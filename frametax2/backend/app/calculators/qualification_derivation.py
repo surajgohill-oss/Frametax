@@ -396,18 +396,24 @@ def derive_qualification_register(
         # authority (Rule 4): an unmapped label means "no explicit rule",
         # and the doctrine decides.
         if doctrine == QualificationDoctrine.OPEN_DEFAULT_INCLUDE:
+            # Cluster 11: this line is included because NOTHING EXCLUDES IT,
+            # which is not the same provenance claim as "the statute names
+            # this category as qualifying". The inclusion is unchanged; only
+            # the basis now states truthfully why.
             _acct(QualificationState.QUALIFIES, QualificationConfidence.MEDIUM,
-                  AuthorityBasis.EXPLICIT_STATUTE,
+                  AuthorityBasis.DEFAULT_INCLUDE_NO_EXCLUSION,
                   f"Included by default: {jur} program is OPEN_DEFAULT_INCLUDE — any "
                   "locally-incurred production spend qualifies unless an explicit "
-                  f"exclusion clause names it, and none names category '{category}'.")
+                  f"exclusion clause names it, and none names category '{category}'. "
+                  "This is canonical default inclusion, NOT an express statutory "
+                  "statement that this category qualifies.")
         elif doctrine == QualificationDoctrine.CLOSED_POSITIVE_LIST:
             _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH,
-                  AuthorityBasis.EXPLICIT_STATUTE,
+                  AuthorityBasis.CLOSED_LIST_OMISSION,
                   f"Excluded: {jur} program is a CLOSED_POSITIVE_LIST — only the "
                   "enumerated qualifying categories qualify, and category "
-                  f"'{category}' is not among them (the omission is the exclusion "
-                  "authority).")
+                  f"'{category}' is not among them. The exclusion rests on the "
+                  "omission from the list, not on a clause naming this category.")
         elif doctrine == QualificationDoctrine.HYBRID_CONDITIONAL:
             _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
                   QualificationConfidence.LOW, AuthorityBasis.ABSENCE_OF_AUTHORITY,

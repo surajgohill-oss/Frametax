@@ -72,6 +72,57 @@ def _anchor_and_stacked(trace: dict) -> tuple[str | None, list[str]]:
     return ranked[0], ranked[1:]
 
 
+def _with_component_display_names(
+    component_allocations: list, jurisdiction_name_by_code: dict[str, str] | None,
+) -> list:
+    """Backfill a component allocation's producer-facing jurisdiction name at
+    serve time. A persisted trace can carry None (the target jurisdiction had
+    no seeded Jurisdiction row when it was written); the producer must still
+    never see a raw code."""
+    from app.services.canonical_program_identity import canonical_jurisdiction_name
+
+    names = jurisdiction_name_by_code or {}
+    healed = []
+    for allocation in component_allocations:
+        if not isinstance(allocation, dict):
+            healed.append(allocation)
+            continue
+        if allocation.get("jurisdiction_display_name"):
+            healed.append(allocation)
+            continue
+        code = allocation.get("jurisdiction_code")
+        resolved = names.get(code) or canonical_jurisdiction_name(code)
+        healed.append({**allocation, "jurisdiction_display_name": resolved} if resolved else allocation)
+    return healed
+
+
+def _jurisdiction_names_by_code(jurisdictions) -> dict[str, str]:
+    """Producer-facing jurisdiction names, DB first with a CANONICAL
+    fallback -- never a raw code on a producer surface.
+
+    The Jurisdiction table is the primary source, but a jurisdiction can be
+    canonically modeled (a DoctrineRecord and rate rules exist, so it is
+    discovered and priced) without ever having been seeded as a row -- AE-AD,
+    AE-DXB and AU-SA are the current instances. Those codes then reached
+    producer surfaces raw, e.g. a component/split candidate routing post to
+    "AE-AD". jurisdiction_comparison.ALL_PROFILES already carries the real
+    display name for exactly these codes, so this reads the existing
+    canonical metadata rather than introducing a second hand-maintained
+    name map (which is what PROJECT_RULES.md forbids and what would drift).
+    """
+    from app.calculators import jurisdiction_comparison as jc
+    from app.services.canonical_program_identity import canonical_jurisdiction_name
+
+    names = {}
+    for code in jc.ALL_PROFILES:
+        resolved = canonical_jurisdiction_name(code)
+        if resolved:
+            names[code] = resolved
+    # A seeded Jurisdiction row is authoritative and always wins.
+    names.update({j.code: j.name for j in jurisdictions if j.name})
+    return names
+
+
 def _program_display_name(program_slug: str | None) -> str | None:
     """The real, human-readable program name from the canonical doctrine
     registry (executable_jurisdiction_registry.get_doctrine) — never a
@@ -263,7 +314,13 @@ def _empty_structure_entry(
         "stacked_programs": (
             _anchor_and_stacked(trace)[1] if structure_type == "multi_program" else []
         ),
-        "component_allocations": trace.get("component_allocations") or [],
+        # Display metadata is resolved at SERVE time, never trusted from the
+        # frozen calculation trace: a row persisted before a jurisdiction had
+        # a resolvable name would otherwise show the producer a raw code
+        # (AE-AD) forever. Economics stay persisted; presentation heals.
+        "component_allocations": _with_component_display_names(
+            trace.get("component_allocations") or [], jurisdiction_name_by_code,
+        ),
         "stacking_rule_type": trace.get("stacking_rule_type"),
         "stacking_note": trace.get("stacking_condition_text"),
         "stacking_reduction_usd": trace.get("stacking_reduction_usd"),
@@ -516,7 +573,7 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         if jurisdiction_ids else []
     )
     jurisdiction_code_by_id = {str(j.id): j.code for j in jurisdictions}
-    jurisdiction_name_by_code = {j.code: j.name for j in jurisdictions}
+    jurisdiction_name_by_code = _jurisdiction_names_by_code(jurisdictions)
 
     structure_entries = [
         _empty_structure_entry(s, r, jurisdiction_code_by_id, jurisdiction_name_by_code) for s, r in rows

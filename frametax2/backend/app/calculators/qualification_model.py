@@ -51,6 +51,15 @@ class QualificationState(str, enum.Enum):
 class AuthorityBasis(str, enum.Enum):
     """What kind of evidence backs this account's state."""
     EXPLICIT_STATUTE = "explicit_statute"                # cited program text
+    # Cluster 11 (trace provenance truthfulness). "The authority expressly
+    # says this qualifies" and "our canonical doctrine includes it because no
+    # authoritative exclusion applies" are DIFFERENT provenance claims, and
+    # conflating them overstates what the repository actually establishes.
+    # The default-inclusion doctrine itself is unchanged -- only the label
+    # stops claiming statutory support it does not have.
+    DEFAULT_INCLUDE_NO_EXCLUSION = "default_include_no_exclusion"  # included by silence, not by citation
+    CLOSED_LIST_OMISSION = "closed_list_omission"          # excluded because not enumerated, not by a naming clause
+    PROGRAM_BASE_INAPPLICABLE = "program_base_inapplicable"  # outside this program's qualifying base (e.g. a labour-only base)
     TERRITORIAL_NEXUS = "territorial_nexus"               # QPE must be MU-incurred; spend is not
     STRUCTURAL_DEFINITION = "structural_definition"        # e.g. unspent reserve isn't "incurred" spend
     CROSS_PROGRAM_CONVENTION = "cross_program_convention"  # near-universal industry practice, not MU-cited

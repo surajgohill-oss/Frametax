@@ -537,7 +537,26 @@ from app.services.canonical_project_economics import (
 # document's own stated Grand Total exactly ($11,983,654.00, previously
 # $10,480,580.00 -- a discrepancy this fix removes rather than papering
 # over). Bumped per this constant's own established convention.
-ENGINE_VERSION = "canonical-1.41.0"
+#
+# canonical-1.42.0 (CineGlobe economics + wiring integrity repair): three
+# SEMANTIC pricing/trace changes that persisted rows cannot be allowed to
+# outlive, so the version bump is what invalidates and recomputes them:
+#   * cluster 6 -- a lone band-ceiling tier no longer becomes a guaranteed
+#     floor rate; an unconfirmable "up to X%" fails closed
+#     (allocation_pricing._price_segment / program_rate_rules.
+#     resolve_program_rate has_guaranteed_floor);
+#   * cluster 7 -- canonical dollar caps (per_project_cap_usd,
+#     annual_cap_usd) now clip the incentive after base x rate, with an
+#     auditable uncapped/cap-type/capped trace;
+#   * cluster 11 -- trace provenance stops claiming EXPLICIT_STATUTE for
+#     lines included by canonical default. The inclusion is unchanged; the
+#     basis is now DEFAULT_INCLUDE_NO_EXCLUSION (and CLOSED_LIST_OMISSION
+#     for the closed-list mirror), so an auditor can tell "the authority
+#     expressly says this qualifies" from "nothing excludes it".
+# Note the authority gate (cluster 1) invalidates independently via
+# AUTHORITY_COVERAGE_REGISTRY_VERSION, which the input fingerprint already
+# includes.
+ENGINE_VERSION = "canonical-1.42.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -1531,6 +1550,15 @@ def _segment_dicts(pricing) -> list[dict]:
     ]
 
 
+def _canonical_jurisdiction_name(code: str | None) -> str | None:
+    """Producer-facing jurisdiction name for a code with no seeded
+    Jurisdiction row (AE-AD, AE-DXB, AU-SA). Delegates to the single
+    canonical resolver rather than duplicating a name map."""
+    from app.services.canonical_program_identity import canonical_jurisdiction_name
+
+    return canonical_jurisdiction_name(code)
+
+
 def _program_display_name(program_slug: str) -> str:
     """Human-readable program name for structure-label disambiguation only
     (never used for economics) — reads the same DoctrineRecord.program_name
@@ -2451,7 +2479,14 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         "component_allocations": [{
                             "component": component,
                             "jurisdiction_code": target.jurisdiction_code,
-                            "jurisdiction_display_name": target_jur_row.name if target_jur_row else None,
+                            # A seeded Jurisdiction row wins; otherwise resolve
+                            # the name from canonical registries so a modeled-
+                            # but-unseeded code (AE-AD, AE-DXB, AU-SA) never
+                            # reaches the producer raw.
+                            "jurisdiction_display_name": (
+                                target_jur_row.name if target_jur_row
+                                else _canonical_jurisdiction_name(target.jurisdiction_code)
+                            ),
                             "program_slug": target.program_slug,
                             "allocated_usd": target_component_seg.allocated_usd if target_component_seg else spend_amount,
                             "incentive_floor_usd": target_component_seg.incentive_floor_usd if target_component_seg else None,

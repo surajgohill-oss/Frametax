@@ -107,8 +107,16 @@ async def test_statutory_eligibility_failure_still_rejects_correctly(db: AsyncSe
     feasibility gate, never the real economic gates."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = {e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]}
-    au = entries["AU"]
+    structures = view["structures"]["allocated_structures"]["structures"]
+    # AU now carries MORE THAN ONE candidate (au_location_offset plus
+    # au_pdv_offset), so a {primary_jurisdiction: entry} dict silently keeps
+    # whichever happens to be last. Select the program this test is actually
+    # about -- the genuine statutory/threshold rejection -- by slug.
+    au = next(
+        e for e in structures
+        if e["primary_jurisdiction"] == "AU"
+        and "au_location_offset" in (e.get("program_slugs") or [e.get("program_slug")])
+    )
     assert au["is_fully_priced"] is False
     assert au.get("candidate_status") == "RULE_REJECTED"
 
@@ -608,9 +616,9 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 168
-    assert len(priced) == 105
-    assert len(unpriced) == 63
+    assert len(entries) == 171
+    assert len(priced) == 101
+    assert len(unpriced) == 70
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -972,7 +980,12 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    codes = ("CA-BC", "HR", "NZ", "TT", "US-LA", "US-MD", "US-NM", "US-RI")
+    # US-MD is EXCLUDED from the priced list: us_md_film_production_activity_
+    # credit states only band ceilings (28%/30%) with an unevaluable
+    # us-md-tv-series-uplift condition, so under the cluster-6 repair it has
+    # no guaranteed floor and must not price deterministically. It is
+    # asserted as withheld-but-disclosed below instead.
+    codes = ("CA-BC", "HR", "NZ", "TT", "US-LA", "US-NM", "US-RI")
     seen_incentives = set()
     for code in codes:
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -981,6 +994,10 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
         seen_incentives.add(e["selected_incentive_usd"])
+    # Withheld, not erased: US-MD stays discovered and disclosed.
+    md = next(x for x in entries if x["primary_jurisdiction"] == "US-MD")
+    assert md["is_fully_priced"] is False
+    assert not md.get("selected_incentive_usd")
     assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"
 
 
@@ -1009,12 +1026,18 @@ async def test_batch2_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    for code in ("SA", "SI"):
+    # SI (si_cash_rebate) is a floorless band ceiling with an unevaluable
+    # si-eligible-applicant-scope condition -- withheld under cluster 6, so
+    # only SA is asserted as priced here.
+    for code in ("SA",):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
         assert e["is_fully_priced"] is True, f"{code} did not price"
         assert e["candidate_status"] == "PRICED"
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
+    si = next(x for x in entries if x["primary_jurisdiction"] == "SI")
+    assert si["is_fully_priced"] is False
+    assert not si.get("selected_incentive_usd")
 
 
 # ── Global Economic Data + Base Pricing — batch 3: 8 more recover-before-

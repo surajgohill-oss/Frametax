@@ -185,3 +185,35 @@ def all_canonical_identities() -> tuple[CanonicalProgramIdentity, ...]:
         if identity is not None:
             seen.setdefault(identity.canonical_program_id, identity)
     return tuple(seen[cid] for cid in sorted(seen))
+
+
+def canonical_jurisdiction_name(code: str | None) -> str | None:
+    """The producer-facing display name for a jurisdiction CODE, resolved
+    from existing canonical registries. Returns None when nothing canonical
+    names it -- absence, never a prettified code.
+
+    A jurisdiction can be fully modeled canonically (DoctrineRecord + rate
+    rules, so it is discovered, priced and shown) without ever having been
+    seeded as a Jurisdiction row. AE-AD, AE-DXB and AU-SA are the current
+    instances, and they reached producer surfaces as raw codes -- e.g. a
+    component/split candidate routing post to "AE-AD". Both display sites
+    (canonical_production_view's structure entries and canonical_evaluation's
+    persisted component_allocations) resolve through here so there is ONE
+    canonical answer rather than a second hand-maintained name map, which is
+    what PROJECT_RULES.md forbids and what would drift.
+
+    Callers that also have a seeded Jurisdiction row should prefer that row;
+    it is the authoritative source when present.
+    """
+    if not code:
+        return None
+    profile = _jc.ALL_PROFILES.get(code)
+    name = getattr(profile, "jurisdiction_name", None) if profile else None
+    if name:
+        return name
+    for program in _gi.ALL_PROGRAMS:
+        if program.jurisdiction_code == code:
+            inventory_name = getattr(program, "jurisdiction_name", None)
+            if inventory_name:
+                return inventory_name
+    return None
