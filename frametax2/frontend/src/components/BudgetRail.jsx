@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Money } from "../lib/format";
+import { Money, jurisdictionName } from "../lib/format";
 import { buildAccountBlocks, buildDepartmentBlocks } from "../lib/budgetBlocks";
-import { postProjectAssumptions } from "../api";
+import { postProjectAssumptions, beginEvaluation } from "../api";
 
 // Production Budget rail — approved Overview right column. Categories and
 // line items come verbatim from the real parsed budget register
@@ -75,7 +75,10 @@ function RailBlock({ block, structure, onSelectAccount, openLineKey, onToggleLin
                         chain, scoped to the active structure. */}
                     {alloc ? (
                       <dl className="brail-trace-kv">
-                        <div><dt>Jurisdiction allocation</dt><dd className="mono">{alloc.jurisdictionCode}</dd></div>
+                        {/* Producer Display Names closeout: was the raw
+                            jurisdiction_code — same canonical helper every
+                            other producer-facing surface uses. */}
+                        <div><dt>Jurisdiction allocation</dt><dd>{jurisdictionName(alloc.jurisdictionCode)}</dd></div>
                         <div>
                           <dt>{alloc.included ? "Included QPE" : "Excluded costs"}</dt>
                           <dd className="mono"><Money value={l.amount} /></dd>
@@ -100,62 +103,44 @@ function RailBlock({ block, structure, onSelectAccount, openLineKey, onToggleLin
   );
 }
 
-// Original -> Adjustment -> Current scaffold (Workspace Phase 1: design
-// only, no persistence — see engineering note below). Original values are
-// read from already-served backend fields; Adjustment is local component
-// state that is never sent anywhere; Current is the computed sum. The
-// later "User Adjustments" phase replaces the local state with a real
-// mutation + refetch, without changing this shape.
-const ADJUSTMENT_ROWS = [
-  { key: "reinvestment", label: "Reinvestment" },
-  { key: "inkind", label: "In-kind" },
-  { key: "labor", label: "Manual labor normalization" },
-  { key: "manual", label: "Manual override" },
-];
-
-function AdjustmentsPreview({ economics }) {
-  const [open, setOpen] = useState(false);
-  const [adjustments, setAdjustments] = useState({ reinvestment: 0, inkind: 0, labor: 0, manual: 0 });
-  const originals = {
-    reinvestment: 0, // no reinvestment imported for this production
-    inkind: economics?.inkind_post_options?.accepted_as_qpe?.off_budget_inkind_usd ?? 0,
-    labor: 0,
-    manual: 0,
-  };
+// Producer Display Names + Budget Rail User Assumptions closeout —
+// replaces the old "Original -> Adjustment -> Current" scaffold, which
+// had four ALWAYS-editable inputs (Reinvestment, In-kind, Manual labor
+// normalization, Manual override) that were explicitly local-only —
+// typed values vanished on refresh with no persistence, and the row
+// itself said so ("preview — not yet saved"). Audited against the real,
+// existing canonical capability (Section 10 of the closeout task):
+//   - Reinvestment: no canonical persisted input or NPC/QPE treatment
+//     exists anywhere in the backend for a producer-stated reinvestment
+//     figure. Classification C (planned, not yet implemented).
+//   - In-kind: a real backend figure exists
+//     (economics.inkind_post_options.accepted_as_qpe...) but ONLY for
+//     Little Utopia's own hand-modeled scenario — the generic canonical
+//     path (every other/new project) always serves inkind_post_options
+//     as {}, and there is no producer-facing persisted input that feeds
+//     it (accepting in-kind as QPE is a qualification-doctrine decision,
+//     out of this task's scope — see "DO NOT ALTER ... QPE doctrine").
+//     Classification C for the generic case.
+//   - Manual labor normalization / Manual override: no canonical
+//     persisted input or economic treatment exists for either.
+//     Classification C.
+// All four are C — no fake editable control is left in the active form.
+// Finance Costs (below, FinanceCostLine) is the one row this audit found
+// real, already-implemented canonical backend support for
+// (allocation_pricing.price_allocated_structure's own financing_cost_usd
+// parameter, previously fed 0.0 with no input path) — Classification B,
+// now wired end-to-end (persisted ProjectFact -> canonical evaluation
+// input -> NPC, same mechanism as Contingency below).
+function InkindDisclosure({ economics }) {
+  const offBudgetInkindUsd = economics?.inkind_post_options?.accepted_as_qpe?.off_budget_inkind_usd;
+  if (offBudgetInkindUsd == null) return null;
   return (
     <div className="brail-block">
-      <button className="brail-header" onClick={() => setOpen((o) => !o)}>
-        {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        <span className="brail-name">Adjustments (preview — not yet saved)</span>
-      </button>
-      {open && (
-        <div className="brail-lines">
-          {ADJUSTMENT_ROWS.map((r) => {
-            const original = originals[r.key] || 0;
-            const adj = adjustments[r.key] || 0;
-            const current = original + adj;
-            return (
-              <div key={r.key} className="brail-adj-row">
-                <span className="brail-adj-name">{r.label}</span>
-                <span className="brail-adj-v" title="Original (imported/computed)"><Money value={original} bare /></span>
-                <input
-                  type="number"
-                  className="brail-adj-input"
-                  value={adj || ""}
-                  placeholder="0"
-                  title="Adjustment (local preview only — not persisted)"
-                  onChange={(e) => setAdjustments((a) => ({ ...a, [r.key]: Number(e.target.value) || 0 }))}
-                />
-                <span className="brail-adj-v mono" title="Current (original + adjustment)"><Money value={current} bare /></span>
-              </div>
-            );
-          })}
-          <p className="text-tertiary small" style={{ margin: "6px 4px 0" }}>
-            Original → Adjustment → Current. Adjustment values are a local preview only — nothing here is sent to
-            the backend yet; persistence is the later User Adjustments phase.
-          </p>
-        </div>
-      )}
+      <div className="brail-header brail-static" title="Read-only — accepting in-kind contribution as QPE is a qualification-doctrine decision, not yet a producer-editable assumption.">
+        <span style={{ width: 13 }} />
+        <span className="brail-name">In-kind (accepted as QPE)</span>
+        <span className="brail-amount mono"><Money value={offBudgetInkindUsd} /></span>
+      </div>
     </div>
   );
 }
@@ -179,6 +164,17 @@ function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved }) {
     setSaving(true);
     try {
       await postProjectAssumptions(projectId, { contingency_expected_utilization_pct: pct });
+      // Producer Display Names + Budget Rail User Assumptions closeout:
+      // GET-side reads (useCineGlobe's refetch, called via onSaved below)
+      // serve the LAST PERSISTED evaluation row — they never re-run
+      // pricing themselves. contingency_expected_utilization_pct is
+      // already part of the evaluation cache fingerprint, so without an
+      // explicit re-evaluation here the served NPC/economics would stay
+      // stale after a save until some unrelated future evaluation
+      // happened to run. beginEvaluation is the SAME existing, generic
+      // "Begin Evaluation" entry point (idempotent per fingerprint) —
+      // no new economics, no new endpoint.
+      await beginEvaluation(projectId);
       onSaved?.();
     } finally {
       setSaving(false);
@@ -212,9 +208,86 @@ function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved }) {
   );
 }
 
+// Producer Display Names + Budget Rail User Assumptions closeout —
+// Finance Costs, wired the SAME way ContingencyLine above already is:
+// POST /projects/{id}/assumptions (generic ProjectFact write path,
+// whitelist-only, USER_OVERRIDE precedence) -> onSaved (refetch) ->
+// the canonical evaluation fingerprint picks up the change (financing_
+// cost_usd is now part of _compute_fingerprint's payload) -> a fresh
+// evaluation prices financing_cost_usd straight into NPC via
+// allocation_pricing.price_allocated_structure's existing parameter —
+// never QPE, never the imported gross budget. `currentUsd` is read from
+// the real persisted fact (facts.answers.financing_cost_usd via
+// Overview.jsx), not from local state, so a page refresh always shows
+// the true saved value, never a value that silently reverts.
+function FinanceCostLine({ projectId, currentUsd, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    setDraft(currentUsd != null ? String(currentUsd) : "");
+    setEditing(true);
+  }
+
+  async function save() {
+    if (saving) return;
+    const trimmed = draft.trim();
+    const value = trimmed === "" ? null : Number(trimmed);
+    if (trimmed !== "" && !Number.isFinite(value)) return;
+    setSaving(true);
+    try {
+      await postProjectAssumptions(projectId, { financing_cost_usd: value });
+      // Same reasoning as ContingencyLine above — an explicit
+      // re-evaluation is required for the new financing_cost_usd (now
+      // part of the fingerprint) to actually produce a fresh NPC, not
+      // just a persisted-but-unread fact.
+      await beginEvaluation(projectId);
+      onSaved?.();
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="brail-block">
+      <div className="brail-header brail-static brail-contingency-row" title="Producer-stated financing/bridge cost — added to NPC (allocation_pricing's existing financing_cost_usd parameter), never QPE and never the imported budget.">
+        <span style={{ width: 13 }} />
+        <span className="brail-name">Finance costs</span>
+        {editing ? (
+          <>
+            <input
+              type="number"
+              className="brail-adj-input"
+              value={draft}
+              placeholder="0"
+              autoFocus
+              disabled={saving}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+            />
+            <button className="ghost-action small" disabled={saving} onClick={save}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button className="ghost-action small" disabled={saving} onClick={() => setEditing(false)}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="brail-amount mono"><Money value={currentUsd ?? 0} /></span>
+            <button className="ghost-action small" onClick={startEdit}>Edit</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function BudgetRail({
   production, register, budget, structure, structureIsLeading, economics, onSelectAccount,
-  projectId, contingencyPct, onContingencySaved,
+  projectId, contingencyPct, onContingencySaved, financingCostUsd, onFinanceCostSaved,
 }) {
   // Production Overview + Project Globe UI regression repair, Section 3/4:
   // ONE canonical budget surface. pkg.register (jurisdiction-pricing-
@@ -235,7 +308,6 @@ export default function BudgetRail({
     }
     return buildDepartmentBlocks(budget?.line_items || []);
   }, [register, budget]);
-  const hasFinance = blocks.some((b) => /finance/i.test(b.label));
   const [openLineKey, setOpenLineKey] = useState(null);
   const onToggleLine = (key) => setOpenLineKey((cur) => (cur === key ? null : key));
   const contingencyReserveUsd = budget?.totals_by_spend_category_usd?.contingency ?? 0;
@@ -294,17 +366,13 @@ export default function BudgetRail({
         onSaved={onContingencySaved}
       />
 
-      {!hasFinance && (
-        <div className="brail-block">
-          <div className="brail-header brail-static">
-            <span style={{ width: 13 }} />
-            <span className="brail-name">Finance costs</span>
-            <span className="brail-amount mono"><Money value={0} /></span>
-          </div>
-        </div>
-      )}
+      <FinanceCostLine
+        projectId={projectId}
+        currentUsd={financingCostUsd}
+        onSaved={onFinanceCostSaved}
+      />
 
-      <AdjustmentsPreview economics={economics} />
+      <InkindDisclosure economics={economics} />
 
       <div className="brail-total">
         <span>Total budget</span>

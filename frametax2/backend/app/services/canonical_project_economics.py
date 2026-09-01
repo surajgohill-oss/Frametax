@@ -71,6 +71,21 @@ FACT_OFFSHORE_PAYROLL_ACCOUNTS = "budget_offshore_payroll_accounts"
 #: branch, which surfaces GREY_AREA_REQUIRES_AUTHORITY when this is None).
 FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT = "contingency_expected_utilization_pct"
 
+#: Producer Display Names + Budget Rail User Assumptions closeout — the
+#: SAME generic ProjectFact model, same USER_OVERRIDE precedence, as
+#: contingency_expected_utilization_pct above. A producer's stated
+#: financing/bridge cost for this production, in USD. This is NOT a
+#: budget line item (it does not rewrite the imported source PDF or any
+#: normalized BudgetLineItem) and it is NOT QPE (it never enters any
+#: jurisdiction's qualifying-spend register) — it flows only into
+#: allocation_pricing.price_allocated_structure's existing
+#: `financing_cost_usd` parameter, which already adds it to NPC
+#: (npc_verified_usd / npc_with_adjustments_usd) exactly as documented
+#: there ("Financing... default to zero — explicit inputs only, never a
+#: silent assumption"). Absent means genuinely unset — treated as 0.0 by
+#: price_allocated_structure's own default, never defaulted here.
+FACT_FINANCING_COST_USD = "financing_cost_usd"
+
 #: Leading account-code token on a budget line description, e.g.
 #: "1400 CAST" -> ("1400", "CAST"). Film budgets are account-coded by
 #: convention; a line without a code cannot participate in
@@ -125,6 +140,10 @@ class ProjectEconomicInputs:
     #: (0-100, percent), read from the generic ProjectFact model. None
     #: means genuinely unset, never defaulted.
     contingency_expected_utilization_pct: float | None = None
+
+    #: Producer Display Names + Budget Rail User Assumptions closeout —
+    #: see FACT_FINANCING_COST_USD above. None means genuinely unset.
+    financing_cost_usd: float | None = None
 
     @property
     def reconciliation_variance_usd(self) -> float:
@@ -457,6 +476,7 @@ async def build_project_economic_inputs(
         contingency_expected_utilization_pct=_fact_float(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
+        financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
     ))
 
 

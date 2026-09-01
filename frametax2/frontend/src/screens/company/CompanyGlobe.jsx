@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
 import { STATUS_HEX } from "../../lib/globeData";
-import { Money } from "../../lib/format";
+import { Money, jurisdictionName } from "../../lib/format";
 
 export default function CompanyGlobe() {
   // Restore Final Phase 3B Globe: current-data compatibility adapter.
@@ -41,7 +41,8 @@ export default function CompanyGlobe() {
           <span className="dot" style={{ background: STATUS_HEX.gold }} />
           <div>
             <div className="row-title">{production.production_name}</div>
-            <div className="row-sub">{production.jurisdiction_code} · <Money value={production.gross_budget_usd} /></div>
+            {/* Producer Display Names closeout: was the raw jurisdiction_code. */}
+            <div className="row-sub">{jurisdictionName(production.jurisdiction_code)} · <Money value={production.gross_budget_usd} /></div>
           </div>
         </div>
       </div>
@@ -73,7 +74,7 @@ export default function CompanyGlobe() {
           <p className="inspector-eyebrow">Production preview</p>
           <h3>{production.production_name}</h3>
           <dl className="kv-list">
-            <div><dt>Baseline jurisdiction</dt><dd>{production.jurisdiction_code}</dd></div>
+            <div><dt>Baseline jurisdiction</dt><dd>{jurisdictionName(production.jurisdiction_code)}</dd></div>
             <div><dt>Gross budget</dt><dd><Money value={production.gross_budget_usd} /></dd></div>
             <div><dt>Incentive rate</dt><dd className="mono">{(production.rate * 100).toFixed(0)}%</dd></div>
           </dl>

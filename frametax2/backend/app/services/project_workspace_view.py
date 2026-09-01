@@ -81,15 +81,44 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     # off ANY current-engine result row for this project instead — every
     # row from one evaluation run shares one fingerprint by construction.
     engine_version = ENGINE_VERSION
-    fingerprint = (await session.execute(
-        select(StructureCalculationResult.input_fingerprint)
-        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(
-            ProductionStructure.project_id == project.id,
-            StructureCalculationResult.engine_version == engine_version,
+    # Producer Display Names + Budget Rail User Assumptions closeout —
+    # correctness fix, not a doctrine change (same fix, same reasoning,
+    # as canonical_production_view.py's identical query): rows are never
+    # deleted when a new evaluation runs, so once a producer changes a
+    # fingerprint-participating assumption (contingency_expected_
+    # utilization_pct, financing_cost_usd, ...) and later reverts it,
+    # MULTIPLE real fingerprints legitimately coexist for this project —
+    # an unordered `.limit(1)` could pick a stale one. The only correct
+    # source for "this project's current fingerprint" is the SAME
+    # computation evaluate_project() uses — recomputed here READ-ONLY
+    # (no script analysis / artwork extraction / new rows) so this stays
+    # a cheap read, never a second evaluation entry point.
+    from app.services.canonical_evaluation import _compute_fingerprint, _coproduction_facts
+    from app.services.canonical_project_economics import build_project_economic_inputs
+    from app.calculators.canonical_role_qualification_bridge import (
+        role_known_codes_from_project, script_facts_from_project,
+    )
+    fingerprint = None
+    econ = await build_project_economic_inputs(session, project.id)
+    if econ.ok:
+        role_known_codes = await role_known_codes_from_project(session, str(project.id))
+        script_facts = await script_facts_from_project(session, str(project.id))
+        coproduction_facts = await _coproduction_facts(session, project.id)
+        fingerprint = _compute_fingerprint(
+            econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
+            coproduction_facts=coproduction_facts,
         )
-        .limit(1)
-    )).scalar_one_or_none()
+    if fingerprint is None:
+        fingerprint = (await session.execute(
+            select(StructureCalculationResult.input_fingerprint)
+            .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+            .where(
+                ProductionStructure.project_id == project.id,
+                StructureCalculationResult.engine_version == engine_version,
+            )
+            .order_by(StructureCalculationResult.created_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
 
     if fingerprint:
         rows = (await session.execute(

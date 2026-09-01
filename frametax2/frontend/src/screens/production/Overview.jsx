@@ -96,6 +96,11 @@ export default function Overview() {
   const { production, pkg, people, economics, facts } = data;
   const contingencyPctRaw = facts?.answers?.contingency_expected_utilization_pct;
   const contingencyPct = contingencyPctRaw == null ? null : Number(contingencyPctRaw);
+  // Producer Display Names + Budget Rail User Assumptions closeout: SAME
+  // pattern as contingencyPct above — the real persisted ProjectFact
+  // (never local component state), read the same way for any project.
+  const financingCostUsdRaw = facts?.answers?.financing_cost_usd;
+  const financingCostUsd = financingCostUsdRaw == null ? null : Number(financingCostUsdRaw);
 
   // Production Options card click — same inspect pattern Scenarios.jsx
   // already uses (open the structure's first segment, or its
@@ -215,6 +220,8 @@ export default function Overview() {
             projectId={projectId}
             contingencyPct={contingencyPct}
             onContingencySaved={refetch}
+            financingCostUsd={financingCostUsd}
+            onFinanceCostSaved={refetch}
             onSelectAccount={(line, alloc) => openInspector("account", {
               ...line,
               crossRef: alloc ? [{

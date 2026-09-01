@@ -766,7 +766,7 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
 # fact_key write) so this endpoint can't be used to smuggle a value into
 # an extraction/system-owned fact key (writer_name, gross_budget_usd,
 # etc.) that must retain its own real provenance/source_document_version.
-_PROJECT_ASSUMPTION_FACT_KEYS = {"contingency_expected_utilization_pct"}
+_PROJECT_ASSUMPTION_FACT_KEYS = {"contingency_expected_utilization_pct", "financing_cost_usd"}
 
 
 class ProjectAssumptions(BaseModel):

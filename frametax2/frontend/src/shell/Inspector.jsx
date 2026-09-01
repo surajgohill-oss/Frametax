@@ -145,7 +145,10 @@ function AccountInspector({ data }) {
                 <div className="row-main">
                   <div className="row-title small">{c.structureLabel}</div>
                   <div className="row-sub">
-                    {c.jurisdictionCode}
+                    {/* Producer Display Names closeout: was the raw
+                        jurisdiction_code (e.g. "CA-MB") — same canonical
+                        helper every other producer-facing surface uses. */}
+                    {jurisdictionName(c.jurisdictionCode)}
                     {c.claimsIncentive
                       ? ` · QPE ${Math.round(c.qpeUsd).toLocaleString()}`
                       : " · no incentive claimed here"}
@@ -348,7 +351,10 @@ function AllocationAssignmentInspector({ data }) {
       <dl className="kv-list">
         <div><dt>Amount</dt><dd className="mono"><Money value={data.amount_usd} /></dd></div>
         <div><dt>Component</dt><dd style={{ textTransform: "capitalize" }}>{(data.component || "").replace(/_/g, " ")}</dd></div>
-        <div><dt>Routed to</dt><dd className="mono">{data.jurisdiction_code}</dd></div>
+        {/* Producer Display Names closeout: was the raw jurisdiction_code
+            (e.g. "US-MT") — same canonical helper every other
+            producer-facing surface uses. Backend id is untouched. */}
+        <div><dt>Routed to</dt><dd>{jurisdictionName(data.jurisdiction_code)}</dd></div>
         <div><dt>Assignment</dt><dd style={{ textTransform: "capitalize" }}>{(data.assignment_kind || "").replace(/_/g, " ")}</dd></div>
         {data.split_pct != null && <div><dt>Split share</dt><dd className="mono">{Math.round(data.split_pct * 100)}%</dd></div>}
       </dl>
@@ -404,7 +410,10 @@ function JurisdictionInspector({ data }) {
   return (
     <>
       <p className="inspector-eyebrow">Jurisdiction</p>
-      <h3>{data.code}</h3>
+      {/* Producer Display Names closeout: was the raw code (e.g. "CA-ON")
+          — same canonical helper every other producer-facing Inspector
+          title uses. Backend id is untouched. */}
+      <h3>{jurisdictionName(data.code)}</h3>
       <span className={`badge ${tierBadgeClass(data.tier)}`}>{data.tierLabel}</span>
       {data.candidate && (
         <dl className="kv-list" style={{ marginTop: 12 }}>

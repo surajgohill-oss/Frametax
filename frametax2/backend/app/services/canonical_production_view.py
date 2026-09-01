@@ -435,15 +435,61 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # by construction (_compute_fingerprint is a pure function of the
     # project's inputs, not of any individual candidate).
     engine_version = ENGINE_VERSION
-    fingerprint = (await session.execute(
-        select(StructureCalculationResult.input_fingerprint)
-        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(
-            ProductionStructure.project_id == project.id,
-            StructureCalculationResult.engine_version == engine_version,
+    # Producer Display Names + Budget Rail User Assumptions closeout —
+    # correctness fix, not a doctrine change. Rows are never deleted when
+    # a new evaluation runs (evaluate_project's own idempotent-per-
+    # fingerprint cache accumulates one row set per distinct fingerprint
+    # ever seen), so once a producer changes any assumption that
+    # participates in the fingerprint (contingency_expected_utilization_
+    # pct, financing_cost_usd, ...) and later changes it back, TWO (or
+    # more) real fingerprints legitimately coexist for this project — an
+    # older one is not necessarily stale; "most recently CREATED" is not
+    # the same fact as "matches the CURRENT persisted inputs" (reverting
+    # an assumption can make an older row current again). The only
+    # correct source for "this project's current fingerprint" is the
+    # SAME computation evaluate_project() itself uses — never a guess
+    # (an unordered `.limit(1)`, tried first here and confirmed wrong;
+    # ordering by created_at DESC, tried second, also confirmed wrong on
+    # the revert case) over the calculation-result table. evaluate_project
+    # is READ-ONLY and side-effect-free (same queries evaluate_project()
+    # itself runs to decide REUSED vs. recompute) — this function must
+    # never trigger evaluate_project()'s own mutating steps (script
+    # analysis, artwork extraction, new-row persistence) merely because a
+    # producer loaded a page; calling the full entry point here was tried
+    # and reverted — it caused duplicate/extra StructureCalculationResult
+    # rows by invoking evaluate_project() far more often than the
+    # explicit "Begin Evaluation" action ever did, breaking the very
+    # idempotency this fix depends on.
+    from app.services.canonical_evaluation import _compute_fingerprint, _coproduction_facts
+    from app.services.canonical_project_economics import build_project_economic_inputs
+    from app.calculators.canonical_role_qualification_bridge import (
+        role_known_codes_from_project, script_facts_from_project,
+    )
+    fingerprint = None
+    econ = await build_project_economic_inputs(session, project.id)
+    if econ.ok:
+        role_known_codes = await role_known_codes_from_project(session, str(project.id))
+        script_facts = await script_facts_from_project(session, str(project.id))
+        coproduction_facts = await _coproduction_facts(session, project.id)
+        fingerprint = _compute_fingerprint(
+            econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
+            coproduction_facts=coproduction_facts,
         )
-        .limit(1)
-    )).scalar_one_or_none()
+    if fingerprint is None:
+        # A project that can't currently evaluate at all (e.g. budget
+        # still missing) has no fingerprint to key off — fall back to the
+        # best-effort prior behavior (most recent current-engine row) so
+        # this function keeps degrading gracefully rather than raising.
+        fingerprint = (await session.execute(
+            select(StructureCalculationResult.input_fingerprint)
+            .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+            .where(
+                ProductionStructure.project_id == project.id,
+                StructureCalculationResult.engine_version == engine_version,
+            )
+            .order_by(StructureCalculationResult.created_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
 
     rows: list[tuple] = []
     if fingerprint:

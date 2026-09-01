@@ -673,6 +673,11 @@ def _compute_fingerprint(
         # qualification outcomes (see qualification_derivation's
         # contingency branch) must invalidate any stale cached result.
         "contingency_expected_utilization_pct": inputs.contingency_expected_utilization_pct,
+        # Producer Display Names + Budget Rail User Assumptions closeout —
+        # same reasoning as contingency_expected_utilization_pct directly
+        # above: a change to this producer-stated NPC input must invalidate
+        # any stale cached evaluation row.
+        "financing_cost_usd": inputs.financing_cost_usd,
         # CBA-008 (Codex evidence: "fingerprint excludes personnel,
         # screenplay, co-production ... versions") — these three facts can
         # move a candidate between QUALIFIES/CURABLE_GAP/USER_FACT_
@@ -777,6 +782,14 @@ def _price_candidate(
         local_cost_delta_usd=0.0,
         production_type=inputs.production_type,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        # Producer Display Names + Budget Rail User Assumptions closeout —
+        # threads the producer's persisted financing-cost assumption
+        # (ProjectFact, same USER_OVERRIDE mechanism as contingency above)
+        # into the existing financing_cost_usd NPC parameter. Absent
+        # (None) resolves to 0.0 — price_allocated_structure's own
+        # documented default ("explicit inputs only, never a silent
+        # assumption"), never assumed here.
+        financing_cost_usd=inputs.financing_cost_usd or 0.0,
     )
     return pricing, register, rr
 
@@ -1032,6 +1045,14 @@ def _price_component_relocation_candidate(
         local_cost_delta_usd=0.0,
         production_type=inputs.production_type,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        # Producer Display Names + Budget Rail User Assumptions closeout —
+        # threads the producer's persisted financing-cost assumption
+        # (ProjectFact, same USER_OVERRIDE mechanism as contingency above)
+        # into the existing financing_cost_usd NPC parameter. Absent
+        # (None) resolves to 0.0 — price_allocated_structure's own
+        # documented default ("explicit inputs only, never a silent
+        # assumption"), never assumed here.
+        financing_cost_usd=inputs.financing_cost_usd or 0.0,
     )
     return spec, allocation, pricing
 
