@@ -248,7 +248,15 @@ class RateResolution:
     """The full, explainable outcome of resolving a program's rate for
     one production. modeled_rate is what the engine uses; floor_rate is
     the highest NON-band-ceiling tier the production also satisfies —
-    the guaranteed fallback if the authority awards below the ceiling."""
+    the guaranteed fallback if the authority awards below the ceiling.
+
+    has_guaranteed_floor is False when the program has NO non-band-ceiling
+    tier at all. In that case there is no statutory floor to fall back on,
+    and floor_rate is only the ceiling repeated — it must NOT be read as a
+    guaranteed rate. A ceiling is a LIMIT, never evidence that the limit is
+    awarded. Consumers that pay the floor deterministically must check this
+    flag (see allocation_pricing._price_segment, which fails closed when a
+    floorless ceiling also requires confirmation)."""
     program_slug: str
     modeled_rate: float
     floor_rate: float
@@ -258,6 +266,7 @@ class RateResolution:
     conditions_evaluated: tuple[ConditionEvaluation, ...]
     unverified_claims: tuple[UnverifiedRateClaim, ...]
     conflicts: tuple[RateConflict, ...]
+    has_guaranteed_floor: bool = True
 
 
 # ── Mauritius EDB Film Rebate Scheme ────────────────────────────────────────
@@ -1296,6 +1305,13 @@ def resolve_program_rate(
 
     tier = eligible[0]
     floor_candidates = [r for r in eligible if not r.is_band_ceiling]
+    # A lone band ceiling has NO guaranteed floor. floor_rate still repeats
+    # the ceiling so existing arithmetic/disclosure is unchanged, but
+    # has_guaranteed_floor records the truth so no consumer can silently
+    # treat "up to X%" as "X% guaranteed" (a ceiling is a limit, not an
+    # award). See allocation_pricing._price_segment for the fail-closed
+    # consumption.
+    has_guaranteed_floor = bool(floor_candidates)
     floor_rate = floor_candidates[0].rate if floor_candidates else tier.rate
     effective_rate = _blended_effective_rate(tier, qpe_usd)
 
@@ -1405,6 +1421,7 @@ def resolve_program_rate(
         program_slug=program_slug,
         modeled_rate=effective_rate,
         floor_rate=floor_rate,
+        has_guaranteed_floor=has_guaranteed_floor,
         is_band_ceiling=tier.is_band_ceiling,
         tier_id=tier.tier_id,
         basis=f"{tier.citation}{band_note}{bracket_note}",

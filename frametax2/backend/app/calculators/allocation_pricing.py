@@ -377,6 +377,46 @@ def price_segment(
 
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
                                gross_budget_usd=gross_budget_usd)
+
+    # A CEILING IS A LIMIT, NEVER A GUARANTEED RATE. When a program's only
+    # tiers are band ceilings there is no statutory floor to fall back on,
+    # and resolve_program_rate repeats the ceiling as floor_rate purely to
+    # keep the disclosure shape stable. Paying that "floor" deterministically
+    # is what let an "up to 40%" discretionary band be served as a
+    # guaranteed 40%. Fail closed when the ceiling ALSO could not be
+    # pre-evaluated (a condition the engine cannot satisfy on the facts) and
+    # this specific production has not confirmed it. A floorless ceiling
+    # whose conditions ARE all evaluable stays priced -- it is determinate.
+    if (
+        rr is not None
+        and not rr.has_guaranteed_floor
+        and any(e.satisfied is None for e in rr.conditions_evaluated)
+        and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
+    ):
+        unresolved_ids = ", ".join(
+            e.condition_id for e in rr.conditions_evaluated if e.satisfied is None
+        )
+        return SegmentEconomics(
+            jurisdiction_code=jurisdiction_code, program_slug=slug,
+            claims_incentive=True, allocated_usd=allocated,
+            account_codes=codes, executable=False,
+            qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+            doctrine=doctrine.value,
+            qpe_cap_applied_usd=qpe_cap_applied,
+            rate_ceiling=rr.modeled_rate, is_band_ceiling=True,
+            statutory_basis=rr.basis,
+            ceiling_requires_confirmation=True,
+            blockers=(
+                f"{jurisdiction_code}/{slug}: the program states only a rate CEILING "
+                f"({rr.modeled_rate:.0%}) with no guaranteed floor tier, and its "
+                f"award condition(s) [{unresolved_ids}] cannot be pre-evaluated. A "
+                "ceiling is a limit on what may be awarded, not evidence that it "
+                "will be. Segment is allocated and disclosed but carries NO "
+                "deterministic incentive value until the awarded rate is confirmed "
+                "for this production.",
+            ),
+        )
+
     if rr is None:
         cap_blocker = (
             (f"{jurisdiction_code}/{slug}: ${qpe_cap_applied:,.0f} of eligible "

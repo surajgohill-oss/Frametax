@@ -11,6 +11,11 @@ audits of bb4b6a2, so a later change cannot silently reopen it:
     stack or ranking value (PROJECT_RULES.md final authority-safety gate),
     while remaining DISCOVERED and disclosed -- withheld, never erased.
 
+  * CLUSTER 6  -- A CEILING IS A LIMIT, NEVER A GUARANTEED RATE. A program
+    stating only "up to X%" with no floor tier, whose award condition cannot
+    be pre-evaluated, has no deterministic rate and must fail closed rather
+    than serve X% as guaranteed.
+
   * CLUSTER 13 -- READ PATH MUST BE PURE. A GET/read may reconstruct the
     canonical input fingerprint, but must produce ZERO inserts, ZERO updates,
     ZERO project-fact mutations and ZERO commits.
@@ -195,3 +200,87 @@ def test_read_only_builder_never_reaches_write_capable_recovery():
         assert "build_project_economic_inputs(session, project.id, read_only=True)" in src, (
             f"{module.__name__} must build economic inputs read-only on a GET"
         )
+
+
+# ── CLUSTER 6 — a ceiling is a limit, never a guaranteed rate ────────────
+
+def test_floorless_band_ceiling_is_reported_as_having_no_guaranteed_floor():
+    """resolve_program_rate must tell the truth about whether a statutory
+    FLOOR exists. When every eligible tier is a band ceiling, floor_rate is
+    only the ceiling repeated and must not be read as guaranteed."""
+    from app.data import program_rate_rules as prr
+
+    floorless = [
+        slug for slug, rules in prr._RULES_BY_PROGRAM.items()
+        if rules and all(r.is_band_ceiling for r in rules)
+    ]
+    assert floorless, "expected real programs whose only tiers are band ceilings"
+    for slug in floorless:
+        rr = prr.resolve_program_rate(
+            slug, production_type="feature_film", qpe_usd=5_000_000.0,
+        )
+        if rr is None:
+            continue
+        assert rr.has_guaranteed_floor is False, (
+            f"{slug} has no non-band tier but claims a guaranteed floor"
+        )
+
+
+def test_a_program_with_a_real_floor_tier_still_reports_one():
+    """The flag must not over-trigger: a program that genuinely has a
+    non-band floor tier alongside a ceiling keeps its guaranteed floor."""
+    from app.data import program_rate_rules as prr
+
+    rr = prr.resolve_program_rate(
+        "gr_cash_rebate", production_type="feature_film", qpe_usd=5_000_000.0,
+    )
+    assert rr is not None and rr.has_guaranteed_floor is True
+
+
+def _probe_segment(slug: str):
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    alloc = AccountAllocation(
+        account_code="2000", description="Production spend",
+        amount_usd=5_000_000.0, component="production", jurisdiction_code="XX",
+        assignment_kind=AssignmentKind.FIXED,
+        rationale="conditional-ceiling probe",
+        governing_decision="cineglobe-economics-integrity-repair",
+    )
+    return price_segment(
+        jurisdiction_code="XX", program_slug=slug, allocations=[alloc],
+        spend_category_by_code={"2000": "production"},
+        offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=5_000_000.0,
+    )
+
+
+def test_unconfirmed_conditional_ceiling_cannot_become_a_deterministic_rate():
+    """Chile states only 'up to 40%' (tier cl-ceiling-40, condition
+    cl-up-to-not-guaranteed). With no floor tier and an award condition that
+    cannot be pre-evaluated, there is no deterministic rate -- the segment
+    must fail closed, allocated and disclosed but carrying no incentive."""
+    seg = _probe_segment("cl_corfo_incentive")
+    assert seg.executable is False
+    assert not seg.incentive_floor_usd
+    assert seg.blockers and "ceiling" in seg.blockers[0].lower()
+    # Withheld, not erased.
+    assert seg.allocated_usd == pytest.approx(5_000_000.0)
+
+
+def test_a_determinate_floorless_ceiling_still_prices():
+    """No over-blocking. A program whose only tier is a band ceiling but
+    whose conditions are ALL pre-evaluable is determinate and must keep
+    pricing -- the repair targets unconfirmable discretion, not the shape."""
+    from app.data import program_rate_rules as prr
+
+    rr = prr.resolve_program_rate(
+        "us_tx_miip", production_type="feature_film", qpe_usd=5_000_000.0,
+    )
+    assert rr is not None and rr.has_guaranteed_floor is False
+    assert not any(e.satisfied is None for e in rr.conditions_evaluated)
+
+    seg = _probe_segment("us_tx_miip")
+    assert seg.executable is True
+    assert seg.incentive_floor_usd > 0
