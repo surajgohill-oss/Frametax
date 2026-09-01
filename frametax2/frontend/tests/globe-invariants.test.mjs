@@ -252,7 +252,13 @@ test("the legend is scoped to Project Globe only, is vertical, and never interce
 // account/source citations, requirements, blockers) — that's still what
 // opening the Inspector is for.
 test("Globe hover card shows full-precision money and stays clear of Inspector-only content", () => {
-  const src = read("screens/production/ProjectGlobe.jsx");
+  // Overview Globe hover data parity: GlobeHoverCard (and its three body
+  // variants) were extracted from ProjectGlobe.jsx into their own module,
+  // components/GlobeHoverCard.jsx, so Overview.jsx can render the SAME
+  // canonical hover card instead of duplicating/truncating it. Content and
+  // behaviour are byte-identical to what lived inline here before — only
+  // the file changed.
+  const src = read("components/GlobeHoverCard.jsx");
   const fn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src);
   assert.ok(fn, "GlobeHoverCard component not found");
   assert.ok(!/CompactMoney/.test(src), "Phase 3B Batch 1 requires full-precision money — CompactMoney must not appear anywhere in this file");
@@ -277,7 +283,9 @@ test("Globe hover card shows full-precision money and stays clear of Inspector-o
 // now asserts THAT dispatch uses the colour-slot keys, so the exact same
 // regression can't reappear silently in the new shape.
 test("hover card dispatch keys off the colour-slot status, not semanticState", () => {
-  const src = read("screens/production/ProjectGlobe.jsx");
+  // See the extraction note above — GlobeHoverCard now lives in its own
+  // module, shared by ProjectGlobe.jsx and Overview.jsx.
+  const src = read("components/GlobeHoverCard.jsx");
   const cardFn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src)[0];
   assert.ok(cardFn.includes('hover.status === "silver"'), 'GlobeHoverCard must dispatch Excluded on status === "silver"');
   assert.ok(cardFn.includes('hover.status === "amber"'), 'GlobeHoverCard must dispatch Co-Production on status === "amber"');

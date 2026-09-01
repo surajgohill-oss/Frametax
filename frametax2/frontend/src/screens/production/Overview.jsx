@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
+import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, activeStructure } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import ProductionDetails from "../../components/ProductionDetails";
@@ -43,6 +44,12 @@ export default function Overview() {
   } = useAppState();
   const [globeMode, setGlobeMode] = useState("jurisdictions");
   const [hover, setHover] = useState(null);
+  // Overview Globe hover data parity: same GlobeHoverCard/hoverRect pattern
+  // ProjectGlobe.jsx uses to anchor the card near the hovered marker rather
+  // than a fixed corner — canvasRef is the card's nearest positioned
+  // ancestor (the Globe panel below), not the Globe3D canvas element itself.
+  const [hoverRect, setHoverRect] = useState(null);
+  const canvasRef = useRef(null);
 
   const allocated = data?.structures?.allocated_structures;
 
@@ -50,14 +57,22 @@ export default function Overview() {
   // Map/Split modes. One globe engine for the whole app, never forked.
   // Same shared leadingStructureId/selectedJurisdiction as the Workspace —
   // choosing a leading structure or jurisdiction on either screen updates
-  // both without a refresh.
+  // both without a refresh. grossBudgetUsd is passed through identically to
+  // ProjectGlobe.jsx: buildGlobeView's buildCountryHoverData needs it for
+  // the hover card's "Incentive / Gross Budget" figure — without it, that
+  // one field would silently read "Not available" on Overview even where
+  // the full Project Globe page shows a real percentage for the same
+  // jurisdiction, which is exactly the parity gap this fix closes.
   const rankById = useMemo(() => {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
   const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
-    () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
-    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
+    () => buildGlobeView(allocated, rankById, {
+      mode: globeMode, leadingStructureId, selectedJurisdiction,
+      grossBudgetUsd: data?.production?.gross_budget_usd ?? null,
+    }),
+    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction, data?.production?.gross_budget_usd],
   );
   // Bad Hombres Overview Truthfulness / generic ingestion propagation:
   // this is the SAME real defect the Workspace dynamic FX slot had (see
@@ -127,7 +142,7 @@ export default function Overview() {
               </div>
               <button className="act" onClick={() => navigate(`/projects/${projectId}/globe`)}>Full screen →</button>
             </div>
-            <div className="ovxg-globe-wrap dark-panel" style={{ position: "relative" }}>
+            <div className="ovxg-globe-wrap dark-panel" style={{ position: "relative" }} ref={canvasRef}>
               <Globe3D
                 points={points}
                 arcs={arcs}
@@ -163,14 +178,17 @@ export default function Overview() {
                 // usably interactive regardless of this value).
                 obscuredRightPx={0}
                 onPointClick={handleGlobeClick}
-                onPointHover={setHover}
+                // Overview Globe hover data parity: was `onPointHover={setHover}`,
+                // which discarded Globe3D's second (rect) argument and fed a
+                // local truncated tooltip (jurisdiction/statusLabel/role only —
+                // no program, rate, modeled incentive, or NPC). Now the same
+                // two-argument handler ProjectGlobe.jsx uses, feeding the same
+                // canonical GlobeHoverCard below — one hover-data contract, two
+                // Globe embeds, no duplicated economic presentation.
+                onPointHover={(pt, rect) => { setHover(pt); setHoverRect(pt ? rect : null); }}
               />
               {hover && (
-                <div className="globe-tooltip">
-                  <strong>{hover.jurisdictionName}</strong>
-                  <div className="text-tertiary small">{hover.statusLabel}</div>
-                  {hover.role && <div className="text-tertiary small">{hover.role}</div>}
-                </div>
+                <GlobeHoverCard hover={hover} hoverRect={hoverRect} canvasRef={canvasRef} />
               )}
             </div>
           </section>

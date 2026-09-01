@@ -4,11 +4,11 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
+import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey } from "../../lib/globeData";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
-import { Money, humanizeToken, jurisdictionName } from "../../lib/format";
-import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJurisdictions } from "../../lib/globeHoverFormat";
+import { Money, humanizeToken } from "../../lib/format";
 import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../../lib/globeCategoryDiff";
 
 // Project Globe — this production's structures and their routing on the
@@ -306,142 +306,3 @@ export default function ProjectGlobe() {
   );
 }
 
-// Anchors the hover card near the hovered marker's own on-screen box
-// (Globe3D passes it through unmodified from the CSS2D hit-target's
-// getBoundingClientRect()) rather than a fixed panel corner. Clamped to stay
-// inside the canvas panel on every edge — no floating-ui/popper dependency;
-// a fixed approximate card width is enough for a compact, single-purpose
-// card that never wraps to more than a few short lines.
-const HOVER_CARD_W = 260;
-const HOVER_CARD_MARGIN = 10;
-function hoverCardStyle(hoverRect, canvasEl) {
-  if (!hoverRect || !canvasEl) return { display: "none" };
-  const box = canvasEl.getBoundingClientRect();
-  let left = hoverRect.left - box.left + hoverRect.width / 2 + HOVER_CARD_MARGIN;
-  let top = hoverRect.top - box.top - 8;
-  left = Math.max(HOVER_CARD_MARGIN, Math.min(left, box.width - HOVER_CARD_W - HOVER_CARD_MARGIN));
-  top = Math.max(HOVER_CARD_MARGIN, Math.min(top, box.height - 168));
-  return { left, top, width: HOVER_CARD_W };
-}
-
-// PHASE 3B BATCH 1 — canonical hover template, three variants by category.
-// Every figure is read straight off `hover` (built in globeData.js's
-// buildCountryHoverData from real structure/segment/discovery fields — see
-// that function's own comments for exactly which backend field each one
-// is). Full, non-abbreviated currency throughout (formatFullUsd) per this
-// batch's explicit "no MM/K abbreviations" instruction — the previously
-// used compact-currency formatter must not appear anywhere in this file.
-
-// Recommended / Alternatives: program, modeled rate, this jurisdiction's own
-// segment incentive (at the modeled rate) + its share of gross budget, and
-// the structure's NPC.
-// PHASE 3B GLOBE CLOSEOUT: field-by-field template per the standing hover
-// contract — "Program Name / Maximum Incentive / Modeled Incentive / NPC /
-// Incentive / Gross Budget", each its own line, full dollar amounts, no
-// abbreviation. The previous draft folded the rate onto the Program line
-// AND repeated it on a second "Modeled Rate" line with a "(guaranteed floor
-// Y%)" annotation — read as exactly the "misleading 30-40% range" framing
-// the contract explicitly rules out. "Maximum Incentive" is a single number
-// (rate_ceiling — see globeData.js's buildCountryHoverData / globeHoverFormat.js's
-// modeledRateInfo for why that field, not rate_floor, is the one that
-// actually funds the dollar figures below it), stated once, as "Up to X%".
-function RecommendedOrAlternativeBody({ hover }) {
-  const b = hover.baseIncentive;
-  const pctOfGross = incentivePctOfGross(hover.segmentIncentiveUsd, hover.grossBudgetUsd);
-  return (
-    <>
-      <div className="hover-field">
-        <div className="text-tertiary small">Program</div>
-        <div className="small">{b ? b.programLabel : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Maximum Incentive</div>
-        <div className="small">{b?.ratePct != null ? `Up to ${b.ratePct}%` : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Modeled Incentive</div>
-        <div className="small">{hover.segmentIncentiveUsd != null ? formatFullUsd(hover.segmentIncentiveUsd) : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">NPC</div>
-        <div className="small">{hover.npcUsd != null ? formatFullUsd(hover.npcUsd) : "Not priced"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Incentive / Gross Budget</div>
-        <div className="small">{pctOfGross || "Not available"}</div>
-      </div>
-    </>
-  );
-}
-
-// Co-Production Opportunity: program (if one resolved despite the block),
-// the structure's own real related jurisdictions, and an explicit,
-// undisguised "not available" for the two figures this data model does not
-// yet support (see the Batch 1 report's missing-contract note) — never a
-// fabricated uplift or NPC.
-function CoProductionBody({ hover }) {
-  const b = hover.baseIncentive;
-  const related = relatedJurisdictions({ participants: [hover.jurisdictionCode, ...hover.relatedCodes] }, hover.jurisdictionCode, jurisdictionName);
-  return (
-    <>
-      <div className="hover-field">
-        <div className="text-tertiary small">Program</div>
-        <div className="small">
-          {b ? `${b.programLabel}${b.ratePct != null ? (b.isBandCeiling ? ` · Up to ${b.ratePct}%` : ` · ${b.ratePct}%`) : ""}` : "Not available"}
-        </div>
-      </div>
-      {related.length > 0 && (
-        <div className="hover-field">
-          <div className="text-tertiary small">Co-Production With</div>
-          <div className="small">{related.map((r) => r.name).join(", ")}</div>
-        </div>
-      )}
-      {/* MISSING BACKEND CONTRACT (see Batch 1 report): no field anywhere
-          expresses a forward-looking co-production uplift or "best modeled
-          NPC" for a BLOCKED structure — blocked structures are, by
-          definition, not fully priced, so there is no real number to show.
-          Stated honestly rather than fabricated; label matches the
-          standing contract's eventual "Co-Production Potential" field name
-          so no rewrite is needed once the optimizer actually produces one. */}
-      <div className="hover-field">
-        <div className="text-tertiary small">Co-Production Potential</div>
-        <div className="small">Not modeled yet</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Best Modeled NPC</div>
-        <div className="small">Not priced — structure is blocked</div>
-      </div>
-    </>
-  );
-}
-
-// Excluded: one line answering "why isn't this an option" — the backend's
-// own real discovery-examination reason, truncated to its first sentence
-// and stripped of raw snake_case tokens (see globeHoverFormat.js's
-// presentExclusionReason for exactly what transform is applied and why it
-// is NOT a fabricated category enum).
-function ExcludedBody({ hover }) {
-  const reason = presentExclusionReason(hover.excludedReason) || "Current production constraints";
-  return (
-    <div className="hover-field">
-      <div className="text-tertiary small">Reason</div>
-      <div className="small">{reason}</div>
-    </div>
-  );
-}
-
-function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
-  return (
-    <div className="globe-tooltip" style={hoverCardStyle(hoverRect, canvasRef.current)}>
-      <strong>{hover.jurisdictionName}</strong>
-      <div className="text-tertiary small" style={{ marginBottom: 6 }}>{hover.fullStatusLabel}</div>
-      {hover.status === "silver" ? (
-        <ExcludedBody hover={hover} />
-      ) : hover.status === "amber" ? (
-        <CoProductionBody hover={hover} />
-      ) : (
-        <RecommendedOrAlternativeBody hover={hover} />
-      )}
-    </div>
-  );
-}
