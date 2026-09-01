@@ -458,6 +458,60 @@ def price_segment(
     # pre-evaluated (a condition the engine cannot satisfy on the facts) and
     # this specific production has not confirmed it. A floorless ceiling
     # whose conditions ARE all evaluable stays priced -- it is determinate.
+    # ── Cluster 5: a program-specific qualifying base is not all-spend ───
+    # Some programs price a NARROWER base than the QPE register this engine
+    # derives -- Canada's CPTC/PSTC family applies its rate to qualified
+    # LABOUR, not to all eligible spend. Those programs declare that
+    # canonically, as a rate condition of kind rate_base_narrower_than_qpe
+    # (condition ids like ca-cptc-labour-only-base / ca-labour-only-base),
+    # and the condition is AUTHORITY_UNRESOLVED because the narrower base
+    # cannot be derived from what is on file: BudgetLineItem.is_labor is
+    # populated on only a handful of lines per budget (Lips: 4 lines,
+    # $1,354,581 of $11,983,654), which is nowhere near a real labour
+    # schedule, and residency/nationality splits are absent entirely.
+    # Multiplying the rate by the BROAD base would materially overstate the
+    # credit, so the segment fails closed instead. Never invent labour.
+    # The base TYPE is a property of the PROGRAM, not of whichever rate tier
+    # happened to win selection. ca_bc_pstc declares ca-bc-labour-only-base on
+    # its 36% base tier while resolution selects the 48% regional-ceiling
+    # tier, so inspecting only rr.conditions_evaluated would miss it -- and
+    # the incentive is still computed on the broad base. Scan every tier.
+    if rr is not None:
+        narrower_base_conditions = tuple(
+            condition
+            for rule in get_rate_rules(slug)
+            for condition in rule.conditions
+            if condition.kind == "rate_base_narrower_than_qpe"
+        )
+        satisfied_by_id = {
+            e.condition_id: e.satisfied for e in rr.conditions_evaluated
+        }
+        narrower_base_conditions = tuple(
+            c for c in narrower_base_conditions
+            if satisfied_by_id.get(c.condition_id) is not True
+        )
+        if narrower_base_conditions:
+            condition_ids = ", ".join(c.condition_id for c in narrower_base_conditions)
+            return SegmentEconomics(
+                jurisdiction_code=jurisdiction_code, program_slug=slug,
+                claims_incentive=True, allocated_usd=allocated,
+                account_codes=codes, executable=False,
+                qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                doctrine=doctrine.value,
+                qpe_cap_applied_usd=qpe_cap_applied,
+                rate_ceiling=rr.modeled_rate, statutory_basis=rr.basis,
+                blockers=(
+                    f"{jurisdiction_code}/{slug}: this program's rate applies to a "
+                    f"NARROWER base than the derived qualifying spend [{condition_ids}] "
+                    "— a labour/qualified-cost base, not all eligible spend. That base "
+                    "cannot be derived from the facts on file (no labour schedule or "
+                    "residency split), and applying the rate to the broad base would "
+                    "materially overstate the credit. Segment is allocated and "
+                    "disclosed but carries NO deterministic incentive value until the "
+                    "qualifying base is supplied.",
+                ),
+            )
+
     if (
         rr is not None
         and not rr.has_guaranteed_floor

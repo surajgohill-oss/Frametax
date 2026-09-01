@@ -398,3 +398,118 @@ def test_no_priced_segment_ever_exceeds_its_own_declared_dollar_cap():
         assert seg.incentive_floor_usd <= cap + 0.01
         checked += 1
     assert checked, "expected at least one capped priceable program"
+
+
+# ── CLUSTER 5 — a labour base is not all-spend ───────────────────────────
+
+def test_programs_declaring_a_narrower_rate_base_do_not_price_off_all_spend():
+    """Canada's CPTC/PSTC family applies its rate to qualified LABOUR, and
+    says so canonically via a rate condition of kind
+    rate_base_narrower_than_qpe. The narrower base cannot be derived from the
+    facts on file (BudgetLineItem.is_labor is populated on only a handful of
+    lines per budget, and residency splits are absent), so these programs must
+    fail closed rather than multiply the rate by the broad register."""
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM
+
+    declaring = sorted({
+        slug for slug, rules in _RULES_BY_PROGRAM.items()
+        for rule in rules
+        for condition in rule.conditions
+        if condition.kind == "rate_base_narrower_than_qpe"
+    })
+    assert declaring, "expected real programs declaring a narrower rate base"
+    for slug in declaring:
+        seg = _probe_segment_amount(slug, 11_000_000.0)
+        assert seg.executable is False, f"{slug} priced off the broad base"
+        assert not seg.incentive_floor_usd
+        assert seg.blockers and "narrower base" in seg.blockers[0].lower()
+        # Withheld, not erased.
+        assert seg.allocated_usd == pytest.approx(11_000_000.0)
+
+
+def test_narrower_base_check_scans_every_tier_not_just_the_selected_one():
+    """ca_bc_pstc declares ca-bc-labour-only-base on its 36% BASE tier while
+    rate resolution selects the 48% regional-ceiling tier. A check that only
+    inspected the resolved tier's evaluated conditions would miss it and still
+    price the broad base -- the qualifying base is a property of the PROGRAM,
+    not of whichever tier won selection."""
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM, resolve_program_rate
+
+    rr = resolve_program_rate(
+        "ca_bc_pstc", production_type="feature_film", qpe_usd=11_000_000.0,
+    )
+    assert rr is not None
+    assert not any(
+        e.kind == "rate_base_narrower_than_qpe" for e in rr.conditions_evaluated
+    ), "precondition: the selected tier does NOT carry the narrower-base condition"
+    assert any(
+        c.kind == "rate_base_narrower_than_qpe"
+        for rule in _RULES_BY_PROGRAM["ca_bc_pstc"] for c in rule.conditions
+    ), "precondition: another tier does carry it"
+
+    assert _probe_segment_amount("ca_bc_pstc", 11_000_000.0).executable is False
+
+
+def test_a_broad_base_program_is_unaffected_by_the_narrower_base_guard():
+    """No over-blocking: Greece prices its whole qualifying register."""
+    seg = _probe_segment_amount("gr_cash_rebate", 11_000_000.0)
+    assert seg.executable is True
+    assert seg.incentive_floor_usd > 0
+
+
+# ── CLUSTER 9 — subnational conditional nodes must not cross provinces ───
+
+def test_a_subnational_participant_gets_only_its_own_subnational_nodes():
+    """A CA-MB structure previously attached EVERY Canadian subnational
+    conditional node, so Manitoba was offered Saskatchewan's and PEI's
+    province-only programs. Sharing a parent country is not participation."""
+    from app.calculators.conditional_programs import conditional_nodes_for
+
+    nodes = conditional_nodes_for(("CA-MB",))
+    subnational = [n for n in nodes if n.scope == "subnational"]
+    assert subnational, "Manitoba's own conditional node must still attach"
+    for node in subnational:
+        assert node.jurisdiction_code.upper() == "CA-MB", (
+            f"{node.jurisdiction_code} is a sibling province, not a participant"
+        )
+
+
+def test_national_nodes_still_attach_to_a_subnational_participant():
+    """The scoping must not over-correct: a national program applies across
+    the whole country, so CA-MB still reaches Canada-wide funds."""
+    from app.calculators.conditional_programs import conditional_nodes_for
+
+    national = [n for n in conditional_nodes_for(("CA-MB",)) if n.scope == "national"]
+    assert national, "Canada-wide national nodes must still attach to CA-MB"
+    assert all(n.parent_country == "CA" for n in national)
+
+
+def test_country_only_participant_gets_no_subnational_nodes():
+    """Participating in 'CA' generally is not participation in any province."""
+    from app.calculators.conditional_programs import conditional_nodes_for
+
+    nodes = conditional_nodes_for(("CA",))
+    assert nodes, "national nodes must attach"
+    assert not [n for n in nodes if n.scope == "subnational"]
+
+
+def test_each_subnational_participant_gets_its_own_node_generically():
+    """Generic, not a Canada special case: the same rule holds province by
+    province, for every subnational participant the catalog models."""
+    from app.calculators.conditional_programs import (
+        conditional_nodes_for,
+        get_conditional_program_index,
+    )
+
+    index = get_conditional_program_index()
+    subnational_codes = sorted({
+        n.jurisdiction_code.upper() for n in index.nodes if n.scope == "subnational"
+    })
+    assert len(subnational_codes) > 1, "expected several modeled subnational nodes"
+    for code in subnational_codes:
+        attached = [
+            n for n in conditional_nodes_for((code,)) if n.scope == "subnational"
+        ]
+        assert all(n.jurisdiction_code.upper() == code for n in attached), (
+            f"{code} attached another jurisdiction's subnational node"
+        )

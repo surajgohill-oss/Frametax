@@ -225,6 +225,7 @@ def conditional_nodes_for(participants: tuple[str, ...] | list[str]) -> list[Con
 
     index = get_conditional_program_index()
 
+    participant_codes: set[str] = {str(p).upper() for p in participants}
     participant_countries: list[str] = []
     for p in participants:
         code = p.upper()
@@ -235,11 +236,24 @@ def conditional_nodes_for(participants: tuple[str, ...] | list[str]) -> list[Con
     attached: list[ConditionalProgramNode] = []
     for country in participant_countries:
         for node in index.by_parent_country.get(country, []):
-            basis = (
-                f"Participant jurisdiction {country} is the node's country."
-                if node.scope == "national"
-                else f"Subnational program within participant jurisdiction {country}."
-            )
+            if node.scope == "national":
+                # A national program applies across the whole country, so
+                # participation anywhere in it is a real basis.
+                basis = f"Participant jurisdiction {country} is the node's country."
+            else:
+                # SUBNATIONAL SCOPING. Sharing a parent country is NOT
+                # participation: a CA-MB structure was previously attached
+                # every Canadian subnational node, so Manitoba was offered
+                # Saskatchewan's and PEI's own province-only programs. A
+                # subnational node attaches only when its OWN jurisdiction is
+                # a participant. Generic -- expressed in terms of canonical
+                # codes and scope, with no country-specific exception.
+                if node.jurisdiction_code.upper() not in participant_codes:
+                    continue
+                basis = (
+                    f"Participant jurisdiction {node.jurisdiction_code} is the "
+                    "node's own subnational jurisdiction."
+                )
             attached.append(_attached(node, basis))
 
     for node in index.supranational:
