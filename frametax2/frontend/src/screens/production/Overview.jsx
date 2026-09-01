@@ -38,7 +38,7 @@ export default function Overview() {
   const { data, error, loading, refetch } = useCineGlobe(projectId);
   const navigate = useNavigate();
   const {
-    inspector, openInspector, leadingStructureId, setLeadingStructureId,
+    openInspector, leadingStructureId, setLeadingStructureId,
     selectedJurisdiction, setSelectedJurisdiction,
   } = useAppState();
   const [globeMode, setGlobeMode] = useState("jurisdictions");
@@ -141,11 +141,27 @@ export default function Overview() {
           focusLat={focusLat}
           focusLng={focusLng}
           focusDistance={focusDistance}
-                // The app-level floating Inspector (--inspector-width=400px)
-                // can cover the right edge of the viewport, including part of
-                // this panel on narrower layouts — same reframe as Project
-                // Globe, so a selected country never disappears behind it.
-                obscuredRightPx={inspector ? 400 : 0}
+                // Overview Globe wrapper fix: the Inspector's 400px reframe
+                // constant was copied from the full Project Globe page,
+                // where the canvas spans nearly the full viewport width and
+                // its right edge genuinely sits under the Inspector panel.
+                // Here the Globe lives in the CENTER of a 3-column grid
+                // (340px | 1fr | 340px) — the fixed-position Inspector
+                // (right:0, width:400px) covers the RIGHT column (Budget
+                // Rail, 340px) and the viewport margin beyond it, but never
+                // reaches this narrower center-column canvas. Passing 400
+                // anyway shrank the visible-width used for camera framing
+                // (Globe3D's applySize: visibleW = canvasWidth -
+                // obscuredRightPx) down to ~150px on a ~550px canvas,
+                // producing a drastically zoomed-out, tiny sphere the
+                // instant the Inspector opened. The Globe3D engine itself
+                // is untouched — this column's canvas is simply never
+                // obscured by the Inspector, at any grid breakpoint down to
+                // the 1150px single-column collapse (a different layout
+                // entirely, where the Inspector already sits over
+                // everything as a full-width overlay and the Globe is not
+                // usably interactive regardless of this value).
+                obscuredRightPx={0}
                 onPointClick={handleGlobeClick}
                 onPointHover={setHover}
               />
