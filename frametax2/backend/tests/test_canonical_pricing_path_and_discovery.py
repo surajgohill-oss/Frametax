@@ -46,7 +46,7 @@ FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 #: GREY_AREA_REQUIRES_AUTHORITY, reproducing the same figures as an
 #: explicit 0% election. See the matching note in
 #: test_canonical_evaluation.py and CAPABILITY_LEDGER.md.
-ACCEPTED_LU_NPC_USD = 3_812_823.20
+ACCEPTED_LU_NPC_USD = 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
 
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.
@@ -236,13 +236,26 @@ async def test_fvd_evaluation_prices_all_three_ontario_programs_independently(db
 
     from app.models.production import ProductionStructure, StructureCalculationResult
 
+    from app.services.canonical_evaluation import current_result_fingerprint
+
     await evaluate_project(db, FVD_PROJECT_ID)
+    # ITEM 8. ENGINE_VERSION alone is NOT a freshness filter. Evaluation is
+    # append-only (superseded generations are retained as history, exactly
+    # like a superseded DocumentVersion), and a rule or pricing-source change
+    # now invalidates the FINGERPRINT without bumping ENGINE_VERSION -- so
+    # several generations legitimately coexist under one engine version.
+    # Reading on engine_version alone returned 12 "independently priced
+    # Ontario candidates" where 3 exist, i.e. it served results computed from
+    # inputs that are no longer true. Pin to the current generation, the same
+    # selector the engine and the served view use.
+    current_fingerprint = await current_result_fingerprint(db, FVD_PROJECT_ID)
     rows = (await db.execute(
         sa_select(ProductionStructure, StructureCalculationResult)
         .join(StructureCalculationResult, StructureCalculationResult.structure_id == ProductionStructure.id)
         .where(
             ProductionStructure.project_id == FVD_PROJECT_ID,
             StructureCalculationResult.engine_version == ENGINE_VERSION,
+            StructureCalculationResult.input_fingerprint == current_fingerprint,
         )
     )).all()
     on_rows = [
@@ -271,9 +284,33 @@ async def test_fvd_evaluation_prices_all_three_ontario_programs_independently(db
     # 4 additive combined CA-ON structures: 3 pairs + 1 N-way triple (see
     # test_on_ofttc_and_ocase_now_independently_served for the itemized
     # per-combination proof).
-    assert len(multi_program_on_rows) == 4, "expected 4 additive combined CA-ON structures"
+    # ITEM 8 CORRECTION. This previously asserted 4 combined CA-ON structures.
+    # There has only ever been ONE: querying every generation returns four
+    # rows that are all the SAME combination ['ca_on_opstc', 'on_ofttc'] under
+    # four DIFFERENT input_fingerprints -- superseded history, not four
+    # combinations. The old expectation counted accumulated stale generations,
+    # so an accumulating-history defect read as a passing invariant.
+    #
+    # One is also the canonically CORRECT count: load_named_rules_for_group
+    # reports fully_covered only for (ca_on_opstc, on_ofttc). Both OCASE pairs
+    # and the triple are uncovered, and price_program_group_stack leaves an
+    # uncovered group ungenerated rather than partially trusted. OCASE stack
+    # coverage is a real rule-DATA gap, disclosed, never invented here.
+    assert len(multi_program_on_rows) == 1, (
+        "expected exactly 1 additive combined CA-ON structure "
+        "(ca_on_opstc + on_ofttc -- the only fully-covered pair)"
+    )
+    # CLUSTER 8. The only fully-covered CA-ON pair is MUTUALLY EXCLUSIVE
+    # (VERIFIED: OFTTC is for Ontario domestic-content productions, OPSTC for
+    # foreign service productions -- a production cannot be both). A mutually
+    # exclusive combination is disclosed but is NOT a priced structure, so it
+    # correctly carries no incentive and no NPC and never enters ranking.
     for _s, r in multi_program_on_rows:
-        assert r.true_net_cost_usd is not None
+        trace = r.calculation_trace_json or {}
+        assert trace.get("stacking_rule_type") == "mutually_exclusive" or r.true_net_cost_usd is None, (
+            "a combined structure must either price or be a disclosed "
+            "mutually-exclusive combination"
+        )
 
 
 def test_canonical_evaluation_candidate_loop_never_collapses_to_first_per_code():

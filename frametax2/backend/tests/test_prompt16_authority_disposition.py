@@ -150,10 +150,17 @@ def test_economically_blocked_programs_all_carry_a_declared_blocking_state():
     carry a stated reason -- never blocked incidentally or silently.
     Unresolved authority is itself a genuine, declared economic reason to
     fail closed, so it is a legitimate member of this set."""
-    from app.data.authority_coverage_registry import COVERAGE_REGISTRY
+    # ITEM 5: read through get_coverage_status, not the raw dict. A
+    # disposition can now be DERIVED from canonical requirement data (an
+    # AllocationType.COMPETITIVE program is NON_GUARANTEED_SELECTIVE even
+    # without an explicit row). A derived disposition is still DECLARED and
+    # still carries its stated reason -- which is exactly what this test
+    # guarantees -- it simply is not a literal key in COVERAGE_REGISTRY.
+    from app.data.authority_coverage_registry import get_coverage_status
 
     for slug in _economically_blocked_slugs():
-        rec = COVERAGE_REGISTRY[slug]
+        rec = get_coverage_status(slug)
+        assert rec is not None, slug
         assert rec.state in BLOCKING_STATES
         assert rec.reason
 
@@ -272,7 +279,16 @@ def test_internally_recovered_programs_are_provenance_verified():
     for slug in recovered_this_pass:
         assert authority_disposition(slug) == AUTHORITY_VERIFIED_PRICEABLE, slug
         assert provenance_cohort_disposition(slug) == PROVENANCE_RECOVERED, slug
-        if slug not in ("us_or_opif", "jp_vipo_location_incentive"):  # real, independent, pre-existing exceptions
+        # ITEM 5 extends this SAME pre-existing exception class. dk, nl and cl
+        # are declared AllocationType.COMPETITIVE in program_requirements, so
+        # they carry NON_GUARANTEED_SELECTIVE for exactly the reason
+        # jp_vipo_location_incentive already did -- a reason about ENTITLEMENT,
+        # entirely independent of structured provenance, which they still have.
+        if slug not in (
+            "us_or_opif", "jp_vipo_location_incentive",
+            "dk_production_rebate", "nl_film_production_incentive",
+            "cl_corfo_incentive",
+        ):  # real, independent, pre-existing exceptions
             assert not blocks_economic_candidacy(slug), slug
 
 

@@ -28,7 +28,35 @@ from app.calculators.classify_budget_line_items import classify_line_item
 # Bumped whenever a change to this module or classify_budget_line_items
 # changes parsed/classified OUTPUT for existing real budgets — mirrors
 # screenplay_structural_parser.PARSER_VERSION's own convention exactly.
-BUDGET_PARSER_VERSION = "budget-1.2.0"
+def _classification_rules_digest() -> str:
+    """A short digest of the classification rule TABLE actually loaded.
+
+    Item 8 prevention, applied to ingestion. Budget routing is idempotent on
+    BUDGET_PARSER_VERSION, so changing a CLASSIFICATION RULE (a semantic
+    change: it moves real dollars between spend categories and ATL/BTL)
+    silently left every already-parsed BudgetDocument on its old, now-wrong
+    classification -- the same "semantic change without invalidation" hazard
+    that let a pricing change ship against stale rows. Folding the rule
+    table into the version means a rule edit re-derives persisted line items
+    automatically, with no constant for anyone to remember to bump.
+    """
+    import hashlib
+
+    from app.calculators.classify_budget_line_items import _RULES
+
+    digest = hashlib.sha256()
+    for rule in _RULES:
+        digest.update(
+            f"{rule.pattern}|{rule.atl_btl}|{rule.spend_category}|"
+            f"{rule.is_fixed}|{rule.is_labor}|{rule.compensation_type}\x00".encode()
+        )
+    return digest.hexdigest()[:12]
+
+
+#: Bumped to 1.3.0: source-account ATL/BTL semantics, finance/bridge/banking
+#: as finance costs, and a residuals reserve as its own obligation rather
+#: than contingency or a guild's ATL fee.
+BUDGET_PARSER_VERSION = f"budget-1.3.0+rules.{_classification_rules_digest()}"
 
 
 @dataclass

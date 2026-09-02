@@ -576,7 +576,7 @@ from app.services.canonical_project_economics import (
 # incompatibility diagnostic), and a valid combined structure now carries
 # reconciled per-program segments and a real total QPE instead of segments=[]
 # with total_qualifying_spend_usd=0 beside a non-zero incentive.
-ENGINE_VERSION = "canonical-1.46.0"
+ENGINE_VERSION = "canonical-1.47.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -697,6 +697,10 @@ def _compute_fingerprint(
         STRUCTURING_OPPORTUNITY_PATTERNS_VERSION,
     )
     from app.optimization.stacking_rules import STACKING_RULES_VERSION
+    from app.services.canonical_runtime_attribution import (
+        canonical_ruleset_digest,
+        pricing_source_digest,
+    )
 
     payload = {
         "gross_budget_usd": inputs.gross_budget_usd,
@@ -754,6 +758,19 @@ def _compute_fingerprint(
         "program_requirements_version": PROGRAM_REQUIREMENTS_VERSION,
         "program_spend_rules_version": PROGRAM_SPEND_RULES_VERSION,
         "stacking_rules_version": STACKING_RULES_VERSION,
+        # STALE-STATE PREVENTION (item 8). Every *_VERSION above is
+        # HAND-MAINTAINED: a semantic change shipped without bumping one does
+        # not invalidate persisted rows, so the change never reaches served
+        # output while a full suite still reports "zero regressions" -- exactly
+        # what happened with cluster 5 (commit d754b6a). These two digests are
+        # DERIVED from what is actually loaded, so no constant has to be
+        # remembered:
+        #   ruleset_digest        -- the live canonical rule DATA
+        #   pricing_source_digest -- the on-disk SOURCE of the modules that
+        #                            decide economics
+        # Either changing invalidates every persisted result automatically.
+        "ruleset_digest": canonical_ruleset_digest(),
+        "pricing_source_digest": pricing_source_digest(),
         "treaty_engine_version": TREATY_ENGINE_VERSION,
         "structuring_opportunity_patterns_version": STRUCTURING_OPPORTUNITY_PATTERNS_VERSION,
         "executable_jurisdiction_registry_version": EXECUTABLE_JURISDICTION_REGISTRY_VERSION,
@@ -1898,6 +1915,13 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "reason": reason,
                     "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
                     "primary_jurisdiction": code,
+                    # ITEM 5: a capability_only candidate can BE the
+                    # production's baseline (California's competitive credit
+                    # is exactly this case). Without this the blocked baseline
+                    # was anonymous and the summary reported no baseline at all.
+                    "is_baseline": code == inputs.jurisdiction_code,
+                    "relocation_cost_normalized": code == inputs.jurisdiction_code,
+                    "is_directly_comparable": code == inputs.jurisdiction_code,
                     "feasibility_status": feasibility_status,
                     "feasibility_reasons": feasibility_reasons,
                 },
@@ -1906,6 +1930,14 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             continue
 
         pricing, register, rate_resolution = _price_candidate(inputs, code, program_slug)
+        # ITEM 5. Computed BEFORE the unpriceable branch below. It used to be
+        # derived only after it, so every authority/rule-blocked candidate
+        # persisted a trace with NO is_baseline -- a BLOCKED BASELINE became
+        # indistinguishable from a blocked relocation, the summary reported
+        # baseline=null (fail-closed silently DROPPED the row instead of
+        # disclosing it), and the leader fell through to the lowest-NPC
+        # relocation. Failing closed means no NUMBER, never no ROW.
+        is_baseline = code == inputs.jurisdiction_code
         if pricing is None or not pricing.is_fully_priced:
             if pricing is None:
                 # Codex Defect 4: resolve_program_rate() returned None for
@@ -1946,6 +1978,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "reason": reason,
                     "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
                     "primary_jurisdiction": code,
+                    "is_baseline": is_baseline,
+                    "relocation_cost_normalized": is_baseline,
+                    "is_directly_comparable": is_baseline,
                     "feasibility_status": feasibility_status,
                     "feasibility_reasons": feasibility_reasons,
                 },
@@ -1953,7 +1988,6 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             ))
             continue
 
-        is_baseline = code == inputs.jurisdiction_code
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
             str(structure.id), code, (program_slug,),
         )
@@ -2984,6 +3018,38 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     return summary
 
 
+async def current_result_fingerprint(session, project_id) -> str | None:
+    """The input fingerprint of a project's CURRENT evaluation generation.
+
+    STALE-STATE PREVENTION (item 8). Evaluation is deliberately append-only:
+    a superseded generation's StructureCalculationResult rows are retained as
+    history rather than deleted, exactly as a superseded DocumentVersion is
+    retained. That is only safe if every READER selects one generation.
+
+    Readers historically filtered on ENGINE_VERSION alone, which was
+    accidentally sufficient only because every semantic change also bumped
+    that hand-maintained constant. Now that a rule or pricing-source change
+    invalidates the FINGERPRINT on its own (canonical_runtime_attribution),
+    several fingerprints legitimately coexist under one engine version, and
+    an engine-version-only read serves rows computed from inputs that are no
+    longer true -- a stale persisted result reaching the API.
+
+    The newest committed row under the current engine defines the current
+    generation. This is a pure read: it computes no economics and writes
+    nothing, so read-only callers (the served production view) can use it.
+    """
+    return (await session.execute(
+        select(StructureCalculationResult.input_fingerprint)
+        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+        .where(
+            ProductionStructure.project_id == project_id,
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
+        )
+        .order_by(StructureCalculationResult.created_at.desc())
+        .limit(1)
+    )).scalars().first()
+
+
 async def _summarize_evaluation(
     session: AsyncSession, project: Project, inputs: ProjectEconomicInputs,
     fingerprint: str, *, reused: bool,
@@ -3028,6 +3094,18 @@ async def _summarize_evaluation(
         return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
 
     baseline_pair = next((pair for pair in priced if _is_baseline(pair)), None)
+    # ITEM 5. A project's baseline can be RECOGNIZED but BLOCKED -- e.g.
+    # California's Film & Television Tax Credit is a COMPETITIVE, ranked
+    # allocation requiring a Credit Allocation Letter before principal
+    # photography, so it is NOT an entitlement and must not produce
+    # deterministic economics (authority_coverage_registry:
+    # NON_GUARANTEED_SELECTIVE). Failing closed means the baseline carries no
+    # NUMBER; it must still be DISCLOSED, with its reason, or the producer
+    # sees "no baseline" for a production that plainly has one.
+    blocked_baseline_pair = (
+        None if baseline_pair is not None
+        else next((pair for pair in unpriced if _is_baseline(pair)), None)
+    )
     # The served "winner"/top_result is the baseline whenever it is priced
     # AND its own qualification admits Recommended — never a relocation
     # candidate in this phase regardless of NPC (see RELOCATION_
@@ -3041,6 +3119,14 @@ async def _summarize_evaluation(
     # candidate stand in — unrelated to, and unchanged by, this gate.
     if baseline_pair is not None:
         top_pair = baseline_pair if _admits_recommended(baseline_pair) else None
+    elif blocked_baseline_pair is not None:
+        # The production HAS a baseline; it simply cannot be priced
+        # deterministically. A relocation is never directly comparable
+        # (relocation_cost_normalized is False for every one of them), so
+        # promoting the lowest-NPC relocation would present an incomparable
+        # candidate as the recommendation purely because its raw number is
+        # smallest. No winner is the truthful answer.
+        top_pair = None
     else:
         top_pair = priced[0] if priced else None
 
@@ -3127,7 +3213,14 @@ async def _summarize_evaluation(
         "base_jurisdiction_code": inputs.jurisdiction_code,
         "priced_count": len(priced),
         "unpriceable_count": len(unpriced),
-        "baseline": _entry(*baseline_pair) if baseline_pair else None,
+        "baseline": (
+            _entry(*baseline_pair) if baseline_pair
+            else _entry(*blocked_baseline_pair) if blocked_baseline_pair
+            else None
+        ),
+        #: True when the production's baseline is recognized but carries no
+        #: deterministic economics -- distinct from having no baseline.
+        "baseline_blocked": blocked_baseline_pair is not None,
         "top_result": _entry(*top_pair) if top_pair else None,
         "ranked": [_entry(s, r) for s, r in priced],
         "unpriceable": [_entry(s, r) for s, r in unpriced],

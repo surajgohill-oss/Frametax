@@ -233,6 +233,7 @@ from __future__ import annotations
 AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.2.0"
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Literal
 
 CoverageState = Literal[
@@ -636,11 +637,62 @@ CANONICAL_RUNTIME_SLUG_BINDINGS: dict[str, str] = {
 }
 
 
+@lru_cache(maxsize=None)
+def _derived_coverage(program_slug: str) -> AuthorityCoverageRecord | None:
+    """Coverage DERIVED from canonical requirement data, for a program this
+    registry does not state a disposition for.
+
+    ITEM 5 REPAIR -- mandatory components that are not canonically connected.
+    NON_GUARANTEED_SELECTIVE and program_requirements' AllocationType.
+    COMPETITIVE encode the SAME canonical fact: the incentive is allocated by
+    ranked selection within fixed windows, so it is NOT an entitlement -- a
+    production can satisfy every requirement and still receive nothing.
+
+    The two registries were never connected. Absence from COVERAGE_REGISTRY
+    means PRICEABLE_VALIDATED, so six programs that this codebase's own
+    program_requirements declares COMPETITIVE priced as guaranteed
+    deterministic entitlements -- California's Film & Television Tax Credit
+    among them, whose own EvidenceRecord says "Ranked competitive allocation
+    by jobs ratio within fixed application windows - not entitlement and not
+    first-come-first-served", and which additionally requires a Credit
+    Allocation Letter before principal photography.
+
+    jp_vipo_location_incentive is the proof of intent: it is COMPETITIVE in
+    program_requirements AND explicitly NON_GUARANTEED_SELECTIVE here. This
+    derivation makes that pairing hold for every program automatically
+    instead of depending on someone hand-adding a duplicate row.
+
+    An EXPLICIT row always wins -- this only fills genuine absence, so no
+    authored authority disposition is ever overwritten.
+    """
+    try:
+        from app.data.program_requirements import get_program_requirements
+    except Exception:  # pragma: no cover - import cycle safety
+        return None
+    profile = get_program_requirements(program_slug)
+    if profile is None:
+        return None
+    allocation = getattr(profile, "allocation_type", None)
+    if allocation is None or "COMPETITIVE" not in str(allocation).upper():
+        return None
+    return AuthorityCoverageRecord(
+        program_slug=program_slug,
+        state="NON_GUARANTEED_SELECTIVE",
+        jurisdiction=getattr(profile, "jurisdiction_code", "") or "",
+        program_name=program_slug,
+    )
+
+
 def get_coverage_status(program_slug: str | None) -> AuthorityCoverageRecord | None:
-    """None == PRICEABLE_VALIDATED (absence is never an exclusion)."""
+    """An explicit row wins; otherwise a disposition DERIVED from canonical
+    requirement data (see _derived_coverage); otherwise None ==
+    PRICEABLE_VALIDATED."""
     if program_slug is None:
         return None
-    return COVERAGE_REGISTRY.get(program_slug)
+    explicit = COVERAGE_REGISTRY.get(program_slug)
+    if explicit is not None:
+        return explicit
+    return _derived_coverage(program_slug)
 
 
 def blocks_economic_candidacy(program_slug: str | None) -> bool:

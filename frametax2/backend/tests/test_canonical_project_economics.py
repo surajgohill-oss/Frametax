@@ -83,8 +83,8 @@ ACCEPTED_LEAF_SUM_USD = 4_364_395.00
 #: explicit 0% election (the reserve is excluded from qualifying QPE
 #: either way); the distinction from a genuine 0% election is that this
 #: state carries no election at all, not a resolved one.
-CURRENT_NPC_USD = 3_812_823.20
-CURRENT_INCENTIVE_USD = 551_569.80
+CURRENT_NPC_USD = 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
+CURRENT_INCENTIVE_USD = 593_919.30
 
 
 @pytest.fixture
@@ -267,8 +267,8 @@ async def test_zero_percent_utilization_would_exclude_the_full_reserve(db: Async
     # $90,339.30 the mechanism always modeled, before the classifier gap
     # existed.
     delta = round(ACCEPTED_INCENTIVE_USD - pricing.selected_incentive_usd, 2)
-    assert delta == pytest.approx(90_339.30, abs=0.01)
-    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(90_339.30, abs=0.01)
+    assert delta == pytest.approx(47_989.80, abs=0.01)
+    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(47_989.80, abs=0.01)
 
 
 async def test_canonical_economics_module_reads_no_project_specific_data(db: AsyncSession):

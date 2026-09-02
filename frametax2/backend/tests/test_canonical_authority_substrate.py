@@ -469,7 +469,7 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
     # 100% contingency-utilization election (migration 0068) was removed
     # as a project-name-branched default. Absent an election the reserve
     # is GREY_AREA_REQUIRES_AUTHORITY, never silently 0%/100%.
-    assert result["baseline"]["true_net_cost_usd"] == 3_812_823.20
+    assert result["baseline"]["true_net_cost_usd"] == 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
     assert result["top_result"] is None
 
 
@@ -621,8 +621,24 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # Cluster 8: the CA-ON combined structure is mutually exclusive, so it is
     # now an explicit RULE_REJECTED incompatibility diagnostic rather than a
     # priced structure. priced 92 -> 91, unpriceable 64 -> 65.
-    assert len(priced) == 91
-    assert len(unpriced) == 65
+    # ITEM 5 (competitive allocation is not an entitlement): six programs that
+    # this codebase's own program_requirements declares
+    # AllocationType.COMPETITIVE had NO authority-coverage row, and absence
+    # means PRICEABLE_VALIDATED -- so a ranked, application-window credit that
+    # a production can satisfy in full and still not receive was priced as a
+    # guaranteed deterministic entitlement. The coverage disposition is now
+    # DERIVED from that canonical requirement data, matching
+    # jp_vipo_location_incentive which was already COMPETITIVE *and*
+    # explicitly NON_GUARANTEED_SELECTIVE. All six now report
+    # NON_GUARANTEED_SELECTIVE for FVD; five of them had been priced.
+    # priced 91 -> 86.
+    assert len(priced) == 86
+    # ITEM 5 (same cause as the priced count above): the five newly
+    # non-entitlement candidates move from priced to unpriced.
+    # unpriceable 65 -> 70. Total entries unchanged at 156 -- nothing was
+    # dropped, only reclassified from "priced" to "disclosed, not priced".
+    assert len(unpriced) == 70
+    assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -921,7 +937,7 @@ async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     # 100% contingency-utilization election (migration 0068) was removed.
     # Absent an election the reserve is GREY_AREA_REQUIRES_AUTHORITY, never
     # silently defaulted to 0% or 100%.
-    assert baseline["npc_verified_usd"] == pytest.approx(3812823.20, abs=0.01)
+    assert baseline["npc_verified_usd"] == pytest.approx(3770473.70, abs=0.01)
 
 
 async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):
@@ -959,6 +975,37 @@ def test_batch1_doctrine_records_promoted_to_verified():
         doc = get_doctrine(slug)
         assert doc is not None, f"{slug} lost its DoctrineRecord"
         assert doc.confidence_tier == "VERIFIED", f"{slug} was not promoted"
+
+
+
+def _assert_no_authority_veto(slug: str) -> None:
+    """ITEM 5. A batch's coverage-veto removal was about AUTHORITY / DATA
+    SUFFICIENCY ("the rules are now verified"). That is orthogonal to whether
+    the award is an ENTITLEMENT. A program whose program_requirements declares
+    AllocationType.COMPETITIVE is allocated by ranked selection from a fixed
+    pot -- a production can satisfy every published gate and still receive
+    nothing -- so it carries NON_GUARANTEED_SELECTIVE and must not price
+    deterministically. Each is backed by its own primary-source evidence, e.g.
+    California: "Ranked competitive allocation by jobs ratio within fixed
+    application windows - not entitlement and not first-come-first-served";
+    Chile: "only a small named set of projects win each call (six in the first
+    2025 call)".
+
+    So: assert no AUTHORITY veto remains, without conflating that with
+    entitlement.
+    """
+    from app.data.authority_coverage_registry import coverage_state
+    from app.data.program_requirements import get_program_requirements
+
+    state = coverage_state(slug)
+    if state == "NON_GUARANTEED_SELECTIVE":
+        profile = get_program_requirements(slug)
+        assert "COMPETITIVE" in str(getattr(profile, "allocation_type", "")).upper(), (
+            f"{slug} is NON_GUARANTEED_SELECTIVE without a canonical "
+            "COMPETITIVE allocation declaration"
+        )
+        return
+    assert state == "PRICEABLE_VALIDATED", f"{slug} still vetoed: {state}"
 
 
 def test_batch1_coverage_veto_removed_including_alias_spellings():
@@ -1076,7 +1123,20 @@ def test_batch3_doctrine_records_promoted_to_verified():
 
 
 def test_batch3_coverage_veto_removed_including_alias_spellings():
-    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    # ITEM 5. These batches removed a coverage veto that existed for an
+    # AUTHORITY / DATA-INSUFFICIENCY reason ("the rules were not verified").
+    # That is orthogonal to whether the award is an ENTITLEMENT. A program
+    # whose program_requirements declares AllocationType.COMPETITIVE is
+    # allocated by ranked selection from a fixed pot -- a production can
+    # satisfy every published gate and still receive nothing -- so it carries
+    # NON_GUARANTEED_SELECTIVE and must not price deterministically. Each is
+    # backed by its own primary-source evidence, e.g. California: "Ranked
+    # competitive allocation by jobs ratio within fixed application windows
+    # - not entitlement and not first-come-first-served"; Chile: "only a
+    # small named set of projects win each call (six in the first 2025
+    # call)". The assertion below therefore checks the batch's ACTUAL
+    # intent -- no authority/data veto remains -- rather than conflating it
+    # with entitlement.
     for canonical, alias in (
         ("ca_on_opstc", "on_opstc"),
         ("de_dfff", None),
@@ -1087,9 +1147,9 @@ def test_batch3_coverage_veto_removed_including_alias_spellings():
         ("us_mn_film_production_credit", "us_mn_film_credit"),
         ("uk_avec", None),
     ):
-        assert blocks_economic_candidacy(canonical) is False, canonical
+        _assert_no_authority_veto(canonical)
         if alias:
-            assert blocks_economic_candidacy(alias) is False, alias
+            _assert_no_authority_veto(alias)
 
 
 async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
@@ -1110,7 +1170,11 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    codes = ("CA-ON", "DE", "FR", "HU", "NO", "US-MN", "GB")
+    # ITEM 5: NO (no_film_incentive) is a COMPETITIVE, preapproval-gated
+    # award from a fixed annual pot, so it is NON_GUARANTEED_SELECTIVE and
+    # correctly does not price deterministically. Asserted separately below
+    # as a disclosed non-entitlement, not silently dropped.
+    codes = ("CA-ON", "DE", "FR", "HU", "US-MN", "GB")
     seen_incentives = set()
     for code in codes:
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -1125,6 +1189,12 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     assert es["is_fully_priced"] is False
     assert es["candidate_status"] == "RULE_REJECTED"
     assert es["blockers"], "ES must still disclose the real reason it did not price"
+
+    no = next(x for x in entries if x["primary_jurisdiction"] == "NO")
+    assert no["is_fully_priced"] is False
+    assert no["selected_incentive_usd"] in (None, 0), (
+        "a non-entitlement award must not carry deterministic economics"
+    )
 
 
 def test_batch1_2_3_promoted_programs_carry_structured_provenance():
@@ -1190,9 +1260,9 @@ def test_batch5_coverage_veto_removed_including_alias_spellings():
         ("us_nc_film_entertainment_grant", "us_nc_film_grant"),
         ("us_nv_film_credit", "us_nv_film_incentive"),
     ):
-        assert blocks_economic_candidacy(canonical) is False, canonical
+        _assert_no_authority_veto(canonical)
         if alias:
-            assert blocks_economic_candidacy(alias) is False, alias
+            _assert_no_authority_veto(alias)
 
 
 async def test_batch5_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
@@ -1357,15 +1427,28 @@ def test_batch4_doctrine_records_promoted_to_verified():
 
 
 def test_batch4_coverage_veto_removed_including_alias_spellings():
-    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    # ITEM 5. These batches removed a coverage veto that existed for an
+    # AUTHORITY / DATA-INSUFFICIENCY reason ("the rules were not verified").
+    # That is orthogonal to whether the award is an ENTITLEMENT. A program
+    # whose program_requirements declares AllocationType.COMPETITIVE is
+    # allocated by ranked selection from a fixed pot -- a production can
+    # satisfy every published gate and still receive nothing -- so it carries
+    # NON_GUARANTEED_SELECTIVE and must not price deterministically. Each is
+    # backed by its own primary-source evidence, e.g. California: "Ranked
+    # competitive allocation by jobs ratio within fixed application windows
+    # - not entitlement and not first-come-first-served"; Chile: "only a
+    # small named set of projects win each call (six in the first 2025
+    # call)". The assertion below therefore checks the batch's ACTUAL
+    # intent -- no authority/data veto remains -- rather than conflating it
+    # with entitlement.
     for canonical, alias in (
         ("cy_film_rebate", None),
         ("ie_section_481", None),
         ("us_ca_film_credit", "ca_film_30"),
     ):
-        assert blocks_economic_candidacy(canonical) is False, canonical
+        _assert_no_authority_veto(canonical)
         if alias:
-            assert blocks_economic_candidacy(alias) is False, alias
+            _assert_no_authority_veto(alias)
 
 
 async def test_batch4_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
@@ -1374,7 +1457,11 @@ async def test_batch4_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    for code in ("CY", "IE", "US-CA"):
+    # ITEM 5: US-CA is COMPETITIVE (ranked jobs-ratio allocation within fixed
+    # application windows, Credit Allocation Letter required before principal
+    # photography) -- not an entitlement, so it must NOT price
+    # deterministically. Asserted separately below.
+    for code in ("CY", "IE"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
         assert e["is_fully_priced"] is True, f"{code} did not price"
         assert e["candidate_status"] == "PRICED"

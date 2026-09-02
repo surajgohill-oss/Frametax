@@ -43,7 +43,7 @@ FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 #: now-retired 100%-election figure; see CAPABILITY_LEDGER.md,
 #: "Production Page Integrity Closeout" for the full sensitivity table
 #: and reconciliation.
-ACCEPTED_LU_NPC_USD = 3_812_823.20
+ACCEPTED_LU_NPC_USD = 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
 FVD_GROSS_BUDGET_USD = 4_517_687.00
 
 

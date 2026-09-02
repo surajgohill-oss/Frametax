@@ -108,6 +108,11 @@ class SpendCategory(str, enum.Enum):
     INSURANCE = "insurance"
     COMPLETION_BOND = "completion_bond"
     CONTINGENCY = "contingency"
+    #: A residuals reserve is NOT contingency. Contingency is an unspent
+    #: allowance against production overrun; a residuals reserve is a funded
+    #: obligation to guilds for future exploitation. Collapsing them
+    #: overstates contingency and mis-states what is genuinely at risk.
+    RESIDUALS_RESERVE = "residuals_reserve"
     PAYROLL_FRINGES = "payroll_fringes"
     # Non-cash compensation
     DEFERMENT = "deferment"

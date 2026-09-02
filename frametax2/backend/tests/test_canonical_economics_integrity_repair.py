@@ -283,7 +283,16 @@ def test_unconfirmed_conditional_ceiling_cannot_become_a_deterministic_rate():
     seg = _probe_segment("cl_corfo_incentive")
     assert seg.executable is False
     assert not seg.incentive_floor_usd
-    assert seg.blockers and "ceiling" in seg.blockers[0].lower()
+    # ITEM 5: cl_corfo_incentive is ALSO declared AllocationType.COMPETITIVE
+    # ("only a small named set of projects win each call"), so the
+    # NON_GUARANTEED_SELECTIVE gate now fires first. Both reasons are true and
+    # both fail closed; this test's claim is that a non-deterministic rate
+    # never becomes a priced number, so accept either stated reason.
+    assert seg.blockers
+    assert any(
+        token in seg.blockers[0].lower()
+        for token in ("ceiling", "non_guaranteed_selective")
+    ), seg.blockers[0]
     # Withheld, not erased.
     assert seg.allocated_usd == pytest.approx(5_000_000.0)
 
@@ -360,11 +369,17 @@ def test_dollar_cap_clips_the_incentive_and_preserves_the_uncapped_amount():
 
 
 def test_a_non_binding_dollar_cap_does_not_clip():
-    """No over-clipping: California declares a $120M annual allocation, which
-    a single ordinary production never approaches."""
-    seg = _probe_segment_amount("us_ca_film_credit", 11_000_000.0)
+    """No over-clipping: New Mexico declares a $140M annual allocation, which
+    a single ordinary production never approaches.
+
+    ITEM 5: this previously used California, which is now correctly blocked as
+    a COMPETITIVE, non-entitlement award and so can no longer demonstrate a
+    NON-binding cap on an EXECUTABLE segment. New Mexico is an entitlement
+    credit with an even larger annual cap -- the same property, on a program
+    that actually prices."""
+    seg = _probe_segment_amount("us_nm_film_credit", 11_000_000.0)
     assert seg.executable is True
-    assert seg.incentive_cap_usd == pytest.approx(120_000_000.0)
+    assert seg.incentive_cap_usd == pytest.approx(140_000_000.0)
     assert seg.incentive_cap_applied_usd == 0.0
     assert seg.incentive_uncapped_usd is None
 
@@ -803,3 +818,115 @@ def test_examinations_are_addressable_per_program_not_per_jurisdiction():
             assert examination.program_slug == slug, (
                 f"{code}/{slug} resolved to {examination.program_slug}'s examination"
             )
+
+
+# ── ITEM 4 — budget classification is generic, not Lips-specific ─────────
+
+def test_budget_classification_separates_reserves_finance_and_contingency():
+    """Item 4. A residuals RESERVE is a distinct obligation, not contingency;
+    financing / bridge / banking charges are finance costs, not
+    miscellaneous. These are source-account semantics, so the rules are
+    matched on generic wording only -- no project-specific rule exists."""
+    from app.calculators.classify_budget_line_items import classify_line_item
+    from app.models.enums import SpendCategory
+
+    cases = {
+        "Residuals Reserve": SpendCategory.RESIDUALS_RESERVE,
+        "SAG residuals accrual": SpendCategory.RESIDUALS_RESERVE,
+        "Contingency": SpendCategory.CONTINGENCY,
+        "Financing Fees": SpendCategory.FINANCE_COSTS,
+        "Bridge Loan Interest": SpendCategory.FINANCE_COSTS,
+        "Banking Fees": SpendCategory.FINANCE_COSTS,
+    }
+    for description, expected in cases.items():
+        result = classify_line_item(description)
+        assert result.spend_category is expected, (
+            f"{description!r} classified {result.spend_category} not {expected}"
+        )
+
+    assert (
+        SpendCategory.RESIDUALS_RESERVE is not SpendCategory.CONTINGENCY
+    ), "a residuals reserve must never collapse into contingency"
+
+
+def test_atl_btl_follows_the_source_account_department():
+    """Item 4. ATL/BTL is a property of the SOURCE account, so a line the
+    budget itself files above the line must not be re-derived as BTL by a
+    keyword rule."""
+    from app.calculators.classify_budget_line_items import classify_line_item
+    from app.models.enums import ATLBTLCategory
+
+    above = classify_line_item("Writer -- screenplay", "Above the Line")
+    assert above.atl_btl is ATLBTLCategory.ATL
+
+    below = classify_line_item("Set construction labour", "Construction")
+    assert below.atl_btl is ATLBTLCategory.BTL
+
+
+def test_no_classification_rule_is_project_specific():
+    """Item 4 explicitly forbids Lips-specific rules. The rule table must
+    contain no project title, so the repair generalizes to every project."""
+    from app.calculators.classify_budget_line_items import _RULES
+
+    for rule in _RULES:
+        pattern = rule.pattern.lower()
+        for title in ("lips", "utopia", "hombres", "valentine", "sugar"):
+            assert title not in pattern, (
+                f"classification rule {rule.pattern!r} is project-specific"
+            )
+
+
+# ── ITEM 6 — finance semantics: source-budget vs incremental ─────────────
+
+@pytest.mark.parametrize("project_id", [LIPS_PROJECT_ID, FVD_PROJECT_ID])
+async def test_source_budget_finance_is_never_re_added_as_incremental(
+    db: AsyncSession, project_id,
+):
+    """Item 6 (settled doctrine). Financing ALREADY inside the source budget
+    is part of gross and therefore already in NPC. `financing_cost_usd` means
+    INCREMENTAL / OFF-BUDGET financing only, so it must never be populated
+    from budget lines -- that would charge the same money twice."""
+    from app.services.canonical_project_economics import build_project_economic_inputs
+
+    inputs = (await build_project_economic_inputs(db, project_id)).inputs
+    if inputs is None:
+        pytest.skip("project has no economics inputs")
+
+    if inputs.source_budget_finance_usd:
+        assert inputs.financing_cost_usd in (None, 0.0), (
+            "source-budget financing was re-added as an incremental producer "
+            f"assumption ({inputs.financing_cost_usd})"
+        )
+
+
+async def test_lips_source_budget_finance_is_disclosed_not_assumed(db: AsyncSession):
+    """Item 6 runtime proof on the project that actually carries budgeted
+    finance: it is disclosed on the served payload as source-budget finance,
+    and the producer's incremental assumption stays absent."""
+    from app.services.canonical_project_economics import build_project_economic_inputs
+
+    inputs = (await build_project_economic_inputs(db, LIPS_PROJECT_ID)).inputs
+    assert inputs is not None
+    assert inputs.source_budget_finance_usd > 0, (
+        "Lips' budgeted financing/bridge/banking charges are no longer "
+        "classified as finance costs"
+    )
+    assert inputs.financing_cost_usd in (None, 0.0)
+
+    view = await build_production_and_structures(db, LIPS_PROJECT_ID)
+    semantics = view["production"]["finance_semantics"]
+    assert semantics["source_budget_finance_usd"] == inputs.source_budget_finance_usd
+    assert semantics["producer_assumption_scope"] == "INCREMENTAL_OFF_BUDGET"
+
+
+def test_npc_adds_financing_cost_on_top_of_gross():
+    """Item 6, the arithmetic half. NPC is gross - incentive +
+    financing_cost_usd, so the field is unambiguously ADDITIVE. That is only
+    correct because it carries off-budget financing exclusively."""
+    import inspect
+
+    from app.calculators import allocation_pricing
+
+    source = inspect.getsource(allocation_pricing.price_allocated_structure)
+    assert "gross_budget_usd - selected_incentive" in source
+    assert "+ financing_cost_usd" in source

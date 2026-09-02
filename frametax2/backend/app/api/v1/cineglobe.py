@@ -768,6 +768,15 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
 # etc.) that must retain its own real provenance/source_document_version.
 _PROJECT_ASSUMPTION_FACT_KEYS = {"contingency_expected_utilization_pct", "financing_cost_usd"}
 
+#: Server-side bounds for numeric producer assumptions: (minimum, maximum).
+#: financing_cost_usd is INCREMENTAL / OFF-BUDGET financing not already inside
+#: the source gross budget (settled doctrine), so it cannot be negative; there
+#: is no defensible upper bound, hence None.
+_NUMERIC_ASSUMPTION_BOUNDS: dict[str, tuple[float, float | None]] = {
+    "contingency_expected_utilization_pct": (0.0, 100.0),
+    "financing_cost_usd": (0.0, None),
+}
+
 
 class ProjectAssumptions(BaseModel):
     answers: dict[str, Any]
@@ -793,6 +802,29 @@ async def post_project_assumptions(
     for fact_key, value in body.answers.items():
         if fact_key not in _PROJECT_ASSUMPTION_FACT_KEYS:
             raise HTTPException(status_code=400, detail=f"'{fact_key}' is not a producer-settable project assumption.")
+        # SERVER-SIDE ECONOMIC BOUNDS. The browser rejects non-finite input,
+        # but a direct API caller could persist a negative or NaN economic
+        # assumption that downstream float conversion would accept -- and
+        # financing_cost_usd is added straight to NPC. Validate here, at the
+        # write boundary, independently of any client.
+        if value is not None and fact_key in _NUMERIC_ASSUMPTION_BOUNDS:
+            minimum, maximum = _NUMERIC_ASSUMPTION_BOUNDS[fact_key]
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"'{fact_key}' must be a number.",
+                ) from None
+            if numeric != numeric or numeric in (float("inf"), float("-inf")):
+                raise HTTPException(
+                    status_code=400, detail=f"'{fact_key}' must be a finite number.",
+                )
+            if numeric < minimum or (maximum is not None and numeric > maximum):
+                bound = f"between {minimum} and {maximum}" if maximum is not None else f"at least {minimum}"
+                raise HTTPException(
+                    status_code=400, detail=f"'{fact_key}' must be {bound}.",
+                )
         existing = (await db.execute(
             select(ProjectFact).where(ProjectFact.project_id == project.id, ProjectFact.fact_key == fact_key)
         )).scalar_one_or_none()

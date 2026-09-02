@@ -41,7 +41,11 @@ from app.models.project import Project
 from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
-from app.services.canonical_evaluation import ENGINE_VERSION, _QUALIFICATION_ADMITS_RECOMMENDED
+from app.services.canonical_evaluation import (
+    ENGINE_VERSION,
+    _QUALIFICATION_ADMITS_RECOMMENDED,
+    current_result_fingerprint,
+)
 
 # Production Page Integrity: the SAME leading-account-code convention
 # canonical_project_economics.py's own _ACCOUNT_CODE_RE already uses to
@@ -571,16 +575,7 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         # still missing) has no fingerprint to key off — fall back to the
         # best-effort prior behavior (most recent current-engine row) so
         # this function keeps degrading gracefully rather than raising.
-        fingerprint = (await session.execute(
-            select(StructureCalculationResult.input_fingerprint)
-            .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-            .where(
-                ProductionStructure.project_id == project.id,
-                StructureCalculationResult.engine_version == engine_version,
-            )
-            .order_by(StructureCalculationResult.created_at.desc())
-            .limit(1)
-        )).scalar_one_or_none()
+        fingerprint = await current_result_fingerprint(session, project.id)
 
     rows: list[tuple] = []
     if fingerprint:
@@ -697,11 +692,21 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     leaf_account_sum_usd = None
     variance_usd = None
     reconciliation_note = None
+    source_budget_finance_usd = 0.0
     if budget_doc is not None:
-        leaf_sum_row = (await session.execute(
-            select(BudgetLineItem.amount_usd).where(BudgetLineItem.budget_document_id == budget_doc.id)
-        )).scalars().all()
-        leaf_account_sum_usd = round(sum(float(a) for a in leaf_sum_row if a is not None), 2)
+        leaf_rows = (await session.execute(
+            select(BudgetLineItem.amount_usd, BudgetLineItem.spend_category).where(
+                BudgetLineItem.budget_document_id == budget_doc.id
+            )
+        )).all()
+        leaf_account_sum_usd = round(sum(float(a) for a, _ in leaf_rows if a is not None), 2)
+        # Financing ALREADY inside the source budget. Read off the SAME
+        # classified lines the priced register uses, so this can never
+        # disagree with the classification that produced gross.
+        source_budget_finance_usd = round(sum(
+            float(a) for a, category in leaf_rows
+            if a is not None and str(getattr(category, "value", category) or "").endswith("finance_costs")
+        ), 2)
         if gross_budget_usd is not None:
             variance_usd = round(gross_budget_usd - leaf_account_sum_usd, 2)
             if abs(variance_usd) > 5:
@@ -733,6 +738,25 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             "leaf_account_sum_usd": leaf_account_sum_usd,
             "variance_usd": variance_usd,
             "note": reconciliation_note,
+        },
+        # FINANCE SEMANTICS (settled doctrine), served so the distinction is
+        # checkable rather than a convention someone has to remember:
+        #   source_budget_finance_usd -- financing ALREADY inside the source
+        #     gross budget (classified SpendCategory.FINANCE_COSTS). It is
+        #     part of gross, therefore already in NPC, and must NEVER be
+        #     added again.
+        #   financing_cost_usd (the producer assumption, elsewhere) means
+        #     INCREMENTAL / OFF-BUDGET financing NOT already in gross.
+        # Bridge PRINCIPAL is not a production cost and a monetization
+        # haircut is not this field; neither is represented here.
+        "finance_semantics": {
+            "source_budget_finance_usd": source_budget_finance_usd,
+            "producer_assumption_scope": "INCREMENTAL_OFF_BUDGET",
+            "note": (
+                "Financing already inside the source budget is part of gross and is "
+                "already reflected in NPC. The producer's financing assumption is "
+                "ADDITIONAL to this amount, never a restatement of it."
+            ),
         },
         "production_structure_default": None,
         # Script Analyzer Full Production Breakdown: was hardcoded {} for
@@ -846,15 +870,23 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     total_budget_usd = None
     currency_code = None
     filename = None
+    # STALE-STATE PREVENTION (item 8). ENGINE_VERSION alone is NOT a
+    # freshness filter: a rule or pricing-source change now invalidates the
+    # fingerprint on its own, so several superseded generations legitimately
+    # coexist under one engine version. Reading them all and taking the first
+    # is_baseline row served a register computed from inputs that are no
+    # longer true. Pin the read to the CURRENT generation.
+    current_fingerprint = await current_result_fingerprint(session, project.id)
     baseline_rows = (await session.execute(
         select(StructureCalculationResult)
         .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
         .where(
             ProductionStructure.project_id == project.id,
             StructureCalculationResult.engine_version == ENGINE_VERSION,
+            StructureCalculationResult.input_fingerprint == current_fingerprint,
         )
         .order_by(StructureCalculationResult.created_at.desc())
-    )).scalars().all()
+    )).scalars().all() if current_fingerprint else []
     leading_result = next(
         (r for r in baseline_rows if (r.calculation_trace_json or {}).get("is_baseline")), None,
     )

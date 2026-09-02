@@ -145,6 +145,16 @@ class ProjectEconomicInputs:
     #: see FACT_FINANCING_COST_USD above. None means genuinely unset.
     financing_cost_usd: float | None = None
 
+    #: FINANCE SEMANTICS (settled doctrine). financing_cost_usd means
+    #: INCREMENTAL / OFF-BUDGET financing NOT already inside the source gross
+    #: budget. This is the other half of that contract: the financing already
+    #: CLASSIFIED in the source budget (SpendCategory.FINANCE_COSTS -- Lips'
+    #: FINANCING FEES + BRIDGE + BANKING FEE = $1,700,000). It is part of
+    #: gross and is therefore ALREADY in NPC; it must never be added again.
+    #: Serving both figures is what makes the distinction checkable rather
+    #: than a convention someone has to remember.
+    source_budget_finance_usd: float = 0.0
+
     @property
     def reconciliation_variance_usd(self) -> float:
         return round(self.leaf_account_sum_usd - self.gross_budget_usd, 2)
@@ -541,6 +551,14 @@ async def build_project_economic_inputs(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
         financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
+        # Financing ALREADY inside the source gross budget. Derived from the
+        # normalized lines' own canonical category, so it follows the source
+        # document rather than a per-production assumption.
+        source_budget_finance_usd=round(sum(
+            float(line.amount_usd or 0.0)
+            for line in items
+            if str(getattr(line, "spend_category", "") or "").lower().endswith("finance_costs")
+        ), 2),
     ))
 
 

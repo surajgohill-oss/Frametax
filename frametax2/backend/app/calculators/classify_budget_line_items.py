@@ -38,14 +38,27 @@ class ClassificationRule:
 
 
 _RULES: list[ClassificationRule] = [
+    # --- Obligations that NAME a guild but are not that guild's fee ---
+    # A residuals reserve is a funded guild obligation, NOT contingency and
+    # NOT the guild's above-the-line fee. Real top sheets write it as "SAG
+    # residuals accrual" / "WGA residuals", so it must be matched BEFORE the
+    # ATL guild-name rules below, which would otherwise claim it as cast,
+    # writer or director compensation.
+    ClassificationRule(r"residual",
+                       ATLBTLCategory.OTHER, SpendCategory.RESIDUALS_RESERVE, False, False),
+
     # --- Above-the-Line (fixed fees) ---
-    ClassificationRule(r"director( fee|'s fee|ial fee)?$|dga fee|director fee",
+    # A real top sheet names ATL DEPARTMENTS ("SCRIPT", "PRODUCING",
+    # "DIRECTING", "CAST"), not fee-style labels ("director fee"). The
+    # fee-style spellings are kept; the department spellings are added, so
+    # source account semantics classify without a per-production rule.
+    ClassificationRule(r"director( fee|'s fee|ial fee)?$|dga fee|director fee|directing",
                        ATLBTLCategory.ATL, SpendCategory.ATL_DIRECTOR, True, True),
-    ClassificationRule(r"writer|screenplay|script fee|wga",
+    ClassificationRule(r"writer|screenplay|script fee|wga|(^|\s)script(\s|$)|story",
                        ATLBTLCategory.ATL, SpendCategory.ATL_WRITER, True, True),
-    ClassificationRule(r"producer( fee)?$|executive producer|ep fee",
+    ClassificationRule(r"producer( fee)?$|executive producer|ep fee|producing",
                        ATLBTLCategory.ATL, SpendCategory.ATL_PRODUCER, True, True),
-    ClassificationRule(r"lead cast|star( fee)?|cast( fee)?$|actor fee|talent fee|sag",
+    ClassificationRule(r"lead cast|star( fee)?|cast( fee)?$|actor fee|talent fee|sag|(^|\s)cast(\s|$)",
                        ATLBTLCategory.ATL, SpendCategory.ATL_CAST, True, True),
     ClassificationRule(r"rights|option|underlying|book right|life rights|remake",
                        ATLBTLCategory.ATL, SpendCategory.ATL_RIGHTS, True, False),
@@ -105,11 +118,15 @@ _RULES: list[ClassificationRule] = [
                        ATLBTLCategory.BTL, SpendCategory.LODGING, False, False),
 
     # --- Finance / Insurance / Bond (excluded from most incentive programs) ---
-    ClassificationRule(r"finance cost|interest|loan fee|bank fee|gap financ",
+    # Real film budgets name these as departments, not as "finance cost":
+    # "FINANCING FEES", "BRIDGE", "BANKING FEE". The stem "financ" covers
+    # finance/financing/financial; bridge and banking are named explicitly.
+    # These are production FINANCING charges, never miscellaneous spend.
+    ClassificationRule(r"financ|interest|loan fee|bank fee|banking|bridge",
                        ATLBTLCategory.OTHER, SpendCategory.FINANCE_COSTS, False, False),
     ClassificationRule(r"insurance|e&o|errors.and.omissions",
                        ATLBTLCategory.OTHER, SpendCategory.INSURANCE, False, False),
-    ClassificationRule(r"completion( guarantee| bond)|bond premium",
+    ClassificationRule(r"completion( guarantee| bond)|bond premium|bond fee|completion fee",
                        ATLBTLCategory.OTHER, SpendCategory.COMPLETION_BOND, False, False),
     # Little Utopia Economic Reconciliation: "conting?ency" tolerates the
     # real, common misspelling "Contigency" (missing the 'n') found in
@@ -153,10 +170,27 @@ def classify_line_item(description: str, department: str | None = None) -> Class
     """
     search_text = f"{description} {department or ''}".lower().strip()
 
+    # SOURCE ACCOUNT SEMANTICS DECIDE ATL/BTL.
+    # The budget parser already derives `department` from the source
+    # document's own account-code convention (1000s = Above The Line, and so
+    # on -- see budget_parser._dept_for_acct). A description-pattern table
+    # cannot know that convention, so a real ATL department whose name is not
+    # fee-shaped ("SCRIPT", "PRODUCING", "DIRECTING", "CAST", "ATL TRAVEL &
+    # LIVING", "Total Fringes") fell through to the default BTL branch and the
+    # whole above-the-line block was reported below the line. The source
+    # document already stated the answer; honour it rather than re-deriving
+    # it from prose.
+    department_text = (department or "").lower()
+    department_atl = "above the line" in department_text or department_text.strip() == "atl"
+
     for pattern, rule in _COMPILED:
         if pattern.search(search_text):
             return ClassificationResult(
-                atl_btl=rule.atl_btl,
+                atl_btl=(
+                    ATLBTLCategory.ATL
+                    if department_atl and rule.atl_btl is ATLBTLCategory.BTL
+                    else rule.atl_btl
+                ),
                 spend_category=rule.spend_category,
                 is_fixed=rule.is_fixed,
                 is_labor=rule.is_labor,
@@ -164,9 +198,10 @@ def classify_line_item(description: str, department: str | None = None) -> Class
                 rule_matched=rule.pattern,
             )
 
-    # Default: unclassified BTL labor
+    # Default: unclassified BTL labor -- unless the source account convention
+    # already placed this line above the line.
     return ClassificationResult(
-        atl_btl=ATLBTLCategory.BTL,
+        atl_btl=ATLBTLCategory.ATL if department_atl else ATLBTLCategory.BTL,
         spend_category=SpendCategory.MISCELLANEOUS,
         is_fixed=False,
         is_labor=False,

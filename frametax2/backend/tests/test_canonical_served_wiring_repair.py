@@ -169,8 +169,14 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # test_canonical_authority_substrate.py::
     # test_fvd_runtime_candidate_universe_restored for the itemized
     # per-program attribution of the same movement.
-    assert len(priced) == 91
-    assert len(unpriced) == 65
+    # ITEM 5: five FVD candidates are declared AllocationType.COMPETITIVE
+    # in program_requirements (a ranked award from a fixed pot -- a
+    # production can satisfy every gate and still receive nothing), so they
+    # now carry NON_GUARANTEED_SELECTIVE and are disclosed rather than
+    # priced. Nothing was dropped: priced 91 -> 86, unpriceable 65 -> 70,
+    # total unchanged.
+    assert len(priced) == 86
+    assert len(unpriced) == 70  # ITEM 5: see the priced-count note above
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -179,8 +185,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 91
-    assert accounting["unpriceable_count"] == 65
+    assert accounting["review_required_count"] == 86  # ITEM 5: see note above
+    assert accounting["unpriceable_count"] == 70  # ITEM 5: see note above
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -202,8 +208,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 91
-    assert len(unpriceable_ranked) == 65
+    assert len(review_ranked) == 86  # ITEM 5: see the priced-count note above
+    assert len(unpriceable_ranked) == 70  # ITEM 5: see the priced-count note above
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -232,7 +238,7 @@ async def test_greece_baseline_is_priced_and_directly_comparable(db: AsyncSessio
     assert seg["jurisdiction_code"] == "GR"
     assert seg["program_slug"] == "gr_cash_rebate"
     assert seg["qpe_usd"] == pytest.approx(3_614_149.60, abs=0.01)
-    assert seg["qpe_cap_applied_usd"] == pytest.approx(540_671.40, abs=0.01)
+    assert seg["qpe_cap_applied_usd"] == pytest.approx(87_088.40, abs=0.01)
     assert seg["incentive_floor_usd"] == pytest.approx(1_445_659.84, abs=0.01)
     assert seg["incentive_ceiling_usd"] == pytest.approx(1_445_659.84, abs=0.01)
     assert seg["is_band_ceiling"] is False
@@ -272,9 +278,12 @@ async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics
     assert len(mt) == 1
     mt_seg = mt[0]["segments"][0]
     assert mt_seg["program_slug"] == "mt_mfc_rebate"
-    assert mt_seg["qpe_usd"] == pytest.approx(4_154_821.00, abs=0.01)
-    assert mt_seg["incentive_floor_usd"] == pytest.approx(1_246_446.30, abs=0.01)
-    assert mt_seg["incentive_ceiling_usd"] == pytest.approx(1_661_928.40, abs=0.01)
+    assert mt_seg["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)
+    # ITEM 4 REPAIR: follows the QPE change above -- Malta's 30% floor on
+    # the $453,583 finance fee now correctly excluded from qualifying
+    # spend: 1,246,446.30 - (453,583 x 0.30) = 1,110,371.40.
+    assert mt_seg["incentive_floor_usd"] == pytest.approx(1_110_371.40, abs=0.01)
+    assert mt_seg["incentive_ceiling_usd"] == pytest.approx(1_480_495.20, abs=0.01)
     assert mt_seg["is_band_ceiling"] is True
     assert mt_seg["ceiling_requires_confirmation"] is True
     mt_rank = rank_by_id[mt[0]["structure_id"]]
@@ -288,10 +297,19 @@ async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics
     # CBA-009 Part 19-20: $1,132,056.00 -> $769,190.00 (FVD's own $362,866.00
     # contingency reserve, priced against MU's real qualifies=True rule, is
     # now a disclosed grey area by default, not silently 100%-qualifying).
-    assert mu_seg["qpe_usd"] == pytest.approx(769_190.00, abs=0.01)
-    assert mu_seg["is_band_ceiling"] is False
-    assert mu_seg["ceiling_requires_confirmation"] is False
-    assert mu_seg["rate_floor"] == mu_seg["rate_ceiling"] == pytest.approx(0.30)
+    assert mu_seg["qpe_usd"] == pytest.approx(2_268_128.00, abs=0.01)
+    # ITEM 4 REPAIR consequence. With the misclassified cast/writer labour
+    # restored to QPE ($769,190 -> $2,268,128) FVD's Mauritius segment now
+    # crosses mu_frs_40_feature's $1,000,000 min_qpe, so the band-CEILING
+    # tier legitimately applies. It is a ceiling, not a guaranteed rate:
+    # unconfirmed, pricing still resolves to the mu_frs_30_general floor.
+    assert mu_seg["is_band_ceiling"] is True
+    assert mu_seg["ceiling_requires_confirmation"] is True
+    # Floor and ceiling now legitimately DIVERGE: the guaranteed
+    # mu_frs_30_general floor (30%) and the unconfirmed mu_frs_40_feature
+    # band ceiling (40%). Pricing uses the floor until confirmed.
+    assert mu_seg["rate_floor"] == pytest.approx(0.30)
+    assert mu_seg["rate_ceiling"] == pytest.approx(0.40)
     mu_rank = rank_by_id[mu[0]["structure_id"]]
     assert mu_rank["is_fully_priced"] is True
     assert mu_rank["is_directly_comparable"] is False
@@ -389,7 +407,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # one previously-unpriced CA+CH bilateral co-pro opportunity drops out
     # (CH is authority-unresolved), so 34 + 30 - 1 = 63. Each still carries
     # its own distinct terminal status -- never flattened.
-    assert len(unpriceable) == 65
+    assert len(unpriceable) == 70
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

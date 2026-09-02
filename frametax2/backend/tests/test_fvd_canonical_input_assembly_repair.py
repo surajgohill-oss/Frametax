@@ -246,12 +246,12 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
 
     gr = seg("GR")
     assert gr["qpe_usd"] == pytest.approx(3_614_149.60, abs=0.01)
-    assert gr["qpe_cap_applied_usd"] == pytest.approx(540_671.40, abs=0.01)
+    assert gr["qpe_cap_applied_usd"] == pytest.approx(87_088.40, abs=0.01)
     assert gr["rate_floor"] == gr["rate_ceiling"] == 0.4
     assert entries["GR"]["npc_with_adjustments_usd"] == pytest.approx(3_072_027.16, abs=0.01)
 
     ca_nl = seg("CA-NL")
-    assert ca_nl["qpe_usd"] == pytest.approx(4_154_821.00, abs=0.01)
+    assert ca_nl["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)
     # Final-19 committee closeout: gov.nl.ca directly confirmed a flat 40%
     # rate (no separate ceiling tier) -- the prior 45%-ceiling entry was
     # carried forward unconfirmed from an older catalog figure and is now
@@ -276,7 +276,7 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
         assert all_entries[code]["is_fully_priced"] is False
 
     mt = seg("MT")
-    assert mt["qpe_usd"] == pytest.approx(4_154_821.00, abs=0.01)
+    assert mt["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)
     assert mt["is_band_ceiling"] is True
     assert mt["ceiling_requires_confirmation"] is True
 
@@ -284,7 +284,12 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     # CBA-009 Part 19-20: $1,132,056.00 -> $769,190.00 (FVD's own $362,866.00
     # contingency reserve, priced against MU's real qualifies=True rule, is
     # now a disclosed grey area by default, not silently 100%-qualifying).
-    assert mu["qpe_usd"] == pytest.approx(769_190.00, abs=0.01)
+    # ITEM 4 REPAIR: FVD's "1400 CAST" ($1,246,288) and "1100 STORY /
+    # RIGHTS / CONTINUITY" ($252,650) were classified `miscellaneous` /
+    # `atl_rights`. Mauritius' EDB-2020-QPE-List qualifies atl_cast and
+    # atl_writer (VERIFIED), so $1,498,938 of qualifying labour was
+    # excluded from MU QPE. 769,190 + 1,498,938 = 2,268,128.
+    assert mu["qpe_usd"] == pytest.approx(2_268_128.00, abs=0.01)
     assert mu["doctrine"] == "hybrid_conditional"
 
     # AU-QLD is asserted with QA/SG above (authority-withheld, not traced).
@@ -313,5 +318,5 @@ async def test_little_utopia_regression_unchanged_by_input_assembly_repair(db: A
     # beta 100% contingency-utilization election was removed. Absent an
     # election the reserve is GREY_AREA_REQUIRES_AUTHORITY, never
     # silently 0%/100%.
-    assert result["baseline"]["true_net_cost_usd"] == 3_812_823.20
+    assert result["baseline"]["true_net_cost_usd"] == 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
     assert result["top_result"] is None

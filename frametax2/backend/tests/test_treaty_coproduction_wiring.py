@@ -143,7 +143,7 @@ async def test_little_utopia_home_anchored_treaty_opportunity_is_still_honestly_
     ]
     assert home_anchored == []
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3812823.20  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3770473.70  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
 
 
 async def test_lu_australia_uk_bilateral_opportunity_surfaces_independent_of_mauritius(db: AsyncSession):
