@@ -72,7 +72,10 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     # AUTHORITY_UNRESOLVED_NON_PRICEABLE, so Switzerland no longer
     # contributes an economic leg and the single ca-ch-bilateral pair drops
     # out. Every other bilateral pair is unaffected.
-    assert len(bilateral_among_candidates) == 22
+    # Cluster 5 (labour-only qualifying base): Canada's CPTC/PSTC family declares rate_base_narrower_than_qpe and is now withheld, so every candidate, pair and combination whose economics depended on a Canadian labour credit is correctly no longer priced. Canada is a party to many of these pairs, so the
+    # bilateral universe falls 22 -> 12. The capability itself is
+    # asserted in test_coproduction_optimizer_preservation.py.
+    assert len(bilateral_among_candidates) == 12
     assert all(
         "ca-ch-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
     ), "CH is authority-unresolved; its bilateral pair must not be offered"

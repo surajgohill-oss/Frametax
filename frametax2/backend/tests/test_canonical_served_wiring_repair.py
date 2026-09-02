@@ -169,8 +169,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # test_canonical_authority_substrate.py::
     # test_fvd_runtime_candidate_universe_restored for the itemized
     # per-program attribution of the same movement.
-    assert len(priced) == 101
-    assert len(unpriced) == 70
+    assert len(priced) == 92
+    assert len(unpriced) == 64
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -179,8 +179,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 101
-    assert accounting["unpriceable_count"] == 70
+    assert accounting["review_required_count"] == 92
+    assert accounting["unpriceable_count"] == 64
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -202,8 +202,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 101
-    assert len(unpriceable_ranked) == 70
+    assert len(review_ranked) == 92
+    assert len(unpriceable_ranked) == 64
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -389,7 +389,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # one previously-unpriced CA+CH bilateral co-pro opportunity drops out
     # (CH is authority-unresolved), so 34 + 30 - 1 = 63. Each still carries
     # its own distinct terminal status -- never flattened.
-    assert len(unpriceable) == 70
+    assert len(unpriceable) == 64
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

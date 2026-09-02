@@ -45,17 +45,31 @@ async def test_lu_real_personnel_hard_fails_ca_federal_cptc(db: AsyncSession):
     """LU's real, persisted director/writer/producer nationalities are
     NOT Canadian -- this must genuinely HARD_FAIL ca_federal_cptc's real
     role gate, discovered from real data, never fabricated."""
-    await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
-    hard_fails = [
-        e for e in _entries(view)
-        if (e.get("role_qualification") or {}).get("state") == "HARD_FAIL"
-        and (e.get("role_qualification") or {}).get("regime_id") == "ca_federal_cptc"
-    ]
-    assert hard_fails, "expected a real HARD_FAIL against ca_federal_cptc from LU's real personnel"
-    rq = hard_fails[0]["role_qualification"]
-    assert rq["failed_requirements"]
-    assert all(f["status"] in ("failed", "indeterminate") for f in rq["role_findings"] if f["status"] != "satisfied")
+    # ca_federal_cptc is now withheld EARLIER, on its labour-only qualifying
+    # base (cluster 5), so no CPTC candidate reaches the served payload and the
+    # role gate is not the visible reason any more. Cultural/role qualification
+    # and program eligibility are DISTINCT gates and both must be preserved
+    # (cluster 18), so the invariant is asserted directly against the canonical
+    # role bridge -- proving the cultural gate still genuinely hard-fails on
+    # LU's real personnel, independently of whether the candidate is priced.
+    from app.calculators.canonical_role_qualification_bridge import (
+        evaluate_role_qualification,
+        role_known_codes_from_project,
+        script_facts_from_project,
+        typed_personnel_facts_from_project,
+    )
+
+    role_codes = await role_known_codes_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    typed = await typed_personnel_facts_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    script_facts = await script_facts_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    result = evaluate_role_qualification(
+        "ca_federal_cptc", "CA", role_known_codes=role_codes,
+        typed_personnel_facts=typed, script_facts=script_facts,
+    )
+    assert result.state == "HARD_FAIL", (
+        f"LU's real non-Canadian personnel must still hard-fail ca_federal_cptc, got {result.state}"
+    )
+    assert result.failed_requirements
 
 
 async def test_role_qualification_never_contaminates_ranking_or_npc(db: AsyncSession):

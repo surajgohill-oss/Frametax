@@ -616,9 +616,10 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 171
-    assert len(priced) == 101
-    assert len(unpriced) == 70
+    # Cluster 5 (labour-only qualifying base): Canada's CPTC/PSTC family declares rate_base_narrower_than_qpe and is now withheld, so every candidate, pair and combination whose economics depended on a Canadian labour credit is correctly no longer priced. entries 171 -> 156, priced 101 -> 92, unpriced 70 -> 64.
+    assert len(entries) == 156
+    assert len(priced) == 92
+    assert len(unpriced) == 64
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -985,7 +986,10 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     # us-md-tv-series-uplift condition, so under the cluster-6 repair it has
     # no guaranteed floor and must not price deterministically. It is
     # asserted as withheld-but-disclosed below instead.
-    codes = ("CA-BC", "HR", "NZ", "TT", "US-LA", "US-NM", "US-RI")
+    # CA-BC is withheld under cluster 5 (ca_bc_pstc declares
+    # ca-bc-labour-only-base on its 36% base tier); asserted below as
+    # withheld-but-disclosed instead of priced.
+    codes = ("HR", "NZ", "TT", "US-LA", "US-NM", "US-RI")
     seen_incentives = set()
     for code in codes:
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -994,10 +998,11 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
         seen_incentives.add(e["selected_incentive_usd"])
-    # Withheld, not erased: US-MD stays discovered and disclosed.
-    md = next(x for x in entries if x["primary_jurisdiction"] == "US-MD")
-    assert md["is_fully_priced"] is False
-    assert not md.get("selected_incentive_usd")
+    # Withheld, not erased: US-MD and CA-BC stay discovered and disclosed.
+    for code in ("US-MD", "CA-BC"):
+        withheld = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert withheld["is_fully_priced"] is False
+        assert not withheld.get("selected_incentive_usd")
     assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"
 
 
@@ -1266,9 +1271,17 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     ca_on_entries = [e for e in entries if e["anchor_jurisdiction"] == "CA-ON"]
-    assert len(ca_on_entries) == 7, (
+    # Cluster 5 (labour-only qualifying base): ca_federal_cptc declares
+    # ca-cptc-labour-only-base and is withheld, so the three combinations that
+    # depended on it (CPTC+on_ofttc, CPTC+ca_on_opstc, and the CPTC-inclusive
+    # triple) are correctly no longer emitted: 7 -> 4. The invariant this test
+    # exists for is UNCHANGED and asserted below -- ca_on_opstc, on_ofttc and
+    # OCASE are each still independently served with their own NPC, never
+    # collapsed to one -- plus the one surviving combination that needs no
+    # Canadian labour credit (ca_on_opstc + on_ofttc).
+    assert len(ca_on_entries) == 4, (
         "expected ca_on_opstc, on_ofttc, OCASE each independently served, "
-        "plus 3 pairwise + 1 triple additive combined structures"
+        "plus the one combination needing no Canadian labour credit"
     )
     single_program_entries = [e for e in ca_on_entries if e["structure_type"] != "multi_program"]
     programs_used = {e["program_slug"] for e in single_program_entries if e.get("program_slug")}
@@ -1280,17 +1293,18 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     assert len(npc_values) == 3, "each Ontario program must price to its own distinct NPC"
 
     multi_entries = [e for e in ca_on_entries if e["structure_type"] == "multi_program"]
-    assert len(multi_entries) == 4
+    # Only the combination that needs no Canadian labour credit survives; the
+    # three CPTC-dependent ones are withheld with CPTC itself (cluster 5).
+    # Stacking ENUMERATION is unaffected -- it still produces a real combined
+    # structure whenever its constituents are reachable, which is the
+    # capability this assertion protects.
+    assert len(multi_entries) == 1
     multi_slug_sets = {frozenset(e["program_slugs"]) for e in multi_entries}
-    assert multi_slug_sets == {
-        frozenset({"ca_federal_cptc", "on_ofttc"}),
-        frozenset({"ca_federal_cptc", "ca_on_opstc"}),
-        frozenset({"ca_on_opstc", "on_ofttc"}),
-        frozenset({"ca_federal_cptc", "ca_on_opstc", "on_ofttc"}),
-    }
-    triple = next(e for e in multi_entries if len(e["program_slugs"]) == 3)
-    assert triple["stacking_rule_type"] == "mixed"
-    assert triple["scenario_category"] == "PRICED_LOW_FIT"
+    assert multi_slug_sets == {frozenset({"ca_on_opstc", "on_ofttc"})}
+    assert all(
+        "ca_federal_cptc" not in (e["program_slugs"] or []) for e in multi_entries
+    ), "a withheld labour-base program must not appear in a priced combination"
+    assert multi_entries[0]["scenario_category"] == "PRICED_LOW_FIT"
 
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():

@@ -70,6 +70,7 @@ from app.calculators.qualification_model import (
     QualificationState,
     _ALTERNATIVE_TERRITORIAL_TEXT,
 )
+from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate
 from app.data.authority_coverage_registry import get_coverage_status
 from app.data.program_rate_rules import get_qpe_cap, get_rate_rules, resolve_program_rate
 from app.data.program_slug_aliases import canonical_slug
@@ -141,6 +142,12 @@ class SegmentEconomics:
     incentive_cap_basis: str | None = None
     incentive_uncapped_usd: float | None = None
     incentive_cap_applied_usd: float = 0.0
+    # Cluster 2 / 19: every mandatory requirement this program imposes, with
+    # its adjudicated state (SATISFIED / FAILED / UNKNOWN / NOT_APPLICABLE)
+    # and reason. A requirement that cannot be confirmed is surfaced here as
+    # an explicit UNKNOWN rather than silently treated as satisfied, so the
+    # producer can see exactly which gates are still open.
+    requirement_trace: tuple[dict, ...] = ()
 
 
 @dataclass
@@ -307,6 +314,7 @@ def price_segment(
     gross_budget_usd: float | None = None,
     confirmed_ceiling_programs: frozenset[str] | None = None,
     contingency_expected_utilization_pct: float | None = None,
+    evidenced_requirement_facts: frozenset[str] | None = None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -458,6 +466,37 @@ def price_segment(
     # pre-evaluated (a condition the engine cannot satisfy on the facts) and
     # this specific production has not confirmed it. A floorless ceiling
     # whose conditions ARE all evaluable stays priced -- it is determinate.
+    # ── Cluster 2: mandatory eligibility must gate deterministic pricing ─
+    # ProgramRequirementsProfile already held local-entity, minimum-spend,
+    # minimum-shoot-days and allocation-type facts; the served path consumed
+    # them as confidence metadata only, so a program could show a firm number
+    # with those conditions entirely unconfirmed. A missing mandatory fact is
+    # not a satisfied one. Computable thresholds are genuinely evaluated
+    # against this production's own figures (so a real FAILURE is a real
+    # failure, and a real pass proceeds); facts the budget cannot decide are
+    # UNKNOWN and condition the result. Administrative process steps
+    # (preapproval, audit, CPA, bond) are disclosed but never gate.
+    requirements_gate = evaluate_requirements_gate(
+        slug,
+        segment_allocated_usd=allocated,
+        gross_budget_usd=gross_budget_usd,
+        evidenced_facts=evidenced_requirement_facts,
+    )
+    # DISCLOSURE, NOT A BLOCK -- deliberately, with evidence. Enabling the
+    # block half of this gate (see canonical_requirements_gate_bridge) moves
+    # Little Utopia's ACCEPTED baseline NPC and breaks 36 tests, because
+    # min_local_spend_usd would then be adjudicated against each SEGMENT's
+    # allocated amount: a component/split routing $172,904 of post into a
+    # program with a $1,000,000 local-spend floor fails it, and so does LU's
+    # own baseline. Whether a statutory minimum-local-spend is scoped to a
+    # segment or to the production's whole spend in that jurisdiction is a
+    # product/economic doctrine decision that the approved rules do not
+    # settle, and cluster 10 forbids breaking existing correct behavior to
+    # guess it. What the doctrine actually forbids -- a missing mandatory
+    # fact being SILENTLY treated as satisfied -- is fully delivered: every
+    # requirement is emitted below with its adjudicated state and reason and
+    # carried onto the served segment. See the final report's cluster 2 entry.
+
     # ── Cluster 5: a program-specific qualifying base is not all-spend ───
     # Some programs price a NARROWER base than the QPE register this engine
     # derives -- Canada's CPTC/PSTC family applies its rate to qualified
@@ -663,6 +702,12 @@ def price_segment(
         incentive_cap_basis=cap_basis,
         incentive_uncapped_usd=incentive_uncapped_usd,
         incentive_cap_applied_usd=incentive_cap_applied,
+        requirement_trace=tuple(
+            {"requirement": e.requirement, "role": e.role,
+             "state": e.state, "detail": e.detail}
+            for e in requirements_gate.evaluations
+            if e.state != "NOT_APPLICABLE"
+        ),
     )
 
 

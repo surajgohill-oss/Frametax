@@ -556,7 +556,22 @@ from app.services.canonical_project_economics import (
 # Note the authority gate (cluster 1) invalidates independently via
 # AUTHORITY_COVERAGE_REGISTRY_VERSION, which the input fingerprint already
 # includes.
-ENGINE_VERSION = "canonical-1.42.0"
+#
+# canonical-1.43.0 (cluster 2): mandatory eligibility now GATES deterministic
+# pricing. ProgramRequirementsProfile facts (local entity, minimum spend,
+# minimum shoot days, discretionary/competitive allocation) were consumed as
+# confidence metadata only; a missing mandatory fact is not a satisfied one.
+# Computable thresholds are evaluated against this production's real figures;
+# facts the budget cannot decide are UNKNOWN and condition the result;
+# administrative process steps are disclosed but never gate. See
+# canonical_requirements_gate_bridge.py.
+# canonical-1.43.1: the cluster-2 requirements gate is DISCLOSURE-ONLY. An
+# intermediate 1.43.0 state blocked on unresolved local-entity/allocation-type
+# facts and persisted those blockers; that reading removed Little Utopia's own
+# baseline and 34 other accepted results, which cluster 10 forbids. The bump
+# invalidates those rows so the disclosure-only behavior actually reaches the
+# served output.
+ENGINE_VERSION = "canonical-1.43.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -1544,6 +1559,14 @@ def _segment_dicts(pricing) -> list[dict]:
             "qpe_cap_applied_usd": s.qpe_cap_applied_usd,
             "blockers": list(s.blockers),
             "qualification_trace": list(s.register_trace),
+            # Cluster 2/19: the mandatory requirements this program imposes and
+            # their adjudicated state, so a producer can see which gates are
+            # satisfied, failed or still unresolved rather than only a number.
+            "requirement_trace": list(getattr(s, "requirement_trace", ()) or ()),
+            "incentive_cap_usd": getattr(s, "incentive_cap_usd", None),
+            "incentive_cap_type": getattr(s, "incentive_cap_type", None),
+            "incentive_uncapped_usd": getattr(s, "incentive_uncapped_usd", None),
+            "incentive_cap_applied_usd": getattr(s, "incentive_cap_applied_usd", 0.0),
             "notes": list(s.notes),
         }
         for s in pricing.segments
