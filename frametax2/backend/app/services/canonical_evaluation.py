@@ -576,7 +576,7 @@ from app.services.canonical_project_economics import (
 # incompatibility diagnostic), and a valid combined structure now carries
 # reconciled per-program segments and a real total QPE instead of segments=[]
 # with total_qualifying_spend_usd=0 beside a non-zero incentive.
-ENGINE_VERSION = "canonical-1.44.2"
+ENGINE_VERSION = "canonical-1.45.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -3039,6 +3039,21 @@ async def _summarize_evaluation(
     # overwrites a CURRENT canonical result on a repeat/idempotent run.
     if top_pair:
         needs_repoint = project.leading_structure_id is None
+        if not needs_repoint and project.leading_structure_id == top_pair[0].id:
+            # Even when the pointer already names the top candidate, its
+            # LATEST result can be stale (a superseded fingerprint). Validate
+            # rather than assume.
+            _self_result = (await session.execute(
+                select(StructureCalculationResult)
+                .where(StructureCalculationResult.structure_id == project.leading_structure_id)
+                .order_by(StructureCalculationResult.created_at.desc())
+            )).scalars().first()
+            if (
+                _self_result is None
+                or _self_result.engine_version != ENGINE_VERSION
+                or _self_result.input_fingerprint != fingerprint
+            ):
+                needs_repoint = True
         if not needs_repoint and project.leading_structure_id != top_pair[0].id:
             current_structure = await session.get(ProductionStructure, project.leading_structure_id)
             current_result = (
@@ -3049,7 +3064,18 @@ async def _summarize_evaluation(
                 )).scalars().first()
                 if current_structure is not None else None
             )
-            if current_structure is None or current_result is None or current_result.engine_version != ENGINE_VERSION:
+            # CLUSTER 12: a result is CURRENT only when its engine version AND
+            # its input fingerprint both match the current canonical inputs.
+            # Checking the engine version alone let a leading pointer survive
+            # against a superseded fingerprint -- the same engine, but computed
+            # from inputs the project no longer has -- and the project summary
+            # then read that stale row as though it were current.
+            if (
+                current_structure is None
+                or current_result is None
+                or current_result.engine_version != ENGINE_VERSION
+                or current_result.input_fingerprint != fingerprint
+            ):
                 needs_repoint = True
         if needs_repoint:
             project.leading_structure_id = top_pair[0].id

@@ -96,6 +96,37 @@ def _with_component_display_names(
     return healed
 
 
+def _humanize_structure_label(
+    name: str | None, jurisdiction_name_by_code: dict[str, str] | None,
+) -> str | None:
+    """Producer-facing structure label. Backend-authored ProductionStructure
+    names embed raw jurisdiction codes and program slugs -- "Full relocation to
+    CA-MB", "US anchor - post routed to CA-MB", "CA-ON - ca_federal_cptc +
+    on_ofttc (combined)". Those reach the Inspector and sidebars verbatim.
+
+    Rewritten at SERVE time from the SAME canonical display metadata the rest
+    of the view uses (jurisdiction names resolved canonically, program names
+    from the doctrine registry), so nothing is hand-maintained and rows
+    persisted before this heal too. Codes/slugs with no canonical name are
+    left exactly as they are rather than prettified into a guess.
+    """
+    if not name:
+        return name
+    names = jurisdiction_name_by_code or {}
+    out = name
+    # Program slugs first (they can contain characters that also look like
+    # jurisdiction codes), longest first so a prefix never shadows a longer id.
+    for slug in sorted(set(re.findall(r"[a-z][a-z0-9_]{3,}", out)), key=len, reverse=True):
+        display = _program_display_name(slug)
+        if display:
+            out = out.replace(slug, display)
+    for code in sorted(names, key=len, reverse=True):
+        display = names.get(code)
+        if display and code in out:
+            out = re.sub(rf"(?<![A-Za-z0-9-]){re.escape(code)}(?![A-Za-z0-9-])", display, out)
+    return out
+
+
 def _jurisdiction_names_by_code(jurisdictions) -> dict[str, str]:
     """Producer-facing jurisdiction names, DB first with a CANONICAL
     fallback -- never a raw code on a producer surface.
@@ -190,7 +221,7 @@ def _empty_structure_entry(
     return {
         "structure_id": str(structure.id),
         "structure_type": structure_type,
-        "label": structure.name,
+        "label": _humanize_structure_label(structure.name, jurisdiction_name_by_code),
         "primary_jurisdiction": code,
         "participants": [code] if code else [],
         "relationship_types": relationship_types,

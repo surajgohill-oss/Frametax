@@ -661,3 +661,40 @@ async def test_in_kind_and_reinvestment_are_not_deterministic_benefits(db: Async
             assert delta in (None, 0, 0.0), (
                 f"{entry['label']} carries an unproven in-kind economic benefit: {delta}"
             )
+
+
+# ── CLUSTER 12 — result / fingerprint / leading-structure lineage ────────
+
+async def test_leading_structure_is_current_by_engine_and_fingerprint(db: AsyncSession):
+    """A leading structure is CURRENT only when its latest result matches the
+    current engine version AND the current input fingerprint. Checking the
+    engine version alone let a pointer survive against a superseded
+    fingerprint -- the same engine, but inputs the project no longer has --
+    and the project summary then read that stale row as current."""
+    from sqlalchemy import text
+
+    from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
+
+    for project_id in (LIPS_PROJECT_ID, FVD_PROJECT_ID):
+        summary = await evaluate_project(db, project_id)
+        current_fingerprint = summary["state_fingerprint"]
+
+        row = (await db.execute(text("""
+            select scr.engine_version, scr.input_fingerprint
+            from projects p
+            join structure_calculation_results scr
+              on scr.structure_id = p.leading_structure_id
+            where p.id = :p
+            order by scr.created_at desc
+            limit 1
+        """), {"p": project_id})).first()
+        if row is None:
+            continue  # no leading selection is a legitimate state
+        engine_version, fingerprint = row
+        assert engine_version == ENGINE_VERSION, (
+            f"leading structure is stale by engine: {engine_version}"
+        )
+        assert fingerprint == current_fingerprint, (
+            "leading structure is stale by fingerprint -- a superseded row is "
+            "being presented as current"
+        )
