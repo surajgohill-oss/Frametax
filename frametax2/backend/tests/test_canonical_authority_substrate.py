@@ -617,7 +617,13 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     # Cluster 5 (labour-only qualifying base): Canada's CPTC/PSTC family declares rate_base_narrower_than_qpe and is now withheld, so every candidate, pair and combination whose economics depended on a Canadian labour credit is correctly no longer priced. entries 171 -> 156, priced 101 -> 92, unpriced 70 -> 64.
-    assert len(entries) == 156
+    # Codex forensic findings B/C: treaty-partner discovery no longer
+    # depends on deterministic pricing success (Canada's federal-level "CA"
+    # treaty code is reachable via its priced provinces), and component-
+    # relocation candidate enumeration is no longer pre-truncated to the top
+    # 6 target jurisdictions -- the full, real, independently-priceable
+    # target universe is now persisted. entries 156 -> 267.
+    assert len(entries) == 267
     # Cluster 8: the CA-ON combined structure is mutually exclusive, so it is
     # now an explicit RULE_REJECTED incompatibility diagnostic rather than a
     # priced structure. priced 92 -> 91, unpriceable 64 -> 65.
@@ -632,12 +638,14 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # explicitly NON_GUARANTEED_SELECTIVE. All six now report
     # NON_GUARANTEED_SELECTIVE for FVD; five of them had been priced.
     # priced 91 -> 86.
-    assert len(priced) == 86
+    # Same cause as above: many more component-relocation candidates now
+    # clear their target program's threshold and price. priced 86 -> 187.
+    assert len(priced) == 187
     # ITEM 5 (same cause as the priced count above): the five newly
     # non-entitlement candidates move from priced to unpriced.
     # unpriceable 65 -> 70. Total entries unchanged at 156 -- nothing was
     # dropped, only reclassified from "priced" to "disclosed, not priced".
-    assert len(unpriced) == 70
+    assert len(unpriced) == 80  # Codex findings B/C: see priced-count note above
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):

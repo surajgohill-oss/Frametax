@@ -54,7 +54,7 @@ async def test_fresh_evaluation_uses_the_current_engine_version(db: AsyncSession
     under an older ENGINE_VERSION with an unaffected fingerprint kept
     matching as current indefinitely."""
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    assert result["engine_version"] == ENGINE_VERSION == "canonical-1.47.0"
+    assert result["engine_version"] == ENGINE_VERSION == "canonical-1.49.0"
 
     rows = await _current_rows(db, LITTLE_UTOPIA_PROJECT_ID)
     current = [r for r in rows if r.engine_version == ENGINE_VERSION]

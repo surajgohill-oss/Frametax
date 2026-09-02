@@ -41,12 +41,18 @@ already-served pattern for the vast majority of Little Utopia's own
 alternative-jurisdiction comparisons (only 3 of ~30 curate territorial
 text; the rest already run with None).
 
-MFNI (regional production-cost normalization) is explicitly NOT applied
-here — local_cost_delta_usd is always 0.0, and every persisted result
-discloses that limitation. Travel/FX normalization are likewise omitted
-generically (no per-project travel/FX input exists yet outside Little
-Utopia's own hand-built fixtures) and folded into the same disclosure
-rather than silently assumed zero without comment.
+Travel/FX/local-cost (MFNI) normalization ARE applied here, generically,
+for every single-program and component-relocation candidate --
+_relocation_normalization() connects the existing, real
+production_normalization.py (travel_model.py + apply_fx_rates.py +
+production_adjustment.py) using only real project figures (the
+production's own travel budget line, its real gross budget, its real
+jurisdiction codes) and that module's own documented, disclosed static
+benchmark/snapshot defaults. The baseline candidate always yields an
+exact-zero travel/local-cost delta by construction. in-kind replacement
+remains 0.0 -- a genuinely absent generic capability (it names a real,
+specific off-budget fact unique to Little Utopia, not a property every
+production has), not a disconnected one.
 """
 from __future__ import annotations
 
@@ -576,7 +582,7 @@ from app.services.canonical_project_economics import (
 # incompatibility diagnostic), and a valid combined structure now carries
 # reconciled per-program segments and a real total QPE instead of segments=[]
 # with total_qualifying_spend_usd=0 beside a non-zero incentive.
-ENGINE_VERSION = "canonical-1.47.0"
+ENGINE_VERSION = "canonical-1.49.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -780,6 +786,69 @@ def _compute_fingerprint(
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def _relocation_normalization(
+    inputs: "ProjectEconomicInputs", jurisdiction_code: str, allocated_usd: float,
+) -> tuple[float, float | None, float]:
+    """Codex forensic finding D -- connects the EXISTING, generic
+    production_normalization.py (travel_model.py + apply_fx_rates.py +
+    production_adjustment.py) into the generic evaluator. This capability
+    was real and already reused by Little Utopia's own hand-built
+    comparisons, but every candidate this module priced hardcoded
+    travel_incremental_delta_usd=0.0, fx_delta_usd=None,
+    local_cost_delta_usd=0.0 -- disconnected during the generic cutover,
+    not absent. No duplicate calculator: this calls the SAME three
+    functions LU's own path already calls, generalized to any
+    (jurisdiction_code, allocated_usd) pair.
+
+    Every input is either a real project figure (the production's own
+    travel budget line, its real gross budget, the two real jurisdiction
+    codes) or that calculator's own documented, disclosed static
+    benchmark/snapshot default -- never a fabricated fact. The baseline
+    candidate (jurisdiction_code == inputs.jurisdiction_code) yields an
+    exact-zero travel/local-cost delta by construction (both calculators'
+    own documented behavior), so this cannot move the baseline's own NPC.
+
+    in-kind replacement is deliberately NOT included here: unlike travel/
+    FX/local-cost, it has no generic derivation -- it names a real,
+    specific, off-budget fact about ONE production (Little Utopia's
+    Mauritius in-kind post FMV), not a property every production has. That
+    remains a disclosed 0.0, a genuinely absent generic capability rather
+    than a disconnected one -- see the module docstring above.
+    """
+    from app.calculators.production_normalization import (
+        FXInputs,
+        TravelInputs,
+        compute_fx_normalization,
+        compute_local_cost_normalization,
+        compute_travel_normalization,
+    )
+    from app.models.enums import SpendCategory
+
+    original_budgeted_travel_usd = round(sum(
+        line.amount_usd for line in inputs.budget_lines
+        if not line.is_memo
+        and inputs.spend_category_by_code.get(line.account_code, line.spend_category)
+        == SpendCategory.TRAVEL.value
+    ), 2)
+
+    travel = compute_travel_normalization(
+        jurisdiction_code, TravelInputs(),
+        original_budgeted_travel_usd=original_budgeted_travel_usd,
+        original_jurisdiction_code=inputs.jurisdiction_code,
+    )
+    local_cost = compute_local_cost_normalization(
+        jurisdiction_code, inputs.jurisdiction_code, inputs.gross_budget_usd,
+    )
+    # scenario_fx_delta_pct defaults to 0.0 (no assumed currency movement) --
+    # no per-project FX scenario fact exists yet, so this connects the real
+    # rate lookup/disclosure without fabricating a hypothetical movement;
+    # delta_usd is honestly 0.0 absent that fact, exactly as before, but now
+    # the rate itself is looked up and disclosed rather than skipped.
+    fx = compute_fx_normalization(jurisdiction_code, FXInputs(), local_cost_basis_usd=allocated_usd)
+
+    return travel.incremental_delta_usd, fx.delta_usd, local_cost.incremental_delta_usd
+
+
 def _price_candidate(
     inputs: ProjectEconomicInputs, jurisdiction_code: str, program_slug: str,
 ):
@@ -827,15 +896,18 @@ def _price_candidate(
         spec=spec,
         stated_outside_accounts=inputs.accounts_outside_jurisdiction,
     )
+    _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
+        inputs, jurisdiction_code, allocation.total_allocated_usd,
+    )
     pricing = price_allocated_structure(
         spec=spec, allocation=allocation,
         spend_category_by_code=inputs.spend_category_by_code,
         offshore_payroll_accounts=inputs.offshore_payroll_accounts,
         gross_budget_usd=inputs.gross_budget_usd,
-        travel_incremental_delta_usd=0.0,
-        fx_delta_usd=None,
+        travel_incremental_delta_usd=_travel_delta,
+        fx_delta_usd=_fx_delta,
         inkind_replacement_delta_usd=0.0,
-        local_cost_delta_usd=0.0,
+        local_cost_delta_usd=_local_cost_delta,
         production_type=inputs.production_type,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
         # Producer Display Names + Budget Rail User Assumptions closeout —
@@ -1090,15 +1162,21 @@ def _price_component_relocation_candidate(
         spec=spec,
         stated_outside_accounts=inputs.accounts_outside_jurisdiction,
     )
+    # target_code, not home_code: the component itself is what relocates,
+    # so the normalization delta is against the target jurisdiction, using
+    # the SAME allocation basis price_allocated_structure prices below.
+    _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
+        inputs, target_code, allocation.total_allocated_usd,
+    )
     pricing = price_allocated_structure(
         spec=spec, allocation=allocation,
         spend_category_by_code=inputs.spend_category_by_code,
         offshore_payroll_accounts=inputs.offshore_payroll_accounts,
         gross_budget_usd=inputs.gross_budget_usd,
-        travel_incremental_delta_usd=0.0,
-        fx_delta_usd=None,
+        travel_incremental_delta_usd=_travel_delta,
+        fx_delta_usd=_fx_delta,
         inkind_replacement_delta_usd=0.0,
-        local_cost_delta_usd=0.0,
+        local_cost_delta_usd=_local_cost_delta,
         production_type=inputs.production_type,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
         # Producer Display Names + Budget Rail User Assumptions closeout —
@@ -2491,12 +2569,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         if comp in MOVABLE_COMPONENTS:
             component_spend[comp] = round(component_spend.get(comp, 0.0) + line.amount_usd, 2)
 
-    # Bounded to the most promising real alternative jurisdictions (by
-    # their own already-computed single-program incentive value) — a
-    # practical search-space bound, not a doctrine choice; every target
-    # considered is a genuinely discovered, independently-priceable
-    # candidate, never invented.
-    MAX_COMPONENT_TARGETS = 6
+    # Codex forensic finding C -- the engine must enumerate the COMPLETE
+    # eligible component-opportunity ledger before any ranking/presentation
+    # pruning happens, not truncate the candidate universe before it is even
+    # constructed. The prior MAX_COMPONENT_TARGETS=6 pre-filter (its own
+    # comment already called it "a practical search-space bound, not a
+    # doctrine choice") meant 57 of 63 real, independently-discovered,
+    # independently-priceable target jurisdictions for a typical production
+    # never got a persisted component-relocation candidate at all -- not
+    # pruned from a ranked list, never built. Every target considered here
+    # is a genuinely discovered, independently-priceable candidate (never
+    # invented), and a target that does not actually clear the routed
+    # component's threshold still fails closed below (`is_fully_priced`)
+    # and is not persisted -- so removing the pre-filter enumerates the real
+    # universe, it does not relax what counts as priceable.
     if component_spend:
         target_best_by_code: dict[str, StackCandidate] = {}
         for code, cands in priced_by_code.items():
@@ -2505,7 +2591,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             target_best_by_code[code] = max(cands, key=lambda c: c.selected_incentive_usd)
         top_targets = sorted(
             target_best_by_code.values(), key=lambda c: c.selected_incentive_usd, reverse=True,
-        )[:MAX_COMPONENT_TARGETS]
+        )
 
         for component, spend_amount in sorted(component_spend.items()):
             if spend_amount <= 0:
@@ -2641,7 +2727,45 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # project fact on file, so every generated opportunity here correctly
     # resolves to UNRESOLVED_FACTS — a genuine, disclosed pathway, never
     # priced or comparable economics.
-    candidate_codes = list(priced_by_code.keys())
+    # Codex forensic finding B -- treaty PARTNER discovery must not depend
+    # on the partner's OWN incentive resolving to a deterministic price.
+    # `priced_by_code` only contains jurisdictions whose own program priced
+    # deterministically, so every blocked/unresolved/non-guaranteed-
+    # selective/rule-rejected jurisdiction silently disappeared from treaty
+    # partner discovery too. Canada is the proof: its 13 real registered
+    # bilateral treaties (uk-ca-bilateral, ca-fr-bilateral, ...) are keyed
+    # to the bare federal "CA" code. "CA" is a real, independently
+    # DISCOVERED candidate (ca_federal_pstc/ca_federal_cptc) but never
+    # prices deterministically (UNPRICEABLE_AUTHORITY_INSUFFICIENT) --
+    # dropping "CA" from candidate_codes meant zero Canada-linked
+    # co-production opportunities could ever be generated for any
+    # production, regardless of how many Canadian provinces DID price.
+    #
+    # The correct universe is every code production_discovery examined as a
+    # genuine candidate (`candidates`, built earlier in this function from
+    # discovery.accepted + accepted_alternatives + capability_only
+    # examinations) union each code's own bare country prefix -- the same
+    # code.split("-")[0] federal-derivation convention already used for
+    # stacking above, so a treaty keyed to a country level is reachable
+    # even when only a subnational program under that country was
+    # independently discovered. This only widens which PAIRS get checked
+    # for real treaty-registry presence (find_real_bilateral_partners's own
+    # docstring: "registry presence only, never eligibility") -- real
+    # eligibility (contribution share, cultural test) is still resolved
+    # exactly as before by evaluate_bilateral_coproduction_opportunity, so
+    # nothing here fabricates eligibility or economics.
+    # NOT the full discovery universe: a jurisdiction with zero priced legs
+    # anywhere (e.g. Switzerland, whose only program ch_pics_national_rebate
+    # is itself AUTHORITY_UNRESOLVED_NON_PRICEABLE) has no real economic leg
+    # and must not be offered as a co-production partner --
+    # test_a_blocked_constituent_does_not_destroy_the_capability pins this.
+    # The fix is narrower than "discovered": every code that DOES have at
+    # least one priced leg, union each such code's bare country prefix (so
+    # Canada's federal-level treaty code "CA" is reachable because CA-ON/
+    # CA-AB/CA-QC/CA-NL priced, even though "CA" itself never does).
+    reachable_codes = set(priced_by_code)
+    reachable_codes |= {code.split("-")[0] for code in reachable_codes}
+    candidate_codes = sorted(reachable_codes)
     # _copro_majority_pct/_copro_minority_pct/_copro_cultural_test_passed
     # fetched once, near the top of this function (see CBA-008 note there
     # — also part of the cache fingerprint now) and reused here.

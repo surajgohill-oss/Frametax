@@ -72,10 +72,21 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     # AUTHORITY_UNRESOLVED_NON_PRICEABLE, so Switzerland no longer
     # contributes an economic leg and the single ca-ch-bilateral pair drops
     # out. Every other bilateral pair is unaffected.
-    # Cluster 5 (labour-only qualifying base): Canada's CPTC/PSTC family declares rate_base_narrower_than_qpe and is now withheld, so every candidate, pair and combination whose economics depended on a Canadian labour credit is correctly no longer priced. Canada is a party to many of these pairs, so the
-    # bilateral universe falls 22 -> 12. The capability itself is
-    # asserted in test_coproduction_optimizer_preservation.py.
-    assert len(bilateral_among_candidates) == 12
+    # Codex forensic finding B (this pass): 12 was ITSELF the regression, not
+    # a legitimate consequence of Cluster 5. Treaty-partner discovery had
+    # been scoped to `priced_by_code` DIRECTLY (deterministic pricing
+    # success for that EXACT code), so Canada's federal-level "CA" treaty
+    # code -- which never itself prices -- silently dropped out and took
+    # every ca-*-bilateral pair with it, even though CA-AB/CA-ON/CA-QC/CA-NL
+    # priced. Cluster 5 (labour-only qualifying base) genuinely withholds
+    # Canada's CPTC/PSTC family (rate_base_narrower_than_qpe), but that is
+    # orthogonal to whether Canada is a real treaty PARTY -- treaty registry
+    # presence never required Canada's OWN incentive to price. The fix
+    # widens candidate_codes to every code with a priced leg ANYWHERE at or
+    # under it (priced_by_code union each code's bare country prefix),
+    # restoring Canada as a reachable treaty party. 12 -> 22. The capability
+    # itself is asserted in test_coproduction_optimizer_preservation.py.
+    assert len(bilateral_among_candidates) == 22
     assert all(
         "ca-ch-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
     ), "CH is authority-unresolved; its bilateral pair must not be offered"
