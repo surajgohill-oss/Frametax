@@ -618,8 +618,11 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     # Cluster 5 (labour-only qualifying base): Canada's CPTC/PSTC family declares rate_base_narrower_than_qpe and is now withheld, so every candidate, pair and combination whose economics depended on a Canadian labour credit is correctly no longer priced. entries 171 -> 156, priced 101 -> 92, unpriced 70 -> 64.
     assert len(entries) == 156
-    assert len(priced) == 92
-    assert len(unpriced) == 64
+    # Cluster 8: the CA-ON combined structure is mutually exclusive, so it is
+    # now an explicit RULE_REJECTED incompatibility diagnostic rather than a
+    # priced structure. priced 92 -> 91, unpriceable 64 -> 65.
+    assert len(priced) == 91
+    assert len(unpriced) == 65
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -1304,7 +1307,9 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     assert all(
         "ca_federal_cptc" not in (e["program_slugs"] or []) for e in multi_entries
     ), "a withheld labour-base program must not appear in a priced combination"
-    assert multi_entries[0]["scenario_category"] == "PRICED_LOW_FIT"
+    # Mutually exclusive -> no longer a priced scenario at all.
+    assert multi_entries[0]["scenario_category"] == "NOT_AVAILABLE"
+    assert multi_entries[0]["is_fully_priced"] is False
 
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():

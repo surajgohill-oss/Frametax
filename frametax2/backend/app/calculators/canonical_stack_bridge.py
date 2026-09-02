@@ -155,6 +155,10 @@ class MultiProgramStackResult:
     adjusted_incentive_usd: float
     stacking_reduction_usd: float
     per_program_adjusted_usd: dict[str, float]
+    #: Cluster 8: each constituent's own qualifying spend, so a combined
+    #: structure can serve reconciled segments instead of segments=[] with
+    #: total_qualifying_spend_usd=0 alongside a non-zero incentive.
+    per_program_qpe_usd: dict[str, float] = field(default_factory=dict)
     adjustments: list[dict] = field(default_factory=list)
     legal_review_required: bool = False
     violations: list[dict] = field(default_factory=list)
@@ -357,6 +361,9 @@ def _build_group_result(
             0.0, adj_result.total_raw_value_usd - adj_result.total_adjusted_value_usd
         ),
         per_program_adjusted_usd=adj_result.program_values,
+        per_program_qpe_usd={
+            c.program_slug: float(c.qualifying_spend_usd or 0.0) for c in candidates
+        },
         adjustments=[
             {
                 "program_a_id": a.program_a_id,

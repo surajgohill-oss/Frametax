@@ -571,7 +571,12 @@ from app.services.canonical_project_economics import (
 # baseline and 34 other accepted results, which cluster 10 forbids. The bump
 # invalidates those rows so the disclosure-only behavior actually reaches the
 # served output.
-ENGINE_VERSION = "canonical-1.43.1"
+# canonical-1.44.0 (cluster 8): a mutually exclusive combination is no longer
+# emitted as a PRICED structure (it is retained as an explicit RULE_REJECTED
+# incompatibility diagnostic), and a valid combined structure now carries
+# reconciled per-program segments and a real total QPE instead of segments=[]
+# with total_qualifying_spend_usd=0 beside a non-zero incentive.
+ENGINE_VERSION = "canonical-1.44.2"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -2301,16 +2306,36 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
             str(structure.id), code, tuple(stack_result.program_slugs),
         )
+        # CLUSTER 8: a mutually exclusive combination is not a valid priced
+        # structure, so it carries NO economics at all -- not an incentive,
+        # not an NPC. Leaving those populated made it look priced to the
+        # summarizer and it kept appearing in `ranked`.
+        _combination_is_invalid = stack_result.rule_type == "mutually_exclusive"
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd,
-            total_incentive_value_usd=stack_result.adjusted_incentive_usd,
-            true_net_cost_usd=npc,
-            risk_adjusted_net_cost_usd=npc,
+            total_incentive_value_usd=(
+                None if _combination_is_invalid else stack_result.adjusted_incentive_usd
+            ),
+            true_net_cost_usd=None if _combination_is_invalid else npc,
+            risk_adjusted_net_cost_usd=None if _combination_is_invalid else npc,
             has_unverified_inputs=territorial_state_unknown or bool(stack_result.disclosed_limitations),
             warnings=warnings,
             calculation_trace_json={
-                "candidate_status": STATUS_PRICED,
+                # CLUSTER 8. A MUTUALLY EXCLUSIVE combination is not a valid
+                # priced structure. The stacking engine already zeroes the
+                # suppressed member, so the arithmetic was safe, but the
+                # STRUCTURE was still emitted as PRICED -- presenting a
+                # combination the programs' own rules forbid. It is retained
+                # as an explicitly non-priceable incompatibility diagnostic
+                # (the architecture's existing terminal-state pattern) rather
+                # than deleted, so the producer can see the pair was
+                # considered and why it cannot be combined.
+                "candidate_status": (
+                    STATUS_RULE_REJECTED
+                    if stack_result.rule_type == "mutually_exclusive"
+                    else STATUS_PRICED
+                ),
                 "discovery_classification": "multi_program_stack",
                 "structure_type": "multi_program",
                 "primary_jurisdiction": code,
@@ -2332,12 +2357,44 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # concept invented — this is the same is_baseline test.
                 "is_directly_comparable": is_baseline,
                 "stacking_rule_type": stack_result.rule_type,
+                # A rejected combination must explain itself -- never an
+                # unexplained drop into the unpriceable bucket.
+                "reason": (
+                    f"{code}: {' + '.join(stack_result.program_slugs)} are MUTUALLY "
+                    "EXCLUSIVE under their own stacking rule"
+                    + (f" ({stack_result.condition_text})" if stack_result.condition_text else "")
+                    + ". The combination is disclosed for completeness but cannot be "
+                      "claimed together, so it carries no incentive or NPC."
+                ) if _combination_is_invalid else None,
                 "stacking_condition_text": stack_result.condition_text,
                 "raw_incentive_usd": stack_result.raw_incentive_usd,
-                "selected_incentive_usd": stack_result.adjusted_incentive_usd,
-                "npc_verified_usd": npc,
-                "npc_conservative_usd": npc,
+                "selected_incentive_usd": (
+                    None if _combination_is_invalid else stack_result.adjusted_incentive_usd
+                ),
+                "npc_verified_usd": None if _combination_is_invalid else npc,
+                "npc_conservative_usd": None if _combination_is_invalid else npc,
                 "gross_budget_usd": inputs.gross_budget_usd,
+                # CLUSTER 8: a priced combined structure must carry reconciled
+                # per-program segments and a real total QPE. Previously these
+                # served segments=[] and total_qualifying_spend_usd=0 next to a
+                # multi-million incentive, which is not a trace anyone can audit.
+                "segments": [
+                    {
+                        "jurisdiction_code": code,
+                        "program_slug": slug,
+                        "program_display_name": _program_display_name(slug),
+                        "claims_incentive": True,
+                        "executable": True,
+                        "qpe_usd": stack_result.per_program_qpe_usd.get(slug, 0.0),
+                        "incentive_floor_usd": stack_result.per_program_adjusted_usd.get(slug, 0.0),
+                        "incentive_ceiling_usd": stack_result.per_program_adjusted_usd.get(slug, 0.0),
+                    }
+                    for slug in stack_result.program_slugs
+                ],
+                "total_qualifying_spend_usd": sum(
+                    stack_result.per_program_qpe_usd.get(slug, 0.0)
+                    for slug in stack_result.program_slugs
+                ),
                 "stacking_reduction_usd": stack_result.stacking_reduction_usd,
                 "per_program_adjusted_usd": stack_result.per_program_adjusted_usd,
                 "stacking_adjustments": stack_result.adjustments,

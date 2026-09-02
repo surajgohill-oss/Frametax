@@ -33,6 +33,7 @@ from app.data.program_rate_rules import get_rate_rules  # noqa: F401 -- import-o
 from app.db.session import engine
 from app.models.project import Project
 from app.models.project_fact import ProjectFact
+from app.services.canonical_evaluation import evaluate_project
 from app.services.canonical_production_view import build_production_and_structures
 from app.services.project_workspace_view import build_project_workspace_view
 
@@ -115,6 +116,7 @@ async def test_authority_unresolved_program_is_served_but_unpriced(db: AsyncSess
     """End to end, on a real project: Manitoba is authority-unresolved, so it
     must appear in the served universe carrying its authority reason and
     contribute no deterministic incentive."""
+    await evaluate_project(db, LIPS_PROJECT_ID)
     view = await build_production_and_structures(db, LIPS_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
 
@@ -550,3 +552,112 @@ def test_every_registered_program_is_priceable_or_fails_closed_with_a_reason():
     priceable = [r for r in records if r["disposition"] == "PRICEABLE"]
     failed = [r for r in records if r["disposition"] == "FAILS_CLOSED"]
     assert priceable and failed, "expected both dispositions to be represented"
+
+
+# ── CLUSTER 8 — multi-program stacking validity and trace projection ─────
+
+async def test_mutually_exclusive_combination_is_not_a_priced_structure(db: AsyncSession):
+    """A combination the programs' own rules forbid must never be presented
+    as a valid priced structure. The stacking engine already zeroed the
+    suppressed member, so the arithmetic was safe -- but the STRUCTURE was
+    still emitted PRICED. It is retained as an explicit incompatibility
+    diagnostic, never deleted."""
+    for project_id in (FVD_PROJECT_ID, LIPS_PROJECT_ID):
+        await evaluate_project(db, project_id)
+        view = await build_production_and_structures(db, project_id)
+        entries = view["structures"]["allocated_structures"]["structures"]
+        multi = [e for e in entries if e["structure_type"] == "multi_program"]
+        for entry in multi:
+            if entry.get("stacking_rule_type") != "mutually_exclusive":
+                continue
+            assert entry["is_fully_priced"] is False, (
+                f"{entry['label']} is mutually exclusive yet priced"
+            )
+            assert not entry.get("selected_incentive_usd")
+            assert entry.get("candidate_status") == "RULE_REJECTED"
+
+
+async def test_combined_structures_carry_reconciled_segments_and_qpe(db: AsyncSession):
+    """No combined structure may serve segments=[] with
+    total_qualifying_spend_usd=0 beside a non-zero incentive."""
+    for project_id in (FVD_PROJECT_ID, LIPS_PROJECT_ID):
+        await evaluate_project(db, project_id)
+        view = await build_production_and_structures(db, project_id)
+        entries = view["structures"]["allocated_structures"]["structures"]
+        for entry in [e for e in entries if e["structure_type"] == "multi_program"]:
+            segments = entry.get("segments") or []
+            assert segments, f"{entry['label']} served no segments"
+            assert len(segments) == len(entry.get("program_slugs") or []), (
+                "every constituent program must appear as its own segment"
+            )
+            assert sum(s.get("qpe_usd") or 0.0 for s in segments) > 0, (
+                f"{entry['label']} served zero QPE across its segments"
+            )
+            for segment in segments:
+                assert segment.get("program_slug")
+                assert segment.get("program_display_name")
+
+
+# ── CLUSTERS 10 / 15 / 17 — preservation, asserted not assumed ───────────
+
+def test_conditional_awards_are_never_invented_as_economics():
+    """CLUSTER 10 non-regression: a conditional/competitive award is an
+    opportunity, never an assumed award. Its documented cap must not become
+    a modeled incentive."""
+    from app.calculators.conditional_programs import get_conditional_program_index
+
+    index = get_conditional_program_index()
+    assert index.nodes, "expected real conditional program nodes"
+    for node in index.nodes:
+        assert node.stacking in (
+            "unknown_requires_evidence", "compatible", "incompatible",
+        ), f"{node.node_id} carries an invented stacking claim"
+        # A documented cap is evidence of a ceiling, never an award amount.
+        assert not hasattr(node, "awarded_usd")
+        assert not hasattr(node, "incentive_usd")
+
+
+async def test_conditional_nodes_never_enter_deterministic_economics(db: AsyncSession):
+    """CLUSTER 10 runtime: attached conditional programs are disclosed on a
+    candidate but contribute nothing to its incentive or NPC."""
+    await evaluate_project(db, LIPS_PROJECT_ID)
+    view = await build_production_and_structures(db, LIPS_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    with_conditionals = [e for e in entries if e.get("conditional_programs")]
+    assert with_conditionals, "expected conditional programs to be attached somewhere"
+    for entry in with_conditionals:
+        for node in entry["conditional_programs"]:
+            assert not node.get("awarded_usd")
+            assert not node.get("incentive_usd")
+
+
+def test_contingency_doctrine_is_preserved():
+    """CLUSTER 15 non-regression: contingency utilization stays generic and
+    user-controlled -- no universal 0/50/100 default, and a residual reserve
+    is not contingency."""
+    import inspect
+
+    from app.calculators import allocation_pricing
+
+    source = inspect.getsource(allocation_pricing.price_segment)
+    assert "contingency_expected_utilization_pct" in source
+    signature = inspect.signature(allocation_pricing.price_segment)
+    default = signature.parameters["contingency_expected_utilization_pct"].default
+    assert default is None, (
+        "contingency utilization must default to genuinely unset, never a "
+        f"universal assumption (got {default!r})"
+    )
+
+
+async def test_in_kind_and_reinvestment_are_not_deterministic_benefits(db: AsyncSession):
+    """CLUSTER 17 non-regression: in-kind replacement and reinvestment must
+    never be silently treated as a deterministic economic benefit."""
+    for project_id in (FVD_PROJECT_ID, LIPS_PROJECT_ID):
+        await evaluate_project(db, project_id)
+        view = await build_production_and_structures(db, project_id)
+        entries = view["structures"]["allocated_structures"]["structures"]
+        for entry in entries:
+            delta = entry.get("inkind_replacement_delta_usd")
+            assert delta in (None, 0, 0.0), (
+                f"{entry['label']} carries an unproven in-kind economic benefit: {delta}"
+            )

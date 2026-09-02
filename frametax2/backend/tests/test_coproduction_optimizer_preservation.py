@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.program_rate_rules import get_rate_rules  # noqa: F401 -- import-order guard
 from app.db.session import engine
+from app.services.canonical_evaluation import evaluate_project
 from app.services.canonical_production_view import build_production_and_structures
 
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
@@ -47,6 +48,10 @@ async def db():
 
 
 async def _structures(session: AsyncSession, project_id: str) -> list[dict]:
+    # Evaluate first: reads are PURE (cluster 13), so a project whose rows
+    # predate the current engine version has nothing current to serve. The
+    # other served-runtime suites use the same pattern.
+    await evaluate_project(session, project_id)
     view = await build_production_and_structures(session, project_id)
     return view["structures"]["allocated_structures"]["structures"]
 
