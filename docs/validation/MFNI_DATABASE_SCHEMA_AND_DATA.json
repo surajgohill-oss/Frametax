@@ -1,0 +1,158 @@
+{
+  "schema_recommendation": {
+    "tables": [
+      {
+        "name": "mfni_raw_observation",
+        "columns": [
+          "observation_id (PK)",
+          "jurisdiction",
+          "subjurisdiction",
+          "production_center",
+          "cost_category",
+          "cost_subcategory",
+          "production_scale",
+          "production_type",
+          "local_or_imported",
+          "value",
+          "unit",
+          "currency",
+          "effective_date",
+          "observation_date",
+          "source",
+          "source_tier",
+          "methodology",
+          "sample_size",
+          "confidence_score",
+          "notes",
+          "provenance_url"
+        ]
+      },
+      {
+        "name": "mfni_normalization_index",
+        "columns": [
+          "index_id (PK)",
+          "jurisdiction",
+          "cost_category",
+          "index_type (e.g., Wage, CPI, PPI)",
+          "base_year",
+          "current_value",
+          "source"
+        ]
+      },
+      {
+        "name": "mfni_jurisdiction_factor",
+        "columns": [
+          "factor_id (PK)",
+          "jurisdiction",
+          "subjurisdiction",
+          "cost_category",
+          "production_scale",
+          "derived_multiplier_vs_usd",
+          "confidence_range_low",
+          "confidence_range_high",
+          "confidence_rating",
+          "last_calculated_date"
+        ]
+      }
+    ]
+  },
+  "E_source_database": [
+    {
+      "source_id": "SRC_IATSE_891",
+      "source_name": "IATSE Local 891 Master Agreement",
+      "tier": 1,
+      "url": "https://www.iatse.com/agreements",
+      "publication_date": "2025-04-01",
+      "supports": [
+        "Crew Labor (Canada - BC)",
+        "Fringes"
+      ]
+    },
+    {
+      "source_id": "SRC_BECTU_PACT",
+      "source_name": "BECTU / PACT TV & Film Agreements",
+      "tier": 1,
+      "url": "https://bectu.org.uk/rates",
+      "publication_date": "2026-01-01",
+      "supports": [
+        "Crew Labor (UK)",
+        "Overtime structures"
+      ]
+    },
+    {
+      "source_id": "SRC_EP_PAYROLL",
+      "source_name": "Entertainment Partners Global Payroll Fringes Matrix",
+      "tier": 2,
+      "url": "https://www.ep.com/fringe-rates",
+      "publication_date": "2026-06-01",
+      "supports": [
+        "Fringes/Employer Burden (Global)"
+      ]
+    },
+    {
+      "source_id": "SRC_OFS_COST",
+      "source_name": "Olsberg SPI / Screen Australia Cost of Production Report",
+      "tier": 2,
+      "url": "https://www.screenaustralia.gov.au",
+      "publication_date": "2025-11-01",
+      "supports": [
+        "Accommodation",
+        "Local Services (Aus)"
+      ]
+    }
+  ],
+  "F_raw_dataset_sample": [
+    {
+      "observation_id": "OBS_001",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "England",
+      "production_center": "London",
+      "cost_category": "CREW LABOR",
+      "cost_subcategory": "Camera Operator",
+      "production_scale": "Major Studio Feature",
+      "local_or_imported": "LOCAL",
+      "value": 520,
+      "unit": "GBP/Day",
+      "currency": "GBP",
+      "effective_date": "2026-01-01",
+      "source_tier": 1,
+      "source": "SRC_BECTU_PACT",
+      "confidence_score": "HIGH"
+    },
+    {
+      "observation_id": "OBS_002",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "production_center": "Vancouver",
+      "cost_category": "FRINGES",
+      "cost_subcategory": "Total Employer Burden",
+      "production_scale": "All",
+      "local_or_imported": "LOCAL",
+      "value": 22.5,
+      "unit": "Percentage",
+      "currency": "CAD",
+      "effective_date": "2026-01-01",
+      "source_tier": 1,
+      "source": "SRC_IATSE_891",
+      "confidence_score": "HIGH"
+    }
+  ],
+  "G_normalization_dataset_sample": [
+    {
+      "jurisdiction": "United Kingdom",
+      "cost_category": "CREW LABOR",
+      "index_type": "BECTU Negotiated Rate Increase",
+      "base_year": 2024,
+      "current_value": 1.08,
+      "notes": "8% cumulative increase from 2024 to 2026."
+    },
+    {
+      "jurisdiction": "Hungary",
+      "cost_category": "CONSTRUCTION",
+      "index_type": "KSH PPI - Construction Materials",
+      "base_year": 2024,
+      "current_value": 1.15,
+      "notes": "15% inflation in building materials."
+    }
+  ]
+}
