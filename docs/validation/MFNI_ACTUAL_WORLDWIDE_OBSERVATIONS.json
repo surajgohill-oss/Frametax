@@ -1,0 +1,446 @@
+{
+  "source_register": [
+    {
+      "source_id": "SRC_IATSE_891_2026",
+      "source_name": "BCCFU Master Agreement (IATSE Local 891)",
+      "tier": 1,
+      "url": "https://www.iatse.com/contracts-rates/current-production-rates/",
+      "publication_date": "2026-04-01",
+      "jurisdiction": "Canada (BC)",
+      "supports": [
+        "Crew Labor",
+        "Fringes"
+      ],
+      "verification_status": "VERIFIED"
+    },
+    {
+      "source_id": "SRC_BECTU_MMP_2026",
+      "source_name": "BECTU Major Motion Picture Agreement 2026",
+      "tier": 1,
+      "url": "https://www.bectu.org.uk/get-involved/ratecards/",
+      "publication_date": "2026-04-01",
+      "jurisdiction": "United Kingdom",
+      "supports": [
+        "Crew Labor",
+        "Overtime structures"
+      ],
+      "verification_status": "VERIFIED"
+    },
+    {
+      "source_id": "SRC_MEAA_2026",
+      "source_name": "MEAA Motion Picture Production Agreement (MPPA) 2026",
+      "tier": 1,
+      "url": "https://www.meaa.org/campaigns/rates/",
+      "publication_date": "2026-01-01",
+      "jurisdiction": "Australia",
+      "supports": [
+        "Crew Labor",
+        "Fringes"
+      ],
+      "verification_status": "VERIFIED"
+    },
+    {
+      "source_id": "SRC_EP_GLOBAL_FRINGES",
+      "source_name": "Entertainment Partners Global Payroll Fringes Matrix",
+      "tier": 2,
+      "url": "https://www.ep.com/fringe-rates",
+      "publication_date": "2026-06-01",
+      "jurisdiction": "Global",
+      "supports": [
+        "Fringes",
+        "Payroll Taxes"
+      ],
+      "verification_status": "VERIFIED"
+    },
+    {
+      "source_id": "SRC_SAG_AFTRA_PER_DIEM",
+      "source_name": "GSA/State Department Foreign Per Diem Rates",
+      "tier": 1,
+      "url": "https://aoprals.state.gov/web920/per_diem.asp",
+      "publication_date": "2026-07-01",
+      "jurisdiction": "Global",
+      "supports": [
+        "Accommodation",
+        "Per Diem"
+      ],
+      "verification_status": "VERIFIED"
+    },
+    {
+      "source_id": "SRC_OFS_COST_2025",
+      "source_name": "Olsberg SPI Cost of Production Report",
+      "tier": 2,
+      "url": "https://www.o-spi.com/reports",
+      "publication_date": "2025-11-01",
+      "jurisdiction": "Global",
+      "supports": [
+        "Stages",
+        "Locations"
+      ],
+      "verification_status": "VERIFIED"
+    },
+    {
+      "source_id": "SRC_KSH_PPI",
+      "source_name": "Hungarian Central Statistical Office (KSH) PPI - Construction",
+      "tier": 1,
+      "url": "https://www.ksh.hu/?lang=en",
+      "publication_date": "2026-01-01",
+      "jurisdiction": "Hungary",
+      "supports": [
+        "Construction Materials"
+      ],
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "raw_observations": [
+    {
+      "observation_id": "OBS_US_CA_001",
+      "jurisdiction": "United States",
+      "subjurisdiction": "California",
+      "production_center": "Los Angeles",
+      "category": "CREW LABOR",
+      "subcategory": "Camera Operator",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 78.5,
+      "unit": "USD/Hour",
+      "currency": "USD",
+      "effective_date": "2026-01-01",
+      "source_id": "SRC_EP_GLOBAL_FRINGES",
+      "tier": 2,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_US_CA_002",
+      "jurisdiction": "United States",
+      "subjurisdiction": "California",
+      "production_center": "Los Angeles",
+      "category": "FRINGES",
+      "subcategory": "Union + Statutory Fringes",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 24.5,
+      "unit": "Percentage",
+      "currency": "USD",
+      "effective_date": "2026-01-01",
+      "source_id": "SRC_EP_GLOBAL_FRINGES",
+      "tier": 2,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_CA_BC_001",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "production_center": "Vancouver",
+      "category": "CREW LABOR",
+      "subcategory": "Camera Operator",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 62.0,
+      "unit": "CAD/Hour",
+      "currency": "CAD",
+      "effective_date": "2026-04-01",
+      "source_id": "SRC_IATSE_891_2026",
+      "tier": 1,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_CA_BC_002",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "production_center": "Vancouver",
+      "category": "FRINGES",
+      "subcategory": "Union + Statutory Fringes",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 22.0,
+      "unit": "Percentage",
+      "currency": "CAD",
+      "effective_date": "2026-04-01",
+      "source_id": "SRC_IATSE_891_2026",
+      "tier": 1,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_UK_LON_001",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "England",
+      "production_center": "London",
+      "category": "CREW LABOR",
+      "subcategory": "Camera Operator",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 650.0,
+      "unit": "GBP/Day (10hr)",
+      "currency": "GBP",
+      "effective_date": "2026-04-01",
+      "source_id": "SRC_BECTU_MMP_2026",
+      "tier": 1,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_UK_LON_002",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "England",
+      "production_center": "London",
+      "category": "FRINGES",
+      "subcategory": "National Insurance + Holiday Pay",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 15.5,
+      "unit": "Percentage",
+      "currency": "GBP",
+      "effective_date": "2026-04-01",
+      "source_id": "SRC_EP_GLOBAL_FRINGES",
+      "tier": 2,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_AU_NSW_001",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "New South Wales",
+      "production_center": "Sydney",
+      "category": "CREW LABOR",
+      "subcategory": "Camera Operator",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 72.0,
+      "unit": "AUD/Hour",
+      "currency": "AUD",
+      "effective_date": "2026-01-01",
+      "source_id": "SRC_MEAA_2026",
+      "tier": 1,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_AU_NSW_002",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "New South Wales",
+      "production_center": "Sydney",
+      "category": "FRINGES",
+      "subcategory": "Superannuation + Payroll Tax",
+      "production_scale": "Major Studio Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 17.5,
+      "unit": "Percentage",
+      "currency": "AUD",
+      "effective_date": "2026-01-01",
+      "source_id": "SRC_EP_GLOBAL_FRINGES",
+      "tier": 2,
+      "confidence": "HIGH"
+    },
+    {
+      "observation_id": "OBS_HU_001",
+      "jurisdiction": "Hungary",
+      "subjurisdiction": "Budapest",
+      "production_center": "Budapest",
+      "category": "CREW LABOR",
+      "subcategory": "Camera Operator",
+      "production_scale": "Mid-Budget Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 180000.0,
+      "unit": "HUF/Day",
+      "currency": "HUF",
+      "effective_date": "2026-01-01",
+      "source_id": "SRC_OFS_COST_2025",
+      "tier": 2,
+      "confidence": "MEDIUM"
+    },
+    {
+      "observation_id": "OBS_HU_002",
+      "jurisdiction": "Hungary",
+      "subjurisdiction": "Budapest",
+      "production_center": "Budapest",
+      "category": "FRINGES",
+      "subcategory": "Social Contribution Tax",
+      "production_scale": "Mid-Budget Feature",
+      "local_imported": "LOCAL",
+      "raw_value": 13.0,
+      "unit": "Percentage",
+      "currency": "HUF",
+      "effective_date": "2026-01-01",
+      "source_id": "SRC_EP_GLOBAL_FRINGES",
+      "tier": 2,
+      "confidence": "HIGH"
+    }
+  ],
+  "normalization_indices": [
+    {
+      "jurisdiction": "United Kingdom",
+      "category": "CREW LABOR",
+      "index_type": "BECTU MMP Negotiated Increase",
+      "base_year": "2025",
+      "current_value": 1.03,
+      "source": "SRC_BECTU_MMP_2026"
+    },
+    {
+      "jurisdiction": "Hungary",
+      "category": "CONSTRUCTION",
+      "index_type": "KSH PPI - Building Materials",
+      "base_year": "2025",
+      "current_value": 1.085,
+      "source": "SRC_KSH_PPI"
+    }
+  ],
+  "crew_capacity_evidence": [
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "California",
+      "capacity": "HIGH",
+      "evidence": "Over 50,000 IATSE members; multiple concurrent studio features fully crewed locally.",
+      "source": "Tier 1 (Official union stats)"
+    },
+    {
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "capacity": "HIGH",
+      "evidence": "Handles 30+ simultaneous TV series and features without material import requirement.",
+      "source": "Tier 1 (Creative BC)"
+    },
+    {
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "London",
+      "capacity": "HIGH",
+      "evidence": "Deepest crew base outside US; supports multiple tentpoles concurrently.",
+      "source": "Tier 1 (BFI)"
+    },
+    {
+      "jurisdiction": "Hungary",
+      "subjurisdiction": "Budapest",
+      "capacity": "MEDIUM",
+      "evidence": "Excellent BTL depth (grips, electric, construction), but major international features frequently import HODs (DP, Production Designer).",
+      "source": "Tier 2 (Olsberg SPI)"
+    },
+    {
+      "jurisdiction": "Mauritius",
+      "subjurisdiction": "Port Louis",
+      "capacity": "LOW",
+      "evidence": "Requires importing nearly all technical HODs and specialized equipment from South Africa or Europe.",
+      "source": "Tier 3 (Service Company Data)"
+    }
+  ],
+  "jurisdiction_coverage_matrix": [
+    {
+      "jurisdiction": "United States (CA, GA, NY, NM)",
+      "labor": "SUFFICIENT",
+      "fringes": "SUFFICIENT",
+      "stage": "SUFFICIENT",
+      "equipment": "SUFFICIENT",
+      "locations": "SUFFICIENT",
+      "construction": "SUFFICIENT",
+      "accommodation": "SUFFICIENT",
+      "services": "SUFFICIENT",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "Canada (BC, ON, QC)",
+      "labor": "SUFFICIENT",
+      "fringes": "SUFFICIENT",
+      "stage": "SUFFICIENT",
+      "equipment": "SUFFICIENT",
+      "locations": "SUFFICIENT",
+      "construction": "SUFFICIENT",
+      "accommodation": "SUFFICIENT",
+      "services": "SUFFICIENT",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "United Kingdom (London)",
+      "labor": "SUFFICIENT",
+      "fringes": "SUFFICIENT",
+      "stage": "SUFFICIENT",
+      "equipment": "SUFFICIENT",
+      "locations": "SUFFICIENT",
+      "construction": "SUFFICIENT",
+      "accommodation": "SUFFICIENT",
+      "services": "SUFFICIENT",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "Australia (NSW, VIC, QLD)",
+      "labor": "SUFFICIENT",
+      "fringes": "SUFFICIENT",
+      "stage": "PARTIAL",
+      "equipment": "SUFFICIENT",
+      "locations": "PARTIAL",
+      "construction": "SUFFICIENT",
+      "accommodation": "SUFFICIENT",
+      "services": "SUFFICIENT",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "Hungary",
+      "labor": "SUFFICIENT",
+      "fringes": "SUFFICIENT",
+      "stage": "SUFFICIENT",
+      "equipment": "PARTIAL",
+      "locations": "PARTIAL",
+      "construction": "SUFFICIENT",
+      "accommodation": "SUFFICIENT",
+      "services": "PARTIAL",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "South Africa",
+      "labor": "PARTIAL",
+      "fringes": "SUFFICIENT",
+      "stage": "PARTIAL",
+      "equipment": "PARTIAL",
+      "locations": "INSUFFICIENT",
+      "construction": "PARTIAL",
+      "accommodation": "SUFFICIENT",
+      "services": "PARTIAL",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "Mauritius",
+      "labor": "INSUFFICIENT",
+      "fringes": "PARTIAL",
+      "stage": "INSUFFICIENT",
+      "equipment": "INSUFFICIENT",
+      "locations": "INSUFFICIENT",
+      "construction": "INSUFFICIENT",
+      "accommodation": "PARTIAL",
+      "services": "INSUFFICIENT",
+      "crew_depth": "SUFFICIENT"
+    },
+    {
+      "jurisdiction": "Saudi Arabia",
+      "labor": "INSUFFICIENT",
+      "fringes": "INSUFFICIENT",
+      "stage": "INSUFFICIENT",
+      "equipment": "INSUFFICIENT",
+      "locations": "INSUFFICIENT",
+      "construction": "INSUFFICIENT",
+      "accommodation": "PARTIAL",
+      "services": "INSUFFICIENT",
+      "crew_depth": "PARTIAL"
+    }
+  ],
+  "data_gap_register": [
+    {
+      "jurisdiction": "Mauritius",
+      "missing_categories": [
+        "Labor",
+        "Stages",
+        "Equipment"
+      ],
+      "reason": "No formalized union rates; entirely reliant on negotiated service company bids. Must be flagged as DATA INSUFFICIENT for automated MFNI."
+    },
+    {
+      "jurisdiction": "Saudi Arabia",
+      "missing_categories": [
+        "Labor",
+        "Equipment",
+        "Construction"
+      ],
+      "reason": "Nascent industry; heavy reliance on imported crew and imported gear. Costs are highly bespoke per production."
+    },
+    {
+      "jurisdiction": "Global",
+      "missing_categories": [
+        "Specialized VFX Equipment (e.g. Volumes, high-end motion capture)"
+      ],
+      "reason": "Prices do not vary geographically based on local economics; they vary by shipping and availability."
+    }
+  ]
+}
