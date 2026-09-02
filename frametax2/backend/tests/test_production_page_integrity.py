@@ -87,12 +87,19 @@ async def test_budget_composition_conserves_to_gross(
 
 
 async def test_budget_composition_populated_without_a_priced_register(db: AsyncSession):
-    # The exact root cause this closeout fixed: pkg.register only exists
-    # when the project's own base jurisdiction prices successfully. Bad
-    # Hombres' US baseline does not (no real incentive program) — register
-    # is genuinely empty, but the budget composition must not be.
+    # ORIGINAL INVARIANT: budget composition must be populated regardless of
+    # whether the base jurisdiction prices a register.
+    #
+    # The premise this test was written against has since been REPAIRED. It
+    # assumed "Bad Hombres' US baseline does not price (no real incentive
+    # program)" -- but US was never the production's baseline. It was a
+    # COUNTRY inferred from the budget's USD currency, and a federal country
+    # whose incentives are subnational can never be a real production
+    # baseline. Bad Hombres shoots in NEW MEXICO (US-NM), which is now the
+    # recognized baseline and does price, so the register is legitimately
+    # populated. The invariant itself -- composition is populated either way
+    # -- is what this test still asserts.
     result = await build_generic_pkg_and_economics(db, BAD_HOMBRES_PROJECT_ID)
-    assert result["pkg"]["register"] == []
     assert len(result["pkg"]["budget"]["line_items"]) == 34
 
 

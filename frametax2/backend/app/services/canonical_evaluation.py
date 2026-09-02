@@ -576,7 +576,7 @@ from app.services.canonical_project_economics import (
 # incompatibility diagnostic), and a valid combined structure now carries
 # reconciled per-program segments and a real total QPE instead of segments=[]
 # with total_qualifying_spend_usd=0 beside a non-zero incentive.
-ENGINE_VERSION = "canonical-1.45.0"
+ENGINE_VERSION = "canonical-1.46.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -1753,6 +1753,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         qpe_usd=inputs.gross_budget_usd,
         home_code=inputs.jurisdiction_code,
     )
+    #: REJECTION TRACE IDENTITY. A jurisdiction can examine SEVERAL programs
+    #: (CA-ON alone has three). Keying a rejection lookup by jurisdiction
+    #: alone returns whichever examination happens to be first, so a program
+    #: could report ANOTHER program's canonical reason. Every disposition must
+    #: state its own. Keyed by (jurisdiction_code, program_slug), with a
+    #: jurisdiction-only fallback for a candidate that names no program.
+    examination_by_pair = {
+        (e.jurisdiction_code, e.program_slug): e for e in discovery.examinations
+    }
+    examination_by_code = {e.jurisdiction_code: e for e in discovery.examinations}
 
     # CineGlobe canonical pricing path + discovery repair: candidate
     # identity is (jurisdiction_code, program_slug), never jurisdiction_code
@@ -1871,7 +1881,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             # the terminal cause is classified from discovery's own already-
             # computed fields (never re-evaluated), not flattened to a
             # single generic status.
-            examination = next((e for e in discovery.examinations if e.jurisdiction_code == code), None)
+            examination = examination_by_pair.get(
+                (code, program_slug), examination_by_code.get(code)
+            )
             candidate_status, rejection_reason_class, reason = _capability_only_status(examination)
             session.add(StructureCalculationResult(
                 id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,

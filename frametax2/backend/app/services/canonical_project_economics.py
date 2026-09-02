@@ -284,6 +284,42 @@ async def _resolve_home_jurisdiction(
     linked to the budget's own DocumentVersion for provenance) so the
     derivation is never silently re-run or lost, and is clearly
     distinguishable from a real user-confirmed answer."""
+    # BASELINE PROVENANCE. A CONFIRMED baseline fact outranks the stored
+    # column. project.home_jurisdiction_id can hold a low-confidence EXTRACTED
+    # derivation -- notably the currency fallback, which resolves USD to the
+    # COUNTRY "US". A federal country whose production incentives are
+    # subnational can never itself be a real production baseline, so that
+    # value both mis-states the baseline AND, once persisted, short-circuited
+    # this resolver forever so better evidence could never supersede it.
+    # A producer-stated home_jurisdiction_code fact (USER_OVERRIDE, the
+    # same precedence contingency and financing assumptions already use) is
+    # authoritative and may name a SUBNATIONAL jurisdiction.
+    confirmed = (await session.execute(
+        select(ProjectFact).where(
+            ProjectFact.project_id == project.id,
+            ProjectFact.fact_key == "home_jurisdiction_code",
+            # source_type is stored in mixed representations across the
+            # corpus (the enum member, its NAME, and its value all occur), so
+            # match every spelling rather than silently missing a real
+            # producer-stated fact.
+            ProjectFact.source_type.in_((
+                ProjectFactSourceType.USER_OVERRIDE,
+                ProjectFactSourceType.USER_OVERRIDE.name,
+                ProjectFactSourceType.USER_OVERRIDE.value,
+            )),
+        )
+    )).scalars().first()
+    if confirmed is not None and confirmed.value:
+        confirmed_jurisdiction = (await session.execute(
+            select(Jurisdiction).where(Jurisdiction.code == confirmed.value)
+        )).scalars().first()
+        if confirmed_jurisdiction is not None:
+            if persist and project.home_jurisdiction_id != confirmed_jurisdiction.id:
+                project.home_jurisdiction_id = confirmed_jurisdiction.id
+                await session.commit()
+                await session.refresh(project)
+            return confirmed_jurisdiction
+
     if project.home_jurisdiction_id is not None:
         return await session.get(Jurisdiction, project.home_jurisdiction_id)
 

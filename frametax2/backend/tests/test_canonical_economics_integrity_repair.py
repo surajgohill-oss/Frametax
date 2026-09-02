@@ -698,3 +698,108 @@ async def test_leading_structure_is_current_by_engine_and_fingerprint(db: AsyncS
             "leading structure is stale by fingerprint -- a superseded row is "
             "being presented as current"
         )
+
+
+# ── BASELINE PROVENANCE — a production's known baseline must survive ─────
+
+BAD_HOMBRES_PROJECT_ID = "4355ae88-a636-4c18-af60-ad73b2646124"
+LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
+
+#: Each production's REAL baseline production jurisdiction. These are
+#: established project facts -- the source budgets were built around them.
+KNOWN_BASELINES = {
+    LITTLE_UTOPIA_PROJECT_ID: "MU",
+    FVD_PROJECT_ID: "GR",
+    LIPS_PROJECT_ID: "US-CA",
+    BAD_HOMBRES_PROJECT_ID: "US-NM",
+}
+
+
+async def test_every_production_keeps_its_known_baseline_jurisdiction(db: AsyncSession):
+    """comparable_count == 0 must never be read as "this production has no
+    baseline". A currency-derived COUNTRY (USD -> "US") is not a production
+    baseline: a federal country whose incentives are subnational can never be
+    one, and once persisted it also short-circuited the resolver so better
+    evidence could not supersede it."""
+    from app.services.canonical_evaluation import evaluate_project
+
+    for project_id, expected in KNOWN_BASELINES.items():
+        summary = await evaluate_project(db, project_id)
+        assert summary["base_jurisdiction_code"] == expected, (
+            f"{project_id} lost its baseline: expected {expected}, got "
+            f"{summary['base_jurisdiction_code']}"
+        )
+
+
+async def test_a_producer_stated_baseline_outranks_a_derived_one(db: AsyncSession):
+    """A USER_OVERRIDE home_jurisdiction_code fact is authoritative and may
+    name a SUBNATIONAL jurisdiction, superseding a low-confidence derivation
+    already persisted on the project column."""
+    from sqlalchemy import text
+
+    for project_id in (LIPS_PROJECT_ID, BAD_HOMBRES_PROJECT_ID):
+        row = (await db.execute(text("""
+            select value, source_type from project_facts
+            where project_id = :p and fact_key = 'home_jurisdiction_code'
+        """), {"p": project_id})).first()
+        assert row is not None, "a producer-stated baseline fact must exist"
+        value, source = row
+        assert "-" in value, "the baseline must be the subnational production jurisdiction"
+        assert str(source).upper() == "USER_OVERRIDE"
+
+
+async def test_an_incomparable_relocation_never_becomes_the_leader(db: AsyncSession):
+    """Never elect the cheapest relocation as leader merely because its raw
+    NPC is lowest. A leader must be the production's own baseline; where the
+    baseline's qualification is unresolved there is honestly NO leader."""
+    from app.services.canonical_evaluation import evaluate_project
+
+    for project_id, expected in KNOWN_BASELINES.items():
+        summary = await evaluate_project(db, project_id)
+        top = summary.get("top_result")
+        if top is None:
+            continue  # honest "no recommendation" is allowed
+        assert top.get("is_baseline") is True, (
+            f"{project_id} elected a non-baseline leader: {top.get('name')}"
+        )
+
+
+# ── REJECTION TRACE IDENTITY — a reason must belong to ITS OWN program ───
+
+def test_examinations_are_addressable_per_program_not_per_jurisdiction():
+    """Discovery examines EVERY program in a jurisdiction (CA-ON alone has
+    three). A rejection lookup keyed by jurisdiction alone returns whichever
+    examination happens to be first, so one program could report another
+    program's canonical reason. Prove the examination set is addressable by
+    (jurisdiction_code, program_slug) and that multi-program jurisdictions
+    really do produce several distinct examinations."""
+    from app.calculators.production_discovery import discover_executable_jurisdictions
+    from app.calculators.production_requirements import derive_production_requirements
+
+    discovery = discover_executable_jurisdictions(
+        requirements=derive_production_requirements({}),
+        production_type="feature_film",
+        qpe_usd=5_000_000.0,
+        home_code="US-CA",
+    )
+    by_pair = {
+        (e.jurisdiction_code, e.program_slug): e for e in discovery.examinations
+    }
+    assert len(by_pair) == len(discovery.examinations), (
+        "(jurisdiction, program) must uniquely address every examination"
+    )
+
+    from collections import Counter
+
+    per_jurisdiction = Counter(e.jurisdiction_code for e in discovery.examinations)
+    multi = [code for code, n in per_jurisdiction.items() if n > 1]
+    assert multi, "expected at least one jurisdiction examining several programs"
+
+    for code in multi:
+        slugs = {e.program_slug for e in discovery.examinations if e.jurisdiction_code == code}
+        assert len(slugs) > 1, f"{code} collapsed its programs to one examination"
+        for slug in slugs:
+            examination = by_pair[(code, slug)]
+            assert examination.program_slug == slug, (
+                f"{code}/{slug} resolved to {examination.program_slug}'s examination"
+            )
