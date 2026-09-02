@@ -116,14 +116,20 @@ def test_a_projects_evidence_cannot_change_the_canonical_ruleset_digest():
     assert len(canonical_ruleset_digest()) == 64
 
 
-async def test_lips_california_baseline_is_recognized_but_not_priced():
-    """Runtime proof of the fail-closed half.
-
-    California is a COMPETITIVE, ranked allocation requiring a Credit
-    Allocation Letter before principal photography -- not an entitlement. So
-    Lips' baseline must be RECOGNIZED (US-CA, disclosed, with the reason) and
-    must carry NO deterministic economics. A blocked baseline must also never
-    hand the recommendation to an incomparable relocation.
+async def test_lips_california_baseline_prices_its_deterministic_floor():
+    """MASTER RECONCILIATION (2026-09-02) -- supersedes this test's prior
+    premise. Git-history reconciliation established that treating
+    AllocationType.COMPETITIVE as a program-wide economic block was itself a
+    regression: `allocation_type` has been pure disclosure metadata since
+    2026-07-26, us_ca_film_credit was individually, deliberately verified
+    priceable via a direct primary-source statute fetch (AB 1138,
+    leginfo.legislature.ca.gov, commit ee0e380) before last-known-good, and
+    it carries a real, unconditional 35% guaranteed-floor RateRule. Program
+    4.0's ranked-allocation/CAL mechanics are a REAL administrative/
+    competitive-allocation RISK -- disclosed as a warning (see
+    canonical_evaluation._competitive_allocation_disclosure), never a reason
+    to zero the deterministic floor rate a producer's own statute guarantees
+    once they clear it.
     """
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -137,34 +143,75 @@ async def test_lips_california_baseline_is_recognized_but_not_priced():
     assert summary["base_jurisdiction_code"] == "US-CA", (
         "Lips lost its California baseline identity"
     )
-    assert summary["baseline_blocked"] is True
+    assert summary["baseline_blocked"] is False
     baseline = summary["baseline"]
-    assert baseline is not None, (
-        "failing closed must DISCLOSE the baseline, not drop it -- no number, "
-        "never no row"
-    )
+    assert baseline is not None
     assert baseline["is_baseline"] is True
-    assert baseline["true_net_cost_usd"] is None
-    assert baseline["total_incentive_value_usd"] is None
-    assert "NON_GUARANTEED_SELECTIVE" in (baseline["reason"] or "")
+    assert baseline["true_net_cost_usd"] is not None
+    assert baseline["total_incentive_value_usd"] is not None
+    assert baseline["total_incentive_value_usd"] > 0
 
-    assert summary["top_result"] is None, (
-        "an incomparable relocation was promoted over a recognized baseline "
-        "purely because its raw NPC is lowest"
+    assert summary["top_result"] is not None, (
+        "a recognized, priced baseline with admitted qualification must be "
+        "the recommendation"
+    )
+    assert summary["top_result"]["structure_id"] == baseline["structure_id"]
+
+
+async def test_lips_california_discloses_administrative_and_competitive_risk():
+    """The administrative/competitive-allocation risk must be disclosed on
+    the priced baseline, not silently absorbed into a guaranteed number."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.db.session import engine
+    from app.models.production import ProductionStructure, StructureCalculationResult
+    from app.services.canonical_evaluation import (
+        ENGINE_VERSION,
+        current_result_fingerprint,
+        evaluate_project,
     )
 
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        await evaluate_project(session, LIPS_PROJECT_ID)
+        await session.commit()
+        fingerprint = await current_result_fingerprint(session, LIPS_PROJECT_ID)
+        rows = (await session.execute(
+            select(ProductionStructure, StructureCalculationResult)
+            .join(StructureCalculationResult,
+                  StructureCalculationResult.structure_id == ProductionStructure.id)
+            .where(
+                ProductionStructure.project_id == LIPS_PROJECT_ID,
+                StructureCalculationResult.engine_version == ENGINE_VERSION,
+                StructureCalculationResult.input_fingerprint == fingerprint,
+            )
+        )).all()
 
-def test_competitive_allocation_implies_non_guaranteed_selective():
-    """The generic invariant behind the repair: the two canonical registries
-    may never disagree about whether an award is an entitlement."""
-    from app.data.authority_coverage_registry import coverage_state
-    from app.data.program_requirements import all_program_requirements
+    baseline_row = next(
+        r for _s, r in rows if (r.calculation_trace_json or {}).get("is_baseline")
+    )
+    warnings_text = " ".join(baseline_row.warnings or []).lower()
+    assert "administrative/allocation risk" in warnings_text
+    assert "competitive" in warnings_text or "preapproval" in warnings_text
 
-    for slug, profile in all_program_requirements().items():
-        allocation = str(getattr(profile, "allocation_type", "") or "").upper()
-        if "COMPETITIVE" not in allocation:
-            continue
-        assert coverage_state(slug) != "PRICEABLE_VALIDATED", (
-            f"{slug} is declared COMPETITIVE but is treated as a guaranteed "
-            "entitlement by the authority-coverage gate"
-        )
+
+def test_competitive_or_discretionary_allocation_never_implies_a_full_block():
+    """SUPERSEDED (master reconciliation, 2026-09-02): the prior invariant
+    here asserted every COMPETITIVE program must be NON_GUARANTEED_
+    SELECTIVE -- that derivation is the repealed regression. The correct
+    generic invariant is the OPPOSITE constraint: a program's economic
+    candidacy must never be decided by allocation_type alone -- only an
+    authored COVERAGE_REGISTRY row (a real, evidenced disposition) may block
+    it. This is a standing regression guard against the repealed
+    mechanism reappearing."""
+    import inspect
+
+    from app.data import authority_coverage_registry as acr
+
+    source = inspect.getsource(acr.get_coverage_status)
+    # The function BODY (not its docstring, which legitimately explains the
+    # repeal) must never read allocation_type/AllocationType.
+    body = source.split('"""', 2)[-1] if source.count('"""') >= 2 else source
+    assert "allocation_type" not in body
+    assert "AllocationType" not in body
+    assert "COVERAGE_REGISTRY.get(program_slug)" in body

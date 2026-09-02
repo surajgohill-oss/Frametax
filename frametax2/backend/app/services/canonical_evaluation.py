@@ -56,6 +56,7 @@ production has), not a disconnected one.
 """
 from __future__ import annotations
 
+import functools
 import itertools
 import uuid
 
@@ -128,7 +129,12 @@ from app.calculators.production_requirements import (
 from app.calculators.qualification_derivation import derive_qualification_register
 from app.calculators.qualification_model import QualificationState
 from app.calculators.structure_compatibility import compatibility_to_dict, evaluate_structure_compatibility
-from app.data.authority_coverage_registry import coverage_state as _coverage_state
+from app.data.authority_coverage_registry import (
+    PROVENANCE_DISCLOSURE_STATES,
+    STATE_REASON,
+    coverage_state,
+    coverage_state as _coverage_state,
+)
 from app.data.executable_jurisdiction_registry import get_doctrine as _get_doctrine
 from app.data.program_rate_rules import (
     CONDITION_STATE_AUTHORITY_UNRESOLVED,
@@ -582,24 +588,34 @@ from app.services.canonical_project_economics import (
 # incompatibility diagnostic), and a valid combined structure now carries
 # reconciled per-program segments and a real total QPE instead of segments=[]
 # with total_qualifying_spend_usd=0 beside a non-zero incentive.
-ENGINE_VERSION = "canonical-1.49.0"
+ENGINE_VERSION = "canonical-1.51.0"
 
+#: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
+#: normalization ARE now applied generically -- see
+#: _relocation_normalization() and true_net_cost_usd vs
+#: risk_adjusted_net_cost_usd on every served candidate. Only in-kind
+#: replacement remains unconnected (a genuinely absent generic capability,
+#: not a disconnected one -- see _relocation_normalization's own docstring).
 LIMITATION_NOTE = (
-    "Regional production-cost normalization (MFNI) and generic travel/FX "
-    "normalization are not yet applied to this comparison — every figure "
-    "uses this production's own nominal budget amounts and statutory "
-    "incentive rate only."
+    "Travel/FX/local-cost (MFNI) normalization ARE applied — see this "
+    "candidate's risk_adjusted_net_cost_usd for the normalized figure "
+    "against true_net_cost_usd's pre-normalization one. In-kind "
+    "replacement cost is not yet computed generically for any project "
+    "(a real, production-specific fact rather than a generic property)."
 )
 
 #: Why the baseline structure is always the served "winner" in this phase,
 #: never a relocation candidate — see the module-level note below.
+#: STALE as of item D: travel and local-cost ARE now computed generically
+#: (risk_adjusted_net_cost_usd); only in-kind post-production replacement
+#: remains a genuinely absent generic capability.
 RELOCATION_COMPARABILITY_NOTE = (
-    "This structure's cost omits real relocation-specific costs (travel, "
-    "in-kind post-production replacement) that are not yet computed "
-    "generically for any project. Its NPC is therefore NOT a fair, complete "
-    "comparison against the production's own base jurisdiction, which needs "
-    "no such adjustment by construction. Never treated as beating the "
-    "baseline until relocation costs are modeled generically."
+    "This structure's true_net_cost_usd omits real relocation-specific "
+    "costs; see risk_adjusted_net_cost_usd for the travel/FX/local-cost- "
+    "normalized figure. In-kind post-production replacement cost is not "
+    "yet computed generically for any project (a real, production-specific "
+    "fact, not a generic property). Never treated as beating the baseline "
+    "until in-kind costs are also modeled generically."
 )
 
 #: Candidate accounting terminal states (Part N/K).
@@ -847,6 +863,61 @@ def _relocation_normalization(
     fx = compute_fx_normalization(jurisdiction_code, FXInputs(), local_cost_basis_usd=allocated_usd)
 
     return travel.incremental_delta_usd, fx.delta_usd, local_cost.incremental_delta_usd
+
+
+@functools.lru_cache(maxsize=None)
+def _competitive_allocation_disclosure(program_slug: str) -> str | None:
+    """Master reconciliation, 2026-09-02: administrative/pre-certification
+    and competitive/capacity allocation are REAL risks, distinct from
+    whether the program's rate resolves deterministically. This discloses
+    them on every served candidate that reaches STATUS_PRICED -- it never
+    withholds economics; that would repeat the repealed _derived_coverage()
+    defect (authority_coverage_registry.py's own repeal comment has the
+    full accounting).
+
+    Reads only real canonical program_requirements fields --
+    allocation_type and preapproval_mandatory -- never a fabricated risk
+    assessment. Returns None when neither is set (an ordinary entitlement
+    program has nothing to disclose here).
+    """
+    try:
+        from app.data.program_requirements import get_program_requirements
+    except Exception:  # pragma: no cover - import cycle safety
+        return None
+    profile = get_program_requirements(program_slug)
+    if profile is None:
+        return None
+    allocation = getattr(profile, "allocation_type", None)
+    preapproval = bool(getattr(profile, "preapproval_mandatory", False))
+    allocation_text = str(allocation).upper() if allocation else ""
+    is_competitive = "COMPETITIVE" in allocation_text
+    is_discretionary = "DISCRETIONARY" in allocation_text
+    if not (is_competitive or is_discretionary or preapproval):
+        return None
+
+    parts = []
+    if is_discretionary:
+        parts.append(
+            "the award authority has discretion over whether and/or how "
+            "much to award"
+        )
+    elif is_competitive:
+        parts.append(
+            "allocation is competitive/capacity-limited (ranked selection "
+            "or a fixed application-window pool) -- receipt of this "
+            "production's own deterministic rate is not guaranteed by "
+            "eligibility alone"
+        )
+    if preapproval:
+        parts.append(
+            "a preapproval/certification step (e.g. an allocation letter) "
+            "is required before this incentive is confirmed"
+        )
+    return (
+        "Administrative/allocation risk (not an economic block -- the "
+        "figures below are this program's real deterministic formula, "
+        "priced normally): " + "; ".join(parts) + "."
+    )
 
 
 def _price_candidate(
@@ -2100,6 +2171,30 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             if _QUAL_STATE_SEVERITY.get(_this_qual_state, 2) < _QUAL_STATE_SEVERITY.get(_prior_state, 2):
                 _qual_state_by_program[program_slug] = _this_qual_state
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
+        # Two-axis authority correction: a program priced under a
+        # PROVENANCE_DISCLOSURE_STATES disposition (real rate data, but its
+        # structured-provenance citation trail is not yet upgraded to a
+        # primary/official source) must disclose that gap on every served
+        # result carrying it — priced does not mean fully knowledge-verified.
+        _authority_state = coverage_state(program_slug)
+        if _authority_state in PROVENANCE_DISCLOSURE_STATES:
+            warnings = warnings + [
+                f"Authority provenance incomplete ({_authority_state}): "
+                + STATE_REASON.get(_authority_state, "")
+            ]
+        # Master reconciliation, 2026-09-02: administrative/competitive-
+        # allocation risk is a DIFFERENT axis from whether a deterministic
+        # rate exists. A Credit Allocation Letter, an application window, a
+        # capacity-limited annual round, or a ranked-selection process does
+        # NOT by itself make a program's already-priced, guaranteed floor
+        # rate non-deterministic -- it is a real risk about WHETHER this
+        # production receives the incentive it has otherwise correctly
+        # priced, disclosed here rather than silently zeroing the number
+        # (that conflation was exactly the repealed _derived_coverage()
+        # defect -- see authority_coverage_registry.py's repeal comment).
+        _competitive_disclosure = _competitive_allocation_disclosure(program_slug)
+        if _competitive_disclosure:
+            warnings = warnings + [_competitive_disclosure]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed
         # as though "confirmed none." An absent ProjectFact still resolves
@@ -2371,6 +2466,24 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             feasibility_by_code.get(code), requirements,
         )
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
+        # Two-axis authority correction: any member program of this
+        # combination priced under a provenance-disclosure state inherits
+        # its own gap into the combined structure, same as the single-
+        # program branch above — never silently dropped just because it is
+        # now part of a stack.
+        _combo_provenance_gaps = [
+            (slug, coverage_state(slug)) for slug in stack_result.program_slugs
+            if coverage_state(slug) in PROVENANCE_DISCLOSURE_STATES
+        ]
+        for _gap_slug, _gap_state in _combo_provenance_gaps:
+            warnings = warnings + [
+                f"Authority provenance incomplete for {_gap_slug} ({_gap_state}): "
+                + STATE_REASON.get(_gap_state, "")
+            ]
+        for _member_slug in stack_result.program_slugs:
+            _member_disclosure = _competitive_allocation_disclosure(_member_slug)
+            if _member_disclosure:
+                warnings = warnings + [_member_disclosure]
         # Same territorial-fact disclosure every underlying single-
         # program candidate this combination is built from already
         # carries (see the STATUS_PRICED branch above) — the combined

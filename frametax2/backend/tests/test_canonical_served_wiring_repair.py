@@ -175,8 +175,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # now carry NON_GUARANTEED_SELECTIVE and are disclosed rather than
     # priced. Nothing was dropped: priced 91 -> 86, unpriceable 65 -> 70,
     # total unchanged.
-    assert len(priced) == 187  # Codex B/C: co-pro discovery + component enumeration widened
-    assert len(unpriced) == 80  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
+    assert len(priced) == 315  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened
+    assert len(unpriced) == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -185,8 +185,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 187  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see note above
-    assert accounting["unpriceable_count"] == 80  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see note above
+    assert accounting["review_required_count"] == 315  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see note above
+    assert accounting["unpriceable_count"] == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see note above
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -208,8 +208,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 187  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
-    assert len(unpriceable_ranked) == 80  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
+    assert len(review_ranked) == 315  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
+    assert len(unpriceable_ranked) == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -320,27 +320,30 @@ async def test_australia_queensland_priced_flat_rate_not_comparable(db: AsyncSes
     and is still excluded from the comparable ranking on the same
     non-baseline basis as Malta/Mauritius.
 
-    AU-QLD (au_qld_pdv_rebate) was this invariant's original carrier. It is
-    AUTHORITY_UNRESOLVED_NON_PRICEABLE, so the fail-closed authority gate
-    (CineGlobe economics + wiring integrity repair, Cluster 1) now withholds
-    its deterministic economics entirely: it must remain DISCOVERED and
-    disclosed, but carry no priced segment. The flat-rate/non-comparable
-    invariant itself is therefore asserted on CA-NL, whose 40% rate is
-    likewise flat and non-band and whose authority is verified.
+    AU-QLD (au_qld_pdv_rebate) is this invariant's original carrier, restored
+    (master reconciliation, 2026-09-02): AUTHORITY_UNRESOLVED_NON_PRICEABLE
+    is a provenance-completeness disclosure, not an economic block, and
+    AU-QLD carries a real, unconditional 15% floor rate -- it prices
+    deterministically, with its provenance gap disclosed as a warning
+    (PROVENANCE_DISCLOSURE_STATES), not zeroed. CA-NL (40% flat, authority-
+    verified) remains asserted alongside it as a second, independent
+    instance of the same flat-rate/non-comparable invariant.
     """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     rank_by_id = {r["structure_id"]: r for r in view["structures"]["allocated_structures"]["ranking"]}
 
-    # AU-QLD: withheld by authority, never erased.
-    au_qld_entries = [e for e in entries if e["primary_jurisdiction"] == "AU-QLD"]
-    assert au_qld_entries, "AU-QLD must remain discovered and disclosed"
-    assert all(not e["is_fully_priced"] for e in au_qld_entries)
-    assert all(not e.get("selected_incentive_usd") for e in au_qld_entries)
-    assert not _single_segment_structures(entries, "AU-QLD"), (
-        "an authority-unresolved program must not produce a priced segment"
-    )
+    au_qld = _single_segment_structures(entries, "AU-QLD")
+    assert len(au_qld) == 1
+    seg = au_qld[0]["segments"][0]
+    assert seg["is_band_ceiling"] is False
+    assert seg["ceiling_requires_confirmation"] is False
+    assert seg["incentive_floor_usd"] == pytest.approx(seg["incentive_ceiling_usd"], abs=0.01)
+
+    rank = rank_by_id[au_qld[0]["structure_id"]]
+    assert rank["is_fully_priced"] is True
+    assert rank["is_directly_comparable"] is False
 
     # The invariant this test protects, on an authority-verified flat rate.
     ca_nl = _single_segment_structures(entries, "CA-NL")
@@ -407,7 +410,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # one previously-unpriced CA+CH bilateral co-pro opportunity drops out
     # (CH is authority-unresolved), so 34 + 30 - 1 = 63. Each still carries
     # its own distinct terminal status -- never flattened.
-    assert len(unpriceable) == 80  # Codex B/C: co-pro discovery + component enumeration widened
+    assert len(unpriceable) == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

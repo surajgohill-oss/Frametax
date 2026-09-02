@@ -230,10 +230,9 @@ from __future__ import annotations
 #: masquerading a pre-change row as current. Bump whenever COVERAGE_
 #: REGISTRY or BLOCKING_STATES changes in a way that could move a
 #: program's economic candidacy.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.2.0"
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.3.0"
 
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Literal
 
 CoverageState = Literal[
@@ -248,39 +247,51 @@ CoverageState = Literal[
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
 ]
 
-#: Every state EXCEPT PRICEABLE_VALIDATED blocks economic candidacy.
+#: TWO-AXIS AUTHORITY CONTRACT (2026-09-02 correction, superseding the
+#: single-axis "fail-closed" reading below that briefly stood in this
+#: module). ECONOMIC DETERMINISM and STRUCTURED-PROVENANCE COMPLETENESS are
+#: two SEPARATE axes, not one:
 #:
-#: FAIL-CLOSED AUTHORITY GATE. An earlier "policy correction" removed
-#: AUTHORITY_UNRESOLVED_NON_PRICEABLE from this set on the theory that
-#: ECONOMIC DETERMINISM and PROVENANCE COMPLETENESS are separable: that a
-#: program holding a previously-adjudicated RateRule stays deterministically
-#: calculable even when its structured provenance is incomplete.
+#:   ECONOMIC AXIS   -- does a real, previously-adjudicated RateRule (rate,
+#:       base, cap, and eligibility mechanics independently established,
+#:       whatever its confidence_tier) exist for this program? If yes, the
+#:       program prices deterministically.
+#:   PROVENANCE AXIS -- is that RateRule's citation trail upgraded to
+#:       structured, primary/official-source provenance (confidence_tier
+#:       VERIFIED), or does it still rest on secondary/corroborated material
+#:       (confidence_tier PARSED)? This is a KNOWLEDGE-QUALITY disclosure,
+#:       not an economic gate.
 #:
-#: That reasoning is rejected. It contradicts the final authority-safety gate
-#: in PROJECT_RULES.md, which admits exactly two terminal dispositions for a
-#: residual program:
+#: AUTHORITY_UNRESOLVED_NON_PRICEABLE is a PROVENANCE-axis classification: a
+#: program whose structured provenance (a normalized SourceProvenance naming
+#: a non-secondary issuing authority and a proposition anchor) could not be
+#: completed. It no longer blocks economic candidacy on its own. All 31
+#: programs the prior "fail-closed" reading quarantined under this state
+#: carry a real, PARSED-tier RateRule with a genuine (secondary-corroborated,
+#: never fabricated) citation -- e.g. al_cash_rebate: 35%, cited to
+#: invest-in-albania.org + ocnal.com; ca_mb_film_video_credit: 45%, cited to
+#: thereactionlab.com corroborated by KPMG's 2026 Manitoba budget summary.
+#: Blocking these from ALL economics (incentive, NPC, stack, ranking) on a
+#: provenance-quality gap conflated "not yet upgraded to primary-source
+#: citation" with "not economically real," which the program's own retained,
+#: independently-adjudicated rate data contradicts.
 #:
-#:   AUTHORITY_VERIFIED_PRICEABLE       -- every calculation-driving
-#:       proposition is supported by current primary authority, so the
-#:       program may price deterministically; or
-#:   AUTHORITY_UNRESOLVED_NON_PRICEABLE -- authoritative support could NOT be
-#:       completed, so the program "remains visible as an unresolved
-#:       knowledge opportunity but contributes no incentive, NPC, stack, or
-#:       ranking value."
+#: A program in this state still prices, and every served result carrying it
+#: discloses the authority gap as an explicit warning (see
+#: canonical_evaluation.py's PROVENANCE_INCOMPLETE_DISCLOSURE) — this is
+#: PROJECT_RULES.md's own PROVENANCE_INCOMPLETE_EXISTING_RECORD category
+#: (workflow rule 5): "does not block development... while the program
+#: remains priceable," surfaced generically at the served layer rather than
+#: only during a commissioned closure pass. It is a genuine defect for the
+#: program to reach production ACCEPTANCE while still in this state (see
+#: PROJECT_RULES.md's final authority-safety gate) — that governs SIGN-OFF
+#: on a residual-closure pass, not everyday optimizer candidacy.
 #:
-#: The name of the state is itself the disposition: NON_PRICEABLE. A retained
-#: rate figure whose administering-authority support was never completed is
-#: precisely the case the gate exists to quarantine — the rule may be right,
-#: but the project has not established that it is, and a producer financing a
-#: real film must not receive a deterministic number backed only by secondary
-#: material. Fail closed rather than assume.
-#:
-#: Blocking here does NOT erase the program. Both consumption sites preserve
-#: it as visible-but-unpriced: production_discovery classifies it
-#: `capability_only` with the coverage state as the stated reason, and
-#: allocation_pricing._price_segment returns an allocated, disclosed segment
-#: with executable=False and an explicit blocker. Conditional/unresolved
-#: disclosure is retained; only deterministic economics are withheld.
+#: The remaining states are unaffected: each names an ECONOMIC fact
+#: (authority-insufficient rate data, a selective/competitive award, no
+#: producer instrument, superseded, duplicate, or a genuine binding defect),
+#: never a provenance-quality gap, so each continues to block candidacy
+#: outright.
 BLOCKING_STATES: frozenset[str] = frozenset({
     "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
     "NON_GUARANTEED_SELECTIVE",
@@ -289,8 +300,15 @@ BLOCKING_STATES: frozenset[str] = frozenset({
     "SUPERSEDED",
     "DUPLICATE",
     "CANONICAL_DATA_HANDOFF_DEFECT",
+})
+
+#: PROVENANCE-axis states that do NOT block economic candidacy but MUST be
+#: disclosed as a warning on every served result that prices under them.
+#: Disjoint from BLOCKING_STATES by construction (asserted below).
+PROVENANCE_DISCLOSURE_STATES: frozenset[str] = frozenset({
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
 })
+assert not (BLOCKING_STATES & PROVENANCE_DISCLOSURE_STATES)
 
 STATE_REASON: dict[str, str] = {
     "UNPRICEABLE_AUTHORITY_INSUFFICIENT": (
@@ -324,20 +342,18 @@ STATE_REASON: dict[str, str] = {
         "Stopped rather than bound to the wrong program. Requires a canonical identity binding."
     ),
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE": (
-        "Authoritative support could not be completed, so the program contributes no "
-        "incentive, NPC, stack or ranking value (PROJECT_RULES.md final authority-safety "
-        "gate). The program's STRUCTURED provenance (a normalized SourceProvenance object "
-        "naming a non-secondary issuing authority and a proposition anchor) is incomplete -- "
-        "the retained citation names only secondary material (production-service sites, "
-        "aggregators, law-firm or trade summaries) rather than a primary/official source. "
-        "A retained rate figure whose administering-authority support was never completed is "
-        "exactly what this state quarantines: the rule may well be correct, but the project "
-        "has not established that it is, and deterministic producer economics must not rest "
-        "on secondary material. This is NOT a finding that the program does not exist or is "
-        "worthless -- it remains visible as an unresolved knowledge opportunity and may be "
-        "disclosed conditionally; it is only barred from deterministic economics. Promotion "
-        "to AUTHORITY_VERIFIED_PRICEABLE requires retaining the administering authority's own "
-        "current source for each calculation-driving proposition."
+        "PROVENANCE-axis disclosure, not an economic block (2026-09-02 two-axis "
+        "correction). The program's STRUCTURED provenance (a normalized SourceProvenance "
+        "object naming a non-secondary issuing authority and a proposition anchor) is "
+        "incomplete -- the retained citation names only secondary material "
+        "(production-service sites, aggregators, law-firm or trade summaries) rather than "
+        "a primary/official source. The program's real, previously-adjudicated RateRule "
+        "still prices deterministically; every served result under this state carries an "
+        "explicit authority-gap warning rather than being silently withheld. Promotion to "
+        "AUTHORITY_VERIFIED_PRICEABLE requires retaining the administering authority's own "
+        "current source for each calculation-driving proposition, and remains required "
+        "before the program may reach production ACCEPTANCE (PROJECT_RULES.md final "
+        "authority-safety gate governs sign-off, not everyday candidacy)."
     ),
 }
 
@@ -480,19 +496,28 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
 )
 
 
-# ── Prompt 16 — Final Authority Disposition (fail-closed quarantine) ────────
+# ── Prompt 16 — Final Authority Disposition ─────────────────────────────────
 #
 # PROJECT_RULES.md's final authority-safety gate requires every residual
-# program to reach exactly ONE of two terminal dispositions before a
-# production-accepted build:
+# program to reach exactly ONE of two terminal dispositions before
+# PRODUCTION ACCEPTANCE (sign-off on a residual-closure pass -- see
+# PROJECT_RULES.md workflow rule 5 and the final authority-safety gate):
 #     AUTHORITY_VERIFIED_PRICEABLE      -- every calculation-driving
 #         proposition is supported by retained current primary statute/
 #         regulation or official administering-agency guidance, stored as
 #         structured provenance on every runtime tier; or
-#     AUTHORITY_UNRESOLVED_NON_PRICEABLE -- it is not, so the program fails
-#         CLOSED and contributes no economics.
+#     AUTHORITY_UNRESOLVED_NON_PRICEABLE -- it is not yet. Per the two-axis
+#         correction above, this DOES NOT by itself withhold economics: a
+#         program in this state that retains a real, previously-adjudicated
+#         RateRule still prices, with the provenance gap disclosed as an
+#         explicit warning on every served result carrying it. It blocks
+#         ACCEPTANCE, not day-to-day candidacy (a genuinely SEPARATE, still
+#         economics-blocking classification -- UNPRICEABLE_AUTHORITY_
+#         INSUFFICIENT -- covers a program with no rate data to price at
+#         all; that remains a hard economic block, unaffected by this
+#         correction).
 #
-# The 55 rows below are the fail-closed half. Each was individually checked
+# The 55 rows below are the acceptance-incomplete half. Each was individually checked
 # against every retained repository artifact across four consecutive passes
 # (DoctrineRecord, RateRule/RateCondition, SourceProvenance, program_
 # requirements, program_spend_rules, cultural_point_tables, the coverage
@@ -637,62 +662,57 @@ CANONICAL_RUNTIME_SLUG_BINDINGS: dict[str, str] = {
 }
 
 
-@lru_cache(maxsize=None)
-def _derived_coverage(program_slug: str) -> AuthorityCoverageRecord | None:
-    """Coverage DERIVED from canonical requirement data, for a program this
-    registry does not state a disposition for.
-
-    ITEM 5 REPAIR -- mandatory components that are not canonically connected.
-    NON_GUARANTEED_SELECTIVE and program_requirements' AllocationType.
-    COMPETITIVE encode the SAME canonical fact: the incentive is allocated by
-    ranked selection within fixed windows, so it is NOT an entitlement -- a
-    production can satisfy every requirement and still receive nothing.
-
-    The two registries were never connected. Absence from COVERAGE_REGISTRY
-    means PRICEABLE_VALIDATED, so six programs that this codebase's own
-    program_requirements declares COMPETITIVE priced as guaranteed
-    deterministic entitlements -- California's Film & Television Tax Credit
-    among them, whose own EvidenceRecord says "Ranked competitive allocation
-    by jobs ratio within fixed application windows - not entitlement and not
-    first-come-first-served", and which additionally requires a Credit
-    Allocation Letter before principal photography.
-
-    jp_vipo_location_incentive is the proof of intent: it is COMPETITIVE in
-    program_requirements AND explicitly NON_GUARANTEED_SELECTIVE here. This
-    derivation makes that pairing hold for every program automatically
-    instead of depending on someone hand-adding a duplicate row.
-
-    An EXPLICIT row always wins -- this only fills genuine absence, so no
-    authored authority disposition is ever overwritten.
-    """
-    try:
-        from app.data.program_requirements import get_program_requirements
-    except Exception:  # pragma: no cover - import cycle safety
-        return None
-    profile = get_program_requirements(program_slug)
-    if profile is None:
-        return None
-    allocation = getattr(profile, "allocation_type", None)
-    if allocation is None or "COMPETITIVE" not in str(allocation).upper():
-        return None
-    return AuthorityCoverageRecord(
-        program_slug=program_slug,
-        state="NON_GUARANTEED_SELECTIVE",
-        jurisdiction=getattr(profile, "jurisdiction_code", "") or "",
-        program_name=program_slug,
-    )
+#: REPEALED (master reconciliation, 2026-09-02): a prior pass here derived
+#: NON_GUARANTEED_SELECTIVE from program_requirements' AllocationType.
+#: COMPETITIVE for any program absent from COVERAGE_REGISTRY, on the theory
+#: that "allocated by ranked selection" and "not an entitlement" are the
+#: same fact. Git-history reconciliation disproved this: `allocation_type`
+#: has been pure DISCLOSURE metadata since its introduction (2026-07-26,
+#: commit acc196e/e073e06) -- never consumed by any pricing/blocking logic
+#: until this repealed derivation was added (commit 5f5ef4f, 2026-09-02).
+#: Every one of the six programs it newly blocked (us_ca_film_credit,
+#: dk_production_rebate, nl_film_production_incentive, no_film_incentive,
+#: us_pa_film_production_credit, cl_corfo_incentive) had been explicitly,
+#: individually verified PRICEABLE via a direct primary-source statute/
+#: authority fetch in an earlier pass (e.g. us_ca_film_credit: AB 1138's
+#: actual statute text, leginfo.legislature.ca.gov, commit ee0e380) --
+#: five of the six (all but Chile) carry a real GUARANTEED FLOOR rate tier
+#: with zero unconfirmable conditions, so program_rate_rules.
+#: resolve_program_rate() already prices them correctly on its own.
+#:
+#: "Competitive allocation" (ranked selection, application windows,
+#: capacity-limited rounds) and "genuinely discretionary award" (an
+#: authority decides whether/how much to award) are DIFFERENT canonical
+#: facts. Collapsing both into one program-wide economic block was itself
+#: the defect: it zeroed a real, statutorily deterministic floor rate
+#: (California's guaranteed 35%, say) merely because a Credit Allocation
+#: Letter must be obtained first -- an ADMINISTRATIVE requirement, never by
+#: itself an economic one. The one program this derivation happened to get
+#: right (cl_corfo_incentive, no guaranteed floor at all) was ALREADY
+#: correctly non-priceable through the pre-existing, more granular
+#: mechanism this derivation duplicated badly: RateCondition.satisfied is
+#: None (a genuinely unconfirmable "up to X%" condition) makes
+#: resolve_program_rate() and price_segment() fail closed on their own --
+#: see test_unconfirmed_conditional_ceiling_cannot_become_a_deterministic_
+#: rate / test_a_determinate_floorless_ceiling_still_prices, both pre-
+#: existing and unaffected by this repeal.
+#:
+#: Competitive/administrative/preapproval risk is real and must still be
+#: DISCLOSED -- see canonical_evaluation.py's competitive-allocation
+#: warning, attached to every served candidate whose program declares
+#: AllocationType.COMPETITIVE or preapproval_mandatory=True, without
+#: withholding its deterministic floor economics.
 
 
 def get_coverage_status(program_slug: str | None) -> AuthorityCoverageRecord | None:
-    """An explicit row wins; otherwise a disposition DERIVED from canonical
-    requirement data (see _derived_coverage); otherwise None ==
-    PRICEABLE_VALIDATED."""
+    """None == PRICEABLE_VALIDATED (absence is never an exclusion) -- an
+    authored COVERAGE_REGISTRY row is the only way a program's economic
+    candidacy is blocked from this module. See the repealed-derivation
+    comment above for why a generic AllocationType-based derivation was
+    removed."""
     if program_slug is None:
         return None
-    explicit = COVERAGE_REGISTRY.get(program_slug)
-    if explicit is not None:
-        return explicit
-    return _derived_coverage(program_slug)
+    return COVERAGE_REGISTRY.get(program_slug)
 
 
 def blocks_economic_candidacy(program_slug: str | None) -> bool:

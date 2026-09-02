@@ -90,19 +90,15 @@ async def test_fresh_project_priced_and_top_scenario_fully_attributable(db: Asyn
     assert result["status"] in ("EVALUATION_COMPLETE", "EVALUATION_REUSED")
     assert result["priced_count"] > 0
 
-    # ITEM 5: California is a COMPETITIVE, ranked allocation requiring a
-    # Credit Allocation Letter before principal photography -- not an
-    # entitlement -- so Lips' baseline is RECOGNIZED but carries no
-    # deterministic economics, and no incomparable relocation is promoted in
-    # its place. top_result is therefore correctly None.
-    assert result["top_result"] is None
+    # MASTER RECONCILIATION (2026-09-02): California's real, unconditional
+    # 35% floor rate prices deterministically (see
+    # test_california_temporal_program_generations.py for the full
+    # attribution), so the baseline is again the recommendation.
     assert result["base_jurisdiction_code"] == "US-CA"
-    assert result["baseline_blocked"] is True
+    assert result["baseline_blocked"] is False
+    assert result["top_result"] is not None
 
-    # This test's subject is ATTRIBUTABILITY of a priced scenario (the
-    # "9998 - Tax Incentive 25%" netting-line exclusion), which is unaffected
-    # by which candidate is recommended. Reconcile the best priced candidate.
-    top = result["ranked"][0]
+    top = result["top_result"]
     assert top["candidate_status"] == "PRICED"
 
     row = (await db.execute(

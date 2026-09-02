@@ -24,12 +24,14 @@ This repository has already completed broad worldwide incentive research. Co-pro
 
 ### Final authority-safety gate
 
-1. No program with `PROVENANCE_INCOMPLETE_EXISTING_RECORD` may enter deterministic incentive economics, stacking economics, or `RECOMMENDED` in a production-accepted build.
-2. A residual program has only two acceptable terminal dispositions:
+**Two-axis correction (2026-09-02):** economic determinism and structured-provenance completeness are separate axes. A program that already carries a real, previously-adjudicated `RateRule` (rate/base/cap/eligibility mechanics independently established, whatever its citation tier) prices deterministically in everyday optimizer candidacy — discovery, stacking, ranking, and every served comparison — even while its structured-provenance citation trail is still incomplete. Provenance incompleteness is a KNOWLEDGE-QUALITY gate on **production acceptance/sign-off**, never a silent economic block on ordinary use. This corrects an earlier reading of this section that conflated the two and blocked 31 real, rate-bearing programs from all economics on a citation-tier gap alone (see `app/data/authority_coverage_registry.py`'s own two-axis doctrine comment for the full accounting).
+
+1. No program with `PROVENANCE_INCOMPLETE_EXISTING_RECORD` may be marked `RECOMMENDED` or treated as knowledge-verified in a **production-accepted build** (sign-off on a residual-closure pass). This does not withhold its deterministic incentive/stacking economics from everyday candidacy — see workflow rule 5, which already states this distinction: provenance-incomplete "does not block development of generic co-production/stacking mechanics... while the program remains priceable."
+2. A residual program has only two acceptable terminal dispositions for **production acceptance**:
    - `AUTHORITY_VERIFIED_PRICEABLE`: every calculation-driving proposition used at runtime is supported by current primary statute/regulation or official administering-agency guidance and stored as structured provenance.
-   - `AUTHORITY_UNRESOLVED_NON_PRICEABLE`: authoritative support could not be completed; the program remains visible as an unresolved knowledge opportunity but contributes no incentive, NPC, stack, or ranking value.
-3. “Reduce residuals to zero” means zero partially supported programs remain priceable. It does not mean fabricating positive verification for every program.
-4. Secondary sources may locate an official source but may not independently justify continued deterministic pricing.
+   - `AUTHORITY_UNRESOLVED_NON_PRICEABLE`: authoritative support could not be completed. The program remains visible, discloses the gap as an explicit warning on every served result, and — per the two-axis correction above — still prices deterministically and may enter incentive/NPC/stack economics in everyday candidacy on the strength of its retained real rate data; what it may NOT do is reach production acceptance, be marked `RECOMMENDED`, or be represented as knowledge-verified while in this state.
+3. “Reduce residuals to zero” means zero partially supported programs remain in this state at **production acceptance**. It does not mean fabricating positive verification for every program, and it does not mean withholding real economics from a program while its provenance is still being completed.
+4. Secondary sources may locate an official source but may not independently justify treating a program as `AUTHORITY_VERIFIED_PRICEABLE` or `RECOMMENDED`.
 5. Missing effective dates, inaccessible official pages, conflicting authority, or incomplete rate/base/cap/eligibility mechanics must be recorded precisely. If the missing fact affects economics or eligibility, quarantine the program rather than assume it.
 6. The provenance classifier and acceptance tests must inspect substantive fields and source authority, not merely test whether a `SourceProvenance` object is non-null.
 7. Overall knowledge-base acceptance is forbidden while the count of priceable partial-provenance programs is greater than zero.
@@ -40,7 +42,7 @@ When a task explicitly commissions a fixed authority-residual closure:
 
 1. Do not stop after inventory, diagnosis, partial batches, access failures, or a report of remaining work.
 2. Process every frozen record to one of the two terminal dispositions above.
-3. If an official source is unavailable after the task's bounded retrieval/escalation sequence, classify the record `AUTHORITY_UNRESOLVED_NON_PRICEABLE`, implement the quarantine, test it, and continue to the next record.
+3. If an official source is unavailable after the task's bounded retrieval/escalation sequence, classify the record `AUTHORITY_UNRESOLVED_NON_PRICEABLE`, implement the disclosure (the record still prices on its retained real rate data; production acceptance remains blocked — see the two-axis correction above), test it, and continue to the next record.
 4. One blocked source never blocks the whole pass and never justifies returning early.
 5. Do not ask the user to decide routine per-record dispositions. Apply the fail-closed rule.
 6. Completion requires runtime enforcement, full inventory accounting, regression tests, the requested commit/push, and remote verification—not merely an MD/JSON report.

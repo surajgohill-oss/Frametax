@@ -57,47 +57,79 @@ async def db():
         yield session
 
 
-# ── CLUSTER 1 — authority fails closed ───────────────────────────────────
+# ── CLUSTER 1 (SUPERSEDED, master reconciliation 2026-09-02) — two-axis ──
+#
+# The original Cluster 1 tests below pinned a SINGLE-axis reading:
+# AUTHORITY_UNRESOLVED_NON_PRICEABLE (a PROVENANCE-completeness gap) as a
+# universal economic blocker. Git-history reconciliation established this
+# was itself the regression (commit 8212dd4, 2026-09-01): 6b44973
+# ("Final canonical backend closeout: separate economics from provenance,
+# restore 58") and bb4b6a2 (last-known-good) both already treated
+# authority/provenance completeness and economic determinism as SEPARATE
+# axes. PROJECT_RULES.md's final authority-safety gate was corrected to
+# match (2026-09-02): a program with a real, previously-adjudicated
+# RateRule prices deterministically in everyday candidacy even while its
+# structured-provenance citation trail is incomplete; provenance
+# incompleteness gates PRODUCTION ACCEPTANCE (sign-off), never ordinary
+# pricing.
 
-def test_unresolved_authority_is_a_blocking_state():
-    """The registry-level gate. NON_PRICEABLE is the disposition, so it must
-    block deterministic economics."""
-    from app.data.authority_coverage_registry import BLOCKING_STATES
+def test_authority_unresolved_is_a_provenance_disclosure_not_a_blocking_state():
+    from app.data.authority_coverage_registry import (
+        BLOCKING_STATES,
+        PROVENANCE_DISCLOSURE_STATES,
+    )
 
-    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" in BLOCKING_STATES
+    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" not in BLOCKING_STATES
+    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" in PROVENANCE_DISCLOSURE_STATES
 
 
-def test_every_authority_unresolved_program_is_barred_from_economics():
+def test_every_authority_unresolved_program_with_a_real_rate_still_prices():
+    """A program in this state that carries a real, unconditional-floor
+    RateRule must NOT be blocked from economic candidacy -- only genuinely
+    absent rate data (a DIFFERENT, still-blocking state,
+    UNPRICEABLE_AUTHORITY_INSUFFICIENT) may withhold pricing."""
     from app.data.authority_coverage_registry import (
         COVERAGE_REGISTRY,
         blocks_economic_candidacy,
     )
+    from app.data.program_rate_rules import get_rate_rules
 
     unresolved = [
         slug for slug, rec in COVERAGE_REGISTRY.items()
         if rec.state == "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
     ]
     assert unresolved, "expected real authority-unresolved programs in the registry"
-    for slug in unresolved:
-        assert blocks_economic_candidacy(slug), f"{slug} still economically priceable"
+    with_real_floor = [
+        s for s in unresolved
+        if any(not r.is_band_ceiling for r in get_rate_rules(s))
+    ]
+    assert with_real_floor, "expected at least one unresolved program with a real floor"
+    for slug in with_real_floor:
+        assert not blocks_economic_candidacy(slug), (
+            f"{slug} has a real guaranteed-floor rate but is still blocked "
+            "purely on a provenance-completeness gap"
+        )
 
 
-def test_authority_unresolved_program_cannot_price_via_direct_price_segment():
-    """The route that bypasses discovery entirely must also fail closed, and
-    must still ALLOCATE and DISCLOSE the segment rather than erase it."""
+def test_authority_unresolved_program_prices_via_direct_price_segment():
+    """The route that bypasses discovery entirely must ALSO reflect the
+    two-axis contract: a real floor rate prices; provenance incompleteness
+    is disclosed separately (see canonical_evaluation.py), not gated here."""
     from app.calculators.allocation_pricing import price_segment
     from app.calculators.production_allocation import AccountAllocation, AssignmentKind
     from app.data.authority_coverage_registry import COVERAGE_REGISTRY
+    from app.data.program_rate_rules import get_rate_rules
 
     slug = next(
         s for s, rec in COVERAGE_REGISTRY.items()
         if rec.state == "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+        and any(not r.is_band_ceiling for r in get_rate_rules(s))
     )
     alloc = AccountAllocation(
         account_code="2000", description="Production spend",
         amount_usd=5_000_000.0, component="production", jurisdiction_code="XX",
         assignment_kind=AssignmentKind.FIXED,
-        rationale="authority fail-closed probe",
+        rationale="two-axis authority probe",
         governing_decision="cineglobe-economics-integrity-repair",
     )
     seg = price_segment(
@@ -106,25 +138,25 @@ def test_authority_unresolved_program_cannot_price_via_direct_price_segment():
         offshore_payroll_accounts=frozenset(),
         production_type="feature_film", gross_budget_usd=5_000_000.0,
     )
-    assert seg.executable is False
-    assert seg.blockers, "a withheld segment must explain itself"
-    # Withheld, not erased: the spend is still located and disclosed.
+    assert seg.executable is True
     assert seg.allocated_usd == pytest.approx(5_000_000.0)
 
 
-async def test_authority_unresolved_program_is_served_but_unpriced(db: AsyncSession):
-    """End to end, on a real project: Manitoba is authority-unresolved, so it
-    must appear in the served universe carrying its authority reason and
-    contribute no deterministic incentive."""
+async def test_authority_unresolved_program_is_served_and_priced(db: AsyncSession):
+    """End to end, on a real project: Manitoba (ca_mb_film_video_credit) has
+    a real, unconditional 45% floor rate and is authority-unresolved
+    (provenance only) -- it must price, carrying its provenance-gap warning,
+    never a withheld incentive."""
     await evaluate_project(db, LIPS_PROJECT_ID)
     view = await build_production_and_structures(db, LIPS_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
 
     mb = [e for e in entries if e["primary_jurisdiction"] == "CA-MB"]
     assert mb, "CA-MB must remain discovered and disclosed, never erased"
-    for entry in mb:
-        assert entry["is_fully_priced"] is False
-        assert not entry.get("selected_incentive_usd")
+    priced_mb = [e for e in mb if e["is_fully_priced"]]
+    assert priced_mb, "CA-MB has a real guaranteed floor and must price"
+    for entry in priced_mb:
+        assert entry.get("selected_incentive_usd")
 
 
 # ── CLUSTER 13 — the read path must be pure ──────────────────────────────

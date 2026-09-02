@@ -51,25 +51,45 @@ from app.data.program_rate_rules import _RULES_BY_PROGRAM
 
 # ── THE fail-closed authority gate, proven structurally ──────────────────
 
-def test_unresolved_authority_blocks_economic_candidacy():
-    """THE gate. An authority-unresolved program is NON_PRICEABLE by name and
-    by PROJECT_RULES.md: it must block deterministic economics."""
-    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" in BLOCKING_STATES
+def test_authority_unresolved_is_provenance_only_not_a_blocking_state():
+    """SUPERSEDED (master reconciliation, 2026-09-02). PROJECT_RULES.md's
+    final authority-safety gate was corrected: AUTHORITY_UNRESOLVED_
+    NON_PRICEABLE is a provenance-completeness disclosure, not itself an
+    economic block -- see PROJECT_RULES.md's own two-axis correction note
+    and authority_coverage_registry.py's BLOCKING_STATES docstring."""
+    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" not in BLOCKING_STATES
 
 
-def test_no_program_is_provenance_unresolved_yet_deterministically_priced():
-    """Fail closed. Every provenance-unresolved program in the real registry
-    must be barred from deterministic economics -- a retained rate figure
-    whose authority was never completed is exactly what the gate quarantines.
-    Proven against the live registry, not a synthetic example."""
+def test_a_provenance_unresolved_program_with_real_rate_data_still_prices():
+    """Two-axis contract, proven against the live registry. A program whose
+    structured provenance is not yet substantively supported, but whose
+    RateRule data (rate/base/cap/eligibility) is real and previously
+    adjudicated, must remain economically priceable -- economic_state()
+    (app.data.program_authority_provenance, itself unaffected by this
+    reconciliation: it already implemented the two-axis split) is the
+    correct predicate for whether a program prices, not authority_
+    disposition()."""
+    from app.data.program_authority_provenance import (
+        ECONOMIC_STATE_DETERMINISTIC_PRICEABLE,
+        economic_state,
+    )
+
     candidates = [
         s for s in _RULES_BY_PROGRAM
         if authority_disposition(s) == AUTHORITY_UNRESOLVED_NON_PRICEABLE
     ]
     assert candidates, "expected real provenance-unresolved programs in the registry"
-    for slug in candidates:
-        assert blocks_economic_candidacy(slug), (
-            f"{slug} is authority-unresolved but still economically priceable"
+    deterministic = [
+        s for s in candidates if economic_state(s) == ECONOMIC_STATE_DETERMINISTIC_PRICEABLE
+    ]
+    assert deterministic, (
+        "expected at least one provenance-unresolved program with real "
+        "deterministic rate data"
+    )
+    for slug in deterministic:
+        assert not blocks_economic_candidacy(slug), (
+            f"{slug} has real deterministic rate data but is blocked purely "
+            "on a provenance-completeness gap"
         )
 
 

@@ -84,27 +84,40 @@ async def _current_rows(db, project_id):
 
 # ── ITEM A — deliberately NOT reverted; pinned so it cannot regress back ──
 
-def test_authority_unresolved_still_blocks_deterministic_economics():
-    """PROJECT_RULES.md's final authority-safety gate, verbatim. Do not
-    revert this in a future pass without updating that doctrine file
-    first -- the two must never disagree."""
+def test_authority_unresolved_is_provenance_only_master_reconciliation():
+    """SUPERSEDED (master reconciliation, 2026-09-02). This test previously
+    pinned AUTHORITY_UNRESOLVED_NON_PRICEABLE as an economic block, citing
+    PROJECT_RULES.md's final authority-safety gate -- but that gate itself
+    was corrected the same day: git-history reconciliation established
+    6b44973 and bb4b6a2 (both pre-dating the 8212dd4 regression this repo's
+    earlier session reintroduced) already treated authority/provenance
+    completeness as SEPARATE from economic determinism. Do not revert this
+    without first checking PROJECT_RULES.md's two-axis correction note --
+    the two must never disagree."""
     from app.data.authority_coverage_registry import BLOCKING_STATES
 
-    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" in BLOCKING_STATES
+    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" not in BLOCKING_STATES
 
 
 # ── ITEM B — treaty partner discovery ─────────────────────────────────────
 
 async def test_a_country_with_zero_priced_legs_is_not_a_treaty_partner(db: AsyncSession):
-    """Switzerland: ch_pics_national_rebate is its ONLY program and it is
-    itself AUTHORITY_UNRESOLVED_NON_PRICEABLE. Zero priced legs anywhere ->
-    not a reachable treaty partner. THE generic preservation invariant --
-    duplicated here as a standing regression guard, not just a fixture
-    assertion (see test_coproduction_optimizer_preservation.py for the
-    fuller property-based version)."""
+    """China: cn_film_incentive is NON_ECONOMIC (a facilitation body, zero
+    rate rules) -- zero priced legs anywhere -> not a reachable treaty
+    partner. THE generic preservation invariant -- duplicated here as a
+    standing regression guard, not just a fixture assertion (see
+    test_coproduction_optimizer_preservation.py for the fuller
+    property-based version).
+
+    ch_pics_national_rebate was this test's ORIGINAL carrier but no longer
+    qualifies (master reconciliation, 2026-09-02): it is AUTHORITY_
+    UNRESOLVED_NON_PRICEABLE, a provenance-completeness disclosure that no
+    longer blocks economics on its own, and it carries a real 20% floor
+    rate -- ca-ch-bilateral is now a real, priced-eligible pair.
+    """
     from app.data.authority_coverage_registry import blocks_economic_candidacy
 
-    assert blocks_economic_candidacy("ch_pics_national_rebate")
+    assert blocks_economic_candidacy("cn_film_incentive")
 
     rows = await _current_rows(db, FVD_PROJECT_ID)
     treaty = [
@@ -112,7 +125,7 @@ async def test_a_country_with_zero_priced_legs_is_not_a_treaty_partner(db: Async
         if (r.calculation_trace_json or {}).get("candidate_status") == "CO_PRO_OPPORTUNITY"
     ]
     slugs = {(r.calculation_trace_json or {}).get("treaty_slug") for _s, r in treaty}
-    assert "ca-ch-bilateral" not in slugs
+    assert "ca-cn-bilateral" not in slugs
 
 
 async def test_a_country_with_a_priced_provincial_leg_IS_a_treaty_partner(db: AsyncSession):

@@ -65,14 +65,7 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
             )
 
     bilateral_among_candidates = [e for e in treaty if e["treaty_slug"] not in by_slug]
-    # 23 -> 22 with the fail-closed authority gate (CineGlobe economics +
-    # wiring integrity repair, Cluster 1). Bilateral opportunities are
-    # generated between pairs of FVD's own DISCOVERED candidate
-    # jurisdictions. ch_pics_national_rebate is
-    # AUTHORITY_UNRESOLVED_NON_PRICEABLE, so Switzerland no longer
-    # contributes an economic leg and the single ca-ch-bilateral pair drops
-    # out. Every other bilateral pair is unaffected.
-    # Codex forensic finding B (this pass): 12 was ITSELF the regression, not
+    # Codex forensic finding B (this pass): 12 was ITSELF a regression, not
     # a legitimate consequence of Cluster 5. Treaty-partner discovery had
     # been scoped to `priced_by_code` DIRECTLY (deterministic pricing
     # success for that EXACT code), so Canada's federal-level "CA" treaty
@@ -84,12 +77,21 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     # presence never required Canada's OWN incentive to price. The fix
     # widens candidate_codes to every code with a priced leg ANYWHERE at or
     # under it (priced_by_code union each code's bare country prefix),
-    # restoring Canada as a reachable treaty party. 12 -> 22. The capability
-    # itself is asserted in test_coproduction_optimizer_preservation.py.
-    assert len(bilateral_among_candidates) == 22
+    # restoring Canada as a reachable treaty party. 12 -> 22.
+    #
+    # MASTER RECONCILIATION (2026-09-02): ch_pics_national_rebate's
+    # AUTHORITY_UNRESOLVED_NON_PRICEABLE block was itself repealed as a
+    # regression (git history: Switzerland was never blocked at bb4b6a2 --
+    # this state has always been a provenance-completeness disclosure, not
+    # an economic one). Switzerland's real 20% floor rate now prices, so
+    # ca-ch-bilateral is a real, priced-eligible pair again. 22 -> 23. The
+    # capability itself is asserted in
+    # test_coproduction_optimizer_preservation.py (now carried by China /
+    # ca-cn-bilateral, a genuinely blocked NON_ECONOMIC constituent).
+    assert len(bilateral_among_candidates) == 23
     assert all(
-        "ca-ch-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
-    ), "CH is authority-unresolved; its bilateral pair must not be offered"
+        "ca-cn-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
+    ), "CN is genuinely non-economic; its bilateral pair must not be offered"
     assert all(not e["is_directly_comparable"] for e in bilateral_among_candidates)
     assert all(e.get("npc_with_adjustments_usd") is None for e in bilateral_among_candidates)
     assert all("GR" not in [p["jurisdiction_code"] for p in e["coproduction_partners"]] for e in bilateral_among_candidates), (

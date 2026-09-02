@@ -108,14 +108,23 @@ async def test_coproduction_partners_are_named_not_raw_codes(
 
 
 async def test_a_blocked_constituent_does_not_destroy_the_capability(db: AsyncSession):
-    """THE preservation invariant. ch_pics_national_rebate became
-    AUTHORITY_UNRESOLVED_NON_PRICEABLE, so Switzerland lost its economic leg
-    and the single ca-ch bilateral pair correctly dropped out. Every OTHER
-    bilateral pair must remain -- a fail-closed constituent removes its own
-    leg, never the generic capability."""
+    """THE preservation invariant. cn_film_incentive is NON_ECONOMIC (a
+    facilitation body with no producer economic instrument -- zero rate
+    rules, unaffected by the two-axis authority correction or the repealed
+    allocation-type derivation), so China has no economic leg and the single
+    ca-cn bilateral pair correctly drops out. Every OTHER bilateral pair must
+    remain -- a genuinely blocked constituent removes its own leg, never the
+    generic capability.
+
+    ch_pics_national_rebate was this test's ORIGINAL carrier but no longer
+    qualifies (master reconciliation, 2026-09-02): it is AUTHORITY_
+    UNRESOLVED_NON_PRICEABLE, a provenance-completeness disclosure that no
+    longer blocks economics on its own, and it carries a real 20% floor
+    rate -- so ca-ch-bilateral is now a real, priced-eligible pair again.
+    """
     from app.data.authority_coverage_registry import blocks_economic_candidacy
 
-    assert blocks_economic_candidacy("ch_pics_national_rebate"), (
+    assert blocks_economic_candidacy("cn_film_incentive"), (
         "precondition: this test is about a genuinely blocked constituent"
     )
 
@@ -124,8 +133,8 @@ async def test_a_blocked_constituent_does_not_destroy_the_capability(db: AsyncSe
         if e["structure_type"] == "treaty_coproduction"
     ]
     slugs = {e.get("treaty_slug") for e in treaty}
-    assert "ca-ch-bilateral" not in slugs, (
-        "a pair whose constituent is authority-blocked must not be offered"
+    assert "ca-cn-bilateral" not in slugs, (
+        "a pair whose constituent is genuinely blocked must not be offered"
     )
     bilateral = [
         e for e in treaty

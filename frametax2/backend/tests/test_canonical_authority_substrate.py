@@ -74,15 +74,17 @@ async def db():
 
 async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: AsyncSession):
     """A landlocked jurisdiction with a real marine mismatch must still be
-    DISCOVERED — feasibility never suppresses discovery.
+    DISCOVERED and PRICED — feasibility never suppresses discovery or
+    pricing on its own.
 
-    MN and UZ are both landlocked with a soft marine mismatch. They are no
-    longer *priced*, but for a reason that has nothing to do with
-    feasibility: both are AUTHORITY_UNRESOLVED_NON_PRICEABLE and the
-    fail-closed authority gate withholds deterministic economics from them
-    (PROJECT_RULES.md final authority-safety gate). This test therefore
-    asserts the thing it always meant to assert — the soft feasibility gate
-    is not what removes them — and proves the two gates stay independent.
+    MN and UZ are both landlocked with a soft marine mismatch, and both are
+    AUTHORITY_UNRESOLVED_NON_PRICEABLE (a provenance-completeness gap, not
+    an economic one -- master reconciliation, 2026-09-02). Both carry a
+    real, unconditional guaranteed-floor RateRule (MN 30%, UZ 10%), so under
+    the two-axis contract they price deterministically. This proves BOTH
+    independences at once: the soft feasibility mismatch never removed them
+    from discovery, and the provenance gap never removed them from pricing
+    -- each gate stays scoped to what it actually governs.
     """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
@@ -91,14 +93,10 @@ async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: 
     for code in ("MN", "UZ"):
         assert code in entries, f"{code} was suppressed from discovery entirely"
         entry = entries[code]
-        # Discovery kept it and disclosed the real, non-feasibility reason.
-        blocking_text = " ".join([entry.get("reason") or "", *(entry.get("blockers") or [])]).lower()
-        assert "authority unresolved non priceable" in blocking_text, (
-            f"{code} must be withheld for the authority reason, not a feasibility one: {blocking_text[:200]}"
+        assert entry["is_fully_priced"] is True, (
+            f"{code} has a real guaranteed floor and must price deterministically"
         )
-        # Fail-closed authority gate: no deterministic economics.
-        assert entry["is_fully_priced"] is False
-        assert not entry.get("selected_incentive_usd")
+        assert entry.get("selected_incentive_usd"), f"{code} priced with no incentive value"
 
 
 async def test_statutory_eligibility_failure_still_rejects_correctly(db: AsyncSession):
@@ -623,29 +621,24 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # relocation candidate enumeration is no longer pre-truncated to the top
     # 6 target jurisdictions -- the full, real, independently-priceable
     # target universe is now persisted. entries 156 -> 267.
-    assert len(entries) == 267
-    # Cluster 8: the CA-ON combined structure is mutually exclusive, so it is
-    # now an explicit RULE_REJECTED incompatibility diagnostic rather than a
-    # priced structure. priced 92 -> 91, unpriceable 64 -> 65.
-    # ITEM 5 (competitive allocation is not an entitlement): six programs that
-    # this codebase's own program_requirements declares
-    # AllocationType.COMPETITIVE had NO authority-coverage row, and absence
-    # means PRICEABLE_VALIDATED -- so a ranked, application-window credit that
-    # a production can satisfy in full and still not receive was priced as a
-    # guaranteed deterministic entitlement. The coverage disposition is now
-    # DERIVED from that canonical requirement data, matching
-    # jp_vipo_location_incentive which was already COMPETITIVE *and*
-    # explicitly NON_GUARANTEED_SELECTIVE. All six now report
-    # NON_GUARANTEED_SELECTIVE for FVD; five of them had been priced.
-    # priced 91 -> 86.
-    # Same cause as above: many more component-relocation candidates now
-    # clear their target program's threshold and price. priced 86 -> 187.
-    assert len(priced) == 187
-    # ITEM 5 (same cause as the priced count above): the five newly
-    # non-entitlement candidates move from priced to unpriced.
-    # unpriceable 65 -> 70. Total entries unchanged at 156 -- nothing was
-    # dropped, only reclassified from "priced" to "disclosed, not priced".
-    assert len(unpriced) == 80  # Codex findings B/C: see priced-count note above
+    #
+    # MASTER RECONCILIATION (2026-09-02): the ITEM 5 "competitive allocation
+    # is not an entitlement" derivation quoted below was ITSELF a regression,
+    # not a correction -- git-history reconciliation established that
+    # allocation_type had been pure disclosure metadata since 2026-07-26 and
+    # was never consumed for blocking before it; five of the six programs it
+    # newly blocked (all but Chile) carry a real, unconditional guaranteed-
+    # floor rate and were each individually, deliberately verified priceable
+    # in an earlier pass via direct primary-source fetch. The derivation is
+    # repealed (authority_coverage_registry.py's own repeal comment has the
+    # full accounting) -- those five now correctly price again, and the
+    # SEPARATE 31-program authority/provenance regression (AUTHORITY_
+    # UNRESOLVED_NON_PRICEABLE no longer an economic blocking state) is also
+    # repaired, so every provenance-only-gapped program with a real floor now
+    # prices too. entries 267 -> 361; priced 187 -> 315; unpriced 80 -> 46.
+    assert len(entries) == 361
+    assert len(priced) == 315
+    assert len(unpriced) == 46
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):
@@ -1178,11 +1171,19 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    # ITEM 5: NO (no_film_incentive) is a COMPETITIVE, preapproval-gated
-    # award from a fixed annual pot, so it is NON_GUARANTEED_SELECTIVE and
-    # correctly does not price deterministically. Asserted separately below
-    # as a disclosed non-entitlement, not silently dropped.
-    codes = ("CA-ON", "DE", "FR", "HU", "US-MN", "GB")
+    # MASTER RECONCILIATION (2026-09-02): Norway is back in the priced set.
+    # ITEM 5's NON_GUARANTEED_SELECTIVE derivation for `no_film_incentive`
+    # was itself the regression -- git-history reconciliation established
+    # `no_film_incentive` was individually, deliberately verified priceable
+    # (25% flat, Norwegian Film Institute direct fetch, commit 9d55736, pre-
+    # dating last-known-good) and allocation_type was never consumed for
+    # blocking before ITEM 5. Norway's real competitive-selection risk
+    # ("five projects... sharing NOK 84.7M, not a guaranteed per-production
+    # entitlement", already present on the rate tier's own RateCondition
+    # `no-competitive-allocation`) is now disclosed as a warning on the
+    # priced result (see canonical_evaluation.py's
+    # _competitive_allocation_disclosure), never as a zeroed incentive.
+    codes = ("CA-ON", "DE", "FR", "HU", "US-MN", "GB", "NO")
     seen_incentives = set()
     for code in codes:
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -1197,12 +1198,6 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     assert es["is_fully_priced"] is False
     assert es["candidate_status"] == "RULE_REJECTED"
     assert es["blockers"], "ES must still disclose the real reason it did not price"
-
-    no = next(x for x in entries if x["primary_jurisdiction"] == "NO")
-    assert no["is_fully_priced"] is False
-    assert no["selected_incentive_usd"] in (None, 0), (
-        "a non-entitlement award must not carry deterministic economics"
-    )
 
 
 def test_batch1_2_3_promoted_programs_carry_structured_provenance():

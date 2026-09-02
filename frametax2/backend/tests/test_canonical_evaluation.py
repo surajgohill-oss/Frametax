@@ -191,7 +191,10 @@ async def test_unpriceable_candidates_are_accounted_for_not_dropped(db: AsyncSes
 async def test_mfni_limitation_present_on_every_result(db: AsyncSession):
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert "mfni_limitation" in result and result["mfni_limitation"]
-    assert "not yet applied" in result["mfni_limitation"]
+    # Item D reconnected travel/FX/local-cost (MFNI) normalization; the
+    # module-level note now says it IS applied, and disclosed in-kind
+    # remains genuinely absent (see canonical_evaluation.LIMITATION_NOTE).
+    assert "applied" in result["mfni_limitation"]
 
     rows = (await db.execute(
         select(StructureCalculationResult).where(

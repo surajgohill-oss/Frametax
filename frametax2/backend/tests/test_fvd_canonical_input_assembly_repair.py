@@ -132,24 +132,22 @@ async def test_landlocked_jurisdictions_remain_economically_discoverable(db: Asy
             "it must remain in the economic universe"
         )
 
-    # MN and UZ are no longer priced, but NOT because of feasibility: both
-    # are AUTHORITY_UNRESOLVED_NON_PRICEABLE and the fail-closed authority
-    # gate withholds deterministic economics from them (PROJECT_RULES.md
-    # final authority-safety gate). The point this test exists to prove --
-    # a soft marine mismatch never removes a candidate from the economic
-    # universe -- is asserted above (`code in served_codes`) and is
-    # unaffected. Here we prove the withholding is attributable to
-    # AUTHORITY, keeping the two gates provably independent.
+    # MASTER RECONCILIATION (2026-09-02): MN and UZ now price. Both are
+    # AUTHORITY_UNRESOLVED_NON_PRICEABLE, which is a provenance-completeness
+    # disclosure, never an economic block (git history: neither was blocked
+    # at bb4b6a2 -- this state has always been provenance-only). Both carry
+    # a real, unconditional guaranteed-floor rate (MN 30%, UZ 10%), so they
+    # price deterministically. The point this test exists to prove -- a soft
+    # marine mismatch never removes a candidate from the economic universe
+    # -- is asserted above (`code in served_codes`); here we additionally
+    # prove the soft mismatch doesn't block PRICING either, keeping the two
+    # gates provably independent in both directions.
     for code in ("MN", "UZ"):
         entry = by_code[code]
-        blocking_text = " ".join(
-            [entry.get("reason") or "", *(entry.get("blockers") or [])]
-        ).lower()
-        assert "authority unresolved non priceable" in blocking_text, (
-            f"{code} must be withheld for the authority reason, not a feasibility one"
+        assert entry["is_fully_priced"] is True, (
+            f"{code} has a real guaranteed floor and must price deterministically"
         )
-        assert entry["is_fully_priced"] is False
-        assert not entry.get("selected_incentive_usd")
+        assert entry.get("selected_incentive_usd")
 
 
 async def test_marine_capable_jurisdictions_unaffected_by_capability_gate(db: AsyncSession):
@@ -165,15 +163,17 @@ async def test_marine_capable_jurisdictions_unaffected_by_capability_gate(db: As
     for code in ("GR", "MT", "MU", "CA-NL"):
         assert code in priced, f"{code} has real marine capability and must remain priced"
 
-    # Marine-capable but AUTHORITY_UNRESOLVED_NON_PRICEABLE: the capability
-    # gate still does not touch them (they remain served/discovered); the
-    # fail-closed authority gate is what withholds their economics. This
-    # test's invariant is "the capability gate must not over-reject", which
-    # is preserved -- these are not rejected on capability.
+    # MASTER RECONCILIATION (2026-09-02): AU-QLD, QA and SG all carry real,
+    # unconditional guaranteed-floor rates (15%, 40%, 30% respectively) and
+    # AUTHORITY_UNRESOLVED_NON_PRICEABLE is a provenance-completeness
+    # disclosure, not an economic block -- they price deterministically.
+    # This test's invariant ("the capability gate must not over-reject") is
+    # preserved by construction: they were never capability-rejected, and
+    # now correctly price too.
     for code in ("AU-QLD", "QA", "SG"):
         assert code in served, f"{code} must remain discovered, not capability-rejected"
-        assert code not in priced, (
-            f"{code} is authority-unresolved and must not price deterministically"
+        assert code in priced, (
+            f"{code} has a real guaranteed floor and must price deterministically"
         )
 
 
@@ -261,19 +261,14 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     assert ca_nl["is_band_ceiling"] is False
     assert ca_nl["ceiling_requires_confirmation"] is False
 
-    # QA, SG and AU-QLD previously carried priced traces here. All three are
-    # AUTHORITY_UNRESOLVED_NON_PRICEABLE, so the fail-closed authority gate
-    # now withholds their deterministic economics entirely (PROJECT_RULES.md
-    # final authority-safety gate) and no priced segment exists to trace.
-    # They must remain DISCOVERED and unpriced -- withheld, never erased.
-    all_entries = {
-        e["primary_jurisdiction"]: e
-        for e in view["structures"]["allocated_structures"]["structures"]
-    }
+    # MASTER RECONCILIATION (2026-09-02): QA, SG and AU-QLD carry real
+    # guaranteed-floor rates (40%, 30%, 15%) and AUTHORITY_UNRESOLVED_
+    # NON_PRICEABLE is a provenance-completeness disclosure, not an economic
+    # block -- all three now produce a real priced trace again.
     for code in ("QA", "SG", "AU-QLD"):
-        assert code not in entries, f"{code} must no longer produce a priced trace"
-        assert code in all_entries, f"{code} must remain discovered and disclosed"
-        assert all_entries[code]["is_fully_priced"] is False
+        assert code in entries, f"{code} must produce a priced trace"
+        assert entries[code]["is_fully_priced"] is True
+        assert seg(code)["qpe_usd"] > 0
 
     mt = seg("MT")
     assert mt["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)

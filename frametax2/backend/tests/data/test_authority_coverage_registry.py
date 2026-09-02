@@ -230,13 +230,15 @@ def test_calibration_anchors_mu_mt_gr_au_are_untouched():
 
 
 def test_no_record_carries_a_synthetic_rate():
-    """FAIL-CLOSED GATE: every state carried by this registry blocks economic
-    candidacy, AUTHORITY_UNRESOLVED_NON_PRICEABLE included (PROJECT_RULES.md
-    final authority-safety gate -- an authority-unresolved program
-    contributes no incentive, NPC, stack or ranking value). A record is a
-    disposition, never a source of economics, so none may carry a rate."""
+    """Every state carried by this registry is either a BLOCKING state or a
+    PROVENANCE_DISCLOSURE state (two-axis correction, 2026-09-02) -- there is
+    no third, unrecognized disposition. A record is itself never a source of
+    economics (a rate lives in RateRule, never here), so none may carry one,
+    regardless of which axis its state belongs to."""
+    from app.data.authority_coverage_registry import PROVENANCE_DISCLOSURE_STATES
+
     for rec in COVERAGE_REGISTRY.values():
-        assert rec.state in BLOCKING_STATES
+        assert rec.state in BLOCKING_STATES or rec.state in PROVENANCE_DISCLOSURE_STATES
         assert rec.reason
         assert not hasattr(rec, "base_rate")
         assert not hasattr(rec, "rate")
