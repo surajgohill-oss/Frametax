@@ -1,7 +1,22 @@
 // Pure computation for Today's Hero and FX strip — no React, no DOM, so
 // this module is independently testable (see
 // scripts/test_today_compute.mjs, run with plain `node`; this frontend
-// has no test runner installed, and none is being introduced here).
+// has no test runner installed, and none is being introduced here). This
+// is also why buildLeaderFxItems below does NOT import flagEmoji from
+// ../lib/format.jsx (a .jsx file plain `node` can't load) — it returns
+// each item's `jurisdiction` and the caller (components/FXStrip.jsx, a
+// real React module) resolves the flag at render time. Same single
+// flagEmoji implementation, just called from the presentation layer
+// instead of duplicated here.
+
+// The base currency every economics payload prices in. A leader
+// structure whose own jurisdiction already uses this currency needs no
+// conversion at all — CineGlobe Overview FX Strip + Vertical Scrolling
+// closeout: this used to fall through to buildLeaderFxItems' generic
+// "no snapshot on file" branch and render a dishonest "rate unavailable"
+// for a USD-jurisdiction leader (e.g. any US-state structure), when the
+// truthful state is "no conversion applies" — see noConversion below.
+const BASE_CURRENCY = "USD";
 
 // The Today hero shows exactly these three canonical CineGlobe lifecycle
 // stages, in this exact order. Evaluation precedes Development, per the
@@ -85,4 +100,68 @@ export function buildFxItems(fxHorizons) {
       deltaPct,
     };
   });
+}
+
+// The dynamic fourth (Nth) FX slot: one cell per DISTINCT local currency
+// among a structure's real participants — one cell for a single-
+// jurisdiction structure, two for a genuine multi-jurisdiction one,
+// deduplicated so two participants sharing a currency (e.g. two Eurozone
+// jurisdictions) never render twice. Every rate is read verbatim from
+// economics.fx_horizons (the SAME dataset feeding the fixed trio in
+// buildFxItems — no second fetch, no frontend FX math).
+//
+// Extracted from Workspace.jsx (CineGlobe Overview FX Strip + Vertical
+// Scrolling closeout) so Workspace and Overview share the exact same FX
+// engine rather than each carrying its own copy — REUSE, never a second
+// implementation. `structure` is deliberately NOT always the producer's
+// manually-selected Leading Structure — see each caller's own fallback
+// (bestPricedCandidate when neither a Leading selection nor a canonical
+// rank-1 exists). When `structure` is null, this returns an empty array —
+// a fake, unresolved "—" block must never render just to fill the slot.
+export function buildLeaderFxItems(economics, structure, label) {
+  if (!structure) return [];
+  const horizons = economics?.fx_horizons || {};
+  const jurisdictionCurrency = economics?.jurisdiction_currency || {};
+  const participants = structure?.participants?.length
+    ? structure.participants
+    : (structure?.primary_jurisdiction ? [structure.primary_jurisdiction] : []);
+
+  const seenCodes = new Set();
+  const items = [];
+  for (const jurisdiction of participants) {
+    const iso2 = jurisdiction.split("-")[0].toUpperCase();
+    // Generic chain, no jurisdiction/currency special-cased here:
+    // jurisdiction -> ISO2 -> economics.jurisdiction_currency (the SAME
+    // canonical registry map served for the fixed trio) -> currency code.
+    // No mapping on file: show the jurisdiction's own code rather than
+    // silently dropping the cell.
+    const code = jurisdictionCurrency[iso2] || iso2;
+    if (seenCodes.has(code)) continue; // dedupe — never a repeated currency cell
+    seenCodes.add(code);
+    // Truthful no-conversion state: the structure's own currency IS the
+    // base currency the economics payload already prices in — there is
+    // no real FX pair to show, and no snapshot entry will ever exist for
+    // USD/USD. Manufacturing one (or falling through to "rate
+    // unavailable", which reads as a data gap rather than a fact) would
+    // be exactly the fabricated-pair failure mode item 5 warns against.
+    if (code === BASE_CURRENCY) {
+      items.push({ code, jurisdiction, isLeader: true, leaderLabel: label, available: true, noConversion: true });
+      continue;
+    }
+    const h = horizons[code];
+    if (!h || h.current == null) {
+      items.push({ code, jurisdiction, available: false, isLeader: true, leaderLabel: label });
+      continue;
+    }
+    const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
+    // Same 5-decimal display precision buildFxItems() uses for the fixed
+    // three, so leader cells never read visually inconsistent with their
+    // siblings — reverse is still always 1/current, computed here, never a
+    // second stored constant.
+    items.push({
+      code, jurisdiction, isLeader: true, leaderLabel: label, available: true,
+      current: Number(h.current.toFixed(FX_DISPLAY_DECIMALS)), reverse: Number((1 / h.current).toFixed(FX_DISPLAY_DECIMALS)), deltaPct,
+    });
+  }
+  return items;
 }

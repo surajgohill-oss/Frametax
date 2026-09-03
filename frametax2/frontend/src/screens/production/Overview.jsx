@@ -10,15 +10,22 @@ import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
-// FXStrip: REMOVED from this Overview position this batch (see Batch 2 —
-// the full-width strip demoted the Globe and broke the approved
-// hero -> tabs -> three-column composition). FXStrip.jsx itself is
-// UNCHANGED and untouched — only this screen's render call was removed.
-// No approved compact placement exists yet in canonical docs; a new
-// placement is EXPLICITLY DEFERRED, not designed in this batch.
+import FXStrip from "../../components/FXStrip";
+// FXStrip: an earlier batch removed the full-width strip from this
+// position because it demoted the Globe and broke the approved
+// hero -> tabs -> three-column composition, deliberately deferring a
+// compact placement design rather than shipping a second engine. CineGlobe
+// Overview FX Strip + Vertical Scrolling closeout supplies that approved
+// placement: HEADER -> FX STRIP -> three-column body, mounting the SAME
+// shared components/FXStrip.jsx engine Workspace.jsx uses (no second FX
+// implementation, no compact redesign) directly above the .ovxg-grid.
 
 // Overview — approved closeout structure (restored from the approved-design
 // migration, commit 9644759):
+//   HEADER — FX Strip (fixed EUR/CAD/GBP reference trio + this project's
+//            current Leading/Top-Priced structure's own local-currency
+//            pair, real ECB/open.er-api.com snapshot, source + as-of date
+//            disclosed — see components/FXStrip.jsx).
 //   LEFT   — Production Facts (ProductionDetails: the Overview view of the
 //            same Production Record the Workspace Inspector edits — POST
 //            /people, role-level nationality; no duplicate input model)
@@ -124,6 +131,7 @@ export default function Overview() {
 
   return (
     <div className="screen ovxg-screen">
+      <FXStrip economics={economics} structure={structure} structureIsLeading={structureIsLeading} />
       <div className="ovxg-grid">
 
         {/* ── LEFT — Production Facts + Production Requirements ─────────── */}

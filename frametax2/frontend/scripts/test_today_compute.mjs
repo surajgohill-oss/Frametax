@@ -236,6 +236,83 @@ test("Production Slate renders three collapsible groups (Evaluation, Development
   assert.ok(todaySrc.includes("heroStages.map"), "expected the Slate to iterate the same buildHeroStages() output the hero derives from");
 });
 
+// ── CineGlobe Overview FX Strip + Vertical Scrolling closeout ──────────
+// buildLeaderFxItems is exported here (not just imported above for the
+// fixed trio) so this file — and the shared components/FXStrip.jsx
+// engine that consumes it — stay independently testable with plain node.
+import { buildLeaderFxItems } from "../src/lib/todayCompute.js";
+
+test("buildLeaderFxItems: a leader structure whose currency IS the base currency shows a truthful no-conversion state, never a fabricated pair or 'rate unavailable'", () => {
+  const economics = { fx_horizons: { EUR: { current: 0.9 } }, jurisdiction_currency: { US: "USD" } };
+  const structure = { primary_jurisdiction: "US-CA", participants: ["US-CA"] };
+  const items = buildLeaderFxItems(economics, structure, "LEADING");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].code, "USD");
+  assert.equal(items[0].noConversion, true);
+  assert.equal(items[0].available, true, "no-conversion is a resolved state, not an unavailable one");
+});
+
+test("buildLeaderFxItems: a real foreign currency with no sourced snapshot renders honest unavailable, never fabricated", () => {
+  const economics = { fx_horizons: { SAR: { current: null, "1m": null, "6m": null, "12m": null } }, jurisdiction_currency: { SA: "SAR" } };
+  const structure = { primary_jurisdiction: "SA", participants: ["SA"] };
+  const items = buildLeaderFxItems(economics, structure, "TOP PRICED");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].code, "SAR");
+  assert.equal(items[0].available, false);
+  assert.equal(items[0].noConversion, undefined, "unavailable is a distinct state from no-conversion");
+});
+
+test("buildLeaderFxItems: a real foreign currency WITH a sourced snapshot reads the rate verbatim, matching DISPLAYED FX == MODEL-CONSUMED FX", () => {
+  const economics = { fx_horizons: { EUR: { current: 0.87679, "12m": 0.85594 } }, jurisdiction_currency: { GR: "EUR" } };
+  const structure = { primary_jurisdiction: "GR", participants: ["GR"] };
+  const items = buildLeaderFxItems(economics, structure, "TOP PRICED");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].current, 0.87679, "the displayed rate must be the same snapshot value the model consumes, never re-derived");
+  assert.ok(Math.abs(items[0].reverse - 1 / 0.87679) < RECIPROCAL_TOLERANCE);
+});
+
+test("buildLeaderFxItems: no structure (no Leading selection, no Top Priced candidate) never fabricates a leader cell", () => {
+  assert.deepEqual(buildLeaderFxItems({ fx_horizons: {} }, null, null), []);
+});
+
+test("buildLeaderFxItems: does not import flagEmoji/format.jsx — stays plain-node testable, flags resolve in the React presentation layer", () => {
+  const computeSrc = readFileSync(join(__dirname, "../src/lib/todayCompute.js"), "utf8");
+  assert.ok(!/from\s+["']\.\/format\.jsx["']/.test(computeSrc), "todayCompute.js must not import from format.jsx (breaks plain-node testability)");
+});
+
+// ── One shared FX engine, not two — Overview and Workspace both mount
+// components/FXStrip.jsx; neither re-implements FX rendering. ──────────
+const overviewSrc = readFileSync(join(__dirname, "../src/screens/production/Overview.jsx"), "utf8");
+const workspaceSrc = readFileSync(join(__dirname, "../src/screens/production/Workspace.jsx"), "utf8");
+const fxStripSrc = readFileSync(join(__dirname, "../src/components/FXStrip.jsx"), "utf8");
+
+test("Overview.jsx renders the shared components/FXStrip.jsx, not a second FX implementation", () => {
+  assert.ok(overviewSrc.includes('import FXStrip from "../../components/FXStrip"'), "expected Overview.jsx to import the shared FXStrip component");
+  assert.ok(overviewSrc.includes("<FXStrip"), "expected Overview.jsx to render <FXStrip");
+  assert.ok(!overviewSrc.includes("wsx-fx-row"), "Overview.jsx must not carry its own copy of the FX strip markup");
+});
+
+test("Workspace.jsx renders the shared components/FXStrip.jsx, not its former inline copy", () => {
+  assert.ok(workspaceSrc.includes('import FXStrip from "../../components/FXStrip"'), "expected Workspace.jsx to import the shared FXStrip component");
+  assert.ok(workspaceSrc.includes("<FXStrip"), "expected Workspace.jsx to render <FXStrip");
+  assert.ok(!workspaceSrc.includes("function buildLeaderFxItems"), "Workspace.jsx must not carry its own copy of buildLeaderFxItems");
+});
+
+test("components/FXStrip.jsx propagates real source + as-of metadata (the backend->UI propagation gap this closeout repairs)", () => {
+  assert.ok(fxStripSrc.includes("economics?.fx_source"), "expected FXStrip.jsx to read economics.fx_source");
+  assert.ok(fxStripSrc.includes("economics?.fx_horizon_dates?.current"), "expected FXStrip.jsx to read economics.fx_horizon_dates.current");
+});
+
+// ── Overview vertical scrolling: the shared .workspace-main scroll
+// container (AppShell.jsx) is not overridden or duplicated by Overview's
+// own markup — the same architecture every other production route uses.
+const appShellSrc = readFileSync(join(__dirname, "../src/shell/AppShell.jsx"), "utf8");
+test("AppShell.jsx's single .workspace-main scroll container wraps every routed screen, including Overview", () => {
+  assert.match(appShellSrc, /className="workspace-main"/, "expected the shared scrollable body region");
+  assert.ok(!overviewSrc.includes("overflow-y"), "Overview.jsx must not declare its own scroll container — it relies on the shared .workspace-main region");
+  assert.ok(!overviewSrc.includes("100vh"), "Overview.jsx must not fix its own height — that would defeat the shared scroll container");
+});
+
 console.log("");
 if (failures > 0) {
   console.log(`${failures} test(s) failed.`);

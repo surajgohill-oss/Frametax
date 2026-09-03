@@ -4,12 +4,12 @@ import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, compactScenarioIdentity, normalizeTrivialVariance, flagEmoji } from "../../lib/format";
+import { Money, compactScenarioIdentity, normalizeTrivialVariance } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
-import { buildFxItems } from "../../lib/todayCompute";
+import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
@@ -98,71 +98,12 @@ function scenarioOptionLabel(structure) {
   return programLabel ? `${label} — ${programLabel}` : label;
 }
 
-// Project FX strip — Workspace-only, same component family as Today's
-// original FX strip (flag + code, optional 12-month delta chip, both
-// quotation directions USD/{code} and {code}/USD, honest-unavailable
-// fallback) — reused visually and computationally, not redesigned. The
-// fixed EUR/CAD/GBP trio (via the SAME buildFxItems() Today's strip used,
-// unchanged) is always present; after that, one cell per DISTINCT local
-// currency among the dynamic structure's real participants — one cell for
-// a single-jurisdiction structure (SAR), two for a genuine multi-
-// jurisdiction one (MUR + SAR), deduplicated so two participants sharing
-// a currency (e.g. two Eurozone jurisdictions) never render twice. Never
-// a full local-costing breakdown (that stays ENGINE-PENDING). Every rate
-// is read verbatim from economics.fx_horizons (the SAME dataset feeding
-// the fixed EUR/CAD/GBP trio — no second fetch, no frontend FX math); a
-// participant currency with no snapshot entry renders as its own real
-// currency code plus an honest "rate unavailable", never a fabricated
-// number and never the bare "—" placeholder this used to fall back to.
-//
-// Workspace/FX Display Regression: `structure` here is deliberately NOT
-// always the producer's manually-selected Leading Structure — see its
-// caller. When `structure` is null (neither a Leading selection nor a
-// Top Priced candidate exists — e.g. a totally unpriced production),
-// this returns an empty array; Section 7 of the governing directive is
-// explicit that a fake, unresolved "—" block must never render just to
-// fill the fourth slot.
-function buildLeaderFxItems(economics, structure, label) {
-  if (!structure) return [];
-  const horizons = economics?.fx_horizons || {};
-  const jurisdictionCurrency = economics?.jurisdiction_currency || {};
-  // Same participants-or-primary fallback compactScenarioIdentity() uses,
-  // so this reads the identical real structure fields, never a second
-  // derivation of "which jurisdictions this structure touches."
-  const participants = structure?.participants?.length
-    ? structure.participants
-    : (structure?.primary_jurisdiction ? [structure.primary_jurisdiction] : []);
-
-  const seenCodes = new Set();
-  const items = [];
-  for (const jurisdiction of participants) {
-    const iso2 = jurisdiction.split("-")[0].toUpperCase();
-    // Generic chain, no jurisdiction/currency special-cased here:
-    // jurisdiction -> ISO2 -> economics.jurisdiction_currency (the SAME
-    // canonical registry map served for the fixed trio) -> currency code.
-    // No mapping on file: show the jurisdiction's own code rather than
-    // silently dropping the cell.
-    const code = jurisdictionCurrency[iso2] || iso2;
-    if (seenCodes.has(code)) continue; // dedupe — never a repeated currency cell
-    seenCodes.add(code);
-    const flag = flagEmoji(jurisdiction);
-    const h = horizons[code];
-    if (!h || h.current == null) {
-      items.push({ code, flag, available: false, isLeader: true, leaderLabel: label });
-      continue;
-    }
-    const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
-    // Same 5-decimal display precision buildFxItems() uses for the fixed
-    // three, so leader cells never read visually inconsistent with their
-    // siblings — reverse is still always 1/current, computed here, never a
-    // second stored constant.
-    items.push({
-      code, flag, isLeader: true, leaderLabel: label, available: true,
-      current: Number(h.current.toFixed(5)), reverse: Number((1 / h.current).toFixed(5)), deltaPct,
-    });
-  }
-  return items;
-}
+// Project FX strip — CineGlobe Overview FX Strip + Vertical Scrolling
+// closeout extracted this screen's own inline buildLeaderFxItems() (and
+// the whole rendered strip below) into the shared components/FXStrip.jsx
+// + lib/todayCompute.js buildLeaderFxItems, now used by both Workspace
+// and Overview — one FX engine, not two. See FXStrip.jsx's own header
+// comment for the full contract.
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
@@ -405,8 +346,7 @@ export default function Workspace() {
   // uses for its own "Top Priced Candidate" state (ProjectHeader.jsx) —
   // never a second, divergent "best" computation.
   const dynamicFxStructure = leadingStructure || bestPricedCandidate(allocated);
-  const dynamicFxLabel = leadingStructure ? "LEADING" : (dynamicFxStructure ? "TOP PRICED" : null);
-  const fxItems = [...buildFxItems(economics?.fx_horizons), ...buildLeaderFxItems(economics, dynamicFxStructure, dynamicFxLabel)];
+  const dynamicFxIsLeading = !!leadingStructure;
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -437,46 +377,11 @@ export default function Workspace() {
     <div className="wsx-screen">
       {/* Project FX strip — immediately below the shared production tabs
           (rendered by ProjectHeader, outside this component) and
-          immediately above the Lanes/Map/Split mode row. Same component
-          family as Today's original FX strip (flag + code, 12-month delta
-          chip, both quotation directions, honest-unavailable fallback) —
-          reused visually and structurally under a wsx- prefix since Today
-          no longer renders FX at all. */}
-      <section className="wsx-fxstrip">
-        <div className="wsx-fx-row">
-          {fxItems.map((it) => (
-            <div className={`wsx-fx-item ${it.isLeader ? "leader" : ""}`} key={`${it.code}-${it.isLeader ? "leader" : "fixed"}`}>
-              <div className="wsx-fx-head">
-                <span className="wsx-fx-flag" aria-hidden="true">{it.flag}</span>
-                <span className="wsx-fx-code">{it.code}</span>
-                {it.isLeader && it.leaderLabel && <span className="wsx-fx-tag">{it.leaderLabel === "LEADING" ? "Leading" : "Top Priced"}</span>}
-                {it.available && it.deltaPct != null && (
-                  <span className={`wsx-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`} title={`12-month move on USD/${it.code}`}>
-                    {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}%
-                  </span>
-                )}
-              </div>
-              <div className="wsx-fx-rates">
-                <div className="wsx-fx-pair">
-                  <span className="l2">USD / {it.code}</span>
-                  <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
-                    {it.available ? it.current : "rate unavailable"}
-                  </span>
-                </div>
-                <div className="wsx-fx-pair">
-                  <span className="l2">{it.code} / USD</span>
-                  <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
-                    {it.available ? it.reverse : "rate unavailable"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-tertiary small wsx-fx-note">
-          Reference rates (ECB). Reverse pairs derive from the same rate; the optimizer prices at current rates, not forward movement.
-        </p>
-      </section>
+          immediately above the Lanes/Map/Split mode row. Now the shared
+          components/FXStrip.jsx engine (CineGlobe Overview FX Strip +
+          Vertical Scrolling closeout) — Overview mounts the identical
+          component. */}
+      <FXStrip economics={economics} structure={dynamicFxStructure} structureIsLeading={dynamicFxIsLeading} />
 
       {/* Grid geometry matches the artifact: 48px | 1fr | 38px collapsed;
           left widens to 220px (stack) / 340px (Recs/Inputs); the right

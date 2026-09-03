@@ -215,10 +215,18 @@ test("no Lips Like Sugar/project-UUID branching in the repaired Workspace/Hero/f
 // structure — the SAME activeStructure() every other Workspace element
 // (anchor lane, "Set as leading" toggle) already reads, never a second
 // "who is leading" computation.
+// CineGlobe Overview FX Strip + Vertical Scrolling closeout: the dynamic
+// slot's structure resolution stays in Workspace.jsx (it needs
+// leadingStructure/allocated, which are screen-local), but the
+// LEADING/TOP PRICED label derivation moved into the shared
+// components/FXStrip.jsx (Overview needs the identical derivation and
+// must not carry a second copy of it).
 test("the dynamic FX slot is driven by activeStructure (Leading) when it resolves, labeled LEADING", () => {
   const src = stripComments(read("screens/production/Workspace.jsx"));
   assert.match(src, /const dynamicFxStructure = leadingStructure \|\| bestPricedCandidate\(allocated\);/);
-  assert.match(src, /const dynamicFxLabel = leadingStructure \? "LEADING" : \(dynamicFxStructure \? "TOP PRICED" : null\);/);
+  assert.match(src, /const dynamicFxIsLeading = !!leadingStructure;/);
+  const fxStripSrc = stripComments(read("components/FXStrip.jsx"));
+  assert.match(fxStripSrc, /const dynamicLabel = structureIsLeading \? "LEADING" : \(structure \? "TOP PRICED" : null\);/);
 });
 
 // H. No Leading exists but a Top Priced candidate does — the SAME real
@@ -237,9 +245,12 @@ test("bestPricedCandidate (imported from the same module the Hero uses) drives t
 
 // I. Neither a Leading selection nor a Top Priced candidate exists — the
 // slot must not render at all, never a fabricated "—"/"USD / —" block.
+// buildLeaderFxItems now lives in lib/todayCompute.js (CineGlobe Overview
+// FX Strip + Vertical Scrolling closeout extracted it out of Workspace.jsx
+// so Workspace and Overview share the one implementation).
 test("buildLeaderFxItems returns nothing (no bogus dash block) when no structure is passed at all", () => {
-  const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /function buildLeaderFxItems\(economics, structure, label\) \{\s*\n\s*if \(!structure\) return \[\];/, "must short-circuit to an empty array, never the old { code: \"—\", ... } placeholder");
+  const src = stripComments(read("lib/todayCompute.js"));
+  assert.match(src, /export function buildLeaderFxItems\(economics, structure, label\) \{\s*\n\s*if \(!structure\) return \[\];/, "must short-circuit to an empty array, never the old { code: \"—\", ... } placeholder");
   assert.doesNotMatch(src, /code: "—"/, "the fabricated unresolved-dash placeholder must be removed entirely");
 });
 
@@ -251,7 +262,7 @@ test("buildLeaderFxItems returns nothing (no bogus dash block) when no structure
 // New South Wales -> AUD, etc. through the one shared jurisdiction_currency
 // map, never a per-subnational duplicate entry.
 test("dynamic FX currency resolution is generic (ISO2 + shared jurisdiction_currency map), never a hardcoded per-country table", () => {
-  const src = stripComments(read("screens/production/Workspace.jsx"));
+  const src = stripComments(read("lib/todayCompute.js"));
   assert.match(src, /const iso2 = jurisdiction\.split\("-"\)\[0\]\.toUpperCase\(\);/);
   assert.match(src, /const code = jurisdictionCurrency\[iso2\] \|\| iso2;/);
   assert.match(src, /const jurisdictionCurrency = economics\?\.jurisdiction_currency \|\| \{\};/, "must read the SAME real economics.jurisdiction_currency map the fixed trio uses, not a second one");
@@ -262,12 +273,14 @@ test("dynamic FX currency resolution is generic (ISO2 + shared jurisdiction_curr
 // never a fabricated rate, and no jurisdiction/currency is special-cased
 // by name anywhere in this file.
 test("a resolved currency with no snapshot entry renders its own code plus a truthful 'rate unavailable', never a fabricated rate", () => {
-  const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /rate unavailable/);
-  assert.doesNotMatch(src, /SAR|Saudi/, "no jurisdiction/currency may be special-cased by name in this file");
+  const fxStripSrc = stripComments(read("components/FXStrip.jsx"));
+  assert.match(fxStripSrc, /rate unavailable/);
+  const computeSrc = stripComments(read("lib/todayCompute.js"));
+  assert.doesNotMatch(fxStripSrc, /SAR|Saudi/, "no jurisdiction/currency may be special-cased by name in the FX strip component");
+  assert.doesNotMatch(computeSrc, /SAR|Saudi/, "no jurisdiction/currency may be special-cased by name in the FX compute module");
 });
 
 test("the LEADING/TOP PRICED tag is self-contained on the resolved dynamic slot, never a detached label over an unresolved cell", () => {
-  const src = stripComments(read("screens/production/Workspace.jsx"));
+  const src = stripComments(read("components/FXStrip.jsx"));
   assert.match(src, /it\.isLeader && it\.leaderLabel && <span className="wsx-fx-tag">\{it\.leaderLabel === "LEADING" \? "Leading" : "Top Priced"\}<\/span>/);
 });
