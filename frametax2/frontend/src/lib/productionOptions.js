@@ -140,6 +140,14 @@ export function qpeOf(structure) {
 // order), tie-broken by ascending NPC for a priced structure with no
 // formal rank — reused here instead of a second, narrower selection
 // rule, over every is_fully_priced structure.
+// Exported (not just internal) so Workspace.jsx's own lane ordering can
+// reuse this exact function instead of carrying a second, independently-
+// maintained copy of the same rank-then-NPC rule (item 7: "Do not
+// duplicate business logic independently in two React components").
+export function rankOrNpcOrder(allocated) {
+  return _rankOrNpcOrder(allocated);
+}
+
 function _rankOrNpcOrder(allocated) {
   const rankById = new Map((allocated.ranking || []).map((r) => [r.structure_id, r]));
   return [...allocated.structures]
@@ -164,54 +172,118 @@ function _hasUpsideGap(structure) {
   return Math.round(floor * 10000) !== Math.round(ceiling * 10000);
 }
 
+// F#K Valentine's Day economic/semantic regression fix (2026-09-03):
+// this used to sum every conditional_programs[].documented_cap_usd and
+// present the total as "Potential up to $X" — for FVD's real Manitoba
+// candidate that summed FIVE unrelated NATIONAL funds' own per-project
+// CEILINGS (Canada Media Fund $10M + Telefilm CFFF $5M + Telefilm Export
+// $550K + Manitoba Film & Music $550K = $16.1M) for a production with a
+// $4.5M total source budget — a program-wide cap sized for "major drama"
+// productions much larger than this one, presented as if it were this
+// project's own achievable potential. A per-project cap is real and
+// disclosable, but summing several unrelated funds' own maximums (each
+// independently competitive/discretionary, never simultaneously
+// guaranteed) is not a project-level figure at all (item 5.C/5.D: a
+// program cap/maximum must never be presented as the project's
+// calculated incentive, and must never exceed what's mathematically
+// permissible for this project). Fix: disclose the REAL fund names/count
+// (still real, disclosed, non-fabricated data) without manufacturing a
+// dollar figure no single fund, let alone their sum, actually guarantees
+// this specific production.
 export function selectMaxPotentialCard(allocated, excludeIds) {
   if (!allocated?.structures) return null;
   const candidates = allocated.structures.filter((s) => !excludeIds.has(s.structure_id));
 
+  // Selection signal stays the total documented_cap_usd (a real,
+  // disclosed per-program ceiling, summed only to RANK candidates
+  // against each other — never displayed as a dollar figure; see the
+  // rendering fix in IncentiveIntelligence.jsx). Ranking by fund COUNT
+  // instead was tried and reverted: it picked a differently-labeled
+  // treaty/co-production structure over the real single-jurisdiction
+  // relocation candidate the cap-sum ranking already correctly
+  // surfaced — changing WHICH structure Card 4 selects was never the
+  // defect here, only what dollar figure it displayed.
   let bestFund = null;
   let bestFundCap = 0;
+  let bestFundNames = [];
   for (const s of candidates) {
-    const cap = (s.conditional_programs || []).reduce((sum, p) => sum + (p.documented_cap_usd || 0), 0);
-    if (cap > bestFundCap) { bestFundCap = cap; bestFund = s; }
+    const programs = s.conditional_programs || [];
+    const cap = programs.reduce((sum, p) => sum + (p.documented_cap_usd || 0), 0);
+    if (cap > bestFundCap) {
+      bestFundCap = cap;
+      bestFundNames = programs.map((p) => p.program_name).filter(Boolean);
+      bestFund = s;
+    }
   }
-  if (bestFund) return { structure: bestFund, isOpportunity: true, potentialUsd: bestFundCap };
+  if (bestFund) return { structure: bestFund, isOpportunity: true, potentialUsd: null, fundCount: bestFund.conditional_programs.length, fundNames: bestFundNames };
 
   const treatyOpportunity = candidates.find(
     (s) => s.treaty_slug || s.structure_type === "treaty_coproduction" || s.candidate_status === "STATUS_CO_PRO_OPPORTUNITY",
   );
-  if (treatyOpportunity) return { structure: treatyOpportunity, isOpportunity: true, potentialUsd: null };
+  if (treatyOpportunity) return { structure: treatyOpportunity, isOpportunity: true, potentialUsd: null, fundCount: 0, fundNames: [] };
 
   const withOwnUpside = candidates
     .filter((s) => s.is_fully_priced && _hasUpsideGap(s))
     .sort((a, b) => (b.npc_with_adjustments_usd ?? 0) - (a.npc_with_adjustments_usd ?? 0));
-  if (withOwnUpside.length) return { structure: withOwnUpside[0], isOpportunity: false, potentialUsd: null };
+  if (withOwnUpside.length) return { structure: withOwnUpside[0], isOpportunity: false, potentialUsd: null, fundCount: 0, fundNames: [] };
 
   return null;
 }
 
-export function selectTopFour(allocated) {
+// CineGlobe Overview 2x2 anchor/scenario composition (history-based
+// restoration, 2026-09-03). The approved 2x2 grid genuinely existed
+// (commit ec283e5, "Incentive Intelligence 2x2 grid") — its own real
+// category was "Recommended" (gold, the rank-1 structure), not a
+// dedicated anchor/current-production concept; the ONE canonical field
+// this codebase already uses for "current/base production structure" is
+// isBaselineStructure()/is_baseline (backend-sourced -- see its own
+// header comment above), reused here rather than inventing a second
+// concept. Card 1 is always the production's real baseline/current
+// structure when one exists in the allocated set; Cards 2-3 are the two
+// highest-ranked alternatives EXCLUDING the anchor (never array
+// position); Card 4 is the strongest legitimate optimization opportunity
+// not already shown (selectMaxPotentialCard, unchanged from the prior
+// pass — its own real-data sourcing already satisfies item 5's
+// requirement list), falling back to the next-best ranked alternative
+// when no legitimate opportunity exists (never fabricated).
+export function selectAnchorLeadingOptimized(allocated) {
   if (!allocated?.ranking || !allocated?.structures) return [];
-  const ordered = _rankOrNpcOrder(allocated);
-  const firstThree = ordered.slice(0, 3);
-  const shownIds = new Set(firstThree.map((s) => s.structure_id));
+  const anchor = allocated.structures.find(isBaselineStructure) || null;
+  const ordered = _rankOrNpcOrder(allocated).filter(
+    (s) => !anchor || s.structure_id !== anchor.structure_id,
+  );
+  const leading = ordered.slice(0, 2);
+  const cards = anchor ? [anchor, ...leading] : leading.length ? ordered.slice(0, 3) : [];
+  const shownIds = new Set(cards.map((s) => s.structure_id));
 
   const maxPotential = selectMaxPotentialCard(allocated, shownIds);
   if (maxPotential) {
-    return [...firstThree, { ...maxPotential.structure, __isOpportunity: maxPotential.isOpportunity, __potentialUsd: maxPotential.potentialUsd }];
+    cards.push({
+      ...maxPotential.structure,
+      __isOpportunity: maxPotential.isOpportunity,
+      __potentialUsd: maxPotential.potentialUsd,
+      __fundCount: maxPotential.fundCount,
+      __fundNames: maxPotential.fundNames,
+    });
+  } else {
+    const fourth = ordered.find((s) => !shownIds.has(s.structure_id));
+    if (fourth) cards.push(fourth);
   }
-  const fourth = ordered.find((s) => !shownIds.has(s.structure_id));
-  if (fourth) return [...firstThree, fourth];
-  return firstThree;
+  return cards.slice(0, 4);
 }
 
-// Card status — item 10's four exact single-line states. `leadingId`:
-// the producer's manual Leading selection (activeStructure's own
-// identity), same generic concept every other Leading/Top-Priced
-// distinction in this app already uses (FXStrip, Budget Rail) — never a
-// second "leading" derivation.
-export function cardStatus(structure, cardIndex, leadingId) {
-  if (structure.__isOpportunity) return "OPPORTUNITY";
-  if (leadingId ? structure.structure_id === leadingId : cardIndex === 0) return "LEADING";
-  if (_hasUpsideGap(structure)) return "OPTIMIZE";
-  return "VIABLE";
+// Card status — the restored ANCHOR/LEADING/LEADING/OPTIMIZED vocabulary
+// (item 10 of the prior pass's LEADING/OPTIMIZE/VIABLE/OPPORTUNITY
+// wording is superseded by this history-based restoration). `cardIndex`
+// is the position selectAnchorLeadingOptimized itself returned the
+// structure at — never re-derived from array order elsewhere, so Anchor
+// can never be assigned to array position 0 by accident when
+// selectAnchorLeadingOptimized had no real baseline to put there (the
+// `isBaselineStructure` check below is the actual authority, cardIndex
+// is only a hint consistent with it by construction).
+export function cardStatus(structure, cardIndex) {
+  if (structure.__isOpportunity) return "OPTIMIZED";
+  if (cardIndex === 0 && isBaselineStructure(structure)) return "ANCHOR";
+  if (cardIndex === 3) return "OPTIMIZED";
+  return "LEADING";
 }

@@ -208,7 +208,6 @@ export default function Overview() {
 
           <IncentiveIntelligence
             allocated={allocated}
-            leadingStructureId={leadingStructureId}
             onSelect={openIntelligenceCard}
           />
         </div>

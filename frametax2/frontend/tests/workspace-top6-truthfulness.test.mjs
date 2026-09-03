@@ -112,7 +112,7 @@ test("a multi-program stack derives its secondary label from program_display_nam
 // never the full "Country — Subnational" string as the card headline.
 test("bestJurisdictionName's composite country-subnational form is trimmed to its most specific segment for the card title", () => {
   const src = stripComments(read("lib/format.jsx"));
-  assert.match(src, /const parts = full\.split\(" — "\);/, "must split the composite registry name on its own real delimiter");
+  assert.match(src, /\.split\(" — "\)/, "must split the composite registry name on its own real delimiter");
   assert.match(src, /return parts\[parts\.length - 1\];/, "must keep only the most specific (last) real segment — never a frontend-invented short name");
 });
 

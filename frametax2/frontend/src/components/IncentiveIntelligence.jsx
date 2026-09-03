@@ -1,36 +1,50 @@
-import { CompactMoney, scenarioDisplay, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone } from "../lib/format";
-import { classifyStructure, selectTopFour, cardStatus, qpeOf, isBaselineStructure } from "../lib/productionOptions";
+import { CompactMoney, scenarioDisplay, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk } from "../lib/format";
+import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, qpeOf, isBaselineStructure } from "../lib/productionOptions";
 
 // Overview center-column, directly beneath Project Globe — the approved
-// Top Four decision surface (CineGlobe Overview / Workspace final repair
-// closeout, 2026-09-03): exactly four cards, one row on desktop. Card
-// 1-3 are the three highest-ranked currently-modeled structures; Card 4
-// is the highest-value legitimate potentially-optimized opportunity not
-// already shown, or the canonical next-best modeled structure when none
-// exists — selection lives in lib/productionOptions.js (unit-tested
-// there); this file only formats and renders, reusing the existing
-// .ii-* card vocabulary (CardShell-style accent bar + metrics grid)
-// unchanged in geometry.
+// 2x2 anchor/scenario decision surface (history-based restoration,
+// 2026-09-03, root authority: commit ec283e5's real "Incentive
+// Intelligence 2x2 grid" — the only genuine 2-row/2-column grid this
+// surface has ever used; its category semantics were Recommended/
+// Alternatives/Co-Production Opportunities/Excluded, reinterpreted here
+// against the canonical anchor/current-production data model
+// (isBaselineStructure/is_baseline) rather than inventing a second
+// concept). Selection lives in lib/productionOptions.js's
+// selectAnchorLeadingOptimized (unit-tested there); this file only
+// formats and renders, reusing the existing .ii-* card vocabulary
+// (CardShell-style accent bar + metrics grid) unchanged in geometry.
 //
-// Status line (immediately beneath the jurisdiction name) and the
-// compact rate line (never a program name — see lib/format.jsx's
-// compactIncentiveRate) are the two changes to the card body; nothing
-// else about card width/height/padding/metrics moved.
+// Card 1 — ANCHOR (the production's real current/base structure).
+// Cards 2-3 — LEADING (the two highest-ranked alternatives, Anchor
+// excluded).
+// Card 4 — OPTIMIZED (the strongest legitimate optimization opportunity
+// not already shown, or the canonical next-best alternative when none
+// exists — never fabricated).
 
-function OptionCard({ structure, cardIndex, leadingId, baseNpc, onClick }) {
+function OptionCard({ structure, cardIndex, baseNpc, onClick }) {
   const classification = classifyStructure(structure);
   const { title } = scenarioDisplay(structure);
-  const status = cardStatus(structure, cardIndex, leadingId);
+  const status = cardStatus(structure, cardIndex);
   const isOpportunity = !!structure.__isOpportunity;
   // Opportunity cards (Card 4 when it represents a real disclosed
   // fund/treaty pathway, not yet-earned economics) must never format
   // their figure through compactIncentiveRate — that function only ever
   // describes a structure's OWN resolved rate_floor/rate_ceiling, and
   // applying it here would misrepresent a disclosed cap as an earned
-  // rate (item 11.D/E). Show the real disclosed cap when one exists,
-  // otherwise the honest "not yet modeled" state — never a fabricated %.
+  // rate. F#K Valentine's Day economic/semantic regression fix
+  // (2026-09-03): this used to sum every disclosed fund's own
+  // documented_cap_usd and show "Potential up to $X" — for a real
+  // production this summed five unrelated national funds' own per-
+  // project ceilings (sized for productions much larger than this one)
+  // into a figure ($16.1M) that exceeded the production's entire $4.5M
+  // source budget by more than 3x. A program's own cap is real and
+  // disclosable but is never this project's calculated potential (item
+  // 5.C/5.D) — disclose the real fund COUNT/NAMES instead, never a
+  // fabricated or summed dollar figure.
   const rateLine = isOpportunity
-    ? (structure.__potentialUsd ? <>Potential up to <CompactMoney value={structure.__potentialUsd} /></> : "Potential — not yet modeled")
+    ? (structure.__fundCount
+        ? `${structure.__fundCount} discretionary fund${structure.__fundCount === 1 ? "" : "s"} available — not a guaranteed or project-scaled figure`
+        : "Potential — not yet modeled")
     : compactIncentiveRate(structure);
   const npc = structure.npc_with_adjustments_usd;
   const diff = npc != null && baseNpc != null && !isBaselineStructure(structure) ? npc - baseNpc : null;
@@ -94,13 +108,25 @@ function OptionCard({ structure, cardIndex, leadingId, baseNpc, onClick }) {
             </span>
           </div>
         )}
+
+        {/* F#K item 3: real, backend-disclosed administrative/discretionary
+            allocation risk (award-authority discretion, competitive/
+            capacity-limited allocation, or a mandatory preapproval step).
+            A structure carrying this must never present as a clean,
+            unconditional deterministic winner — generic across every
+            jurisdiction/program, see hasAdministrativeAllocationRisk. */}
+        {hasAdministrativeAllocationRisk(structure) && (
+          <div className="ii-program">
+            <span className="badge amber">⚠ Discretionary / preapproval required</span>
+          </div>
+        )}
       </div>
     </Tag>
   );
 }
 
-export default function IncentiveIntelligence({ allocated, leadingStructureId, onSelect }) {
-  const options = selectTopFour(allocated);
+export default function IncentiveIntelligence({ allocated, onSelect }) {
+  const options = selectAnchorLeadingOptimized(allocated);
   const baseline = allocated?.structures?.find(isBaselineStructure);
   const baseNpc = baseline?.npc_with_adjustments_usd ?? null;
 
@@ -116,7 +142,6 @@ export default function IncentiveIntelligence({ allocated, leadingStructureId, o
               key={s.structure_id}
               structure={s}
               cardIndex={i}
-              leadingId={leadingStructureId}
               baseNpc={baseNpc}
               onClick={onSelect ? () => onSelect(s) : undefined}
             />

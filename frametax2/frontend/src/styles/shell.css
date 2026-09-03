@@ -294,7 +294,18 @@
    4) rather than the title's own stack rhythm, per the requirement that
    the stage control sit alongside the supporting line, not float on its
    own vertical rhythm. */
-.ph-hero-identity-sub { display: flex; align-items: center; gap: 14px; }
+/* Restored-approved-header repair (2026-09-03): .ph-hero-identity has no
+   flex-shrink/flex-basis of its own and sits opposite .ph-hero-metrics
+   (flex-shrink: 0 — never yields space), so at common desktop widths
+   .ph-hero-identity gets squeezed by min-width:0 well below what its
+   OWN child content (the "Feature Film" label + the stage dropdown)
+   needs — confirmed live: identity measured ~76px wide while its stage
+   control alone is ~95px, so the stage pill visually overflowed onto
+   the adjacent Production Budget metric. Wrapping here keeps the stage
+   control within its own container's bounds (drops to its own line)
+   instead of spilling into a sibling metric — the narrowest fix that
+   doesn't touch metric layout, title typography, or stage semantics. */
+.ph-hero-identity-sub { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; row-gap: 6px; }
 .ph-hero-sub {
   margin: 0;
   font-size: 13px;
@@ -348,6 +359,15 @@
   font-size: 12px;
   color: rgba(247, 243, 232, 0.68);
   white-space: nowrap;
+}
+/* F#K item 3: a real, backend-disclosed administrative/discretionary
+   allocation-risk flag on the Hero's headline candidate — must read
+   distinctly from the ordinary caption so a discretionary/preapproval-
+   gated structure is never mistaken for a guaranteed outcome. */
+.ph-hero-risk-caption {
+  color: var(--amber);
+  white-space: normal;
+  max-width: 220px;
 }
 .ph-hero-sep { width: 0.5px; align-self: stretch; margin-bottom: 3px; background: rgba(247, 243, 232, 0.22); }
 

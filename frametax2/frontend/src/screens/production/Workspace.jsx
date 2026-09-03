@@ -4,11 +4,12 @@ import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, compactScenarioIdentity, normalizeTrivialVariance } from "../../lib/format";
+import { Money, compactScenarioIdentity, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
+import { selectAnchorLeadingOptimized, isBaselineStructure } from "../../lib/productionOptions";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
@@ -51,30 +52,43 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // usefully show at once (every discovery-retained partner — incentive-
 // ready AND capability-only — gets a full-relocation and a component
 // candidate). Six visible cards, swap-in overflow — the same contract
-// Scenarios.jsx uses, over the SAME ordering rule (rank-first, then
-// composition order). This is EXISTING optimizer output navigation
+// Scenarios.jsx uses. This is EXISTING optimizer output navigation
 // ("Other Scenarios"), not scenario creation — the optimizer already
 // generated every one of these; the control only changes which of them
 // occupies a visible lane.
+//
+// 2x2 anchor/scenario composition, history-based restoration (item 7):
+// the first four lanes are ALWAYS Anchor -> Leading -> Leading ->
+// Optimized, via lib/productionOptions.js's selectAnchorLeadingOptimized
+// — the SAME canonical selection Overview's Top Structures uses, never a
+// second, independently-maintained copy. Remaining lanes (5-6, and
+// anything reachable via Other Scenarios) keep the existing rank-then-
+// NPC order, excluding whatever the first four already claimed.
 const MAX_VISIBLE = 6;
-function visibleStructures(structures, rankById, swapId) {
-  const ordered = [...structures].sort((a, b) => {
-    const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
-    const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
-    if (ra !== rb) return ra - rb;
-    // Workspace Top-6/Data Truthfulness: among structures with no
-    // canonical rank (comparable_count can be 0 — the production's own
-    // baseline is unpriceable — while real priced candidates still
-    // exist), the served array order is arbitrary generation order, not
-    // economic order. Tie-break by the SAME real NPC field the canonical
-    // comparable ranking already sorts by — grants no rank, no
-    // recommendation; it only makes "which 6 show first" deterministic
-    // and cost-ordered instead of accidental. Priced structures sort
-    // before unpriced ones.
-    const an = a.is_fully_priced ? (a.npc_with_adjustments_usd ?? Infinity) : Infinity;
-    const bn = b.is_fully_priced ? (b.npc_with_adjustments_usd ?? Infinity) : Infinity;
-    return an - bn;
-  });
+function visibleStructures(allocated, rankById, swapId) {
+  const structures = allocated.structures;
+  const anchorLeadingOptimized = selectAnchorLeadingOptimized(allocated);
+  const claimedIds = new Set(anchorLeadingOptimized.map((s) => s.structure_id));
+  const rest = [...structures]
+    .filter((s) => !claimedIds.has(s.structure_id))
+    .sort((a, b) => {
+      const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
+      const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
+      if (ra !== rb) return ra - rb;
+      // Workspace Top-6/Data Truthfulness: among structures with no
+      // canonical rank (comparable_count can be 0 — the production's own
+      // baseline is unpriceable — while real priced candidates still
+      // exist), the served array order is arbitrary generation order, not
+      // economic order. Tie-break by the SAME real NPC field the canonical
+      // comparable ranking already sorts by — grants no rank, no
+      // recommendation; it only makes "which 6 show first" deterministic
+      // and cost-ordered instead of accidental. Priced structures sort
+      // before unpriced ones.
+      const an = a.is_fully_priced ? (a.npc_with_adjustments_usd ?? Infinity) : Infinity;
+      const bn = b.is_fully_priced ? (b.npc_with_adjustments_usd ?? Infinity) : Infinity;
+      return an - bn;
+    });
+  const ordered = [...anchorLeadingOptimized, ...rest];
   const base = ordered.slice(0, MAX_VISIBLE);
   const overflow = ordered.slice(MAX_VISIBLE);
   const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
@@ -107,6 +121,10 @@ function scenarioOptionLabel(structure) {
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
+  // 2x2 anchor/scenario composition (item 7): the canonical anchor/
+  // current-production structure — isBaselineStructure/is_baseline,
+  // the SAME field Overview's Card 1 reads, never a second derivation.
+  const isAnchor = isBaselineStructure(structure);
   // All four card figures read from THIS scenario's canonical allocated
   // structure — gross from structure.gross_budget_usd (falls back to the
   // production-level prop only if a structure ever omits it), qualified
@@ -123,7 +141,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   const qualifiedSpend = normalizeTrivialVariance(qualifiedSpendRaw, gross);
   const npc = structure.npc_with_adjustments_usd;
 
-  const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
+  const laneClass = (isLeading || isAnchor) ? "anchor" : priced ? "" : "draft";
   // Workspace Top-6/Data Truthfulness: "Set as leading"/LEADING is a
   // PRODUCER SELECTION, never CineGlobe's own ranked recommendation —
   // it must never borrow the "①" glyph, which implies canonical rank #1
@@ -134,11 +152,17 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   // review_required split) must never silently default to "①" either;
   // "PRICED" states plainly that real economics exist without
   // asserting an order the doctrine did not establish.
+  // 2x2 anchor/scenario composition (item 7): a producer's own manual
+  // Leading selection is always surfaced honestly (never silently
+  // relabeled) — ANCHOR only shows when this is the canonical baseline
+  // AND not also the producer's manual pick.
   const badge = isLeading
     ? "◈ LEADING"
-    : priced
-      ? (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : "PRICED")
-      : "DRAFT";
+    : isAnchor
+      ? "◆ ANCHOR"
+      : priced
+        ? (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : "PRICED")
+        : "DRAFT";
 
   // Compact card identity (flag + full jurisdiction name + "Up to X%") —
   // the approved Workspace format. See compactScenarioIdentity in
@@ -197,6 +221,18 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
             <i style={{ left: `${pct(qualifiedSpend, gross)}%`, right: 0 }} />
             <b style={{ left: `${pct(npc, gross)}%` }} />
           </div>
+          {/* F#K item 3: same generic administrative/discretionary
+              allocation-risk disclosure as Overview's cards and the Hero
+              — a priced structure here can still be gated by award-
+              authority discretion, competitive/capacity-limited
+              allocation, or a mandatory preapproval step. Cross-page
+              consistency (invariant H): reads the SAME warnings-derived
+              signal, never a per-page re-derivation. */}
+          {hasAdministrativeAllocationRisk(structure) && (
+            <div className="wsx-row" style={{ color: "var(--amber)" }}>
+              <span>⚠ Discretionary / preapproval required</span>
+            </div>
+          )}
         </>
       ) : (
         <div className="wsx-partial">
@@ -333,7 +369,7 @@ export default function Workspace() {
   const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
-  const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
+  const { overflow, cols } = visibleStructures(allocated, rankById, swapId);
   // Workspace/FX Display Regression: Leading (activeStructure, which
   // already carries this project's OWN manual-selection-or-canonical-
   // rank-1 semantics — the same "leading" identity every other Workspace

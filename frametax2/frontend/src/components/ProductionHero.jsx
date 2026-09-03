@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Money } from "../lib/format";
-import { humanizeToken, bestJurisdictionName } from "../lib/format";
+import { humanizeToken, bestJurisdictionName, hasAdministrativeAllocationRisk } from "../lib/format";
 import { API_ORIGIN } from "../api";
 import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 
@@ -61,6 +61,13 @@ export default function ProductionHero({
   const bestPricedJurisdiction = bestPriced?.primary_jurisdiction
     ? bestJurisdictionName(bestPriced.primary_jurisdiction, bestPriced)
     : null;
+  // F#K item 3: whichever structure is actually driving this metric
+  // (Recommended/Leading, or the Top Priced Candidate fallback) may
+  // itself carry a real, backend-disclosed administrative/discretionary
+  // allocation risk. Generic — keyed on the structure actually shown,
+  // never on a hardcoded jurisdiction.
+  const heroCandidate = topStructure || bestPriced;
+  const heroHasAllocationRisk = hasAdministrativeAllocationRisk(heroCandidate);
 
   // Visible UI defect fix: the Part G change above made this fetch
   // unconditional for every project, including Little Utopia. Little
@@ -188,6 +195,21 @@ export default function ProductionHero({
                 ? (isGenuineRecommendation ? recommendedType : "◈ Producer selection")
                 : (bestPriced ? "Best priced — not CineGlobe's recommendation" : "See Scenarios for priced candidates")}
             </span>
+            {/* F#K item 3: a structure can be deterministically priced and
+                STILL not be an unconditional winner — real award-authority
+                discretion, competitive/capacity-limited allocation, or a
+                mandatory preapproval step can mean this production never
+                actually receives the incentive its own formula computed.
+                The backend already discloses this per-structure; surface
+                it here so the Hero's single most prominent candidate can
+                never read as a clean guaranteed outcome when it isn't.
+                Generic across any jurisdiction/program — see
+                hasAdministrativeAllocationRisk in lib/format.jsx. */}
+            {heroHasAllocationRisk && (
+              <span className="ph-hero-metric-caption ph-hero-risk-caption">
+                ⚠ Discretionary/preapproval-gated — not a guaranteed award
+              </span>
+            )}
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />
           <div className="ph-hero-metric">

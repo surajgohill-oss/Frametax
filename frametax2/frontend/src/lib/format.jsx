@@ -16,12 +16,32 @@ const jurName = (code) => JURISDICTION_COORDS[code]?.name || code || "—";
 // primary_jurisdiction — prefer it there; fall back to the geo map only
 // for a participant code the structure doesn't carry its own registry
 // name for (a real, disclosed gap, never a fabricated label).
+// CineGlobe canonical producer-facing jurisdiction name — the ONE
+// resolver every surface (Overview, Workspace, Scenarios, Project Globe,
+// Reports, any shared jurisdiction component) must call, never a local
+// re-derivation (F#K Valentine's Day economic/semantic regression fix,
+// 2026-09-03). structure.jurisdiction_display_name is the real canonical
+// Jurisdiction-table name, but it is a full disambiguated identity
+// string ("Canada — Manitoba"), not a producer-facing label — a
+// producer reads "Manitoba", the same trimmed-to-most-specific-segment
+// form JURISDICTION_COORDS' own geo map already uses (confirmed:
+// JURISDICTION_COORDS["CA-MB"].name === "Manitoba" already, with no
+// country prefix — the defect was ONLY in this function preferring the
+// untrimmed composite over it for a structure's own primary_jurisdiction).
 export function bestJurisdictionName(code, structure) {
   if (structure && code === structure.primary_jurisdiction && structure.jurisdiction_display_name) {
-    return structure.jurisdiction_display_name;
+    const parts = structure.jurisdiction_display_name.split(" — ");
+    return parts[parts.length - 1];
   }
   return jurName(code);
 }
+
+// F#K item 3 — administrative/discretionary allocation-risk detection
+// lives in lib/allocationRisk.js (pure logic, independently unit-
+// testable with plain `node`; see that file's header for the full
+// rationale). Re-exported here so every component can import it
+// alongside the rest of the display helpers.
+export { hasAdministrativeAllocationRisk } from "./allocationRisk.js";
 
 // Pure display formatting only — no business logic, no derived facts.
 
@@ -328,12 +348,11 @@ export function compactScenarioIdentity(structure) {
   // title). Take only the last " — "-delimited segment, which is always
   // the most specific real name the registry gave this jurisdiction —
   // never a second, frontend-invented jurisdiction name.
+  // bestJurisdictionName itself now returns the trimmed, most-specific-
+  // segment producer-facing name (see its own header comment) — no
+  // second trim needed here.
   const jurisdictionName_ = codes.length
-    ? codes.map((c) => {
-        const full = bestJurisdictionName(c, structure);
-        const parts = full.split(" — ");
-        return parts[parts.length - 1];
-      }).join(" + ")
+    ? codes.map((c) => bestJurisdictionName(c, structure)).join(" + ")
     : (structure.label || "—");
 
   // The card title is the jurisdiction ALONE (Workspace Display

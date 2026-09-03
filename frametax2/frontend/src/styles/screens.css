@@ -132,11 +132,12 @@
    reuse the existing gold/jade/amber/silver tokens — no new palette. */
 .ii-grid {
   display: grid;
-  /* CineGlobe Overview Top Four (final repair, 2026-09-03): exactly four
-     cards, one row on desktop -- was 2x2 (a leftover from Batch 2's 4-slot
-     grid) then implicitly wrapped once Production Options showed up to
-     six. Item 12: "EXACTLY FOUR CARDS ON ONE ROW. No 2x2." */
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Restored 2x2 anchor/scenario composition (history-based restoration,
+     2026-09-03): commit ec283e5's real "Incentive Intelligence 2x2 grid"
+     is the only genuine 2-row/2-column grid this surface has ever used.
+     A later pass briefly widened this to a 4-across single row -- that
+     was itself the regression this restoration reverts. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 .ii-card {
@@ -187,16 +188,10 @@
 }
 .ii-structure { font-size: 10.5px; color: var(--text-tertiary); margin-top: -2px; }
 
-/* Metric cell density (Top Four, final repair 2026-09-03): four cards on
-   one row leaves each card meaningfully narrower than the former 2-up
-   grid -- reduced internal font/gap here only (never the outer card
-   padding/height/jurisdiction-name/economic-value line the task
-   protects) so a real dollar figure truncates less often. The existing
-   ellipsis fallback (unchanged) still applies at any width. */
-.ii-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 8px; margin-top: 8px; }
-.ii-metric { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.ii-metric-label { font-size: 8px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-tertiary); }
-.ii-metric-value { font-size: 11px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ii-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin-top: 8px; }
+.ii-metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ii-metric-label { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); }
+.ii-metric-value { font-size: 12.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .ii-reason { font-size: 11.5px; color: var(--text-secondary); line-height: 1.45; margin-top: 6px; }
 
@@ -208,24 +203,6 @@
 .ii-program { margin-top: auto; padding-top: 8px; font-size: 10px; color: var(--text-tertiary); border-top: 0.5px solid var(--hairline); }
 
 .ii-empty { margin-top: auto; margin-bottom: auto; font-size: 11.5px; color: var(--text-tertiary); }
-
-@media (max-width: 1150px) {
-  .ii-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-/* Top Four at the app's own narrower three-column tier (.ovxg-grid's
-   existing 300px/1fr/300px breakpoint, screens.css:866) -- still four
-   cards on one row (the outer grid/geometry is untouched), but each
-   card's own content width is real estate-constrained enough that four
-   full metric cells truncate even abbreviated (CompactMoney) figures.
-   Same row/height budget as before: two metrics stacked in one column
-   is still two rows, matching the two rows the full four-metric 2-up
-   grid already used -- height never grows. Gross Budget/Qualified Spend
-   remain one Inspector click away (existing detail path), never lost. */
-@media (max-width: 1400px) and (min-width: 1151px) {
-  .ii-metric:nth-child(1), .ii-metric:nth-child(2) { display: none; }
-  .ii-metrics { grid-template-columns: 1fr; }
-}
 
 /* Production Budget rail */
 .brail-panel {

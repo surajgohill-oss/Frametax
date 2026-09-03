@@ -155,7 +155,21 @@ def _jurisdiction_names_by_code(jurisdictions) -> dict[str, str]:
             names[code] = resolved
     # A seeded Jurisdiction row is authoritative and always wins.
     names.update({j.code: j.name for j in jurisdictions if j.name})
-    return names
+    # F#K Valentine's Day economic/semantic regression fix (2026-09-03),
+    # item 4a: both sources above can carry a composite "Country —
+    # Subnational" registry name (e.g. "Canada — Manitoba") -- the real,
+    # correct registry identity, but never the producer-facing form. A
+    # structure's own name-substitution in _humanize_structure_label
+    # embedded this raw composite string verbatim ("Full relocation to
+    # Canada — Manitoba"), duplicating the same defect the frontend's
+    # bestJurisdictionName already fixed for its own callers (see
+    # lib/format.jsx) -- but this backend map feeds a DIFFERENT surface
+    # (Project Globe's structure list) that never routes through the
+    # frontend helper. Trimming to the most specific (last) segment HERE,
+    # at the one canonical name-resolution point every code substitution
+    # in a structure's label goes through, fixes it everywhere at once --
+    # never a per-string patch, never a per-jurisdiction special case.
+    return {code: (name.split(" — ")[-1] if name else name) for code, name in names.items()}
 
 
 def _program_display_name(program_slug: str | None) -> str | None:

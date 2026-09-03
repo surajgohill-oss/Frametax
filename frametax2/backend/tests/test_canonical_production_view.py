@@ -118,3 +118,26 @@ async def test_little_utopia_project_id_still_resolves_project_id(db: AsyncSessi
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
         view = await build_production_and_structures(db, project_id)
         assert view["production"]["project_id"] == project_id
+
+
+async def test_structure_labels_use_the_trimmed_producer_facing_jurisdiction_name(db: AsyncSession):
+    """F#K Valentine's Day economic/semantic regression fix (2026-09-03),
+    item 4a: a structure's `label` is built from the SAME canonical
+    jurisdiction-name map every code substitution in it goes through
+    (_jurisdiction_names_by_code / _humanize_structure_label). That map
+    used to hand back a composite "Country — Subnational" registry name
+    verbatim (e.g. "Canada — Manitoba"), so Project Globe's structure
+    list showed "Full relocation to Canada — Manitoba" — a producer-
+    facing regression this test locks in at the one canonical
+    resolution point every caller shares (never a per-string patch,
+    never a per-jurisdiction special case)."""
+    for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
+        view = await build_production_and_structures(db, project_id)
+        structures = view["structures"]["allocated_structures"]["structures"]
+        manitoba_labels = [s["label"] for s in structures if s.get("label") and "Manitoba" in s["label"]]
+        assert manitoba_labels, f"{project_id}: expected at least one Manitoba-routed structure"
+        for label in manitoba_labels:
+            assert "Canada — Manitoba" not in label, (
+                f"{project_id}: {label!r} still embeds the raw composite registry name"
+            )
+            assert "Manitoba" in label
