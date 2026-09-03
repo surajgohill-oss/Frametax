@@ -1236,14 +1236,39 @@ EMPTY_FACTS: dict[str, Any] = {"answers": {}, "answerable": {}}
 
 @router.get("/projects/{project_id}/state")
 async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    from app.services.canonical_evaluation import evaluate_project
     from app.services.canonical_production_view import (
         build_generic_pkg_and_economics,
         build_production_and_structures,
     )
+    from app.services.fx_refresh import ensure_fx_freshness
 
     project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    # Overview FX Strip Freshness Architecture — the required page-open
+    # flow (opening/reloading a production must validate FX freshness
+    # with no user action): ensure_fx_freshness() is a cheap in-process-
+    # TTL-gated check once warm (item 4 — never a blind fetch on every
+    # render), single-flight locked (item 5), and updates
+    # production_normalization.py's module-level FX state on success or
+    # truthfully falls back on failure (item 6) BEFORE evaluate_project()
+    # reads it. evaluate_project() itself is idempotent per input
+    # fingerprint (see canonical_evaluation.py's own docstring on
+    # `existing`) — a genuinely new FX day changes fx_live_snapshot_date
+    # in the fingerprint (see _compute_fingerprint) and triggers a real
+    # reprice; an unchanged fingerprint (FX already fresh, or no material
+    # change) short-circuits to a single read query, so calling it
+    # unconditionally on every page open is safe and cheap, not "blindly
+    # rerunning expensive optimization" (item 7). This is also the fix
+    # for a project that already has SOME persisted evaluation but was
+    # never re-evaluated after a later material change — GET /state was
+    # previously fully read-only and could serve an arbitrarily stale
+    # generation forever with no user action able to refresh it short of
+    # a manual "Begin Evaluation".
+    await ensure_fx_freshness(db)
+    await evaluate_project(db, project_id)
 
     # CineGlobe canonical pricing path + discovery repair, Task 1: this
     # route previously special-cased Little Utopia by exact project TITLE

@@ -208,6 +208,68 @@ _JURISDICTION_CURRENCY: dict[str, str] = {
     "US": "USD", "CA": "CAD",
 }
 
+#: Every currency CineGlobe's canonical jurisdiction registry can ever
+#: need a rate for. The correct denominator for a live FX refresh (see
+#: app/services/fx_refresh.py) — a currency missing here would never be
+#: fetched no matter how the provider call is scoped. Derived, not
+#: hand-duplicated, so a new jurisdiction/currency entry above is
+#: automatically covered by the next refresh with no second list to keep
+#: in sync.
+ALL_TRACKED_CURRENCIES: frozenset[str] = frozenset(_JURISDICTION_CURRENCY.values())
+
+# ── Live FX freshness state (Overview FX Strip Freshness Architecture) ──
+#
+# FX_RATE_SNAPSHOTS/FX_LIVE_SNAPSHOT_DATE above were, until this pass, pure
+# static constants seeded from a single one-time fetch (2026-07-13) that
+# nothing ever refreshed — apply_fx_rates.py's own docstring described the
+# intended architecture ("Live fetch populates the table; calculations use
+# snapshots") but no live-fetch path was ever wired to anything. That is
+# root cause #1 of "July FX survives into September": there was no
+# refresh mechanism at all, not a broken one.
+#
+# app/services/fx_refresh.py owns the actual live fetch + persistence
+# (into the pre-existing, previously-dormant `fx_rates` table —
+# app/models/fx.py — never a second FX table) and calls
+# apply_live_fx_snapshot()/mark_fx_refresh_failed() below to update this
+# module's in-memory state, which fx_rate_snapshot() (and therefore BOTH
+# the optimizer's FX-delta overlay AND the served UI payload) reads
+# unchanged. One function, one state, so DISPLAYED FX == MODEL-CONSUMED FX
+# holds by construction — there is no second read path to drift from it.
+FX_LIVE_SNAPSHOT_SOURCE = "ECB reference rates (via frankfurter.dev) / open.er-api.com"
+#: "fresh" | "stale_fallback" | "never_refreshed" — truthful disclosure
+#: for the UI; never silently upgraded to "fresh" on a failed refresh.
+FX_FRESHNESS_STATUS: str = "never_refreshed"
+#: The most recent refresh attempt's error, if the last attempt failed.
+#: None when the last attempt succeeded (or none has been made yet).
+FX_LAST_REFRESH_ERROR: str | None = None
+
+
+def apply_live_fx_snapshot(date_str: str, rates: dict[str, float], source: str) -> None:
+    """Called by fx_refresh.py after a successful live fetch. Adds/
+    replaces the 'current' snapshot only — the historical 1m/6m/12m
+    reference dates in FX_HORIZON_DATES are a fixed, dated corpus and are
+    never overwritten by a live refresh (a live provider has no
+    historical endpoint for several of these currencies, exactly as
+    MUR's own doctrine above already documents)."""
+    global FX_LIVE_SNAPSHOT_DATE, FX_LIVE_SNAPSHOT_SOURCE, FX_FRESHNESS_STATUS, FX_LAST_REFRESH_ERROR
+    FX_RATE_SNAPSHOTS[date_str] = dict(rates)
+    FX_LIVE_SNAPSHOT_DATE = date_str
+    FX_HORIZON_DATES["current"] = date_str
+    FX_LIVE_SNAPSHOT_SOURCE = source
+    FX_FRESHNESS_STATUS = "fresh"
+    FX_LAST_REFRESH_ERROR = None
+
+
+def mark_fx_refresh_failed(error: str) -> None:
+    """Called by fx_refresh.py when a refresh attempt fails. The last
+    valid snapshot (FX_RATE_SNAPSHOTS/FX_LIVE_SNAPSHOT_DATE) is left
+    completely untouched — a failed refresh must never corrupt or
+    silently discard the last good data (item 6 of the freshness
+    architecture: retain, don't delete; disclose, don't fabricate)."""
+    global FX_FRESHNESS_STATUS, FX_LAST_REFRESH_ERROR
+    FX_FRESHNESS_STATUS = "stale_fallback"
+    FX_LAST_REFRESH_ERROR = error
+
 
 def fx_rate_snapshot(currency: str) -> dict[str, Optional[float]]:
     """The engine-side data the UI's current/1M/6M/12M FX display needs

@@ -700,6 +700,7 @@ def _compute_fingerprint(
     import hashlib
     import json
 
+    from app.calculators import production_normalization
     from app.calculators.canonical_role_qualification_bridge import (
         CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION,
     )
@@ -797,6 +798,18 @@ def _compute_fingerprint(
         "structuring_opportunity_patterns_version": STRUCTURING_OPPORTUNITY_PATTERNS_VERSION,
         "executable_jurisdiction_registry_version": EXECUTABLE_JURISDICTION_REGISTRY_VERSION,
         "canonical_role_qualification_bridge_version": CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION,
+        # Overview FX Strip Freshness Architecture: the live FX snapshot
+        # date is DERIVED from what production_normalization.py actually
+        # has loaded right now (same "derived, not hand-maintained"
+        # pattern as ruleset_digest immediately above) -- a freshness
+        # refresh that adopts a new day's snapshot changes this fingerprint
+        # on its own, so a stale persisted evaluation is never served
+        # paired with fresh FX metadata: this is the "DETERMINE WHETHER
+        # CURRENT PERSISTED EVALUATION USES SAME ECONOMIC INPUT/
+        # FINGERPRINT" step of the required page-open FX flow, reusing
+        # this existing generation-based invalidation mechanism rather
+        # than inventing a second one.
+        "fx_live_snapshot_date": production_normalization.FX_LIVE_SNAPSHOT_DATE,
     }
     blob = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()

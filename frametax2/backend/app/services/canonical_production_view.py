@@ -1152,6 +1152,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     # generic path now serves Little Utopia too, per get_project_state's
     # own "no production title may select economic logic" contract) gets
     # the same real FX data the legacy route already proved correct.
+    import app.calculators.production_normalization as _fx_doctrine
     from app.calculators.production_normalization import (
         fx_rate_snapshot, _JURISDICTION_CURRENCY, FX_HORIZON_DATES, FX_RATES_VERSION,
     )
@@ -1165,11 +1166,20 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         "fx_horizons": fx_horizons, "jurisdiction_currency": dict(_JURISDICTION_CURRENCY),
         # Provenance for the snapshot above (Workspace Data Completeness):
         # real retrieval dates per horizon, real source, real snapshot
-        # version — never a live per-request fetch, so this identifies
-        # exactly which sourced fetch the served numbers came from.
+        # version — read live off production_normalization.py's module
+        # state (Overview FX Strip Freshness Architecture), never a
+        # hardcoded string frozen at whatever the source happened to say
+        # when this file was last edited — so a live refresh's real
+        # source/date is what actually reaches the UI, never a stale
+        # literal.
         "fx_horizon_dates": dict(FX_HORIZON_DATES),
-        "fx_source": "ECB reference rates (via frankfurter.dev) / open.er-api.com",
+        "fx_source": _fx_doctrine.FX_LIVE_SNAPSHOT_SOURCE,
         "fx_snapshot_version": FX_RATES_VERSION,
+        # Truthful freshness disclosure (never silently upgraded to
+        # "fresh" on a failed refresh) — "fresh" | "stale_fallback" |
+        # "never_refreshed". See app/services/fx_refresh.py.
+        "fx_freshness_status": _fx_doctrine.FX_FRESHNESS_STATUS,
+        "fx_last_refresh_error": _fx_doctrine.FX_LAST_REFRESH_ERROR,
         "alternative_jurisdictions": [],
         "available_funds": [], "structuring_advisory": None,
         "production_requirements_disclosed": requirements_disclosed,

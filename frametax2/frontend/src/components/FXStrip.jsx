@@ -47,6 +47,11 @@ export default function FXStrip({ economics, structure, structureIsLeading }) {
 
   const asOf = economics?.fx_horizon_dates?.current || null;
   const source = economics?.fx_source || null;
+  // Overview FX Strip Freshness Architecture: truthful disclosure only —
+  // "fresh" never overrides a real refresh failure, and a stale fallback
+  // is never silently presented as current. See fx_refresh.py.
+  const freshnessStatus = economics?.fx_freshness_status || null;
+  const isStaleFallback = freshnessStatus === "stale_fallback";
 
   return (
     <section className="wsx-fxstrip">
@@ -89,6 +94,11 @@ export default function FXStrip({ economics, structure, structureIsLeading }) {
       <p className="text-tertiary small wsx-fx-note">
         {source ? `Source: ${source}.` : "Source: unavailable this pass."}{" "}
         {asOf ? `As of ${asOf}.` : "As-of date unavailable this pass."}{" "}
+        {isStaleFallback && (
+          <span className="wsx-fx-stale-badge" title={economics?.fx_last_refresh_error || undefined}>
+            Live refresh failed — showing the last valid snapshot, not fabricated or silently marked current.
+          </span>
+        )}{" "}
         Reverse pairs derive from the same rate; the optimizer prices at current rates, not forward movement.
       </p>
     </section>
