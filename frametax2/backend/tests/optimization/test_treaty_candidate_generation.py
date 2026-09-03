@@ -92,7 +92,13 @@ def test_little_utopia_mu_auto_enumeration_is_correctly_empty_not_a_regression()
     # animation/VFX/post credits, i.e. precisely the programs a production
     # routes a post/VFX COMPONENT to, a real target the component pathway
     # previously had no way to reach.
-    assert len(structures) == 201
+    # 201 -> 203: 31-zero-rate-program forensic classification (2026-09-02)
+    # repaired jo_rfc_rebate and uy_acau_cash_rebate (ph_film_incentive
+    # turned out to be a canonical DUPLICATE of the pre-existing, already-
+    # priced ph_fdcp_flip program and was not independently repaired) --
+    # see test_global_data_application_runtime.py's identical note for the
+    # full accounting.
+    assert len(structures) == 203
     treaty_structures = [s for s in structures if s["structure_type"] == "treaty_coproduction"]
     assert treaty_structures == []
     assert served["coverage"]["reachable_treaty_partners"] == []

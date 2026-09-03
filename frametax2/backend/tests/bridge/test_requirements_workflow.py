@@ -52,13 +52,26 @@ class TestSelectMissingPrograms:
         # 2026-07-26) -- assert a floor tied to the executable registry
         # itself rather than a point-in-time snapshot, so this doesn't
         # need re-pinning every batch.
+        #
+        # 31-zero-rate-program forensic classification (2026-09-02): a
+        # jurisdiction is "unprofiled" per the real gap-analysis function
+        # (executable_jurisdictions_without_requirements_profile) only when
+        # NEITHER its primary NOR any secondary program slug has a profile
+        # -- Uruguay (UY) now has a profile for uy_acau_cash_rebate (a
+        # secondary slug) while its primary slug (uy_tax_credit_2026) still
+        # has none, so UY correctly drops out of the gap. The test's own
+        # `unprofiled` recount must apply the same secondary-slug rule, not
+        # just check the primary slug, to stay consistent with the function
+        # under test.
         from app.data.canonical_executable_registry import canonical_executable_jurisdictions
-        from app.data.program_requirements import get_program_requirements
+        from app.data.program_requirements import all_program_requirements
 
         total_executable = len(canonical_executable_jurisdictions())
+        populated = set(all_program_requirements())
         unprofiled = sum(
             1 for e in canonical_executable_jurisdictions().values()
-            if get_program_requirements(e.primary_program_slug) is None
+            if e.primary_program_slug not in populated
+            and not any(s in populated for s in e.secondary_program_slugs)
         )
         targets = select_missing_programs()
         assert len(targets) > 0

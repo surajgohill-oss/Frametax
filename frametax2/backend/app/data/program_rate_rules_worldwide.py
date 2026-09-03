@@ -3137,51 +3137,86 @@ register_rate_rules(rate_rules_for(SA_DOCTRINE))
 # Checked internal source first: global_inventory_extended.py already had
 # a real DISCOVERY-tier lead (10-25% range, RFC Jordan, Petra/Wadi Rum
 # locations). No fresher rate found via search this pass — held at the
-# pre-existing catalog figures rather than guessed; promoted confidence
-# only on the min/max structure already present (a genuine range, not a
-# single flat rate, per the original catalog notes), not VERIFIED further.
+# 31-zero-rate-program forensic classification (2026-09-02): the prior
+# ~10-25% DISCOVERY-tier range was STALE, superseding a real, dated program
+# change. In May 2025 (announced at Cannes) the Royal Film Commission raised
+# the international-production rebate to a SCALABLE 25%-45% structure: a
+# 25% GUARANTEED FLOOR on qualifying in-country spend for every qualifying
+# international production, scaling up to 45% via a points-based assessment
+# of project size, integration of Jordanian cultural content, and artistic/
+# cultural/economic value (productions over $10M with strong Jordanian
+# cultural integration reach the 45% maximum). This is the SAME
+# floor-plus-points-based-uplift shape already modeled elsewhere in this
+# registry (e.g. California's 35% floor + conditional uplift to 40%) --
+# points-based assessment against objective, disclosed criteria is a
+# CONDITIONAL UPLIFT, not authority discretion over the base rate. Local
+# (Jordanian) productions separately moved from a 10% cap to a 30% cap for
+# spend over $500,000 -- a distinct track, not modeled here (this program
+# targets international/foreign productions).
+#
+# Corroborated by 5 independent trade-press reports of the same May 2025
+# Cannes announcement (Deadline, The Hollywood Reporter, Screen Daily, IMDb
+# citing Deadline, Asian Movie Pulse) -- consistent on the 25%-45% range,
+# the $10M/cultural-integration threshold for the 45% maximum, and the
+# points-based assessment. The Commission's own film.jo/cash-rebate page
+# could not be fetched directly this pass (blocked); PARSED tier, not
+# VERIFIED, pending a direct primary-source fetch.
 _JO_CITATION = (
-    "Pre-existing global_inventory_extended.py DISCOVERY-tier lead "
-    "(rfc.jo, Royal Film Commission Jordan): '~10-25% rebate on Jordanian "
-    "qualifying expenditures.' No fresher primary or corroborating "
-    "source found this pass — NOT promoted beyond the catalog's own "
-    "DISCOVERY tier; the range itself (not a single number) is modeled "
-    "so the engine never silently picks one end."
+    "Corroborated by 5 independent 2025-05 trade-press reports of the Royal "
+    "Film Commission's Cannes 2025 announcement: Deadline "
+    "('Jordan Bolsters Film Incentives; Raises Cash Rebate To 45%'), The "
+    "Hollywood Reporter ('Jordan Boosts Film, TV Production Cash Rebate to "
+    "Up to 45 Percent'), Screen Daily ('Jordan boosts film and TV "
+    "production incentive to 45%'), IMDb (citing Deadline), and Asian Movie "
+    "Pulse. 'Scalable cash rebate ranging from 25% to 45% on qualifying "
+    "in-country spend,' determined by 'a points-based system assessing the "
+    "project's size, incorporation of Jordanian cultural content, and its "
+    "artistic, cultural, and economic value'; projects over $10M with "
+    "strong Jordanian cultural integration reach the 45% maximum. "
+    "Supersedes the prior ~10-25% DISCOVERY-tier catalog figure, which "
+    "predates this May 2025 program change. Not independently confirmed "
+    "against the Commission's own film.jo/cash-rebate page (blocked on "
+    "direct fetch this pass) -- PARSED, not VERIFIED."
 )
 JO_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="JO",
     program_slug="jo_rfc_rebate",
     program_name="Jordan Royal Film Commission Production Rebate",
-    confidence_tier="DISCOVERY",
+    confidence_tier="PARSED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
     min_spend_usd=None,
     annual_cap_usd=None,
-    requires_cultural_test=True,   # "content review required" per the
-                                    # pre-existing catalog lead
+    requires_cultural_test=True,
     citation=_JO_CITATION,
-    source_ref="global_inventory_extended-jordan-rfc",
+    source_ref="jo-rfc-2025-05-cannes-rebate-increase",
     tiers=(
         DoctrineRateTier(
-            tier_id="jo-discovery-10",
-            rate=0.10,
+            tier_id="jo-floor-25",
+            rate=0.25,
             is_band_ceiling=False,
         ),
         DoctrineRateTier(
-            tier_id="jo-discovery-ceiling-25",
-            rate=0.25,
+            tier_id="jo-points-ceiling-45",
+            rate=0.45,
             is_band_ceiling=True,
             conditions=(
                 RateCondition(
-                    condition_id="jo-discovery-tier-unverified",
-                    description="Entire range is DISCOVERY tier — not "
-                                "independently verified this phase, "
-                                "carried forward from the pre-existing "
-                                "catalog lead only",
-                    quote="~10-25% rebate on Jordanian qualifying "
-                          "expenditures (global_inventory_extended.py, "
-                          "DISCOVERY)",
+                    condition_id="jo-points-based-uplift-unconfirmed",
+                    description="The 45% maximum requires a points-based "
+                                "assessment of project size, Jordanian "
+                                "cultural-content integration, and "
+                                "artistic/cultural/economic value -- a "
+                                "real, disclosed, objective-criteria "
+                                "uplift, not authority discretion over "
+                                "the base rate. No project fact on file "
+                                "resolves this assessment, so the uplift "
+                                "stays conditional pending it.",
+                    quote="'a points-based system assessing the project's "
+                          "size, incorporation of Jordanian cultural "
+                          "content, and its artistic, cultural, and "
+                          "economic value' (Screen Daily, 2025-05)",
                     kind="discretionary_band",
                 ),
             ),
@@ -3189,6 +3224,79 @@ JO_DOCTRINE = register(DoctrineRecord(
     ),
 ))
 register_rate_rules(rate_rules_for(JO_DOCTRINE))
+
+# 31-zero-rate-program forensic classification (2026-09-02) -- CORRECTED
+# after database-first reconciliation exposed a duplicate: ph_film_incentive
+# was one of 31 explicit NON_GUARANTEED_SELECTIVE records with ZERO rate
+# rules. Initial research (external-first, before the database-first
+# protocol correction) independently found the FDCP FilmPhilippines
+# Location Incentive Program (FLIP) -- 20% cash rebate on Qualified
+# Philippine Production Expenses, 25% with a cultural-test uplift -- and a
+# DoctrineRecord was registered here under program_slug="ph_film_incentive".
+#
+# That was WRONG: this canonical database already carries this exact real
+# program under a different pre-existing slug, program_slug="ph_fdcp_flip"
+# (see below in this file), with the same FLIP mechanism, the same 20%
+# floor / 25% cultural-uplift ceiling shape, and its own independent
+# EvidenceRecord in program_requirements.py (line ~2566/4288) predating
+# this pass. ph_film_incentive and ph_fdcp_flip are the SAME real-world
+# program under two canonical identities -- a pre-existing ingestion
+# duplicate this pass would have made worse by adding a second, separate
+# doctrine instead of repairing/consolidating the existing one.
+#
+# CLASSIFICATION: H (duplicate/alias) for ph_film_incentive, not a
+# standalone deterministic program. No new DoctrineRecord is registered
+# under ph_film_incentive; ph_fdcp_flip is the sole canonical carrier of
+# FLIP's economics and already prices independently of this program's
+# blocking disposition. ph_film_incentive's authority_coverage_registry.py
+# row and program_requirements.py profile are retained only as a
+# provenance record of the duplicate finding, not as a second economic
+# candidate -- it is expected and correct for ph_film_incentive to have
+# zero rate rules going forward (duplicate, not unresearched).
+
+# 31-zero-rate-program forensic classification (2026-09-02): uy_acau_cash_
+# rebate was another of the 31 zero-rate-rule records. Uruguay's ACAU
+# (Agencia para el Desarrollo del Audiovisual) administers a real,
+# deterministic Programa Uruguay Audiovisual (PUA) cash rebate: "up to 25%
+# of eligible expenses incurred in Uruguay" for international audiovisual
+# productions (uruguayaudiovisual.com, ACAU's own promotional portal).
+# Independent reporting (cveintiuno.com) describes a tiered structure (25%
+# for spend USD 300,000-3,000,000 capped at USD 750,000; 20% above USD
+# 3,000,000 capped at USD 1,000,000) -- modeled here as a single 25%
+# guaranteed floor only, the figure both sources agree on; the tiered
+# breakdown is NOT modeled pending a direct primary-source (acau.gub.uy)
+# fetch, which was not obtained this pass -- never a fabricated tier.
+_UY_CITATION = (
+    "uruguayaudiovisual.com (ACAU's own portal): 'up to 25% of eligible "
+    "expenses incurred in Uruguay' for international productions working "
+    "with a local company. Corroborated by cveintiuno.com's description of "
+    "a tiered cash-rebate structure. acau.gub.uy's own detailed rules PDFs "
+    "were not directly fetched this pass -- PARSED tier, single "
+    "floor-figure only; the reported secondary escalation/de-escalation "
+    "by spend tier is NOT modeled pending primary confirmation."
+)
+UY_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="UY",
+    program_slug="uy_acau_cash_rebate",
+    program_name="ACAU Programa Uruguay Audiovisual (PUA) Cash Rebate",
+    confidence_tier="PARSED",
+    incentive_type="cash_rebate",
+    is_refundable=True,
+    is_transferable=False,
+    min_spend_usd=300_000.0,
+    annual_cap_usd=None,
+    requires_cultural_test=False,
+    citation=_UY_CITATION,
+    source_ref="uy-acau-pua-cash-rebate",
+    tiers=(
+        DoctrineRateTier(
+            tier_id="uy-floor-25",
+            rate=0.25,
+            is_band_ceiling=False,
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(UY_DOCTRINE))
 
 # ── Thailand: BOI Film Incentive ────────────────────────────────────────────
 # Checked internal source first: catalog had 15-20% DISCOVERY. STALE —

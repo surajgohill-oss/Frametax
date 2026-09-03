@@ -636,9 +636,27 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # UNRESOLVED_NON_PRICEABLE no longer an economic blocking state) is also
     # repaired, so every provenance-only-gapped program with a real floor now
     # prices too. entries 267 -> 361; priced 187 -> 315; unpriced 80 -> 46.
-    assert len(entries) == 361
-    assert len(priced) == 315
-    assert len(unpriced) == 46
+    #
+    # 31-zero-rate-program forensic classification (2026-09-02): jo_rfc_rebate,
+    # uy_acau_cash_rebate now carry real rate data (ph_film_incentive was
+    # found to be a canonical DUPLICATE of the pre-existing ph_fdcp_flip
+    # program and was NOT independently repaired -- see
+    # authority_coverage_registry.py's ph_film_incentive doc comment). Each
+    # of the 3 now-priceable program-target combinations (JO x1, UY x2 --
+    # uy_acau_cash_rebate + the pre-existing uy_tax_credit_2026 -- plus
+    # ph_fdcp_flip, which already priced before this pass) adds its own
+    # full_relocation candidate, and the full component-enumeration universe
+    # (Codex B/C) routes each of FVD's 3 splittable components (post/vfx/
+    # music) to each of these 3 newly-priceable target jurisdictions too:
+    # 4 full_relocation + 9 component_relocation = 13 new priced entries.
+    # This displaces 9 previously-top-ranked entries (8 priced, 1 unpriced)
+    # out of the bounded top-N alternative-jurisdiction comparison the same
+    # way Manitoba's slot was vacated for Italy above -- net: entries
+    # 361 -> 365 (+13 new, -9 displaced); priced 315 -> 320 (+13, -8);
+    # unpriced 46 -> 45 (-1, no new unpriced entries added).
+    assert len(entries) == 365
+    assert len(priced) == 320
+    assert len(unpriced) == 45  # 31-zero-rate-program repair: jo/uy price, ph_fdcp_flip already did (see comment above)
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):
@@ -1186,7 +1204,21 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     codes = ("CA-ON", "DE", "FR", "HU", "US-MN", "GB", "NO")
     seen_incentives = set()
     for code in codes:
-        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        # 31-zero-rate-program forensic classification (2026-09-02):
+        # CA-ON now carries multiple candidates -- 3 priced single-program
+        # full_relocation structures (OPSTC/OFTTC/OCASE, unchanged) PLUS a
+        # combined multi_program OPSTC+OFTTC stack that also lists real,
+        # genuinely conditional/discretionary national funds (CMF, Telefilm)
+        # as conditional_programs and so is correctly never is_fully_priced.
+        # Newly-priceable jo/uy programs entering the shared top-N target-
+        # jurisdiction enumeration shifted CANDIDATE GENERATION ORDER (not
+        # CA-ON's own economics -- its 3 full_relocation structures are
+        # still priced exactly as before), so a bare `next()` over entries
+        # can land on the never-priced combined stack instead. This test's
+        # intent is "does CA-ON have a priced candidate" -- select any
+        # priced match for the code, falling back to the first if none.
+        matches = [x for x in entries if x["primary_jurisdiction"] == code]
+        e = next((x for x in matches if x["is_fully_priced"]), matches[0])
         assert e["is_fully_priced"] is True, f"{code} did not price"
         assert e["candidate_status"] == "PRICED"
         assert e["selected_incentive_usd"] > 0

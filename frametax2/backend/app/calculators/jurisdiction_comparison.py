@@ -2221,10 +2221,10 @@ _JORDAN = JurisdictionIncentiveProfile(
     jurisdiction_name="Jordan",
     program_slug="jo_rfc_rebate",
     program_name="Jordan Royal Film Commission Production Rebate",
-    confidence_tier="DISCOVERY",
+    confidence_tier="PARSED",
     incentive_type="cash_rebate",
-    base_rate=0.10,
-    max_rate=0.25,
+    base_rate=0.25,
+    max_rate=0.45,
     is_refundable=True,
     is_transferable=False,
     annual_cap_local=None,
@@ -2251,13 +2251,20 @@ _JORDAN = JurisdictionIncentiveProfile(
     authority_name="Royal Film Commission Jordan (RFC)",
     authority_url_hint="rfc.jo",
     notes=(
-        "No fresher rate found this pass — remains DISCOVERY tier, carried "
-        "forward from the pre-existing catalog lead, not promoted further. "
-        "Petra, Wadi Rum, Aqaba are major location assets (Lawrence of "
-        "Arabia, The Martian, Dune). Content review required."
+        "31-zero-rate-program forensic classification (2026-09-02): promoted "
+        "to PARSED. The 10-25% figure above was a stale pre-2025 lead; "
+        "Royal Film Commission Jordan raised the rebate to a 25% floor with "
+        "a 45% points-based ceiling in a May 2025 program change, confirmed "
+        "by 5 independent 2025-05 trade-press reports (see "
+        "program_rate_rules_worldwide.py's JO_DOCTRINE for the full "
+        "citation trail). Petra, Wadi Rum, Aqaba are major location assets "
+        "(Lawrence of Arabia, The Martian, Dune). Content review required."
     ),
     data_gaps=[
-        "Confirmed current rate (within the 10-25% range) not verified",
+        "45% ceiling's points-based assessment criteria not independently "
+        "scored (size, cultural integration, artistic/economic value) — "
+        "modeled as a conditional rate-tier uplift, not resolved to a "
+        "project fact",
         "Minimum spend and annual cap unknown",
         "Crew depth and studio infrastructure not verified",
     ],

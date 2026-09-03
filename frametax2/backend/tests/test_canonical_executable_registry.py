@@ -117,14 +117,30 @@ class TestRequirementsGapAnalysis:
     what should never break instead."""
 
     def test_gap_plus_populated_equals_total(self):
+        """31-zero-rate-program forensic classification (2026-09-02):
+        uy_acau_cash_rebate is a SECONDARY program slug for Uruguay (the
+        primary is uy_tax_credit_2026) and now has its own
+        ProgramRequirementsProfile. executable_jurisdictions_without_
+        requirements_profile()'s own real semantics (see its docstring/
+        body in canonical_executable_registry.py) correctly treat a
+        jurisdiction as covered when EITHER its primary OR any secondary
+        slug is populated -- so Uruguay legitimately leaves the gap. A
+        naive primary-slug-only intersection (the original form of this
+        recount) doesn't see that secondary-slug coverage and so
+        undercounts by exactly the jurisdictions covered only through a
+        secondary slug. Recompute the same way the real function does."""
         from app.data.program_requirements import all_program_requirements
 
         gap = executable_jurisdictions_without_requirements_profile()
         populated_primary_count = total_executable_jurisdiction_count() - len(gap)
-        assert populated_primary_count == len(
-            {e.primary_program_slug for e in canonical_executable_jurisdictions().values()}
-            & set(all_program_requirements())
-        )
+        populated = set(all_program_requirements())
+        covered_via_primary_or_secondary = {
+            e.jurisdiction_code
+            for e in canonical_executable_jurisdictions().values()
+            if e.primary_program_slug in populated
+            or any(s in populated for s in e.secondary_program_slugs)
+        }
+        assert populated_primary_count == len(covered_via_primary_or_secondary)
         assert len(gap) + populated_primary_count == total_executable_jurisdiction_count()
 
     def test_es_is_not_in_the_gap_it_already_has_a_profile(self):

@@ -4736,3 +4736,66 @@ register(ProgramRequirementsProfile(
         "primary_source_status": "fisa-plus.at returned a DNS resolution failure at access time (2026-07-26); fisaplus.com and filminaustria.com were reached directly and confirm administration/application-portal facts, but not the rate/threshold figures, which remain secondary-sourced pending a retry.",
     },
 ))
+
+
+# 31-zero-rate-program forensic classification (2026-09-02): two programs
+# were repaired with real, previously-missing DoctrineRecord rate data
+# (program_rate_rules_worldwide.py's JO_DOCTRINE/UY_DOCTRINE), but carried
+# no ProgramRequirementsProfile at all -- so the generic competitive/
+# administrative-risk disclosure (canonical_evaluation.
+# _competitive_allocation_disclosure, keyed off allocation_type/
+# preapproval_mandatory) never fired for them, even though each is a real,
+# capacity/application-gated program. Minimal profiles below exist ONLY to
+# carry that disclosure -- no eligibility/cap/timing facts are asserted
+# beyond what the rate-repair citations already established.
+#
+# A third program originally repaired here, ph_film_incentive, was removed
+# from this block: database-first reconciliation established it is a
+# canonical DUPLICATE of the pre-existing ph_fdcp_flip program (same real
+# FDCP FilmPhilippines Location Incentive Program, same 20%/25% rate
+# shape) -- see program_rate_rules_worldwide.py's classification-H comment
+# at the former PH_DOCTRINE site. ph_fdcp_flip already carries its own
+# independent EvidenceRecord (this file, ~line 4288) and prices on its own;
+# no duplicate profile is registered for ph_film_incentive.
+register(ProgramRequirementsProfile(
+    program_slug="jo_rfc_rebate", jurisdiction_code="JO",
+    preapproval_mandatory=True,
+    cultural_test_required=False,  # points-based uplift assesses PROJECT content/value (already modeled as a rate condition), never personnel nationality
+    allocation_type=AllocationType.COMPETITIVE,
+    evidence=EvidenceRecord(
+        source_title="Royal Film Commission Jordan rebate increase (Cannes 2025)",
+        source_url="https://www.screendaily.com/news/jordan-boosts-film-and-tv-production-incentive-to-45/5204968.article",
+        issuing_authority="Royal Film Commission — Jordan",
+        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
+        access_date="2026-09-02",
+        notes="See program_rate_rules_worldwide.py JO_DOCTRINE for the full "
+              "citation trail. The 25%-45% rebate is determined by a "
+              "points-based assessment (size, cultural integration, "
+              "artistic/economic value) -- a real, disclosed, "
+              "objective-criteria process, modeled here only so the "
+              "generic administrative/allocation-risk disclosure fires; "
+              "no eligibility/cap/timing facts asserted beyond the rate "
+              "repair's own citation.",
+    ),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="uy_acau_cash_rebate", jurisdiction_code="UY",
+    preapproval_mandatory=True,
+    cultural_test_required=False,  # no personnel/nationality cultural gate found in available sources
+    allocation_type=None,
+    evidence=EvidenceRecord(
+        source_title="ACAU Programa Uruguay Audiovisual (PUA) Cash Rebate",
+        source_url="https://uruguayaudiovisual.com/en/incentives/",
+        issuing_authority="Agencia para el Desarrollo del Audiovisual (ACAU)",
+        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
+        access_date="2026-09-02",
+        notes="See program_rate_rules_worldwide.py UY_DOCTRINE for the full "
+              "citation trail. No explicit competitive-selection language "
+              "found in the available sources (unlike Jordan/Philippines) "
+              "-- allocation_type left None rather than guessed; "
+              "preapproval_mandatory=True reflects the ordinary "
+              "application/certification process ACAU's own portal "
+              "describes, not a proven competitive-selection risk.",
+    ),
+))

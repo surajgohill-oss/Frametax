@@ -153,15 +153,36 @@ def test_mauritius_calibration_is_byte_identical_after_application():
     # jurisdiction_comparison.py's own profiles. Each adds one
     # full_relocation + one component_relocation candidate = +4, fully
     # attributed. Mauritius itself is untouched (asserted above).
-    assert len(served["structures"]) == 201
+    # 201 -> 203: 31-zero-rate-program forensic classification (2026-09-02)
+    # repaired jo_rfc_rebate and uy_acau_cash_rebate with real,
+    # previously-missing rate data (both had ZERO rate rules despite real,
+    # dated programs) -- each newly-priceable program adds one
+    # full_relocation candidate to LU's own comparison universe (+2).
+    # ph_film_incentive was investigated too but found to be a canonical
+    # DUPLICATE of the pre-existing (and already-priced) ph_fdcp_flip
+    # program -- see authority_coverage_registry.py's ph_film_incentive doc
+    # comment -- so it contributes no new candidate; its economics were
+    # already counted in the 201 baseline via ph_fdcp_flip. Mauritius itself
+    # remains untouched (asserted above).
+    assert len(served["structures"]) == 203
 
 
 def test_selective_programs_contribute_zero_guaranteed_value():
     """ENCODE_SELECTIVE_ZERO_GUARANTEED: a competitive award never prices as a
     guaranteed rate, even where the canonical record carries a headline rate."""
-    for slug in ("jo_rfc_rebate", "kr_film_incentive", "il_film_incentive", "jp_film_incentive"):
+    # jo_rfc_rebate REMOVED from this list (31-zero-rate-program forensic
+    # classification, 2026-09-02): a real, dated May 2025 program change
+    # (Cannes announcement, 25% guaranteed floor) supersedes the stale
+    # DISCOVERY-tier figure this corpus captured -- see
+    # program_rate_rules_worldwide.py's JO_DOCTRINE. kr_film_incentive,
+    # il_film_incentive and jp_film_incentive were independently
+    # re-verified this pass and remain correctly selective/discretionary.
+    for slug in ("kr_film_incentive", "il_film_incentive", "jp_film_incentive"):
         assert coverage_state(slug) == "NON_GUARANTEED_SELECTIVE"
         assert blocks_economic_candidacy(slug) is True
+
+    assert coverage_state("jo_rfc_rebate") == "PRICEABLE_VALIDATED"
+    assert blocks_economic_candidacy("jo_rfc_rebate") is False
 
 
 def test_treaty_candidate_generation_still_functions_after_application():

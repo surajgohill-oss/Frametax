@@ -164,7 +164,27 @@ def test_selective_records_are_present_and_carry_zero_guaranteed_value():
         if r["implementation_action"] == "ENCODE_SELECTIVE_ZERO_GUARANTEED"
     ]
     assert len(selective) == 23
+    # 31-zero-rate-program forensic classification (2026-09-02): the frozen
+    # corpus this test reads from is dated evidence -- jo_rfc_rebate's real
+    # program changed materially (May 2025 Cannes announcement, a 25% floor
+    # / 45% points-based ceiling superseding the ~10-25% figure this corpus
+    # captured) AFTER this corpus's own generation date. This is a genuine
+    # current-law update, not a re-litigation of the corpus's original
+    # ENCODE_SELECTIVE_ZERO_GUARANTEED finding for the OLD program it
+    # actually observed -- see program_rate_rules_worldwide.py's JO_DOCTRINE
+    # for the full citation trail. Every other of the 23 remains blocked.
+    # Same reasoning for ph_film_incentive: FDCP's real FLIP program has a
+    # deterministic 20% floor (+ conditional 5% cultural-bonus uplift) that
+    # this corpus's own capture never modeled at all (zero rate rules) --
+    # see program_rate_rules_worldwide.py's PH_DOCTRINE.
+    _repaired_this_pass = {"jo_rfc_rebate", "ph_film_incentive"}
     for cid in selective:
+        if cid in _repaired_this_pass:
+            assert not blocks_economic_candidacy(cid), (
+                f"{cid} was repaired with a real guaranteed-floor rate -- "
+                "it must price deterministically"
+            )
+            continue
         assert blocks_economic_candidacy(cid), f"{cid} must not price deterministically"
 
 

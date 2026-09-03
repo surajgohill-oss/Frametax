@@ -374,6 +374,73 @@ class AuthorityCoverageRecord:
         return self.state in BLOCKING_STATES
 
 
+#: 31-zero-rate-program forensic classification (2026-09-02) -- confirming
+#: evidence for records whose NON_GUARANTEED_SELECTIVE disposition was
+#: investigated this pass and found CORRECT (no rule/registry change), so
+#: the confirming citation is recorded here rather than left only in
+#: conversation output. Absence of a rate rule for these five is itself
+#: correct: each is a real, disclosed, genuinely selective/discretionary
+#: mechanism, not a missing-ingestion gap.
+#:
+#: il_film_incentive (Israel Fund for the Promotion of Foreign Productions):
+#:   CONFIRMED correctly selective. "The fund operates as a competitive,
+#:   round-based grant scheme with a fixed budget... A total of 19 requests
+#:   were received in the first round, totaling around $14.5 million, more
+#:   than twice the budget allocated" (Deadline, Times of Israel, Variety,
+#:   2022). Real, documented oversubscription -- qualifying does not imply
+#:   funding.
+#: tr_film_incentive (Turkey Ministry of Culture and Tourism, Law 5224):
+#:   CONFIRMED correctly discretionary. Applications are "assessed
+#:   regarding the creativity of the project, cultural, artistic and
+#:   aesthetical qualitative value... human dignity, and compliance with
+#:   Constitutional principles" -- a genuinely qualitative/subjective
+#:   Ministry judgment, not an objective points test (Mondaq, summarizing
+#:   the Ministry's own regulation).
+#: au_qld_screen_qld (Screen Queensland Production Attraction Strategy):
+#:   CONFIRMED correctly discretionary, by Screen Queensland's OWN
+#:   guideline document: "the final amount is at the discretion of Screen
+#:   Queensland and subject to the availability of funding" (PAS Incentive
+#:   Guidelines, June 2025, screenqueensland.com.au).
+#: proposed_united_kingdom_uk_global_screen_fund_international_co_production
+#:   (UK Global Screen Fund, BFI-administered): CONFIRMED correctly
+#:   selective. A juried, panel-reviewed grant (not a %-of-spend formula)
+#:   capped at GBP300,000 and at 50% of the applicant's own secured UK
+#:   financial contribution, assessed against "export potential and
+#:   international audience reach" -- genuine qualitative panel review
+#:   (BFI's own program pages).
+#: kr_kofic_location_incentive / kr_film_incentive (its registered alias,
+#:   see the alias map below): CONFIRMED the existing 20%/25% floor+ceiling
+#:   tiers remain the correct treatment. KOFIC's own program description
+#:   states "the grant amount is subject to change depending on the number
+#:   of days taken to shoot the film AND the remaining grant program budget
+#:   as of the date of application" (Wikipedia, sourced to KOFIC's program
+#:   materials) -- real, disclosed budget-dependency, distinct from a
+#:   statutory entitlement pool.
+#:
+#: jo_rfc_rebate (Jordan Royal Film Commission): NOT confirmed-as-is --
+#:   REPAIRED. See program_rate_rules_worldwide.py's JO_DOCTRINE for the
+#:   full citation trail (5 independent 2025-05 trade-press reports of a
+#:   real May 2025 program change to a 25% floor / 45% points-based
+#:   ceiling, superseding the stale ~10-25% DISCOVERY-tier figure this
+#:   registry never itself gated on).
+#: uy_acau_cash_rebate: NOT confirmed-as-is -- REPAIRED. Had ZERO rate
+#:   rules despite a real, dated, deterministic program (ACAU PUA 25%
+#:   floor, distinct from the separately-tracked uy_tax_credit_2026). See
+#:   program_rate_rules_worldwide.py's UY_DOCTRINE.
+#: ph_film_incentive: NOT confirmed-as-is, and NOT independently repaired
+#:   -- database-first reconciliation established this is a canonical
+#:   DUPLICATE (classification H) of the pre-existing ph_fdcp_flip program:
+#:   both represent the same real FDCP FilmPhilippines Location Incentive
+#:   Program (FLIP), same 20% floor / 25% cultural-bonus ceiling. An
+#:   earlier pass in this run mistakenly registered a second, separate
+#:   DoctrineRecord for ph_film_incentive before this was caught by a
+#:   runtime double-counting symptom (FVD's candidate universe carrying
+#:   two distinct "Full relocation to Philippines" entries) -- that
+#:   duplicate registration was removed. ph_fdcp_flip is the sole
+#:   canonical carrier of FLIP's economics and prices independently of
+#:   this row. See program_rate_rules_worldwide.py's classification-H
+#:   comment at the former PH_DOCTRINE (ph_film_incentive) site.
+
 #: (program_slug, state, jurisdiction, program_name)
 _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("in_nfdc_coproduction", "CANONICAL_DATA_HANDOFF_DEFECT", "India", "NFDC International Co-production Development Fund"),
@@ -392,14 +459,12 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("hk_film_dev_fund", "NON_GUARANTEED_SELECTIVE", "Hong Kong SAR", "Hong Kong Film Development Fund (FDF)"),
     ("ibermedia_programme", "NON_GUARANTEED_SELECTIVE", "Ibero-American Region (SEGIB) / Ibero-American Region (SEGIB)", "IBERMEDIA Programme for Ibero-American Co-productions"),
     ("il_film_incentive", "NON_GUARANTEED_SELECTIVE", "Israel", "Israel Film Fund / Maslool Incentive"),
-    ("jo_rfc_rebate", "NON_GUARANTEED_SELECTIVE", "Jordan", "Royal Film Commission Jordan — Production Rebate"),
     ("jp_film_incentive", "NON_GUARANTEED_SELECTIVE", "Japan", "Japan Film Commission Location Incentive (JLOC)"),
     ("jp_vipo_location_incentive", "NON_GUARANTEED_SELECTIVE", "Japan", "Japan Film Commission Location Incentive (JLOC) [runtime slug of jp_film_incentive]"),
     ("korea_kocca_animation_production_support", "NON_GUARANTEED_SELECTIVE", "South Korea", "Korea KOCCA Animation Production Support"),
     ("kr_film_incentive", "NON_GUARANTEED_SELECTIVE", "South Korea", "Korea Film Council (KOFIC) Location Incentive"),
     ("kr_kofic_location_incentive", "NON_GUARANTEED_SELECTIVE", "South Korea", "Korea Film Council (KOFIC) Location Incentive [runtime slug of kr_film_incentive]"),
     ("na_film_commission", "NON_GUARANTEED_SELECTIVE", "Namibia", "Namibia Film Commission Production Incentive"),
-    ("ph_film_incentive", "NON_GUARANTEED_SELECTIVE", "Philippines", "Film Development Council of the Philippines (FDCP) Incentive"),
     ("proposed_united_kingdom_uk_global_screen_fund_international_co_production", "NON_GUARANTEED_SELECTIVE", "United Kingdom", "UK Global Screen Fund — International Co-production"),
     ("qa_dfi_fund", "NON_GUARANTEED_SELECTIVE", "Qatar", "Doha Film Institute — Grants for Filmmakers"),
     ("ru_film_incentive", "NON_GUARANTEED_SELECTIVE", "Russia", "Russian Cinema Fund (Fond Kino) Production Support"),
@@ -414,23 +479,23 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ae_dxb_dpip", "SUPERSEDED", "United Arab Emirates", "Dubai Film Commission — Dubai Production Incentive (DPIP) [runtime slug of ae_dpip]"),
     ("iceland_post_production_visual_effects_and_animation_incentive", "SUPERSEDED", "Iceland", "Iceland Post-Production, Visual Effects and Animation Incentive"),
     ("ar_incaa_incentive", "NON_ECONOMIC", "Argentina", "INCAA — Argentine Film Institute Incentives"),
-    ("au_nsw_screen", "NON_GUARANTEED_SELECTIVE", "Australia / Australia — New South Wales", "NSW Government Screen Incentive (Create NSW)"),
+    ("au_nsw_screen", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia / Australia — New South Wales", "NSW Government Screen Incentive (Create NSW)"),
     ("au_qld_screen_qld", "NON_GUARANTEED_SELECTIVE", "Australia / Australia — Queensland", "Screen Queensland Production Attraction Strategy"),
     ("au_screen_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia", "Screen Australia — Production Funding"),
-    ("au_vic_vicscreen", "NON_GUARANTEED_SELECTIVE", "Australia / Australia — Victoria", "VicScreen Production Investment"),
+    ("au_vic_vicscreen", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia / Australia — Victoria", "VicScreen Production Investment"),
     ("ba_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bosnia and Herzegovina", "Film Centre Bosnia and Herzegovina Production Support"),
     ("bb_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Barbados", "Barbados Film and Entertainment Production Incentives"),
     ("bc_interactive_digital_media_tax_credit_idmtc", "NON_ECONOMIC", "Canada / British Columbia", "BC Interactive Digital Media Tax Credit (IDMTC)"),
     ("bd_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bangladesh", "bd_film_incentive"),
     ("bh_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bahrain", "bh_film_incentive"),
-    ("br_ancine_incentive", "NON_GUARANTEED_SELECTIVE", "Brazil", "ANCINE — Brazilian Film Commission Tax Incentives"),
+    ("br_ancine_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Brazil", "ANCINE — Brazilian Film Commission Tax Incentives"),
     ("bs_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bahamas", "Bahamas Film Commission Production Support"),
     ("by_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Belarus", "Belarusfilm National Film Studio Production Support"),
     ("ca_cmf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Canada Media Fund (CMF) — Convergent Stream"),
     ("cr_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Costa Rica", "Costa Rica Film Commission Production Facilitation"),
     ("de_fff_bayern", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — Bavaria", "FilmFernsehFonds Bayern (FFF Bayern)"),
     ("de_nrw_filmstiftung", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — North Rhine-Westphalia", "Film und Medienstiftung NRW"),
-    ("dk_film_incentive", "NON_GUARANTEED_SELECTIVE", "Denmark", "Danish Film Institute Production Support"),
+    ("dk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Denmark", "Danish Film Institute Production Support"),
     ("ec_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ecuador", "Ecuador Film Commission Production Facilitation"),
     ("eg_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Egypt", "eg_film_incentive"),
     ("et_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ethiopia", "et_film_commission"),
@@ -439,13 +504,13 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("fr_cnc_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "France", "CNC France — Avances sur Recettes (Cinema Production Aid)"),
     ("ga_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Gabon", "ga_film_incentive"),
     ("gb_bfi_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom", "BFI Film Fund — Production Funding"),
-    ("gb_sct_screen_fund", "NON_GUARANTEED_SELECTIVE", "United Kingdom / United Kingdom — Scotland", "Screen Scotland Production Growth Fund"),
-    ("gb_wls_screen_fund", "NON_GUARANTEED_SELECTIVE", "United Kingdom / United Kingdom — Wales", "Wales Screen Production Fund (Ffilm Cymru Wales)"),
+    ("gb_sct_screen_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom / United Kingdom — Scotland", "Screen Scotland Production Growth Fund"),
+    ("gb_wls_screen_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom / United Kingdom — Wales", "Wales Screen Production Fund (Ffilm Cymru Wales)"),
     ("gh_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ghana", "gh_film_incentive"),
     ("gt_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guatemala", "Guatemala Film Commission (INGUAT) Production Facilitation"),
     ("gy_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guyana", "Guyana Tourism Authority Film Production Support"),
     ("id_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Indonesia", "id_film_incentive"),
-    ("jm_film_incentive", "NON_GUARANTEED_SELECTIVE", "Jamaica", "Jamaica Entertainment Industry Incentive Programme"),
+    ("jm_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Jamaica", "Jamaica Entertainment Industry Incentive Programme"),
     ("ke_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kenya", "ke_film_incentive"),
     ("kw_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kuwait", "kw_film_incentive"),
     ("kz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kazakhstan", "kz_film_incentive"),
@@ -488,7 +553,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("us_or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF) [runtime slug of or_opif]"),
     ("us_sundance_doc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States", "Sundance Institute — Documentary Fund"),
     ("uy_xxi_incentive", "SUPERSEDED", "Uruguay", "Uruguay XXI Film Incentive"),
-    ("uy_acau_cash_rebate", "NON_GUARANTEED_SELECTIVE", "Uruguay", "ACAU Programa Uruguay Audiovisual (PUA) Cash Rebate"),
     ("uz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uzbekistan", "uz_film_incentive"),
     ("vn_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Vietnam", "vn_film_incentive"),
     ("zm_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Zambia", "zm_film_commission"),

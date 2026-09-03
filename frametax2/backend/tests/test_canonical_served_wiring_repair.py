@@ -175,8 +175,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # now carry NON_GUARANTEED_SELECTIVE and are disclosed rather than
     # priced. Nothing was dropped: priced 91 -> 86, unpriceable 65 -> 70,
     # total unchanged.
-    assert len(priced) == 315  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened
-    assert len(unpriced) == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
+    assert len(priced) == 320  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: jo/uy price + full component routing (see test_canonical_authority_substrate.py)
+    assert len(unpriced) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: net -1 displaced (see test_canonical_authority_substrate.py)
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -185,8 +185,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 315  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see note above
-    assert accounting["unpriceable_count"] == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see note above
+    assert accounting["review_required_count"] == 320  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors priced count above
+    assert accounting["unpriceable_count"] == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors unpriced count above
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -208,8 +208,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 315  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
-    assert len(unpriceable_ranked) == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # ITEM 5: see the priced-count note above
+    assert len(review_ranked) == 320  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors priced count above
+    assert len(unpriceable_ranked) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors unpriced count above
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -410,7 +410,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # one previously-unpriced CA+CH bilateral co-pro opportunity drops out
     # (CH is authority-unresolved), so 34 + 30 - 1 = 63. Each still carries
     # its own distinct terminal status -- never flattened.
-    assert len(unpriceable) == 46  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened
+    assert len(unpriceable) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: net -1 displaced (see test_canonical_authority_substrate.py)
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"
