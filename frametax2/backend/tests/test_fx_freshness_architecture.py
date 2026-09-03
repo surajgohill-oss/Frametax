@@ -33,12 +33,44 @@ async def db():
         yield session
 
 
+# CRITICAL TEST-ISOLATION FIX (proven live-runtime corruption, 2026-09-02):
+# every test in this file exercises the REAL commit path
+# (_refresh_from_provider -> _upsert_rates -> session.commit()) against the
+# REAL shared dev database/engine the live uvicorn --reload server also
+# reads from — there is no separate test schema/engine in this repo. The
+# first version of this file let `_today_str()` resolve to the ACTUAL
+# calendar date, so a fake 1.5-for-every-currency payload
+# (`_fake_provider_payload`) got committed into `fx_rates` under TODAY's
+# real effective_date, source="open.er-api.com" — indistinguishable from a
+# genuine refresh. The live server's own `_adopt_from_db_if_fresh()` (an
+# intentional, correct optimization: a cold process reuses a complete
+# same-day snapshot instead of re-hitting the provider) then adopted that
+# fake row set as genuinely fresh on its next check, and every currency
+# rendered as 1.5 in the actual browser — proven via direct DB query
+# (`fx_rates` rows dated today, source open.er-api.com, all 1.5) matching
+# the live API response and the rendered FXStrip byte for byte. The
+# freshness ARCHITECTURE was not defective; this test file's isolation was.
+#
+# Fix: every test's writes are pinned to a sentinel date
+# (_SENTINEL_TEST_DATE) that can never equal a real calendar date, via
+# monkeypatching fx_refresh._today_str for the duration of the test. A
+# real server's `_adopt_from_db_if_fresh()`/refresh path can therefore
+# never observe or adopt a row this suite writes, regardless of test
+# pass/fail/cleanup-ordering — correctness no longer depends on cleanup
+# succeeding. Rows are still deleted afterward as defense in depth, not as
+# the load-bearing safeguard.
+_SENTINEL_TEST_DATE = "0001-01-01"
+
+
 @pytest.fixture(autouse=True)
-def _reset_fx_module_state():
+async def _reset_fx_module_state(monkeypatch):
     """Every test gets a clean slate of the module-level FX state and the
     in-process freshness cache/lock — this state is intentionally global
     (it backs every project's request, not a per-project object), so
-    tests must not leak it into each other."""
+    tests must not leak it into each other. Also pins all DB writes this
+    file makes to _SENTINEL_TEST_DATE — see the module-level comment
+    above for why that is load-bearing, not cosmetic."""
+    monkeypatch.setattr(fx_refresh, "_today_str", lambda: _SENTINEL_TEST_DATE)
     saved_snapshots = dict(fx_doctrine.FX_RATE_SNAPSHOTS)
     saved_horizon_dates = dict(fx_doctrine.FX_HORIZON_DATES)
     saved_live_date = fx_doctrine.FX_LIVE_SNAPSHOT_DATE
@@ -57,6 +89,15 @@ def _reset_fx_module_state():
     fx_doctrine.FX_FRESHNESS_STATUS = saved_status
     fx_doctrine.FX_LAST_REFRESH_ERROR = saved_error
     fx_refresh._last_checked_at = None
+    # Defense in depth (not load-bearing — see comment above): remove this
+    # test's own sentinel-dated rows so they never accumulate.
+    async with AsyncSession(engine, expire_on_commit=False) as cleanup_session:
+        rows = (await cleanup_session.execute(
+            select(FXRate).where(FXRate.effective_date == _SENTINEL_TEST_DATE)
+        )).scalars().all()
+        for r in rows:
+            await cleanup_session.delete(r)
+        await cleanup_session.commit()
 
 
 def _fake_provider_payload(rates: dict[str, float] | None = None):

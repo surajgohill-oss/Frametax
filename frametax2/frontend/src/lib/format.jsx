@@ -1,5 +1,6 @@
 import { JURISDICTION_COORDS } from "./jurisdictions";
 import { humanizeToken, programDisplay } from "./programNames.js";
+import { compactIncentiveRate } from "./incentiveRate.js";
 
 const jurName = (code) => JURISDICTION_COORDS[code]?.name || code || "—";
 
@@ -290,6 +291,13 @@ function compactProgramLabel(programName, jurisdictionName) {
   return s && s.length < programName.length ? s : null;
 }
 
+// The compact-rate schema itself now lives in lib/incentiveRate.js (pure
+// logic, no JSX) so it stays independently unit-testable with plain
+// `node` — this file cannot be (real JSX below, no transpiling test
+// runner installed). Re-exported here so every existing caller of
+// format.jsx keeps working unchanged.
+export { compactIncentiveRate };
+
 // Workspace-only compact scenario identity — the previously approved
 // compact card format ("🇲🇺 Mauritius" / "Up to 40%"), restored after the
 // verbose "EDB Film Rebate · 30% (up to 40%)" program-mechanics presentation
@@ -369,35 +377,23 @@ export function compactScenarioIdentity(structure) {
   // one EXACT rate (floor == ceiling — the common case for a flat
   // statutory program, not a band), the label states it plainly rather
   // than "Up to X%", which implies a range that does not exist here.
-  const segments = structure.segments || [];
-  const claiming = segments.filter((sg) => sg.claims_incentive);
-  const floors = claiming.map((sg) => sg.rate_floor).filter((r) => r != null);
-  const ceilings = claiming.map((sg) => sg.rate_ceiling ?? sg.rate_floor).filter((r) => r != null);
-  const ceiling = ceilings.length ? Math.max(...ceilings) : null;
-  const floor = floors.length ? Math.min(...floors) : null;
-  const isExactRate = ceiling != null && floor != null && Math.round(floor * 10000) === Math.round(ceiling * 10000);
-  const rateText = ceiling != null
-    ? (isExactRate ? `${Math.round(ceiling * 100)}%` : `Up to ${Math.round(ceiling * 100)}%`)
-    : humanizeToken(structure.structure_type);
-  // Program identity moves here (Workspace Display Regression closeout):
-  // the compact secondary line carries the same-jurisdiction distinction
-  // the previous fix correctly established, without the full legal name.
-  // No compact label available (multi-program stack with only one real
-  // program name, or a program name with no jurisdiction-prefix pattern
-  // to strip) — the rate alone is still a real, honest secondary line,
-  // exactly the prior behavior. When ceiling is null, rateText is already
-  // the structure_type fallback ("Multi program" etc.) — appending it
-  // after a real compactLabel would be redundant ("X + Y · Multi
-  // program"), so it's only appended alongside a genuine numeric rate.
-  const subtitle = compactLabel
-    ? (ceiling != null ? `${compactLabel} · ${rateText}` : compactLabel)
-    : rateText;
+  const rateText = compactIncentiveRate(structure) ?? humanizeToken(structure.structure_type);
+  // Overview Top Four + Workspace incentive-display unification: the
+  // compact economic-value line is now ALWAYS the rate alone (rateOnly) —
+  // a long statutory program name (e.g. "Manitoba Film and Video
+  // Production Tax Credit") must never occupy that line; program identity
+  // still exists (programLabel/compactLabel below) for a caller that
+  // wants same-jurisdiction disambiguation elsewhere, and the full legal
+  // name remains available via Inspector. `subtitle` is kept for
+  // call-site compatibility but now also never mixes program name into
+  // the rate line — callers should prefer rateOnly directly.
+  const subtitle = rateText;
 
   // programLabel exposed separately (not just folded into subtitle) so a
   // caller that needs same-jurisdiction disambiguation without the rate
   // — e.g. a compact dropdown option — can use it directly, rather than
   // parsing it back out of the combined subtitle string.
-  return { flags, name, subtitle, programLabel: compactLabel };
+  return { flags, name, subtitle, rateOnly: rateText, programLabel: compactLabel };
 }
 
 // Real AccountQualification.state values -> plain-language label + tier.

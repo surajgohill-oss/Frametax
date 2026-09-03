@@ -66,9 +66,20 @@ test("compactScenarioIdentity never uses the Globe's geo-hub coordinate map as t
 });
 
 test("an exact resolved rate (floor == ceiling) is labeled plainly, never 'Up to X%' which implies a range that does not exist", () => {
-  const src = stripComments(read("lib/format.jsx"));
-  assert.match(src, /isExactRate/);
-  assert.match(src, /isExactRate \? `\$\{Math\.round\(ceiling \* 100\)\}%` : `Up to/);
+  // Overview Top Four + Workspace incentive-display unification (final
+  // repair, 2026-09-03): this logic moved into the shared
+  // compactIncentiveRate() -- one schema for both Overview and Workspace,
+  // never a second copy inline in compactScenarioIdentity. Now lives in
+  // the pure lib/incentiveRate.js (independently unit-testable with
+  // plain node — format.jsx has real JSX and cannot be), re-exported
+  // from format.jsx for existing callers.
+  const rateSrc = stripComments(read("lib/incentiveRate.js"));
+  assert.match(rateSrc, /export function compactIncentiveRate\(structure\)/);
+  assert.match(rateSrc, /isExactRate/);
+  assert.match(rateSrc, /if \(isExactRate\) return `\$\{Math\.round\(ceiling \* 100\)\}%`;/);
+  assert.match(rateSrc, /return `\$\{Math\.round\(floor \* 100\)\}% · up to \$\{Math\.round\(ceiling \* 100\)\}%`;/, "a genuine range must show BOTH the floor and the ceiling, never the ceiling alone");
+  const formatSrc = stripComments(read("lib/format.jsx"));
+  assert.match(formatSrc, /export \{ compactIncentiveRate \}/, "format.jsx must re-export it for existing callers, not duplicate it");
 });
 
 // C. Exact duplicate canonical structures do not appear twice — proven at
@@ -79,7 +90,7 @@ test("an exact resolved rate (floor == ceiling) is labeled plainly, never 'Up to
 test("two same-jurisdiction structures with different program_display_name still get distinct secondary labels", () => {
   const src = stripComments(read("lib/format.jsx"));
   assert.match(src, /const compactLabel = singleProgram \? compactProgramLabel\(programName, jurisdictionName_\) : stackLabel;/);
-  assert.match(src, /return \{ flags, name, subtitle, programLabel: compactLabel \};/, "programLabel must be exposed for callers that need disambiguation without the rate (e.g. a dropdown)");
+  assert.match(src, /programLabel: compactLabel/, "programLabel must be exposed for callers that need disambiguation without the rate (e.g. a dropdown)");
 });
 
 // A/D. Workspace Display Regression: the card headline is jurisdiction-

@@ -105,3 +105,113 @@ export function selectTopOptions(allocated) {
 export function qpeOf(structure) {
   return structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
 }
+
+// CineGlobe Overview Top Four (final adversarial repair pass, 2026-09-03).
+// Card 1-3: the three highest-ranked CURRENTLY MODELED structures, same
+// existing ranking order/filter selectTopOptions already uses
+// (is_directly_comparable). Card 4: the highest-value LEGITIMATE
+// potentially-optimized opportunity not already shown — never fabricated,
+// always sourced from real, disclosed canonical optimizer fields:
+//   1. A structure carrying real conditional_programs (grants/funds with
+//      their own documented_cap_usd — a genuine published ceiling, e.g.
+//      Canada Media Fund/Telefilm) — ranked by total disclosed cap.
+//   2. A real, disclosed treaty/co-production opportunity
+//      (treaty_slug set, or the CO_PRO_OPPORTUNITY terminal status).
+//   3. A currently-modeled structure with its OWN genuine rate_floor <
+//      rate_ceiling gap (a real, already-resolved-by-the-optimizer
+//      upside on that structure itself) not already in cards 1-3.
+//   4. Fallback per item 9: the canonical next-best current modeled
+//      structure (4th-ranked), same semantics as cards 1-3 — never a
+//      fabricated "opportunity" when no legitimate one exists.
+// `isOpportunity: true` (cases 1-2) means this card represents a real,
+// disclosed pathway that is NOT current earned economics — the caller
+// must render it with OPPORTUNITY status and must never format its
+// figure through compactIncentiveRate (that would misrepresent a
+// disclosed cap/opportunity as an earned resolved rate).
+// The "top ranked, currently modeled" ordering item 9's Cards 1-3 need is
+// a BROADER concept than isDirectlyComparable (which narrowly means
+// "regionally/currency comparable to the production's own home
+// jurisdiction" — Little Utopia's own real data has exactly ONE such
+// structure, its Mauritius baseline, which made Card 1-3 collapse to a
+// single entry when this reused isDirectlyComparable, caught live in the
+// rendered app: header read "Top Structures 2", not 4). The correct,
+// already-established convention is Workspace.jsx's own
+// visibleStructures() ordering — rank first (allocated.ranking's own
+// order), tie-broken by ascending NPC for a priced structure with no
+// formal rank — reused here instead of a second, narrower selection
+// rule, over every is_fully_priced structure.
+function _rankOrNpcOrder(allocated) {
+  const rankById = new Map((allocated.ranking || []).map((r) => [r.structure_id, r]));
+  return [...allocated.structures]
+    .filter((s) => s.is_fully_priced)
+    .sort((a, b) => {
+      const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
+      const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
+      if (ra !== rb) return ra - rb;
+      const an = a.npc_with_adjustments_usd ?? Infinity;
+      const bn = b.npc_with_adjustments_usd ?? Infinity;
+      return an - bn;
+    });
+}
+
+function _hasUpsideGap(structure) {
+  const claiming = (structure.segments || []).filter((sg) => sg.claims_incentive);
+  const floors = claiming.map((sg) => sg.rate_floor).filter((r) => r != null);
+  const ceilings = claiming.map((sg) => sg.rate_ceiling ?? sg.rate_floor).filter((r) => r != null);
+  if (!floors.length || !ceilings.length) return false;
+  const floor = Math.min(...floors);
+  const ceiling = Math.max(...ceilings);
+  return Math.round(floor * 10000) !== Math.round(ceiling * 10000);
+}
+
+export function selectMaxPotentialCard(allocated, excludeIds) {
+  if (!allocated?.structures) return null;
+  const candidates = allocated.structures.filter((s) => !excludeIds.has(s.structure_id));
+
+  let bestFund = null;
+  let bestFundCap = 0;
+  for (const s of candidates) {
+    const cap = (s.conditional_programs || []).reduce((sum, p) => sum + (p.documented_cap_usd || 0), 0);
+    if (cap > bestFundCap) { bestFundCap = cap; bestFund = s; }
+  }
+  if (bestFund) return { structure: bestFund, isOpportunity: true, potentialUsd: bestFundCap };
+
+  const treatyOpportunity = candidates.find(
+    (s) => s.treaty_slug || s.structure_type === "treaty_coproduction" || s.candidate_status === "STATUS_CO_PRO_OPPORTUNITY",
+  );
+  if (treatyOpportunity) return { structure: treatyOpportunity, isOpportunity: true, potentialUsd: null };
+
+  const withOwnUpside = candidates
+    .filter((s) => s.is_fully_priced && _hasUpsideGap(s))
+    .sort((a, b) => (b.npc_with_adjustments_usd ?? 0) - (a.npc_with_adjustments_usd ?? 0));
+  if (withOwnUpside.length) return { structure: withOwnUpside[0], isOpportunity: false, potentialUsd: null };
+
+  return null;
+}
+
+export function selectTopFour(allocated) {
+  if (!allocated?.ranking || !allocated?.structures) return [];
+  const ordered = _rankOrNpcOrder(allocated);
+  const firstThree = ordered.slice(0, 3);
+  const shownIds = new Set(firstThree.map((s) => s.structure_id));
+
+  const maxPotential = selectMaxPotentialCard(allocated, shownIds);
+  if (maxPotential) {
+    return [...firstThree, { ...maxPotential.structure, __isOpportunity: maxPotential.isOpportunity, __potentialUsd: maxPotential.potentialUsd }];
+  }
+  const fourth = ordered.find((s) => !shownIds.has(s.structure_id));
+  if (fourth) return [...firstThree, fourth];
+  return firstThree;
+}
+
+// Card status — item 10's four exact single-line states. `leadingId`:
+// the producer's manual Leading selection (activeStructure's own
+// identity), same generic concept every other Leading/Top-Priced
+// distinction in this app already uses (FXStrip, Budget Rail) — never a
+// second "leading" derivation.
+export function cardStatus(structure, cardIndex, leadingId) {
+  if (structure.__isOpportunity) return "OPPORTUNITY";
+  if (leadingId ? structure.structure_id === leadingId : cardIndex === 0) return "LEADING";
+  if (_hasUpsideGap(structure)) return "OPTIMIZE";
+  return "VIABLE";
+}
