@@ -2386,6 +2386,19 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             has_unverified_inputs=territorial_state_unknown, warnings=warnings,
             calculation_trace_json={
                 "candidate_status": STATUS_PRICED,
+                # Canonical optimizer/Globe wiring remediation (2026-09-04),
+                # Section 5: MODELED POTENTIAL RATE vs AWARD/EXECUTION
+                # CERTAINTY are two different axes -- a program can be
+                # deterministically priced and STILL be administratively/
+                # discretionarily gated (Saudi is the first real instance,
+                # never the only one this is scoped to). Previously this
+                # fact lived ONLY inside a prose warnings string a consumer
+                # would have to pattern-match; now also served as a real
+                # structured boolean, generically derived from the SAME
+                # program_requirements.allocation_type/preapproval_mandatory
+                # facts _competitive_allocation_disclosure already reads --
+                # never a Saudi-specific flag, never a second derivation.
+                "administrative_allocation_risk": bool(_competitive_disclosure),
                 "discovery_classification": classification,
                 "modeled_rate": rate_resolution.modeled_rate,
                 "rate_basis": rate_resolution.basis,
@@ -2566,9 +2579,11 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 f"Authority provenance incomplete for {_gap_slug} ({_gap_state}): "
                 + STATE_REASON.get(_gap_state, "")
             ]
+        _stack_administrative_allocation_risk = False
         for _member_slug in stack_result.program_slugs:
             _member_disclosure = _competitive_allocation_disclosure(_member_slug)
             if _member_disclosure:
+                _stack_administrative_allocation_risk = True
                 warnings = warnings + [_member_disclosure]
         # Same territorial-fact disclosure every underlying single-
         # program candidate this combination is built from already
@@ -2659,6 +2674,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     if stack_result.rule_type == "mutually_exclusive"
                     else STATUS_PRICED
                 ),
+                # Section 5 -- same generic structured field as the other
+                # two STATUS_PRICED-producing paths.
+                "administrative_allocation_risk": _stack_administrative_allocation_risk,
                 "discovery_classification": "multi_program_stack",
                 "structure_type": "multi_program",
                 "primary_jurisdiction": code,
@@ -2880,22 +2898,48 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # home or the routed target program can independently
                 # carry a real discretionary/preapproval/competitive-
                 # allocation doctrine fact.
+                _component_administrative_allocation_risk = False
                 for _component_program_slug in (home_program_slug, target.program_slug):
                     if not _component_program_slug:
                         continue
                     _component_disclosure = _competitive_allocation_disclosure(_component_program_slug)
-                    if _component_disclosure and _component_disclosure not in _component_warnings:
-                        _component_warnings.append(_component_disclosure)
+                    if _component_disclosure:
+                        _component_administrative_allocation_risk = True
+                        if _component_disclosure not in _component_warnings:
+                            _component_warnings.append(_component_disclosure)
                 session.add(StructureCalculationResult(
                     id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
                     total_budget_usd=inputs.gross_budget_usd,
                     total_incentive_value_usd=pricing.selected_incentive_usd,
-                    true_net_cost_usd=npc,
+                    # Canonical optimizer/Globe wiring remediation
+                    # (2026-09-04), P0-2: this used to persist the SAME
+                    # adjusted value (`npc`, i.e. pricing.
+                    # npc_with_adjustments_usd) into BOTH columns --
+                    # true_net_cost_usd (which every OTHER structure type
+                    # correctly populates from the verified/base figure,
+                    # see the single/full_relocation path a few hundred
+                    # lines above) collapsed into the adjusted figure,
+                    # mislabeling adjusted-as-verified at the exact
+                    # served-field boundary canonical_production_view.py
+                    # reads from (npc_verified_usd <- true_net_cost_usd).
+                    # pricing.npc_verified_usd was ALREADY correctly
+                    # computed by price_allocated_structure (the SAME
+                    # kernel single/full_relocation uses) and was already
+                    # correctly written into this row's own trace_json
+                    # below ("npc_verified_usd": pricing.npc_verified_usd)
+                    # -- only the top-level DB column read the wrong
+                    # value. Same real number, now read from the same
+                    # real field, matching the full_relocation
+                    # convention exactly.
+                    true_net_cost_usd=pricing.npc_verified_usd,
                     risk_adjusted_net_cost_usd=npc,
                     has_unverified_inputs=True,
                     warnings=_component_warnings,
                     calculation_trace_json={
                         "candidate_status": STATUS_PRICED,
+                        # Section 5 -- same generic structured field as
+                        # the single/full_relocation path above.
+                        "administrative_allocation_risk": _component_administrative_allocation_risk,
                         "discovery_classification": "component_relocation",
                         "structure_type": "component_relocation",
                         "primary_jurisdiction": home_code,
@@ -2930,6 +2974,33 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         "feasibility_reasons": feasibility_reasons,
                         "conditional_programs": _conditional_program_dicts,
                         "conditional_compatibility": _conditional_compatibility_dict,
+                        # Canonical optimizer/Globe wiring remediation
+                        # (2026-09-04), P0-2 (second half): the audit's
+                        # own words -- "the trace contains the correct
+                        # pre-normalization NPC but omits the
+                        # normalization fields". This component trace
+                        # never carried an "adjustments" key at all, so
+                        # canonical_production_view.py's
+                        # `(trace.get("adjustments") or {}).get(...)`
+                        # reads silently returned null/0.0 for every
+                        # served delta -- reconstructing npc_with_
+                        # adjustments_usd from npc_verified_usd + these
+                        # deltas was impossible. Same real fields, same
+                        # shape, as the single/full_relocation path
+                        # above -- reading straight off the SAME
+                        # `pricing` kernel object (price_allocated_
+                        # structure), never new economics.
+                        "adjustments": {
+                            "travel_incremental_delta_usd": pricing.travel_incremental_delta_usd,
+                            "fx_delta_usd": pricing.fx_delta_usd,
+                            "inkind_replacement_delta_usd": pricing.inkind_replacement_delta_usd,
+                            "local_cost_delta_usd": pricing.local_cost_delta_usd,
+                            "financing_cost_usd": pricing.financing_cost_usd,
+                            "implementation_cost_usd": pricing.implementation_cost_usd,
+                            "total_adjustments_usd": round(
+                                (pricing.npc_with_adjustments_usd or 0.0) - (pricing.npc_verified_usd or 0.0), 2
+                            ),
+                        },
                     },
                     input_fingerprint=fingerprint,
                 ))

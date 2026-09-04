@@ -309,6 +309,16 @@ def _empty_structure_entry(
         "primary_jurisdiction": code,
         "participants": _participant_codes,
         "relationship_types": relationship_types,
+        # Canonical optimizer/Globe wiring remediation (2026-09-04),
+        # Section 5: MODELED POTENTIAL RATE vs AWARD/EXECUTION CERTAINTY.
+        # Generically derived (canonical_evaluation.py's
+        # _competitive_allocation_disclosure, keyed only on program_
+        # requirements.allocation_type/preapproval_mandatory — never a
+        # per-jurisdiction check) and served here as a real structured
+        # boolean, not only as prose inside `warnings` a consumer would
+        # otherwise have to pattern-match. False (never fabricated True)
+        # for any row persisted before this field existed.
+        "administrative_allocation_risk": bool(trace.get("administrative_allocation_risk")),
         # Existing Optimizer/Stacker Reconnection, Task 7 — read straight
         # off calculation_trace_json's conditional_programs/
         # conditional_compatibility (canonical_evaluation._conditional_
