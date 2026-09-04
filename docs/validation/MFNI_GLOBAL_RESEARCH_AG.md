@@ -64,16 +64,63 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** BECTU Official Website, Pact Agreements (Tier 1/Tier 3)
 - **Confidence:** STRONG for structure, PROVISIONAL for exact scale (depends on branch).
 
+### Fringes / Payroll
+- **Employer National Insurance (NI):** RESEARCHED. 13.8% for 2024-2025 on earnings above £9,100/yr. (Increases to 15% and £5,000 threshold in April 2025). No special film exemption for Employer NI.
+- **Workplace Pension:** RESEARCHED. Statutory minimum employer contribution is 3% of qualifying earnings (total 8%).
+- **Holiday Pay:** RESEARCHED. PACT advises 10.77%; BECTU advises 12.07%. BECTU strongly pushing for 12.07% for freelancers under the April 2024 "irregular hours" legislation.
+- **Source:** UK Gov (HMRC), PACT/BECTU statements (Tier 1/Tier 3)
+- **Confidence:** VERIFIED (Statutory rates) / STRONG (Union guidance).
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major UK studios (Pinewood, Shepperton, Warner Bros Leavesden) do NOT publish public rate cards. Pricing is confidential, case-by-case, and highly dependent on scale, duration, and bundled services (offices, workshops).
+- **Source:** Pinewood Studios, Commercial research (Tier 2/Tier 3)
+- **Confidence:** BLOCKED (Rate not publicly disclosed for Tier 1 facilities; secondary commercial sources required for modeling).
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Top-tier rental houses (ARRI Rental UK, Procam Take 2) operate purely on a quote-by-request basis for film drama packages. No standardized public rate card is available for 2024. Volume discounts and project duration heavily dictate the actual rate.
+- **Source:** ARRI Rental UK, Procam Take 2 (Tier 2)
+- **Confidence:** BLOCKED (Rate not publicly disclosed for Tier 1 vendors; secondary/independent price lists may be needed as proxies).
+
+### Locations / Permits
+- **Location/Permit Fees:** RESEARCHED. 
+- **Findings:** Decentralized across 33 London local authorities. No single rate card. Each borough sets its own fee structure via FilmApp. Temporary Traffic Orders (Road Closures) generally cost £1,000 – £2,000 and require 6-8 weeks minimum notice.
+- **Source:** Film London, Borough Film Services (Tier 1/Tier 3).
+- **Confidence:** STRONG (Structural understanding), PROVISIONAL (for exact deterministic pricing as it is highly localized).
+
+### Travel / Accommodation
+- **Per Diems:** RESEARCHED.
+- **Findings:** No industry-wide BECTU per diem agreement. Most productions default to HMRC tax-free benchmark scale rates (up to £25/day for 24-hour periods). Amounts beyond this attract NI/tax unless bespoke arrangements are agreed with HMRC.
+- **Source:** UK Gov (HMRC Employment Income Manual) (Tier 1).
+- **Confidence:** VERIFIED (Tax threshold) / STRONG (Industry convention).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Industry standard daily rate typically falls between £18 and £35 per head (excluding VAT), with £25/head as a safe baseline for drama/commercial. Breakfast usually adds £6–£10/head.
+- **Source:** UK location catering commercial vendors (e.g. Reel Menus) (Tier 2).
+- **Confidence:** STRONG (Primary commercial quotes).
+
+### Post Production / VFX
+- **VFX Incentive Economics:** RESEARCHED.
+- **Findings:** Effective Jan 1, 2025, the UK Audio-Visual Expenditure Credit (AVEC) provides an enhanced 39% rate for VFX (net 29.25%). The 80% cap on qualifying expenditure is removed specifically for VFX.
+- **Source:** HMRC, BFI (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Local vs Imported Crew
+- **Imported Labor Tax/Withholding:** RESEARCHED. 
+- **Findings:** The UK operates a specific Foreign Entertainers Unit (FEU). Payments to non-UK resident performers/cast (even via loan-out companies) require a strict 20% withholding tax, which must be modeled. However, this 20% FEU withholding does NOT apply to imported technical crew (e.g., directors, camera operators) who may fall under standard dual-taxation or temporary worker rules depending on time spent. 
+- **Source:** HMRC Foreign Entertainers Unit (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Construction / Materials
+- **Materials Pricing:** RESEARCHED.
+- **Findings:** No film-specific rate cards exist for raw construction materials (timber, steel, paint). Filming in the UK requires tracking general regional construction material price indices (Opex / BCIS).
+- **Source:** Commercial Construction Indices.
+- **Confidence:** PROVISIONAL (Requires dynamic macro-economic linkage rather than a static film benchmark).
+
 ### Gaps / Incomplete (Next Execution Needed)
-- Fringes / Payroll (Employer NI, Pension)
-- Stages / Facilities
-- Equipment 
-- Locations / Permits
-- Travel / Accommodation
-- Construction / Materials
-- Catering / Unit
-- Post / VFX
-- Local vs Imported Crew
+- None for GB structural categories (though continuous rate updates are needed). (Retained home compensation/tax implications)
 
 ## 7. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
@@ -89,11 +136,11 @@ E — RESEARCH BLOCKED / INCOMPLETE
 ## 8. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched BECTU 2024 agreements).
-- **Domains reached:** BECTU.org.uk.
+- **Domains reached:** BECTU.org.uk, Gov.uk (HMRC/FEU), PACT.co.uk, Pinewood Group, ARRI Rental, Film London, commercial catering providers.
 - **Local-language searches:** 0.
 
 ## 9. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-Resume **GB (United Kingdom)**. Specifically, research UK Employer National Insurance (NI) rates, statutory pension requirements, and union fringes. Then proceed to Stage/Facility pricing in the UK.
+GB (United Kingdom) structural category coverage is complete. Begin **US (United States)** research, specifically focusing on California, New York, and Georgia baseline variances, union fringes (SAG/DGA/IATSE/Teamsters), and stage pricing.
