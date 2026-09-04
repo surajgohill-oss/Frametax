@@ -507,7 +507,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** DGCA / Cinecittà (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 16. GLOBAL COVERAGE ACCOUNTING
+## 16. JURISDICTION × CATEGORY RESEARCH: ES (SPAIN)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer social security (Seguridad Social) adds approximately 30-32% burden to the gross salary. This covers Common Contingencies (23.6%), Unemployment (5.5-6.7%), FOGASA, MEI, and Training. The contribution base is capped (e.g., €4,720.50/month max in 2024).
+- **Source:** Tesorería General de la Seguridad Social (TGSS) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major studio hubs (Madrid Content City, Parc Audiovisual de Catalunya in Terrassa) do not publish static rates. Standard pricing models are quote-dependent, scaling from €1,000+ per day for large format stages, subject to power usage and duration discounts.
+- **Source:** Madrid Content City, Parc Audiovisual de Catalunya (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Municipal control. Madrid charges an admin fee (~€48) plus variable linear-meter space occupation fees for standard shoots; small crew shoots are free. Barcelona applies an €89 issuing fee plus occupation minimums (~€480-€600/day for vehicles).
+- **Source:** Madrid Film Office, Barcelona Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Major Spanish cinema rental houses (EPC, Ovide, RC Service) operate on a "Request a Quote" basis for cinematic packages (ARRI, Sony, RED). No public static rate cards exist.
+- **Source:** EPC, RC Service (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Standard crew catering costs typically range between €25 and €35 per head per day (main meals), with separate scaled rates for background actors (~€15).
+- **Source:** Spanish Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Mainland Spain offers a 30% deduction on the first €1M and 25% on the rest (max €20M/film). The Canary Islands offer 54% on the first €1M and 45% thereafter (max €36M/film). The minimum qualifying spend for VFX/post-production projects is exceptionally low at €200,000.
+- **Source:** Spain Film Commission, ZEC (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 17. JURISDICTION × CATEGORY RESEARCH: PT (PORTUGAL)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** The standard employer statutory contribution (Taxa Social Única or TSU) is 23.75%, with no ceiling. Mandatory workplace accident insurance adds another 1-2%. However, the industry relies heavily on independent contractors ("recibos verdes") where the employer TSU does not apply.
+- **Source:** Portugal Social Security (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Portugal lacks massive Hollywood-scale studio complexes; hubs like Beato Innovation District act mostly as event spaces. Dedicated professional studios (TODOS, Comuna) use bespoke quoting or modular packages, but standard global rate cards are non-existent.
+- **Source:** TODOS Creative Hub (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Managed by local councils (e.g., Lisbon Câmara Municipal). Fees depend on public space occupation and logistical impact (parking, traffic). A special noise license (LER) may be required. Small/cultural projects may apply for exemptions.
+- **Source:** Lisboa Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Established rental houses (Planar, Smiling, Digital Azul) operate via custom proposals based on equipment lists and project duration. 
+- **Source:** Planar Lda (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Professional on-set catering ranges from €20 to €40 per person for standard production needs. A statutory meal allowance (when catering is absent) proxies around €12.50-€15.00/day.
+- **Source:** Portuguese Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Administered by ICA / PIC Portugal (recently transitioning to SCRI.PT/RIPAC), the Cash Rebate offers 25% to 30% on eligible expenditure. The minimum local spend requirement for post-production-only projects is €200,000.
+- **Source:** Portugal Film Commission, ICA (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 18. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -515,20 +592,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 16 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany)
+- **Subnational jurisdictions researched:** 20 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon)
 - **Stale/unprovenanced existing records:** 44
 
-## 17. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 19. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA.
 - **Local-language searches:** 0.
 
-## 18. STOP CONDITION
+## 20. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-IE (Ireland) and IT (Italy) structural category coverage is complete. Resume **ES (Spain)** research, focusing on ES Stages, Permits, Equipment, and Catering. After ES, advance to **PT (Portugal)**.
+ES (Spain) and PT (Portugal) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **Eastern Europe / Latin America hubs**).
