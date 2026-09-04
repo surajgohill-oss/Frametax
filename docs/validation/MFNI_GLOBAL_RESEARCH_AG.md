@@ -1046,7 +1046,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Film Center Serbia (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 30. GLOBAL COVERAGE ACCOUNTING
+## 30. JURISDICTION × CATEGORY RESEARCH: SE (SWEDEN)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Very High. The statutory employer social security contribution (Arbetsgivaravgifter) is a flat 31.42%, uncapped. Film/TV union collective bargaining agreements (e.g., Scen & Film) add occupational pension and insurances. Total employer burden is widely budgeted at 130%-140% of base gross salary.
+- **Source:** Swedish Tax Agency, Scen & Film (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Ystad Studios quotes standard stages (600sqm) at 8,000 to 10,000 SEK per day (~$750-$950 USD). Filmhuset (Stockholm) is more of an administrative hub, with commercial stages managed by independent entities like Multiproduktion.
+- **Source:** Ystad Studios, Film i Skåne (Tier 2).
+- **Confidence:** VERIFIED.
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Police application fee for public space obstruction is 990 SEK (Polismyndigheten). City usage fees in Stockholm are charged hourly (e.g., 254 SEK/hour).
+- **Source:** Polismyndigheten, Stockholm Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Market led by Dagsljus (now Storyline Studios) and Ljud & Bildmedia. Standard packages are highly customized. Equipment rentals operate exclusively on a bespoke quote model.
+- **Source:** Storyline Studios, Ljud & Bildmedia (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** High cost environment. Basic production catering runs 200 to 500 SEK per head (~$20-$50 USD). High-end or full-service mobile catering easily exceeds this.
+- **Source:** Swedish Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 25% cash rebate via Tillväxtverket. Specifically includes post-production and VFX. Cap of 10 million SEK per project. The total world budget must hit steep minimums (e.g., 30M SEK for features).
+- **Source:** Tillväxtverket (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 31. JURISDICTION × CATEGORY RESEARCH: NO (NORWAY)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Modestly high. Employer National Insurance (Arbeidsgiveravgift) is geographically zoned: 14.1% in Zone 1 (Oslo), scaling down to 0% in far north zones. Mandatory Occupational Pension (OTP) adds 2-7%. Holiday Pay (Feriepenger) is ~10.2%-12%. Total fringe burden is budgeted at ~18%-28% on top of base.
+- **Source:** Norwegian Tax Administration (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Facilities like Filmparken (Oslo), Storyline Studios, and Filmcamp (Øverbygd) do not publish flat rate cards. Quotes depend heavily on duration, scale, and technical specs.
+- **Source:** Filmparken, Filmcamp (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Highly accessible. No national permit fee. In Oslo, public filming is generally free unless it involves road closures/obstructions, which require local municipality/police coordination.
+- **Source:** Oslo Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Storyline Studios, Dagslys, and Kamera Rental dominate. No standard rate cards. Smaller independent rentals estimate daily rates using retail-value division (e.g., Retail / 15 for cameras), but major vendors operate strictly on bespoke quotes.
+- **Source:** Storyline Studios, Kamera Rental (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Very high cost environment. Simple drop-off lunches start at NOK 200-400 (~$19-$38 USD) per head. Full-service craft/catering on set starts at NOK 500-1000+ (~$47-$95+ USD) per head.
+- **Source:** Norwegian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 25% cash rebate via Norwegian Film Institute (NFI). The scheme is competitive (projects ranked if oversubscribed). Min local spend is NOK 4 million, with stringent total budget and international financing requirements. Post/VFX is eligible.
+- **Source:** Norwegian Film Institute (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 32. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -1054,20 +1131,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 32 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade)
+- **Subnational jurisdictions researched:** 34 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo)
 - **Stale/unprovenanced existing records:** 44
 
-## 31. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 33. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute.
 - **Local-language searches:** 0.
 
-## 32. STOP CONDITION
+## 34. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-BG (Bulgaria) and RS (Serbia) structural category coverage is complete. The Eastern/Central European bloc is now finalized. Proceed to open the Nordic bloc starting with **SE (Sweden)** and **NO (Norway)**.
+SE (Sweden) and NO (Norway) structural category coverage is complete. The Nordic bloc is now open. Proceed to finalize the Nordics by executing **DK (Denmark)** and **FI (Finland)** next.
