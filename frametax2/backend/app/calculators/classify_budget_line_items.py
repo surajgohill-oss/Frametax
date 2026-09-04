@@ -122,7 +122,23 @@ _RULES: list[ClassificationRule] = [
     # "FINANCING FEES", "BRIDGE", "BANKING FEE". The stem "financ" covers
     # finance/financing/financial; bridge and banking are named explicitly.
     # These are production FINANCING charges, never miscellaneous spend.
-    ClassificationRule(r"financ|interest|loan fee|bank fee|banking|bridge",
+    # "\blend(er|ing)\b" added (Consolidated UI/ingestion/permission
+    # closeout, 2026-09-03, Batch 2) -- a PROVEN gap, not a guess:
+    # "LENDER FEE" is a real, plainly-labeled finance-cost synonym the
+    # prior pattern did not match (confirmed: re.search against "financ|
+    # interest|loan fee|bank fee|banking|bridge" returns no match for
+    # "LENDER FEE"). F#K Valentine's Day's own real line ("7901 FINANCE
+    # FEE : 12.5%") already matched via "financ" -- this was never an
+    # F#K-specific classification failure; see BudgetRail.jsx's
+    # SourceBudgetFinanceLine for the real (separate) producer-facing
+    # wiring defect that made it LOOK like one.
+    # WORD-BOUNDED, not a bare "lend" substring: an unbounded "lend(er|
+    # ing)" would also match "Color Blending (post)" / "Blending suite
+    # rental" -- "blending" contains the literal substring "lending".
+    # Proven and tested (see test_classify_finance_costs.py); \b anchors
+    # prevent this exact false positive while still matching LENDER/
+    # LENDING/LENDER'S/etc.
+    ClassificationRule(r"financ|interest|loan fee|\blend(er|ing)\b|bank fee|banking|bridge",
                        ATLBTLCategory.OTHER, SpendCategory.FINANCE_COSTS, False, False),
     ClassificationRule(r"insurance|e&o|errors.and.omissions",
                        ATLBTLCategory.OTHER, SpendCategory.INSURANCE, False, False),

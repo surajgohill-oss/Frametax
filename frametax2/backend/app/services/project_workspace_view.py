@@ -93,7 +93,9 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     # computation evaluate_project() uses — recomputed here READ-ONLY
     # (no script analysis / artwork extraction / new rows) so this stays
     # a cheap read, never a second evaluation entry point.
-    from app.services.canonical_evaluation import _compute_fingerprint, _coproduction_facts
+    from app.services.canonical_evaluation import (
+        _compute_fingerprint, _coproduction_facts, _excluded_jurisdiction_codes,
+    )
     from app.services.canonical_project_economics import build_project_economic_inputs
     from app.calculators.canonical_role_qualification_bridge import (
         role_known_codes_from_project, script_facts_from_project,
@@ -107,9 +109,18 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
         role_known_codes = await role_known_codes_from_project(session, str(project.id))
         script_facts = await script_facts_from_project(session, str(project.id))
         coproduction_facts = await _coproduction_facts(session, project.id)
+        # Batched producer-control closeout (2026-09-03) — same fix,
+        # same reasoning, as canonical_production_view.py's identical
+        # call: must reuse the exact same fingerprint inputs
+        # evaluate_project() itself uses, including
+        # excluded_jurisdiction_codes, or this read-only reconstruction
+        # silently diverges from what was actually persisted the moment
+        # a project has any jurisdiction exclusion on file.
+        excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project.id))
         fingerprint = _compute_fingerprint(
             econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,
+            excluded_jurisdiction_codes=excluded_jurisdiction_codes,
         )
     if fingerprint is None:
         fingerprint = (await session.execute(

@@ -20,6 +20,7 @@ the engines, before this file ever runs.
 """
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import asdict
 from typing import Any
@@ -849,6 +850,79 @@ async def post_project_assumptions(
         select(ProjectFact).where(ProjectFact.project_id == project.id, ProjectFact.fact_key.in_(_PROJECT_ASSUMPTION_FACT_KEYS))
     )).scalars().all()
     return {"answers": {f.fact_key: f.value for f in fact_rows}}
+
+
+# Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
+# candidate-jurisdiction inclusion/exclusion election. Same real
+# ProjectFact table/precedence every producer-settable fact already uses
+# (see post_project_assumptions above) — never a second persistence
+# mechanism, never a Saudi-specific column/table. The code is a real
+# jurisdiction code (e.g. "SA", "CA-MB"), never a free-form key, so this
+# endpoint can't be used to smuggle a value into an arbitrary fact_key.
+# canonical_evaluation.py's _excluded_jurisdiction_codes() reads these
+# same rows generically at candidate-generation time (never Saudi-
+# specific there either) and the read-back is the SAME generic
+# facts.answers ProjectFact passthrough every other fact already uses
+# (canonical_production_view.build_generic_pkg_and_economics) — no new
+# read path needed.
+_JURISDICTION_CODE_PATTERN = re.compile(r"^[A-Z]{2}(-[A-Z0-9]{1,4})?$")
+
+
+class JurisdictionPreference(BaseModel):
+    jurisdiction_code: str
+    included: bool
+
+
+@router.post("/projects/{project_id}/jurisdiction-preference")
+async def post_jurisdiction_preference(
+    project_id: str, body: JurisdictionPreference, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Set (or clear) this PROJECT's candidate-jurisdiction inclusion
+    election for one jurisdiction code. `included=True` (or a code with
+    no election on file at all) means the jurisdiction participates in
+    this project's own candidate generation/pricing/ranking, exactly as
+    discovered/priced — this is a producer MODELING preference, never a
+    change to law/doctrine/rate/preapproval/content requirements.
+    `included=False` removes it from this project's candidate universe
+    at the earliest shared candidate-generation point (see
+    canonical_evaluation.py's excluded_jurisdiction_codes filter) — it
+    can never become a Top Priced Candidate, Top Structure,
+    recommendation, or comparison candidate while excluded. Persisted
+    per-project (never a company-global exclusion); a later Evaluate
+    picks up the change through the existing fingerprint (this value is
+    now part of _compute_fingerprint's real input set)."""
+    from app.services.canonical_evaluation import JURISDICTION_PREFERENCE_FACT_PREFIX
+
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    code = body.jurisdiction_code.strip().upper()
+    if not _JURISDICTION_CODE_PATTERN.match(code):
+        raise HTTPException(status_code=400, detail=f"{body.jurisdiction_code!r} is not a valid jurisdiction code.")
+
+    fact_key = f"{JURISDICTION_PREFERENCE_FACT_PREFIX}{code}"
+    existing = (await db.execute(
+        select(ProjectFact).where(ProjectFact.project_id == project.id, ProjectFact.fact_key == fact_key)
+    )).scalar_one_or_none()
+    if body.included:
+        # Included is the default (absence of a row) — clear any prior
+        # exclusion rather than persist a redundant "included" row, same
+        # convention post_project_assumptions uses for value=None.
+        if existing is not None:
+            await db.delete(existing)
+    elif existing is not None:
+        existing.value = "excluded"
+        existing.source_type = ProjectFactSourceType.USER_OVERRIDE.value
+        existing.review_status = ReviewStatus.APPROVED.value
+    else:
+        db.add(ProjectFact(
+            id=uuid.uuid4(), project_id=project.id, fact_key=fact_key,
+            value="excluded", value_type="string",
+            source_type=ProjectFactSourceType.USER_OVERRIDE.value,
+            review_status=ReviewStatus.APPROVED.value,
+        ))
+    await db.commit()
+    return {"jurisdiction_code": code, "included": body.included}
 
 
 class LocationOverrides(BaseModel):

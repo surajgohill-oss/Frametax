@@ -119,7 +119,7 @@ function scenarioOptionLabel(structure) {
 // and Overview — one FX engine, not two. See FXStrip.jsx's own header
 // comment for the full contract.
 
-function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPriced, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   // 2x2 anchor/scenario composition (item 7): the canonical anchor/
   // current-production structure — isBaselineStructure/is_baseline,
@@ -149,19 +149,33 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   // A priced structure with no real canonical rank (rank?.rank is only
   // ever set for a directly-comparable, recommendation-eligible
   // candidate — see canonical_production_view.py's comparable/
-  // review_required split) must never silently default to "①" either;
-  // "PRICED" states plainly that real economics exist without
-  // asserting an order the doctrine did not establish.
+  // review_required split) must never silently default to "①" either.
   // 2x2 anchor/scenario composition (item 7): a producer's own manual
   // Leading selection is always surfaced honestly (never silently
   // relabeled) — ANCHOR only shows when this is the canonical baseline
   // AND not also the producer's manual pick.
+  //
+  // Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 4:
+  // ROLE vs QUALIFICATION STATE are two distinct concepts and must never
+  // overwrite each other (task doctrine) — "PRICED" is a qualification
+  // state, not a role, and using it as the ONLY thing every non-Anchor/
+  // Leading/ranked card said was the actual regression: a discretionary/
+  // preapproval-gated jurisdiction's genuinely lowest-priced candidate
+  // read identically to every other unranked alternative, even though
+  // its real conditional STATUS is already shown separately below (⚠ Discretionary /
+  // preapproval required — see hasAdministrativeAllocationRisk). A real
+  // rank still wins when the doctrine has established one (the circled
+  // number); otherwise the single genuinely lowest-NPC unranked
+  // candidate reads "BEST PRICED" (bestPricedCandidate — the SAME
+  // selection the Hero/BudgetRail already use), and every other priced-
+  // but-unranked structure reads "ALTERNATIVE" — never the bare
+  // qualification word "PRICED" standing in for a role it isn't.
   const badge = isLeading
     ? "◈ LEADING"
     : isAnchor
       ? "◆ ANCHOR"
       : priced
-        ? (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : "PRICED")
+        ? (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : (isBestPriced ? "BEST PRICED" : "ALTERNATIVE"))
         : "DRAFT";
 
   // Compact card identity (flag + full jurisdiction name + "Up to X%") —
@@ -356,6 +370,21 @@ export default function Workspace() {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
+  // Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 4:
+  // restore a meaningful producer-facing ROLE for priced structures that
+  // have no canonical direct-comparability rank (rank?.rank absent — a
+  // real, common state; see canonical_production_view.py's comparable/
+  // review_required split) and are not Anchor/Leading. These used to all
+  // collapse to the bare qualification-state word "PRICED", which is not
+  // a role and does not distinguish, e.g. a jurisdiction's genuinely
+  // lowest-NPC candidate from every other unranked alternative. Reuses
+  // the SAME bestPricedCandidate() selection the Hero/BudgetRail already
+  // use — never a second, independently-maintained "which one is best
+  // priced" computation.
+  const bestPricedStructureId = useMemo(
+    () => (allocated ? bestPricedCandidate(allocated)?.structure_id ?? null : null),
+    [allocated],
+  );
   const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
     () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
@@ -530,6 +559,7 @@ export default function Workspace() {
                   rank={rankById.get(s.structure_id)}
                   grossBudget={production.gross_budget_usd}
                   isLeading={s.structure_id === leadingId}
+                  isBestPriced={s.structure_id === bestPricedStructureId}
                   onSetLeading={handleSetLeading}
                   onInspect={handleSelectStructure}
                   onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}
@@ -558,6 +588,7 @@ export default function Workspace() {
                     rank={rankById.get(leadingStructure.structure_id)}
                     grossBudget={production.gross_budget_usd}
                     isLeading={leadingStructure.structure_id === leadingId}
+                    isBestPriced={leadingStructure.structure_id === bestPricedStructureId}
                     onSetLeading={handleSetLeading}
                     onInspect={handleSelectStructure}
                     onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}
@@ -612,6 +643,7 @@ export default function Workspace() {
                       rank={rankById.get(s.structure_id)}
                       grossBudget={production.gross_budget_usd}
                       isLeading={s.structure_id === leadingId}
+                      isBestPriced={s.structure_id === bestPricedStructureId}
                       onSetLeading={handleSetLeading}
                       onInspect={handleSelectStructure}
                       onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}

@@ -151,6 +151,12 @@
   text-align: left;
   overflow: hidden;
 }
+/* Batched producer-control closeout (2026-09-03), Batch 6: .ii-card is
+   now a role="button" div, not a real <button> (see IncentiveIntelligence.
+   jsx's own comment — nested Exclude/Include buttons can't validly live
+   inside a real button), so the pointer cursor a real button gets for
+   free must be set explicitly. */
+.ii-card.ii-clickable { cursor: pointer; }
 .ii-card.ii-clickable:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-sm); }
 .ii-card-accent { width: 3px; flex-shrink: 0; background: var(--hairline-strong); }
 .ii-gold .ii-card-accent { background: var(--gold); }
@@ -203,6 +209,14 @@
 .ii-program { margin-top: auto; padding-top: 8px; font-size: 10px; color: var(--text-tertiary); border-top: 0.5px solid var(--hairline); }
 
 .ii-empty { margin-top: auto; margin-bottom: auto; font-size: 11.5px; color: var(--text-tertiary); }
+
+/* Batched producer-control closeout (2026-09-03), Batch 6 — restore
+   control for jurisdictions currently excluded from this project's own
+   candidate universe (see IncentiveIntelligence.jsx's
+   ExcludedJurisdictions). Compact, secondary — a small status line
+   beneath the grid, not a new prominent section. */
+.ii-excluded { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 0.5px solid var(--hairline); }
+.ii-excluded-label { font-size: 11px; color: var(--text-tertiary); }
 
 /* Production Budget rail */
 .brail-panel {

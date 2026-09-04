@@ -220,6 +220,44 @@ function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved }) {
 // the real persisted fact (facts.answers.financing_cost_usd via
 // Overview.jsx), not from local state, so a page refresh always shows
 // the true saved value, never a value that silently reverts.
+// Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 2:
+// root cause of "the source budget contains a FINANCE FEE line but this
+// panel shows Finance costs $0" — NOT a classification/ingestion defect.
+// The imported line was already correctly classified SpendCategory.
+// FINANCE_COSTS at ingestion (verified: F#K's "7901 FINANCE FEE : 12.5%"
+// row, $453,583, spend_category=finance_costs in the database), and the
+// backend already aggregates it generically and serves it as
+// production.finance_semantics.source_budget_finance_usd (built in a
+// prior session's "Producer Display Names + Budget Rail User
+// Assumptions closeout", alongside the settled FINANCE SEMANTICS
+// doctrine in canonical_project_economics.py/canonical_production_view.
+// py). The defect was purely a producer-facing LABEL COLLISION: this
+// editable row (financing_cost_usd, a producer-stated INCREMENTAL/
+// off-budget assumption never inside the imported gross budget) was
+// ALSO labeled "Finance costs" — the exact same words as the money
+// already sitting inside the source budget — so a producer reasonably
+// read the $0 here as contradicting the real $453,583 line they could
+// see in their own budget. Two distinct, non-overlapping facts must
+// never share one label. Relabeled to name what this control actually
+// is; the real classified amount is now shown as its own read-only
+// line (SourceBudgetFinanceLine below), never fabricated, never
+// hardcoded per-project.
+function SourceBudgetFinanceLine({ amountUsd }) {
+  if (!amountUsd) return null;
+  return (
+    <div className="brail-block">
+      <div
+        className="brail-header brail-static brail-contingency-row"
+        title="Financing already classified inside the imported source budget (SpendCategory.FINANCE_COSTS) — already part of gross and already reflected in NPC. Read-only; not a producer assumption."
+      >
+        <span style={{ width: 13 }} />
+        <span className="brail-name">Finance costs (in budget)</span>
+        <span className="brail-amount mono"><Money value={amountUsd} /></span>
+      </div>
+    </div>
+  );
+}
+
 function FinanceCostLine({ projectId, currentUsd, onSaved }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -252,9 +290,9 @@ function FinanceCostLine({ projectId, currentUsd, onSaved }) {
 
   return (
     <div className="brail-block">
-      <div className="brail-header brail-static brail-contingency-row" title="Producer-stated financing/bridge cost — added to NPC (allocation_pricing's existing financing_cost_usd parameter), never QPE and never the imported budget.">
+      <div className="brail-header brail-static brail-contingency-row" title="Producer-stated ADDITIONAL financing/bridge cost, not already inside the imported budget — added to NPC (allocation_pricing's existing financing_cost_usd parameter), never QPE and never the imported gross budget itself.">
         <span style={{ width: 13 }} />
-        <span className="brail-name">Finance costs</span>
+        <span className="brail-name">Additional financing (off-budget)</span>
         {editing ? (
           <>
             <input
@@ -365,6 +403,8 @@ export default function BudgetRail({
         currentPct={contingencyPct}
         onSaved={onContingencySaved}
       />
+
+      <SourceBudgetFinanceLine amountUsd={production?.finance_semantics?.source_budget_finance_usd} />
 
       <FinanceCostLine
         projectId={projectId}

@@ -42,7 +42,18 @@ function NationalitySelect({ value, onChange, disabled }) {
   );
 }
 
-export default function ProductionDetails({ people, requirements, refetch, projectId }) {
+export default function ProductionDetails({
+  people, requirements, refetch, projectId,
+  // Batched producer-control closeout (2026-09-03), item 3: Major
+  // Location Requirements belongs to the upcoming Script Analysis
+  // experience, not this panel's current Overview placement. Gated by
+  // a prop (default true, so no other caller regresses) rather than
+  // deleted -- the underlying data (requirements.location_categories),
+  // extraction, and toggle/override logic are all untouched and fully
+  // preserved for that later surface; only Overview opts out of
+  // rendering the block.
+  showLocationRequirements = true,
+}) {
   const overrides = people?.overrides || {};
   const categories = requirements?.location_categories || {};
   const [editing, setEditing] = useState(false);
@@ -194,38 +205,43 @@ export default function ProductionDetails({ people, requirements, refetch, proje
 
       {/* Major Location Requirements — canonical taxonomy seeded from
           script analysis (evidence in tooltips); editable only within the
-          panel's edit mode, persisted as overrides on Save. */}
-      <div className="pd-locations">
-        <div className="pd-section-label">Major location requirements</div>
-        <p className="pd-req-note">
-          Seeded from script analysis · drives jurisdiction matching · click to toggle
-        </p>
-        {catEntries.length === 0 ? (
-          <p className="pd-loc-empty">No script analysis available yet.</p>
-        ) : (
-          <div className="tag-row">
-            {catEntries.map(([slug, cat]) => {
-              const active = editing ? draft.locations[slug] : cat.effective;
-              const overridden = cat.override !== null && cat.override !== undefined;
-              const title = editing
-                ? cat.evidence
-                : `${cat.evidence}${cat.source === "user_override" ? " — user override" : " — script analysis"} — click to toggle`;
-              return (
-                <button
-                  key={slug}
-                  type="button"
-                  className={`tag ${active ? "active" : ""} ${!editing && overridden ? "pd-overridden" : ""}`}
-                  disabled={saving}
-                  title={title}
-                  onClick={() => (editing ? toggleLocation(slug) : beginEditAndToggleLocation(slug))}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+          panel's edit mode, persisted as overrides on Save. Suppressed on
+          Overview (item 3 above); the data/toggle logic above this JSX is
+          untouched so a future Script Analysis surface can render it
+          unchanged by passing showLocationRequirements. */}
+      {showLocationRequirements && (
+        <div className="pd-locations">
+          <div className="pd-section-label">Major location requirements</div>
+          <p className="pd-req-note">
+            Seeded from script analysis · drives jurisdiction matching · click to toggle
+          </p>
+          {catEntries.length === 0 ? (
+            <p className="pd-loc-empty">No script analysis available yet.</p>
+          ) : (
+            <div className="tag-row">
+              {catEntries.map(([slug, cat]) => {
+                const active = editing ? draft.locations[slug] : cat.effective;
+                const overridden = cat.override !== null && cat.override !== undefined;
+                const title = editing
+                  ? cat.evidence
+                  : `${cat.evidence}${cat.source === "user_override" ? " — user override" : " — script analysis"} — click to toggle`;
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    className={`tag ${active ? "active" : ""} ${!editing && overridden ? "pd-overridden" : ""}`}
+                    disabled={saving}
+                    title={title}
+                    onClick={() => (editing ? toggleLocation(slug) : beginEditAndToggleLocation(slug))}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

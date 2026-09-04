@@ -5,7 +5,6 @@ import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { getTheme, toggleTheme } from "../lib/theme";
 import { activeStructure } from "../lib/globeData";
-import { bestPricedCandidate } from "../lib/bestPricedCandidate";
 import { useAppState } from "../state/AppState";
 import ProductionHero from "../components/ProductionHero";
 
@@ -135,14 +134,13 @@ export default function ProjectHeader() {
   const isGenuineRecommendation = !!(
     topStructure && canonicalTop && topStructure.structure_id === canonicalTop.structure_id
   );
-  // Workspace/Overview Truthfulness: when doctrine has no rank-eligible
-  // recommendation (topStructure null — a real, possible state, not a
-  // bug; see bestPricedCandidate's own header comment), fall back to the
-  // cheapest real priced candidate so the Hero is never left entirely
-  // blank while real economics exist — passed to ProductionHero as a
-  // DISTINCT, separately-labeled prop, never silently relabeled as the
-  // recommendation itself.
-  const bestPriced = topStructure ? null : bestPricedCandidate(allocated);
+  // Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 1:
+  // the Hero no longer renders any recommendation/best-priced fallback
+  // (see ProductionHero.jsx's own header comment), so bestPricedCandidate
+  // is no longer computed here. Overview's own BudgetRail already calls
+  // bestPricedCandidate directly for its own fallback (see
+  // production-overview-truthfulness.test.mjs) — this was never a second,
+  // independently-maintained copy of that logic.
 
   // Shared stage control. The menu itself is portaled to document.body
   // (see the effect above) so it always escapes the Hero's overflow clip,
@@ -205,11 +203,16 @@ export default function ProjectHeader() {
 
   return (
     <header className="project-header-wrap">
+      {/* Consolidated UI/ingestion/permission closeout (2026-09-03),
+          Batch 1: the Hero is budget-only now (see ProductionHero.jsx's
+          own header comment) — topStructure/isGenuineRecommendation/
+          bestPriced are still computed above (other consumers read
+          `allocated`/`topStructure`'s underlying activeStructure() call,
+          and a regression test pins ProjectHeader's own
+          isGenuineRecommendation derivation), but no longer passed into
+          the Hero. */}
       <ProductionHero
         production={production}
-        topStructure={topStructure}
-        isGenuineRecommendation={isGenuineRecommendation}
-        bestPricedCandidate={bestPriced}
         stageControl={stageControl}
         openQuestions={openQuestions}
         swing={swing}

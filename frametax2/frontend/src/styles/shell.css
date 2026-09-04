@@ -338,6 +338,22 @@
   display: flex;
   align-items: flex-end;
   gap: 26px;
+  /* Consolidated UI/ingestion/permission closeout (2026-09-03) — artwork
+     containment BUG FIX ONLY, not a redesign. The scrim gradient alone
+     (directional, tuned for Little Utopia's clean text-free photograph)
+     is not enough contrast when a project's OWN key art has its own
+     baked title/text near the metrics zone (confirmed live: F#K
+     Valentine's Day's source art has "VALENTINE'S DAY" baked in, and it
+     visibly overlapped "PRODUCTION BUDGET"/the value). A dedicated
+     backdrop panel behind the metrics guarantees legibility regardless
+     of what any future project's artwork bakes in there, generically —
+     never a per-project fix. Reuses the SAME dark-chip-on-photography
+     idiom `.ph-stage-val` already establishes a few lines up (rgba fill
+     + blur), not a new visual language. */
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(10, 11, 10, 0.4);
+  backdrop-filter: blur(4px);
 }
 .ph-hero-metric { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
 .ph-hero-metric-label {

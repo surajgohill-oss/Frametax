@@ -566,7 +566,9 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # rows by invoking evaluate_project() far more often than the
     # explicit "Begin Evaluation" action ever did, breaking the very
     # idempotency this fix depends on.
-    from app.services.canonical_evaluation import _compute_fingerprint, _coproduction_facts
+    from app.services.canonical_evaluation import (
+        _compute_fingerprint, _coproduction_facts, _excluded_jurisdiction_codes,
+    )
     from app.services.canonical_project_economics import build_project_economic_inputs
     from app.calculators.canonical_role_qualification_bridge import (
         role_known_codes_from_project, script_facts_from_project,
@@ -580,9 +582,23 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         role_known_codes = await role_known_codes_from_project(session, str(project.id))
         script_facts = await script_facts_from_project(session, str(project.id))
         coproduction_facts = await _coproduction_facts(session, project.id)
+        # Batched producer-control closeout (2026-09-03) — MUST reuse the
+        # exact same fingerprint inputs evaluate_project() itself uses
+        # (see this function's own header comment above), or this
+        # read-only reconstruction silently diverges from what was
+        # actually persisted the moment a project has any jurisdiction
+        # exclusion on file: evaluate_project() persists rows under a
+        # fingerprint that includes excluded_jurisdiction_codes, and this
+        # function would otherwise compute a DIFFERENT fingerprint
+        # (excluded_jurisdiction_codes=None here) — the row-selection
+        # query below then matches nothing, and the whole production/
+        # structures payload silently renders empty. Confirmed as the
+        # exact failure mode live before this fix.
+        excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project.id))
         fingerprint = _compute_fingerprint(
             econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,
+            excluded_jurisdiction_codes=excluded_jurisdiction_codes,
         )
     if fingerprint is None:
         # A project that can't currently evaluate at all (e.g. budget

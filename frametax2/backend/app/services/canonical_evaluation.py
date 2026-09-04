@@ -696,6 +696,7 @@ def _compute_fingerprint(
     role_known_codes: dict[str, tuple[str, ...]] | None = None,
     script_facts: dict | None = None,
     coproduction_facts: tuple | None = None,
+    excluded_jurisdiction_codes: frozenset[str] | None = None,
 ) -> str:
     import hashlib
     import json
@@ -744,6 +745,13 @@ def _compute_fingerprint(
         # above: a change to this producer-stated NPC input must invalidate
         # any stale cached evaluation row.
         "financing_cost_usd": inputs.financing_cost_usd,
+        # Batched producer-control closeout (2026-09-03) -- a change to
+        # which jurisdictions this PROJECT elects to exclude from its own
+        # candidate universe must invalidate any stale cached evaluation
+        # row (same reasoning as financing_cost_usd/contingency directly
+        # above), or toggling Saudi ON/OFF would silently keep serving
+        # the pre-toggle persisted structures forever.
+        "excluded_jurisdiction_codes": sorted(excluded_jurisdiction_codes or ()),
         # CBA-008 (Codex evidence: "fingerprint excludes personnel,
         # screenplay, co-production ... versions") — these three facts can
         # move a candidate between QUALIFIES/CURABLE_GAP/USER_FACT_
@@ -1778,6 +1786,39 @@ def _program_display_name(program_slug: str) -> str:
     return program_slug.replace("_", " ").upper()
 
 
+#: Generic PROJECT-LEVEL candidate-jurisdiction preference fact_key prefix
+#: (batched producer-control closeout, 2026-09-03). One ProjectFact row per
+#: excluded jurisdiction code: fact_key=f"jurisdiction_preference:{code}",
+#: value="excluded" (any other/absent value, including no row at all,
+#: means the jurisdiction is INCLUDED -- the default). Never a per-
+#: jurisdiction column, never a Saudi-specific flag; the same generic
+#: mechanism works for any jurisdiction code any project ever wants to
+#: exclude from its own candidate universe.
+JURISDICTION_PREFERENCE_FACT_PREFIX = "jurisdiction_preference:"
+
+
+async def _excluded_jurisdiction_codes(session: AsyncSession, project_id) -> set[str]:
+    """The set of jurisdiction codes this PROJECT has elected to exclude
+    from its own candidate universe -- a producer MODELING preference,
+    never a change to law/doctrine/rate/preapproval/content requirements
+    (those are untouched for any jurisdiction that remains in the
+    universe). Reads the same generic ProjectFact mechanism/precedence
+    every other producer-settable fact already uses (see the coproduction
+    facts read above and cineglobe.py's /assumptions endpoint) -- never a
+    second persistence mechanism."""
+    rows = (await session.execute(
+        select(ProjectFact.fact_key, ProjectFact.value).where(
+            ProjectFact.project_id == project_id,
+            ProjectFact.fact_key.like(f"{JURISDICTION_PREFERENCE_FACT_PREFIX}%"),
+        )
+    )).all()
+    excluded = set()
+    for fact_key, value in rows:
+        if (value or "").strip().lower() == "excluded":
+            excluded.add(fact_key[len(JURISDICTION_PREFERENCE_FACT_PREFIX):])
+    return excluded
+
+
 async def evaluate_project(session: AsyncSession, project_id) -> dict:
     """The canonical served evaluation entry point for any project."""
     project = await session.get(Project, project_id)
@@ -1837,9 +1878,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     _copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed = await _coproduction_facts(
         session, project.id,
     )
+    # Batched producer-control closeout (2026-09-03) — fetched once here
+    # (same one-query-per-project pattern as role_known_codes/script_facts
+    # above) and reused at both use sites (fingerprint below, and the
+    # candidate filter further down) — never re-fetched.
+    excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project_id))
     fingerprint = _compute_fingerprint(
         inputs, role_known_codes=role_known_codes, script_facts=script_facts,
         coproduction_facts=(_copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed),
+        excluded_jurisdiction_codes=excluded_jurisdiction_codes,
     )
 
     existing = (await session.execute(
@@ -1961,6 +2008,32 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     for examination in discovery.examinations:
         if examination.classification == "capability_only" and examination.program_slug:
             candidates.append((examination.jurisdiction_code, examination.program_slug, "capability_only"))
+
+    # Batched producer-control closeout (2026-09-03) -- generic PROJECT-
+    # LEVEL candidate-jurisdiction inclusion/exclusion election. A pure
+    # producer MODELING preference (which jurisdictions this project's
+    # own candidate universe considers), never a change to law/doctrine/
+    # rate/preapproval/content requirements -- those stay exactly as
+    # discovered/priced for any jurisdiction that IS still in the
+    # universe. Read via the SAME generic ProjectFact mechanism/
+    # precedence every other producer-settable fact already uses (see
+    # _copro_facts above and cineglobe.py's /assumptions endpoint) --
+    # never a second persistence mechanism, never a Saudi-specific
+    # column. Filtered HERE, at the single earliest point every
+    # downstream candidate consumer shares (full_relocation,
+    # component_relocation's target routing, and treaty co-production
+    # partner discovery all derive from `candidates`/`priced_by_code`
+    # below) -- an excluded jurisdiction is removed from the candidate
+    # universe itself, never merely hidden by a later filter/CSS, so it
+    # cannot become Top Priced Candidate, Top Structure, a
+    # recommendation, or a comparison candidate. The production's own
+    # home/base jurisdiction can never be excluded from its own
+    # candidate universe -- only alternative candidates are eligible.
+    if excluded_jurisdiction_codes:
+        candidates = [
+            c for c in candidates
+            if c[0] not in excluded_jurisdiction_codes or c[0] == inputs.jurisdiction_code
+        ]
 
     jurisdiction_rows = (await session.execute(select(Jurisdiction))).scalars().all()
     jurisdiction_by_code = {j.code: j for j in jurisdiction_rows}

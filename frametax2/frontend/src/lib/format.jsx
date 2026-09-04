@@ -333,7 +333,32 @@ export { compactIncentiveRate };
 export function compactScenarioIdentity(structure) {
   const participants = structure.participants || [];
   const primary = structure.primary_jurisdiction;
-  const codes = participants.length ? participants : (primary ? [primary] : []);
+  // Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 4:
+  // "do not assume duplicate structures" — a component_relocation
+  // structure's `participants` field only ever lists its own primary/
+  // anchor jurisdiction (confirmed live: "Greece anchor — post routed to
+  // Hungary" served participants=["GR"], never ["GR","HU"]), so several
+  // genuinely distinct structures (different movable component routed
+  // to different destinations, e.g. post->Hungary vs post->Romania vs
+  // post->Bulgaria — real, separately priced, different NPCs) all
+  // rendered as an indistinguishable bare "Greece" card. The routed
+  // destination IS real, structured data — each structure's own
+  // segments carry their own real jurisdiction_code (never parsed out
+  // of the free-text label) — so it is surfaced here generically for
+  // ANY component_relocation structure, never a per-project special
+  // case.
+  const segmentCodes = structure.structure_type === "component_relocation"
+    ? [...new Set((structure.segments || []).map((s) => s.jurisdiction_code).filter(Boolean))]
+    : [];
+  // A component_relocation structure's own `participants` is always
+  // non-empty (it always at least lists its primary/anchor jurisdiction)
+  // — gating the routed-destination merge on "participants is empty"
+  // meant it never actually fired for the real case it exists for.
+  // Append any routed destination not already present in participants.
+  const routedCodes = segmentCodes.filter((c) => c !== primary && !participants.includes(c));
+  const codes = participants.length
+    ? [...participants, ...routedCodes]
+    : (primary ? [primary, ...routedCodes] : routedCodes);
   const flags = codes.map(flagEmoji).filter(Boolean).join(" ");
   // bestJurisdictionName (never the Globe's geo-hub map alone) — see its
   // own header comment for why: a sub-national code's real registry name

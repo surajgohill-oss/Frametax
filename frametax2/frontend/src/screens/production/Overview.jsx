@@ -141,6 +141,7 @@ export default function Overview() {
             requirements={production.physical_requirements}
             refetch={refetch}
             projectId={projectId}
+            showLocationRequirements={false}
           />
         </div>
 
@@ -209,6 +210,9 @@ export default function Overview() {
           <IncentiveIntelligence
             allocated={allocated}
             onSelect={openIntelligenceCard}
+            projectId={projectId}
+            onPreferenceSaved={refetch}
+            facts={facts}
           />
         </div>
 

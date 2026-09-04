@@ -132,11 +132,58 @@ test("IncentiveIntelligence.jsx and Workspace.jsx both read hasAdministrativeAll
   }
 });
 
-// ── ProductionHero.jsx (the Hero's "Top Priced Candidate" / most
-// visible unconditional-winner surface) must also read the same
-// generic detector. ───────────────────────────────────────────────────
-test("ProductionHero.jsx surfaces the same generic allocation-risk detector on its headline candidate, never hardcoded per-jurisdiction", () => {
+// ── Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 1:
+// the Hero no longer shows any per-structure candidate at all — no
+// "Top Priced Candidate", no risk disclosure — so it has no
+// allocation-risk detection to test. The generic detector's real
+// consumers are Overview's IncentiveIntelligence.jsx and Workspace.jsx
+// (already covered above); this test now pins the Hero's absence of
+// per-structure content instead. ─────────────────────────────────────
+test("ProductionHero.jsx renders no per-structure candidate/allocation-risk content — that lives on Overview/Workspace only", () => {
   const src = read("components/ProductionHero.jsx");
-  assert.match(src, /hasAdministrativeAllocationRisk/);
-  assert.ok(!/["']SA["']|Saudi/i.test(src), "must never hardcode Saudi-specific UI behavior");
+  assert.doesNotMatch(src, /hasAdministrativeAllocationRisk/);
+  assert.doesNotMatch(src, /Top Priced Candidate/);
+});
+
+// ── Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 3:
+// scenario-economics precision regression. History (commit b73b432)
+// shows CompactMoney ("$3.7M") was built explicitly for Today's dense
+// multi-cell lifecycle ladder, never for scenario cards — Workspace's
+// own ScenarioCard has always used full-precision Money ("$3,614,150").
+// Overview's IncentiveIntelligence.jsx regressed to CompactMoney when
+// its 2x2 grid was rebuilt; this locks the restored full-precision
+// formatter in and keeps both scenario surfaces consistent with each
+// other and with the previously accepted behavior. ────────────────────
+test("IncentiveIntelligence.jsx (Overview's Top Structures) uses full-precision Money, matching Workspace's ScenarioCard, never the CompactMoney formatter Today's dense grid uses", () => {
+  const iiSrc = read("components/IncentiveIntelligence.jsx");
+  const wsSrc = read("screens/production/Workspace.jsx");
+  assert.doesNotMatch(iiSrc, /CompactMoney/, "CompactMoney is for Today's dense grid, not scenario cards");
+  assert.match(iiSrc, /import \{[^}]*\bMoney\b[^}]*\}\s*from\s*"\.\.\/lib\/format"/);
+  assert.match(iiSrc, /<Money value=\{structure\.gross_budget_usd\}/);
+  assert.match(iiSrc, /<Money value=\{npc\}/);
+  // Both scenario surfaces must share the SAME formatter — never two
+  // independently-maintained money presentations for the same concept.
+  assert.match(wsSrc, /<Money value=\{gross\}/);
+  assert.doesNotMatch(wsSrc, /CompactMoney/);
+});
+
+// ── Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 4:
+// "do not assume duplicate structures" — several genuinely distinct
+// component_relocation structures (same primary/anchor jurisdiction,
+// different movable-component routing destination, different real NPC)
+// rendered as an indistinguishable bare jurisdiction card because
+// `participants` only ever lists the primary jurisdiction for this
+// structure type. Fixed generically via each structure's own real
+// `segments[].jurisdiction_code` — never parsed out of the free-text
+// label, never a per-project special case. ────────────────────────────
+test("compactScenarioIdentity distinguishes component_relocation structures by their real routed segment jurisdiction, never collapsing distinct structures to the same bare name", () => {
+  const src = read("lib/format.jsx");
+  assert.match(src, /structure\.structure_type === "component_relocation"/);
+  assert.match(src, /structure\.segments/);
+  assert.match(src, /routedCodes\s*=\s*segmentCodes\.filter\(\(c\) => c !== primary && !participants\.includes\(c\)\)/);
+  // Regression guard for the exact bug found: gating the merge on
+  // "participants is empty" meant it never fired, since a component_
+  // relocation structure's participants is always non-empty (it always
+  // lists at least its own primary jurisdiction).
+  assert.doesNotMatch(src, /const codes = participants\.length\s*\n\s*\? participants\s*\n\s*:/, "must not silently drop routedCodes whenever participants is non-empty");
 });

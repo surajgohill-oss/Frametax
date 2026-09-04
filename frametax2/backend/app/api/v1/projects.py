@@ -289,10 +289,51 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
     for v in versions:
         versions_by_doc.setdefault(v.document_id, []).append(v)
 
+    # Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 5:
+    # document-version permission reduction. CineGlobe should act like a
+    # competent production analyst -- auto-resolve routine version state,
+    # ask only when a producer decision is genuinely material (see the
+    # task's four control classes: AUTOMATIC / AUTOMATIC+SURFACE /
+    # DECISION REQUIRED / AUTHORITY LOCKED).
+    #
+    # ROOT CAUSE (confirmed, not guessed): current_unresolved fired
+    # whenever a Document had >1 version and NO supersedes_version_id
+    # link existed between ANY of them -- regardless of category, and
+    # regardless of whether the system already had a confident current
+    # pick. But DocumentVersion.is_current is a REAL, reliably-maintained
+    # field (see its own model docstring: "a replaced 'current' version
+    # is marked is_current=False, not removed") -- the exact same field
+    # `current` above already trusts. Flagging a document "unresolved"
+    # merely because OTHER historical versions exist, while the system
+    # itself already has a confident is_current pick, is asking the
+    # producer to re-confirm something CineGlobe already knows -- pure
+    # friction, not a real decision.
+    #
+    # Fixed generically (no per-document/per-project branch):
+    #   1. AUTOMATIC — any version genuinely marked is_current=True means
+    #      the system has a confident pick; never unresolved, regardless
+    #      of category or how many other versions exist.
+    #   2. Only when NO version carries is_current=True (a genuine,
+    #      system-acknowledged authority gap) does version count matter
+    #      at all -- and even then, restricted to the categories where a
+    #      wrong pick can materially change downstream analysis (budget,
+    #      schedule — the task's own stricter categories). Artwork/deck/
+    #      screenplay auto-resolve (fall through to the doc_versions[0]
+    #      fallback already used for `current` above) rather than
+    #      blocking on a producer decision that rarely matters for them.
+    _MATERIAL_VERSION_CATEGORIES = {"budget", "schedule"}
+
     def _document_payload(doc: Document) -> dict[str, Any]:
         doc_versions = versions_by_doc.get(doc.id, [])
+        has_confident_current = any(v.is_current for v in doc_versions)
         current = next((v for v in doc_versions if v.is_current), None) or (
             doc_versions[0] if doc_versions else None
+        )
+        current_unresolved = (
+            not has_confident_current
+            and doc.category in _MATERIAL_VERSION_CATEGORIES
+            and len(doc_versions) > 1
+            and not any(v.supersedes_version_id is not None for v in doc_versions)
         )
         return {
             "category": doc.category,
@@ -312,12 +353,7 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
                 if current else None
             ),
             "version_count": len(doc_versions),
-            # No supersedes_version_id relationship connects the versions
-            # in a genuinely ambiguous case — never guessed at, see the
-            # Phase C migration notes for Little Utopia's own deck.
-            "current_unresolved": len(doc_versions) > 1 and not any(
-                v.supersedes_version_id is not None for v in doc_versions
-            ),
+            "current_unresolved": current_unresolved,
         }
 
     categories_present = {d.category for d in docs}

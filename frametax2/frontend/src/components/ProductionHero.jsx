@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Money } from "../lib/format";
-import { humanizeToken, bestJurisdictionName, hasAdministrativeAllocationRisk } from "../lib/format";
 import { API_ORIGIN } from "../api";
 import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 
@@ -36,38 +35,24 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 // reverted.
 export default function ProductionHero({
   production,
-  topStructure,
-  isGenuineRecommendation,
-  bestPricedCandidate,
   stageControl,
   openQuestions,
   swing,
   onBack,
   headerActions,
 }) {
-  const recommendedJurisdiction = topStructure?.primary_jurisdiction
-    ? bestJurisdictionName(topStructure.primary_jurisdiction, topStructure)
-    : null;
-  const recommendedType = topStructure?.structure_type
-    ? humanizeToken(topStructure.structure_type)
-    : null;
-  // Workspace/Overview Truthfulness: a genuinely different, distinctly
-  // labeled state from "Recommended" — canonical doctrine found no
-  // rank-eligible/directly-comparable structure (topStructure null), but
-  // real priced candidates exist. Never rendered under the "Recommended
-  // Structure" label — a producer must never read this as CineGlobe's
-  // own endorsement.
-  const bestPriced = !topStructure ? bestPricedCandidate : null;
-  const bestPricedJurisdiction = bestPriced?.primary_jurisdiction
-    ? bestJurisdictionName(bestPriced.primary_jurisdiction, bestPriced)
-    : null;
-  // F#K item 3: whichever structure is actually driving this metric
-  // (Recommended/Leading, or the Top Priced Candidate fallback) may
-  // itself carry a real, backend-disclosed administrative/discretionary
-  // allocation risk. Generic — keyed on the structure actually shown,
-  // never on a hardcoded jurisdiction.
-  const heroCandidate = topStructure || bestPriced;
-  const heroHasAllocationRisk = hasAdministrativeAllocationRisk(heroCandidate);
+  // Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 1:
+  // the Hero is now BUDGET ONLY — project identity/artwork, Production
+  // Budget, Questions Remaining. No scenario economics (Top Priced
+  // Candidate, Leading/Recommended Structure, incentive, NPC) belong
+  // here; this component no longer accepts or computes topStructure/
+  // isGenuineRecommendation/bestPricedCandidate at all — see
+  // ProjectHeader.jsx, which still computes them (other consumers read
+  // them — the Globe/Workspace/FX-strip active-structure resolution is
+  // unchanged) but no longer passes them into this component. That
+  // recommendation/leading-structure identity is not relocated anywhere
+  // in this pass; Overview's Top Structures cards already carry the
+  // real ANCHOR/LEADING/OPTIMIZED roles independently.
 
   // Visible UI defect fix: the Part G change above made this fetch
   // unconditional for every project, including Little Utopia. Little
@@ -146,70 +131,6 @@ export default function ProductionHero({
               {production ? <Money value={production.gross_budget_usd} /> : "—"}
             </span>
             <span className="ph-hero-metric-caption">Total estimated budget</span>
-          </div>
-          <div className="ph-hero-sep" aria-hidden="true" />
-          <div className="ph-hero-metric">
-            <span className="ph-hero-metric-label">
-              {topStructure
-                ? (isGenuineRecommendation ? "Net Production Cost" : "Leading Structure Cost")
-                : bestPriced ? "Modeled Net Cost" : "Net Production Cost"}
-            </span>
-            <span className="ph-hero-metric-value mono">
-              {topStructure
-                ? <Money value={topStructure.npc_with_adjustments_usd} />
-                : bestPriced ? <Money value={bestPriced.npc_with_adjustments_usd} /> : "—"}
-            </span>
-            {/* Truthful absence, not a blank claiming completeness: no
-                candidate currently admits a directly-comparable/recommended
-                rank (e.g. this production's own base jurisdiction has no
-                priceable program yet). When a real priced candidate exists
-                anyway, its NPC is shown under an explicitly DIFFERENT label
-                ("Modeled", never "Net Production Cost" alone) so it is never
-                mistaken for a canonical recommendation — see Scenarios'
-                Review / Needs Validation group for the full priced set. */}
-            <span className="ph-hero-metric-caption">
-              {topStructure
-                ? (isGenuineRecommendation ? "After incentives and rebates" : "Producer-selected, not CineGlobe's recommendation")
-                : bestPriced ? "Not yet directly comparable — see Scenarios" : "No directly comparable scenario yet"}
-            </span>
-          </div>
-          <div className="ph-hero-sep" aria-hidden="true" />
-          <div className="ph-hero-metric">
-            {/* Set as leading (Workspace) is a PRODUCER SELECTION, never
-                CineGlobe's own ranked recommendation (Section 12) — this
-                label/caption must never conflate the two. Only the
-                genuine rank-#1/directly-comparable pick earns
-                "Recommended Structure"; a manually-led structure that
-                isn't that pick is labeled "Leading Structure" instead,
-                exactly like the LEADING badge on its own Workspace card. */}
-            <span className="ph-hero-metric-label">
-              {topStructure
-                ? (isGenuineRecommendation ? "Recommended Structure" : "Leading Structure")
-                : "Top Priced Candidate"}
-            </span>
-            <span className="ph-hero-metric-value">
-              {recommendedJurisdiction || bestPricedJurisdiction || "—"}
-            </span>
-            <span className="ph-hero-metric-caption">
-              {topStructure
-                ? (isGenuineRecommendation ? recommendedType : "◈ Producer selection")
-                : (bestPriced ? "Best priced — not CineGlobe's recommendation" : "See Scenarios for priced candidates")}
-            </span>
-            {/* F#K item 3: a structure can be deterministically priced and
-                STILL not be an unconditional winner — real award-authority
-                discretion, competitive/capacity-limited allocation, or a
-                mandatory preapproval step can mean this production never
-                actually receives the incentive its own formula computed.
-                The backend already discloses this per-structure; surface
-                it here so the Hero's single most prominent candidate can
-                never read as a clean guaranteed outcome when it isn't.
-                Generic across any jurisdiction/program — see
-                hasAdministrativeAllocationRisk in lib/format.jsx. */}
-            {heroHasAllocationRisk && (
-              <span className="ph-hero-metric-caption ph-hero-risk-caption">
-                ⚠ Discretionary/preapproval-gated — not a guaranteed award
-              </span>
-            )}
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />
           <div className="ph-hero-metric">

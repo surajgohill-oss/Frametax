@@ -118,12 +118,30 @@ test("bestJurisdictionName's composite country-subnational form is trimmed to it
 
 // B/H. Rank badge truthfulness — never "①" for an unranked structure;
 // LEADING is a producer selection, never a canonical rank glyph.
-test("ScenarioCard badge never defaults an unranked priced structure to circled-1, and LEADING never borrows a rank glyph", () => {
+//
+// Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 4:
+// bare "PRICED" was a QUALIFICATION state doing duty as a ROLE — every
+// unranked, non-Anchor/Leading structure (e.g. Saudi Arabia's genuinely
+// lowest-priced candidate) read identically, with no distinguishing
+// role at all. Superseded: a real rank still wins (unchanged); the
+// single genuinely lowest-NPC unranked candidate now reads "BEST
+// PRICED" (bestPricedCandidate — the same selection the Hero/BudgetRail
+// use), every other priced-but-unranked structure reads "ALTERNATIVE".
+test("ScenarioCard badge never defaults an unranked priced structure to circled-1, and LEADING never borrows a rank glyph — a real ROLE (BEST PRICED/ALTERNATIVE), never the bare qualification word PRICED", () => {
   const src = stripComments(read("screens/production/Workspace.jsx"));
   assert.doesNotMatch(src, /rank\?\.rank \|\| 1/, "must not default a missing rank to position 1");
   assert.match(src, /rank\?\.rank \? \(CIRCLED\[rank\.rank - 1\]/, "a real rank must still render its real circled position");
-  assert.match(src, /"PRICED"/, "an unranked priced structure must say PRICED, never imply a false rank");
+  assert.match(src, /"BEST PRICED"/, "the genuinely lowest-NPC unranked candidate must carry a real role, not the bare qualification word PRICED");
+  assert.match(src, /"ALTERNATIVE"/, "every other unranked priced structure must carry a real role, not the bare qualification word PRICED");
+  assert.doesNotMatch(src, /: "PRICED"/, "PRICED must never stand in for a role — see BEST PRICED/ALTERNATIVE above");
   assert.match(src, /"◈ LEADING"/, "LEADING must use a distinct producer-selection glyph, never a circled rank number");
+});
+
+test("Workspace's BEST PRICED role reuses bestPricedCandidate — the SAME selection the Hero/BudgetRail already use, never a second independently-maintained 'lowest NPC' computation", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /import\s*\{\s*bestPricedCandidate\s*\}\s*from\s*"\.\.\/\.\.\/lib\/bestPricedCandidate"/);
+  assert.match(src, /bestPricedStructureId\s*=\s*useMemo\(\s*\(\)\s*=>\s*\(allocated \? bestPricedCandidate\(allocated\)/);
+  assert.match(src, /isBestPriced=\{s\.structure_id === bestPricedStructureId\}/);
 });
 
 // A. review_required (no canonical rank) still sorts deterministically —
@@ -138,12 +156,22 @@ test("visibleStructures tie-breaks unranked structures by real NPC, never leavin
 // remain textually distinct — never the same label for a genuine
 // canonical recommendation, a producer's manual leading selection, and a
 // non-comparable best-priced fallback.
-test("ProductionHero never labels a producer's manual leading selection as the canonical Recommended Structure", () => {
+test("ProductionHero is budget-only — no scenario economics/recommendation identity rendered in the Hero", () => {
+  // Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 1:
+  // superseded by the new Hero contract (Production Budget + Questions
+  // Remaining only). The Recommended/Leading Structure distinction this
+  // test used to pin lived exclusively in the Hero's now-removed third
+  // metric; it is not relocated elsewhere in this pass (Overview's Top
+  // Structures cards already carry ANCHOR/LEADING/OPTIMIZED roles
+  // independently — see fvd-economic-invariants.test.mjs and
+  // overview-anchor-scenarios.test.mjs).
   const src = stripComments(read("components/ProductionHero.jsx"));
-  assert.match(src, /isGenuineRecommendation/);
-  assert.match(src, /"Leading Structure"/);
-  assert.match(src, /"Recommended Structure"/);
-  assert.match(src, /Producer-selected, not CineGlobe's recommendation/);
+  assert.doesNotMatch(src, /Recommended Structure/, "scenario recommendation identity must not render in the Hero");
+  assert.doesNotMatch(src, /Leading Structure/, "scenario recommendation identity must not render in the Hero");
+  assert.doesNotMatch(src, /Top Priced Candidate/, "scenario recommendation identity must not render in the Hero");
+  assert.doesNotMatch(src, /npc_with_adjustments_usd/, "no per-structure NPC must render in the Hero");
+  assert.match(src, /Production Budget/);
+  assert.match(src, /Questions? Remaining|Question\{/, "Questions Remaining must still render");
 });
 
 test("ProjectHeader computes isGenuineRecommendation by comparing the active structure against the pure canonical rank-1 pick, never assuming a manual leading selection is the recommendation", () => {
@@ -154,9 +182,14 @@ test("ProjectHeader computes isGenuineRecommendation by comparing the active str
 
 // H. Conditional/non-canonical structures cannot silently become the
 // deterministic recommendation — bestPricedCandidate is a SEPARATE,
-// distinctly-labeled fallback the Hero only reaches when topStructure
-// (activeStructure's own recommendation-or-leading pick) is absent.
-test("bestPricedCandidate is a distinct fallback, never substituted silently for the canonical recommendation", () => {
+// distinctly-labeled fallback. Consolidated UI/ingestion/permission
+// closeout (2026-09-03), Batch 1: the Hero itself no longer reaches
+// this fallback at all (it renders no recommendation identity); the
+// concept now lives solely on Overview's own BudgetRail (see
+// production-overview-truthfulness.test.mjs's "Overview's Budget card
+// falls back to bestPricedCandidate" test), never a second,
+// independently-maintained copy.
+test("bestPricedCandidate is a distinct fallback function, and the Hero no longer reaches it at all", () => {
   // Hard Restore Frozen Project Globe: bestPricedCandidate was extracted
   // out of lib/globeData.js (now restored byte-exact to the July 30 freeze,
   // which predates this function) into its own small module — a current-
@@ -165,7 +198,7 @@ test("bestPricedCandidate is a distinct fallback, never substituted silently for
   const src = stripComments(read("lib/bestPricedCandidate.js"));
   assert.match(src, /export function bestPricedCandidate\(allocated\)/);
   const heroSrc = stripComments(read("components/ProductionHero.jsx"));
-  assert.match(heroSrc, /bestPriced = !topStructure \? bestPricedCandidate : null/, "bestPriced must only apply when there is genuinely no active structure at all");
+  assert.doesNotMatch(heroSrc, /bestPricedCandidate/, "the Hero must not compute or render any best-priced fallback");
 });
 
 // E. Card click opens Inspector with the correct structure ID — the

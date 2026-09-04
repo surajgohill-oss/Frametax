@@ -93,3 +93,51 @@ def test_contingency_misspelling_fix_does_not_over_match():
     unrelated words."""
     r = classify_line_item("Continuity supervisor")
     assert r.spend_category != SpendCategory.CONTINGENCY
+
+
+# ── Consolidated UI/ingestion/permission closeout (2026-09-03), Batch 2 ──
+#
+# ROOT CAUSE FINDING: F#K Valentine's Day's real source budget line
+# ("7901 FINANCE FEE : 12.5%", $453,583) was ALREADY correctly classified
+# SpendCategory.FINANCE_COSTS at ingestion — confirmed against the live
+# database, not assumed. This was never a classification/ingestion
+# defect; the producer-facing "Finance costs $0" contradiction was a
+# separate frontend label-collision bug (BudgetRail.jsx's editable
+# financing_cost_usd row sharing the exact label "Finance costs" with
+# the real classified amount) — see BudgetRail.jsx's SourceBudgetFinanceLine.
+#
+# The ONE real, PROVEN (not guessed) generic classification gap found
+# while auditing this rule: "LENDER FEE" — one of the task's six named
+# finance-cost synonyms — did not match the prior pattern
+# ("financ|interest|loan fee|bank fee|banking|bridge"). Fixed generically
+# via the canonical classifier architecture (never an F#K-only mapping).
+
+@pytest.mark.parametrize("description", [
+    "FINANCE FEE",
+    "FINANCING FEE",
+    "FINANCE COST",
+    "FINANCING COST",
+    "LENDER FEE",
+    "LOAN FEE",
+    "7901 FINANCE FEE  : 12.5%",  # F#K Valentine's Day's real source line
+])
+def test_finance_fee_synonyms_classify_as_finance_costs(description):
+    r = classify_line_item(description)
+    assert r.spend_category == SpendCategory.FINANCE_COSTS, (
+        f"{description!r} is a plainly-labeled finance-cost line and must classify as FINANCE_COSTS"
+    )
+    assert r.atl_btl == ATLBTLCategory.OTHER
+
+
+def test_lender_fee_word_boundary_does_not_over_match():
+    """The fix for LENDER FEE is word-bounded (\\blend(er|ing)\\b), not a
+    bare 'lend' substring search — an unbounded pattern would also match
+    "Color Blending (post)" / "Blending suite rental", since "blending"
+    contains the literal substring "lending". Proven false positive,
+    fixed before landing; this test locks it out permanently."""
+    r = classify_line_item("Color Blending (post)")
+    assert r.spend_category != SpendCategory.FINANCE_COSTS
+    assert r.spend_category == SpendCategory.POST_PRODUCTION
+
+    r2 = classify_line_item("Blending suite rental")
+    assert r2.spend_category != SpendCategory.FINANCE_COSTS

@@ -70,16 +70,19 @@ test("ProductionDetails renders 'Not yet named' for an empty role, never a place
   assert.match(src, /cur\.name \|\| <span className="text-tertiary">Not yet named<\/span>/);
 });
 
-// E. Hero recommendation/NPC semantics use canonical eligible state.
-test("ProductionHero: NPC/Recommended Structure are gated on topStructure (the same canonical eligible-ranked structure), never candidate #1 merely because candidates exist", () => {
+// E. Hero recommendation/NPC semantics — SUPERSEDED (Consolidated UI/
+// ingestion/permission closeout, 2026-09-03, Batch 1): the Hero no
+// longer renders any per-structure recommendation/NPC at all. That
+// eligible-ranked-state gating (topStructure vs a genuine rank-1 pick)
+// still lives in ProjectHeader.jsx (isGenuineRecommendation) and drives
+// Overview's own BudgetRail/Top Structures cards — see
+// production-overview-truthfulness.test.mjs's BudgetRail test below and
+// workspace-top6-truthfulness.test.mjs's ProjectHeader test.
+test("ProductionHero renders no per-structure recommendation/NPC — Hero is budget-only", () => {
   const src = stripComments(read("components/ProductionHero.jsx"));
-  assert.match(src, /topStructure\s*\?\s*<Money value=\{topStructure\.npc_with_adjustments_usd\} \/>/, "NPC must come from topStructure when a canonical recommendation exists");
-  assert.match(src, /No directly comparable scenario yet/, "absence must be captioned truthfully, not left ambiguous");
-  // Workspace/Overview Truthfulness: a genuinely priced-but-not-comparable
-  // best candidate may fill the Hero, but only under an explicitly
-  // DIFFERENT label — never silently presented as "Recommended".
-  assert.match(src, /Top Priced Candidate/);
-  assert.match(src, /Best priced — not CineGlobe's recommendation/);
+  assert.doesNotMatch(src, /topStructure/, "Hero must not read topStructure at all");
+  assert.doesNotMatch(src, /npc_with_adjustments_usd/, "Hero must not render any per-structure NPC");
+  assert.doesNotMatch(src, /Top Priced Candidate/);
 });
 test("globeData.activeStructure only returns a structure eligible by rank #1 or the shared leading selection, never an arbitrary candidate", () => {
   const src = stripComments(read("lib/globeData.js"));

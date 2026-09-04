@@ -75,6 +75,18 @@ export const postProjectPeople = (projectId, answers) =>
 export const postProjectAssumptions = (projectId, answers) =>
   request(`/projects/${projectId}/assumptions`, { method: "POST", body: JSON.stringify({ answers }) });
 
+// Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
+// candidate-jurisdiction inclusion/exclusion election (the SAME real
+// ProjectFact write path as postProjectAssumptions above, a different
+// whitelisted key shape). See app/api/v1/cineglobe.py
+// post_jurisdiction_preference. Works for any jurisdiction code — never
+// a Saudi-specific endpoint.
+export const postJurisdictionPreference = (projectId, jurisdictionCode, included) =>
+  request(`/projects/${projectId}/jurisdiction-preference`, {
+    method: "POST",
+    body: JSON.stringify({ jurisdiction_code: jurisdictionCode, included }),
+  });
+
 // Major-location categories — user-confirmed overrides over the
 // script-derived seeds (canonical Production Record; effective values
 // feed territory matching / recommendations, which recompute on write).
