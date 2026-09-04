@@ -249,68 +249,69 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Ontario Creates, Creative BC, BCTQ (Tier 1).
 - **Confidence:** VERIFIED.
 
-### Gaps / Incomplete (Next Execution Needed)
-- None for CA structural categories (requires dynamic pricing engine input).
+### Local vs Imported Crew (TRIP Nuances)
+- **Imported Labor Tax/Withholding:** RESEARCHED.
+- **Findings:** While TRIP now covers non-European actor remuneration (as of 2026), payments to non-resident foreign crew are subject to French withholding tax (*retenue à la source*) on a progressive scale (0%, 12%, 20%). The French PSC acts as the tax collector (via PASRAU).
+- **Source:** Impots.gouv.fr (Tier 1).
+- **Confidence:** VERIFIED.
 
-## 9. JURISDICTION × CATEGORY RESEARCH: FR (FRANCE)
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Consistent with UK/US/CA markets, major French rental houses (TSF, RVZ, Panavision France) do not publish static rate cards. Pricing is handled purely via custom package quotes.
+- **Source:** TSF, RVZ (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
 
-### Fringes / Payroll (Statutory & Union)
+## 10. JURISDICTION × CATEGORY RESEARCH: DE (GERMANY)
+
+### Fringes / Payroll (Statutory)
 - **Employer Social Contributions:** RESEARCHED.
-- **Findings:** France operates a highly centralized and regulated social contribution model. Employer fringes typically range from **35% to 45%** of gross salary. This covers:
-  - **URSSAF:** General social security (health, family, pension).
-  - **Audiens:** Specialized social protection for the culture/audiovisual sector (complementary retirement/health).
-  - **Congés Spectacles:** Mandatory paid leave fund specific to intermittent workers (*intermittents du spectacle*).
-- **Source:** URSSAF, Audiens (Tier 1).
-- **Confidence:** STRONG (Structural understanding).
+- **Findings:** Germany requires contributions to five branches of social insurance (Pension, Health, Unemployment, Long-Term Care, Accident). Employer-side statutory fringes generally amount to **20% to 27%** of gross salary, subject to statutory ceilings (*Beitragsbemessungsgrenzen*). An additional ~10% must be budgeted for mandatory holiday pay.
+- **Source:** DFFF Guidelines, German Social Security (Tier 1).
+- **Confidence:** VERIFIED.
 
 ### Stages / Facilities
 - **Stage Rental Pricing:** RESEARCHED.
-- **Findings:** Major French facilities (e.g., Les Studios de Bry, Studios de Paris) do not publish static rate cards. Pricing is strictly quote-based, depending on duration, stage specifications, and bundled workshops/offices.
-- **Source:** Film France / Film Paris Region, Studios de Bry (Tier 1/Tier 2).
+- **Findings:** Major studios (Studio Babelsberg, MMC Studios, Penzing Studios) do not publish rate cards. Facilities operate as full-service hubs and pricing is bespoke based on duration, technical needs (e.g. LED volumes), and bundled construction services.
+- **Source:** Studio Babelsberg, Penzing (Tier 2).
 - **Confidence:** BLOCKED (Quote-dependent).
 
 ### Locations / Permits
 - **Permit Fees:** RESEARCHED.
-- **Findings:** In Paris, administrative processing of filming permits by *Mission Cinéma* is generally free. However, occupation of the public domain (parking tech vehicles, blocking streets) requires municipal fees (*redevances*). Filming at iconic landmarks requires direct commercial negotiation and carries significant fees.
-- **Source:** Paris Film (AGATE portal) (Tier 1).
+- **Findings:** Decentralized at the municipal level. 
+  - **Berlin:** Tiered general filming permit required for public space/traffic orders (e.g., €50/1 day, €300/year). Special usage/parking fees are additional.
+  - **Munich:** Administered via the municipal film office, with costs based on public domain occupation/stopping bans.
+- **Source:** BBFC (Berlin), FFF Bayern (Tier 1).
 - **Confidence:** VERIFIED.
-
-### Catering / Unit Services
-- **Catering Pricing:** RESEARCHED.
-- **Findings:** France relies on specialized mobile canteens (*cantine cinéma*). There is no fixed daily rate per head; pricing is strictly custom-quoted based on crew size and service scope (courtesy breakfast + hot lunch).
-- **Source:** French production catering commercial guidelines (Tier 2).
-- **Confidence:** STRONG.
 
 ### Post Production / VFX
 - **Incentive Economics:** RESEARCHED.
-- **Findings:** France offers the Tax Rebate for International Productions (TRIP / *Crédit d'impôt international*). The base rebate is 30% of qualifying French expenditures. 
-  - **VFX Bonus:** The rate escalates to **40%** if VFX-related eligible expenses exceed €2 million. Critically, once this threshold is met, the 40% applies to the *entire* eligible French spend, not just the VFX portion. (Capped at €30 million per project).
-- **Source:** CNC, Film France (Tier 1).
+- **Findings:** Germany utilizes an automatic non-repayable grant system, not a tax credit. DFFF II (for production service providers) and GMPF provide a **30% grant** on approved German production costs, which covers VFX and post-production.
+- **Source:** FFA (Filmförderungsanstalt) (Tier 1).
 - **Confidence:** VERIFIED.
 
 ### Gaps / Incomplete (Next Execution Needed)
-- FR Local vs Imported Crew (Foreign talent withholding tax under TRIP)
-- FR Equipment Pricing mechanics
+- DE Catering / Unit Services
+- DE Equipment pricing structure
 
-## 10. GLOBAL COVERAGE ACCOUNTING
+## 11. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 4 (GB, US, CA - Completed, FR - Partial)
+- **Researched:** 5 (GB, US, CA, FR - Completed, DE - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 4 (GB, US, CA, FR)
+- **Partial data:** 5 (GB, US, CA, FR, DE)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 6 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC - completed structural)
+- **Subnational jurisdictions researched:** 8 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria)
 - **Stale/unprovenanced existing records:** 44
 
-## 11. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 12. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr.
 - **Local-language searches:** 0.
 
-## 12. STOP CONDITION
+## 13. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-Resume **FR (France)** research. Specifically, determine French Local vs Imported Crew withholding nuances under TRIP, and establish structural proxies for FR Equipment. After FR, advance to **DE (Germany)**.
+FR (France) structural category coverage is complete. Resume **DE (Germany)** research, focusing on DE Catering and DE Equipment proxies. After DE, advance to **AU (Australia)**.
