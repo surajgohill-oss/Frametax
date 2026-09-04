@@ -122,25 +122,63 @@ E — RESEARCH BLOCKED / INCOMPLETE
 ### Gaps / Incomplete (Next Execution Needed)
 - None for GB structural categories (though continuous rate updates are needed). (Retained home compensation/tax implications)
 
-## 7. GLOBAL COVERAGE ACCOUNTING
+## 7. JURISDICTION × CATEGORY RESEARCH: US (UNITED STATES)
+
+### Fringes / Payroll (Union)
+- **Union Pension & Health (P&H) Rules:** RESEARCHED.
+- **Findings:** 
+  - **SAG-AFTRA:** Typically ~21% of gross for Pension & Health, subject to budget tier ceilings.
+  - **DGA:** ~20% total (e.g., 8.5% Pension + 11.5% Health).
+  - **IATSE & Teamsters:** Do NOT use flat percentages. They operate on a mix of percentage-based rates and **flat hourly contributions** depending on the specific Local (e.g. Local 44, Local 399) and whether it's a production city vs distant location.
+- **Source:** SAG-AFTRA, DGA, Entertainment Payroll guidelines (Wrapbook, GreenSlate, EP) (Tier 1/Tier 3).
+- **Confidence:** STRONG (Structural understanding).
+
+### Fringes / Payroll (Statutory CA, NY, GA)
+- **FICA / FUTA:** RESEARCHED. 
+- **Findings:** Federal Social Security is 6.2% (capped at $168,600 for 2024), Medicare 1.45% (uncapped). FUTA is 0.6% effective on the first $7,000.
+- **State Unemployment Insurance (SUI):** RESEARCHED.
+  - **California (US-CA):** 3.4% on $7,000 wage base (plus 0.1% ETT).
+  - **New York (US-NY):** 4.1% on $12,500 wage base.
+  - **Georgia (US-GA):** 2.7% on $9,500 wage base.
+- **Source:** State Depts of Labor, IRS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities (CA, NY, GA)
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Square footage pricing is rarely used. Flat daily rates are the standard, scaling by market:
+  - **Los Angeles (CA):** $1,000 – $5,000+ per day. Premium for soundproofing and Hollywood proximity.
+  - **New York (NY):** $1,500 – $6,000+ per day. High real estate premium and logistics.
+  - **Atlanta (GA):** $500 – $2,500+ per day. Highly competitive, often bundled "all-in" with grip/lighting.
+- **Source:** Commercial studio listings (Tier 2/Tier 3).
+- **Confidence:** STRONG (Market range), PROVISIONAL (for exact deterministic pricing as it varies by bundle).
+
+### Gaps / Incomplete (Next Execution Needed)
+- US Equipment (Local availability multipliers CA vs GA vs NY)
+- US Travel / Accommodation / Per Diems (GSA rates vs Union distant location rules)
+- US Locations / Permits (FilmLA, NYC Mayor's Office, Georgia)
+- US Construction / Materials
+- US Catering / Unit Services
+- US Post / VFX Economics
+
+## 8. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 1 (GB - Partial)
+- **Researched:** 2 (GB - Completed Structural, US - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 1 (GB)
+- **Partial data:** 2 (GB, US)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
 - **Subnational jurisdictions researched:** 0
 - **Stale/unprovenanced existing records:** 44
 
-## 8. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 9. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched BECTU 2024 agreements).
-- **Domains reached:** BECTU.org.uk, Gov.uk (HMRC/FEU), PACT.co.uk, Pinewood Group, ARRI Rental, Film London, commercial catering providers.
+- **Domains reached:** BECTU.org.uk, Gov.uk (HMRC/FEU), PACT.co.uk, Pinewood Group, ARRI Rental, Film London, commercial catering providers, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL.
 - **Local-language searches:** 0.
 
-## 9. STOP CONDITION
+## 10. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-GB (United Kingdom) structural category coverage is complete. Begin **US (United States)** research, specifically focusing on California, New York, and Georgia baseline variances, union fringes (SAG/DGA/IATSE/Teamsters), and stage pricing.
+Resume **US (United States)** research. Specifically, focus on US Equipment availability/costs, Travel/Accommodation (GSA vs Union distant location), Locations/Permits (FilmLA, NYC Mayor's Office), Catering, and Post/VFX.
