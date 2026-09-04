@@ -362,31 +362,76 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** New Zealand Film Commission (NZFC) (Tier 1).
 - **Confidence:** VERIFIED.
 
-### Gaps / Incomplete (Next Execution Needed)
-- NZ Stages / Facilities pricing structure
-- NZ Locations / Permits
-- NZ Equipment
-- NZ Catering
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major facilities (Stone Street Studios, Auckland Film Studios, Lane Street) do not publicly list rate cards. Pricing is handled via private negotiations based on duration, scale, and bundled spaces (offices, workshops).
+- **Source:** Auckland Film Studios, Lane Street (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
 
-## 13. GLOBAL COVERAGE ACCOUNTING
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Managed via regional film offices (e.g., Screen Auckland, Screen Wellington) using the FilmApp platform. 
+  - Auckland fees range from NZ$75 to $2,110+ per day based on impact. 
+  - Wellington fees are mostly waived for facilitation but site-specific upkeep fees apply.
+- **Source:** Screen Auckland, Screen Wellington (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Top-tier rental houses (Panavision NZ, Metro Film, Portsmouth Rentals) operate on bespoke quoting rather than universal rate cards. Pricing scales dynamically based on production duration and package size.
+- **Source:** Panavision NZ, Metro Film (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly variable. Quotes are "food only" (excluding staffing/crockery unless specified). Small shoots range ~$55/head, but large mobile-kitchen operations scale based on exact hot meal counts (not including separate crafty budgets of NZ$2-$10/day).
+- **Source:** Gatting's, The Food Lab (Tier 2).
+- **Confidence:** STRONG.
+
+## 13. JURISDICTION × CATEGORY RESEARCH: ZA (SOUTH AFRICA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** South African statutory employer contributions for 2024/2025 include:
+  - **UIF (Unemployment Insurance Fund):** 1% of remuneration (capped at R177.12 max monthly employer contribution).
+  - **SDL (Skills Development Levy):** 1% of total payroll (mandatory if annual payroll > R500,000).
+  - **COIDA (Compensation for Occupational Injuries):** Industry-risk dependent, generally ~0.1% to 3% of payroll up to an earnings ceiling of R597,328 per employee.
+- **Source:** South African Revenue Service (SARS), Dept of Employment and Labour (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Administered by the dtic (Department of Trade, Industry and Competition). The Foreign Film and Television Production and Post-Production Incentive offers a base **20%** on Qualifying South African Post-Production Expenditure (QSAPPE).
+  - **Uplifts:** Increases to 22.5% (for >R10M spend) or 25% (for >R15M spend).
+  - *Note:* As of late 2026, the dtic FTIP guidelines are under comprehensive review following a processing backlog, though existing approved parameters currently remain the baseline.
+- **Source:** dtic South Africa (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Gaps / Incomplete (Next Execution Needed)
+- ZA Stages / Facilities
+- ZA Locations / Permits
+- ZA Equipment
+- ZA Catering
+
+## 14. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 7 (GB, US, CA, FR, DE, AU - Completed, NZ - Partial)
+- **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 7 (GB, US, CA, FR, DE, AU, NZ)
+- **Partial data:** 8 (GB, US, CA, FR, DE, AU, NZ, ZA)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 10 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD)
+- **Subnational jurisdictions researched:** 12 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington)
 - **Stale/unprovenanced existing records:** 44
 
-## 14. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 15. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic.
 - **Local-language searches:** 0.
 
-## 15. STOP CONDITION
+## 16. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-AU (Australia) structural category coverage is complete. Resume **NZ (New Zealand)** research, focusing on NZ Stages, Permits, Equipment, and Catering. After NZ, advance to **ZA (South Africa)**.
+NZ (New Zealand) structural category coverage is complete. Resume **ZA (South Africa)** research, focusing on ZA Stages, Permits, Equipment, and Catering. After ZA, this tier of major global production hubs is structurally complete and we can compile the final matrix.
