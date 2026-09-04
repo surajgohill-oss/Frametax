@@ -132,3 +132,6 @@ US-MA (Massachusetts),Standard US + MA SUI,BLOCKED (Quote-dependent),MA Film Off
 US-TX (Texas),Standard US + TX SUI,BLOCKED (Quote-dependent),Texas Film Commission,BLOCKED (Quote-dependent),$30-$50 USD/head,5-31% Cash Grant
 US-CT (Connecticut),Standard US + CT SUI,BLOCKED (Quote-dependent),CT DECD,BLOCKED (Quote-dependent),$40-$60 USD/head,10-30% Tax Credit
 US-PA (Pennsylvania),Standard US + PA SUI,BLOCKED (Quote-dependent),Film In PA / DCED,BLOCKED (Quote-dependent),$35-$60 USD/head,25-30% Tax Credit
+US-MD (Maryland),Standard US + MD SUI,BLOCKED (Quote-dependent),Maryland Film Office,BLOCKED (Quote-dependent),$35-$60 USD/head,28-30% Refundable Tax Credit
+US-VA (Virginia),Standard US + VA SUI,BLOCKED (Quote-dependent),Virginia Film Office,BLOCKED (Quote-dependent),$30-$50 USD/head,15-35% Tax Credit
+US-CO (Colorado),Standard US + CO SUI,BLOCKED (Quote-dependent),CO Office of Film,BLOCKED (Quote-dependent),$35-$60 USD/head,20-22% Refundable Tax Credit
