@@ -6,6 +6,7 @@ import { Money, CompactMoney } from "../../lib/format";
 import { useProjectStatus } from "../../lib/useProjectStatus";
 import { buildRecordRows } from "../../lib/recordEvents";
 import { buildHeroStages } from "../../lib/todayCompute";
+import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { getTheme, toggleTheme } from "../../lib/theme";
 import { API_ORIGIN } from "../../api";
 import heroArt from "../../assets/production-art/little-utopia-hero-clean.png";
@@ -122,12 +123,20 @@ export default function Today() {
   const swingTotal = openGrey.reduce((s, g) => s + (g.amount_usd || 0), 0);
 
   // Canonical allocated_structures ranking — the SAME source Overview/
-  // Workspace/Scenarios read. structures.ranking (top-level) is the
-  // older, narrower STRUCT-* pair; deliberately not read here.
+  // Workspace/Scenarios/Reports read. structures.ranking (top-level) is
+  // the older, narrower STRUCT-* pair; deliberately not read here.
+  //
+  // Final non-Globe closeout, Item A: this screen's own comment claimed
+  // parity with Overview/Workspace but was missing the SAME fallback
+  // Reports.jsx was missing — a rank==1-only lookup with no fallback,
+  // so a production with no numeric rank 1 (comparable_count==0, a real,
+  // common state) silently showed no "Top Recommendation" here even
+  // when Overview/Workspace both displayed a real leading structure.
+  // Fixed by resolving through the server's own canonical field
+  // (allocated.canonical_selected_structure_id — see
+  // canonical_production_view.py), same as every other consumer.
   const allocated = structures.allocated_structures;
-  const structById = new Map((allocated?.structures || []).map((s) => [s.structure_id, s]));
-  const bestRank = (allocated?.ranking || []).find((r) => r.rank === 1);
-  const best = bestRank ? structById.get(bestRank.structure_id) : null;
+  const best = bestPricedCandidate(allocated);
   const topRec = recommendations.by_category.financial
     .filter((r) => r.estimated_value_usd)
     .sort((a, b) => (b.estimated_value_usd || 0) - (a.estimated_value_usd || 0))[0];

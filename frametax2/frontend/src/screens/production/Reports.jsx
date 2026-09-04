@@ -1,22 +1,41 @@
 import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
+import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
+import { activeStructure } from "../../lib/globeData";
+import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 
 // Reports — the approved artifact "generated ledger" view. Reports are
 // composed from the live model (no separate report store exists in this
 // backend), so each card is derived from the current allocated structures
 // and question queue. Export/Share are disabled until a generation engine
 // is wired — nothing here is fabricated.
+//
+// Final non-Globe closeout, Item A (canonical scenario-selection
+// consistency): this screen used to determine its "leading structure"
+// with a rank==1-only lookup and NO fallback, while Overview/Workspace
+// additionally fell back to the best-priced candidate whenever rank 1
+// was absent (comparable_count==0 — a real, common state, e.g. Bad
+// Hombres). That meant the same production state could show "No
+// structure is fully priced yet" here while Overview/Workspace both
+// displayed a real leading structure — a genuine scenario-truth
+// disagreement, not merely a display difference. Fixed by resolving
+// through the exact same activeStructure()/bestPricedCandidate() chain
+// Overview and Workspace already use, including the SAME shared
+// AppState leadingStructureId producer override, so all three screens
+// can never disagree about which structure_id is "the" leading one for
+// a given production state.
 export default function Reports() {
   const { projectId } = useParams();
   const { data, error, loading } = useCineGlobe(projectId);
+  const { leadingStructureId } = useAppState();
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   const { production, pkg, legal, structures } = data;
   const allocated = structures.allocated_structures;
-  const best = allocated.structures.find((s) => s.structure_id === allocated.ranking.find((r) => r.rank === 1)?.structure_id);
+  const best = activeStructure(allocated, leadingStructureId) || bestPricedCandidate(allocated);
   const priced = allocated.structures.filter((s) => s.is_fully_priced).length;
   const blocked = allocated.structures.length - priced;
   const openGrey = legal.grey_areas_current.filter((g) => g.status === "open");

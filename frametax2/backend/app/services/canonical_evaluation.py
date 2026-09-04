@@ -697,6 +697,7 @@ def _compute_fingerprint(
     script_facts: dict | None = None,
     coproduction_facts: tuple | None = None,
     excluded_jurisdiction_codes: frozenset[str] | None = None,
+    discretionary_policy_facts: dict[str, str] | None = None,
 ) -> str:
     import hashlib
     import json
@@ -752,6 +753,14 @@ def _compute_fingerprint(
         # above), or toggling Saudi ON/OFF would silently keep serving
         # the pre-toggle persisted structures forever.
         "excluded_jurisdiction_codes": sorted(excluded_jurisdiction_codes or ()),
+        # Item B (Final non-Globe closeout, 2026-09-04) -- a change to
+        # this project's discretionary/selective-program policy (default
+        # or any per-program override) must invalidate any stale cached
+        # evaluation row, same reasoning as excluded_jurisdiction_codes
+        # directly above -- or toggling a discretionary program ON/OFF
+        # would silently keep serving the pre-toggle persisted structures
+        # forever.
+        "discretionary_policy_facts": sorted((discretionary_policy_facts or {}).items()),
         # CBA-008 (Codex evidence: "fingerprint excludes personnel,
         # screenplay, co-production ... versions") — these three facts can
         # move a candidate between QUALIFIES/CURABLE_GAP/USER_FACT_
@@ -1819,6 +1828,84 @@ async def _excluded_jurisdiction_codes(session: AsyncSession, project_id) -> set
     return excluded
 
 
+#: Final non-Globe canonical core closeout, Item B (2026-09-04) --
+#: generic PROJECT-level discretionary/selective-program policy. Two
+#: fact_keys, same ProjectFact mechanism/precedence as
+#: JURISDICTION_PREFERENCE_FACT_PREFIX directly above -- never a
+#: Saudi-specific column, never a second persistence mechanism, never a
+#: country-name if/else:
+#:   "discretionary_policy_default" -> "exclude" turns discretionary/
+#:     selective programs OFF project-wide. Any other/absent value
+#:     (including no row at all) means "include" -- the default, and
+#:     the exact behavior every project had before this policy existed,
+#:     so no existing evaluation changes unless a project explicitly
+#:     opts out.
+#:   f"discretionary_policy_program:{program_slug}" -> "include" or
+#:     "exclude", overriding the project default for that ONE program
+#:     specifically (e.g. keep Saudi's discretionary Film Rebate off
+#:     while leaving every OTHER discretionary program in this
+#:     project's universe on, or the reverse).
+#: Scope: "discretionary" here means program_requirements.allocation_type
+#: == AllocationType.DISCRETIONARY -- the SAME real field
+#: _competitive_allocation_disclosure already reads (see
+#: _is_discretionary_program below), never a second classification.
+#: COMPETITIVE / FIRST_COME_FIRST_SERVED programs are a different,
+#: non-discretionary allocation-timing risk (still disclosed via
+#: administrative_allocation_risk) and are NOT gated by this policy.
+#: Authority requirements -- eligibility, preapproval, cultural tests,
+#: nationality, minimum spend, local entity, and every other
+#: authoritative gate -- are UNCHANGED by this policy; it only decides
+#: whether a discretionary program's candidate is generated at all, and
+#: every gate still applies in full to any candidate that remains.
+DISCRETIONARY_POLICY_DEFAULT_FACT_KEY = "discretionary_policy_default"
+DISCRETIONARY_POLICY_PROGRAM_FACT_PREFIX = "discretionary_policy_program:"
+
+
+def _is_discretionary_program(program_slug: str) -> bool:
+    """True only for AllocationType.DISCRETIONARY -- the generic
+    contract's "discretionary/selective" category (Saudi's Film Rebate,
+    Abu Dhabi's fund, etc.). Reads the SAME canonical
+    program_requirements.allocation_type field
+    _competitive_allocation_disclosure already reads -- never a second
+    classification, never a hardcoded program-slug list."""
+    try:
+        from app.data.program_requirements import AllocationType, get_program_requirements
+    except Exception:  # pragma: no cover - import cycle safety
+        return False
+    profile = get_program_requirements(program_slug)
+    if profile is None:
+        return False
+    return profile.allocation_type == AllocationType.DISCRETIONARY
+
+
+async def _discretionary_policy_facts(session: AsyncSession, project_id) -> dict[str, str]:
+    """Raw discretionary/selective-program policy facts for this PROJECT
+    (Item B), keyed exactly as persisted. Fetched ONCE (same
+    one-query-per-project pattern as _excluded_jurisdiction_codes/
+    role_known_codes elsewhere in this module) and reused at both the
+    fingerprint and the candidate-filter use sites -- never re-fetched."""
+    rows = (await session.execute(
+        select(ProjectFact.fact_key, ProjectFact.value).where(
+            ProjectFact.project_id == project_id,
+            (ProjectFact.fact_key == DISCRETIONARY_POLICY_DEFAULT_FACT_KEY)
+            | ProjectFact.fact_key.like(f"{DISCRETIONARY_POLICY_PROGRAM_FACT_PREFIX}%"),
+        )
+    )).all()
+    return {fact_key: (value or "").strip().lower() for fact_key, value in rows}
+
+
+def _discretionary_policy_resolve(program_slug: str, facts: dict[str, str]) -> str:
+    """'include' or 'exclude' for this ONE program: per-program override
+    wins if present and valid, else the project default, else 'include'
+    (the safe, behavior-preserving default). Generic for any
+    program_slug -- never a per-jurisdiction or per-country branch."""
+    override = facts.get(f"{DISCRETIONARY_POLICY_PROGRAM_FACT_PREFIX}{program_slug}")
+    if override in ("include", "exclude"):
+        return override
+    default = facts.get(DISCRETIONARY_POLICY_DEFAULT_FACT_KEY)
+    return default if default in ("include", "exclude") else "include"
+
+
 async def evaluate_project(session: AsyncSession, project_id) -> dict:
     """The canonical served evaluation entry point for any project."""
     project = await session.get(Project, project_id)
@@ -1883,10 +1970,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # above) and reused at both use sites (fingerprint below, and the
     # candidate filter further down) — never re-fetched.
     excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project_id))
+    # Item B — fetched once here (same pattern as excluded_jurisdiction_
+    # codes directly above) and reused at both the fingerprint and the
+    # candidate-filter use sites further down.
+    discretionary_policy_facts = await _discretionary_policy_facts(session, project_id)
     fingerprint = _compute_fingerprint(
         inputs, role_known_codes=role_known_codes, script_facts=script_facts,
         coproduction_facts=(_copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed),
         excluded_jurisdiction_codes=excluded_jurisdiction_codes,
+        discretionary_policy_facts=discretionary_policy_facts,
     )
 
     existing = (await session.execute(
@@ -2034,6 +2126,43 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             c for c in candidates
             if c[0] not in excluded_jurisdiction_codes or c[0] == inputs.jurisdiction_code
         ]
+
+    # Item B (Final non-Globe closeout, 2026-09-04) -- generic
+    # discretionary/selective-program policy, applied at the SAME single
+    # earliest choke point as the jurisdiction exclusion immediately
+    # above (full_relocation, component_relocation target routing, and
+    # treaty co-production partner discovery all derive from `candidates`
+    # below, so this is generic for every structure type without any
+    # per-structure-type code). A program this project's resolved policy
+    # excludes never becomes a candidate at all:
+    #   CASE 1 (formulaic base + a SEPARATE discretionary add-on program
+    #     at the same or a different jurisdiction): only the
+    #     discretionary program's own candidate is removed here -- the
+    #     formulaic base program is a DIFFERENT program_slug and is
+    #     untouched, so its own single-program candidate (and therefore
+    #     its own structure) is preserved exactly as before.
+    #   CASE 2 (a candidate whose ONLY program is itself discretionary):
+    #     removing its sole candidate here means no structure is ever
+    #     generated for it -- it leaves the modeled/ranked universe
+    #     entirely, per the required economic behavior.
+    #   CASE 3 (creator/project-specific fund): unaffected by this
+    #     mechanism either way -- filtering is per program_slug, never
+    #     per jurisdiction, so a fund never becomes a jurisdiction-wide
+    #     uplift merely because of where it is administered.
+    # Same home/base-jurisdiction protection as excluded_jurisdiction_
+    # codes above, for the same reason: a project's own base candidate
+    # can never be removed by a project MODELING preference.
+    if discretionary_policy_facts:
+        _discretionary_excluded_program_slugs = {
+            slug for _, slug, _ in candidates
+            if _is_discretionary_program(slug)
+            and _discretionary_policy_resolve(slug, discretionary_policy_facts) == "exclude"
+        }
+        if _discretionary_excluded_program_slugs:
+            candidates = [
+                c for c in candidates
+                if c[1] not in _discretionary_excluded_program_slugs or c[0] == inputs.jurisdiction_code
+            ]
 
     jurisdiction_rows = (await session.execute(select(Jurisdiction))).scalars().all()
     jurisdiction_by_code = {j.code: j for j in jurisdiction_rows}

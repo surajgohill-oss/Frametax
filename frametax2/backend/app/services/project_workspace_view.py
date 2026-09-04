@@ -95,6 +95,7 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     # a cheap read, never a second evaluation entry point.
     from app.services.canonical_evaluation import (
         _compute_fingerprint, _coproduction_facts, _excluded_jurisdiction_codes,
+        _discretionary_policy_facts,
     )
     from app.services.canonical_project_economics import build_project_economic_inputs
     from app.calculators.canonical_role_qualification_bridge import (
@@ -117,10 +118,16 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
         # silently diverges from what was actually persisted the moment
         # a project has any jurisdiction exclusion on file.
         excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project.id))
+        # Item B (Final non-Globe closeout, 2026-09-04) — same THIRD
+        # fingerprint call site this whole module's header comment warns
+        # about keeping in sync; must carry the identical
+        # discretionary_policy_facts evaluate_project() itself uses.
+        discretionary_policy_facts = await _discretionary_policy_facts(session, project.id)
         fingerprint = _compute_fingerprint(
             econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,
             excluded_jurisdiction_codes=excluded_jurisdiction_codes,
+            discretionary_policy_facts=discretionary_policy_facts,
         )
     if fingerprint is None:
         fingerprint = (await session.execute(

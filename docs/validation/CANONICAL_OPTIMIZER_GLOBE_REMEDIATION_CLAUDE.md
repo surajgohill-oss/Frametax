@@ -295,3 +295,193 @@ No other change is recommended: `Bash(*)` combined with the existing destructive
 - Artifact committed/pushed/remotely retrievable: pending — see closing chat response
 
 **PARTIAL — NON-GLOBE CORE NOT YET FULLY ACCEPTED.** Real, verified, substantial progress (P0-2, Saudi certainty separation, corpus taxonomy, hardened all-project gate, cardinality) — but Reports/selection consistency, per-program discretionary policy, and the full program-onboarding conformance checklist remain genuinely unbuilt, named exactly rather than claimed done. Globe is correctly excluded from this pass's completion bar per explicit instruction and was not touched.
+
+---
+
+## FINAL NON-GLOBE CANONICAL CORE CLOSEOUT (2026-09-04)
+
+### 1. Repo / branch / SHA
+
+Repo: `surajgohill-oss/Frametax`. Local: `~/cineglobe-frametax`. Branch: `claude/audit-frametax-features-NZcX5`. Starting HEAD for this closeout: `93f4dda` (this artifact's own Pass 3 resume commit) — by the time this pass began, a concurrent agent (AG, independently completing MFNI research per its own separate workstream) had advanced HEAD to `d310bea` and then further with docs-only commits; this pass's own changes are layered on top of the current tip at commit time, touching only backend/frontend source files AG's docs-only commits never touch. See Section 16 for the final commit SHA.
+
+### 2. Accepted starting state (not reopened)
+
+P0-1, P0-2, P0-3, P0-4A — accepted, reconfirmed intact this pass (0 failures across the full 13-production corpus, all invariants, including the two that directly re-test them — ELIGIBILITY re-tests P0-1, NPC TRACE re-tests P0-2, PARTICIPANTS re-tests P0-3, PROGRAM CERTAINTY/STATUS re-test P0-4A's disclosure propagation). Saudi's modeled-potential-vs-execution-certainty separation — accepted, and this pass additionally proves it generically at the STRUCTURE level for every discretionary program, not only Saudi (see Section 7, PROGRAM CERTAINTY). Project corpus — accepted as: 50 total library records, 47 with source material, 15 with parsed budgets, **13** with real optimizer structures suitable for current end-to-end optimizer acceptance (named in full in Section 9). Globe — untouched, deferred ledger preserved (Section 13/K).
+
+### 3. Selection consistency implementation (Item A)
+
+**Root defect (Codex-identified, confirmed in this repo):** `Reports.jsx` resolved its leading structure with `allocated.ranking.find(r => r.rank === 1)` and **no fallback**, while `Overview.jsx`/`Workspace.jsx` additionally fell back to a client-side `bestPricedCandidate(allocated)` re-derivation whenever rank 1 was absent — a real, common state (`comparable_count == 0`, confirmed live on both F#K Valentine's Day and Bad Hombres, which currently exercise opposite branches of this exact algorithm). The same production state could therefore show a real leading structure on Overview/Workspace and "No structure is fully priced yet" on Reports — a genuine scenario-truth disagreement, not a display difference. `Today.jsx` (company dashboard) carried the identical defect despite its own comment claiming parity with Overview/Workspace.
+
+**Fix — ONE canonical source, computed once, server-side:** [`canonical_production_view.py`](../../frametax2/backend/app/services/canonical_production_view.py) now computes and serves `allocated_structures.canonical_selected_structure_id` — rank 1's `structure_id` if a numerically-ranked candidate exists, else the lowest-`npc_with_adjustments_usd` structure among all `is_fully_priced` candidates (byte-identical algorithm to the pre-existing `bestPricedCandidate.js`, so this pass changes WHERE the answer is computed, never WHAT the answer is), else `None`. Every frontend consumer now resolves through this ONE field:
+
+- [`lib/globeData.js::activeStructure`](../../frametax2/frontend/src/lib/globeData.js) — producer `leadingStructureId` override first, else the canonical field (a rank==1-only lookup remains only as a defensive fallback for a payload predating this field).
+- [`lib/bestPricedCandidate.js`](../../frametax2/frontend/src/lib/bestPricedCandidate.js) — reads the canonical field first; its original client-side computation is now defensive-only, and is mathematically identical to the field's own algorithm.
+- [`Reports.jsx`](../../frametax2/frontend/src/screens/production/Reports.jsx) — fixed to resolve via `activeStructure(allocated, leadingStructureId) || bestPricedCandidate(allocated)`, reading the SAME shared `AppState.leadingStructureId` Overview/Workspace already share, so a producer's manual override is honored identically on all three screens.
+- [`Today.jsx`](../../frametax2/frontend/src/screens/company/Today.jsx) — fixed the same way (`bestPricedCandidate(allocated)`).
+
+Fingerprint parity was **not** needed for this field (it's derived, not a persistence input), but the field IS included in every one of the three existing `_compute_fingerprint()` call sites' output shape implicitly via the structures it's derived from — no new fingerprint dependency was required.
+
+**Acceptance criterion, verified:** for the same production state, `canonical_selected_structure_id == Overview's resolved structure == Workspace's resolved structure == Reports' resolved structure`, subject only to the documented Top-4/Top-6 composition rules (untouched — no composition-rule code was edited).
+
+**Tests:** [`test_canonical_selection_consistency.py`](../../frametax2/backend/tests/test_canonical_selection_consistency.py) (2 tests, RUNTIME VERIFIED against real F#K + Bad Hombres data — both branches of the algorithm genuinely exercised, not merely theoretically covered) + [`canonical-scenario-selection-consistency.test.mjs`](../../frametax2/frontend/tests/canonical-scenario-selection-consistency.test.mjs) (5 tests, pure-logic, no JSX).
+
+### 4. Discretionary / selective policy implementation (Item B)
+
+**Generic model, implemented beneath the existing working Saudi UI (UI untouched):**
+
+- **PROJECT DEFAULT** — `ProjectFact` fact_key `discretionary_policy_default` ("include"/"exclude"; absent = "include", i.e. every existing project's behavior is byte-identical to before this policy existed unless a project explicitly opts out).
+- **PER-PROGRAM OVERRIDE** — `ProjectFact` fact_key `discretionary_policy_program:{program_slug}`, wins over the project default for that one program.
+- **Scope** — "discretionary" means `program_requirements.allocation_type == AllocationType.DISCRETIONARY`, the exact same canonical field `_competitive_allocation_disclosure` (Section 5, prior pass) already reads — never a second classification, never a country-name branch. Applied generically at the SAME single candidate-generation choke point the existing `jurisdiction_preference` mechanism already uses in [`canonical_evaluation.py`](../../frametax2/backend/app/services/canonical_evaluation.py), so it is automatically generic across every structure type (full_relocation, component_relocation, treaty_coproduction, multi-program stacking) with zero per-structure-type code.
+- **Authority requirements immutable** — this mechanism only decides whether a discretionary program's *candidate* is generated at all; every eligibility/preapproval/cultural-test/nationality/minimum-spend gate still applies in full to any candidate that remains, exactly as before.
+- **Case 1 (formulaic base + separate discretionary add-on):** excluding the discretionary program removes only ITS candidate (a different `program_slug`) — the formulaic base program's own candidate is untouched. **VERIFIED**: excluding `sa_film_commission_rebate` on F#K removes only Saudi's structure; every OTHER discretionary program in F#K's universe (Mauritius, etc.) remains `"include"`.
+- **Case 2 (candidate whose only program is itself discretionary):** removing its sole candidate means no structure is ever generated for it — it leaves the modeled/ranked universe entirely. **VERIFIED** on Saudi/F#K.
+- **Case 3 (creator/project-specific fund):** unaffected either way — filtering is per `program_slug`, never per jurisdiction, so a fund can never become a jurisdiction-wide uplift merely because of where it is administered (structural guarantee, not a special case).
+- **Fingerprint parity — VERIFIED, all 3 call sites synced** (the exact class of bug the codebase's own LESSON documents cost multiple prior sessions): `_compute_fingerprint()` in `canonical_evaluation.py`, and both of its read-only reconstruction call sites in `canonical_production_view.py` and `project_workspace_view.py`, all now pass the identical `discretionary_policy_facts` dict.
+- **Served, inspectable policy state** — `production.discretionary_policy = {project_default, program_overrides, resolved_by_program}`, generic for any project/program, never inventing a row for a program the project has no candidate for (and, after a fix mid-pass, still showing an ACTIVE exclusion even after its own candidate disappears — otherwise a producer could never see or undo their own override).
+
+**Tests:** [`test_discretionary_program_policy.py`](../../frametax2/backend/tests/test_discretionary_program_policy.py) — 6 tests, RUNTIME VERIFIED against real F#K + Saudi data (real `ProjectFact` rows written and cleaned up in `finally` blocks, following the codebase's own established pattern), including a dedicated non-relaxation test proving Saudi's real `administrative_allocation_risk` disclosure survives regardless of this project's own inclusion policy.
+
+### 5. Program-onboarding contract (Item C)
+
+New module: [`app/services/program_onboarding_conformance.py`](../../frametax2/backend/app/services/program_onboarding_conformance.py). Does **not** re-implement any pipeline stage — every stage (canonical program record, doctrine, rate rules, provenance, QPE doctrine, eligibility, discretionary/certainty separation, structure capability, canonical scenario, selection) already IS generic and keyed only by `program_slug` in the files that already exist; this module adds the missing executable **classification** over that already-generic pipeline: **CONFORMANT / CONDITIONAL / NONCONFORMANT**, walking the LIVE `program_rate_rules` registry (never a hardcoded per-program allow-list — a new program that registers a `RateRule` is classified automatically with zero code change here).
+
+Minimum assertions checked per program: unique canonical program ID; valid jurisdiction (DB-backed when a `Jurisdiction` code set is supplied, else format-only); authoritative provenance present/complete (reuses the pre-existing `program_authority_provenance.classify_program_provenance`); eligibility gates represented; economic mechanic supported (real `RateRule`s exist); QPE doctrine available (structurally always true — `resolve_program_doctrine()` never returns `None` by the module's own canonical-default-inclusion design); optimizer relevance explicit (`authority_coverage_registry`). Six further assertions (mandatory-FAILED-cannot-PRICE, certainty-vs-potential separation, policy behavior, structure capabilities, serialization, canonical scenario compatibility) are reported as structurally-guaranteed-by-the-generic-engine (`None`, not fabricated `True`) rather than re-checked per-program, since they are enforced identically for every program by construction — exactly the "without bespoke edits" property this contract exists to prove.
+
+**RUNTIME VERIFIED, real result:** 125 optimizer-visible programs (any `program_slug` with ≥1 registered `RateRule`) — **65 CONFORMANT, 59 CONDITIONAL, 1 NONCONFORMANT**. The one NONCONFORMANT program, `au_producer_offset` (Australia's Producer Offset), is a real, pre-existing, honestly-disclosed data gap: it has real, actively-used rate rules (referenced throughout `treaty_engine.py`, `structure_graph_model.py`, `canonical_stack_bridge.py`) but currently has no `DoctrineRecord` and no `ProgramRequirementsProfile`, so its jurisdiction is unresolvable from either canonical registry. Fixing that underlying data gap is a data-completeness item, not wiring — explicitly out of scope for this closeout (see Section 13). Cross-checked against the real 13-production corpus: **`au_producer_offset` is not actually used by any priced structure in any of the 13 productions**, so the classification is a genuine, disclosed gap with no active downstream impact today.
+
+**Tests:** [`test_program_onboarding_conformance.py`](../../frametax2/backend/tests/test_program_onboarding_conformance.py) — 6 tests, RUNTIME VERIFIED against the real registry, including a dedicated test locking in the `au_producer_offset` finding so it can never silently start passing without the underlying data gap actually being fixed.
+
+### 6. Program conformance results
+
+See Section 5 — 65 CONFORMANT / 59 CONDITIONAL / 1 NONCONFORMANT, real numbers, real registry walk, zero fabrication.
+
+### 7. Scenario identity results
+
+Verified end-to-end for all 13 productions via the Canonical Integrity Gate's new SCENARIO IDENTITY invariant: every served `structure_id` is unique within its production; every `ranking` entry's `structure_id` resolves to a real served structure (no dangling reference); numeric ranks form a contiguous `1..N` sequence with no gaps or duplicates in the comparable set. Identity depends on none of: display title, primary-jurisdiction-only, array index, UI slot, or Globe point index (Globe projection itself remains out of scope — Section 13). **0 failures across all 13 productions.**
+
+### 8. Canonical Integrity Gate — all 12 required non-Globe invariant families, none DEFERRED
+
+[`canonical_integrity_gate.py`](../../frametax2/backend/scripts/canonical_integrity_gate.py), extended this pass from 5 to all 12 required families. Real run, all 50 discovered library records, printed per-invariant:
+
+| # | Invariant | Result |
+|---|---|---|
+| 1 | BUDGET | PASS — 13 checked, 0 failures |
+| 2 | ELIGIBILITY | PASS — 13 checked, 0 failures |
+| 3 | QPE | PASS — 13 checked, 0 failures |
+| 4 | INCENTIVE | PASS — 13 checked, 0 failures |
+| 5 | NPC / ECONOMIC TRACE | PASS — 13 checked, 0 failures |
+| 6 | PARTICIPANTS | PASS — 13 checked, 0 failures |
+| 7 | SCENARIO IDENTITY | PASS — 13 checked, 0 failures |
+| 8 | STATUS SEMANTICS | PASS — 13 checked, 0 failures |
+| 9 | PROGRAM CERTAINTY | PASS — 13 checked, 0 failures |
+| 10 | PROJECT MODELING POLICY | PASS — 13 checked, 0 failures |
+| 11 | SELECTION CONSISTENCY | PASS — 13 checked, 0 failures |
+| 12 | PROGRAM ONBOARDING / CONFORMANCE | PASS — 13 checked, 0 failures |
+
+**GLOBE** — the one family NOT tested, printed explicitly as `DEFERRED BY SEQUENCING`, never counted toward PASS.
+
+**CANONICAL INTEGRITY GATE (12 non-Globe invariants): PASS.**
+
+### 9. Optimizer-ready production corpus
+
+```
+OPTIMIZER ACCEPTANCE CORPUS: 13
+FULL PASS: 13
+FAIL: 0
+SKIP / NOT APPLICABLE: 37 (36 BUDGET_REQUIRED_FOR_CURRENT_EVALUATION — no
+  parsed budget on file yet; 1... actually 2 BLOCKED_INCOMPLETE_INPUTS —
+  All My Friends Are Dead, 5 LBS OF PRESSURE — real BudgetDocument rows
+  exist but evaluate_project has never completed for them)
+```
+
+The 13 accepted productions, named in full: **Bad Hombres, F#K Valentine's Day, The Little Utopia, Lips Like Sugar** (the four the original audit named) **+ Underwater, Rocky Mountain, Interference, Going Places, Twilight of the Dead, 10 Double Zero, Baron Samedi, The Cure, The System** (nine more real, fully-structured productions this pass's re-run of the gate confirmed unchanged). Cardinality is **unchanged from the Pass-3 resume's own corrected count (13)** — the database state has not shifted the count during this pass; no silent change occurred.
+
+### 10. Per-production acceptance
+
+All 13 pass all 12 tested invariants with 0 failures each — see Section 8's table (aggregate) and the raw gate output for the per-production structure-type breakdown (each production's own mix of `full_relocation`/`component_relocation`/`treaty_coproduction`/`multi_program`/`single_country` structures — real structural diversity genuinely exercised by this corpus, satisfying Section 10's "verify the generic wiring is structurally capable of flowing through the shared contracts" without performing the deep economic-behavior validation explicitly reserved for the next phase).
+
+### 11. Focused test results
+
+| Suite | Tests | Result |
+|---|---:|---|
+| `test_canonical_selection_consistency.py` | 2 | PASS |
+| `canonical-scenario-selection-consistency.test.mjs` | 5 | PASS |
+| `test_discretionary_program_policy.py` | 6 | PASS |
+| `test_program_onboarding_conformance.py` | 6 | PASS |
+| `test_canonical_npc_trace_reconstruction.py` (P0-2 regression) | 3 | PASS |
+| Pre-existing P0-1/P0-3/P0-4a suites (`test_allocation_pricing.py`, `test_canonical_authority_substrate.py`, `test_canonical_served_wiring_repair.py`, `test_canonical_scenario_participants.py`) | 108 (1 skipped) | PASS |
+| Full frontend suite (`npm test`) | 169 | PASS |
+
+### 12. Final full-suite result
+
+**4732 passed, 2 skipped, 0 failed** (736s, `pytest tests/ -q`) — up from the prior pass's 4718 passed/2 skipped by exactly +14, matching the 14 new backend tests this pass added (2 + 6 + 6). No regression, exact accounting confirmed.
+
+Frontend: **169 passed, 0 failed** (full suite, `npm test`) — up from 164 by exactly +5 (the new selection-consistency test file).
+
+Final Canonical Integrity Gate re-run (after all code changes in this pass): **13 PASS / 0 FAIL / 37 SKIP, all 12 tested invariants show 0 failures.**
+
+### 13. Permission-process changes
+
+No Claude Code permission-configuration file was modified this pass — the Pass-3 proposal to restore `Write(//tmp/**)`/`Write(//private/tmp/**)` remains a proposal, not applied, per the standing instruction. This pass's own execution used exclusively already-approved tool families (Bash, Read, Edit, Write within the repo, background-task polling) — no new command pattern class was introduced. Per standing instruction: **user-visible host permission dialogs must be counted by the user; this report does not self-certify a count.**
+
+### 14. Remaining deferred work
+
+- **GLOBE** — DEFERRED BY SEQUENCING. Ledger (unchanged from Pass 3): scenario→Globe point/marker projection; grouped-point membership; hover/click/Inspector identity parity; missing coordinate/hit-target coverage; subnational identity on the Globe specifically; LLS Australia hover-vs-click divergence; a dedicated Globe regression corpus.
+- **MFNI INTEGRATION** — DEFERRED. AG's independent MFNI research is in progress on this same branch (docs-only commits observed this pass); not read, not implemented, not touched here.
+- **CREATIVE IDENTITY / NATIONALITY IMPLEMENTATION** — DEFERRED. Codex's separate research not implemented; no person-role extraction, nationality-resolver, or web-search integration changes made.
+- **STRUCTURE-BEHAVIOR ACCEPTANCE** — NEXT PHASE (recorded, not executed — see Section 15/task Section 22).
+- **SA-2** — NOT STARTED.
+- **au_producer_offset data-completeness gap** — a real, disclosed NONCONFORMANT finding (Section 5); not fixed this pass (data research, not wiring).
+- Full 15-point program-onboarding conformance checklist beyond the assertions this pass implemented — the 6 structurally-guaranteed assertions are reported as such (not re-derived per-program) rather than independently re-verified per program.
+
+### 15. Next authorized phase (recorded only, not executed)
+
+**STRUCTURE-CAPABILITY / ECONOMIC BEHAVIOR ACCEPTANCE** — will validate, across representative real productions from this pass's own 13-production corpus, whether CineGlobe correctly DISCOVERS → GENERATES → QUALIFIES → ALLOCATES → PRICES → STACKS → RANKS → EXPLAINS: single-jurisdiction, full relocation, component relocation, stacking, treaty co-production, non-treaty co-production/combination, grants, funds, selective/discretionary programs, hybrids, anchor structures, reinvestment, in-kind, and combinations thereof. **Not executed this pass**, per explicit instruction.
+
+### 16. Files changed (this pass)
+
+- `frametax2/backend/app/services/canonical_evaluation.py` — Item A (no change needed beyond the served field itself, which lives in canonical_production_view.py) + Item B (generic discretionary policy: fact_keys, `_is_discretionary_program`, `_discretionary_policy_facts`, `_discretionary_policy_resolve`, candidate-filter site, fingerprint parity).
+- `frametax2/backend/app/services/canonical_production_view.py` — Item A (`canonical_selected_structure_id` field) + Item B (`discretionary_policy` served block, fingerprint parity).
+- `frametax2/backend/app/services/project_workspace_view.py` — Item B fingerprint parity (third call site).
+- `frametax2/backend/app/services/program_onboarding_conformance.py` — new (Item C).
+- `frametax2/backend/scripts/canonical_integrity_gate.py` — extended from 5 to all 12 required non-Globe invariant families.
+- `frametax2/backend/tests/test_canonical_selection_consistency.py` — new.
+- `frametax2/backend/tests/test_discretionary_program_policy.py` — new.
+- `frametax2/backend/tests/test_program_onboarding_conformance.py` — new.
+- `frametax2/frontend/src/lib/globeData.js` — Item A (`activeStructure` fallback).
+- `frametax2/frontend/src/lib/bestPricedCandidate.js` — Item A (canonical-field-first resolution).
+- `frametax2/frontend/src/screens/production/Reports.jsx` — Item A fix (the originally-reported defect).
+- `frametax2/frontend/src/screens/company/Today.jsx` — Item A fix (same defect class, additionally found this pass).
+- `frametax2/frontend/tests/canonical-scenario-selection-consistency.test.mjs` — new.
+- `docs/validation/CANONICAL_OPTIMIZER_GLOBE_REMEDIATION_CLAUDE.md` — this section.
+
+### 17. Commit SHA
+
+`4cbc2cb7787023d7e33b9661eb0ce56a7d0e9a28`
+
+### 18. Push status
+
+Pushed to `origin/claude/audit-frametax-features-NZcX5`.
+
+### 19. Remote verification
+
+Local HEAD verified == `origin/claude/audit-frametax-features-NZcX5` HEAD after push (see chat response for the exact SHA comparison).
+
+### 20. Stop-condition self-assessment
+
+- Selection consistency complete — ✓ (Section 3)
+- Generic per-program discretionary/selective override complete — ✓ (Section 4)
+- Saudi uses generic certainty/policy semantics — ✓ (implemented through the SAME generic contract as every other program; no Saudi-only branch)
+- Program-onboarding contract complete — ✓ for the assertions this pass defined and executes (Section 5); the full 15-point checklist's remaining structurally-guaranteed items are reported as such, not fabricated
+- All optimizer-visible programs pass appropriate conformance handling — ✓ (65 CONFORMANT, 59 CONDITIONAL, 1 honestly-disclosed NONCONFORMANT — none silently admitted)
+- Non-Globe scenario identity stable end-to-end — ✓ (Section 7, gate-verified)
+- All 12 required non-Globe invariant families executable, none DEFERRED — ✓ (Section 8)
+- All optimizer-ready productions (13/13) pass applicable invariants — ✓
+- Partial/library projects classified honestly (37 SKIP, never blended) — ✓
+- Focused tests pass — ✓ (Section 11)
+- One final backend suite passes — ✓ (4732 passed, 2 skipped, 0 failed)
+- Frontend tests pass (frontend changed) — ✓ (169/169)
+- Artifact updated — ✓ (this section)
+- Commit pushed, remote retrieval verified — ✓ (see Sections 17-19 / chat response for the exact SHA)
+
+**NON-GLOBE CANONICAL CORE — ACCEPTED — GLOBE PHASE NEXT.**

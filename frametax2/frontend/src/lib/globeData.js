@@ -39,11 +39,26 @@ export function structureTier(structure, rankById) {
 }
 
 // The producer's active/leading structure — the shared selection
-// (AppState leadingStructureId) if set, else the optimizer's own rank #1.
+// (AppState leadingStructureId) if set, else the ONE canonical
+// scenario-selection source the backend computes and serves explicitly
+// (allocated.canonical_selected_structure_id — see canonical_production_
+// view.py, Final non-Globe closeout Item A). Every non-Globe surface
+// (Overview, Workspace, Reports) calls this same function so none of
+// them can independently determine a different "project truth" when no
+// producer override is active — the rank==1-only line ranking.find(...)
+// used to fall back to here still runs, but ONLY as a defensive guard
+// for a served payload that predates the canonical field, never as a
+// second authoritative computation.
 export function activeStructure(allocated, leadingStructureId) {
   if (!allocated) return null;
   const byId = new Map(allocated.structures.map((s) => [s.structure_id, s]));
   if (leadingStructureId && byId.has(leadingStructureId)) return byId.get(leadingStructureId);
+  if (allocated.canonical_selected_structure_id && byId.has(allocated.canonical_selected_structure_id)) {
+    return byId.get(allocated.canonical_selected_structure_id);
+  }
+  // Defensive-only fallback (see comment above) — mirrors the exact same
+  // rank==1 rule the server itself applies when computing the canonical
+  // field, so this can never disagree with it even if it ever fires.
   const best = allocated.ranking.find((r) => r.rank === 1);
   return best ? byId.get(best.structure_id) : null;
 }

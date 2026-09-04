@@ -644,6 +644,7 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # idempotency this fix depends on.
     from app.services.canonical_evaluation import (
         _compute_fingerprint, _coproduction_facts, _excluded_jurisdiction_codes,
+        _discretionary_policy_facts,
     )
     from app.services.canonical_project_economics import build_project_economic_inputs
     from app.calculators.canonical_role_qualification_bridge import (
@@ -671,10 +672,17 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         # structures payload silently renders empty. Confirmed as the
         # exact failure mode live before this fix.
         excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project.id))
+        # Item B (Final non-Globe closeout, 2026-09-04) — MUST reuse the
+        # exact same fingerprint inputs evaluate_project() itself uses,
+        # same reasoning as excluded_jurisdiction_codes directly above:
+        # a project with any discretionary-policy fact on file would
+        # otherwise silently diverge and render empty.
+        discretionary_policy_facts = await _discretionary_policy_facts(session, project.id)
         fingerprint = _compute_fingerprint(
             econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,
             excluded_jurisdiction_codes=excluded_jurisdiction_codes,
+            discretionary_policy_facts=discretionary_policy_facts,
         )
     if fingerprint is None:
         # A project that can't currently evaluate at all (e.g. budget
@@ -771,6 +779,44 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         r["scenario_category"] = e["scenario_category"]
         ranking.append(r)
 
+    # Final non-Globe closeout, Item A — canonical scenario-selection
+    # source. Codex found Reports.jsx reading ONLY rank==1 while
+    # Overview/Workspace additionally fell back to a client-side
+    # "bestPricedCandidate" re-derivation when rank 1 was absent (a real,
+    # common state: comparable_count==0). Two independent selection
+    # algorithms living in two places is exactly the inconsistency risk
+    # the closeout brief calls out — this field removes it by computing
+    # the ONE canonical answer here, once, server-side, and serving it
+    # explicitly. Every consumer (frontend lib/globeData.js::
+    # activeStructure, lib/bestPricedCandidate.js, Reports.jsx) now reads
+    # THIS field rather than each recomputing its own fallback; a
+    # producer's manual "leading structure" pick (client-only, ephemeral
+    # UI selection state, never persisted or treated as project truth)
+    # still overrides it at the call site, exactly as before.
+    #
+    # Algorithm (byte-for-byte the same as the pre-existing
+    # bestPricedCandidate.js it replaces, so this pass changes WHERE the
+    # answer is computed, never WHAT the answer is):
+    #   1. rank 1 (comparable[0]) if a numerically-ranked candidate exists.
+    #   2. else the lowest-NPC structure among ALL is_fully_priced
+    #      structures (comparable or review_required) — the same
+    #      candidate bestPricedCandidate(allocated) already picked.
+    #   3. else None (no priced structure exists at all yet).
+    if comparable:
+        canonical_selected_structure_id = comparable[0]["structure_id"]
+    else:
+        priced_candidates = [e for e in structure_entries if e["is_fully_priced"]]
+        canonical_selected_structure_id = (
+            min(
+                priced_candidates,
+                key=lambda e: (
+                    e["npc_with_adjustments_usd"]
+                    if e["npc_with_adjustments_usd"] is not None else float("inf")
+                ),
+            )["structure_id"]
+            if priced_candidates else None
+        )
+
     base_code = jurisdiction_code_by_id.get(str(project.home_jurisdiction_id)) if project.home_jurisdiction_id else None
     if base_code is None:
         baseline_entry = next((e for e in structure_entries if e["is_baseline"]), None)
@@ -828,6 +874,57 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     from app.services.canonical_project_economics import build_ui_location_categories
     ui_location_categories = await build_ui_location_categories(session, project.id)
 
+    # Item B (Final non-Globe closeout, 2026-09-04) -- served, read-only
+    # view of this project's own resolved discretionary/selective-program
+    # policy (see canonical_evaluation.py's DISCRETIONARY_POLICY_* facts
+    # and _discretionary_policy_resolve). Inspectable generically for any
+    # project/program; per-program overrides are reported only for
+    # programs that actually appear in this project's own served
+    # structures, so this can never invent a policy row for a program the
+    # project has no candidate for.
+    from app.services.canonical_evaluation import (
+        _discretionary_policy_facts, _discretionary_policy_resolve, _is_discretionary_program,
+    )
+    _raw_policy_facts = await _discretionary_policy_facts(session, project.id)
+    _served_program_slugs = sorted({
+        slug
+        for e in structure_entries
+        for slug in ([e["program_slug"]] if e.get("program_slug") else []) + (e.get("program_slugs") or [])
+        if slug
+    })
+    # program_overrides reports every REAL persisted per-program fact,
+    # never scoped to currently-served structures: a program a producer
+    # has excluded is, BY DESIGN, no longer a served structure (that's
+    # the whole point of the exclusion), so scoping this to served slugs
+    # would make an active override invisible/unreadable the moment it
+    # takes effect -- exactly the wrong direction for something a
+    # producer needs to be able to see and toggle back. resolved_by_
+    # program instead unions served discretionary programs with any
+    # program that has an explicit override on file, so both "on and
+    # visible" and "off and still visible" programs are represented.
+    _program_override_slugs = sorted({
+        fact_key[len("discretionary_policy_program:"):]
+        for fact_key, value in _raw_policy_facts.items()
+        if fact_key.startswith("discretionary_policy_program:") and value in ("include", "exclude")
+    })
+    _resolved_scope_slugs = sorted(set(_served_program_slugs) | set(_program_override_slugs))
+    discretionary_policy_view = {
+        "project_default": (
+            _raw_policy_facts.get("discretionary_policy_default")
+            if _raw_policy_facts.get("discretionary_policy_default") in ("include", "exclude")
+            else "include"
+        ),
+        "program_overrides": {
+            slug: _raw_policy_facts[f"discretionary_policy_program:{slug}"]
+            for slug in _program_override_slugs
+        },
+        "resolved_by_program": {
+            slug: _discretionary_policy_resolve(slug, _raw_policy_facts)
+            for slug in _resolved_scope_slugs
+            if _is_discretionary_program(slug)
+        },
+    }
+
     production = {
         "production_id": str(project.id),
         "production_name": project.title,
@@ -865,6 +962,9 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             ),
         },
         "production_structure_default": None,
+        # Item B (Final non-Globe closeout, 2026-09-04) — see the
+        # discretionary_policy_view build immediately above.
+        "discretionary_policy": discretionary_policy_view,
         # Script Analyzer Full Production Breakdown: was hardcoded {} for
         # every generic project, so ProductionDetails.jsx's "Major
         # Location Requirements" panel always showed "No script analysis
@@ -911,6 +1011,12 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             "structures": structure_entries,
             "contingency": {},
             "ranking": ranking,
+            # Item A (canonical scenario-selection consistency) — see the
+            # long comment above where this is computed. The single
+            # authoritative structure_id every non-Globe surface (Overview,
+            # Workspace, Reports) must resolve to when no producer override
+            # is active. None only when no structure is fully priced yet.
+            "canonical_selected_structure_id": canonical_selected_structure_id,
             "stack_combinations": {},
             "advisor_routing_decisions_input": {},
             # Restoration-phase candidate accounting, matching the earlier
