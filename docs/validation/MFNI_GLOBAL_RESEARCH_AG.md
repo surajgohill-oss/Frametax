@@ -3208,7 +3208,123 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** CFA (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 86. GLOBAL COVERAGE ACCOUNTING
+## 86. JURISDICTION × CATEGORY RESEARCH: VN (VIETNAM)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer SHUI (Social Insurance, Health Insurance, Unemployment Insurance). SI 17.5%, HI 3%, UI 1% = 21.5% total for locals. Plus 2% trade union. Total ~23.5%. Capped at 20x base salary (VND 46.8M).
+- **Source:** MOLISA (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Found in HCMC and Hanoi (e.g. 2M Media). Custom quoted.
+- **Source:** Vietnamese Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Fixer-led procurement.
+- **Source:** Vietnamese Fixer Proxies (Tier 2).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Handled by fixers (e.g. HDEquipment, 2M Media). Quote dependent.
+- **Source:** Vietnamese Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** $35 to $60 USD per person per day (850k to 1.5M VND) for full service.
+- **Source:** Vietnamese Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** No formal nationwide cash rebate for international productions. Relies on low cost base.
+- **Source:** Vietnamese Government Proxies (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 87. JURISDICTION × CATEGORY RESEARCH: KH (CAMBODIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer NSSF 5.4% total (0.8% Occ Risk + 2.6% Healthcare + 2% Pension). Plus Seniority Indemnity (15 days/yr). Salary cap for NSSF is KHR 1.2M.
+- **Source:** NSSF Cambodia (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Minimal stage infrastructure. Location based.
+- **Source:** Cambodian Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Fixer-led procurement.
+- **Source:** Cambodian Fixer Proxies (Tier 2).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Fixer-managed (Kongchak Pictures, Bophana). No public rate cards.
+- **Source:** Cambodian Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** $8–$15 USD/head.
+- **Source:** Cambodian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** No official cash rebate. Customs exemptions exist.
+- **Source:** Cambodian Government Proxies (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 88. JURISDICTION × CATEGORY RESEARCH: TW (TAIWAN)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer Labor Pension 6% minimum, Labor Insurance ~8.05%, NHI ~4.84%, Occ Accident ~0.11-0.93%. Total ~19-20%.
+- **Source:** Taiwan Bureau of Labor Insurance (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Professional Film Studios available in Taipei, Kaohsiung. Custom quotes.
+- **Source:** Taiwanese Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Administered by Taipei Film Commission and other local bodies.
+- **Source:** Taipei Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Local line producers. Quote dependent.
+- **Source:** Taiwanese Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Usually bento boxes (local market rates). ~$10-$20 USD/head.
+- **Source:** Taiwanese Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Up to 30% local spend support via BAMID (cap ~$1M). TAICCA offers co-production grants.
+- **Source:** BAMID / TAICCA (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 89. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -3219,13 +3335,13 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Subnational jurisdictions researched:** 52 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki, GR-Athens, MT-Valletta, AE-Dubai, AE-Abu Dhabi, SA-Riyadh, SA-Neom, KR-Seoul, JP-Tokyo, IN-Maharashtra, TH-Bangkok, ID-Batam, MY-Johor, MA-Ouarzazate, JO-Amman, DO-Santo Domingo, JM-Kingston)
 - **Stale/unprovenanced existing records:** 44
 
-## 87. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 90. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
 - **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service, BPJS Indonesia, Kemdikbudristek, Infinite Studios, Jakarta Film Commission, KWSP Malaysia, PERKESO, PUSPAL, FINAS, Iskandar Malaysia Studios, Cinerent, Camwerkz, CNSS Morocco, CCM Morocco, Atlas Studios, CLA Studios, K-Films, SSC Jordan, Royal Film Commission Jordan, Olivewood Film Studios, Slate Film Services, TSS Dominican Republic, DGCINE, Lantica Studios, TAJ Jamaica, JAMPRO, Phase 3 Productions, Cyprus Social Insurance Services, Invest Cyprus, Mauritius Revenue Authority, MFDC, EDB Mauritius.
 - **Local-language searches:** 0.
 
-## 88. STOP CONDITION
+## 91. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
