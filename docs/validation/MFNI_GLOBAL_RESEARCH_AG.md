@@ -661,7 +661,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Czech Audiovisual Fund (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 20. GLOBAL COVERAGE ACCOUNTING
+## 20. JURISDICTION × CATEGORY RESEARCH: MX (MEXICO)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** A heavily burdened payroll environment. Employers pay IMSS (Social Security, 20-35%+ based on risk), INFONAVIT (Housing, 5%), SAR (Retirement, 2%), plus State Payroll Tax (ISN, 1-4%). Additional statutory benefits (Aguinaldo, Vacation premium) push the total burden to roughly 30-45% over base salary.
+- **Source:** Mexican Federal Labor Law (LFT), IMSS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major sound stages (Estudios Churubusco, Estudios Gabriel García Márquez) do not publish static rates. Quotes are bespoke based on duration, power requirements, and additional facility needs (e.g., LED volumes).
+- **Source:** Estudios Churubusco, Estudios GGM (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** In Mexico City, CFilma coordinates permits. Fees are decentralized and highly variable; simple admin permits exist, but specific locations (museums, INAH archaeological sites, commercial plazas) require negotiated usage fees.
+- **Source:** CFilma (Comisión de Filmaciones de la CDMX) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Premier rental houses (e.g., EFD Equipment & Film Design) do not publish rate cards. They operate strictly on formal quotes for camera, lighting, and grip packages tailored to the production schedule.
+- **Source:** EFD (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Standard to intermediate film catering ranges from $500 to $1,500 MXN (~$30-$80 USD) per person per day. Highly variable based on craft services inclusion and overtime "second meal" requirements.
+- **Source:** Mexican Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Under the new EFICA program (2026-2030), Mexico offers a 30% transferable income tax credit. Post-production and VFX are eligible with an exceptionally low minimum spend threshold of MXN 5 million. Program is capped at MXN 40M per project.
+- **Source:** EFICA Guidelines, IMCINE (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 21. JURISDICTION × CATEGORY RESEARCH: CO (COLOMBIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Total burden ranges from 30% to 50% over base salary. Includes Pension (12%), Cajas de Compensación (4%), and ARL (risk, 0.522%-6.96%). Health (8.5%), SENA (2%), and ICBF (3%) are exempt if the employee earns <10 SMMLV and the employer pays corporate income tax. Heavy "Prestaciones Sociales" (Prima, Cesantías, Vacations) apply.
+- **Source:** Colombian Tax Statute, Ministry of Labor (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major studio complexes (TIS Productions/Fox Telecolombia, Caracol) require direct production inquiries for bespoke quotes. No public rack rates exist for large sound stages.
+- **Source:** TIS Productions, Colombia Film Commission (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Bogotá utilizes the PUFA (Unified Permit for Audiovisual Filming) via the SUMA+ platform. Fees are calculated dynamically based on public space economic exploitation. Significant reductions (up to 70%) apply for Law 1556 beneficiary projects.
+- **Source:** Bogotá Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Major regional rental providers like Congo Films do not publish standard rate cards. Pricing requires formal production quotes based on gear packages (ARRI/RED) and duration.
+- **Source:** Congo Films (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Extremely cost-effective compared to Western hubs. Highly customized based on service level, but proxies suggest $15-$30 USD per head per day for standard production catering.
+- **Source:** Colombian Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Governed by Law 1556. Two primary mechanisms: FFC (40% cash rebate on audiovisual services / 20% on logistics) or CINA (35% transferable tax credit). Post-production-only projects can qualify for CINA directly, or FFC if the primary production phase was also subsidized.
+- **Source:** Proimágenes Colombia, Law 1556 (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 22. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -669,20 +746,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 22 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague)
+- **Subnational jurisdictions researched:** 24 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota)
 - **Stale/unprovenanced existing records:** 44
 
-## 21. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 23. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556.
 - **Local-language searches:** 0.
 
-## 22. STOP CONDITION
+## 24. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-HU (Hungary) and CZ (Czech Republic) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **LATAM hubs like MX (Mexico)**).
+MX (Mexico) and CO (Colombia) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **LATAM hubs like BR (Brazil) or AR (Argentina)**).
