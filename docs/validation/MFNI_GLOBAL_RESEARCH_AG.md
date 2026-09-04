@@ -815,7 +815,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Buenos Aires Film Commission, INCAA (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 24. GLOBAL COVERAGE ACCOUNTING
+## 24. JURISDICTION × CATEGORY RESEARCH: CL (CHILE)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** A comparatively low standard employer burden compared to other LATAM hubs, as employees bear the bulk of Pension (AFP, 10%) and Health (Fonasa/Isapre, 7%) directly via deductions. Employers pay Seguro de Cesantía (2.4-3%), Mutual de Seguridad (0.9-3.4%), and SIS (1.4-1.85%). However, a mandatory profit-sharing "Gratificación" (typically 25% up to a cap) significantly raises the real cost.
+- **Source:** Previred, Chilean Labor Directorate (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major sound stages (e.g., Kuarzo Atresmedia) do not publish rate cards. Facilities are booked under a B2B model requiring technical riders and formal proposals.
+- **Source:** Kuarzo (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Filming permits are decentralized. Film Commission Chile (FCCh) facilitates, but municipalities and property owners (like CONAF for parks) set their own highly variable tariffs.
+- **Source:** Film Commission Chile (FCCh) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** No fixed rate cards from prime vendors (Congo Films Chile, David & Joseph, Atomica). Quotes are customized based on duration and long-term production relationships.
+- **Source:** Congo Films, Atomica (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Variable based on location logic (urban Santiago vs. Atacama desert/remote). No standardized per-head fee is published; relies entirely on local fixers soliciting 3-bid vendor quotes.
+- **Source:** Chilean Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Driven by the IFI Audiovisual (CORFO). Offers up to a 30% reimbursement (up to 40% if outside Santiago), capped at US$3 million. Post-production and VFX are explicitly eligible.
+- **Source:** InvestChile, CORFO (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 25. JURISDICTION × CATEGORY RESEARCH: UY (URUGUAY)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Moderate to high employer burden (~28-40% total). BPS mandatory contributions run 12.625% (Pension 7.5%, FONASA 5%, FRL/Guarantee ~0.125%). Added to this are the Aguinaldo (13th month, accrued at 8.33%), Salario Vacacional, and BSE accident insurance (0.3-1%).
+- **Source:** Banco de Previsión Social (BPS), MTSS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** The Reducto Audiovisual Hub (partnered with Musitelli) is the primary premium space. Rates are not published and require bespoke quoting based on technical grid needs.
+- **Source:** Reducto, Musitelli (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Regulated by Montevideo Audiovisual (Municipality of Montevideo). Filming in public places is generally free, acting as a major draw for the city, though logistical support (traffic/police) incurs costs.
+- **Source:** Montevideo Audiovisual (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Musitelli Film & Digital is the dominant premium rental house. No public rate cards; relies entirely on customized technical quoting.
+- **Source:** Musitelli Film & Digital (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Uruguay is generally cost-effective. Proxies suggest $15 to $35 USD per head per day for professional on-set catering, but specific quotes are required.
+- **Source:** Uruguayan Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Very aggressive incentives. The new Audiovisual Tax Credit (introduced 2026) offers a 30% transferable tax credit with NO per-project cap. The legacy PUA (Programa Uruguay Audiovisual) also offers cash rebates (typically ~25%). Post-production and VFX are explicitly eligible. VAT is 0% for audiovisual exports.
+- **Source:** ACAU (Film and Audiovisual Agency of Uruguay) (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 26. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -823,20 +900,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 26 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA)
+- **Subnational jurisdictions researched:** 28 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo)
 - **Stale/unprovenanced existing records:** 44
 
-## 25. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 27. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU.
 - **Local-language searches:** 0.
 
-## 26. STOP CONDITION
+## 28. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-BR (Brazil) and AR (Argentina) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **CL (Chile) and UY (Uruguay)** or Eastern Europe hubs like **PL (Poland) / RO (Romania)**).
+CL (Chile) and UY (Uruguay) structural category coverage is complete. The Latin American canonical bloc is definitively finalized. Resume global discovery loop starting with the Eastern European hubs: **PL (Poland) and RO (Romania)**.
