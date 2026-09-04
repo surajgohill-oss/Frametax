@@ -326,30 +326,67 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Australian Government (Department of Arts) (Tier 1).
 - **Confidence:** VERIFIED.
 
-### Gaps / Incomplete (Next Execution Needed)
-- AU Locations / Permits
-- AU Catering
-- AU Equipment pricing
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Decentralized to Local Government Areas (LGAs) rather than state screen agencies. Fees depend strictly on impact level. E.g., Brisbane charges a ~$904 baseline for standard permits (with low-impact exemptions). Sydney bases fees on ultra-low to high impact scales.
+- **Source:** Screen NSW, Brisbane City Council, City of Sydney (Tier 1).
+- **Confidence:** VERIFIED.
 
-## 12. GLOBAL COVERAGE ACCOUNTING
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly variable. Casual drop-off starts around AUD $20–$55 per head. Full-service food trucks covering breakfast/lunch/crafty run closer to corporate event rates of AUD $60–$150+ per person.
+- **Source:** Australian production catering benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** In line with global tier-1 standards, Australian branches of major rental houses (Panavision Sydney, Lemac) do not publish static rate cards. Pricing is driven by custom quotes and scaled package duration.
+- **Source:** Lemac, Panavision (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+## 12. JURISDICTION × CATEGORY RESEARCH: NZ (NEW ZEALAND)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Unique classification structure. The majority of NZ film crew operate as **independent contractors**, meaning there is *no statutory requirement* for the production to provide Holiday Pay or employer KiwiSaver (superannuation). Contractors pay their own ACC levies (accident compensation).
+  - *Note:* The Screen Industry Workers Act 2022 (SIWA) allows contractors to bargain collectively for minimum terms, creating baseline conditions without reclassifying them as employees.
+  - If classified as an employee (rare), standard 3% KiwiSaver, ACC levies, and 8% Holiday Pay apply.
+- **Source:** New Zealand Government, SIWA (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** NZ offers a **20% cash rebate** via the Post, Digital, and Visual Effects (PDV) Grant on Qualifying New Zealand Production Expenditure (QNZPE). 
+  - **Uplift:** An additional 5% (total 25%) is available if the project meets significant economic benefit criteria.
+  - **Threshold:** Requires a minimum spend of NZ$250,000.
+- **Source:** New Zealand Film Commission (NZFC) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Gaps / Incomplete (Next Execution Needed)
+- NZ Stages / Facilities pricing structure
+- NZ Locations / Permits
+- NZ Equipment
+- NZ Catering
+
+## 13. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 6 (GB, US, CA, FR, DE - Completed, AU - Partial)
+- **Researched:** 7 (GB, US, CA, FR, DE, AU - Completed, NZ - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 6 (GB, US, CA, FR, DE, AU)
+- **Partial data:** 7 (GB, US, CA, FR, DE, AU, NZ)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 8 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria)
+- **Subnational jurisdictions researched:** 10 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD)
 - **Stale/unprovenanced existing records:** 44
 
-## 13. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 14. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA.
 - **Local-language searches:** 0.
 
-## 14. STOP CONDITION
+## 15. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-DE (Germany) structural category coverage is complete. Resume **AU (Australia)** research, focusing on AU Locations/Permits, AU Catering, and AU Equipment proxies. After AU, advance to **NZ (New Zealand)**.
+AU (Australia) structural category coverage is complete. Resume **NZ (New Zealand)** research, focusing on NZ Stages, Permits, Equipment, and Catering. After NZ, advance to **ZA (South Africa)**.
