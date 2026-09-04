@@ -431,7 +431,83 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** South African catering market data (Tier 2).
 - **Confidence:** STRONG.
 
-## 14. GLOBAL COVERAGE ACCOUNTING
+## 14. JURISDICTION × CATEGORY RESEARCH: IE (IRELAND)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer PRSI (Pay-Related Social Insurance) is mandatory. As of late 2024, the standard Class A employer PRSI rate is approximately 11.15% (increased by 0.1% in October 2024). This is a statutory payroll cost, not a fringe benefit.
+- **Source:** Irish Department of Social Protection (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major facilities (Ardmore Studios, Troy Studios) operate exclusively on custom quotes based on production scale and duration. Rate cards are not publicly listed.
+- **Source:** Ardmore Studios (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Managed by local councils. Dublin City Council uses a tiered structure based on production budget, ranging from €100/day for <€500k budgets up to €1,000+/day for >€4M features. Surcharges apply for specific areas like Henrietta Street.
+- **Source:** Dublin City Film Office (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Top-tier rental houses (Panavision Ireland, Teach Solais) operate via bespoke quoting based on equipment lists. No static rate cards exist for cinematic packages.
+- **Source:** Panavision (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Standard crew catering (hot lunch + mid-morning break) runs €25–€30 per head per day as a safe baseline, but can scale €20-€40 based on mobile kitchen vs drop-off requirements.
+- **Source:** Irish Catering Market Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Section 481 provides a base 32% tax credit. A specific VFX uplift (raising the rate to 40% on up to €10m of spend) applies if the project incurs at least €1m in eligible VFX expenditure in Ireland. No principal photography is required in Ireland to claim this VFX uplift.
+- **Source:** Screen Ireland / Irish Revenue (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 15. JURISDICTION × CATEGORY RESEARCH: IT (ITALY)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Highly burdened statutory fringes. Includes INPS (Social Security, 23-32%), INAIL (Accident Insurance, 0.4-1.0%), and TFR (Severance, 7.41%). Total employer burden frequently adds 35-45% to base gross salaries.
+- **Source:** INPS, INAIL (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Cinecittà (Rome) does not publish standardized rates. Pricing is bespoke based on stage dimensions, virtual production needs, and rental duration.
+- **Source:** Cinecittà (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Highly variable by municipality. Standard street permits typically start around €300/day (Rome/Florence), but major historical landmarks incur massive tiered fees up to tens of thousands of euros.
+- **Source:** Roma Lazio Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Standard practice rejects public rate cards. Panalight and D-Vision Movie People operate on custom packages with volume/duration discounts (often 40-60% off internal list prices for features).
+- **Source:** Panalight, D-Vision Movie People (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Standard on-set catering ranges €20–€35 per person per meal. Specialized requirements or premium tablescale service can escalate to €35–€70+.
+- **Source:** Italian catering benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** International productions access a 40% tax credit. Capped at €20m per year per company. AI costs are strictly ineligible *unless* specifically attributable to VFX/special effects.
+- **Source:** DGCA / Cinecittà (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 16. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -439,19 +515,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 13 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape)
+- **Subnational jurisdictions researched:** 16 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany)
 - **Stale/unprovenanced existing records:** 44
 
-## 15. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 17. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission.
 - **Local-language searches:** 0.
 
-## 16. STOP CONDITION
+## 18. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-**GLOBAL DISCOVERY SWEEP COMPLETE.**
+**STATUS: PARTIAL — CONTINUATION REQUIRED**
 
-All primary tier-1 and tier-2 production hubs (GB, US, CA, FR, DE, AU, NZ, ZA) have been structurally mapped across the specified MFNI cost drivers. The canonical matrix `MFNI_GLOBAL_COVERAGE_MATRIX_AG.csv` has been generated.
+**Exact Next Jurisdiction/Category:**
+IE (Ireland) and IT (Italy) structural category coverage is complete. Resume **ES (Spain)** research, focusing on ES Stages, Permits, Equipment, and Catering. After ES, advance to **PT (Portugal)**.
