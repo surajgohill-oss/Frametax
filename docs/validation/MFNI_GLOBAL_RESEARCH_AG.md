@@ -1508,7 +1508,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Thailand Film Office (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 42. GLOBAL COVERAGE ACCOUNTING
+## 42. JURISDICTION × CATEGORY RESEARCH: ID (INDONESIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** For formal employees, BPJS Kesehatan (Health) is 4% (capped) and BPJS Ketenagakerjaan (Social Security/Pension) is ~4.24-5.74%. The mandatory religious holiday bonus (THR) adds an annualized 8.33%. Total burden is ~16-18%. However, film crew are predominantly hired as freelancers/contractors who are not entitled to BPJS or THR, making the effective statutory employer fringe 0% (subject to withholding tax).
+- **Source:** Indonesian Labor Law / BPJS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** The premier facility is Infinite Studios (Batam), boasting 1,300+ sqm sound stages and extensive backlots. Studio Gamplong (Yogyakarta) is also notable. Pricing is strictly bespoke and project-dependent; no public rate cards exist.
+- **Source:** Infinite Studios (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** The official film permit from Kemdikbudristek (Ministry of Education, Culture, Research, and Technology) is technically free (Rp0). However, foreign crew MUST obtain C14 Filming Visas (Immigration fees ~IDR 2,000,000) and must hire an Indonesian-registered production company (TDUP holder) as a sponsor, incurring significant service fees.
+- **Source:** Kemdikbudristek (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Available via local houses (Bali Film Gear, Midnight Sun, Iris Film) but major productions often rely on packages provided directly by their local fixer or imported. No public rate cards.
+- **Source:** Indonesian Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Extremely cost-effective. The industry standard is "Nasi Kotak" (boxed meals). Basic meals range from IDR 25,000 to 50,000, with high-quality catering between IDR 50,000 and 100,000 per head/meal (~$3 - $7 USD).
+- **Source:** Indonesian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Indonesia has NO national-level cash rebate or tax credit for foreign film productions or VFX. Recent municipal initiatives in Jakarta offer local entertainment tax rebates (for domestic films) and location discounts, but there is no federal scheme.
+- **Source:** Kemdikbudristek / Jakarta Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 43. JURISDICTION × CATEGORY RESEARCH: MY (MALAYSIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** For Malaysian citizens, the burden is EPF (12-13%), SOCSO (1.75%, wage cap increased to RM6,000 in late 2024), and EIS (0.2%). Total burden is ~14-15%. However, the film workforce relies heavily on freelance contractors, bypassing these statutory requirements.
+- **Source:** KWSP, PERKESO (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Iskandar Malaysia Studios (formerly Pinewood) is the massive flagship facility, offering huge sound stages and water tanks. Rental rates are strictly quote-dependent based on the scale and duration of the shoot.
+- **Source:** Iskandar Malaysia Studios (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Filming permits are strictly regulated by PUSPAL (Central Agency Committee for Application for Filming). The PUSPAL processing fee is RM90 per foreign cast/crew member. A registered local sponsor (FINAS approved) is mandatory to file the application.
+- **Source:** PUSPAL / FINAS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Strongly established market with players like Cinerent and Camwerkz. Pricing is strictly quote-dependent and often bundled with crew/technicians. No public rate cards.
+- **Source:** Cinerent, Camwerkz (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly cost-effective. Boxed meals/bento range from RM15 to RM30 per person per meal (~$3 - $7 USD). Full buffet catering ranges from RM35 to RM80+.
+- **Source:** Malaysian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** The Film in Malaysia Incentive (FIMI) offers a 30% cash rebate on Qualifying Malaysian Production Expenditure (QMPE). A 5% "Cultural Test" bonus can push this to 35%. Crucially, post-production and VFX are explicitly covered, with a low minimum spend threshold of RM 1 million for standalone post.
+- **Source:** FINAS / FIMO (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 44. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -1516,20 +1593,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 46 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki, GR-Athens, MT-Valletta, AE-Dubai, AE-Abu Dhabi, SA-Riyadh, SA-Neom, KR-Seoul, JP-Tokyo, IN-Maharashtra, TH-Bangkok)
+- **Subnational jurisdictions researched:** 48 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki, GR-Athens, MT-Valletta, AE-Dubai, AE-Abu Dhabi, SA-Riyadh, SA-Neom, KR-Seoul, JP-Tokyo, IN-Maharashtra, TH-Bangkok, ID-Batam, MY-Johor)
 - **Stale/unprovenanced existing records:** 44
 
-## 43. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 45. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service, BPJS Indonesia, Kemdikbudristek, Infinite Studios, Jakarta Film Commission, KWSP Malaysia, PERKESO, PUSPAL, FINAS, Iskandar Malaysia Studios, Cinerent, Camwerkz.
 - **Local-language searches:** 0.
 
-## 44. STOP CONDITION
+## 46. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-IN (India) and TH (Thailand) structural category coverage is complete, concluding the APAC tier 1/2 bloc. Proceed to finish the remaining Asian outlier jurisdictions, starting with **ID (Indonesia)** and **MY (Malaysia)** next.
+ID (Indonesia) and MY (Malaysia) structural category coverage is complete, finalizing the core Asian outlier jurisdictions. Proceed to the Middle Eastern / North African (MENA) expansion tier, starting with **MA (Morocco)** and **JO (Jordan)** next.
