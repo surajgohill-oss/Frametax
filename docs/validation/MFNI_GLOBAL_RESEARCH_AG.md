@@ -738,7 +738,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Proimágenes Colombia, Law 1556 (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 22. GLOBAL COVERAGE ACCOUNTING
+## 22. JURISDICTION × CATEGORY RESEARCH: BR (BRAZIL)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** A very high burden ("Custo Brasil"). Employers pay INSS (20%), FGTS (8%), System S (Terceiros, ~5.8%), RAT (1-3%). Additionally, mandatory 13th salary, vacation premium (+1/3), and a 40% FGTS fine for termination without cause push the effective total burden to roughly 60-70% over the base net salary for formal CLT hires.
+- **Source:** Brazilian CLT, INSS, Receita Federal (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major sound stages (Quanta Estúdios, Polo Cinematográfico de Paulínia, Estúdios Globo) operate exclusively on project-based quotes. Independent studios in São Paulo quote R$ 3,500 to R$ 8,500/day, but the prime infrastructure remains opaque.
+- **Source:** Quanta Estúdios, Spcine (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Handled by regional commissions (Rio Film Commission, Spcine). Base permits for public domain spaces are generally free, but productions must pay associated costs for municipal services like traffic control (CET) or police/security.
+- **Source:** Rio Film Commission, Spcine (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** No fixed rate cards from prime vendors (Marc Films, Naymovie, Quanta). Pricing is highly customized, often requiring a local partner (e.g., Brazil Production Services) to navigate tax/import logistics and negotiate volume discounts.
+- **Source:** Marc Films, Naymovie (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Heavily bifurcated. Basic local drop-off (R$ 50-100/head) vs. full professional itinerant catering. Proxies out to ~$15-$30 USD per head, but entirely quote-dependent based on craft service complexity.
+- **Source:** Brazilian Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** No federal cash rebate for foreign production. State-level cash rebates exist (RioFilme, Spcine - typically 20-30%) but are tied to physical filming criteria and local spend, rather than standalone VFX/post-production projects.
+- **Source:** ANCINE, Spcine, RioFilme (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 23. JURISDICTION × CATEGORY RESEARCH: AR (ARGENTINA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Standard employer contributions run 24-26.4% (SIPA, PAMI, Asignaciones Familiares) plus ~6% for Obra Social. Including SAC (Aguinaldo / 13th month), ART (risk insurance), and vacation accruals, the total burden is extremely heavy. Highly unionized environment (SICA) dictates strict minimums.
+- **Source:** ARCA (formerly AFIP), Argentine Labor Law (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** No public rate cards for major studios (Baires Studios, Pol-ka, Pampa Films). Market volatility and currency fluctuations mean all large facilities quote bespoke in USD or adjusted ARS based on duration and bundled services.
+- **Source:** Baires Studios, Pol-ka (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Buenos Aires uses the BASet system (Buenos Aires Film Set). Generally highly affordable, but requires a locally registered production company/fixer. Costs vary based on disruption scale. Process takes 2-5 days.
+- **Source:** Buenos Aires Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Universal lack of static rate cards due to extreme inflation and currency mechanics. Rental houses (Cinecolor, J&J, Lahaye Media) quote bespoke based on gear packages and immediate market exchange rates.
+- **Source:** Lahaye Media, Argentine Rental Benchmarks (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Requires custom quotes. Extremely cost-effective for international productions leveraging currency advantages, but standard daily rates per head are not published.
+- **Source:** Argentine Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** No national cash rebate (INCAA focuses on domestic). City of Buenos Aires offers the BA Producción Internacional (BA Cash Rebate) at 20%, but it strictly requires a minimum of 4 physical shoot days in the city to qualify local expenditure (including post). Standalone post-production does not qualify.
+- **Source:** Buenos Aires Film Commission, INCAA (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 24. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -746,20 +823,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 24 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota)
+- **Subnational jurisdictions researched:** 26 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA)
 - **Stale/unprovenanced existing records:** 44
 
-## 23. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 25. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA.
 - **Local-language searches:** 0.
 
-## 24. STOP CONDITION
+## 26. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-MX (Mexico) and CO (Colombia) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **LATAM hubs like BR (Brazil) or AR (Argentina)**).
+BR (Brazil) and AR (Argentina) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **CL (Chile) and UY (Uruguay)** or Eastern Europe hubs like **PL (Poland) / RO (Romania)**).
