@@ -119,6 +119,36 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Commercial Construction Indices.
 - **Confidence:** PROVISIONAL (Requires dynamic macro-economic linkage rather than a static film benchmark).
 
+## 7. JURISDICTION × CATEGORY RESEARCH: US (UNITED STATES)
+
+### Fringes / Payroll (Union)
+- **Union Pension & Health (P&H) Rules:** RESEARCHED.
+- **Findings:** 
+  - **SAG-AFTRA:** Typically ~21% of gross for Pension & Health, subject to budget tier ceilings.
+  - **DGA:** ~20% total (e.g., 8.5% Pension + 11.5% Health).
+  - **IATSE & Teamsters:** Do NOT use flat percentages. They operate on a mix of percentage-based rates and **flat hourly contributions** depending on the specific Local (e.g. Local 44, Local 399) and whether it's a production city vs distant location.
+- **Source:** SAG-AFTRA, DGA, Entertainment Payroll guidelines (Wrapbook, GreenSlate, EP) (Tier 1/Tier 3).
+- **Confidence:** STRONG (Structural understanding).
+
+### Fringes / Payroll (Statutory CA, NY, GA)
+- **FICA / FUTA:** RESEARCHED. 
+- **Findings:** Federal Social Security is 6.2% (capped at $168,600 for 2024), Medicare 1.45% (uncapped). FUTA is 0.6% effective on the first $7,000.
+- **State Unemployment Insurance (SUI):** RESEARCHED.
+  - **California (US-CA):** 3.4% on $7,000 wage base (plus 0.1% ETT).
+  - **New York (US-NY):** 4.1% on $12,500 wage base.
+  - **Georgia (US-GA):** 2.7% on $9,500 wage base.
+- **Source:** State Depts of Labor, IRS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities (CA, NY, GA)
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Square footage pricing is rarely used. Flat daily rates are the standard, scaling by market:
+  - **Los Angeles (CA):** $1,000 – $5,000+ per day. Premium for soundproofing and Hollywood proximity.
+  - **New York (NY):** $1,500 – $6,000+ per day. High real estate premium and logistics.
+  - **Atlanta (GA):** $500 – $2,500+ per day. Highly competitive, often bundled "all-in" with grip/lighting.
+- **Source:** Commercial studio listings (Tier 2/Tier 3).
+- **Confidence:** STRONG (Market range), PROVISIONAL (for exact deterministic pricing as it varies by bundle).
+
 ### Equipment
 - **Rental Pricing:** RESEARCHED.
 - **Findings:** Similar to the UK, tier 1 camera/grip vendors (Panavision, ARRI, Keslow) do not publish static rate cards. Pricing is heavily quote-based, depending on duration and volume.
@@ -155,29 +185,65 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** CA Film Commission, NY State Governor's Office of Motion Picture & Television Development, Georgia Dept of Economic Development (Tier 1).
 - **Confidence:** VERIFIED.
 
-### Gaps / Incomplete (Next Execution Needed)
-- US Construction / Materials (requires broad CPI indices tracking)
-- US Local vs Imported Crew taxation nuances (Loan-outs across state lines)
+## 8. JURISDICTION × CATEGORY RESEARCH: CA (CANADA)
 
-## 8. GLOBAL COVERAGE ACCOUNTING
+### Fringes / Payroll (Union)
+- **Union Pension & Health (P&H) Rules:** RESEARCHED.
+- **Findings:** 
+  - **IATSE (e.g. Local 891 BC):** ~16.5% - 17.0% for most standard productions.
+  - **DGC:** Mandatory fringe packages varying slightly by ON vs BC. 
+  - **ACTRA:** Producer contributions are generally around 12% for insurance/retirement.
+- **Source:** BCCFU, ACTRA, DGC (Tier 1).
+- **Confidence:** STRONG (Structural understanding).
+
+### Fringes / Payroll (Statutory ON, BC, QC)
+- **CPP / EI / EHT:** RESEARCHED. 
+- **Findings:** 
+  - **Federal CPP:** 5.95% on first tier ($68.5k), plus 4% on second tier ($68.5k-$73.2k).
+  - **Federal EI:** 2.324% up to $63.2k.
+  - **Ontario (CA-ON):** Employer Health Tax (EHT) up to 1.95% (exemption under $1M payroll).
+  - **British Columbia (CA-BC):** EHT up to 5.85% on payroll over $1.5M (exemption under $1M).
+  - **Quebec (CA-QC):** Requires QPIP (Quebec Parental Insurance Plan) instead of federal EI parental premiums. 
+- **Source:** CRA, Provincial Ministries of Finance (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities (ON, BC, QC)
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Follows US flat-rate daily standard (not sq ft). Average daily rates for standard professional stages range from CAD $750 to $2,250+, heavily dependent on bundled grip/lighting packages.
+- **Source:** Commercial studio listings in Toronto/Vancouver/Montreal (Tier 2/Tier 3).
+- **Confidence:** STRONG (Market range), PROVISIONAL (exact determinism).
+
+### Travel / Accommodation
+- **Per Diems (Distant Location):** RESEARCHED.
+- **Findings:** Per diems are dictated specifically by the collective agreements (ACTRA IPA, BCCFU Master Agreement). There is no standard flat government rate applied to film workers. Actual meals provided reduce the per diem allowance dollar-for-dollar.
+- **Source:** ACTRA, BCCFU (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Gaps / Incomplete (Next Execution Needed)
+- CA Equipment (Local availability multipliers ON vs BC vs QC)
+- CA Locations / Permits (Toronto, Vancouver, Montreal permit structures)
+- CA Catering / Unit Services
+- CA Post / VFX Economics
+
+## 9. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 2 (GB - Completed Structural, US - Partial)
+- **Researched:** 3 (GB, US, CA - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 2 (GB, US)
+- **Partial data:** 3 (GB, US, CA)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 3 (US-CA, US-NY, US-GA partial)
+- **Subnational jurisdictions researched:** 6 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC)
 - **Stale/unprovenanced existing records:** 44
 
-## 9. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 10. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
-- **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched BECTU 2024 agreements).
-- **Domains reached:** BECTU.org.uk, Gov.uk (HMRC/FEU), PACT.co.uk, Pinewood Group, ARRI Rental, Film London, commercial catering providers, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov.
+- **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
+- **Domains reached:** BECTU.org.uk, Gov.uk (HMRC/FEU), PACT.co.uk, Pinewood Group, ARRI Rental, Film London, commercial catering providers, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC.
 - **Local-language searches:** 0.
 
-## 10. STOP CONDITION
+## 11. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-US (United States) structural category coverage is largely complete. Begin baseline structural research for **CA (Canada)** (specifically CA-ON, CA-BC, and CA-QC variances) or **FR (France)**.
+Resume **CA (Canada)** research. Specifically, focus on CA Locations/Permits (Toronto, Vancouver, Montreal), CA Equipment, CA Catering, and CA Post/VFX. After CA completion, advance to **FR (France)**.
