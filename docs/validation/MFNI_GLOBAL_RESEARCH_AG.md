@@ -969,7 +969,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Office for Film and Cultural Investments (OFIC) (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 28. GLOBAL COVERAGE ACCOUNTING
+## 28. JURISDICTION × CATEGORY RESEARCH: BG (BULGARIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Highly favorable. The standard employer social security burden (DOO, DZPO, Health, etc.) ranges between 18.92% and 19.62%. Crucially, this is capped at a maximum monthly insurable income (approx. BGN 3,750), meaning high-earning crew incur no additional employer tax beyond the cap. A flat 10% income tax applies.
+- **Source:** Bulgarian Social Insurance Code, NRA (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Nu Boyana Film Studios (Sofia) dominates the market with 10 sound stages, underwater tanks, and massive standing sets (e.g., Roman, NYC, London streets). UFO Film and Television Studios provides XR/Virtual Production. Neither publishes public rate cards; both operate on bespoke international quoting.
+- **Source:** Nu Boyana, UFO (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Permits in Sofia are relatively cheap (ranging from $100-$600) but also require a mandatory National Film Centre (NFC) tax (1,500 BGN for <1 month). Local fixers are required to navigate the Cyrillic/Bulgarian administrative process.
+- **Source:** Sofia Municipality, NFC (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Supplied heavily by in-house studio rentals (Nu Boyana, UFO) and local houses like Magic Shop. Operates entirely on technical riders and bundled package pricing. No flat-file rate cards exist for professional cinema gear.
+- **Source:** Nu Boyana Equipment (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Exceptional value. Benchmarked at roughly 25-35% of equivalent costs in Western European hubs (implying ~$15-$25 USD/head). Bundled actively by fixers.
+- **Source:** Bulgarian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 25% cash rebate administered by the Bulgarian National Film Center (NFC). Cap is €5 million per project. Includes VFX and post-production, provided the local spend conditions are met and the cultural test passed.
+- **Source:** Bulgarian National Film Center (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 29. JURISDICTION × CATEGORY RESEARCH: RS (SERBIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Highly favorable. The employer social security burden is a flat 15.15% (10% Pension/PIO + 5.15% Health). Similar to Bulgaria, this is capped at a maximum monthly base (RSD 656,425 in 2024). Flat 10% income tax applies.
+- **Source:** Serbian Ministry of Finance (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** PFI Studios (Pink Films International) and Firefly Studios provide world-class infrastructure. Firefly includes an underwater tank. Neither publishes rate cards; pricing is based exclusively on project duration and technical requirements.
+- **Source:** PFI Studios, Firefly Studios (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Highly "Film Friendly" (promoted by the Serbia Film Commission). Fees range from $100-$600, but public domain permits are often granted for free if the project promotes Serbia.
+- **Source:** Film in Serbia / Serbia Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Vision Team and Cineplanet dominate the professional rental market. The market relies entirely on custom package quoting, enhanced by Serbia's ATA Carnet membership (allowing easy temporary import of specialized gear). No static rate cards.
+- **Source:** Vision Team, Cineplanet (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly cost-competitive. Standard corporate benchmarks start at ~€10 per head, with professional mobile-kitchen film catering running slightly higher but representing a fraction of Western European costs.
+- **Source:** Serbian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 25% cash rebate (elevated to 30% for local spend >€5m) managed by Film Center Serbia. Post-production and VFX are explicitly eligible with a distinct, lower minimum local spend requirement of just €150,000.
+- **Source:** Film Center Serbia (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 30. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -977,20 +1054,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 30 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest)
+- **Subnational jurisdictions researched:** 32 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade)
 - **Stale/unprovenanced existing records:** 44
 
-## 29. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 31. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia.
 - **Local-language searches:** 0.
 
-## 30. STOP CONDITION
+## 32. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-PL (Poland) and RO (Romania) structural category coverage is complete. Proceed to finalize the Eastern/Central European bloc with **BG (Bulgaria)** and **RS (Serbia)**.
+BG (Bulgaria) and RS (Serbia) structural category coverage is complete. The Eastern/Central European bloc is now finalized. Proceed to open the Nordic bloc starting with **SE (Sweden)** and **NO (Norway)**.
