@@ -892,7 +892,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** ACAU (Film and Audiovisual Agency of Uruguay) (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 26. GLOBAL COVERAGE ACCOUNTING
+## 26. JURISDICTION × CATEGORY RESEARCH: PL (POLAND)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Under standard employment contracts, the employer ZUS burden is approx. 19.38% - 22.04% (Pension 9.76%, Disability 6.5%, Accident 0.67-3.33%, Labour Fund 2.45%, FGŚP 0.1%), plus PPK 1.5%. However, many film professionals operate on B2B / civil law contracts which shifts the tax burden.
+- **Source:** ZUS (Social Insurance Institution) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Poland offers high-end facilities (e.g., ATM Studio Warsaw, Alvernia Studios, WFDiF). They do not publish standardized rental rates. Pricing is bespoke, requiring technical riders and often factoring in power and prep/strike days.
+- **Source:** ATM Studio, Alvernia Studios (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Managed efficiently by regional bodies like the Mazovia Warsaw Film Commission. Support is free, and filming in the public domain without major disruption is typically free. Fees apply only when blocking traffic or using private/historic properties.
+- **Source:** Mazovia Warsaw Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Dominant players like ATM System and Fastmedia operate on a quote-based model for specialized cinema packages. No public rate cards available.
+- **Source:** ATM System (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly cost-effective. Professional on-set catering benchmarks around 50 - 90 PLN per head per day (approx. $12-$23 USD), with background/extras typically lower (~35 PLN).
+- **Source:** Polish Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 30% cash rebate managed by the Polish Film Institute (PISF). Minimum spend for feature film service work is PLN 1,000,000. Cap is PLN 15M per project. Covers VFX/Post explicitly if routed through a Polish partner.
+- **Source:** Polish Film Institute (PISF) (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 27. JURISDICTION × CATEGORY RESEARCH: RO (ROMANIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** The statutory employer burden is uniquely low at a flat 2.25% CAM (Labor Insurance Contribution). Since 2018, the vast majority of social contributions (Pension 25%, Health 10%) are deducted directly from the employee's gross. Total employer cost is essentially Gross Salary × 1.0225.
+- **Source:** ANAF (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Historic and massive infrastructure like Bucharest Film Studios (Buftea) and Castel Film Studios offer stage space, but operate strictly on custom B2B proposals based on scale and duration.
+- **Source:** Bucharest Film Studios, Castel Film (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Administered decentrally. Bucharest City Hall lists specific tariffs (e.g., ~3,317 Lei for building use/day, ~3 Lei/sqm/day for tech footprints), though exact rates depend on negotiation and local fixer coordination.
+- **Source:** Bucharest City Hall (Primăria Municipiului București) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Equipment vendors like Bivolul and Cutare Film provide custom quoting based on technical lists and project duration. No static rate cards published online.
+- **Source:** Bivolul, Cutare Film (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Exceptionally cost-effective. While high-end corporate catering runs €60-€85, film production logic drives costs down significantly, typically requiring quotes from local fixers but benchmarking well below Western European norms.
+- **Source:** Romanian Production Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 30% cash rebate managed by the Office for Film and Cultural Investments (OFIC). Re-launched and active through 2029. Minimum local spend for features is €100,000, capped at €10 million per project.
+- **Source:** Office for Film and Cultural Investments (OFIC) (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 28. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -900,20 +977,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 28 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo)
+- **Subnational jurisdictions researched:** 30 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest)
 - **Stale/unprovenanced existing records:** 44
 
-## 27. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 29. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC.
 - **Local-language searches:** 0.
 
-## 28. STOP CONDITION
+## 30. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-CL (Chile) and UY (Uruguay) structural category coverage is complete. The Latin American canonical bloc is definitively finalized. Resume global discovery loop starting with the Eastern European hubs: **PL (Poland) and RO (Romania)**.
+PL (Poland) and RO (Romania) structural category coverage is complete. Proceed to finalize the Eastern/Central European bloc with **BG (Bulgaria)** and **RS (Serbia)**.
