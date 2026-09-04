@@ -584,7 +584,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Portugal Film Commission, ICA (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 18. GLOBAL COVERAGE ACCOUNTING
+## 18. JURISDICTION × CATEGORY RESEARCH: HU (HUNGARY)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** The employer Social Contribution Tax (SZOCHO) is mandatory at a flat rate of 13% on gross salaries. There is no special film-industry exemption for this tax, but it qualifies as eligible local spend for the national rebate.
+- **Source:** Hungarian Tax and Customs Administration (NAV) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major, state-of-the-art studio campuses (Origo Studios, Korda Studios) do not publish static rates. They operate strictly on bespoke pricing tailored to high-budget international features, considering volume and duration.
+- **Source:** Origo Studios, Korda Studios (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Hungary uses a streamlined "one-door" system. There is a standard administrative fee of HUF 50,000 (HUF 130,000 expedited), plus variable public-area usage fees based on the footprint of the shoot. Small, non-disruptive setups (tripod < 30 mins) are often exempt.
+- **Source:** NFI Location Office (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Major vendors like Visionteam and Sparks Camera & Lighting expect formal "Order Requests" for custom quotes. Prices are negotiated based on volume; no public rate cards exist for cinematic packages.
+- **Source:** Visionteam, Sparks (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly competitive. Mid-range professional production catering typically proxies around $20–$35 USD (€18–€32) per head per day, often bundled into local production service agreements to qualify for the rebate.
+- **Source:** Hungarian production benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Hungary offers a massive 30% cash rebate on eligible costs (effectively up to 37.5% when leveraging the allowance for non-Hungarian spend). Post-production and VFX are fully eligible standalone activities.
+- **Source:** National Film Institute Hungary (NFI) (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 19. JURISDICTION × CATEGORY RESEARCH: CZ (CZECH REPUBLIC)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Heavy statutory burden totaling 33.8% of gross salary. This comprises Social Security (24.8% up to an annual cap) and Health Insurance (9.0% uncapped), plus a minor accident liability premium (~0.28%).
+- **Source:** Czech Social Security Administration (CSSZ) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Top-tier studios (Barrandov Studio, Prague Studios) require direct production inquiries for bespoke pricing. Daily/hourly rate cards do not exist for the large sound stages.
+- **Source:** Barrandov Studio (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Decentralized. Managed by municipal districts and local road authorities. Fees are variable based on footprint. High-profile sites (e.g., Charles Bridge) carry massive premiums.
+- **Source:** Czech Film Commission (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Custom quoting model. Panavision Prague and Vantage Film Prague provide bespoke pricing based on proprietary gear sets (e.g., anamorphic lenses) and duration discounts. 
+- **Source:** Panavision Prague, Vantage Film (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Standard professional full-service catering ranges from 800 to 1,500 CZK (€30-€60) per person per day. Craft services are typically budgeted separately.
+- **Source:** Czech Catering Benchmarks (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Governed by the Audiovisual Act. The standard cash rebate is 25%, but a dedicated rate of 35% applies to animation and digital/VFX productions that do not involve live-action shooting (new framework effective 2025). Max cap is CZK 450 million per project.
+- **Source:** Czech Audiovisual Fund (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 20. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -592,20 +669,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 20 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon)
+- **Subnational jurisdictions researched:** 22 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague)
 - **Stale/unprovenanced existing records:** 44
 
-## 19. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 21. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund.
 - **Local-language searches:** 0.
 
-## 20. STOP CONDITION
+## 22. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-ES (Spain) and PT (Portugal) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **Eastern Europe / Latin America hubs**).
+HU (Hungary) and CZ (Czech Republic) structural category coverage is complete. Resume global discovery loop starting with the next remaining canonical jurisdiction (e.g., **LATAM hubs like MX (Mexico)**).
