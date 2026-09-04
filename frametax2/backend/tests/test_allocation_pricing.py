@@ -159,13 +159,21 @@ def test_component_route_below_minimum_spend_blocks_honestly():
     # Greece's rebate has a minimum-spend condition the routed component
     # spend (~$61.6k) cannot meet — the structure must be excluded from
     # ranking with that exact blocker, never priced at a guessed rate.
+    #
+    # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: the
+    # mandatory-eligibility gate (canonical_requirements_gate_bridge) now
+    # blocks this BEFORE rate resolution is even attempted (see
+    # allocation_pricing.py's requirements_gate.failed check) -- a more
+    # direct, more informative failure than the old "rate did not resolve"
+    # path this test used to observe. The underlying invariant this test
+    # protects (not fully priced, no NPC) is unchanged.
     pricing = _price(_spec(
         "P-COMP-GR", "component_relocation", ("MU", "GR"),
         {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
         component_routes={c: "GR" for c in MOVABLE_COMPONENTS},
     ))
     assert not pricing.is_fully_priced
-    assert any("did not resolve" in b for b in pricing.blockers)
+    assert any("minimum-spend" in b.lower() for b in pricing.blockers)
     assert pricing.npc_verified_usd is None
 
 

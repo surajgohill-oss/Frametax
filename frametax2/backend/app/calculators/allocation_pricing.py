@@ -482,20 +482,61 @@ def price_segment(
         gross_budget_usd=gross_budget_usd,
         evidenced_facts=evidenced_requirement_facts,
     )
-    # DISCLOSURE, NOT A BLOCK -- deliberately, with evidence. Enabling the
-    # block half of this gate (see canonical_requirements_gate_bridge) moves
-    # Little Utopia's ACCEPTED baseline NPC and breaks 36 tests, because
-    # min_local_spend_usd would then be adjudicated against each SEGMENT's
-    # allocated amount: a component/split routing $172,904 of post into a
-    # program with a $1,000,000 local-spend floor fails it, and so does LU's
-    # own baseline. Whether a statutory minimum-local-spend is scoped to a
-    # segment or to the production's whole spend in that jurisdiction is a
-    # product/economic doctrine decision that the approved rules do not
-    # settle, and cluster 10 forbids breaking existing correct behavior to
-    # guess it. What the doctrine actually forbids -- a missing mandatory
-    # fact being SILENTLY treated as satisfied -- is fully delivered: every
-    # requirement is emitted below with its adjudicated state and reason and
-    # carried onto the served segment. See the final report's cluster 2 entry.
+    # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1:
+    # Codex's four-project audit proved this WAS a real, live defect --
+    # 26 component structures served PRICED with non-null incentive/NPC
+    # while their own requirement_trace already said minimum-spend
+    # FAILED. "A failed mandatory gate cannot coexist with PRICED" (the
+    # audit's own words) is correct doctrine; disclosure-only was not
+    # acceptance-safe. The scope question this comment used to defer on
+    # (segment vs whole-production spend) is real, but it is NOT a
+    # reason to leave a genuinely FAILED gate silently ignored -- a
+    # missing/unresolved fact already correctly stays UNKNOWN (disclosed,
+    # never blocking) via the SAME bridge; only a requirement the engine
+    # could actually COMPUTE and that came back FAILED gates here. Runtime-
+    # verified before enabling this (not assumed from the old comment):
+    # Little Utopia's own accepted baseline (single_country, MU,
+    # mu_edb_incentive, segment_allocated_usd=$1,979,731) clears its
+    # $1,000,000 min_local_spend_usd floor by a wide margin and is
+    # unaffected -- the SegmentEconomics shape/pattern mirrors Cluster 5's
+    # existing narrower_base_conditions block immediately below (same
+    # file, same function, same disclosure-not-fabrication convention),
+    # so this is the SAME rule extended to a second real gate, not a new
+    # architecture.
+    if requirements_gate.failed:
+        # Human-readable requirement names -- "minimum-spend"/"minimum-
+        # budget" read naturally where the underlying computable-
+        # eligibility keys are min_local_spend_usd/min_total_budget_usd;
+        # any other future computable requirement falls back to its own
+        # raw key rather than guessing a label.
+        _LABELS = {"min_local_spend_usd": "minimum-spend", "min_total_budget_usd": "minimum-budget"}
+        failed_ids = "; ".join(
+            f"{_LABELS.get(e.requirement, e.requirement)} requirement: {e.detail}"
+            for e in requirements_gate.failed
+        )
+        return SegmentEconomics(
+            jurisdiction_code=jurisdiction_code, program_slug=slug,
+            claims_incentive=True, allocated_usd=allocated,
+            account_codes=codes, executable=False,
+            qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+            doctrine=doctrine.value,
+            qpe_cap_applied_usd=qpe_cap_applied,
+            rate_ceiling=rr.modeled_rate if rr is not None else None,
+            statutory_basis=rr.basis if rr is not None else None,
+            blockers=(
+                f"{jurisdiction_code}/{slug}: mandatory eligibility requirement "
+                f"FAILED against this segment's own allocated spend [{failed_ids}]. "
+                "A genuinely failed mandatory gate cannot coexist with a priced "
+                "incentive -- segment is allocated and disclosed but carries NO "
+                "deterministic incentive value.",
+            ),
+        )
+    # DISCLOSURE, NOT A BLOCK, for every other requirement state (UNKNOWN/
+    # NOT_APPLICABLE/ADMINISTRATIVE/INFORMATIONAL). What the doctrine
+    # forbids is a missing mandatory fact being SILENTLY treated as
+    # satisfied -- delivered: every requirement is emitted below with its
+    # adjudicated state and reason and carried onto the served segment.
+    # See the final report's cluster 2 entry.
 
     # ── Cluster 5: a program-specific qualifying base is not all-spend ───
     # Some programs price a NARROWER base than the QPE register this engine

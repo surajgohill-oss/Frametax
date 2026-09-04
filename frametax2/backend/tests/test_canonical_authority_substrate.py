@@ -654,9 +654,21 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # way Manitoba's slot was vacated for Italy above -- net: entries
     # 361 -> 365 (+13 new, -9 displaced); priced 315 -> 320 (+13, -8);
     # unpriced 46 -> 45 (-1, no new unpriced entries added).
-    assert len(entries) == 365
-    assert len(priced) == 320
-    assert len(unpriced) == 45  # 31-zero-rate-program repair: jo/uy price, ph_fdcp_flip already did (see comment above)
+    # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1:
+    # entries 365 -> 356, priced 320 -> 311 -- mandatory eligibility
+    # (canonical_requirements_gate_bridge) is now enforced in
+    # allocation_pricing.price_segment. 9 component candidates whose own
+    # minimum-spend requirement genuinely FAILED (Codex's four-project
+    # audit named exactly 9 for FVD) are no longer persisted as PRICED --
+    # they hit the SAME pre-existing "not fully priced -> never
+    # persisted" component_relocation path (canonical_evaluation.py's
+    # `if not pricing.is_fully_priced: continue`) every other pricing
+    # failure already used; unpriced (structures actually persisted with
+    # a disclosed non-priced status) is unaffected because these 9 were
+    # never persisted at all, matching that existing convention.
+    assert len(entries) == 356
+    assert len(priced) == 311
+    assert len(unpriced) == 45  # unaffected -- the 9 newly-blocked candidates were never persisted (see comment above), not reclassified into this bucket
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):

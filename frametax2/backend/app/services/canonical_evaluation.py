@@ -2868,6 +2868,24 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         "only input a set-membership check can be given without inventing "
                         "evidence — but that assumption is unconfirmed, not verified."
                     )
+                # Canonical optimizer/Globe wiring remediation (2026-09-04),
+                # P0-4 (second half): the audit found component candidates
+                # lose the administrative/discretionary-allocation
+                # disclosure entirely -- _competitive_allocation_disclosure
+                # was already called for full_relocation and stacked/
+                # member programs (see the other two call sites in this
+                # file) but never for a component route's own claimed
+                # programs. Same generic function, same generic call
+                # pattern, no jurisdiction-specific check -- either the
+                # home or the routed target program can independently
+                # carry a real discretionary/preapproval/competitive-
+                # allocation doctrine fact.
+                for _component_program_slug in (home_program_slug, target.program_slug):
+                    if not _component_program_slug:
+                        continue
+                    _component_disclosure = _competitive_allocation_disclosure(_component_program_slug)
+                    if _component_disclosure and _component_disclosure not in _component_warnings:
+                        _component_warnings.append(_component_disclosure)
                 session.add(StructureCalculationResult(
                     id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
                     total_budget_usd=inputs.gross_budget_usd,

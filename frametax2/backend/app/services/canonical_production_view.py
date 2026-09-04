@@ -236,12 +236,78 @@ def _empty_structure_entry(
     if trace.get("conditional_programs"):
         relationship_types.append("conditional_fund")
 
+    # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-3:
+    # `participants` used to be hardcoded to the primary jurisdiction
+    # alone -- confirmed by the Codex four-project audit as a defect
+    # affecting all 836 component/treaty structures (740 component + 96
+    # treaty), collapsing e.g. "Greece + Romania" to bare "Greece" at
+    # this exact API boundary and corrupting every downstream consumer
+    # (title/flags, selection, Globe, Inspector, Reports). Fixed
+    # generically from the SAME real persisted trace data every other
+    # field on this entry already reads -- never parsed from the
+    # free-text label, never derived in the frontend (which cannot see
+    # data this API boundary already dropped):
+    #   - segments[].jurisdiction_code: the real per-jurisdiction
+    #     allocation for single/full_relocation/component_relocation
+    #     structures (a component's routed destination is its own real
+    #     segment).
+    #   - coproduction_partners[].jurisdiction_code: the real treaty
+    #     partner for treaty_coproduction opportunities (which persist
+    #     jurisdiction_allocations=[] at generation time and so have no
+    #     segments to read).
+    # Order preserved (primary first), deduplicated, never fabricated --
+    # a structure with no additional real jurisdiction on file still
+    # participates as [primary] alone, exactly as before.
+    # coproduction_partners carries THREE distinct real shapes (see
+    # canonical_evaluation.py's treaty-opportunity generation and its
+    # own "LU Co-Pro Opportunity Trace" history comment):
+    #   - multilateral (treaty_slug is a real multilateral MECHANISM
+    #     identity -- "eurimages" / "european-convention-coproduction",
+    #     never a jurisdiction code): home_code is always a genuine
+    #     member/party ("{home_code} is a Eurimages member"), alongside
+    #     however many other discovered member candidates are shown.
+    #   - bilateral, ONE partner entry: home_code IS the other real
+    #     treaty party ("{home_code} + {partner_code}" opportunities).
+    #   - bilateral, TWO partner entries: the treaty is between two
+    #     OTHER candidate jurisdictions and home_code (served here only
+    #     as production context) is explicitly NOT a party ("neither of
+    #     which is {home_code}" -- the trace's own warning text).
+    # The distinguishing signal is the treaty MECHANISM (multilateral
+    # slug) and partner-list cardinality -- both real, structural facts
+    # about the treaty record itself, never a hardcoded jurisdiction
+    # comparison.
+    _coprod_partners = trace.get("coproduction_partners") or []
+    _MULTILATERAL_TREATY_SLUGS = {"eurimages", "european-convention-coproduction"}
+    _home_is_party = (
+        trace.get("treaty_slug") in _MULTILATERAL_TREATY_SLUGS
+        or len(_coprod_partners) < 2
+    )
+    _participant_codes = [code] if (code and _home_is_party) else []
+    # Scoped to component_relocation only: the audit confirmed single_
+    # country/full_relocation's existing bare-primary participants
+    # ("already correct — do not reopen") -- their segments can carry a
+    # real but INCIDENTAL account allocated outside the primary
+    # jurisdiction (e.g. a few post-production accounts genuinely
+    # incurred abroad, claiming no incentive there) that is not this
+    # structure's OWN identity the way a component's routed destination
+    # is. Only a component_relocation structure's routed segment is the
+    # structure's defining second territory.
+    if structure_type == "component_relocation":
+        for _seg in trace.get("segments") or []:
+            _c = _seg.get("jurisdiction_code")
+            if _c and _c not in _participant_codes:
+                _participant_codes.append(_c)
+    for _partner in _coprod_partners:
+        _c = _partner.get("jurisdiction_code")
+        if _c and _c not in _participant_codes:
+            _participant_codes.append(_c)
+
     return {
         "structure_id": str(structure.id),
         "structure_type": structure_type,
         "label": _humanize_structure_label(structure.name, jurisdiction_name_by_code),
         "primary_jurisdiction": code,
-        "participants": [code] if code else [],
+        "participants": _participant_codes,
         "relationship_types": relationship_types,
         # Existing Optimizer/Stacker Reconnection, Task 7 — read straight
         # off calculation_trace_json's conditional_programs/

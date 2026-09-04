@@ -175,7 +175,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # now carry NON_GUARANTEED_SELECTIVE and are disclosed rather than
     # priced. Nothing was dropped: priced 91 -> 86, unpriceable 65 -> 70,
     # total unchanged.
-    assert len(priced) == 320  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: jo/uy price + full component routing (see test_canonical_authority_substrate.py)
+    assert len(priced) == 311  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311 -- mandatory eligibility (canonical_requirements_gate_bridge) is now enforced in allocation_pricing.price_segment (a genuinely FAILED computable requirement, e.g. minimum local spend, blocks PRICED instead of being disclosure-only); the 9 component candidates that failed real minimum-spend gates were never persisted at all, matching the SAME existing "not fully priced -> never persisted, disclosed as a class not per-instance" component_relocation convention every other pricing failure already used (see canonical_evaluation.py's `if not pricing.is_fully_priced: continue`). Verified against Codex's four-project audit, which named exactly 9 FVD structures as PRICED-despite-FAILED.
     assert len(unpriced) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: net -1 displaced (see test_canonical_authority_substrate.py)
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
@@ -185,7 +185,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 320  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors priced count above
+    assert accounting["review_required_count"] == 311  # P0-1 mandatory eligibility fix -- mirrors priced count above
     assert accounting["unpriceable_count"] == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors unpriced count above
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
@@ -208,7 +208,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 320  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors priced count above
+    assert len(review_ranked) == 311  # P0-1 mandatory eligibility fix -- mirrors priced count above
     assert len(unpriceable_ranked) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors unpriced count above
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
