@@ -162,3 +162,6 @@ US-RI (Rhode Island),Standard US + RI SUI + TDI,BLOCKED (Quote-dependent),RI Fil
 SE-VG (Västra Götaland),Standard Swedish,BLOCKED (Quote-dependent),Film i Väst,BLOCKED (Quote-dependent),500-700 SEK/head,Discretionary Regional Equity
 GB-NIR (Northern Ireland),Standard UK (NIC),BLOCKED (Quote-dependent),Northern Ireland Screen,BLOCKED (Quote-dependent),£30-£50 GBP/head,Discretionary Regional Grant
 DE-MDM (Mitteldeutschland),Standard German,BLOCKED (Quote-dependent),MDM,BLOCKED (Quote-dependent),€35-€55 EUR/head,Discretionary Regional Grant
+IT-APU (Apulia),Standard Italian (INPS/INAIL),BLOCKED (Quote-dependent),Apulia Film Commission,BLOCKED (Quote-dependent),€30-€45 EUR/head,Discretionary Regional Grant
+IT-PIE (Piedmont),Standard Italian (INPS/INAIL),BLOCKED (Quote-dependent),Film Commission Torino Piemonte,BLOCKED (Quote-dependent),€35-€50 EUR/head,Discretionary Regional Grant
+ES-EUS (Basque Country),Standard Spanish,BLOCKED (Quote-dependent),Bilbao Bizkaia Film Commission,BLOCKED (Quote-dependent),€40-€60 EUR/head,35-70% Foral Tax Credit
