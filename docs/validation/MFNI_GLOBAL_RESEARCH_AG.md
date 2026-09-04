@@ -1123,7 +1123,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Norwegian Film Institute (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 32. GLOBAL COVERAGE ACCOUNTING
+## 32. JURISDICTION × CATEGORY RESEARCH: DK (DENMARK)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Highly unique. Denmark has virtually 0% percentage-based statutory social security. Employers pay nominal flat fees (e.g., ATP is DKK 198/month). However, mandatory Holiday Pay (Feriepenge) is 12.5%, and collective bargaining agreements (CBAs) frequently add 9.5%+ in pension/insurance. Therefore, the total fringe is often budgeted at roughly 22%-25% of gross wages.
+- **Source:** Virk.dk, Danish Tax Agency (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** No published flat rate cards. Major stages include FilmGEAR (Risby Studierne) and Filmstationen (Værløse). Rentals operate exclusively on project-by-project bespoke quotes.
+- **Source:** FilmGEAR, Filmstationen (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Highly accessible. Filming in public spaces in Copenhagen is generally free unless it involves physical obstruction (rigs, tracks, road closures). Certain private/specialized locations (e.g., cemeteries) have specific hourly administrative fees.
+- **Source:** City of Copenhagen (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Dominated by FilmGEAR, Trust Rental, Only Rental, and Kamera Rental. No static rate cards exist; pricing relies on bespoke packages (camera + lighting + grip) quoting.
+- **Source:** FilmGEAR, Kamera Rental (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** High cost environment. Professional full-day service (breakfast, lunch, craft) is benchmarked around DKK 600 - 800+ per person daily (~$85 - $115+ USD).
+- **Source:** Danish Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Historically lacking a federal tax incentive, but a new 25% national production incentive scheme came into force on January 1, 2026. Administered by the Danish Film Institute (DFI). Post/VFX costs are eligible if incurred locally as part of a qualifying project.
+- **Source:** Danish Film Institute / DFI (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 33. JURISDICTION × CATEGORY RESEARCH: FI (FINLAND)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Moderate burden. The core component is Earnings-Related Pension (TyEL) at ~17.34%. Health insurance is 1.87%, and Unemployment is ~0.20%-0.80%. Accident insurance adds a minor variable cost. Total statutory employer burden hovers around 20%-21%.
+- **Source:** Finnish Tax Administration / Vero, Eläketurvakeskus (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Facilities like Valofirma (The Light House) and Kinos Rentals provide professional spaces. All operate on a bespoke quote-based model rather than static public rate cards.
+- **Source:** Valofirma, Kinos Rentals (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Governed by "Everyman's Right" – public domain filming is generally free and permit-free unless it requires road closures or traffic disruption. When required, administrative fees range from €50 to €500. Port of Helsinki charges a specific €443/hour.
+- **Source:** Film in Finland, Port of Helsinki (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** The market is supplied by Valofirma (lighting/grip/camera) and Kinos Rentals. Quotes are customized via online shopping carts and direct sales, with weekly rates generally billed at 4x the daily rate.
+- **Source:** Valofirma, Kinos Rentals (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Unique model. Catering costs the production roughly €15 to €19 per head daily for basic service, but Finnish industry standard often sees €8-€12 of that deducted back from the employee's wage. Fully subsidized craft services (breakfast/snacks) run higher.
+- **Source:** Finnish Production Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 25% cash rebate via Business Finland (can be stacked with regional funds up to 40%). Post-production and VFX are fully eligible. Minimum local spend is €350,000 for most projects.
+- **Source:** Business Finland (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 34. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -1131,20 +1208,20 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 34 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo)
+- **Subnational jurisdictions researched:** 36 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki)
 - **Stale/unprovenanced existing records:** 44
 
-## 33. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 35. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland.
 - **Local-language searches:** 0.
 
-## 34. STOP CONDITION
+## 36. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:**
-SE (Sweden) and NO (Norway) structural category coverage is complete. The Nordic bloc is now open. Proceed to finalize the Nordics by executing **DK (Denmark)** and **FI (Finland)** next.
+DK (Denmark) and FI (Finland) structural category coverage is complete. The Nordic bloc is now fully finalized. Proceed to open the Middle East & Mediterranean bloc, starting with **GR (Greece)** and **MT (Malta)** next.
