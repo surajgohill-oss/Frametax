@@ -252,25 +252,65 @@ E — RESEARCH BLOCKED / INCOMPLETE
 ### Gaps / Incomplete (Next Execution Needed)
 - None for CA structural categories (requires dynamic pricing engine input).
 
-## 9. GLOBAL COVERAGE ACCOUNTING
+## 9. JURISDICTION × CATEGORY RESEARCH: FR (FRANCE)
+
+### Fringes / Payroll (Statutory & Union)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** France operates a highly centralized and regulated social contribution model. Employer fringes typically range from **35% to 45%** of gross salary. This covers:
+  - **URSSAF:** General social security (health, family, pension).
+  - **Audiens:** Specialized social protection for the culture/audiovisual sector (complementary retirement/health).
+  - **Congés Spectacles:** Mandatory paid leave fund specific to intermittent workers (*intermittents du spectacle*).
+- **Source:** URSSAF, Audiens (Tier 1).
+- **Confidence:** STRONG (Structural understanding).
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major French facilities (e.g., Les Studios de Bry, Studios de Paris) do not publish static rate cards. Pricing is strictly quote-based, depending on duration, stage specifications, and bundled workshops/offices.
+- **Source:** Film France / Film Paris Region, Studios de Bry (Tier 1/Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** In Paris, administrative processing of filming permits by *Mission Cinéma* is generally free. However, occupation of the public domain (parking tech vehicles, blocking streets) requires municipal fees (*redevances*). Filming at iconic landmarks requires direct commercial negotiation and carries significant fees.
+- **Source:** Paris Film (AGATE portal) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** France relies on specialized mobile canteens (*cantine cinéma*). There is no fixed daily rate per head; pricing is strictly custom-quoted based on crew size and service scope (courtesy breakfast + hot lunch).
+- **Source:** French production catering commercial guidelines (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** France offers the Tax Rebate for International Productions (TRIP / *Crédit d'impôt international*). The base rebate is 30% of qualifying French expenditures. 
+  - **VFX Bonus:** The rate escalates to **40%** if VFX-related eligible expenses exceed €2 million. Critically, once this threshold is met, the 40% applies to the *entire* eligible French spend, not just the VFX portion. (Capped at €30 million per project).
+- **Source:** CNC, Film France (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Gaps / Incomplete (Next Execution Needed)
+- FR Local vs Imported Crew (Foreign talent withholding tax under TRIP)
+- FR Equipment Pricing mechanics
+
+## 10. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 3 (GB, US, CA - Completed Structural)
+- **Researched:** 4 (GB, US, CA - Completed, FR - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 3 (GB, US, CA)
+- **Partial data:** 4 (GB, US, CA, FR)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
 - **Subnational jurisdictions researched:** 6 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC - completed structural)
 - **Stale/unprovenanced existing records:** 44
 
-## 10. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 11. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film.
 - **Local-language searches:** 0.
 
-## 11. STOP CONDITION
+## 12. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-CA (Canada) structural category coverage is complete. Begin baseline structural research for **FR (France)**, focusing on French statutory fringes (URSSAF, Audiens), Stage Pricing (e.g. Bry-sur-Marne), and French VFX mechanisms.
+Resume **FR (France)** research. Specifically, determine French Local vs Imported Crew withholding nuances under TRIP, and establish structural proxies for FR Equipment. After FR, advance to **DE (Germany)**.
