@@ -153,3 +153,6 @@ US-MS (Mississippi),Standard US + MS SUI,BLOCKED (Quote-dependent),Film Mississi
 US-AZ (Arizona),Standard US + AZ SUI,BLOCKED (Quote-dependent),AZ Commerce Authority,BLOCKED (Quote-dependent),$35-$55 USD/head,15-27.5% Tax Credit
 US-PR (Puerto Rico),US Fed + PR Local Taxes,BLOCKED (Quote-dependent),PR Film Commission,BLOCKED (Quote-dependent),$45-$65 USD/head,40-60%+ Tax Credit
 CA-SK (Saskatchewan),Standard CAN (CPP/EI/WCB),BLOCKED (Quote-dependent),Creative Saskatchewan,BLOCKED (Quote-dependent),$40-$60 CAD/head,25-45% Grant (FFTV)
+CA-NL (Newfoundland/Labrador),Standard CAN (CPP/EI/WHSCC),BLOCKED (Quote-dependent),PictureNL,BLOCKED (Quote-dependent),$45-$65 CAD/head,40% Tax Credit
+US-LA (Louisiana),Standard US + LA SUI,BLOCKED (Quote-dependent),Louisiana Entertainment,BLOCKED (Quote-dependent),$45-$70 USD/head,25-40% Tax Credit
+US-NM (New Mexico),Standard US + NM SUI + GRT,BLOCKED (Quote-dependent),New Mexico Film Office,BLOCKED (Quote-dependent),$45-$70 USD/head,25-40% Tax Credit
