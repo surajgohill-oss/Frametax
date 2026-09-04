@@ -156,3 +156,6 @@ CA-SK (Saskatchewan),Standard CAN (CPP/EI/WCB),BLOCKED (Quote-dependent),Creativ
 CA-NL (Newfoundland/Labrador),Standard CAN (CPP/EI/WHSCC),BLOCKED (Quote-dependent),PictureNL,BLOCKED (Quote-dependent),$45-$65 CAD/head,40% Tax Credit
 US-LA (Louisiana),Standard US + LA SUI,BLOCKED (Quote-dependent),Louisiana Entertainment,BLOCKED (Quote-dependent),$45-$70 USD/head,25-40% Tax Credit
 US-NM (New Mexico),Standard US + NM SUI + GRT,BLOCKED (Quote-dependent),New Mexico Film Office,BLOCKED (Quote-dependent),$45-$70 USD/head,25-40% Tax Credit
+US-NV (Nevada),Standard US + NV SUI,BLOCKED (Quote-dependent),Nevada Film Office,BLOCKED (Quote-dependent),$45-$70 USD/head,15-25% Tax Credit
+US-RI (Rhode Island),Standard US + RI SUI + TDI,BLOCKED (Quote-dependent),RI Film & Television Office,BLOCKED (Quote-dependent),$45-$65 USD/head,30% Tax Credit
+"DE-NW (NRW, Germany)",Standard German,BLOCKED (Quote-dependent),Film und Medienstiftung NRW,BLOCKED (Quote-dependent),€35-€55 EUR/head,Discretionary Regional Grant
