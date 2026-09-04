@@ -159,3 +159,6 @@ US-NM (New Mexico),Standard US + NM SUI + GRT,BLOCKED (Quote-dependent),New Mexi
 US-NV (Nevada),Standard US + NV SUI,BLOCKED (Quote-dependent),Nevada Film Office,BLOCKED (Quote-dependent),$45-$70 USD/head,15-25% Tax Credit
 US-RI (Rhode Island),Standard US + RI SUI + TDI,BLOCKED (Quote-dependent),RI Film & Television Office,BLOCKED (Quote-dependent),$45-$65 USD/head,30% Tax Credit
 "DE-NW (NRW, Germany)",Standard German,BLOCKED (Quote-dependent),Film und Medienstiftung NRW,BLOCKED (Quote-dependent),€35-€55 EUR/head,Discretionary Regional Grant
+SE-VG (Västra Götaland),Standard Swedish,BLOCKED (Quote-dependent),Film i Väst,BLOCKED (Quote-dependent),500-700 SEK/head,Discretionary Regional Equity
+GB-NIR (Northern Ireland),Standard UK (NIC),BLOCKED (Quote-dependent),Northern Ireland Screen,BLOCKED (Quote-dependent),£30-£50 GBP/head,Discretionary Regional Grant
+DE-MDM (Mitteldeutschland),Standard German,BLOCKED (Quote-dependent),MDM,BLOCKED (Quote-dependent),€35-€55 EUR/head,Discretionary Regional Grant
