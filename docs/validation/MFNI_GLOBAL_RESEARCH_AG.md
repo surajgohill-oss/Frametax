@@ -1932,7 +1932,123 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** Netherlands Film Fund (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 53. GLOBAL COVERAGE ACCOUNTING
+## 53. JURISDICTION × CATEGORY RESEARCH: AT (AUSTRIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Total employer social security burden is ~21% to 22.5%. Capped at €6,060/month. Mandatory 13th and 14th salaries exist. "Loaded" multiplier is typically 1.30x.
+- **Source:** General Social Insurance Act (ASVG) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Limited specialized soundstages (e.g., Lambert Hofer). Highly quote-dependent.
+- **Source:** Austrian Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Facilitated by FILM in AUSTRIA (national film commission). 
+- **Source:** FILM in AUSTRIA (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Professional camera packages (ARRI Alexa 35) ~€1,600-€1,800/day. General AV/Event gear ~€350/day. Customization applies (AV-Professional, FILMBASE, available lights).
+- **Source:** Austrian Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** €25 to €40 per head. Standard Austrian per-diem allowance is ~€42/day if no catering is provided.
+- **Source:** Austrian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** FISAplus offers a 30% base cash rebate on eligible production costs incurred in Austria, plus a 5% "Green Bonus" for sustainability.
+- **Source:** FISAplus (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 54. JURISDICTION × CATEGORY RESEARCH: IS (ICELAND)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer must contribute 11.5% to mandatory occupational pension fund, and 6.35% for Social Security (Tryggingagjald). Total employer statutory non-wage labor cost is 17.85%.
+- **Source:** Icelandic Pension Funds (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Limited. Studio Syrland offers studio spaces/green screens. Quote-dependent.
+- **Source:** Icelandic Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Facilitated by the Icelandic Film Centre. Often managed by local production services (Kukl, Sagafilm).
+- **Source:** Icelandic Film Centre (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Advanced equipment available (Kukl, Film Húsavík). Strictly quote-dependent.
+- **Source:** Icelandic Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Highly variable depending on urban (Reykjavík) vs remote (Highlands/glaciers). Quote-dependent via service companies.
+- **Source:** Icelandic Catering Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** 25% cash rebate. Enhanced to 35% if minimum spend (ISK 350M), 30 working days (10 location shooting), and 50 local crew are met.
+- **Source:** Icelandic Film Centre (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 55. JURISDICTION × CATEGORY RESEARCH: SG (SINGAPORE)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** CPF for locals/PRs is 17% (capped at $6,800/mo). Skills Development Levy (SDL) is 0.25% (capped at $11.25/mo). Foreign Worker Levy (FWL) applies to work pass holders.
+- **Source:** CPF Board (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Infinite Studios has large soundstages (up to S$20,000+/day). Small studios S$50-S$100/hr. 
+- **Source:** Singapore Studio Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Managed by IMDA / SFC. 
+- **Source:** IMDA (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Accessible. BMPCC6K ~S$110/day, lighting ~S$30-S$80/day. Quote-dependent for large packages.
+- **Source:** Singapore Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** SGD 20 – SGD 40 per head for standard mini-buffet. Subject to 9% GST.
+- **Source:** Singapore Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** IMDA offers various grants (Production Assistance, NTFG, SCPG). There is no automatic % cash rebate system, only selective grant funding and co-production funds.
+- **Source:** IMDA / SFC (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 56. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -1943,13 +2059,13 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Subnational jurisdictions researched:** 52 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki, GR-Athens, MT-Valletta, AE-Dubai, AE-Abu Dhabi, SA-Riyadh, SA-Neom, KR-Seoul, JP-Tokyo, IN-Maharashtra, TH-Bangkok, ID-Batam, MY-Johor, MA-Ouarzazate, JO-Amman, DO-Santo Domingo, JM-Kingston)
 - **Stale/unprovenanced existing records:** 44
 
-## 54. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 57. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
 - **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service, BPJS Indonesia, Kemdikbudristek, Infinite Studios, Jakarta Film Commission, KWSP Malaysia, PERKESO, PUSPAL, FINAS, Iskandar Malaysia Studios, Cinerent, Camwerkz, CNSS Morocco, CCM Morocco, Atlas Studios, CLA Studios, K-Films, SSC Jordan, Royal Film Commission Jordan, Olivewood Film Studios, Slate Film Services, TSS Dominican Republic, DGCINE, Lantica Studios, TAJ Jamaica, JAMPRO, Phase 3 Productions, Cyprus Social Insurance Services, Invest Cyprus, Mauritius Revenue Authority, MFDC, EDB Mauritius.
 - **Local-language searches:** 0.
 
-## 55. STOP CONDITION
+## 58. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
