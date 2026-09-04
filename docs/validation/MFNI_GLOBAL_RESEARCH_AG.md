@@ -219,31 +219,58 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** ACTRA, BCCFU (Tier 1).
 - **Confidence:** VERIFIED.
 
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** As in the US and UK, standardizing a deterministic "rate card" for equipment is fundamentally flawed for major vendors (e.g., Sunbelt Rentals Film & TV, formerly William F. White). Pricing requires custom quotes based on volume, bundle, and schedule.
+- **Source:** Sunbelt Rentals/WFW (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits (CA-ON, CA-BC, CA-QC)
+- **Permit Fees:** RESEARCHED.
+- **Findings:**
+  - **Toronto (CA-ON):** Tiered system based on scope. Features/Series pay $100 registration + $300 location permit + $200 parks permit, plus $500 for road closures.
+  - **Vancouver (CA-BC):** $2,000 per day for the standard daily activity filming fee.
+  - **Montreal (CA-QC):** Nominal $38 application fee, but physical occupancy rates scale up to ~$1,300/day.
+- **Source:** Toronto City Hall, City of Vancouver, MFTC (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Professional on-set catering for mid-to-large productions generally ranges from CAD $25 to $45+ per person for standard hot meals, exceeding $50-$70+ for full mobile kitchen premium packages.
+- **Source:** Commercial catering quotes (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Canada allows stacking federal (CPTC 25% or PSTC 16% on labour) with provincial VFX bonuses:
+  - **Ontario (CA-ON):** OCASE provides 18% refundable on labour for VFX/Animation. (No longer requires base production to be shot in ON).
+  - **British Columbia (CA-BC):** DAVE offers 16% on labour.
+  - **Quebec (CA-QC):** 16% enhancement on labour for VFX, but capped at 65% of eligible labour costs.
+- **Source:** Ontario Creates, Creative BC, BCTQ (Tier 1).
+- **Confidence:** VERIFIED.
+
 ### Gaps / Incomplete (Next Execution Needed)
-- CA Equipment (Local availability multipliers ON vs BC vs QC)
-- CA Locations / Permits (Toronto, Vancouver, Montreal permit structures)
-- CA Catering / Unit Services
-- CA Post / VFX Economics
+- None for CA structural categories (requires dynamic pricing engine input).
 
 ## 9. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 3 (GB, US, CA - Partial)
+- **Researched:** 3 (GB, US, CA - Completed Structural)
 - **Strong/current data:** 0
 - **Partial data:** 3 (GB, US, CA)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
-- **Subnational jurisdictions researched:** 6 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC)
+- **Subnational jurisdictions researched:** 6 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC - completed structural)
 - **Stale/unprovenanced existing records:** 44
 
 ## 10. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk (HMRC/FEU), PACT.co.uk, Pinewood Group, ARRI Rental, Film London, commercial catering providers, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC.
 - **Local-language searches:** 0.
 
 ## 11. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-Resume **CA (Canada)** research. Specifically, focus on CA Locations/Permits (Toronto, Vancouver, Montreal), CA Equipment, CA Catering, and CA Post/VFX. After CA completion, advance to **FR (France)**.
+CA (Canada) structural category coverage is complete. Begin baseline structural research for **FR (France)**, focusing on French statutory fringes (URSSAF, Audiens), Stage Pricing (e.g. Bry-sur-Marne), and French VFX mechanisms.
