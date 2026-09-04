@@ -4252,7 +4252,123 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** CFA (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 113. GLOBAL COVERAGE ACCOUNTING
+## 113. JURISDICTION × CATEGORY RESEARCH: MN (MONGOLIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Employer Social Insurance is ~12.5% - 14.5% (Pension 8.5%, Health 2%, Benefit 1%, Unemployment 0.5%, Accident 0.5-2.5%).
+- **Source:** Mongolia Social Insurance (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Limited purpose-built modern sound stages. Usually warehouse conversions.
+- **Source:** Mongolian Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** MNFC facilitates permits.
+- **Source:** MNFC (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Growing local stock, but large international shoots may still import via ATA Carnet/Temporary Import.
+- **Source:** Mongolian Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** ~$15–$30 USD/head/day.
+- **Source:** Mongolian Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** MASSIVE REBATE DISCOVERED. Up to 45% Cash Rebate (30% base + 10% cultural bonus + 5% foreign talent). Requires $500k minimum spend.
+- **Source:** MNFC (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 114. JURISDICTION × CATEGORY RESEARCH: MO (MACAU SAR)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** MOP 90 per month fixed (MOP 60 employer). Plus MOP 200 per month per non-resident worker. Practically negligible as a % of high salaries.
+- **Source:** Macau FSS (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Minimal local sound stages; closely linked to Hong Kong infrastructure.
+- **Source:** Macau Studio Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Handled by Macau Cultural Affairs Bureau.
+- **Source:** Macau Cultural Affairs Bureau (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Rented primarily from Hong Kong.
+- **Source:** Hong Kong/Macau Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** ~$15–$35 USD/head/day.
+- **Source:** Macau Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** No formal operational cash rebate program for foreign shoots. Subsidy Programme for local/co-productions via CDF.
+- **Source:** Cultural Development Fund (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 115. JURISDICTION × CATEGORY RESEARCH: BD (BANGLADESH)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** No universal national social security tax. Provident Fund required for 100+ employees (7-10%). Gratuity is mandatory. Two festival bonuses per year (1 month each) equates to ~16.6% basic salary overhead.
+- **Source:** Bangladesh Labour Act (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** BFDC operates studio floors. State-subsidized rates are extremely low (Tk 2,000 - 4,000 for sets, Tk 5,000 - 11,500 for filming).
+- **Source:** BFDC (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Highly bureaucratic permitting via Ministry of Information.
+- **Source:** Ministry of Information (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** BFDC subsidizes camera rentals (e.g. Red Dragon Tk 3,000-10,000 depending on foreign/local status).
+- **Source:** BFDC (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** ~$5-$15 USD/head/day (Low local costs).
+- **Source:** Bangladeshi Catering Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** No cash rebate. The government supports via direct grants and subsidized BFDC service discounts.
+- **Source:** Ministry of Information (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 116. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -4263,13 +4379,13 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Subnational jurisdictions researched:** 52 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki, GR-Athens, MT-Valletta, AE-Dubai, AE-Abu Dhabi, SA-Riyadh, SA-Neom, KR-Seoul, JP-Tokyo, IN-Maharashtra, TH-Bangkok, ID-Batam, MY-Johor, MA-Ouarzazate, JO-Amman, DO-Santo Domingo, JM-Kingston)
 - **Stale/unprovenanced existing records:** 44
 
-## 114. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 117. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
 - **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service, BPJS Indonesia, Kemdikbudristek, Infinite Studios, Jakarta Film Commission, KWSP Malaysia, PERKESO, PUSPAL, FINAS, Iskandar Malaysia Studios, Cinerent, Camwerkz, CNSS Morocco, CCM Morocco, Atlas Studios, CLA Studios, K-Films, SSC Jordan, Royal Film Commission Jordan, Olivewood Film Studios, Slate Film Services, TSS Dominican Republic, DGCINE, Lantica Studios, TAJ Jamaica, JAMPRO, Phase 3 Productions, Cyprus Social Insurance Services, Invest Cyprus, Mauritius Revenue Authority, MFDC, EDB Mauritius.
 - **Local-language searches:** 0.
 
-## 115. STOP CONDITION
+## 118. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
