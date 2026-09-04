@@ -1739,7 +1739,84 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** JAMPRO / JSDI (Tier 1).
 - **Confidence:** VERIFIED.
 
-## 48. GLOBAL COVERAGE ACCOUNTING
+## 48. JURISDICTION × CATEGORY RESEARCH: CY (CYPRUS)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Total employer statutory burden is 15.4%, comprising Social Insurance (8.8%), General Healthcare System (GHS/GESY, 2.9%), Redundancy Fund (1.2%), Human Resource Development (0.5%), and Social Cohesion Fund (2.0%). An 8% Holiday Fund applies if paid annual leave isn't provided. Contributions (except Social Cohesion) are capped at €5,239/month.
+- **Source:** Cyprus Social Insurance Services (SIS) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Professional cyclorama studios exist in Limassol and Nicosia. Hourly rates start at ~€110-€150, with full-day rentals (up to 10 hours) generally around €800. Large sound stages are limited; custom quotes apply for extended bookings.
+- **Source:** Cypriot Studio Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** The Cyprus Film Commission (via Invest Cyprus) manages the "Olivewood" scheme. Permitting for archaeological sites or public spaces can be complex and is best managed by a local fixer.
+- **Source:** Invest Cyprus (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Standard cinema gear (ARRI, RED) is available locally (e.g., packages from €200/day, individual fixtures €50-€500). High-end specialized technical kits are typically imported via maritime/air corridors (e.g., "Athens Bridge").
+- **Source:** Cypriot Rental Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Basic craft services run €10–€15/head; full meal service ranges from €35–€60/head daily. Subject to 9% VAT.
+- **Source:** Cypriot Production Services (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** The "Olivewood" scheme provides a cash rebate of up to 45% on eligible Below-the-Line (BTL) expenditures and up to 25% on Above-the-Line (ATL). 
+- **Source:** Invest Cyprus (Tier 1).
+- **Confidence:** VERIFIED.
+
+
+## 49. JURISDICTION × CATEGORY RESEARCH: MU (MAURITIUS)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Total employer burden is ~11.5% to 14.5% + mandatory 13th month bonus. Comprises Contribution Sociale Généralisée (CSG, 3% up to 50k MUR, 6% above), National Savings Fund (NSF, 2.5%), HRDC Training Levy (1.5%), and Portable Retirement Gratuity Fund (PRGF, 4.5%).
+- **Source:** Mauritius Revenue Authority (MRA) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Limited purpose-built sound stages; boutique TV studios exist (e.g., Kingdom Productions). Often custom builds are facilitated by local service companies. Rates strictly bespoke.
+- **Source:** Mauritius Production Services (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Locations / Permits
+- **Permit Fees:** RESEARCHED.
+- **Findings:** Handled through the Mauritius Film Development Corporation (MFDC). Processing takes 7-10 days. 
+- **Source:** MFDC (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Basic gear available locally (Mediavision, Papaya.mu). High-end or specialized grip/marine rigs are usually trucked/shipped in from South Africa. ATA Carnet simplifies temporary importation.
+- **Source:** Mauritian Rental Proxies (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** Standard buffet/service ranges from Rs 800 to Rs 1,050 per person (approx. $18 – $23 USD). Catering qualifies for the EDB rebate.
+- **Source:** Mauritian Production Proxies (Tier 2).
+- **Confidence:** STRONG.
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** The EDB Film Rebate Scheme offers a 30% standard rebate, enhanced up to 40% for high-end productions meeting minimum Qualifying Production Expenditure (QPE) thresholds ($1M for features).
+- **Source:** Economic Development Board (EDB) (Tier 1).
+- **Confidence:** VERIFIED.
+
+## 50. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
 - **Researched:** 7 (GB, US, CA, FR, DE, AU, NZ - Completed, ZA - Partial)
 - **Strong/current data:** 0
@@ -1750,13 +1827,13 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Subnational jurisdictions researched:** 52 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria, AU-NSW, AU-QLD, NZ-Auckland, NZ-Wellington, ZA-Western Cape, IE-Dublin, IT-Lazio, IT-Tuscany, ES-Madrid, ES-Catalonia, ES-Canary Islands, PT-Lisbon, HU-Budapest, CZ-Prague, MX-CDMX, CO-Bogota, BR-SP, AR-BA, CL-Santiago, UY-Montevideo, PL-Warsaw, RO-Bucharest, BG-Sofia, RS-Belgrade, SE-Stockholm, NO-Oslo, DK-Copenhagen, FI-Helsinki, GR-Athens, MT-Valletta, AE-Dubai, AE-Abu Dhabi, SA-Riyadh, SA-Neom, KR-Seoul, JP-Tokyo, IN-Maharashtra, TH-Bangkok, ID-Batam, MY-Johor, MA-Ouarzazate, JO-Amman, DO-Santo Domingo, JM-Kingston)
 - **Stale/unprovenanced existing records:** 44
 
-## 49. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 51. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service, BPJS Indonesia, Kemdikbudristek, Infinite Studios, Jakarta Film Commission, KWSP Malaysia, PERKESO, PUSPAL, FINAS, Iskandar Malaysia Studios, Cinerent, Camwerkz, CNSS Morocco, CCM Morocco, Atlas Studios, CLA Studios, K-Films, SSC Jordan, Royal Film Commission Jordan, Olivewood Film Studios, Slate Film Services, TSS Dominican Republic, DGCINE, Lantica Studios, TAJ Jamaica, JAMPRO, Phase 3 Productions.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow, Screen NSW, Brisbane City Council, Lemac, Panavision, NZFC, SIWA, Auckland Film Studios, Screen Auckland, Screen Wellington, SARS, dtic, Cape Town Film Studios, Atlantic Studios, City of Cape Town, Media Film Service, Irish Department of Social Protection, Dublin City Film Office, Screen Ireland, INPS, INAIL, Cinecittà, Roma Lazio Film Commission, TGSS, Madrid Film Office, Barcelona Film Commission, EPC, RC Service, Spain Film Commission, Portugal Social Security, Lisboa Film Commission, Planar Lda, ICA, NAV, Origo Studios, Korda Studios, NFI Location Office, Visionteam, Sparks, CSSZ, Barrandov Studio, Czech Film Commission, Panavision Prague, Vantage Film, Czech Audiovisual Fund, IMSS, LFT, Estudios Churubusco, Estudios GGM, CFilma, EFD, EFICA, IMCINE, Colombian Tax Statute, TIS Productions, Bogotá Film Commission, Congo Films, Proimágenes Colombia, Law 1556, INSS, Receita Federal, Quanta Estúdios, Spcine, Rio Film Commission, Marc Films, ANCINE, ARCA, AFIP, Baires Studios, Pol-ka, Buenos Aires Film Commission, INCAA, Previred, Chilean Labor Directorate, Kuarzo, Film Commission Chile, Congo Films Chile, Atomica, InvestChile, CORFO, BPS, MTSS, Reducto, Musitelli, Montevideo Audiovisual, ACAU, ZUS, ATM Studio, Mazovia Warsaw Film Commission, ATM System, PISF, ANAF, Bucharest Film Studios, Bucharest City Hall, Bivolul, OFIC, NRA, Nu Boyana, UFO, Sofia Municipality, NFC, Serbian Ministry of Finance, PFI Studios, Firefly Studios, Film in Serbia, Vision Team, Cineplanet, Film Center Serbia, Swedish Tax Agency, Scen & Film, Ystad Studios, Polismyndigheten, Stockholm Film Commission, Tillväxtverket, Norwegian Tax Administration, Filmparken, Filmcamp, Oslo Film Commission, Storyline Studios, Kamera Rental, Norwegian Film Institute, Virk.dk, Danish Tax Agency, FilmGEAR, Filmstationen, City of Copenhagen, Kamera Rental, Danish Film Institute, Finnish Tax Administration, Eläketurvakeskus, Valofirma, Kinos Rentals, Film in Finland, Port of Helsinki, Business Finland, e-EFKA, Greek Ministry of Labour, Kapa Studios, Nu Boyana Hellenic, Hellenic Film Commission, Ministry of Culture, Arctos Films, Whitebalance, Creative Greece, Commissioner for Revenue Malta, Malta Film Studios, Malta Film Commission, Heritage Malta, Cineloop, Malta Camera Rental, Screen Malta, GPSSA, MoHRE UAE, Dubai Studio City, twofour54, DFTC, ADFC, Filmquip Media, Action Filmz, GOSI, MHRSD Saudi, Film AlUla, NEOM, Saudi Film Commission, Nebras Films, Film Saudi, ERBSA Korea, Studio Cube, Dexter Studios, Seoul Film Commission, KOFIC, Japan Pension Service, Toho Studios, Shochiku Studios, Kadokawa Daiei Studios, Tokyo Location Box, Sanwa Cine Equipment, NAC Image Technology, METI Japan, VIPO, India Cine Hub, MIB India, Maharashtra Film Cell, Prime Focus, Prasad Corp, Thai Social Security Act, Thailand Film Office, The Studio Park, Gear Head, Lighthouse Film Service, BPJS Indonesia, Kemdikbudristek, Infinite Studios, Jakarta Film Commission, KWSP Malaysia, PERKESO, PUSPAL, FINAS, Iskandar Malaysia Studios, Cinerent, Camwerkz, CNSS Morocco, CCM Morocco, Atlas Studios, CLA Studios, K-Films, SSC Jordan, Royal Film Commission Jordan, Olivewood Film Studios, Slate Film Services, TSS Dominican Republic, DGCINE, Lantica Studios, TAJ Jamaica, JAMPRO, Phase 3 Productions, Cyprus Social Insurance Services, Invest Cyprus, Mauritius Revenue Authority, MFDC, EDB Mauritius.
 - **Local-language searches:** 0.
 
-## 50. STOP CONDITION
+## 52. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
