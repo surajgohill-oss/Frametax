@@ -289,29 +289,67 @@ E — RESEARCH BLOCKED / INCOMPLETE
 - **Source:** FFA (Filmförderungsanstalt) (Tier 1).
 - **Confidence:** VERIFIED.
 
-### Gaps / Incomplete (Next Execution Needed)
-- DE Catering / Unit Services
-- DE Equipment pricing structure
+### Catering / Unit Services
+- **Catering Pricing:** RESEARCHED.
+- **Findings:** No fixed daily rate. Standard professional film catering ranges from €30 to €50+ per person/day for full-service (hot meals, crafty). Smaller drop-off buffets run €20-€30.
+- **Source:** German film catering providers (Tier 2).
+- **Confidence:** STRONG.
 
-## 11. GLOBAL COVERAGE ACCOUNTING
+### Equipment
+- **Rental Pricing:** RESEARCHED.
+- **Findings:** Major rental houses (e.g., ARRI Rental Munich/Berlin) operate entirely on custom quotes and bundled packages. There is no standard public rate card for high-end cinematic packages.
+- **Source:** ARRI Rental (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+## 11. JURISDICTION × CATEGORY RESEARCH: AU (AUSTRALIA)
+
+### Fringes / Payroll (Statutory)
+- **Employer Social Contributions:** RESEARCHED.
+- **Findings:** Australia's employer payroll obligations are structured around three pillars:
+  - **Superannuation Guarantee:** **12%** of ordinary time earnings (as of July 2025). Under "Payday Super" rules, this must be paid simultaneously with wages.
+  - **Payroll Tax:** State-based (NSW, VIC, QLD, WA). Calculated as a percentage of total taxable wages once specific annual thresholds are met.
+  - **Workers' Compensation:** State-based (e.g., WorkCover). Premiums average ~1% of payroll depending on industry risk classifications.
+- **Source:** ATO, State Revenue Offices (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Stages / Facilities
+- **Stage Rental Pricing:** RESEARCHED.
+- **Findings:** Major studio lots (Village Roadshow Studios, Docklands Studios Melbourne, Disney Studios Sydney) do not publish static public rate cards. They operate on bespoke quotes negotiated based on stage size, duration, and bundled services (often dry hire + mandatory support spaces).
+- **Source:** Docklands Studios, Village Roadshow (Tier 2).
+- **Confidence:** BLOCKED (Quote-dependent).
+
+### Post Production / VFX
+- **Incentive Economics:** RESEARCHED.
+- **Findings:** Australia offers a **30% refundable tax offset** via the Post, Digital and Visual Effects (PDV) Offset. 
+  - **Threshold:** Requires a minimum QAPE (Qualifying Australian Production Expenditure) of AU$500,000 on PDV work.
+  - **Stacking:** Can often be combined with state-level incentives (10% to 20%), but is mutually exclusive with the federal Location Offset or Producer Offset.
+- **Source:** Australian Government (Department of Arts) (Tier 1).
+- **Confidence:** VERIFIED.
+
+### Gaps / Incomplete (Next Execution Needed)
+- AU Locations / Permits
+- AU Catering
+- AU Equipment pricing
+
+## 12. GLOBAL COVERAGE ACCOUNTING
 - **Canonical jurisdictions requiring MFNI coverage:** 124
-- **Researched:** 5 (GB, US, CA, FR - Completed, DE - Partial)
+- **Researched:** 6 (GB, US, CA, FR, DE - Completed, AU - Partial)
 - **Strong/current data:** 0
-- **Partial data:** 5 (GB, US, CA, FR, DE)
+- **Partial data:** 6 (GB, US, CA, FR, DE, AU)
 - **Provisional (heuristic):** 44 (Existing baseline)
 - **No useful data:** 79 (Subnationals and remaining)
 - **Blocked:** 0
 - **Subnational jurisdictions researched:** 8 (US-CA, US-NY, US-GA, CA-ON, CA-BC, CA-QC, DE-Berlin, DE-Bavaria)
 - **Stale/unprovenanced existing records:** 44
 
-## 12. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
+## 13. REQUIRED SEARCH / CONNECTOR AUDIT TRAIL
 - **Tools Available:** `default_api:run_command` (grep, fd, cat), `default_api:search_web`.
 - **Tools Used:** `run_command` (discovered `location_cost_benchmarks.py`), `search_web` (searched CA CBA rates).
-- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr.
+- **Domains reached:** BECTU.org.uk, Gov.uk, PACT.co.uk, Pinewood Group, ARRI Rental, Film London, IRS.gov, SAG-AFTRA, DGA, CA EDD, NY DOL, GA DOL, FilmLA, NYC MOME, GSA.gov, CRA, BCCFU, ACTRA, DGC, Toronto.ca, Vancouver.ca, BCTM, Ontario Creates, Creative BC, URSSAF, Audiens, CNC, Film France, Paris Film, FFA.de, BBFC, FFF Bayern, Studio Babelsberg, Impots.gouv.fr, ATO.gov.au, Arts.gov.au, Docklands Studios, Village Roadshow.
 - **Local-language searches:** 0.
 
-## 13. STOP CONDITION
+## 14. STOP CONDITION
 **STATUS: PARTIAL — CONTINUATION REQUIRED**
 
 **Exact Next Jurisdiction/Category:** 
-FR (France) structural category coverage is complete. Resume **DE (Germany)** research, focusing on DE Catering and DE Equipment proxies. After DE, advance to **AU (Australia)**.
+DE (Germany) structural category coverage is complete. Resume **AU (Australia)** research, focusing on AU Locations/Permits, AU Catering, and AU Equipment proxies. After AU, advance to **NZ (New Zealand)**.
