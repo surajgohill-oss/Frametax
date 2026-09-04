@@ -144,3 +144,6 @@ CA-MB (Manitoba),Standard CAN (CPP/EI/WCB),BLOCKED (Quote-dependent),Manitoba Fi
 CA-NS (Nova Scotia),Standard CAN (CPP/EI/WCB),BLOCKED (Quote-dependent),Screen Nova Scotia,BLOCKED (Quote-dependent),$40-$60 CAD/head,25-39% Incentive Fund
 CA-NB (New Brunswick),Standard CAN (CPP/EI/WCB),BLOCKED (Quote-dependent),Arts Culture NB,BLOCKED (Quote-dependent),$40-$60 CAD/head,25-35% LIFT Grant
 GB-SCT (Scotland),"Standard UK (NIC, Pension)",BLOCKED (Quote-dependent),Screen Scotland,BLOCKED (Quote-dependent),£30-£50 GBP/head,Regional Grant + UK AVEC
+GB-WLS (Wales),"Standard UK (NIC, Pension)",BLOCKED (Quote-dependent),Wales Screen,BLOCKED (Quote-dependent),£30-£50 GBP/head,Regional Grant + UK AVEC
+AU-VIC (Victoria),Standard AU + VIC Payroll Tax,BLOCKED (Quote-dependent),VicScreen,BLOCKED (Quote-dependent),$45-$70 AUD/head,3-10% Grant + AU Federal
+US-HI (Hawaii),Standard US + HI SUI + GET,BLOCKED (Quote-dependent),Hawaii Film Office,BLOCKED (Quote-dependent),$60-$90 USD/head,22-32% Refundable Tax Credit
