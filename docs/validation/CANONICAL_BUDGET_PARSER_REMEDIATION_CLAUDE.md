@@ -187,12 +187,17 @@ Fixing real classification defects legitimately changes downstream QPE/incentive
 
 ## 17. Commit SHA
 
-(filled in below — see chat response for the final hash)
+**Process note (full transparency):** this branch is shared with a concurrent automated session (AG) performing independent, rapid-fire MFNI/secondary-program docs commits ("Targeted Backfill Batch N"). Between this remediation's own `git add` and its intended dedicated commit, one of AG's own commit cycles (which used a broad `git add`/`git commit` in the same shared working tree rather than a scoped one) swept up this remediation's already-staged files alongside its own two unrelated CSV/MD files. The content is verified byte-for-byte intact — nothing was lost, altered, or partially applied — but it landed under AG's own commit message rather than a dedicated one of this task's own. The two real commits carrying this remediation's work:
+
+- **`f823a9021238e94ce802cd7cde981f18e398352a`** ("docs: Targeted Backfill Batch 29 — RS, RW, SA secondary programs") — carries all 6 source files, both new files, and all 14 corrected test files.
+- **`30dfef98e59776e0cc98733eb3f8f93d9fb1a708`** / **`74cf1d5`** ("docs: Targeted Backfill Batch 28/24") — carry earlier and later revisions of this artifact file itself.
+
+Verified post-hoc: `PYTHONPATH=. python3 scripts/canonical_budget_integrity_gate.py` at current HEAD still reports **PASS, all 16 invariants** — confirming the swept-in commit did not corrupt or partially apply this remediation's work.
 
 ## 18. Push status
 
-Pushed to `origin/claude/audit-frametax-features-NZcX5`.
+Already pushed — the sweeping commits above were pushed to `origin/claude/audit-frametax-features-NZcX5` by the concurrent session's own push cycle before this was discovered.
 
 ## 19. Remote verification
 
-Local HEAD verified == `origin/claude/audit-frametax-features-NZcX5` HEAD after push — see chat response.
+Local HEAD verified == `origin/claude/audit-frametax-features-NZcX5` HEAD (`e3244b6f5804d9db4bf1a9f4a43da5a20507f94c` at verification time — the branch continues to advance via the concurrent session's own commits).
