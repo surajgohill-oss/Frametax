@@ -292,10 +292,26 @@ def _empty_structure_entry(
     # structure's OWN identity the way a component's routed destination
     # is. Only a component_relocation structure's routed segment is the
     # structure's defining second territory.
+    # Optimizer P0 wiring remediation (2026-09-04), P0-2: a segment's
+    # OWN real `claims_incentive` field (allocation_pricing.py's
+    # SegmentEconomics -- False exactly when the segment has no
+    # program_slug at all, i.e. it is a stated-location fact where spend
+    # is disclosed but no incentive is claimed there) is the real,
+    # structural signal of economic/claiming participation -- never a
+    # jurisdiction-code special case. Confirmed live: LU's
+    # component_relocation structure 8172eb82... carries a real US
+    # segment with claims_incentive=False, program_slug=None (spend
+    # physically located in the US, claims nothing there); its MU/CA-MB
+    # segments both carry claims_incentive=True with a real program_slug.
+    # A non-claiming segment's geography remains fully visible in
+    # trace["segments"] (never removed there) -- only the canonical
+    # PARTICIPANT list, which downstream consumers (title, Globe,
+    # Inspector, Reports) treat as "who actually participates
+    # economically," excludes it.
     if structure_type == "component_relocation":
         for _seg in trace.get("segments") or []:
             _c = _seg.get("jurisdiction_code")
-            if _c and _c not in _participant_codes:
+            if _c and _seg.get("claims_incentive") is True and _c not in _participant_codes:
                 _participant_codes.append(_c)
     for _partner in _coprod_partners:
         _c = _partner.get("jurisdiction_code")
@@ -794,28 +810,38 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # UI selection state, never persisted or treated as project truth)
     # still overrides it at the call site, exactly as before.
     #
-    # Algorithm (byte-for-byte the same as the pre-existing
-    # bestPricedCandidate.js it replaces, so this pass changes WHERE the
-    # answer is computed, never WHAT the answer is):
-    #   1. rank 1 (comparable[0]) if a numerically-ranked candidate exists.
-    #   2. else the lowest-NPC structure among ALL is_fully_priced
-    #      structures (comparable or review_required) — the same
-    #      candidate bestPricedCandidate(allocated) already picked.
-    #   3. else None (no priced structure exists at all yet).
-    if comparable:
-        canonical_selected_structure_id = comparable[0]["structure_id"]
-    else:
-        priced_candidates = [e for e in structure_entries if e["is_fully_priced"]]
-        canonical_selected_structure_id = (
-            min(
-                priced_candidates,
-                key=lambda e: (
-                    e["npc_with_adjustments_usd"]
-                    if e["npc_with_adjustments_usd"] is not None else float("inf")
-                ),
-            )["structure_id"]
-            if priced_candidates else None
-        )
+    # Optimizer P0 wiring remediation (2026-09-04), P0-1 — CANONICAL
+    # SELECTION DIVERGENCE (Codex): the ORIGINAL algorithm here fell back
+    # to "the lowest-NPC structure among ALL is_fully_priced structures"
+    # whenever `comparable` was empty — including PRICED_LOW_FIT,
+    # is_directly_comparable=False candidates. That directly contradicted
+    # canonical_evaluation.py::_summarize_evaluation, which deliberately
+    # returns NO top_result and CLEARS Project.leading_structure_id in
+    # this exact state (no candidate is both is_directly_comparable and
+    # qualification-admits-Recommended — see _qualification_admits_
+    # recommended, the same two gates `comparable` itself already
+    # applies). Confirmed live: Little Utopia and F#K Valentine's Day
+    # both have leading_structure_id=None and comparable_count=0, yet
+    # this field was silently promoting each production's own
+    # PRICED_LOW_FIT Saudi full-relocation candidate as "the" canonical
+    # selection — a candidate the evaluator itself never selected.
+    #
+    # Fixed by removing the non-comparable fallback entirely: the
+    # evaluator's own accepted/comparable semantics are the ONLY source
+    # of truth here, never a second, independently-invented ranking.
+    #   1. rank 1 (comparable[0]) if a numerically-ranked, comparable,
+    #      Recommended-admitting candidate exists — unchanged.
+    #   2. else None — no comparable winner exists, so there is no
+    #      canonical selection, exactly matching _summarize_evaluation's
+    #      own top_result=None / leading_structure_id=None state.
+    # (The one theoretical case this diverges from _summarize_evaluation
+    # — a baseline structure ROW never existing at all, a genuine hard
+    # structural failure distinct from "no candidate is comparable" —
+    # does not occur for any current real project: every project's own
+    # generic evaluation always generates a baseline candidate row.)
+    canonical_selected_structure_id = (
+        comparable[0]["structure_id"] if comparable else None
+    )
 
     base_code = jurisdiction_code_by_id.get(str(project.home_jurisdiction_id)) if project.home_jurisdiction_id else None
     if base_code is None:

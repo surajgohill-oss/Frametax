@@ -59,6 +59,14 @@ Canonical Core Closeout (2026-09-04):
                              (never silently admitted), and no priced
                              structure in this project's own served
                              output uses a NONCONFORMANT program (Item C).
+  13. TREATY ALLOCATION       (added by Optimizer P0 wiring remediation,
+                             2026-09-04, P0-3) a resolved treaty
+                             conditional bilateral scenario's participant
+                             allocation sums to exactly 100% of the one
+                             source budget, and fully_priced is true only
+                             when that allocation is genuinely complete —
+                             never independent full-budget pricing per
+                             participant.
 
 GLOBE remains explicitly OUT OF SCOPE — DEFERRED BY SEQUENCING, never
 tested here, never silently counted as passing.
@@ -100,6 +108,12 @@ _TESTED_INVARIANTS = (
     "BUDGET", "ELIGIBILITY", "QPE", "INCENTIVE", "NPC TRACE", "PARTICIPANTS",
     "SCENARIO IDENTITY", "STATUS", "PROGRAM CERTAINTY", "PROJECT MODELING POLICY",
     "SELECTION", "PROGRAM ONBOARDING",
+    # Optimizer P0 wiring remediation (2026-09-04), P0-3 — added so the
+    # treaty conditional budget double-counting defect Codex found can
+    # never silently recur. Narrow and specific to that one defect class,
+    # not a broadening into general treaty/co-production behavioral
+    # acceptance (explicitly out of scope for this task).
+    "TREATY ALLOCATION",
 )
 #: GLOBE remains the one family this pass explicitly does not test, per
 #: sequencing — reported separately, never folded into _TESTED_INVARIANTS,
@@ -182,7 +196,14 @@ async def _gate_one_project(
         )
 
     # ── 11. SELECTION CONSISTENCY — canonical_selected_structure_id
-    # resolves exactly per its documented algorithm (Item A). ───────────
+    # resolves exactly per its documented algorithm (Item A, corrected by
+    # Optimizer P0 wiring remediation P0-1). Codex found this gate's OWN
+    # prior version encoded the defective fallback ("lowest-NPC among ALL
+    # priced structures") as the expected behavior when no rank 1
+    # exists — exactly the bug that let LU/FVD's non-comparable Saudi
+    # PRICED_LOW_FIT candidates become canonical selections. Fixed:
+    # comparable rank 1 if it exists, else None — never a non-comparable
+    # fallback. ────────────────────────────────────────────────────────
     comparable_ranked = [r for r in ranking if r.get("rank") == 1]
     canonical_id = allocated.get("canonical_selected_structure_id")
     if comparable_ranked:
@@ -192,22 +213,11 @@ async def _gate_one_project(
                 f"SELECTION: canonical_selected_structure_id={canonical_id} but rank 1 is "
                 f"{expected_id} — must equal rank 1 when rank 1 exists"
             )
-    else:
-        priced_all = [s for s in structures if s["is_fully_priced"]]
-        if priced_all:
-            expected = min(
-                priced_all,
-                key=lambda s: s["npc_with_adjustments_usd"] if s["npc_with_adjustments_usd"] is not None else float("inf"),
-            )
-            if canonical_id != expected["structure_id"]:
-                result["failures"].append(
-                    f"SELECTION: canonical_selected_structure_id={canonical_id} but the lowest-NPC "
-                    f"priced structure is {expected['structure_id']} — must match when no rank 1 exists"
-                )
-        elif canonical_id is not None:
-            result["failures"].append(
-                f"SELECTION: canonical_selected_structure_id={canonical_id} but no structure is priced"
-            )
+    elif canonical_id is not None:
+        result["failures"].append(
+            f"SELECTION: canonical_selected_structure_id={canonical_id} but no comparable rank-1 "
+            "candidate exists — must be None (P0-1: never a non-comparable/PRICED_LOW_FIT fallback)"
+        )
 
     # ── 10. PROJECT MODELING POLICY — served block well-formed, and the
     # resolved policy is actually enforced (no priced structure exists
@@ -242,6 +252,55 @@ async def _gate_one_project(
                 result["failures"].append(
                     f"BUDGET: {label} gross_budget_usd={s['gross_budget_usd']} != "
                     f"declared {declared_gross}"
+                )
+
+        # TREATY ALLOCATION — Optimizer P0 wiring remediation, P0-3.
+        # Checked BEFORE the is_fully_priced continue below: a treaty
+        # opportunity's conditional_scenario is nested trace data, never
+        # reflected on the structure's own top-level is_fully_priced
+        # (these rows are disclosure-only opportunities, not priced
+        # candidates). Asserts the exact invariant Codex's audit demands:
+        # a resolved conditional scenario's participant allocation must
+        # sum to exactly 100% (one source budget, never independently
+        # priced per participant), and fully_priced may only be True when
+        # that allocation is genuinely complete.
+        conditional = s.get("conditional_scenario")
+        if conditional and conditional.get("status") == "CONDITIONAL_PROJECT_FACT_DEPENDENT":
+            alloc = conditional.get("participant_allocation_pct")
+            if conditional.get("fully_priced") is True:
+                if not alloc:
+                    result["failures"].append(
+                        f"TREATY ALLOCATION: {label} fully_priced=True but no "
+                        "participant_allocation_pct is disclosed — cannot prove one budget was allocated"
+                    )
+                elif abs(sum(alloc.values()) - 100.0) > 0.01:
+                    result["failures"].append(
+                        f"TREATY ALLOCATION: {label} participant_allocation_pct={alloc} sums to "
+                        f"{sum(alloc.values())}, not 100 — the same double-counting/under-allocation "
+                        "defect Codex found on LU GB/IE (186.2% of gross)"
+                    )
+                gross_budget = declared_gross
+                combined_incentive = conditional.get("conditional_incentive_usd")
+                if gross_budget and combined_incentive is not None and combined_incentive > gross_budget * 2.0:
+                    result["failures"].append(
+                        f"TREATY ALLOCATION: {label} combined conditional_incentive_usd="
+                        f"{combined_incentive} implausibly exceeds 2x the declared gross budget "
+                        f"{gross_budget} — likely double-counted, not allocated"
+                    )
+            elif (
+                alloc and abs(sum(alloc.values()) - 100.0) < 0.01
+                and not conditional.get("canonical_data_gaps")
+            ):
+                # A feasible (100%-summing) allocation with NO real
+                # canonical_data_gaps should have produced fully_priced=
+                # True. If canonical_data_gaps IS non-empty, fully_priced=
+                # False is genuinely correct (a real, unrelated missing-
+                # rate-rule disclosure, e.g. ca_cmf) and must never be
+                # flagged as a P0-3 allocation defect.
+                result["failures"].append(
+                    f"TREATY ALLOCATION: {label} allocation sums to 100 (feasible) but "
+                    "fully_priced is not True — a resolved, complete allocation must be reported "
+                    "as fully priced, not silently left conditional"
                 )
 
         if not s["is_fully_priced"]:
@@ -293,13 +352,24 @@ async def _gate_one_project(
                     f"= {reconstructed} != served adjusted {adjusted}"
                 )
 
-        # PARTICIPANTS (P0-3)
+        # PARTICIPANTS — Optimizer P0 wiring remediation P0-2: exact
+        # claiming-participant identity, not merely a count floor. A
+        # component's canonical participants must equal exactly {primary}
+        # union every segment whose own claims_incentive is True — a
+        # non-claiming stated-location segment (claims_incentive=False,
+        # e.g. LU's real US segment) must never appear.
         participants = s.get("participants") or []
         if s["structure_type"] == "component_relocation":
-            if len(participants) < 2 or s["primary_jurisdiction"] not in participants:
+            expected_participants = {s["primary_jurisdiction"]}
+            for seg in s.get("segments") or []:
+                if seg.get("claims_incentive") is True and seg.get("jurisdiction_code"):
+                    expected_participants.add(seg["jurisdiction_code"])
+            if set(participants) != expected_participants:
                 result["failures"].append(
                     f"PARTICIPANTS: {label} component_relocation participants={participants} "
-                    "(expected primary + routed destination)"
+                    f"!= expected claiming set {sorted(expected_participants)} "
+                    "(a non-claiming stated-location segment must never appear; every real "
+                    "claiming segment must)"
                 )
         elif s["structure_type"] in ("single_country", "full_relocation"):
             if participants != [s["primary_jurisdiction"]]:
@@ -403,7 +473,7 @@ async def main() -> int:
     print(f"\nProjects evaluated: {pass_count} PASS, {fail_count} FAIL, {skip_count} SKIP "
           "(no budget on file yet — a real state, not a gate failure)\n")
 
-    print("Invariant-by-invariant result — ALL 12 required non-Globe families (TESTED, none DEFERRED):")
+    print(f"Invariant-by-invariant result — ALL {len(_TESTED_INVARIANTS)} required non-Globe families (TESTED, none DEFERRED):")
     for name in _TESTED_INVARIANTS:
         n_checked = checked_by_invariant[name]
         n_failed = failures_by_invariant[name]
@@ -422,9 +492,9 @@ async def main() -> int:
 
     print()
     if any_failures:
-        print("CANONICAL INTEGRITY GATE (12 non-Globe invariants): FAIL")
+        print(f"CANONICAL INTEGRITY GATE ({len(_TESTED_INVARIANTS)} non-Globe invariants): FAIL")
         return 1
-    print("CANONICAL INTEGRITY GATE (12 non-Globe invariants): PASS — GLOBE remains separately DEFERRED BY SEQUENCING")
+    print(f"CANONICAL INTEGRITY GATE ({len(_TESTED_INVARIANTS)} non-Globe invariants): PASS — GLOBE remains separately DEFERRED BY SEQUENCING")
     return 0
 
 

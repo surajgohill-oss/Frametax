@@ -1,24 +1,33 @@
 """
-Final non-Globe canonical core closeout (2026-09-04), Item A.
+Final non-Globe canonical core closeout (2026-09-04), Item A —
+UPDATED by Optimizer P0 wiring remediation (2026-09-04), P0-1.
 
-ROOT CAUSE (Codex): Reports.jsx resolved its "leading structure" using
-ONLY rank==1 with no fallback, while Overview.jsx/Workspace.jsx
-additionally fell back to a client-side bestPricedCandidate()
-re-derivation whenever rank 1 was absent (comparable_count==0 — a real,
-common state, confirmed live on Bad Hombres). The same production state
-could therefore show a real leading structure on Overview/Workspace and
-"no structure priced yet" on Reports.
+ROOT CAUSE (Codex, non-Globe closeout pass): Reports.jsx resolved its
+"leading structure" using ONLY rank==1 with no fallback, while
+Overview.jsx/Workspace.jsx additionally fell back to a client-side
+bestPricedCandidate() re-derivation whenever rank 1 was absent. Fixed by
+computing ONE canonical field server-side
+(allocated_structures.canonical_selected_structure_id).
 
-Fixed by computing ONE canonical field server-side
-(allocated_structures.canonical_selected_structure_id) that every
-consumer resolves through. These tests verify the field against REAL
-served data for both real productions, data-driven (which of the two
-currently has a numeric rank 1 vs. which has comparable_count==0 is
-itself real, per-run engine state — not asserted in advance; both
-branches of the field's own algorithm are exercised by these two real
-productions as of 2026-09-04: F#K Valentine's Day currently has NO
-numeric rank 1 lowest-NPC fallback path exercises; Bad Hombres
-currently DOES have one, exercising the direct rank-1 path).
+SECOND, DEEPER DEFECT FOUND BY CODEX'S OPTIMIZER WIRING AUDIT (P0-1,
+2026-09-04): the "no rank 1" fallback THIS test file itself originally
+encoded — "pick the lowest-NPC structure among ALL is_fully_priced
+candidates" — was ITSELF wrong. It let a non-comparable, PRICED_LOW_FIT
+candidate (e.g. a Saudi full-relocation review-only candidate) become
+"the" canonical selection even though canonical_evaluation.py's own
+_summarize_evaluation deliberately selects NONE in that exact state
+(no candidate is both is_directly_comparable and admits Recommended).
+Confirmed live: Little Utopia and F#K Valentine's Day both have
+leading_structure_id=None and comparable_count=0, yet the OLD fallback
+was silently promoting each one's own Saudi PRICED_LOW_FIT candidate as
+project truth.
+
+This file is corrected accordingly: the field must equal rank 1 when a
+comparable rank-1 candidate exists, and must be None — never a
+non-comparable fallback — when it does not. Bad Hombres and Lips Like
+Sugar (which DO have a comparable rank-1 winner) prove the positive
+path; Little Utopia and F#K Valentine's Day (which do NOT) prove the
+negative path — both real, both currently exercised.
 """
 from __future__ import annotations
 
@@ -29,8 +38,10 @@ from app.db.session import engine
 from app.services.canonical_evaluation import evaluate_project
 from app.services.canonical_production_view import build_production_and_structures
 
+LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 BAD_HOMBRES_PROJECT_ID = "4355ae88-a636-4c18-af60-ad73b2646124"
+LIPS_LIKE_SUGAR_PROJECT_ID = "ab10b319-978e-44d3-9331-af2a5f2cccc2"
 
 
 @pytest.fixture
@@ -40,8 +51,8 @@ async def db():
 
 
 async def _assert_canonical_field_correct(view: dict, label: str) -> str:
-    """Shared assertion, data-driven: whichever branch of the field's own
-    algorithm applies to this production's REAL current state, the served
+    """Shared assertion, data-driven: whichever branch applies to this
+    production's OWN real current state, the served
     canonical_selected_structure_id must match it exactly. Returns which
     branch was exercised, so callers can assert real coverage of both."""
     allocated = view["structures"]["allocated_structures"]
@@ -50,58 +61,94 @@ async def _assert_canonical_field_correct(view: dict, label: str) -> str:
 
     if rank1 is not None:
         assert canonical_id == rank1["structure_id"], (
-            f"{label}: canonical field must equal rank 1 when rank 1 exists"
+            f"{label}: canonical field must equal rank 1 when a comparable rank-1 candidate exists"
         )
         return "rank1"
 
-    priced = [s for s in allocated["structures"] if s["is_fully_priced"]]
-    if not priced:
-        assert canonical_id is None, f"{label}: canonical field must be None when nothing is priced"
-        return "none-priced"
-
-    expected = min(
-        priced,
-        key=lambda s: s["npc_with_adjustments_usd"] if s["npc_with_adjustments_usd"] is not None else float("inf"),
+    # Optimizer P0 wiring remediation, P0-1: no comparable rank-1
+    # candidate means NO canonical selection — never a fallback to the
+    # lowest-NPC candidate among non-comparable/PRICED_LOW_FIT structures.
+    assert canonical_id is None, (
+        f"{label}: canonical_selected_structure_id must be None when no comparable rank-1 "
+        f"candidate exists — got {canonical_id!r}, which would be a manufactured, "
+        "non-comparable canonical selection (the exact P0-1 defect Codex found)"
     )
-    assert canonical_id == expected["structure_id"], (
-        f"{label}: canonical_selected_structure_id must resolve to the lowest-NPC priced "
-        "structure when no numeric rank 1 exists — the exact fallback Reports.jsx "
-        "was previously missing"
-    )
-    return "lowest-npc-fallback"
+    return "no-comparable-winner"
 
 
-async def test_canonical_field_correct_for_fvd_and_exercises_both_algorithm_branches(db: AsyncSession):
-    """Runs both real productions and asserts the canonical field is
+async def test_canonical_field_correct_across_all_four_locked_corpus_productions(db: AsyncSession):
+    """Runs all four real productions and asserts the canonical field is
     correct for each given its OWN real current state, then asserts that
-    between the two, both branches of the algorithm (direct rank-1, and
-    the no-rank-1 lowest-NPC fallback that used to be missing from
-    Reports.jsx) are genuinely exercised by real data — not merely
-    theoretically covered."""
+    both branches (a real comparable rank-1 winner, and the real
+    no-comparable-winner state) are genuinely exercised by real data —
+    not merely theoretically covered."""
     branches_seen = set()
     for project_id, label in (
+        (LITTLE_UTOPIA_PROJECT_ID, "Little Utopia"),
         (FVD_PROJECT_ID, "F#K Valentine's Day"),
         (BAD_HOMBRES_PROJECT_ID, "Bad Hombres"),
+        (LIPS_LIKE_SUGAR_PROJECT_ID, "Lips Like Sugar"),
     ):
         await evaluate_project(db, project_id)
         view = await build_production_and_structures(db, project_id)
         branches_seen.add(await _assert_canonical_field_correct(view, label))
 
-    assert "rank1" in branches_seen or "lowest-npc-fallback" in branches_seen
-    assert branches_seen - {"none-priced"}, "expected at least one real priced production"
+    assert branches_seen == {"rank1", "no-comparable-winner"}, (
+        f"expected both branches genuinely exercised across the real corpus, got {branches_seen}"
+    )
 
 
-async def test_canonical_field_is_none_only_when_no_structure_is_priced(db: AsyncSession):
-    """Sanity guard against ever fabricating a selection: the field may
-    only be None if genuinely no structure in the served set is
-    is_fully_priced."""
-    for project_id in (FVD_PROJECT_ID, BAD_HOMBRES_PROJECT_ID):
+async def test_little_utopia_and_fvd_never_surface_a_noncomparable_candidate_as_canonical(db: AsyncSession):
+    """The exact real-project regression case Codex named: Little Utopia
+    and F#K Valentine's Day must never expose their own Saudi
+    full-relocation PRICED_LOW_FIT candidate (or any other non-comparable
+    candidate) as canonical_selected_structure_id."""
+    for project_id, label in (
+        (LITTLE_UTOPIA_PROJECT_ID, "Little Utopia"),
+        (FVD_PROJECT_ID, "F#K Valentine's Day"),
+    ):
         await evaluate_project(db, project_id)
         view = await build_production_and_structures(db, project_id)
         allocated = view["structures"]["allocated_structures"]
         canonical_id = allocated["canonical_selected_structure_id"]
-        any_priced = any(s["is_fully_priced"] for s in allocated["structures"])
+        comparable_count = len([r for r in allocated["ranking"] if r.get("rank") == 1])
+        assert comparable_count == 0, f"{label}: expected this real production to currently have no comparable winner"
+        assert canonical_id is None, (
+            f"{label}: canonical_selected_structure_id must be None (got {canonical_id!r}) — "
+            "no comparable Recommended candidate exists, so there is no canonical selection"
+        )
+
+
+async def test_bad_hombres_and_lips_valid_canonical_selection_preserved(db: AsyncSession):
+    """Regression guard: the two productions that DO have a real
+    comparable rank-1 winner must keep their valid selection unaffected
+    by the P0-1 fix."""
+    for project_id, label in (
+        (BAD_HOMBRES_PROJECT_ID, "Bad Hombres"),
+        (LIPS_LIKE_SUGAR_PROJECT_ID, "Lips Like Sugar"),
+    ):
+        await evaluate_project(db, project_id)
+        view = await build_production_and_structures(db, project_id)
+        allocated = view["structures"]["allocated_structures"]
+        rank1 = next((r for r in allocated["ranking"] if r.get("rank") == 1), None)
+        assert rank1 is not None, f"{label}: expected this real production to currently have a comparable winner"
+        assert allocated["canonical_selected_structure_id"] == rank1["structure_id"]
+
+
+async def test_canonical_field_is_none_only_when_no_comparable_winner_exists(db: AsyncSession):
+    """Sanity guard against ever fabricating a selection: the field may
+    only be None when there is genuinely no comparable rank-1 candidate —
+    never merely because a NON-comparable candidate happens to be
+    cheaper."""
+    for project_id in (
+        LITTLE_UTOPIA_PROJECT_ID, FVD_PROJECT_ID, BAD_HOMBRES_PROJECT_ID, LIPS_LIKE_SUGAR_PROJECT_ID,
+    ):
+        await evaluate_project(db, project_id)
+        view = await build_production_and_structures(db, project_id)
+        allocated = view["structures"]["allocated_structures"]
+        canonical_id = allocated["canonical_selected_structure_id"]
+        rank1 = next((r for r in allocated["ranking"] if r.get("rank") == 1), None)
         if canonical_id is None:
-            assert not any_priced, f"{project_id}: canonical field is None despite a priced structure existing"
+            assert rank1 is None, f"{project_id}: canonical field is None despite a comparable rank-1 candidate existing"
         else:
-            assert any_priced
+            assert rank1 is not None and canonical_id == rank1["structure_id"]

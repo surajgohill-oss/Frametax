@@ -303,3 +303,130 @@ def test_conditional_scenario_returns_none_when_no_treaty_registered():
         _inputs(), "QQ", "WW", "no-such-treaty", baseline_incentive_usd=None,
     )
     assert scenario is None
+
+
+# ---------------------------------------------------------------------------
+# Optimizer P0 wiring remediation (2026-09-04), P0-3 — TREATY CONDITIONAL
+# BUDGET DOUBLE-COUNTING. Codex's own critique of this file's prior
+# coverage: "checks positive arithmetic but not allocation/share
+# conservation." Root cause (confirmed live on LU GB/IE: gross $4,364,393,
+# 20%/20% minimums, combined QPE $8,126,528 = 186.2% of gross while
+# fully_priced=True): each participant was priced against the FULL,
+# unscaled project budget independently — never allocated. These tests
+# assert the fix directly: one budget, allocated shares summing to
+# exactly 100%, no source dollar counted twice, and a genuinely
+# infeasible split failing closed rather than reporting fully_priced.
+# ---------------------------------------------------------------------------
+
+def test_conditional_scenario_allocates_one_budget_never_prices_full_budget_twice(monkeypatch):
+    """THE P0-3 regression proof, synthetic and generic (governing spec's
+    own genericity requirement): a bilateral treaty whose majority/
+    minority minimums (20%/20%) do NOT sum to 100% must still produce an
+    allocation that DOES sum to exactly 100% (minority takes its stated
+    minimum, majority takes the complement) — never two independent
+    full-budget prices."""
+    treaty = _synthetic_treaty(
+        "zz-yy-bilateral", "ZZ", "YY", maj_min=20.0, min_min=20.0, min_max=80.0,
+        maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"],
+    )
+    monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
+
+    gross = 2_000_000.0
+    inputs = _inputs(gross_budget_usd=gross, leaf_account_sum_usd=gross,
+                      budget_lines=[BudgetLine("1000", "Cast", 1_000_000.0, spend_category="atl_cast")])
+    scenario = ce._build_conditional_bilateral_scenario(
+        inputs, "ZZ", "YY", "zz-yy-bilateral", baseline_incentive_usd=None,
+    )
+
+    assert scenario["fully_priced"] is True
+    alloc = scenario["participant_allocation_pct"]
+    assert alloc == {"ZZ": pytest.approx(80.0), "YY": pytest.approx(20.0)}
+    assert sum(alloc.values()) == pytest.approx(100.0, abs=1e-6), (
+        "the two participant allocations must conserve exactly one production budget"
+    )
+
+    # The root regression check: combined QPE/incentive must never reach
+    # anywhere near "each participant received the whole budget" — with
+    # a single $1,000,000 Cast line at 20%/80% split, neither
+    # participant's OWN allocated budget can exceed its own share.
+    majority_share_usd = round(gross * 0.80, 2)
+    minority_share_usd = round(gross * 0.20, 2)
+    for component in scenario["priced_components"]:
+        cap = majority_share_usd if component["jurisdiction_code"] == "ZZ" else minority_share_usd
+        assert component["selected_incentive_usd"] <= cap, (
+            f"{component['jurisdiction_code']}'s incentive ({component['selected_incentive_usd']}) "
+            f"must never exceed its own allocated share ({cap}) of the ONE source budget — "
+            "this is the exact double-counting defect Codex found"
+        )
+    # Old (broken) behavior for this exact fixture would have priced
+    # $1,000,000 of Cast QPE in BOTH ZZ and YY independently (combined
+    # QPE = 200% of the single budget line). The fixed combined incentive
+    # must be well below what two independent full-budget prices would
+    # produce.
+    assert scenario["conditional_incentive_usd"] < gross, (
+        "combined incentive must never approach or exceed the ONE source gross budget "
+        "for a single-line, single-program-per-side fixture like this one"
+    )
+
+
+def test_conditional_scenario_infeasible_split_fails_closed_never_fully_priced(monkeypatch):
+    """A treaty whose minority minimum is so high that the majority's
+    complement share would fall below the majority's OWN recorded
+    minimum has no allocation this engine can construct from known facts
+    alone — this must fail closed (fully_priced=False, an explicit
+    blocking_reason), never silently normalize or invent a split that
+    violates the treaty's own majority floor."""
+    treaty = _synthetic_treaty(
+        "zz-yy-bilateral", "ZZ", "YY", maj_min=50.0, min_min=60.0, min_max=80.0,
+        maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"],
+    )
+    monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
+
+    scenario = ce._build_conditional_bilateral_scenario(
+        _inputs(), "ZZ", "YY", "zz-yy-bilateral", baseline_incentive_usd=None,
+    )
+    assert scenario["fully_priced"] is False
+    assert scenario["status"] == "USER_DECISION_REQUIRED"
+    assert scenario["conditional_qualification_state"] == "UNRESOLVED_FACTS"
+    assert scenario["blocking_reason"], "an infeasible allocation must carry an explicit reason"
+    assert "conditional_incentive_usd" not in scenario
+    assert "conditional_npc_usd" not in scenario
+    # Never silently priced despite the infeasibility.
+    assert "priced_components" not in scenario
+
+
+def test_little_utopia_real_gbie_treaty_allocation_conserves_one_budget():
+    """Real-project control assertion (LU's own GB/IE conditional
+    scenario, the primary regression case named in this task) — proves
+    the fix against real persisted data, not only the synthetic fixtures
+    above. Real thresholds: GB/IE 20%/20%; real gross $4,364,393."""
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.db.session import engine
+    from app.services.canonical_project_economics import build_project_economic_inputs
+
+    LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
+
+    async def _run():
+        async with AsyncSession(engine, expire_on_commit=False) as db:
+            econ = await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)
+            return ce._build_conditional_bilateral_scenario(
+                econ.inputs, "GB", "IE", "european-convention-coproduction", None,
+            )
+
+    scenario = asyncio.run(_run())
+    assert scenario is not None
+    assert scenario["fully_priced"] is True
+    alloc = scenario["participant_allocation_pct"]
+    assert sum(alloc.values()) == pytest.approx(100.0, abs=1e-6)
+    # THE regression this task exists to close: combined QPE must never
+    # again reach 186.2% of gross ($8,126,528 on a $4,364,393 budget).
+    assert scenario["conditional_incentive_usd"] < 4_364_393.0, (
+        "combined conditional incentive must be well below the full gross budget, "
+        "never the ~186% double-counted figure Codex found"
+    )
+    assert scenario["conditional_npc_usd"] == pytest.approx(
+        4_364_393.0 - scenario["conditional_incentive_usd"], abs=0.01
+    )

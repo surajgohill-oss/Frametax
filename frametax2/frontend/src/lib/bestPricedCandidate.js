@@ -20,17 +20,33 @@
 // across two call sites given the same data. It now reads the ONE
 // canonical field the backend computes and serves explicitly
 // (allocated.canonical_selected_structure_id — see
-// canonical_production_view.py) first. The original reduce() below is
-// kept ONLY as a defensive fallback for a served payload that predates
-// the canonical field (e.g. a stale cached response mid-deploy) — it is
-// the exact algorithm the backend field itself now uses, so even if it
-// ever fires, it cannot produce a different answer than the canonical
-// field would have.
+// canonical_production_view.py).
+//
+// Optimizer P0 wiring remediation (2026-09-04), P0-1: the field can be a
+// real, legitimate `null` — "no comparable Recommended candidate exists,
+// so there is no canonical selection" (Little Utopia and F#K Valentine's
+// Day both currently serve this state). The ORIGINAL code here treated a
+// falsy field value (including a real `null`) as "field absent" and fell
+// through to the local reduce() below, which picks the lowest-NPC
+// structure among ALL is_fully_priced candidates regardless of
+// comparability — silently re-inventing exactly the non-comparable
+// PRICED_LOW_FIT winner (e.g. a Saudi full-relocation candidate) the
+// backend fix now correctly refuses to select. Fixed by checking for the
+// field's PRESENCE (a real server key, even when its value is null)
+// rather than its truthiness: a present-but-null field means "the
+// server's own canonical answer is no selection," which must propagate
+// as `null` here too, never trigger the legacy fallback. The reduce()
+// below now fires ONLY for a payload shape that predates this field
+// entirely (the key is genuinely absent) — a real, pre-existing served
+// shape, never re-derived, kept solely for that backward-compatibility
+// case.
 export function bestPricedCandidate(allocated) {
   if (!allocated) return null;
-  const byId = new Map((allocated.structures || []).map((s) => [s.structure_id, s]));
-  if (allocated.canonical_selected_structure_id && byId.has(allocated.canonical_selected_structure_id)) {
-    return byId.get(allocated.canonical_selected_structure_id);
+  if (Object.prototype.hasOwnProperty.call(allocated, "canonical_selected_structure_id")) {
+    const id = allocated.canonical_selected_structure_id;
+    if (!id) return null; // real "no comparable selection" state — never invent one
+    const byId = new Map((allocated.structures || []).map((s) => [s.structure_id, s]));
+    return byId.get(id) || null;
   }
   const priced = (allocated.structures || []).filter((s) => s.is_fully_priced);
   if (!priced.length) return null;

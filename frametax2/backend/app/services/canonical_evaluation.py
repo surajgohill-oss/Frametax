@@ -588,7 +588,18 @@ from app.services.canonical_project_economics import (
 # incompatibility diagnostic), and a valid combined structure now carries
 # reconciled per-program segments and a real total QPE instead of segments=[]
 # with total_qualifying_spend_usd=0 beside a non-zero incentive.
-ENGINE_VERSION = "canonical-1.52.0"
+#: Optimizer P0 wiring remediation (2026-09-04): bumped for P0-3 — treaty
+#: conditional bilateral pricing (_build_conditional_bilateral_scenario)
+#: now allocates ONE source budget across majority/minority participants
+#: instead of independently pricing the full gross budget in each,
+#: changing served conditional_incentive_usd/conditional_npc_usd/
+#: fully_priced/participant_allocation_pct for every persisted
+#: treaty_coproduction row with an UNRESOLVED_FACTS bilateral opportunity
+#: (confirmed live: FVD/Bad Hombres/Lips Like Sugar each have hundreds of
+#: such rows). A pure code change with no fingerprint-input difference —
+#: without this bump, evaluate_project's own existing-row reuse check
+#: would keep serving the OLD, double-counted trace_json forever.
+ENGINE_VERSION = "canonical-1.53.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1098,9 +1109,68 @@ def _build_conditional_bilateral_scenario(
     scenario["conditional_qualification_state"] = RESOLUTION_ELIGIBLE
     scenario["unlocked_slugs"] = list(result.unlocked_slugs)
 
+    # Optimizer P0 wiring remediation (2026-09-04), P0-3 — TREATY
+    # CONDITIONAL BUDGET DOUBLE-COUNTING. Root cause (Codex, confirmed
+    # live on LU GB/IE: gross $4,364,393, minority/majority minimums
+    # 20%/20%, combined QPE $8,126,528 = 186.2% of gross): the loop below
+    # used to call _price_candidate(inputs, code, priced_slug) — the SAME
+    # kernel single/full_relocation candidates use — with the UNSCALED
+    # `inputs.budget_lines`, once per participant. That prices the
+    # production's ENTIRE gross budget independently in EVERY treaty
+    # participant, as if each party received the whole project, rather
+    # than allocating ONE source budget across the two participants.
+    #
+    # A bilateral treaty's own recorded majority_min_pct/minority_min_pct
+    # are MINIMUM CONTRIBUTION FLOORS, not a full partition of the
+    # budget by themselves (this treaty's own real thresholds are
+    # 20%/20%, summing to only 40% — the remaining 60% is not stated by
+    # any treaty fact). No producer-confirmed fact exists that says how
+    # much MORE than its own floor either party contributes. The one
+    # non-invented, definitionally-correct allocation this engine CAN
+    # construct from the treaty's own real facts alone: the MINORITY
+    # party contributes exactly its stated minimum (no more — no fact
+    # justifies more), and the MAJORITY party — by definition the party
+    # holding whatever share is left — takes the complement (1 -
+    # minority_pct). This is the SAME canonical allocation semantics
+    # every other structure already applies (one source budget, real
+    # facts only, never an invented number); it is not a new percentage,
+    # only the arithmetic complement of the treaty's own recorded
+    # minority floor.
+    #
+    # Feasibility check: the majority party's OWN recorded minimum must
+    # still be satisfied by that complement share. If the minority's
+    # floor alone would push the majority's actual share below the
+    # majority's own stated minimum (e.g. minority=60%, majority
+    # min=50% -> complement=40% < 50%), no allocation can be constructed
+    # from known facts, and — per the required invariant — this
+    # scenario must NOT be marked fully_priced; it fails closed with an
+    # explicit reason, exactly like the deterministically_solvable=False
+    # branch above.
+    minority_allocation_pct = solved.minority_pct / 100.0
+    majority_allocation_pct = 1.0 - minority_allocation_pct
+    if majority_allocation_pct * 100.0 + 1e-9 < solved.majority_pct:
+        scenario["status"] = "USER_DECISION_REQUIRED"
+        scenario["fact_classification"] = FACT_USER_CONFIRMATION_REQUIRED
+        scenario["fully_priced"] = False
+        scenario["conditional_qualification_state"] = "UNRESOLVED_FACTS"
+        scenario["blocking_reason"] = (
+            f"Treaty {treaty_slug}'s own recorded minority_min_pct ({treaty.minority_min_pct}%) "
+            f"would leave the majority party only {majority_allocation_pct * 100:.1f}% of the "
+            f"production budget, below the majority's own recorded minimum "
+            f"({treaty.majority_min_pct}%). No producer-confirmed contribution split resolves "
+            "this; a complete allocation cannot be constructed from known facts alone."
+        )
+        return scenario
+    scenario["participant_allocation_pct"] = {
+        majority_code: round(majority_allocation_pct * 100, 4),
+        minority_code: round(minority_allocation_pct * 100, 4),
+    }
+
     # Price every unlocked slug through the SAME canonical kernel every
-    # ordinary candidate uses -- no new economics. majority_unlocks price
-    # against the majority party's own jurisdiction; minority_unlocks
+    # ordinary candidate uses -- no new economics beyond the one real
+    # source budget being ALLOCATED (scaled) across participants before
+    # each participant's own share is priced. majority_unlocks price
+    # against the majority party's own allocated share; minority_unlocks
     # against the minority party's. A slug with no canonical RateRule
     # (CANONICAL_DATA_GAP -- e.g. a program only ever represented in
     # legacy/superseded qualification data, never given canonical rate
@@ -1114,8 +1184,35 @@ def _build_conditional_bilateral_scenario(
     # SAME existing, generic canonical-slug table canonical_stack_bridge.py
     # already consults for stacking-rule lookups -- never a per-slug
     # special case here.
+    import dataclasses
+
     from app.data.program_rate_rules import _RULES_BY_PROGRAM
     from app.data.program_slug_aliases import canonical_slug as _canonical_program_slug
+
+    def _allocated_inputs_for(pct: float) -> "ProjectEconomicInputs":
+        """A scaled COPY of `inputs` whose every budget line is reduced
+        to this participant's own allocated share of the ONE source
+        budget -- never a second, independently-invented budget. Reuses
+        _price_candidate's own kernel unmodified; only its input is a
+        real fraction of the same real dollars, so no source account is
+        ever counted more than once across the two participants (their
+        shares sum to exactly 1.0 by construction above)."""
+        scaled_lines = [
+            dataclasses.replace(line, amount_usd=round(line.amount_usd * pct, 2))
+            for line in inputs.budget_lines
+        ]
+        return dataclasses.replace(
+            inputs,
+            budget_lines=scaled_lines,
+            gross_budget_usd=round(inputs.gross_budget_usd * pct, 2),
+            leaf_account_sum_usd=(
+                round(inputs.leaf_account_sum_usd * pct, 2)
+                if inputs.leaf_account_sum_usd is not None else None
+            ),
+        )
+
+    majority_inputs = _allocated_inputs_for(majority_allocation_pct)
+    minority_inputs = _allocated_inputs_for(minority_allocation_pct)
 
     priced_components: list[dict] = []
     data_gaps: list[str] = []
@@ -1124,11 +1221,12 @@ def _build_conditional_bilateral_scenario(
         code = majority_code if slug in treaty.majority_unlocks else (
             minority_code if slug in treaty.minority_unlocks else majority_code
         )
+        participant_inputs = majority_inputs if code == majority_code else minority_inputs
         priced_slug = _canonical_program_slug(slug)
         if priced_slug not in _RULES_BY_PROGRAM:
             data_gaps.append(slug)
             continue
-        pricing, register, rr = _price_candidate(inputs, code, priced_slug)
+        pricing, register, rr = _price_candidate(participant_inputs, code, priced_slug)
         if pricing is None or rr is None:
             data_gaps.append(slug)
             continue
