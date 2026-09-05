@@ -44219,3 +44219,1375 @@
 - **Co-Production**: Supported via the main scheme.
 - **Uplifts**: Up to +7% across tourism, post-production, and regional shooting criteria.
 
+## LB (LEBANON)
+- **Canonical Inventory Check**: Found 'Centre du Cinéma Libanais (CCL) Production Support' in discovery ledger. Not an optimizer-relevant QPE rebate.
+- **Secondary Research**: Identified Lebanese Film Fund (managed by FLC) and Coup de Cœur Award. AFAC and DFI also provide regional grants.
+- **Stackability**: Unknown/Not applicable to base rebates (none exist).
+- **Co-Production**: CCL support requires Lebanese partners.
+- **Uplifts**: None found.
+
+## VE (VENEZUELA)
+- **Canonical Inventory Check**: Found 'CNAC Venezuela Film Production Fund' in discovery ledger.
+- **Secondary Research**: CNAC (Centro Nacional Autónomo de Cinematografía) is active in 2024 via FONPROCINE. Includes a modality for Minority Feature Film Co-production.
+- **Stackability**: Unknown.
+- **Co-Production**: Yes, explicitly supports minority feature film co-productions.
+- **Uplifts**: None found.
+
+## GY (GUYANA)
+- **Canonical Inventory Check**: Found 'Guyana Tourism Authority Film Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is in-kind support (permits, customs clearance assistance), not a cash grant or rebate. Promoted as part of the 'Orange Economy'.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## NA (NAMIBIA)
+- **Canonical Inventory Check**: Found 'Namibia Film Commission Production Incentive' in discovery ledger.
+- **Secondary Research**: Confirmed NFC provides grants/funding but primarily targeted at local Namibian filmmakers. No operational cash rebate for international productions. VAT recovery possible via fixers.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## BW (BOTSWANA)
+- **Canonical Inventory Check**: Found 'Botswana Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed the Film Commission and cash rebate programs are currently IN DEVELOPMENT under the Ministry of Finance and MYSC. No operational cash rebate exists yet.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## ET (ETHIOPIA)
+- **Canonical Inventory Check**: Found 'Ethiopian Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is in-kind support (permits/coordination). No formal cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## CI (CÔTE D'IVOIRE)
+- **Canonical Inventory Check**: Found 'Centre National de Cinéma de Côte d'Ivoire (CNCI) Film Support' in discovery ledger.
+- **Secondary Research**: Confirmed CNCI (now ONAC-CI) supports local cinema. No cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## CM (CAMEROON)
+- **Canonical Inventory Check**: Found 'Cameroon Centre National de la Cinématographie (CNC-Cameroon)' in discovery ledger.
+- **Secondary Research**: Confirmed CNC-Cameroon supports local cinema. No cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## AO (ANGOLA)
+- **Canonical Inventory Check**: Found 'Angola Instituto do Cinema e Audiovisual (ICA) Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is in-kind institutional support and permitting. No formal cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## UG (UGANDA)
+- **Canonical Inventory Check**: Found 'Uganda Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed UCC handles permits/regulation. No cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## MZ (MOZAMBIQUE)
+- **Canonical Inventory Check**: Found 'Mozambique Instituto do Cinema Film Support' in discovery ledger.
+- **Secondary Research**: Confirmed INICC supports local cinema. No cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## ZM (ZAMBIA)
+- **Canonical Inventory Check**: Found 'Zambia Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is in-kind institutional support. No formal cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## ZW (ZIMBABWE)
+- **Canonical Inventory Check**: Found 'Zimbabwe Film and Broadcasting Authority Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed BAZ handles regulation. No cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## CN (CHINA)
+- **Canonical Inventory Check**: Found 'China Film Administration Domestic Co-production Support' in discovery ledger.
+- **Secondary Research**: Confirmed CFA support allows official co-productions to bypass the foreign film import quota and receive domestic treatment. There is no national cash rebate for foreign shoots (though subnational hubs like Qingdao offer them).
+- **Stackability**: Not applicable at national level.
+- **Co-Production**: Yes, official co-productions are heavily regulated and incentivized via quota bypass.
+- **Uplifts**: None found at national level.
+
+## MN (MONGOLIA)
+- **Canonical Inventory Check**: Found 'Mongolian Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is actually a massive baseline cash rebate (up to 45%).
+- **Stackability**: Unknown.
+- **Co-Production**: Yes, joint international projects qualify.
+- **Uplifts**: 10% cultural bonus + 5% foreign talent bonus.
+
+## MO (MACAU SAR)
+- **Canonical Inventory Check**: Found 'Macau Cultural Industries Fund Film Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed CDF handles subsidies and grants for local projects. No cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## BD (BANGLADESH)
+- **Canonical Inventory Check**: Found 'Bangladesh Film Development Corporation (BFDC) Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed BFDC offers subsidized rental rates and direct grants (via Ministry of Information). No QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## CH (SWITZERLAND)
+- **Canonical Inventory Check**: Found 'Swiss Federal Office of Culture (FOC) Film Support' in discovery ledger.
+- **Secondary Research**: Confirmed FiSS program supports official co-productions (up to 40% of local spend). No automatic cash rebate for foreign service shoots.
+- **Stackability**: Unknown.
+- **Co-Production**: Yes, heavily geared toward official co-productions.
+- **Uplifts**: None found.
+
+## SI (SLOVENIA)
+- **Canonical Inventory Check**: Found 'Slovenian Film Centre (SFC) Cash Rebate and Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is an active 25% QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: Yes, available to co-productions and service shoots.
+- **Uplifts**: None found.
+
+## UA (UKRAINE)
+- **Canonical Inventory Check**: Found 'Ukrainian State Film Agency Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed legislation exists for a 25% cash rebate (plus 5% cultural bonus). However, it is currently inoperable/suspended due to martial law and the ongoing war.
+- **Stackability**: Not applicable.
+- **Co-Production**: Yes, previously available.
+- **Uplifts**: 5% Cultural Bonus (Suspended).
+
+## RU (RUSSIA)
+- **Canonical Inventory Check**: Found 'Russian Cinema Fund (Fond Kino) Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed legislation exists for a 30-40% federal cash rebate. However, it is effectively inaccessible/suspended for Western international productions due to sanctions and geopolitics.
+- **Stackability**: Not applicable.
+- **Co-Production**: Primarily pivoting to Global South / domestic focus.
+- **Uplifts**: None currently applicable to Western shoots.
+
+## BY (BELARUS)
+- **Canonical Inventory Check**: Found 'Belarusfilm National Film Studio Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed state support goes directly through Belarusfilm for domestic and Russian co-productions. No QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: Yes, heavily geared toward Russian co-productions.
+- **Uplifts**: None found.
+
+## MD (MOLDOVA)
+- **Canonical Inventory Check**: Found 'National Centre for Cinematography Moldova (NCFM)' in discovery ledger.
+- **Secondary Research**: Confirmed this is an active 25% QPE cash rebate, plus a 5% thematic/cultural bonus.
+- **Stackability**: Not applicable.
+- **Co-Production**: Yes, requires local co-producer/service company.
+- **Uplifts**: 5% Cultural Bonus.
+
+## CU (CUBA)
+- **Canonical Inventory Check**: Found 'ICAIC Cuba Film Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed ICAIC controls all state production. No automatic cash rebate for foreign service shoots.
+- **Stackability**: Not applicable.
+- **Co-Production**: Supported, but under strict state control.
+- **Uplifts**: None found.
+
+## IR (IRAN)
+- **Canonical Inventory Check**: Found 'Farabi Cinema Foundation Film Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed Farabi primarily supports domestic cinema. No QPE cash rebate for international productions.
+- **Stackability**: Not applicable.
+- **Co-Production**: Geared towards domestic ideological/national projects.
+- **Uplifts**: None found.
+
+## DZ (ALGERIA)
+- **Canonical Inventory Check**: Found 'Centre Algérien pour le Développement du Cinéma (CADC) Film Support' in discovery ledger.
+- **Secondary Research**: Confirmed there is no cash rebate. The primary public fund, FDATIC, was cancelled. CADC handles accreditations and some co-production support.
+- **Stackability**: Not applicable.
+- **Co-Production**: Yes, supported via CADC.
+- **Uplifts**: None found.
+
+## GA (GABON)
+- **Canonical Inventory Check**: Found 'Gabon Ministry of Culture Film Commission Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is institutional facilitation/support (via IGis/Ministry). No active QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific international co-production fund identified.
+- **Uplifts**: None found.
+
+## SC (SEYCHELLES)
+- **Canonical Inventory Check**: Found 'Seychelles Tourism Board Film Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed this is facilitation/logistical support. No active QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## MV (MALDIVES)
+- **Canonical Inventory Check**: Found 'Maldives Marketing and PR Corporation (MMPRC) Film Facilitation' in discovery ledger.
+- **Secondary Research**: Confirmed this is primarily marketing/tourism facilitation. No active QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: No specific funds identified.
+- **Uplifts**: None found.
+
+## BT (BHUTAN)
+- **Canonical Inventory Check**: Found 'Bhutan Film Commission / Tourism Council Production Facilitation' in discovery ledger.
+- **Secondary Research**: Confirmed this is logistical/permitting facilitation. No active QPE cash rebate.
+- **Stackability**: Not applicable.
+- **Co-Production**: Highly restricted due to cultural/tourism regulations.
+- **Uplifts**: None found.
+
+## BF (BURKINA FASO)
+- **Canonical Inventory Check**: Found 'FESPACO' in discovery ledger.
+- **Secondary Research**: Confirmed state support is primarily channeled through Pan-African grants and FESPACO. No formal QPE cash rebate for Western shoots.
+- **Stackability**: Not applicable.
+- **Co-Production**: Yes, heavily geared toward African co-productions.
+- **Uplifts**: None found.
+
+## US-OR (UNITED STATES — OREGON)
+- **Canonical Inventory Check**: Found 'Oregon Production Investment Fund (OPIF)' in discovery ledger.
+- **Secondary Research**: Confirmed OPIF is an active cash rebate. Base is 25% on goods/services and 20% on payroll.
+- **Stackability**: The Greenlight Oregon Labor Rebate (GOLR) stacks an additional 6.2% on labor. rOPIF and L-OPIF function as secondary regional/local funds.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 6.2% Labor Uplift (GOLR).
+
+## US-WA (UNITED STATES — WASHINGTON)
+- **Canonical Inventory Check**: Found 'Washington State Motion Picture Competitiveness Program' in discovery ledger.
+- **Secondary Research**: Confirmed MPCP is a 30% base cash rebate. Secondary funds include Small Budget Production Initiative (SBPI) and FWD Funding Initiative.
+- **Stackability**: Uplifts stack on the base rebate.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 10% Rural County, 10% Historically Underrepresented Communities, 5% Episodic Series Bonus.
+
+## US-IL (UNITED STATES — ILLINOIS)
+- **Canonical Inventory Check**: Found 'Illinois Film Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed active tax credit. Base rate expanded to 35% (via SB 1911).
+- **Stackability**: Highly stackable bonuses up to 55% total.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 15% Economically Disadvantaged Area (EDA), 5% Outside Chicago, 5% Relocation, 5% Certified Green.
+
+## US-NC (UNITED STATES — NORTH CAROLINA)
+- **Canonical Inventory Check**: Found 'North Carolina Film & Entertainment Grant' in discovery ledger.
+- **Secondary Research**: Confirmed 25% cash grant. A secondary Micro-Budget grant fund exists for projects between $50k-$1.5M.
+- **Stackability**: N/A.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: None currently stackable on the base grant.
+
+## US-SC (UNITED STATES — SOUTH CAROLINA)
+- **Canonical Inventory Check**: Found 'South Carolina Film Production Credit' in discovery ledger.
+- **Secondary Research**: Confirmed 20-25% cash rebate on wages, 30% on suppliers. Investor Tax Credits also exist.
+- **Stackability**: Uplifts stack on the base supplier rebate.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 5% In-State Vendor bonus (pushing supplier base to 30%).
+
+## US-MA (UNITED STATES — MASSACHUSETTS)
+- **Canonical Inventory Check**: Found 'Massachusetts Film Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed flat 25% tax credit. Extremely simple structure with no secondary uplifts.
+- **Stackability**: N/A.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: None found.
+
+## US-TX (UNITED STATES — TEXAS)
+- **Canonical Inventory Check**: Found 'Texas Moving Image Industry Incentive Program (MIIP)' in discovery ledger.
+- **Secondary Research**: Confirmed MIIP is a cash grant structure based on spend tiers (5% to 25%).
+- **Stackability**: Highly stackable with multiple state uplifts to reach a theoretical max of 31%.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: Rural/Underutilized Area, Veterans/Workforce, In-State Post-Production, Historic Sites.
+
+## US-CT (UNITED STATES — CONNECTICUT)
+- **Canonical Inventory Check**: Found 'Connecticut Film Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed tiered tax credit up to 30% (for spend > $1M). Transferable.
+- **Stackability**: N/A for 2024 (Urban uplifts begin in 2027).
+- **Co-Production**: N/A (US State).
+- **Uplifts**: None currently active (Urban areas future).
+
+## US-PA (UNITED STATES — PENNSYLVANIA)
+- **Canonical Inventory Check**: Found 'Pennsylvania Film Production Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base tax credit with a 5% bonus for using qualified stages (QPF).
+- **Stackability**: QPF bonus stacks on base.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 5% QPF (Qualified Production Facility) Bonus.
+
+## US-MD (UNITED STATES — MARYLAND)
+- **Canonical Inventory Check**: Found 'Maryland Film Production Activity Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed 28% base refundable tax credit. Features a distinct 'Maryland Small Films' tier for local indie budgets.
+- **Stackability**: TV series stack an additional 2%.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 2% TV Series Uplift.
+
+## US-VA (UNITED STATES — VIRGINIA)
+- **Canonical Inventory Check**: Found 'Virginia Motion Picture Production Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed 15% base tax credit (or grant). Highly dependent on stacking secondary bonuses to reach competitiveness.
+- **Stackability**: Uplifts apply to specific pools (e.g., resident wages) rather than blanket spend, but are explicitly stackable.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 5% Economically Distressed, 10-20% VA Resident Payroll, 10% First-Time Employee.
+
+## US-CO (UNITED STATES — COLORADO)
+- **Canonical Inventory Check**: Found 'Colorado Film Incentive' in discovery ledger.
+- **Secondary Research**: 2024 UPDATE (HB 24-1358): Converted from a cash rebate to a fully refundable income tax credit. Base is 20%.
+- **Stackability**: Regional uplift stacks on base.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 2% Rural or Marginalized Urban Center Bonus.
+
+## US-TN (UNITED STATES — TENNESSEE)
+- **Canonical Inventory Check**: Found 'Tennessee Film, Entertainment & Music Commission Incentives' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base discretionary cash grant. Uses a scorecard system for uplifts.
+- **Stackability**: Scorecard criteria explicitly stack (up to 30% max).
+- **Co-Production**: N/A (US State).
+- **Uplifts**: Up to 5% bonus for Rural, Resident Hires, and VFX.
+
+## US-OK (UNITED STATES — OKLAHOMA)
+- **Canonical Inventory Check**: Found 'Oklahoma Film Enhancement Rebate' in discovery ledger.
+- **Secondary Research**: Confirmed 20% base cash rebate. One of the most aggressive stacking programs in the US.
+- **Stackability**: Extremely stackable up to 38%.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: Rural (3%), Soundstage (5%), TV Pilot/Series (2-5%), Multi-Film (5%), Post-Production (3%), Music (2%).
+
+## US-AL (UNITED STATES — ALABAMA)
+- **Canonical Inventory Check**: Found 'Alabama Film Incentive' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base on expenditures, 35% on resident payroll. Includes small-budget provision (45% on payroll).
+- **Stackability**: Payroll uplifts apply strictly to resident wages.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 10% Resident Payroll Bonus (above the 25% base).
+
+## US-KY (UNITED STATES — KENTUCKY)
+- **Canonical Inventory Check**: Found 'Kentucky Entertainment Industry Incentive Act (KEIIA)' in discovery ledger.
+- **Secondary Research**: Confirmed 30% base refundable tax credit. 35% cap.
+- **Stackability**: 5% uplift stacks on base for either resident labor or enhanced counties.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: 5% Enhanced Incentive County OR 5% Resident Labor.
+
+## CA-AB (CANADA — ALBERTA)
+- **Canonical Inventory Check**: Found 'Alberta Film and Television Tax Credit (FTTC)' in discovery ledger.
+- **Secondary Research**: Confirmed 22% (Foreign) / 30% (Alberta) base credit. 2024 update added a rural uplift for foreign productions.
+- **Stackability**: Rural uplift adds 8% specifically to foreign productions to match the 30% domestic rate.
+- **Co-Production**: N/A.
+- **Uplifts**: 8% Rural/Remote Filming Location Uplift.
+
+## CA-MB (CANADA — MANITOBA)
+- **Canonical Inventory Check**: Found 'Manitoba Film & Video Production Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed dual-stream approach (Cost of Salaries vs Cost of Production).
+- **Stackability**: Extremely stackable. Salaries stream can reach 65%. Production stream can reach 38%.
+- **Co-Production**: Manitoba Production Company Bonus implicitly rewards co-productions.
+- **Uplifts**: Frequent Filming (10%), Rural Filming (5%), MB Producer (5%), MB Company (8%).
+
+## CA-NS (CANADA — NOVA SCOTIA)
+- **Canonical Inventory Check**: Found 'Nova Scotia Film & Television Production Incentive Fund' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base. Features robust uplifts for distant locations and local content.
+- **Stackability**: Stacks cleanly with federal Canadian incentives.
+- **Co-Production**: N/A.
+- **Uplifts**: Distant Location (10%), Rural (2%), Duration (1%), NS Content (3%).
+
+## CA-NB (CANADA — NEW BRUNSWICK)
+- **Canonical Inventory Check**: Found 'New Brunswick Film Tax Credit' in discovery ledger.
+- **Secondary Research**: Shifted structurally to the LIFT (Leveraging Investment in Film & TV) program. Major stream is 25-35% grant.
+- **Stackability**: Designed specifically to stack with federal CPTC/PSTC.
+- **Co-Production**: N/A.
+- **Uplifts**: Up to 10% in LIFT criteria bonuses over the 25% base.
+
+## GB-SCT (UNITED KINGDOM — SCOTLAND)
+- **Canonical Inventory Check**: Found 'Screen Scotland Production Growth Fund' in discovery ledger.
+- **Secondary Research**: This is a direct grant (up to £500k) acting as a regional top-up for productions already accessing the UK AVEC.
+- **Stackability**: Stacks on the UK AVEC/IFTC, but NOT on other Screen Scotland funds.
+- **Co-Production**: N/A.
+- **Uplifts**: The fund itself functions as a regional uplift.
+
+## GB-WLS (UNITED KINGDOM — WALES)
+- **Canonical Inventory Check**: Found 'Wales Screen Production Fund (Ffilm Cymru Wales)' in discovery ledger.
+- **Secondary Research**: Confirmed Creative Wales provides discretionary production funding based on skills legacy and local spend.
+- **Stackability**: Designed to act as a regional top-up stacking on the UK AVEC.
+- **Co-Production**: N/A.
+- **Uplifts**: Funding itself acts as an uplift.
+
+## AU-VIC (AUSTRALIA — VICTORIA)
+- **Canonical Inventory Check**: Found 'VicScreen Production Investment' in discovery ledger.
+- **Secondary Research**: Confirmed VicScreen (VPF) generally offers 3-10% of state spend. Regional Location Assistance Fund (RLAF) acts as an additional targeted fund.
+- **Stackability**: Stacks on top of the Australian Federal Offsets (30% PDV, 40% Producer, or 16.5% Location).
+- **Co-Production**: N/A.
+- **Uplifts**: RLAF acts as a secondary uplift within the state for rural shooting.
+
+## US-HI (UNITED STATES — HAWAII)
+- **Canonical Inventory Check**: Found 'Hawaii Film and Digital Media Income Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed base 22% (O'ahu). Neighbor islands get 27%. Recent act (Act 185) adds a 5% local hire bonus.
+- **Stackability**: The Neighbor Island uplift (5%) and Local Hire uplift (5%) stack on the 22% base for a maximum of 32%.
+- **Co-Production**: N/A.
+- **Uplifts**: 5% Neighbor Island, 5% Local Hire (80%+ workforce).
+
+## US-UT (UNITED STATES — UTAH)
+- **Canonical Inventory Check**: Found 'Utah Motion Picture Incentive Program' in discovery ledger.
+- **Secondary Research**: Confirmed 20% base. 5% uplift available for meeting rural shoot days or local hire targets.
+- **Stackability**: 5% uplift stacks on the 20% base.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: Rural Production Days (5%) OR Local Hire (5%).
+
+## US-MN (UNITED STATES — MINNESOTA)
+- **Canonical Inventory Check**: Found 'Minnesota Film Production Tax Credit' in discovery ledger.
+- **Secondary Research**: State offers a flat 25% transferable tax credit. There are no state-level formulaic uplifts. However, regional hubs (e.g., St. Louis County) offer 25% cash rebates that explicitly stack.
+- **Stackability**: Local/Regional incentives stack on top of the State Tax Credit.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: N/A at the state statutory level, but functionally achieved via regional funds.
+
+## US-MS (UNITED STATES — MISSISSIPPI)
+- **Canonical Inventory Check**: Found 'Mississippi Advantage Film Program' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base cash rebate. 5% bonus for resident labor, 5% bonus for veteran labor.
+- **Stackability**: Both 5% labor bonuses stack, pushing effective rate to 35% on those payroll portions.
+- **Co-Production**: N/A (US State).
+- **Uplifts**: Resident Labor (5%), Veteran Labor (5%).
+
+## US-AZ (UNITED STATES — ARIZONA)
+- **Canonical Inventory Check**: Found 'Arizona Motion Picture Production Program' in discovery ledger.
+- **Secondary Research**: Confirmed tiered base (15-20%) depending on budget size. Highly modular uplifts.
+- **Stackability**: The three 2.5% uplifts (Labor, Facility, Tenant) stack independently on top of the base tier.
+- **Co-Production**: N/A.
+- **Uplifts**: Local BTL Labor (2.5%), QPF Facility (2.5%), QPF Tenant (2.5%).
+
+## US-PR (PUERTO RICO — US TERRITORY)
+- **Canonical Inventory Check**: Found 'Puerto Rico Film Industry Economic Incentives Act' in discovery ledger.
+- **Secondary Research**: Act 60 provides a 40% base on resident spend. Extremely aggressive and highly transferable structure.
+- **Stackability**: Uplifts stack aggressively, theoretically pushing local-driven productions above 60%.
+- **Co-Production**: An explicit 15% Co-Production uplift exists for international studios partnering locally.
+- **Uplifts**: Resident ATL (5%), Domestic-Facing Key Creatives (15%), Co-Production (15%).
+
+## CA-SK (CANADA — SASKATCHEWAN)
+- **Canonical Inventory Check**: Found 'Creative Saskatchewan Film and TV Production Grant' in discovery ledger.
+- **Secondary Research**: Confirmed FFTV grant base. Saskatchewan relies on this grant mechanism rather than standard provincial tax credits.
+- **Stackability**: Bonuses stack directly on top of the base grant limit.
+- **Co-Production**: N/A.
+- **Uplifts**: Rural (5%), Post-Production (5%), Production Volume (10%).
+
+## CA-NL (CANADA — NEWFOUNDLAND & LABRADOR)
+- **Canonical Inventory Check**: Found 'Newfoundland & Labrador Film Development Corp Production Incentive' in discovery ledger.
+- **Secondary Research**: Confirmed 40% All-Spend or 40% Labour-based tax credit. Administered by PictureNL.
+- **Stackability**: N/A. No specific geographic uplifts exist as the base is already 40%.
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the tax credit.
+
+## US-LA (UNITED STATES — LOUISIANA)
+- **Canonical Inventory Check**: Found 'Louisiana Motion Picture Production Program' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base. Heavily incentivizes local hiring and out-of-NOLA filming.
+- **Stackability**: Uplifts stack up to a maximum statutory cap of 40%.
+- **Co-Production**: N/A.
+- **Uplifts**: LA Resident Labor (15%), LA Screenplay (10%), Outside New Orleans (5%), VFX (5%).
+
+## US-NM (UNITED STATES — NEW MEXICO)
+- **Canonical Inventory Check**: Found 'New Mexico Film Production Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed 25% base. Famous for its 10% rural "Uplift Zone" bonus.
+- **Stackability**: The Uplift Zone (10%) stacks with either the TV Series (5%) OR the QPF Facility (5%) bonus, maxing at 40%.
+- **Co-Production**: N/A.
+- **Uplifts**: Uplift Zone / Rural (10%), TV Series (5%), QPF Facility (5%).
+
+## US-NV (UNITED STATES — NEVADA)
+- **Canonical Inventory Check**: Found 'Nevada Film Incentive Program' in discovery ledger.
+- **Secondary Research**: Confirmed 15% base transferable tax credit. The program is significantly constrained by a $10M annual cap, meaning it is often tapped out early.
+- **Stackability**: The two 5% uplifts stack to reach a maximum 25%.
+- **Co-Production**: N/A.
+- **Uplifts**: BTL Resident Bonus (5%), Rural County Location Bonus (5%).
+
+## US-RI (UNITED STATES — RHODE ISLAND)
+- **Canonical Inventory Check**: Found 'Rhode Island Motion Picture Production Tax Credit' in discovery ledger.
+- **Secondary Research**: Confirmed flat 30% transferable tax credit. There are no secondary structural uplifts.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## DE-NW (GERMANY — NORTH RHINE-WESTPHALIA)
+- **Canonical Inventory Check**: Found 'Film und Medienstiftung NRW' in discovery ledger.
+- **Secondary Research**: This is a regional fund (soft-loan/grant) rather than an automatic tax credit. Evaluated on the 'NRW-Effekt' (local spend multiplier).
+- **Stackability**: Explicitly designed to stack with the national German Federal Film Fund (DFFF 20-25%).
+- **Co-Production**: Highly favorable to European co-productions to meet regional spend thresholds.
+- **Uplifts**: None intrinsic to the fund; it acts as a regional uplift itself.
+
+## SE-VG (SWEDEN — VÄSTRA GÖTALAND)
+- **Canonical Inventory Check**: Found 'Film i Väst — Regional Co-production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as an equity co-production fund, not a statutory tax credit. Requires 100% of its investment to be spent regionally.
+- **Stackability**: Designed to sit underneath or alongside the national Tillväxtverket 25% rebate and Eurimages.
+- **Co-Production**: Extremely reliant on co-production mechanics; a Swedish co-producer is mandatory.
+- **Uplifts**: None intrinsic; it is the uplift.
+
+## GB-NIR (UNITED KINGDOM — NORTHERN IRELAND)
+- **Canonical Inventory Check**: Found 'Northern Ireland Screen — Production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary, recoupable loan/grant (max 25% of NI spend, usually capped around £1M).
+- **Stackability**: Explicitly stacks with the UK Audio-Visual Expenditure Credit (AVEC).
+- **Co-Production**: N/A (though frequently used in UK/Ireland co-pros).
+- **Uplifts**: None intrinsic.
+
+## DE-MDM (GERMANY — MITTELDEUTSCHLAND)
+- **Canonical Inventory Check**: Found 'Mitteldeutsche Medienförderung (MDM) — Film Production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a regional fund (up to 50% of budget). Added the FOKUS fund in 2024 for strictly regional stories.
+- **Stackability**: Explicitly designed to stack with the national German Federal Film Fund (DFFF).
+- **Co-Production**: Grant can increase from 50% to 60% for cross-border EU co-productions.
+- **Uplifts**: Cross-border Co-production bump (+10%).
+
+## IT-APU (ITALY — APULIA REGION)
+- **Canonical Inventory Check**: Found 'Apulia Film Commission — Film Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a €5M competitive regional grant, evaluated via a points system (shooting days, local crew).
+- **Stackability**: Designed to explicitly stack with the Italian National Tax Credit (40%).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the funding structure beyond achieving a higher competitive score.
+
+## IT-PIE (ITALY — PIEDMONT REGION)
+- **Canonical Inventory Check**: Found 'Film Commission Torino Piemonte — Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed 'Piemonte Film TV Fund' operates as a non-repayable regional grant covering up to 40% of eligible local costs.
+- **Stackability**: Designed to explicitly stack with the Italian National Tax Credit (40%).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the funding structure beyond achieving a higher competitive score.
+
+## ES-EUS (SPAIN — BASQUE COUNTRY)
+- **Canonical Inventory Check**: Found 'Basque Audiovisual — Eusko Jaurlaritza Film Production Support' in discovery ledger.
+- **Secondary Research**: The Basque Country (specifically Bizkaia) operates under a separate Foral tax system, independent of the general Spanish national incentive. Base deduction ranges from 35% to 60% depending on the percentage of total expenses incurred in the territory.
+- **Stackability**: The Basque language uplift stacks on the base territorial credit to reach up to 70%.
+- **Co-Production**: N/A.
+- **Uplifts**: High Local Spend (+10-25%), Basque Language / Euskera (+10%).
+
+## AU-WA (AUSTRALIA — WESTERN AUSTRALIA)
+- **Canonical Inventory Check**: Found 'Screenwest WA — Production Attraction Strategy (PAS)' in discovery ledger.
+- **Secondary Research**: Confirmed discretionary Production Attraction Incentive (approx 10%+) and a robust 20% WA PDV (Post/VFX) incentive.
+- **Stackability**: Designed to explicitly stack with the Federal Location Offset (30%) and PDV Offset (30%).
+- **Co-Production**: N/A.
+- **Uplifts**: Regional Screen Fund bonus exists for rural WA filming.
+
+## AU-SA (AUSTRALIA — SOUTH AUSTRALIA)
+- **Canonical Inventory Check**: Found 'South Australian Film Corporation (SAFC) — Production Incentive' in discovery ledger.
+- **Secondary Research**: Confirmed the 10% SA PDV Rebate and the discretionary Screen Production Fund.
+- **Stackability**: Designed to explicitly stack with the Federal Location Offset (30%) and PDV Offset (30%).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic beyond the 10% PDV rate.
+
+## DE-BB (GERMANY — BERLIN-BRANDENBURG)
+- **Canonical Inventory Check**: Found 'Medienboard Berlin-Brandenburg (MBB) — Film Production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant/soft-loan up to 50% based on 'regional effect' (local spend).
+- **Stackability**: Designed to explicitly stack with the national German Federal Film Fund (DFFF 20-25%).
+- **Co-Production**: Heavily leveraged for international co-productions utilizing Studio Babelsberg.
+- **Uplifts**: None intrinsic beyond meeting regional spend targets.
+
+## DE-HH (GERMANY — HAMBURG / SCHLESWIG-HOLSTEIN)
+- **Canonical Inventory Check**: Found 'Film- und Medienstiftung Hamburg Schleswig-Holstein' in discovery ledger. Program has rebranded to 'MOIN Filmförderung'.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant/soft-loan based on 'regional effect' (150% local spend required for full benefit).
+- **Stackability**: Designed to explicitly stack with the national German Federal Film Fund (DFFF 20-25%).
+- **Co-Production**: Highly favorable to Nordic/German co-productions.
+- **Uplifts**: None intrinsic beyond meeting regional spend targets.
+
+## DE-BW (GERMANY — BADEN-WÜRTTEMBERG)
+- **Canonical Inventory Check**: Found 'MFG Medien- und Filmgesellschaft Baden-Württemberg' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant. It has a specific 'Line Producer Funding' track highly targeted at Animation and VFX service work.
+- **Stackability**: Designed to explicitly stack with the national German Federal Film Fund (DFFF 20-25%).
+- **Co-Production**: Standard European co-production structures apply.
+- **Uplifts**: None intrinsic beyond meeting regional spend targets.
+
+## IT-SIC (ITALY — SICILY)
+- **Canonical Inventory Check**: Found 'Sicilia Film Commission — Film Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a competitive, non-repayable regional grant. Requires adherence to environmental sustainability protocols ('Green Film').
+- **Stackability**: Designed to explicitly stack with the Italian National Tax Credit (40%).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the funding structure beyond achieving a higher competitive score.
+
+## IT-CAM (ITALY — CAMPANIA)
+- **Canonical Inventory Check**: Found 'Film Commission Campania — Production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant (often funded via POC - Piano Operativo Complementare).
+- **Stackability**: Designed to explicitly stack with the Italian National Tax Credit (40%).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the funding structure beyond achieving a higher competitive score.
+
+## ES-AND (SPAIN — ANDALUSIA)
+- **Canonical Inventory Check**: Found 'Andalucia Film Commission — Audiovisual Production Incentive' in discovery ledger.
+- **Secondary Research**: Andalusia does not possess a specific autonomous fiscal tax uplift (unlike the Canary Islands or Basque Country). It relies entirely on the Spanish National Tax Credit (30% on the first €1M, 25% thereafter). The region offers logistical support and occasional small cultural grants.
+- **Stackability**: N/A (It is the national incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## ES-GAL (SPAIN — GALICIA)
+- **Canonical Inventory Check**: Found 'Agadic — Axencia Galega das Industrias Culturais Film Production Fund' in discovery ledger.
+- **Secondary Research**: AGADIC provides regional competitive subsidies for projects with Galician content. Like Andalusia, Galicia relies on the Spanish National Tax Credit (30%) for base fiscal incentives.
+- **Stackability**: The AGADIC grant stacks with the Spanish National Tax Credit.
+- **Co-Production**: Favorable to projects with a Galician co-producer.
+- **Uplifts**: None intrinsic to the tax code.
+
+## ES-VAL (SPAIN — VALENCIA)
+- **Canonical Inventory Check**: Found 'Institut Valencià de Cultura (IVC) — Audiovisual Production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant. Like other mainland Spanish regions, it relies on the national Spanish Tax Credit (30%).
+- **Stackability**: Designed to explicitly stack with the Spanish National Tax Credit.
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the tax code.
+
+## GB-YRK (UNITED KINGDOM — YORKSHIRE)
+- **Canonical Inventory Check**: Found 'Screen Yorkshire — Yorkshire Content Fund' in discovery ledger.
+- **Secondary Research**: Confirmed the Yorkshire Content Fund operates as an equity co-investor (up to £500k) rather than a pure non-repayable grant. Requires matching private investment.
+- **Stackability**: Designed to explicitly stack with the UK Audio-Visual Expenditure Credit (AVEC).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## FR-IDF (FRANCE — ÎLE-DE-FRANCE)
+- **Canonical Inventory Check**: Found 'Île-de-France Cinema Regional Aid' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant. In 2024, made VHSS (anti-harassment) training and referents mandatory for funding.
+- **Stackability**: Designed to explicitly stack with the French national rebate (TRIP / Crédit d'impôt cinéma).
+- **Co-Production**: Features a specific Minority Co-production Fund.
+- **Uplifts**: 'Bonus Innovation' available for eco-production and innovative technologies.
+
+## FR-NAQ (FRANCE — NOUVELLE-AQUITAINE)
+- **Canonical Inventory Check**: Found 'Nouvelle-Aquitaine Regional Cinema Aid' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a discretionary regional grant managed by ALCA, supporting development and production based on regional expenditure.
+- **Stackability**: Designed to explicitly stack with the French national rebate (TRIP / Crédit d'impôt cinéma).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic to the funding structure beyond achieving a higher competitive score.
+
+## FR-ARA (FRANCE — AUVERGNE-RHÔNE-ALPES)
+- **Canonical Inventory Check**: Found 'Auvergne-Rhône-Alpes Cinema Regional Aid' in discovery ledger.
+- **Secondary Research**: The regional aid functions dually as a grant (FACCA) and a heavy equity co-production fund (Auvergne-Rhône-Alpes Cinéma). Requires at least 120% local spend of the invested amount.
+- **Stackability**: Designed to explicitly stack with the French national rebate (TRIP / Crédit d'impôt cinéma).
+- **Co-Production**: Functions explicitly as an equity co-producer for feature films.
+- **Uplifts**: None intrinsic.
+
+## FR-OCC (FRANCE — OCCITANIE)
+- **Canonical Inventory Check**: Found 'Occitanie Cinema Regional Aid' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as an integrated discretionary regional grant. Heavily prioritizes local employment anchoring.
+- **Stackability**: Designed to explicitly stack with the French national rebate (TRIP / Crédit d'impôt cinéma).
+- **Co-Production**: Often combines with sub-regional metropolitan funds (e.g., Toulouse, Montpellier).
+- **Uplifts**: None intrinsic.
+
+## BE-WAL (BELGIUM — WALLONIA)
+- **Canonical Inventory Check**: Found 'Wallimage Co-production Fund' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as an economic co-production fund providing repayable advances. Requires massive local spend multipliers (e.g., spending 400% of the granted amount locally).
+- **Stackability**: Designed to explicitly stack with the Belgian Federal Tax Shelter.
+- **Co-Production**: Functions as a regional equity co-producer.
+- **Uplifts**: None.
+
+## BE-VLG (BELGIUM — FLANDERS)
+- **Canonical Inventory Check**: Found 'VAF Flanders Audiovisual Fund' in discovery ledger. Added 'Screen Flanders'.
+- **Secondary Research**: The region operates two parallel tracks: Screen Flanders (an economic fund offering repayable advances up to €400k based on local spend) and VAF (the cultural grant fund).
+- **Stackability**: Designed to explicitly stack with the Belgian Federal Tax Shelter.
+- **Co-Production**: Belgian co-producer required.
+- **Uplifts**: None intrinsic to the funding structure beyond scoring parameters.
+
+## BE-BRU (BELGIUM — BRUSSELS-CAPITAL)
+- **Canonical Inventory Check**: Found 'Screen.Brussels Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as an economic fund providing refundable advances (up to €500k) based on eligible audiovisual expenses incurred within the Brussels-Capital Region.
+- **Stackability**: Designed to explicitly stack with the Belgian Federal Tax Shelter.
+- **Co-Production**: Belgian co-producer required.
+- **Uplifts**: None.
+
+## DE-NI (GERMANY — LOWER SAXONY / BREMEN)
+- **Canonical Inventory Check**: Found 'nordmedia Film und Mediengesellschaft' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a regional economic and cultural fund providing soft loans and grants. Increased funding volume in 2024.
+- **Stackability**: Designed to explicitly stack with the German Federal Film Fund (DFFF).
+- **Co-Production**: Functions as a regional equity co-producer/financier.
+- **Uplifts**: None intrinsic.
+
+## SA-KSA (SAUDI ARABIA)
+- **Canonical Inventory Check**: Found 'Saudi Film Commission — Production Grants and Selective Support' in discovery ledger.
+- **Secondary Research**: Confirmed the 'Daw Film Competition' operates as a discretionary non-refundable grant for Saudi production companies, distinct from the main 'Film Saudi' cash rebate (40-60%).
+- **Stackability**: Operates as a distinct funding path for local content, but generally compatible with broader national initiatives.
+- **Co-Production**: Focused primarily on Saudi establishments.
+- **Uplifts**: None.
+
+## SE-SK (SWEDEN — SKÅNE)
+- **Canonical Inventory Check**: Found 'Film i Skåne — Regional Co-production Fund (Scania)' in discovery ledger.
+- **Secondary Research**: Confirmed it operates as a regional co-producer requiring significant regional spend in Skåne.
+- **Stackability**: Designed to explicitly stack with the Swedish National Cash Rebate (25%).
+- **Co-Production**: Functions explicitly as an equity co-producer.
+- **Uplifts**: None.
+
+## NO-ROG (NORWAY — ROGALAND/VESTLAND)
+- **Canonical Inventory Check**: Found 'Vestnorsk Filmsenter — Western Norway Regional Film Centre' in discovery ledger. Added Zefyr.
+- **Secondary Research**: Confirmed Western Norway operates via Vestnorsk Filmsenter (grants) and Mediefondet Zefyr (regional equity investment/gap financing).
+- **Stackability**: Designed to explicitly stack with the Norwegian National Cash Rebate (25%).
+- **Co-Production**: Acts as regional co-producer.
+- **Uplifts**: None intrinsic.
+
+## NO-TRO (NORWAY — TROMSØ / NORTHERN NORWAY)
+- **Canonical Inventory Check**: Found 'Nord Norsk Filmsenter' in discovery ledger.
+- **Secondary Research**: In 2024, Nordnorsk Filmsenter, Filmfond Nord, and the Film Commission merged into 'Arktisk Film Norge'. They manage both regional grants and top-financing investments.
+- **Stackability**: Designed to explicitly stack with the Norwegian National Cash Rebate (25%).
+- **Co-Production**: Acts as regional co-producer.
+- **Uplifts**: None intrinsic.
+
+## AU-TAS (AUSTRALIA — TASMANIA)
+- **Canonical Inventory Check**: Found 'Screen Tasmania — Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed Screen Tasmania provides discretionary grants. In 2024, they launched the 'Island Screen Incentive' which offers 10% of local expenditure (capped at $500k) for large productions.
+- **Stackability**: Designed to explicitly stack with the Australian Federal Offsets.
+- **Co-Production**: State-level equity/grant.
+- **Uplifts**: Island Screen Incentive offers a structured 10% uplift.
+
+## AU-NT (AUSTRALIA — NORTHERN TERRITORY)
+- **Canonical Inventory Check**: Found 'Screen Territory — Northern Territory Production Support' in discovery ledger.
+- **Secondary Research**: Confirmed Screen Territory offers the Production Attraction Incentive Program (PAIP) for footloose productions, alongside general discretionary production finance.
+- **Stackability**: Designed to explicitly stack with the Australian Federal Offsets.
+- **Co-Production**: State-level equity/grant.
+- **Uplifts**: None intrinsic.
+
+## GB-LON (UNITED KINGDOM — LONDON)
+- **Canonical Inventory Check**: Found 'Film London — Production Finance Market and Support' in discovery ledger.
+- **Secondary Research**: Confirmed Film London does *not* offer a direct regional financial incentive or tax credit. It functions as a resource center, facilitating the Production Finance Market and logistics. London relies entirely on the UK AVEC.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: N/A.
+
+## CA-PE (CANADA — PRINCE EDWARD ISLAND)
+- **Canonical Inventory Check**: Found 'Film PEI — Prince Edward Island Production Support' in discovery ledger.
+- **Secondary Research**: Major finding. The province now operates the **PEI Film Production Investment Fund** administered by Innovation PEI. It is a massive regional cash rebate starting at a base of 32% of eligible PEI expenditures.
+- **Stackability**: Designed to explicitly stack with the Canadian Federal Tax Credit (e.g., CPTC or PSTC).
+- **Co-Production**: Must be a Canadian company.
+- **Uplifts**: Offers a +1% PEI Production Bonus and a +2% Series Bonus (capping at 35%).
+
+## AE (UNITED ARAB EMIRATES)
+- **Canonical Inventory Check**: Found 'Dubai Film Commission / Abu Dhabi Film Commission / Emirates Airline' in discovery ledger.
+- **Secondary Research**: Abu Dhabi and Dubai independently offer up to 30% cash rebates on qualifying spend. Emirates Airline's involvement is strictly content distribution (ice system) and native marketing, not production grants.
+- **Stackability**: Rebates are emirate-specific (regional).
+- **Co-Production**: N/A.
+- **Uplifts**: None intrinsic beyond the 30% caps.
+
+## AL (ALBANIA)
+- **Canonical Inventory Check**: Found 'Albanian National Cinema Agency (ANCA) Cash Rebate' in discovery ledger.
+- **Secondary Research**: Albania is reforming its sector via AKKA to implement a formal 35% national cash rebate on qualified expenses.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## AM (ARMENIA)
+- **Canonical Inventory Check**: Found 'National Cinema Centre of Armenia Production Support' in discovery ledger.
+- **Secondary Research**: The newly formed Cinema Foundation of Armenia manages a sovereign cash rebate of 25%, with uplifts of up to 10% for cultural elements or local producers, capping at 35%.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Explicitly offers bonuses for Armenian producers.
+- **Uplifts**: Cultural Element / Local Producer bonuses (+10%).
+
+## AR (ARGENTINA)
+- **Canonical Inventory Check**: Found 'INCAA — Argentine Film Institute Incentives' in discovery ledger.
+- **Secondary Research**: In 2024, the Argentine government suspended INCAA state funding and subsidies for film projects as part of wide-ranging austerity measures. The incentive framework is currently frozen.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## AT (AUSTRIA)
+- **Canonical Inventory Check**: Found 'FISA+ / ORF / ÖFI' in discovery ledger.
+- **Secondary Research**: FISA+ operates as the primary sovereign incentive (30% rebate). ÖFI and ORF provide discretionary grants and co-production financing for domestic and European co-productions.
+- **Stackability**: ÖFI and ORF funding can stack with FISA+ for eligible domestic/co-productions.
+- **Co-Production**: ÖFI and ORF act as sovereign co-producers.
+- **Uplifts**: FISA+ offers a +5% Green Bonus.
+
+## AU (AUSTRALIA — SOVEREIGN)
+- **Canonical Inventory Check**: Found 'Screen Australia / MIFF Premiere Fund / Tourism Australia / Australian Content Standard' in discovery ledger.
+- **Secondary Research**: Screen Australia provides discretionary production funding (equity/grants). MIFF Premiere Fund provides minority co-financing equity. Tourism Australia provides in-kind marketing support. The Content Standard is regulatory quotas, not a financial incentive.
+- **Stackability**: Screen Australia and MIFF equity explicitly stack with the Federal Location/PDV/Producer Offsets.
+- **Co-Production**: Screen Australia frequently acts as a sovereign co-production partner.
+- **Uplifts**: None intrinsic to the secondary grants themselves.
+
+## AU-NSW (AUSTRALIA — NEW SOUTH WALES)
+- **Canonical Inventory Check**: Found 'NSW Government Screen Incentive (via Create NSW)' in discovery ledger.
+- **Secondary Research**: Create NSW manages the 'Made in NSW' fund (discretionary grant up to 10% QNSWPE capped at $1M) and a 10% PDV rebate.
+- **Stackability**: Explicitly designed to stack with Federal Location/PDV/Producer Offsets.
+- **Co-Production**: State-level equity/grant.
+- **Uplifts**: None intrinsic beyond the stated caps.
+
+## AU-QLD (AUSTRALIA — QUEENSLAND)
+- **Canonical Inventory Check**: Found 'Screen Queensland Production Attraction Strategy' in discovery ledger.
+- **Secondary Research**: Screen Queensland provides the Production Attraction Strategy (discretionary grants for projects >$3.5M spend) and a flat 15% PDV Incentive.
+- **Stackability**: Explicitly designed to stack with Federal Location/PDV/Producer Offsets.
+- **Co-Production**: State-level equity/grant.
+- **Uplifts**: None intrinsic.
+
+## AZ (AZERBAIJAN)
+- **Canonical Inventory Check**: Found 'Azerbaijan Film Fund Production Support' in discovery ledger.
+- **Secondary Research**: Significant development. In 2026, Azerbaijan's ARKA officially implemented a 40% sovereign cash rebate (capped at $1M USD) for foreign film and co-productions.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: ARKA supports co-productions via the rebate.
+- **Uplifts**: None.
+
+## BA (BOSNIA AND HERZEGOVINA)
+- **Canonical Inventory Check**: Found 'Film Centre Bosnia and Herzegovina Production Support' in discovery ledger.
+- **Secondary Research**: The Sarajevo Canton operates a 30% cash rebate for local production costs. The separate Film Fund Sarajevo provides discretionary production grants.
+- **Stackability**: Grants can potentially stack with the Canton Rebate for eligible local entities.
+- **Co-Production**: Supported via the Film Fund.
+- **Uplifts**: None intrinsic.
+
+## BB (BARBADOS)
+- **Canonical Inventory Check**: Found 'Barbados Film and Entertainment Production Incentives' in discovery ledger.
+- **Secondary Research**: Barbados has modernized its incentives, introducing a tiered cash rebate offering a baseline of 25% up to a maximum of 40% based on tier tests (replacing the previous tax credit model).
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: Tiered tests can boost the rebate from 25% up to 40%.
+
+## BE (BELGIUM — SOVEREIGN)
+- **Canonical Inventory Check**: Found 'Belgian Tax Shelter for Audiovisual Productions' in discovery ledger.
+- **Secondary Research**: The Belgian Tax Shelter acts as the massive federal public-private financing mechanism (yields ~38-45% of eligible spend). There are no secondary sovereign grants here; the secondary layers exist at the subnational level (VAF, Wallimage, Screen.brussels), which were researched previously.
+- **Stackability**: Explicitly designed to stack with regional subnational funds.
+- **Co-Production**: Strongly supports European co-productions.
+- **Uplifts**: None intrinsic to the tax shelter.
+
+## BG (BULGARIA)
+- **Canonical Inventory Check**: Found 'Bulgarian Film Industry Encouragement Act Cash Rebate' in discovery ledger.
+- **Secondary Research**: The Bulgarian National Film Center operates a 25% cash rebate. Recent 2026 changes raised the cap to EUR 5M per project. There are no secondary programs or uplifts on top of this.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## BH (BAHRAIN)
+- **Canonical Inventory Check**: Found 'Bahrain Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Bahrain does not have a formal cash rebate or tax credit. The Film Commission acts as a one-stop logistical shop. Regional funding relies on external bodies like the Arab Fund for Arts and Culture (AFAC). Marked as obsolete for the financial optimizer.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: N/A.
+
+## BR (BRAZIL)
+- **Canonical Inventory Check**: Found 'ANCINE — Brazilian Film Commission Tax Incentives / FSA' in discovery ledger.
+- **Secondary Research**: Brazil utilizes the Lei do Audiovisual (investor tax incentives) and the massive Fundo Setorial do Audiovisual (FSA), a R$ 1.2 billion discretionary grant/equity fund administered by ANCINE.
+- **Stackability**: FSA grants often work in tandem with the primary tax structures.
+- **Co-Production**: ANCINE strongly supports co-productions via the FSA.
+- **Uplifts**: None intrinsic to the tax code beyond the specific caps.
+
+## BS (BAHAMAS)
+- **Canonical Inventory Check**: Found 'Bahamas Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: The Bahamas does not currently possess a formal cash rebate or tax credit. Support is limited to logistical assistance and duty-free import of equipment. Industry advocacy for a cash rebate is ongoing. Marked as obsolete for the financial optimizer.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: N/A.
+
+## CA (CANADA — SOVEREIGN)
+- **Canonical Inventory Check**: Found 'CPTC / PSTC / CMF / Telefilm Canada' in discovery ledger.
+- **Secondary Research**: CPTC (25% labor) and PSTC (16% labor) serve as the primary sovereign tax credits. The Canada Media Fund (CMF) and Telefilm Canada provide robust discretionary grants and equity for eligible domestic content.
+- **Stackability**: CMF and Telefilm equity explicitly stack with the Federal and Provincial Tax Credits.
+- **Co-Production**: Telefilm strongly supports official treaty co-productions.
+- **Uplifts**: None intrinsic to the discretionary grants.
+
+## CA-BC (CANADA — BRITISH COLUMBIA)
+- **Canonical Inventory Check**: Found 'BC Production Services Tax Credit (PSTC)' in discovery ledger.
+- **Secondary Research**: The BC PSTC is a massive primary regional tax credit calculated on eligible labor. It features a base rate (28%, updating to 36%) with significant structured uplifts.
+- **Stackability**: Designed to explicitly stack with Canadian Federal Tax Credits (CPTC/PSTC).
+- **Co-Production**: N/A.
+- **Uplifts**: DAVE (+16% on digital/VFX labor), Regional (+6%), Distant Location (+6%).
+
+## CA-ON (CANADA — ONTARIO)
+- **Canonical Inventory Check**: Found 'OPSTC / OCASE / NOHFC' in discovery ledger.
+- **Secondary Research**: OPSTC (21.5% labor) and OCASE (18% VFX labor) are primary regional tax credits. The Northern Ontario Heritage Fund Corporation (NOHFC) provides discretionary regional grants up to 50% of local spend.
+- **Stackability**: Designed to explicitly stack with Canadian Federal Tax Credits (CPTC/PSTC) and with each other (e.g. OPSTC + OCASE + NOHFC).
+- **Co-Production**: N/A.
+- **Uplifts**: Regional grants (NOHFC) and VFX stackable credits (OCASE).
+
+## CA-QC (CANADA — QUEBEC)
+- **Canonical Inventory Check**: Found 'QPRDP / SODEC' in discovery ledger.
+- **Secondary Research**: The QPRDP (Foreign Production Tax Credit) is a massive primary regional tax credit (25% base + 16% VFX uplift). It functions as the core regional incentive, not a secondary grant.
+- **Stackability**: Designed to explicitly stack with Canadian Federal Tax Credits (CPTC/PSTC).
+- **Co-Production**: SODEC supports co-productions via domestic streams.
+- **Uplifts**: VFX (+16%).
+
+## CL (CHILE)
+- **Canonical Inventory Check**: Found 'Chile Corfo / CORFO Film Incentive' in discovery ledger.
+- **Secondary Research**: The IFI Audiovisual (CORFO) program is the primary sovereign incentive. It offers a 30% base reimbursement, with a regional uplift to 40% for productions filming outside the Metropolitan Region.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: Regional (+10%).
+
+## CO (COLOMBIA)
+- **Canonical Inventory Check**: Found 'Colombia Film Commission — Film In Colombia' in discovery ledger.
+- **Secondary Research**: Colombia's primary mechanisms under Law 1556 are CINA (35% transferable tax credit) and FFC (40% cash rebate). The FDC (Film Development Fund) provides discretionary non-refundable grants.
+- **Stackability**: FDC grants can support local co-producers in tandem with primary tax offsets.
+- **Co-Production**: Strongly supported via the FDC.
+- **Uplifts**: None intrinsic beyond standard caps.
+
+## CR (COSTA RICA)
+- **Canonical Inventory Check**: Found 'Costa Rica Film Commission Production Facilitation' in discovery ledger.
+- **Secondary Research**: Law 10071 provides robust tax/import exemptions and VAT returns. The new 2025 Law 10657 introduced the 'El Fauno' Fund, a discretionary fund for national value chain/co-productions.
+- **Stackability**: El Fauno grants stack with the baseline Law 10071 exemptions.
+- **Co-Production**: Supported via the El Fauno Fund.
+- **Uplifts**: None intrinsic.
+
+## CY (CYPRUS)
+- **Canonical Inventory Check**: Found 'Cyprus Film Production Rebate' in discovery ledger.
+- **Secondary Research**: The Cyprus Film Scheme is a direct up to 45% cash rebate/tax credit based on a cultural test. There are no secondary sovereign grants identified on top of this.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: The Cultural Test determines the final percentage (up to 45% BTL, 25% ATL).
+
+## CZ (CZECH REPUBLIC)
+- **Canonical Inventory Check**: Found 'Czech Film Incentive / Czech Film Fund' in discovery ledger.
+- **Secondary Research**: The Czech Film Incentive is the primary cash rebate (25% general, 35% animation/VFX for 2025). The Czech Audiovisual Fund (CAF) operates secondary selective grants and minority co-production funds.
+- **Stackability**: CAF grants can stack with the primary rebate for qualifying domestic/co-pro projects.
+- **Co-Production**: Strongly supported via CAF minority co-production calls.
+- **Uplifts**: Animation/VFX (+10% bump to the base rebate).
+
+## DE (GERMANY — SOVEREIGN)
+- **Canonical Inventory Check**: Found 'DFFF / GMPF / WCF / ZDF / ARD' in discovery ledger.
+- **Secondary Research**: DFFF and GMPF are the primary sovereign cash rebates (unified to 30% in 2025). The Berlinale World Cinema Fund (WCF) and broadcaster funds (ZDF/ARD) serve as robust secondary discretionary equity and grant funds.
+- **Stackability**: WCF and broadcaster funds are designed to stack with federal and regional rebates.
+- **Co-Production**: WCF is specifically designed for international co-productions.
+- **Uplifts**: None intrinsic to the discretionary grants.
+
+## DE-BY (GERMANY — BAVARIA)
+- **Canonical Inventory Check**: Found 'FilmFernsehFonds Bayern (FFF Bayern)' in discovery ledger.
+- **Secondary Research**: FFF Bayern is a massive regional fund providing discretionary grants and conditionally repayable loans for productions shooting in Bavaria. It functions as a true secondary layer rather than an automatic tax credit.
+- **Stackability**: Explicitly designed to stack with German Federal (DFFF/GMPF) cash rebates.
+- **Co-Production**: Supports international co-productions with a Bavarian partner.
+- **Uplifts**: None intrinsic.
+
+## DK (DENMARK — SOVEREIGN)
+- **Canonical Inventory Check**: Found 'Danish Film Institute / DR' in discovery ledger.
+- **Secondary Research**: Denmark officially launched its 25% cash rebate (Danish Production Incentive Scheme) in 2026. The Danish Film Institute (DFI) and Danish Broadcasting Corporation (DR) operate as selective secondary co-production/grant funds.
+- **Stackability**: DFI and DR grants can stack with the new cash rebate for eligible domestic/co-pro projects.
+- **Co-Production**: Strongly supported via DFI minority co-production funds.
+- **Uplifts**: None intrinsic to the cash rebate.
+
+## DK-CPH (DENMARK — COPENHAGEN)
+- **Canonical Inventory Check**: Found 'Copenhagen Film Fund' in discovery ledger.
+- **Secondary Research**: The Copenhagen Film Fund operates as a true regional discretionary fund, focusing on co-productions and projects that generate significant local spend/employment in the Capital Region.
+- **Stackability**: Explicitly designed to stack with other funding sources, including the new national rebate.
+- **Co-Production**: Highly focused on international co-productions.
+- **Uplifts**: None intrinsic.
+
+## DO (DOMINICAN REPUBLIC)
+- **Canonical Inventory Check**: Found 'Dominican Republic Film Commission Incentive' in discovery ledger.
+- **Secondary Research**: The primary mechanism is Article 39 (a 25% Transferable Tax Credit). FONPROCINE serves as a domestic discretionary development fund. There are no secondary uplifts on top of the 25% TTC.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via domestic mechanisms.
+- **Uplifts**: None.
+
+## EC (ECUADOR)
+- **Canonical Inventory Check**: Found 'Ecuador Film Commission Production Facilitation' in discovery ledger.
+- **Secondary Research**: The Audiovisual Investment Certificate (CIA) operates as a primary 37% tax credit mechanism on eligible local costs. There are no secondary sovereign discretionary grants of note for foreign producers.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## EE (ESTONIA)
+- **Canonical Inventory Check**: Found 'Film Estonia Cash Rebate' in discovery ledger.
+- **Secondary Research**: The Film Estonia Cash Rebate offers a base 30% rebate, increasing to 40% when utilizing specific Estonian creative residents. Several regional film funds (Viru, Tartu, Islands, Pärnu) operate as robust secondary regional cash rebates.
+- **Stackability**: Regional funds explicitly stack with the Film Estonia national rebate.
+- **Co-Production**: N/A.
+- **Uplifts**: Domestic Resident (+10% bump to base).
+
+## EG (EGYPT)
+- **Canonical Inventory Check**: Found 'Egypt Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: The primary financial incentive is a 30% cash rebate strictly tied to utilizing the Egyptian Media Production City (EMPC) facilities, functioning as a localized facility rebate rather than a general location spend rebate. No secondary grants.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## ES (SPAIN — SOVEREIGN)
+- **Canonical Inventory Check**: Found 'Tax Credit for Foreign Productions / RTVE' in discovery ledger.
+- **Secondary Research**: The primary mechanism for foreign productions is the Article 36.2 Tax Credit (30% on the first €1M, 25% thereafter, capped at €20M). RTVE serves as a public broadcaster providing discretionary co-production equity.
+- **Stackability**: RTVE funding and regional incentives can stack with the national Article 36.2 credit up to EU intensity limits.
+- **Co-Production**: RTVE strongly supports co-productions.
+- **Uplifts**: None intrinsic to the national mainland rate.
+
+## ES-CAT (SPAIN — CATALONIA)
+- **Canonical Inventory Check**: Found 'ICEC — Institut Català de les Empreses Culturals' in discovery ledger.
+- **Secondary Research**: ICEC operates as a regional discretionary grant fund, providing support for projects in Catalonia.
+- **Stackability**: Explicitly designed to stack with the national Article 36.2 tax credit.
+- **Co-Production**: Yes.
+- **Uplifts**: None intrinsic.
+
+## FI (FINLAND)
+- **Canonical Inventory Check**: Found 'Business Finland Film Incentive / SES / YLE' in discovery ledger.
+- **Secondary Research**: The Business Finland Film Incentive provides a 25% cash rebate. The Finnish Film Foundation (SES) and YLE operate as secondary discretionary grant and equity/broadcaster funds.
+- **Stackability**: SES and YLE funding explicitly stack with the Business Finland rebate (and regional funds) up to EU limits.
+- **Co-Production**: Strongly supported via SES and YLE.
+- **Uplifts**: None intrinsic to the national rebate.
+
+## FJ (FIJI)
+- **Canonical Inventory Check**: Found 'Fiji Audio Visual Commission Production Incentive' in discovery ledger.
+- **Secondary Research**: Fiji operates a 20% cash rebate on Total Fiji Expenditure. The F1/F2 (125%/150%) tax deductions are strictly for Fiji taxpayers. There are no secondary discretionary grants of note for foreign producers.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## FR (FRANCE)
+- **Canonical Inventory Check**: Found 'Tax Rebate for International Productions / CNC / Arte / CANAL+ / UniFrance' in discovery ledger.
+- **Secondary Research**: TRIP (Tax Rebate for International Productions) provides a 30% rebate. CNC, Arte, Canal+, and UniFrance operate as massive secondary discretionary grant, equity, and distribution support funds for French co-productions.
+- **Stackability**: Co-production equity (Arte/Canal+) and CNC grants explicitly stack with national tax rebates.
+- **Co-Production**: Strongly supported via CNC, Arte, and Canal+.
+- **Uplifts**: VFX (+10% bump on TRIP to reach 40%).
+
+## GB (UNITED KINGDOM)
+- **Canonical Inventory Check**: Found 'AVEC / BFI / Creative England / BBC Films / Channel 4' in discovery ledger.
+- **Secondary Research**: The primary mechanism is AVEC (Audio-Visual Expenditure Credit) offering a 25.5% net return. BFI, BBC Films, Channel 4, and Creative England operate as secondary discretionary/equity co-production funds.
+- **Stackability**: Discretionary funds (BFI/BBC/Ch4) stack seamlessly with AVEC claims up to legal state aid limits.
+- **Co-Production**: Highly supported through BFI and broadcaster arms.
+- **Uplifts**: IFTC (Independent Film Tax Credit) pushes the net rate to 39.75% for films under £15M. VFX Uplift increases net rate to 29.25% and removes the 80% cap on VFX spend.
+
+## GE (GEORGIA — REPUBLIC OF)
+- **Canonical Inventory Check**: Found 'Georgian National Film Centre Production Incentive' in discovery ledger.
+- **Secondary Research**: The Republic of Georgia offers the 'Film in Georgia' cash rebate, providing a base 20% return on eligible spend. There are no secondary discretionary grants of note for foreign producers.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: N/A.
+- **Uplifts**: A 5% uplift is available if the production promotes Georgia by passing a 'Cultural Test', bringing the total rebate to 25%.
+
+## GH (GHANA)
+- **Canonical Inventory Check**: Found 'Ghana National Film Authority Production Support' in discovery ledger.
+- **Secondary Research**: While a 20% national tax rebate was proposed in early 2024, it remains pending formal legislation. The active financial support mechanism is the Film Development Fund (FDF), which functions as a discretionary/selective fund.
+- **Stackability**: N/A (Primary Rebate Pending).
+- **Co-Production**: Strongly supported via the FDF.
+- **Uplifts**: None.
+
+## GR (GREECE)
+- **Canonical Inventory Check**: Found 'Greece Cash Rebate / Greek Film Centre' in discovery ledger.
+- **Secondary Research**: The Hellenic Film and Audiovisual Center (HFAC) manages both the 40% Cash Rebate and a 30% Tax Relief mechanism. HFAC also oversees selective, discretionary funding programs (e.g., Short Film, Micro-Budget).
+- **Stackability**: The 40% Cash Rebate and 30% Tax Relief can be combined on a single project, provided they adhere to EU state aid limits. Selective grants can also stack.
+- **Co-Production**: Strongly supported via HFAC selective grants.
+- **Uplifts**: The 30% Tax Relief acts as a massive potential uplift/stack on top of the 40% Cash Rebate.
+
+## HK (HONG KONG SAR)
+- **Canonical Inventory Check**: Found 'Create Hong Kong / Hong Kong Film Development Fund' in discovery ledger.
+- **Secondary Research**: Hong Kong does not operate a broad automatic tax rebate for foreign productions on local spend. Instead, the Cultural and Creative Industries Development Agency (CCIDA) administers the Film Development Fund (FDF), providing highly selective co-production equity and grants (e.g., the HK$9M Asian-European scheme).
+- **Stackability**: N/A (Discretionary only).
+- **Co-Production**: Strongly supported (requires HK creative involvement).
+- **Uplifts**: None.
+
+## HR (CROATIA)
+- **Canonical Inventory Check**: Found 'Croatia Film Cash Rebate' in discovery ledger.
+- **Secondary Research**: The primary mechanism is a 25% cash rebate. The Croatian Audiovisual Centre (HAVC) also operates selective production grants for domestic films and minority co-productions.
+- **Stackability**: HAVC grants stack with the Cash Rebate up to EU limits for eligible co-productions.
+- **Co-Production**: Supported via HAVC selective grants.
+- **Uplifts**: A 5% regional uplift is available for filming in areas with 'below-average development'.
+
+## HU (HUNGARY)
+- **Canonical Inventory Check**: Found 'Hungary Film Tax Rebate / National Film Institute' in discovery ledger.
+- **Secondary Research**: The base film rebate is 30% on Hungarian spend. By structuring up to 25% of eligible non-Hungarian costs into the claim, the effective yield scales to 37.5%. The National Film Institute (NFI) provides secondary selective grants.
+- **Stackability**: NFI grants can stack with the 30% rebate for eligible domestic/co-pros.
+- **Co-Production**: Supported via NFI selective grants.
+- **Uplifts**: The effective 37.5% yield via the non-Hungarian spend inclusion acts as a structural uplift mechanism.
+
+## ID (INDONESIA)
+- **Canonical Inventory Check**: Found 'Indonesian Film Commission Production Facilitation' in discovery ledger.
+- **Secondary Research**: Indonesia lacks a broad, automatic cash rebate for foreign productions without local co-pro elements. Financial support is structured through selective matching funds (like Dana Indonesiana) and regional fee waivers (Jakarta Film Fund).
+- **Stackability**: N/A (Discretionary only).
+- **Co-Production**: Strongly supported via matching funds.
+- **Uplifts**: None.
+
+## IE (IRELAND)
+- **Canonical Inventory Check**: Found 'Section 481 / RTÉ / Screen Ireland' in discovery ledger.
+- **Secondary Research**: The primary mechanism is the Section 481 Film Tax Credit (32% base). Screen Ireland, RTÉ, and Tourism Ireland operate massive discretionary secondary equity/grant funds.
+- **Stackability**: Screen Ireland and RTÉ funds explicitly stack with Section 481 claims up to legal state aid limits.
+- **Co-Production**: Highly supported through Screen Ireland.
+- **Uplifts**: The old regional uplift expired in 2023. However, the 'Scéal Uplift' and 'VFX Uplift' offer an enhanced 40% rate for qualifying projects.
+
+## IL (ISRAEL)
+- **Canonical Inventory Check**: Found 'Israel Film Fund / Incentive for Foreign Productions / Jerusalem Film Lab' in discovery ledger.
+- **Secondary Research**: Israel operates a 30% national cash rebate for foreign productions. The Jerusalem Film & Television Fund offers a highly lucrative (up to 60%) regional cash rebate/grant for projects heavily tied to the city. The Israel Film Fund offers selective domestic grants.
+- **Stackability**: Jerusalem funds can be used in tandem with or in lieu of the national rebate, subject to caps.
+- **Co-Production**: Supported via Israel Film Fund selective grants.
+- **Uplifts**: Jerusalem Regional Uplift acts as a massive potential structural uplift (+30% jump).
+
+## IN (INDIA)
+- **Canonical Inventory Check**: Found 'India NFDC and State Incentives' in discovery ledger.
+- **Secondary Research**: The Film Facilitation Office (FFO / India Cine Hub) offers a 30% base cash rebate. Several Indian states (e.g., Maharashtra, UP, Gujarat) offer independent regional grants and tourism subsidies. The NFDC also runs a selective co-production fund.
+- **Stackability**: State-level incentives generally stack with the federal rebate, subject to independent state rules.
+- **Co-Production**: Strongly supported via NFDC grants.
+- **Uplifts**: A 5% bonus is available for employing 15% Indian labor or demonstrating 'Significant Indian Content'.
+
+## IS (ICELAND)
+- **Canonical Inventory Check**: Found 'Icelandic Film Reimbursement Scheme' in discovery ledger.
+- **Secondary Research**: Iceland operates a straightforward 25% base cash reimbursement on local spend. There are no notable secondary discretionary grants for foreign producers outside of this scheme.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: Productions meeting specific high-spend/high-employment thresholds, or producing children's content, qualify for a massive 35% reimbursement tier (+10% uplift).
+
+## IT (ITALY)
+- **Canonical Inventory Check**: Found 'Italian Tax Credit / RAI Cinema / MiC' in discovery ledger.
+- **Secondary Research**: The Ministry of Culture (MiC) oversees a 40% Tax Credit for foreign productions utilizing a local executive producer. RAI Cinema and MiC also operate selective, discretionary funding and equity programs for Italian co-productions.
+- **Stackability**: RAI Cinema equity and MiC selective grants can stack with the Tax Credit up to EU limits for eligible co-productions.
+- **Co-Production**: Highly supported through RAI Cinema and MiC.
+- **Uplifts**: None.
+
+## IT-LAZ (ITALY — LAZIO)
+- **Canonical Inventory Check**: Found 'Lazio Cinema International Film Fund' in discovery ledger.
+- **Secondary Research**: Lazio offers the 'Lazio Cinema International' program, a highly competitive €5M regional grant fund aimed at international co-productions and promoting regional tourism.
+- **Stackability**: Designed to stack with the national 40% Italian Tax Credit up to EU limits.
+- **Co-Production**: Explicitly requires international co-production status.
+- **Uplifts**: None.
+
+## IT-TOS (ITALY — TUSCANY)
+- **Canonical Inventory Check**: Found 'Film Commission Toscana Production Support' in discovery ledger.
+- **Secondary Research**: Tuscany operates a regional Film Fund providing selective, non-repayable grants (capped at €250,000 for features). It requires 150% of the grant value to be spent within the region.
+- **Stackability**: Designed to stack with the national 40% Italian Tax Credit up to EU limits.
+- **Co-Production**: Supported via the selective grant process.
+- **Uplifts**: None.
+
+## JM (JAMAICA)
+- **Canonical Inventory Check**: Found 'Jamaica Entertainment Industry Incentive Programme' in discovery ledger.
+- **Secondary Research**: In 2024, Jamaica launched the Jamaica Screen Development Initiative (JSDI). This formalized a 10% Cash Rebate on local spend (capped at $1.5M USD) for both local and international destination films. Additional duty-free waivers are available.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Local partner required for the rebate.
+- **Uplifts**: None.
+
+## JO (JORDAN)
+- **Canonical Inventory Check**: Found 'Royal Film Commission Jordan Production Rebate' in discovery ledger.
+- **Secondary Research**: In May 2025, the RFC massively overhauled its incentive. It is now a tiered cash rebate ranging from 25% to 45% based on minimum spend and a points-based cultural/economic test.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: Points-based tiering acts as a structural uplift (moving from 25% to 30%, 35%, up to 45%).
+
+## JP (JAPAN)
+- **Canonical Inventory Check**: Found 'Japan Film Commission Location Incentive (JLOC) / VIPO' in discovery ledger.
+- **Secondary Research**: The JLOX+ program offers a 50% national cash rebate (capped at ¥1B). Prefectural/local film commissions (e.g., Tokyo, Sapporo) offer smaller, selective, secondary grants and subsidies.
+- **Stackability**: Prefectural subsidies generally stack with the national JLOX+ rebate.
+- **Co-Production**: Explicitly supported (Japanese company must apply for JLOX+).
+- **Uplifts**: None on the national level.
+
+## KE (KENYA)
+- **Canonical Inventory Check**: Found 'Kenya Film Commission Production Incentive' in discovery ledger.
+- **Secondary Research**: Despite ongoing proposals for a 20-30% rebate, Kenya does not currently operate a formal, automatic national cash rebate. The Kenya Film Commission (KFC) provides discretionary development and production support.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via KFC selective grants.
+- **Uplifts**: None.
+
+## KH (CAMBODIA)
+- **Canonical Inventory Check**: Found 'Cambodia Ministry of Culture Film Production Facilitation' in discovery ledger.
+- **Secondary Research**: Cambodia lacks a formal, automatic national cash rebate for foreign productions. The Film Commission acts as a permit facilitator and may offer discretionary tax/customs waivers on a case-by-case basis (often tied to 'film tourism' packages).
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## KR (SOUTH KOREA)
+- **Canonical Inventory Check**: Found 'Korea Film Council (KOFIC) Location Incentive / KOCCA' in discovery ledger.
+- **Secondary Research**: KOFIC manages a 25-30% Location Incentive (cash rebate) for foreign productions. KOCCA provides broader discretionary support for the Korean content industry (startups, export, R&D). Regional film commissions (Seoul, Busan) also offer secondary grants.
+- **Stackability**: Regional film commission grants generally stack with the national KOFIC rebate.
+- **Co-Production**: Strongly supported via KOFIC and KOCCA selective grants.
+- **Uplifts**: None on the national level.
+
+## KW (KUWAIT)
+- **Canonical Inventory Check**: Found 'Kuwait Film Committee Production Support' in discovery ledger.
+- **Secondary Research**: Kuwait does not have a formal government-backed film cash rebate or tax credit program. The Film Committee and local authorities provide discretionary logistical support, but not automatic financial reimbursements comparable to Saudi Arabia or Qatar.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## KZ (KAZAKHSTAN)
+- **Canonical Inventory Check**: Found 'Kazakhfilm Studios Production Facilitation' in discovery ledger.
+- **Secondary Research**: The State Center for Support of National Cinema (SCSNC) administers a 30% cash rebate (investment subsidy) for international productions. SCSNC also runs discretionary pitching grants focused on domestic films.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via SCSNC pitching grants.
+- **Uplifts**: None.
+
+## LK (SRI LANKA)
+- **Canonical Inventory Check**: Found 'Sri Lanka Film Commission Production Incentive' in discovery ledger.
+- **Secondary Research**: Sri Lanka does not operate a formal, automatic national cash rebate or tax credit for foreign productions. Support is entirely logistical via the National Film Corporation.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## LT (LITHUANIA)
+- **Canonical Inventory Check**: Found 'Lithuanian Film Centre Production Cash Rebate' in discovery ledger.
+- **Secondary Research**: Lithuania operates a highly successful 30% Tax Incentive via a private investment mechanism (where local corporations invest in return for tax breaks, yielding a net 30% benefit to the production). There are no secondary uplifts or regional tiered bonuses.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: None.
+
+## LU (LUXEMBOURG)
+- **Canonical Inventory Check**: Found 'Film Fund Luxembourg (Filmfund) Tax Shelter' in discovery ledger.
+- **Secondary Research**: Luxembourg formally abolished its automatic tax shelter/certificate system in 2014. The jurisdiction now relies on the Aides Financières Sélectives (AFS), which is a selective, discretionary grant/loan system managed by Film Fund Luxembourg.
+- **Stackability**: N/A.
+- **Co-Production**: Strongly supported via AFS and bilateral co-development funds.
+- **Uplifts**: None.
+
+## LV (LATVIA)
+- **Canonical Inventory Check**: Found 'National Film Centre of Latvia Production Incentive' in discovery ledger.
+- **Secondary Research**: Latvia operates a 30% national cash rebate administered by LIAA. This can be stacked with a 20-25% regional uplift provided by the Riga Film Fund, yielding up to a 50% combined rebate on local spend.
+- **Stackability**: Riga Film Fund explicitly stacks with the national LIAA rebate.
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: Riga Film Fund acts as a 20-25% structural regional uplift.
+
+## MA (MOROCCO)
+- **Canonical Inventory Check**: Found 'Centre Cinématographique Marocain (CCM)' in discovery ledger.
+- **Secondary Research**: In 2022, Morocco increased its national cash rebate from 20% to an uncapped 30% on eligible local spend. CCM also continues to offer 'Avance sur Recettes' (advances on receipts) which functions as a discretionary co-production fund for domestic/treaty films.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via Avance sur Recettes.
+- **Uplifts**: None.
+
+## ME (MONTENEGRO)
+- **Canonical Inventory Check**: Found 'Film Centre of Montenegro Production Incentive' in discovery ledger.
+- **Secondary Research**: Montenegro operates a flat 25% cash rebate. Alongside this, the Film Centre of Montenegro issues separate selective production and development grants.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via the selective production grants.
+- **Uplifts**: None for the cash rebate.
+
+## MK (NORTH MACEDONIA)
+- **Canonical Inventory Check**: Found 'Macedonian Film Agency (MFA) Cash Rebate' in discovery ledger.
+- **Secondary Research**: North Macedonia operates a flat 20% cash rebate. The MFA also issues separate discretionary grants for projects deemed of national/cultural interest.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via the selective national grants.
+- **Uplifts**: None for the cash rebate.
+
+## MT (MALTA)
+- **Canonical Inventory Check**: Found 'Malta Film Commission Cash Rebate' in discovery ledger.
+- **Secondary Research**: Malta operates a highly structured national cash rebate. The base rate is 30%. This can be uplifted to 35% (for portraying Malta as itself, or using the Malta Film Studios) and up to 40% (for maximizing local crew and talent).
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: Built-in structural uplifts ranging from +5% to +10% based on cultural framing, studio use, and local hiring.
+
+## MU (MAURITIUS)
+- **Canonical Inventory Check**: Found 'Mauritius EDB Film Rebate Scheme' in discovery ledger.
+- **Secondary Research**: Mauritius operates a highly competitive 30% base cash rebate. This scales up to 40% if high local spend thresholds are met (e.g., 90% of production takes place on the island). Additionally, Mauritius offers a 200% tax deduction for local corporate sponsors investing in film, serving as a powerful secondary financing mechanism.
+- **Stackability**: The 200% corporate tax deduction can be used to raise private equity to cash-flow the production alongside the rebate.
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: +10% uplift for heavy local production presence.
+
+## MX (MEXICO)
+- **Canonical Inventory Check**: Found 'Mexico EFICINE (Article 226 Tax Credit) and PROCINE Fund' in discovery ledger.
+- **Secondary Research**: Historically reliant on the heavily capped EFICINE private investment model, Mexico launched the EFICA mechanism in 2026—a 30% transferable tax credit designed to attract international productions. IMCINE also manages discretionary FOCINE/PROCINE grants focused on domestic cinema.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via IMCINE domestic grants.
+- **Uplifts**: None for EFICA.
+
+## MY (MALAYSIA)
+- **Canonical Inventory Check**: Found 'FINAS Malaysia Film Rebate' in discovery ledger.
+- **Secondary Research**: FINAS administers the Film in Malaysia Incentive (FIMI). It offers a base 30% cash rebate on QMPE. A 5% structural uplift is available if the production passes a specific Malaysian Cultural Test.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: +5% Cultural Test Uplift.
+
+## NG (NIGERIA)
+- **Canonical Inventory Check**: Found 'National Film and Video Censors Board / Creative Economy Incentive' in discovery ledger.
+- **Secondary Research**: Nigeria does not have a formal automatic cash rebate for foreign productions. Support is primarily limited to discretionary logistical facilitation, ad-hoc grants via the Nigerian Film Corporation, and general corporate tax holidays (Pioneer Status Incentive) which are not production-specific rebates.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## NL (NETHERLANDS)
+- **Canonical Inventory Check**: Found 'Netherlands Film Production Incentive (NFPI) / Hubert Bals Fund / IDFA / NPO' in discovery ledger.
+- **Secondary Research**: The Netherlands Film Fund operates the NFPI, a 35% cash rebate. Alongside this, the Hubert Bals Fund provides highly selective co-production grants for developing nations. IDFA Forum acts as a co-financing market. NPO/VPRO provide public broadcaster equity.
+- **Stackability**: NFPI can often be stacked with secondary equity and selective grants, subject to EU state aid limits.
+- **Co-Production**: Strongly supported via Hubert Bals Fund and NPO equity.
+- **Uplifts**: None for the cash rebate.
+
+## NO (NORWAY)
+- **Canonical Inventory Check**: Found 'Norwegian Film Commission Production Incentive / NFI / NRK' in discovery ledger.
+- **Secondary Research**: The Norwegian Film Institute (NFI) administers a 25% automatic cash rebate. NFI also issues separate selective production grants for domestic and co-productions. NRK provides public broadcaster equity.
+- **Stackability**: NFI selective grants can be stacked with the rebate under specific co-production structures.
+- **Co-Production**: Supported via NFI selective grants and NRK equity.
+- **Uplifts**: None for the cash rebate.
+
+## NZ (NEW ZEALAND)
+- **Canonical Inventory Check**: Found 'New Zealand Screen Production Rebate (NZSPR) / Tourism New Zealand' in discovery ledger.
+- **Secondary Research**: New Zealand operates the NZSPR, offering a 20% base cash rebate for international productions. This includes a 5% Uplift (yielding 25%) if the project offers significant economic benefits to NZ. A separate 20% PDV (Post, Digital, and Visual effects) rebate exists. Tourism New Zealand and Air New Zealand offer in-kind/discretionary marketing support.
+- **Stackability**: The 5% Uplift stacks directly on the 20% base.
+- **Co-Production**: Strongly supported via official co-production treaties (which can access the domestic NZSPR rate of 40%).
+- **Uplifts**: +5% Significant Economic Benefit Uplift.
+
+## OM (OMAN)
+- **Canonical Inventory Check**: Found 'Oman Film Commission Production Support' in discovery ledger.
+- **Secondary Research**: Oman does not have a formal automatic cash rebate for foreign productions. Support is primarily limited to discretionary logistical facilitation, location access, and potential fee waivers.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## PA (PANAMA)
+- **Canonical Inventory Check**: Found 'Panama Film Commission Production Facilitation' in discovery ledger.
+- **Secondary Research**: While Panama passed a 15% cash rebate law (Law 16), it has historically suffered from inconsistent funding and operational delays. The Film Commission (DICINE) currently functions primarily as a discretionary facilitation and permitting service.
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## PE (PERU)
+- **Canonical Inventory Check**: Found 'Peru DAFO Film Production Support' in discovery ledger.
+- **Secondary Research**: Peru does not operate a formal, automatic national cash rebate for foreign productions. Financial support is channelled through DAFO (Ministry of Culture), which issues competitive, selective grants primarily for domestic films and official co-productions.
+- **Stackability**: N/A.
+- **Co-Production**: Strongly supported via DAFO selective grants.
+- **Uplifts**: None.
+
+## PH (PHILIPPINES)
+- **Canonical Inventory Check**: Found 'Film Development Council of the Philippines (FDCP) Incentive' in discovery ledger.
+- **Secondary Research**: The FDCP administers the Film Location Incentive Program (FLIP), which provides a 20% cash rebate on eligible production expenditures in the Philippines. FDCP also offers the ACOPI fund specifically targeting international co-productions.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via the discretionary ACOPI fund.
+- **Uplifts**: None for the cash rebate.
+
+## PL (POLAND)
+- **Canonical Inventory Check**: Found 'Polish Film Institute (PISF) Cash Rebate / Production Grant' in discovery ledger.
+- **Secondary Research**: Poland operates a strong 30% automatic cash rebate administered by PISF. Separately, PISF issues selective production grants for domestic/minority co-productions. Regional film funds (e.g., Krakow, Mazovia, Silesia) also offer small discretionary grants.
+- **Stackability**: Regional film funds and selective grants can often be combined with the 30% rebate, subject to overall state aid intensity caps (typically 50%).
+- **Co-Production**: Supported via PISF selective minority co-production grants.
+- **Uplifts**: None on the national rebate level.
+
+## PT (PORTUGAL)
+- **Canonical Inventory Check**: Found 'Portugal Film Commission Incentive / IAPMEI / ICA' in discovery ledger.
+- **Secondary Research**: Portugal offers a 25% to 30% cash rebate managed by the PIC/IAPMEI. Alongside this, the Instituto do Cinema e Audiovisual (ICA) administers separate selective production and co-production grants primarily for domestic films.
+- **Stackability**: ICA selective grants generally operate independently but can be combined for official co-productions.
+- **Co-Production**: Supported via ICA International Co-production Fund.
+- **Uplifts**: +5% uplift for regional shooting outside Lisbon or specific cultural content.
+
+## QA (QATAR)
+- **Canonical Inventory Check**: Found 'Qatar Film Commission Production Incentive / Doha Film Institute' in discovery ledger.
+- **Secondary Research**: Qatar launched the Qatar Screen Production Incentive (QSPI), offering up to a 50% cash rebate. Separately, the Doha Film Institute (DFI) provides highly competitive, discretionary development and production grants for regional and international filmmakers.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via DFI Grants.
+- **Uplifts**: None on the cash rebate.
+
+## RO (ROMANIA)
+- **Canonical Inventory Check**: Found 'Romanian Film Office Cash Rebate' in discovery ledger.
+- **Secondary Research**: Romania operates a 35% cash rebate on eligible local spend. An additional 10% uplift (yielding 45%) is available if the project explicitly promotes Romania visually or narratively.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: +10% explicitly promoting Romania.
+
+## RS (SERBIA)
+- **Canonical Inventory Check**: Found 'Serbia Film Commission Cash Rebate' in discovery ledger.
+- **Secondary Research**: Serbia operates a highly effective 25% cash rebate on eligible local spend. This uplifts to 30% for feature films that surpass a €5 million local qualifying spend threshold.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: +5% structural uplift for high-spending feature films.
+
+## RW (RWANDA)
+- **Canonical Inventory Check**: Found 'Rwanda Development Board Film Production Support' in discovery ledger.
+- **Secondary Research**: Rwanda does not currently operate a formal, automatic national cash rebate or tax credit for foreign productions. Financial support is primarily logistical, handled by the RDB (e.g., fee waivers for shooting in national parks).
+- **Stackability**: N/A.
+- **Co-Production**: N/A.
+- **Uplifts**: None.
+
+## SA (SAUDI ARABIA)
+- **Canonical Inventory Check**: Found 'Saudi Film Commission (SFC) Production Rebate' in discovery ledger.
+- **Secondary Research**: Saudi Arabia recently launched the 'Film Saudi' incentive program. It offers a highly competitive cash rebate of up to 40% on qualifying local spend, designed to attract massive international tentpoles.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: The program is structured to scale up to 40% based on local hires and regional profiling.
+
+## SE (SWEDEN)
+- **Canonical Inventory Check**: Found 'Sweden Film Commission Production Rebate / SVT / Göteborg Film Festival' in discovery ledger.
+- **Secondary Research**: Sweden operates a 25% automatic cash rebate managed by Tillväxtverket (the Swedish Agency for Economic and Regional Growth). SVT provides public broadcaster co-production equity. The Göteborg Film Festival offers selective grants/support.
+- **Stackability**: SVT equity and regional funds can generally be combined with the 25% national rebate.
+- **Co-Production**: Strongly supported via SVT equity.
+- **Uplifts**: None on the national rebate level.
+
+## SE-AB (STOCKHOLM, SWEDEN)
+- **Canonical Inventory Check**: Found 'Filmregion Stockholm-Mälardalen — Regional Co-production Fund' in discovery ledger.
+- **Secondary Research**: Film Stockholm (the regional film fund for Stockholm) provides selective co-production equity and grants for projects shooting in the region or utilizing local talent.
+- **Stackability**: Can be stacked with the national SE 25% cash rebate.
+- **Co-Production**: Yes, it functions as a co-producer.
+- **Uplifts**: None.
+
+## SG (SINGAPORE)
+- **Canonical Inventory Check**: Found 'Singapore Film Commission / IMDA Grants' in discovery ledger.
+- **Secondary Research**: Singapore does not have a broad, automatic cash rebate for foreign productions. Instead, IMDA and the SFC offer competitive grants (such as the Production Assistance Grant) that can cover up to 40% of qualifying local spend, but these are highly selective and generally aimed at building the local media ecosystem.
+- **Stackability**: N/A.
+- **Co-Production**: Strongly supported via IMDA selective grants.
+- **Uplifts**: None.
+
+## SK (SLOVAKIA)
+- **Canonical Inventory Check**: Found 'Slovak Audiovisual Fund (AVF) Production Incentive' in discovery ledger.
+- **Secondary Research**: The Slovak Audiovisual Fund (AVF) administers a 33% cash rebate on eligible local spend. Alongside the rebate, AVF manages selective production and development grants, primarily for domestic films and minority co-productions.
+- **Stackability**: Selective grants can sometimes be combined with the rebate for official co-productions, subject to EU state aid limits.
+- **Co-Production**: Supported via AVF minority co-production grants.
+- **Uplifts**: None on the national rebate level.
+
+## SN (SENEGAL)
+- **Canonical Inventory Check**: Found 'Senegal Bureau d'Accueil des Tournages Film Support' in discovery ledger.
+- **Secondary Research**: Senegal does not operate a formal, automatic cash rebate for international productions. Support is primarily channelled through FOPICA (Fonds de Promotion de l'Industrie Cinématographique et Audiovisuelle), a discretionary grant fund for local cinema, and logistical facilitation from the Bureau d'Accueil.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via FOPICA discretionary grants.
+- **Uplifts**: None.
+
+## TH (THAILAND)
+- **Canonical Inventory Check**: Found 'Thailand Board of Investment (BOI) Film Incentive' in discovery ledger.
+- **Secondary Research**: The Thailand Film Office operates a structured cash rebate. It offers a 15% base rebate. Productions can earn additional uplifts: +5% for promoting Thai tourism or utilizing local post-production services, and an extra +2% for shooting in designated secondary tourism provinces, bringing the maximum rebate to 22%.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: Up to +7% across tourism, post-production, and regional shooting criteria.
+
+## TN (TUNISIA)
+- **Canonical Inventory Check**: Found 'Tunisia National Centre for Cinema and Image (CNCI) Cash Rebate' in discovery ledger.
+- **Secondary Research**: Tunisia has been developing a formal cash rebate for foreign productions under CNCI. Independently, CNCI offers discretionary selective grants primarily targeting domestic films and official co-productions.
+- **Stackability**: N/A.
+- **Co-Production**: Supported via CNCI selective grants.
+- **Uplifts**: None.
+
+## TR (TURKEY)
+- **Canonical Inventory Check**: Found 'Turkey Cinema General Directorate Film Production Support / Ministry of Culture and Tourism (KÜLTÜR)' in discovery ledger.
+- **Secondary Research**: Turkey operates a cash rebate of up to 30% for qualifying international film productions. Separately, the Ministry of Culture and Tourism administers selective production grants intended for domestic cinema and minority co-productions.
+- **Stackability**: Selective grants can be combined for official co-productions.
+- **Co-Production**: Supported via Ministry selective grants.
+- **Uplifts**: None on the national rebate level.
+
+## TT (TRINIDAD & TOBAGO)
+- **Canonical Inventory Check**: Found 'Trinidad & Tobago Creative Industries Production Incentive' in discovery ledger.
+- **Secondary Research**: FilmTT administers the Production Expenditure Rebate Programme. The rebate offers 12.5% to 35% cash back on qualifying local spend, plus an additional 20% specifically for local labor hiring, making it a highly tiered structure.
+- **Stackability**: N/A (Primary Sovereign Incentive).
+- **Co-Production**: Supported via the main scheme.
+- **Uplifts**: Specific structural uplifts based on local crew hiring.
+
