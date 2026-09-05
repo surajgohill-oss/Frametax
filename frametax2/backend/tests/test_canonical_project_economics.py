@@ -67,8 +67,17 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 #: incentive delta the mechanism has always modeled (Mauritius's real EDB
 #: program qualifies 100% of deployed contingency spend, per its
 #: existing, unchanged qualification doctrine — not a new assumption).
-ACCEPTED_NPC_USD = 3_722_483.90
-ACCEPTED_INCENTIVE_USD = 641_909.10
+#:
+#: Canonical Budget Parser Remediation (2026-09-04): these two figures
+#: were updated because "3200 PRODUCTION SOUND" ($69,532) is no longer
+#: miscategorized into the POST-scoped "sound" category (see
+#: CURRENT_NPC_USD's own comment below for the full mechanism) — the
+#: same $90,339.30 marginal delta this docstring already documented is
+#: UNCHANGED by that fix (it affects both the 100% and 0% scenarios
+#: identically, so it cancels out of the delta); only the absolute
+#: NPC/incentive levels shifted.
+ACCEPTED_NPC_USD = 3_700_994.00
+ACCEPTED_INCENTIVE_USD = 663_399.00
 ACCEPTED_GROSS_BUDGET_USD = 4_364_393.00
 ACCEPTED_LEAF_SUM_USD = 4_364_395.00
 
@@ -83,8 +92,8 @@ ACCEPTED_LEAF_SUM_USD = 4_364_395.00
 #: explicit 0% election (the reserve is excluded from qualifying QPE
 #: either way); the distinction from a genuine 0% election is that this
 #: state carries no election at all, not a resolved one.
-CURRENT_NPC_USD = 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
-CURRENT_INCENTIVE_USD = 593_919.30
+CURRENT_NPC_USD = 3_791_333.30  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired. Canonical Budget Parser Remediation (2026-09-04): the real "3200 PRODUCTION SOUND" account ($69,532) was previously misclassified into the POST-scoped "sound" category, whose ONLY Mauritius EDB-2020 citation is "Post production services (picture and sound)" -- a rule that never covered production-phase sound work. Correctly splitting production sound into its own category (never eligible under that citation) moved this $69,532 from certain QPE to GREY_AREA_REQUIRES_AUTHORITY (uncertain, pending real authority evidence) -- incentive $593,919.30 -> $573,059.70 (rate-30%); NPC $3,770,473.70 -> $3,791,333.30. This is a genuine correction (less overclaiming), not a regression.
+CURRENT_INCENTIVE_USD = 573_059.70
 
 
 @pytest.fixture
@@ -267,8 +276,8 @@ async def test_zero_percent_utilization_would_exclude_the_full_reserve(db: Async
     # $90,339.30 the mechanism always modeled, before the classifier gap
     # existed.
     delta = round(ACCEPTED_INCENTIVE_USD - pricing.selected_incentive_usd, 2)
-    assert delta == pytest.approx(47_989.80, abs=0.01)
-    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(47_989.80, abs=0.01)
+    assert delta == pytest.approx(90_339.30, abs=0.01)
+    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(90_339.30, abs=0.01)
 
 
 async def test_canonical_economics_module_reads_no_project_specific_data(db: AsyncSession):

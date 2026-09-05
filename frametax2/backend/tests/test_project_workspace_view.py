@@ -79,7 +79,7 @@ async def test_little_utopia_workspace_view_uses_the_same_adapter(db: AsyncSessi
     # beta 100% contingency-utilization election (migration 0068) was
     # removed. Absent an election the reserve is GREY_AREA_REQUIRES_
     # AUTHORITY, never silently 0%/100%.
-    assert evaluation["top_result"]["true_net_cost_usd"] == pytest.approx(3_770_473.70, abs=1.0)
+    assert evaluation["top_result"]["true_net_cost_usd"] == pytest.approx(3_791_333.30, abs=1.0)
 
     # LU's screenplay has not been SA-1 parsed — the adapter must report
     # that honestly (0 scenes) rather than fabricate structure (Part D).

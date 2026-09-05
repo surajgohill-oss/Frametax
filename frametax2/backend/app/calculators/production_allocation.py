@@ -66,6 +66,15 @@ class AssignmentKind(str, enum.Enum):
 COMPONENT_BY_SPEND_CATEGORY: dict[str, str] = {
     "post_production": "post",
     "sound": "post",
+    # Canonical Budget Parser Remediation (Codex BPI-003): PRODUCTION_SOUND
+    # is a real, distinct category from the post-production SOUND category
+    # above (see SpendCategory.PRODUCTION_SOUND's own docstring) —
+    # physically tied to the shoot, so it is NOT mapped here at all and
+    # falls to _DEFAULT_COMPONENT ("principal_photography"), the same
+    # location-bound treatment every other bare BTL production account
+    # gets. Listed explicitly (rather than left to silently rely on the
+    # default) so the intent is never mistaken for an oversight.
+    "production_sound": "principal_photography",
     "vfx": "vfx",
     "music": "music",
     "atl_writer": "above_the_line",
@@ -76,6 +85,11 @@ COMPONENT_BY_SPEND_CATEGORY: dict[str, str] = {
     "lodging": "travel_and_living",
     "insurance": "overhead",
     "completion_bond": "overhead",
+    # Line-reconciliation audit: administrative/publicity/general-office
+    # spend is office overhead, the SAME component legal_accounting
+    # already maps to below — distinct spend_category (see SpendCategory.
+    # GENERAL_ADMINISTRATION's own docstring), same component treatment.
+    "general_administration": "administration",
     "contingency": "overhead",
     "legal_accounting": "administration",
     "production_service_fees": "administration",
@@ -175,6 +189,11 @@ class AccountAllocation:
     unresolved_requirements: tuple[str, ...] = ()
     split_pct: float | None = None       # set only on explicit split portions
     line_id: str = ""                    # traces to the source BudgetLine.line_id
+    # Canonical Budget Parser Remediation (Codex BPI-002): this
+    # assignment's OWN source line's real spend_category, carried through
+    # explicitly rather than requiring a later consumer to re-derive it
+    # from the collision-prone spend_category_by_code[account_code] map.
+    spend_category: str | None = None
 
 
 @dataclass
@@ -297,7 +316,17 @@ def derive_account_allocation(
             )
             continue
 
-        category = spend_category_by_code.get(line.account_code, line.spend_category)
+        # Canonical Budget Parser Remediation (Codex BPI-002): account_code
+        # is a CLASSIFICATION field, never a unique key (see BudgetLine's
+        # own docstring) — a shared spend_category_by_code dict keyed only
+        # by account_code cannot safely represent two distinct real lines
+        # that happen to reuse the same code (confirmed live on Lips Like
+        # Sugar's two real "4900" rows: "Total Fringes" and "MAIN AND END
+        # TITLES"). This line's OWN spend_category (set once, correctly,
+        # per-line, by classify_line_item) is now authoritative; the
+        # shared dict is consulted only as a fallback for a line that
+        # genuinely carries none of its own.
+        category = line.spend_category or spend_category_by_code.get(line.account_code)
         component = component_for(category)
 
         # 1. explicit producer split
@@ -309,6 +338,7 @@ def derive_account_allocation(
                     description=line.description,
                     amount_usd=round(line.amount_usd * pct, 2),
                     component=component,
+                    spend_category=category,
                     jurisdiction_code=jur,
                     assignment_kind=AssignmentKind.USER_ELECTED,
                     rationale=(
@@ -341,6 +371,7 @@ def derive_account_allocation(
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
+                spend_category=category,
                 jurisdiction_code=jur,
                 assignment_kind=AssignmentKind.USER_ELECTED,
                 rationale=f"Explicit producer election: this account is routed to {jur}.",
@@ -385,6 +416,7 @@ def derive_account_allocation(
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
+                spend_category=category,
                 jurisdiction_code=jur,
                 assignment_kind=kind,
                 rationale=provenance,
@@ -407,6 +439,7 @@ def derive_account_allocation(
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
+                spend_category=category,
                 jurisdiction_code=stated_location_code,
                 assignment_kind=AssignmentKind.FIXED,
                 rationale=(
@@ -431,6 +464,7 @@ def derive_account_allocation(
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
+                spend_category=category,
                 jurisdiction_code=spec.primary_jurisdiction,
                 assignment_kind=AssignmentKind.FIXED,
                 rationale=(
@@ -448,6 +482,7 @@ def derive_account_allocation(
             description=line.description,
             amount_usd=line.amount_usd,
             component=component,
+            spend_category=category,
             jurisdiction_code=spec.primary_jurisdiction,
             assignment_kind=AssignmentKind.RECOMMENDED,
             rationale=(

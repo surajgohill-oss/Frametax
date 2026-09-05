@@ -51,14 +51,23 @@ async def test_fvd_component_relocation_candidates_exist_and_are_typed(db: Async
 async def test_fvd_component_relocation_traces_real_budget_spend_not_invented(db: AsyncSession):
     """The routed component's allocated_usd must equal the REAL project
     budget spend for that component — never a fabricated or rounded
-    amount. post=$172,904, vfx=$10,000, music=$10,200 are FVD's own real
-    budget totals."""
+    amount. vfx=$10,000, music=$10,200 are FVD's own real budget totals.
+
+    Canonical Budget Parser Remediation (2026-09-04): post was $172,904,
+    now $146,446 (-$26,458). FVD's real "3200 PRODUCTION SOUND" is no
+    longer miscategorized into the POST-scoped "sound" category (Codex
+    BPI-003 — a source Production/BTL account was reclassified post
+    purely because a bare "sound" keyword matched unconditionally); it
+    correctly stays with the shoot (component=principal_photography,
+    location-bound), never routed as movable post-production spend. See
+    test_canonical_project_economics.py's ACCEPTED_NPC_USD comment for
+    the same real account's full mechanism."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     comp = [e for e in entries if e["structure_type"] == "component_relocation"]
 
-    expected_by_component = {"post": 172_904.0, "vfx": 10_000.0, "music": 10_200.0}
+    expected_by_component = {"post": 146_446.0, "vfx": 10_000.0, "music": 10_200.0}
     seen_components = set()
     for e in comp:
         ca = e["component_allocations"][0]
@@ -109,6 +118,6 @@ async def test_little_utopia_baseline_unchanged_by_component_relocation(db: Asyn
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3770473.70  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3791333.30  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
     comp = [e for e in entries if e["structure_type"] == "component_relocation"]
     assert len(comp) > 0

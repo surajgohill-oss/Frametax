@@ -873,7 +873,11 @@ def _relocation_normalization(
     original_budgeted_travel_usd = round(sum(
         line.amount_usd for line in inputs.budget_lines
         if not line.is_memo
-        and inputs.spend_category_by_code.get(line.account_code, line.spend_category)
+        # Codex BPI-002: the line's own spend_category is authoritative;
+        # the shared code-keyed dict is a fallback only (see
+        # production_allocation.py's identical fix for the full
+        # rationale).
+        and (line.spend_category or inputs.spend_category_by_code.get(line.account_code))
         == SpendCategory.TRAVEL.value
     ), 2)
 
@@ -1314,7 +1318,8 @@ def _opportunities_for_candidate(
     for line in inputs.budget_lines:
         if line.is_memo:
             continue
-        comp = component_for(inputs.spend_category_by_code.get(line.account_code, line.spend_category))
+        # Codex BPI-002: line's own category wins; dict is fallback only.
+        comp = component_for(line.spend_category or inputs.spend_category_by_code.get(line.account_code))
         component_spend[comp] = round(component_spend.get(comp, 0.0) + line.amount_usd, 2)
 
     current_atl_spend = component_spend.get("above_the_line", 0.0)
@@ -2910,7 +2915,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     for line in inputs.budget_lines:
         if line.is_memo:
             continue
-        cat = inputs.spend_category_by_code.get(line.account_code, line.spend_category)
+        # Codex BPI-002: line's own category wins; dict is fallback only.
+        cat = line.spend_category or inputs.spend_category_by_code.get(line.account_code)
         comp = component_for(cat)
         if comp in MOVABLE_COMPONENTS:
             component_spend[comp] = round(component_spend.get(comp, 0.0) + line.amount_usd, 2)

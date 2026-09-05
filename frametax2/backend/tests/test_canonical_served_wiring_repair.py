@@ -297,9 +297,15 @@ async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics
     # CBA-009 Part 19-20: $1,132,056.00 -> $769,190.00 (FVD's own $362,866.00
     # contingency reserve, priced against MU's real qualifies=True rule, is
     # now a disclosed grey area by default, not silently 100%-qualifying).
-    assert mu_seg["qpe_usd"] == pytest.approx(2_268_128.00, abs=0.01)
+    # Canonical Budget Parser Remediation (2026-09-04): $2,268,128 ->
+    # $2,791,784 — see test_fvd_canonical_input_assembly_repair.py's own
+    # comment on this exact figure for the full accounting (producer/
+    # director/bond restored to their real, pre-existing MU rules;
+    # production sound correctly moved out of certain QPE).
+    assert mu_seg["qpe_usd"] == pytest.approx(2_791_784.00, abs=0.01)
     # ITEM 4 REPAIR consequence. With the misclassified cast/writer labour
-    # restored to QPE ($769,190 -> $2,268,128) FVD's Mauritius segment now
+    # restored to QPE ($769,190 -> $2,268,128, further repaired above to
+    # $2,791,784) FVD's Mauritius segment now
     # crosses mu_frs_40_feature's $1,000,000 min_qpe, so the band-CEILING
     # tier legitimately applies. It is a ceiling, not a guaranteed rate:
     # unconfirmed, pricing still resolves to the mu_frs_30_general floor.

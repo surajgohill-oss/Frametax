@@ -284,7 +284,25 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     # `atl_rights`. Mauritius' EDB-2020-QPE-List qualifies atl_cast and
     # atl_writer (VERIFIED), so $1,498,938 of qualifying labour was
     # excluded from MU QPE. 769,190 + 1,498,938 = 2,268,128.
-    assert mu["qpe_usd"] == pytest.approx(2_268_128.00, abs=0.01)
+    #
+    # Canonical Budget Parser Remediation (2026-09-04): the SAME kind of
+    # repair, three more real accounts. FVD's "1200 PRODUCERS" ($401,831)
+    # and "1300 DIRECTOR" ($75,710) were also `miscellaneous` (Codex
+    # BPI-006 — a broken end-of-string regex anchor never matched a real
+    # parsed line with a department suffix); Mauritius' EDB-2020-QPE-List
+    # ALREADY explicitly qualifies atl_producer and atl_director too
+    # (program_spend_rules.py, VERIFIED tier, same as atl_cast/atl_writer
+    # above). FVD's "7905 BOND : 2%" ($72,573) was also `miscellaneous`
+    # (Codex BPI-004 — a bare "BOND" account matched no bond pattern);
+    # Mauritius ALSO already explicitly qualifies completion_bond
+    # (VERIFIED tier). All three now correctly reach their real,
+    # pre-existing MU rule. Partially offsetting: "3200 PRODUCTION SOUND"
+    # ($26,458) is no longer miscategorized into the POST-scoped "sound"
+    # category (see test_canonical_project_economics.py's
+    # ACCEPTED_NPC_USD comment for the full mechanism), moving it from
+    # certain QPE to GREY_AREA_REQUIRES_AUTHORITY.
+    # 2,268,128 + 401,831 + 75,710 + 72,573 - 26,458 = 2,791,784.
+    assert mu["qpe_usd"] == pytest.approx(2_791_784.00, abs=0.01)
     assert mu["doctrine"] == "hybrid_conditional"
 
     # AU-QLD is asserted with QA/SG above (authority-withheld, not traced).
@@ -313,5 +331,5 @@ async def test_little_utopia_regression_unchanged_by_input_assembly_repair(db: A
     # beta 100% contingency-utilization election was removed. Absent an
     # election the reserve is GREY_AREA_REQUIRES_AUTHORITY, never
     # silently 0%/100%.
-    assert result["baseline"]["true_net_cost_usd"] == 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
+    assert result["baseline"]["true_net_cost_usd"] == 3_791_333.30  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired. Canonical Budget Parser Remediation (2026-09-04): the real "3200 PRODUCTION SOUND" account ($69,532) was previously misclassified into the POST-scoped "sound" category, whose ONLY Mauritius EDB-2020 citation is "Post production services (picture and sound)" -- a rule that never covered production-phase sound work. Correctly splitting production sound into its own category (never eligible under that citation) moved this $69,532 from certain QPE to GREY_AREA_REQUIRES_AUTHORITY (uncertain, pending real authority evidence) -- incentive $593,919.30 -> $573,059.70 (rate-30%); NPC $3,770,473.70 -> $3,791,333.30. This is a genuine correction (less overclaiming), not a regression.
     assert result["top_result"] is None

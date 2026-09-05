@@ -467,7 +467,7 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
     # 100% contingency-utilization election (migration 0068) was removed
     # as a project-name-branched default. Absent an election the reserve
     # is GREY_AREA_REQUIRES_AUTHORITY, never silently 0%/100%.
-    assert result["baseline"]["true_net_cost_usd"] == 3_770_473.70  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired.
+    assert result["baseline"]["true_net_cost_usd"] == 3_791_333.30  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired. Canonical Budget Parser Remediation (2026-09-04): the real "3200 PRODUCTION SOUND" account ($69,532) was previously misclassified into the POST-scoped "sound" category, whose ONLY Mauritius EDB-2020 citation is "Post production services (picture and sound)" -- a rule that never covered production-phase sound work. Correctly splitting production sound into its own category (never eligible under that citation) moved this $69,532 from certain QPE to GREY_AREA_REQUIRES_AUTHORITY (uncertain, pending real authority evidence) -- incentive $593,919.30 -> $573,059.70 (rate-30%); NPC $3,770,473.70 -> $3,791,333.30. This is a genuine correction (less overclaiming), not a regression.
     assert result["top_result"] is None
 
 
@@ -968,7 +968,7 @@ async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     # 100% contingency-utilization election (migration 0068) was removed.
     # Absent an election the reserve is GREY_AREA_REQUIRES_AUTHORITY, never
     # silently defaulted to 0% or 100%.
-    assert baseline["npc_verified_usd"] == pytest.approx(3770473.70, abs=0.01)
+    assert baseline["npc_verified_usd"] == pytest.approx(3791333.30, abs=0.01)
 
 
 async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):

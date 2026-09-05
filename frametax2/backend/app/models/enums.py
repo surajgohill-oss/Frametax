@@ -103,11 +103,39 @@ class SpendCategory(str, enum.Enum):
     VFX = "vfx"
     MUSIC = "music"
     SOUND = "sound"
+    #: Canonical Budget Parser Remediation (Codex BPI-003): a source
+    #: Production/BTL account named e.g. "PRODUCTION SOUND" is physically
+    #: tied to the shoot (mic'ing/recording during principal photography)
+    #: and must never be collapsed into the POST sound category, which is
+    #: reserved for post-section mixing/design/ADR/foley work. Distinct,
+    #: reusable category — never a project-specific patch.
+    PRODUCTION_SOUND = "production_sound"
     # Excluded / special
     FINANCE_COSTS = "finance_costs"
     INSURANCE = "insurance"
     COMPLETION_BOND = "completion_bond"
     CONTINGENCY = "contingency"
+    #: Canonical Budget Parser Remediation (Codex BPI-005): a
+    #: legal/accounting account (e.g. "LEGAL AND ACCOUNTING", "LEGAL
+    #: COSTS") was previously unclassifiable — several downstream modules
+    #: (production_allocation.COMPONENT_BY_SPEND_CATEGORY,
+    #: qualification_model.py, program_spend_rules.py,
+    #: qualification_derivation.FACT_SPLIT_CATEGORIES,
+    #: little_utopia_real_budget.py) already reference the string
+    #: "legal_accounting" as a spend category, but no SpendCategory member
+    #: existed for the classifier to ever actually emit. Adding it here is
+    #: additive only — every existing consumer already compares against
+    #: this exact string value.
+    LEGAL_ACCOUNTING = "legal_accounting"
+    #: Canonical Budget Parser Remediation: a material administrative/
+    #: publicity/general-office account (e.g. "ADMINISTRATIVE EXPENSES",
+    #: "PUBLICITY", "GENERAL EXPENSE") is real, identifiable office/
+    #: overhead spend, distinct from LEGAL_ACCOUNTING (a professional-fee
+    #: category) and from MISCELLANEOUS (the true "nothing else matched"
+    #: bucket) — collapsing it into either would erase a real, common
+    #: source-account semantic the line-reconciliation audit confirmed
+    #: across three of the four locked corpus productions.
+    GENERAL_ADMINISTRATION = "general_administration"
     #: A residuals reserve is NOT contingency. Contingency is an unspent
     #: allowance against production overrun; a residuals reserve is a funded
     #: obligation to guilds for future exploitation. Collapsing them

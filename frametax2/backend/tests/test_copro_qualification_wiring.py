@@ -33,7 +33,7 @@ async def test_baselines_unchanged_after_qualification_reconnection(db: AsyncSes
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     lu_view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     lu_baseline = next(e for e in _entries(lu_view) if e["is_baseline"])
-    assert round(lu_baseline["npc_with_adjustments_usd"], 2) == 3770473.70  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
+    assert round(lu_baseline["npc_with_adjustments_usd"], 2) == 3791333.30  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
 
     await evaluate_project(db, FVD_PROJECT_ID)
     fvd_view = await build_production_and_structures(db, FVD_PROJECT_ID)

@@ -275,4 +275,4 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     # (migration 0071): LU's stale beta 100% contingency-utilization
     # election (migration 0068) was removed; absent an election the
     # reserve is GREY_AREA_REQUIRES_AUTHORITY, not silently 0%/100%.
-    assert float(calc.true_net_cost_usd) == pytest.approx(3770473.70, abs=0.01)
+    assert float(calc.true_net_cost_usd) == pytest.approx(3791333.30, abs=0.01)

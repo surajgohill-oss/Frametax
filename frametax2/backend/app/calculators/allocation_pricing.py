@@ -240,7 +240,13 @@ def _segment_lines(
             account_code=a.account_code,
             description=a.description,
             amount_usd=a.amount_usd,
-            spend_category=spend_category_by_code.get(a.account_code),
+            # Canonical Budget Parser Remediation (Codex BPI-002): the
+            # allocation's OWN spend_category (carried from its real
+            # source BudgetLine — see AccountAllocation.spend_category's
+            # own docstring) is authoritative; the shared, code-keyed
+            # dict is a fallback only, for an allocation with none of its
+            # own.
+            spend_category=a.spend_category or spend_category_by_code.get(a.account_code),
             is_memo=False,
             line_id=a.line_id or f"{a.account_code}:{a.jurisdiction_code}",
         )

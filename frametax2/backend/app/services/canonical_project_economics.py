@@ -483,17 +483,40 @@ async def build_project_economic_inputs(
     for item in items:
         description = item.description or ""
         match = _ACCOUNT_CODE_RE.match(description)
-        if match is None:
-            # Reported, never silently dropped and never assigned a
-            # synthetic code — an uncoded line cannot be allocated to a
-            # jurisdiction, which is a real input gap, not a rounding one.
-            unparsed.append(description)
-            continue
-        code, label = match.group(1), match.group(2).strip()
+        if match is not None:
+            code, label = match.group(1), match.group(2).strip()
+        else:
+            # Canonical Budget Parser Remediation (Codex BPI-001): a real,
+            # unnumbered top-sheet loaded-cost line (e.g. Bad Hombres' own
+            # "CONTINGENCY : 5.0%" -> persisted description "CONTINGENCY")
+            # has no leading numeric account code by construction — see
+            # budget_parser.py's _LOADED_COST_PCT_RE, which registers it
+            # under its own real label text, never a synthetic code. The
+            # parser correctly preserves this line; excluding it HERE was
+            # the exact downstream handoff defect Codex found — gross
+            # budget included it, but allocation/evaluation never saw it.
+            # Fixed by using the line's own stable label text as its
+            # account_code (identical convention the parser itself already
+            # uses to register it) — never invented, never merged with a
+            # numeric code, and the line's real persisted UUID (line_id)
+            # remains its true per-line identity either way.
+            if not description.strip():
+                unparsed.append(description)
+                continue
+            code, label = description.strip(), description.strip()
         amount = float(item.amount_usd) if item.amount_usd is not None else 0.0
         leaf_sum += amount
         category = getattr(item.spend_category, "value", item.spend_category)
-        if category:
+        # Codex BPI-002: account_code is a CLASSIFICATION field, never a
+        # unique key (real budgets legitimately reuse a code across
+        # distinct lines — see BudgetLine's own docstring). A later row
+        # sharing an earlier row's code must never overwrite this shared
+        # fallback map — first-registered wins here; the AUTHORITATIVE
+        # per-line category is always the one carried on this line's own
+        # BudgetLine.spend_category (see line_id-keyed usage downstream),
+        # this dict is only ever a fallback for a line with none of its
+        # own.
+        if category and code not in spend_category_by_code:
             spend_category_by_code[code] = category
         lines.append(BudgetLine(
             account_code=code, description=label, amount_usd=amount,

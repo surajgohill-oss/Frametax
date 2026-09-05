@@ -226,4 +226,4 @@ async def test_little_utopia_no_stale_contingency_default(db: AsyncSession):
     # Absent a real election, derive_qualification_register's own existing
     # GREY_AREA_REQUIRES_AUTHORITY doctrine applies — the reserve is
     # excluded from qualifying QPE, never silently assumed 100% deployed.
-    assert result["baseline"]["true_net_cost_usd"] == pytest.approx(3_770_473.70, abs=0.01)
+    assert result["baseline"]["true_net_cost_usd"] == pytest.approx(3_791_333.30, abs=0.01)
