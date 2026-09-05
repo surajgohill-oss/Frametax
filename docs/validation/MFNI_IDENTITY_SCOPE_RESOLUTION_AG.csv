@@ -1,0 +1,14 @@
+jurisdiction_code,current_name,parent_jurisdiction,identity_type,physical_cost_market,coverage_area,constituent_regions,valid_for_cost_normalization,source_authority,source_url_or_identifier,resolution_status,notes
+SA-KSA,Saudi Arabia National,SA,DUPLICATE_ADMINISTRATIVE,FALSE,Saudi Arabia National,SA,FALSE,ISO 3166-1,,RESOLVED_NOT_A_MARKET,"KSA is Kingdom of Saudi Arabia, identical to SA. Do not duplicate national economy."
+FR-IDF,Ile-de-France,FR,PHYSICAL_MARKET,TRUE,Ile-de-France,Paris/IDF,TRUE,INSEE Region 11,,RESOLVED_VALID,Valid regional production hub.
+FR-NAQ,Nouvelle-Aquitaine,FR,PHYSICAL_MARKET,TRUE,Nouvelle-Aquitaine,NAQ,TRUE,INSEE Region 75,,RESOLVED_VALID,Valid region.
+FR-ARA,Auvergne-Rhone-Alpes,FR,PHYSICAL_MARKET,TRUE,Auvergne-Rhone-Alpes,ARA,TRUE,INSEE Region 84,,RESOLVED_VALID,Valid region.
+FR-OCC,Occitanie,FR,PHYSICAL_MARKET,TRUE,Occitanie,OCC,TRUE,INSEE Region 76,,RESOLVED_VALID,Valid region.
+BE-WAL,Wallonia,BE,PHYSICAL_MARKET,TRUE,Wallonia,WAL,TRUE,Statbel,,RESOLVED_VALID,Valid federal region.
+BE-VLG,Flanders,BE,PHYSICAL_MARKET,TRUE,Flanders,VLG,TRUE,Statbel,,RESOLVED_VALID,Valid federal region.
+BE-BRU,Brussels,BE,PHYSICAL_MARKET,TRUE,Brussels,BRU,TRUE,Statbel,,RESOLVED_VALID,Valid federal region.
+DE-NI,Lower Saxony,DE,PHYSICAL_MARKET,TRUE,Lower Saxony,NI,TRUE,Destatis,,RESOLVED_COMPLEX_FUNDING,"Physical cost market is Lower Saxony. Nordmedia fund area also includes HB (Bremen), but NI alone is a valid cost state."
+DE-MDM,Mitteldeutsche Medienforderung,DE,FUNDING_TERRITORY,FALSE,Mitteldeutsche Medienforderung,"SN, ST, TH",FALSE,MDM Film Commission,,RESOLVED_NOT_A_MARKET,"MDM is a fund covering Saxony, Saxony-Anhalt, and Thuringia. It is not a single cost geography."
+DE-BB,Brandenburg,DE,PHYSICAL_MARKET,TRUE,Brandenburg,BB,TRUE,Destatis,,RESOLVED_COMPLEX_FUNDING,Brandenburg physical state. Medienboard fund includes Berlin (BE). BB valid as distinct cost market.
+DE-HH,Hamburg,DE,PHYSICAL_MARKET,TRUE,Hamburg,HH,TRUE,Destatis,,RESOLVED_COMPLEX_FUNDING,Hamburg physical state. MOIN fund includes Schleswig-Holstein (SH). HH valid as distinct cost market.
+NO-ROG,Rogaland,NO,PHYSICAL_MARKET,TRUE,Rogaland,ROG,TRUE,Kartverket,,RESOLVED_VALID,Valid Norwegian county.
