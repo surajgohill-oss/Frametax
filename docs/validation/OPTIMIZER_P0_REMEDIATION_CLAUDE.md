@@ -145,7 +145,21 @@ CANONICAL INTEGRITY GATE (13 non-Globe invariants): PASS — GLOBE remains separ
 
 ## 14. Full suite
 
-Result recorded after this document was drafted — see the chat response for the exact final count (`pytest tests/ -q`, run once, per the required efficiency model).
+`cd frametax2/backend && PYTHONPATH=. python3 -m pytest tests/ -q`, run once per the required efficiency model:
+
+```
+1 failed, 4749 passed, 3 skipped, 12 warnings in 284.55s
+FAILED tests/test_codex_final_optimizer_health_audit.py::test_fresh_evaluation_uses_the_current_engine_version
+  AssertionError: assert 'canonical-1.53.0' == 'canonical-1.52.0'
+```
+
+Diagnosed before touching anything: this is an unrelated pre-existing test (from a prior closeout pass, `OH-001`) that hardcoded the literal engine-version string `"canonical-1.52.0"` in its assertion, on top of the correct comparison `result["engine_version"] == ENGINE_VERSION`. The P0-3 fix's `ENGINE_VERSION` bump (Section 10) is itself required and correct — this hardcoded literal is now stale as a direct, expected consequence, not a regression in P0 behavior. Fixed minimally: removed the redundant `== "canonical-1.52.0"` pin, keeping the test's real assertion (`result["engine_version"] == ENGINE_VERSION`) intact. Targeted re-run confirms:
+
+```
+tests/test_codex_final_optimizer_health_audit.py: 9 passed, 5 warnings in 125.98s
+```
+
+Effective full-suite result after this fix: **4750 passed, 3 skipped, 0 failed.** This one-line fix is included as a 9th file in the commit (Section 15).
 
 ## 15. Files changed
 
@@ -159,10 +173,11 @@ Result recorded after this document was drafted — see the chat response for th
 **Gate (1):**
 - `frametax2/backend/scripts/canonical_integrity_gate.py` — SELECTION invariant corrected; PARTICIPANTS invariant strengthened to exact identity; new TREATY ALLOCATION invariant family added.
 
-**Tests (3):**
+**Tests (4):**
 - `frametax2/backend/tests/test_canonical_selection_consistency.py` — rewritten for corrected P0-1 semantics.
 - `frametax2/backend/tests/test_canonical_scenario_participants.py` — extended for exact P0-2 identity; import-order fix (Codex P2 finding) applied.
 - `frametax2/backend/tests/test_copro_conditional_pricing_bridge.py` — extended with P0-3 conservation/infeasibility/real-project tests.
+- `frametax2/backend/tests/test_codex_final_optimizer_health_audit.py` — one-line fix: removed a hardcoded stale `ENGINE_VERSION` literal made stale by the P0-3 version bump (Section 14); the test's real assertion is unchanged.
 
 **Docs (1):** this file.
 
@@ -171,5 +186,13 @@ Result recorded after this document was drafted — see the chat response for th
 Permission preflight was re-run at the start of this task per explicit instruction, surfacing one real, unresolved gap: writes to `/tmp`/`/private/tmp` still prompt despite the correctly-configured `.claude/settings.local.json` rule, traced to a Desktop-app-level workspace sandbox outside that file's control. Resolved by switching to an in-repo, gitignored scratch directory (`~/cineglobe-frametax/.claude/scratch/`) for the remainder of this task — verified clean (no dialogs) before proceeding. No further routine permission interruption occurred during the optimizer P0 implementation itself. Diagnostic investigation used a stable, repeated `python3 -c "..."` invocation shape throughout (not varied per question), consistent with the standing command-family discipline.
 
 ## 17. Commit / push / remote
+
+Shared-branch-safe delivery: working tree was inspected fresh immediately before staging (`git status --short`), confirming numerous unrelated untracked files from a concurrent AG session's MFNI/secondary-research work (e.g. `update_*.py`, `generate_*.py`, `.claude/`) — none of these were staged, added, or otherwise touched. Staged exactly the 9 intended files by explicit path (never `git add .`/`git add -A`); staged diff verified to match exactly those 9 paths before committing.
+
+- **Commit:** `136936f8e9357687ae27f606a087ccba5584d0c1` — "fix: optimizer P0 wiring remediation (canonical selection, participant identity, treaty allocation)" — 9 files changed, 762 insertions(+), 112 deletions(-).
+- **Branch:** `claude/audit-frametax-features-NZcX5`, repo `surajgohill-oss/Frametax`.
+- **Push:** `af1a660..136936f claude/audit-frametax-features-NZcX5 -> claude/audit-frametax-features-NZcX5` — succeeded.
+- **Remote verification:** `git rev-parse HEAD` and `git rev-parse origin/claude/audit-frametax-features-NZcX5` both resolve to `136936f8e9357687ae27f606a087ccba5584d0c1` — local HEAD == remote HEAD, confirmed.
+- No history rewrite performed. No unrelated concurrent-agent work was staged, modified, or lost.
 
 See the chat response for the final commit SHA, push confirmation, and remote HEAD verification.
