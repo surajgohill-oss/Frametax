@@ -141,7 +141,7 @@ No material Codex finding remains open, disproven, or blocked.
 
 ## 12. Full test result
 
-- Backend full suite (`pytest tests/ -q`): result recorded in Section "O. Tests" of the final report (run concluded after this document was drafted — see the chat response for the exact count).
+- Backend full suite (`pytest tests/ -q`): **4743 passed, 2 skipped, 0 failed** (447s) — up from the pre-remediation baseline of 4732 passed by exactly **+11**, matching the 11 new tests in `test_canonical_budget_semantic_repair.py` precisely. No other test count moved; no regression anywhere in the suite.
 - All budget-specific and downstream-affected suites (34 files, ~1,310 tests spanning classification, allocation, pricing, opportunity discovery, component relocation, and the four-budget corpus itself): **all green** after the ripple-effect corrections in Section 13.
 - Canonical Budget Integrity Gate: **PASS** (Section 8).
 - Non-Globe canonical optimizer gate (`canonical_integrity_gate.py`, from the prior closeout): re-run as a regression check — **PASS**, all 12 invariants, 0 failures. The optimizer-acceptance corpus grew from 13 to **14** productions (`5 LBS OF PRESSURE` newly evaluates successfully) as an incidental, positive side effect of this repair — noted for transparency; not pursued further, per this task's explicit corpus hard-lock (Section 1).
