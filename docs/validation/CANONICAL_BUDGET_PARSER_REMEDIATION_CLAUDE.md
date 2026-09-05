@@ -182,8 +182,22 @@ Fixing real classification defects legitimately changes downstream QPE/incentive
 - **Claude-visible execution blocks**: one connected read of both Codex artifacts; iterative `Read`/`Edit` cycles across the 6 source files; ~15 direct diagnostic Python one-liners (via Bash) against the live database to trace exact dollar mechanisms before accepting any changed number; 3 focused `pytest` regression passes plus 1 full-suite run; 2 gate-script runs (budget gate + non-Globe optimizer gate, the latter as a regression check only).
 - **Tool categories used**: `Read`, `Edit`, `Write` (all repo-scoped); `Bash` (pytest invocations, direct diagnostic Python scripts against the local Postgres/SQLite dev DB, git); no browser/MCP tools (backend-only task, no frontend touched).
 - **Batchability**: the diagnostic one-liners were each shaped by the PRECEDING one's output (find the delta → hypothesize a mechanism → verify against real data → confirm or revise) — a genuinely sequential, non-batchable investigation, not a case of avoidably-serial commands. The two full-suite-scale pytest runs and the two gate runs were each launched once, backgrounded, and awaited — no repeated polling.
-- **Permission config changes**: none made. The Pass-3 proposal (restore `Write(//tmp/**)`/`Write(//private/tmp/**)`) remains an unapplied proposal from a prior task.
+- **Permission config changes**: none made during the remediation itself. The long-standing proposal (restore `Write(//tmp/**)`/`Write(//private/tmp/**)`) was applied in the follow-on permission-normalization pass — see the standing rule below.
 - User-visible host permission dialogs must be counted by the user; this report does not self-certify a count.
+
+### 16a. STANDING CINEGLOBE PERMISSION RULE (applies to every future Claude task)
+
+> Every Claude implementation task begins with a lightweight permission preflight. Routine project-scoped reversible operations must use stable pre-authorized command/tool families. If a routine permission prompt occurs, repair the permission-pattern gap immediately rather than accumulating approvals. Destructive/external-sensitive operations remain gated.
+
+Operational corollaries, established after this remediation's own process review:
+
+1. **Stable diagnostic command family.** For iterative investigation, use one repeated invocation shape (`python3 <repo script> <args>`, `pytest <args>`) and vary its *arguments*, rather than constructing a new permission-distinct one-liner shape (`python3 -c …`, heredocs, ad-hoc shell pipelines) per question. The reasoning may stay sequential; the command family must stay constant. This remediation's ~15 distinct `python3 -c` shapes are the anti-pattern this rule exists to prevent.
+2. **Prefer native tools over Bash.** Use `Read`/`Grep`/`Glob`/`Edit` instead of `cat`/`grep`/`sed` via Bash wherever equivalent — fewer permission surfaces, and no shell-quoting hazards.
+3. **Batch independent operations.** One repo-state inspection batch, one focused-test invocation, one gate invocation, one final suite, one scoped git delivery sequence. Never poll a background task repeatedly; launch once and await notification.
+4. **Repeated prompt = process failure.** A second host prompt for the same routine category means the permission *rule* is wrong, not that another approval is needed. Stop, inspect why the rule did not match, normalize the narrow project-safe pattern, then retry.
+5. **Shared-branch staging discipline.** This branch is worked concurrently by another automated session. Never leave broad staged state; stage only exact intended paths and commit immediately in the same step. Never `git add .` / `git add -A` under concurrent-agent conditions. Never rewrite shared remote history. (A prior run lost commit attribution — not content — to exactly this hazard; see §17.)
+
+Effective permission configuration lives in `.claude/settings.local.json` (globally gitignored, machine-local, so it never collides with the concurrent session). Destructive, credential, system, package-installation, and account-level operations remain explicitly denied there.
 
 ## 17. Commit SHA
 
