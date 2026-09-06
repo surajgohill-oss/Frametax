@@ -666,9 +666,17 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # failure already used; unpriced (structures actually persisted with
     # a disclosed non-priced status) is unaffected because these 9 were
     # never persisted at all, matching that existing convention.
-    assert len(entries) == 356
+    # Optimizer FINAL closeout, P1-REJ-001: entries 356 -> 444, unpriced
+    # 45 -> 133 (+88 each) -- the 88 FVD component threshold-failed
+    # attempts previously silently dropped (never persisted at all) are
+    # now durably persisted/served as disclosed RULE_REJECTED rows (see
+    # test_canonical_served_wiring_repair.py::
+    # test_fvd_accounting_matches_codex_diagnosis for the full
+    # 45+88=133 reconciliation). priced is unaffected — these are never
+    # priced candidates.
+    assert len(entries) == 444
     assert len(priced) == 311
-    assert len(unpriced) == 45  # unaffected -- the 9 newly-blocked candidates were never persisted (see comment above), not reclassified into this bucket
+    assert len(unpriced) == 133
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):

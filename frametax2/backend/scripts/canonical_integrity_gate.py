@@ -93,6 +93,7 @@ from app.services.canonical_evaluation import evaluate_project
 from app.services.program_onboarding_conformance import (
     CONFORMANT,
     NONCONFORMANT,
+    PATHWAY_SPECIFIC,
     classify_all_programs,
 )
 
@@ -132,6 +133,153 @@ def _program_slugs_of(structure: dict) -> list[str]:
         if s and s not in slugs:
             slugs.append(s)
     return slugs
+
+
+def _check_participants_invariant(s: dict, label: str) -> list[str]:
+    """PARTICIPANTS invariant, extracted as a pure function (P1-GATE-001)
+    so it can be exercised with synthetic inputs in a negative test
+    without a live DB session — see
+    tests/test_canonical_integrity_gate_negative.py."""
+    failures: list[str] = []
+    participants = s.get("participants") or []
+    # Optimizer FINAL closeout, P1-GATE-001 (Codex, final P0 delta
+    # reaudit, Section 8 "Participant oracle"): the set-equality check
+    # below compares SETS, so a duplicate participant entry
+    # (participants=["MU","MU","CA-MB"]) would silently pass — the live
+    # corpus has zero duplicates today only because
+    # `_empty_structure_entry()` deduplicates while building the list,
+    # not because this gate would catch a regression. Checked for every
+    # structure type, not just component_relocation.
+    if len(participants) != len(set(participants)):
+        failures.append(
+            f"PARTICIPANTS: {label} participants={participants} contains duplicate entries — "
+            "a jurisdiction must appear at most once"
+        )
+    if s["structure_type"] == "component_relocation":
+        expected_participants = {
+            seg["jurisdiction_code"] for seg in (s.get("segments") or [])
+            if seg.get("claims_incentive") is True and seg.get("jurisdiction_code")
+        }
+        if set(participants) != expected_participants:
+            failures.append(
+                f"PARTICIPANTS: {label} component_relocation participants={participants} "
+                f"!= expected claiming set {sorted(expected_participants)} "
+                "(a non-claiming stated-location segment must never appear; every real "
+                "claiming segment must)"
+            )
+    elif s["structure_type"] in ("single_country", "full_relocation"):
+        if participants != [s["primary_jurisdiction"]]:
+            failures.append(
+                f"PARTICIPANTS: {label} {s['structure_type']} participants={participants} "
+                f"(expected exactly [{s['primary_jurisdiction']}])"
+            )
+    return failures
+
+
+def _check_program_onboarding_invariant(
+    s: dict, label: str, program_slugs: list[str], conformance_by_slug: dict[str, str],
+) -> list[str]:
+    """PROGRAM ONBOARDING invariant, extracted as a pure function
+    (P1-GATE-001) — see _check_participants_invariant's docstring for
+    why. Covers both the top-level structure's own program_slug(s) and
+    (P1-GATE-001, Codex Section 23 item 4) a nested conditional_scenario's
+    own priced participant programs — a NONCONFORMANT program priced
+    ONLY inside a resolved conditional scenario must never silently
+    escape this check merely because the top-level structure itself is
+    never is_fully_priced=True. PATHWAY_SPECIFIC (P1-CONF-001) is a
+    valid, non-failing classification in both places."""
+    failures: list[str] = []
+    for slug in program_slugs:
+        if conformance_by_slug.get(slug) == NONCONFORMANT:
+            failures.append(
+                f"PROGRAM ONBOARDING: {label} is PRICED using program {slug!r}, which is "
+                "classified NONCONFORMANT — a program with no resolvable jurisdiction and/or "
+                "no rate rule must never silently reach optimizer output"
+            )
+    conditional = s.get("conditional_scenario")
+    if isinstance(conditional, dict) and conditional.get("fully_priced"):
+        for pc in conditional.get("priced_components") or []:
+            cond_slug = pc.get("program_slug")
+            if cond_slug and conformance_by_slug.get(cond_slug) == NONCONFORMANT:
+                failures.append(
+                    f"PROGRAM ONBOARDING: {label} conditional_scenario is PRICED using "
+                    f"program {cond_slug!r}, which is classified NONCONFORMANT — a "
+                    "program with no resolvable jurisdiction and/or no rate rule must "
+                    "never silently reach optimizer output through a nested pathway either"
+                )
+    return failures
+
+
+def _check_treaty_allocation_invariant(s: dict, label: str, declared_gross: float | None) -> list[str]:
+    """TREATY ALLOCATION invariant, extracted as a pure function
+    (P1-GATE-001) — see _check_participants_invariant's docstring for
+    why."""
+    failures: list[str] = []
+    conditional = s.get("conditional_scenario")
+    if not (conditional and conditional.get("status") == "CONDITIONAL_PROJECT_FACT_DEPENDENT"):
+        return failures
+    alloc = conditional.get("participant_allocation_pct")
+    if conditional.get("fully_priced") is True:
+        if not alloc:
+            failures.append(
+                f"TREATY ALLOCATION: {label} fully_priced=True but no "
+                "participant_allocation_pct is disclosed — cannot prove one budget was allocated"
+            )
+        elif abs(sum(alloc.values()) - 100.0) > 0.01:
+            failures.append(
+                f"TREATY ALLOCATION: {label} participant_allocation_pct={alloc} sums to "
+                f"{sum(alloc.values())}, not 100 — the same double-counting/under-allocation "
+                "defect Codex found on LU GB/IE (186.2% of gross)"
+            )
+        gross_budget = declared_gross
+        combined_incentive = conditional.get("conditional_incentive_usd")
+        if gross_budget and combined_incentive is not None and combined_incentive > gross_budget * 2.0:
+            failures.append(
+                f"TREATY ALLOCATION: {label} combined conditional_incentive_usd="
+                f"{combined_incentive} implausibly exceeds 2x the declared gross budget "
+                f"{gross_budget} — likely double-counted, not allocated"
+            )
+        # Optimizer FINAL closeout, P1-GATE-001 (Codex, final P0 delta
+        # reaudit, Section 8 "Treaty oracle"): independently bounds each
+        # priced participant's OWN selected_incentive_usd against its OWN
+        # allocated share of the one source budget times its OWN modeled
+        # rate — never just an allocation-sum or loose combined-incentive
+        # check.
+        if gross_budget and alloc:
+            for _pc in conditional.get("priced_components") or []:
+                _code = _pc.get("jurisdiction_code")
+                _rate = _pc.get("modeled_rate")
+                _incentive = _pc.get("selected_incentive_usd")
+                _pct = alloc.get(_code)
+                if _rate is None or _incentive is None or _pct is None:
+                    continue
+                _allocated_share_usd = gross_budget * _pct / 100.0
+                _upper_bound = _allocated_share_usd * _rate * 1.01 + 1.0  # 1% + $1 tolerance
+                if _incentive > _upper_bound:
+                    failures.append(
+                        f"TREATY ALLOCATION: {label} participant {_code} "
+                        f"selected_incentive_usd={_incentive:,.2f} exceeds its own allocated "
+                        f"share (${_allocated_share_usd:,.2f}) x modeled_rate ({_rate}) = "
+                        f"${_allocated_share_usd * _rate:,.2f} — independently recomputed "
+                        "participant-share QPE conservation violated (never just an "
+                        "allocation-sum or loose combined-incentive check)"
+                    )
+    elif (
+        alloc and abs(sum(alloc.values()) - 100.0) < 0.01
+        and not conditional.get("canonical_data_gaps")
+    ):
+        # A feasible (100%-summing) allocation with NO real
+        # canonical_data_gaps should have produced fully_priced=True. If
+        # canonical_data_gaps IS non-empty, fully_priced=False is
+        # genuinely correct (a real, unrelated missing-rate-rule
+        # disclosure, e.g. ca_cmf) and must never be flagged as a P0-3
+        # allocation defect.
+        failures.append(
+            f"TREATY ALLOCATION: {label} allocation sums to 100 (feasible) but "
+            "fully_priced is not True — a resolved, complete allocation must be reported "
+            "as fully priced, not silently left conditional"
+        )
+    return failures
 
 
 async def _gate_one_project(
@@ -285,54 +433,15 @@ async def _gate_one_project(
                     f"declared {declared_gross}"
                 )
 
-        # TREATY ALLOCATION — Optimizer P0 wiring remediation, P0-3.
-        # Checked BEFORE the is_fully_priced continue below: a treaty
+        # TREATY ALLOCATION — Optimizer P0 wiring remediation, P0-3;
+        # strengthened by Optimizer FINAL closeout, P1-GATE-001. Checked
+        # BEFORE the is_fully_priced continue below: a treaty
         # opportunity's conditional_scenario is nested trace data, never
-        # reflected on the structure's own top-level is_fully_priced
-        # (these rows are disclosure-only opportunities, not priced
-        # candidates). Asserts the exact invariant Codex's audit demands:
-        # a resolved conditional scenario's participant allocation must
-        # sum to exactly 100% (one source budget, never independently
-        # priced per participant), and fully_priced may only be True when
-        # that allocation is genuinely complete.
-        conditional = s.get("conditional_scenario")
-        if conditional and conditional.get("status") == "CONDITIONAL_PROJECT_FACT_DEPENDENT":
-            alloc = conditional.get("participant_allocation_pct")
-            if conditional.get("fully_priced") is True:
-                if not alloc:
-                    result["failures"].append(
-                        f"TREATY ALLOCATION: {label} fully_priced=True but no "
-                        "participant_allocation_pct is disclosed — cannot prove one budget was allocated"
-                    )
-                elif abs(sum(alloc.values()) - 100.0) > 0.01:
-                    result["failures"].append(
-                        f"TREATY ALLOCATION: {label} participant_allocation_pct={alloc} sums to "
-                        f"{sum(alloc.values())}, not 100 — the same double-counting/under-allocation "
-                        "defect Codex found on LU GB/IE (186.2% of gross)"
-                    )
-                gross_budget = declared_gross
-                combined_incentive = conditional.get("conditional_incentive_usd")
-                if gross_budget and combined_incentive is not None and combined_incentive > gross_budget * 2.0:
-                    result["failures"].append(
-                        f"TREATY ALLOCATION: {label} combined conditional_incentive_usd="
-                        f"{combined_incentive} implausibly exceeds 2x the declared gross budget "
-                        f"{gross_budget} — likely double-counted, not allocated"
-                    )
-            elif (
-                alloc and abs(sum(alloc.values()) - 100.0) < 0.01
-                and not conditional.get("canonical_data_gaps")
-            ):
-                # A feasible (100%-summing) allocation with NO real
-                # canonical_data_gaps should have produced fully_priced=
-                # True. If canonical_data_gaps IS non-empty, fully_priced=
-                # False is genuinely correct (a real, unrelated missing-
-                # rate-rule disclosure, e.g. ca_cmf) and must never be
-                # flagged as a P0-3 allocation defect.
-                result["failures"].append(
-                    f"TREATY ALLOCATION: {label} allocation sums to 100 (feasible) but "
-                    "fully_priced is not True — a resolved, complete allocation must be reported "
-                    "as fully priced, not silently left conditional"
-                )
+        # reflected on the structure's own top-level is_fully_priced.
+        # Extracted to _check_treaty_allocation_invariant (see its own
+        # docstring) so it can be exercised with synthetic negative-test
+        # inputs.
+        result["failures"].extend(_check_treaty_allocation_invariant(s, label, declared_gross))
 
         if not s["is_fully_priced"]:
             continue
@@ -399,25 +508,10 @@ async def _gate_one_project(
         # ONLY if its own segment claims. A non-claiming stated-location
         # segment (claims_incentive=False, e.g. a real US segment) must
         # never appear in participants; it stays visible in segments.
-        participants = s.get("participants") or []
-        if s["structure_type"] == "component_relocation":
-            expected_participants = {
-                seg["jurisdiction_code"] for seg in (s.get("segments") or [])
-                if seg.get("claims_incentive") is True and seg.get("jurisdiction_code")
-            }
-            if set(participants) != expected_participants:
-                result["failures"].append(
-                    f"PARTICIPANTS: {label} component_relocation participants={participants} "
-                    f"!= expected claiming set {sorted(expected_participants)} "
-                    "(a non-claiming stated-location segment must never appear; every real "
-                    "claiming segment must)"
-                )
-        elif s["structure_type"] in ("single_country", "full_relocation"):
-            if participants != [s["primary_jurisdiction"]]:
-                result["failures"].append(
-                    f"PARTICIPANTS: {label} {s['structure_type']} participants={participants} "
-                    f"(expected exactly [{s['primary_jurisdiction']}])"
-                )
+        # Extracted to _check_participants_invariant (see its own
+        # docstring, and P1-GATE-001's duplicate-detection strengthening)
+        # so it can be exercised with synthetic negative-test inputs.
+        result["failures"].extend(_check_participants_invariant(s, label))
 
         # STATUS (Section 5)
         if "administrative_allocation_risk" not in s:
@@ -435,16 +529,15 @@ async def _gate_one_project(
                 )
 
         # PROGRAM ONBOARDING / CONFORMANCE — cross-check against the
-        # global program classification (Item C — passed in by the
-        # caller, computed once for the whole run, never per-project).
-        for slug in program_slugs:
-            classification = conformance_by_slug.get(slug)
-            if classification == NONCONFORMANT:
-                result["failures"].append(
-                    f"PROGRAM ONBOARDING: {label} is PRICED using program {slug!r}, which is "
-                    "classified NONCONFORMANT — a program with no resolvable jurisdiction and/or "
-                    "no rate rule must never silently reach optimizer output"
-                )
+        # global program classification (Item C), strengthened by
+        # Optimizer FINAL closeout (P1-CONF-001/P1-GATE-001) to also
+        # examine a nested conditional_scenario's own priced programs.
+        # Extracted to _check_program_onboarding_invariant (see its own
+        # docstring) so it can be exercised with synthetic negative-test
+        # inputs.
+        result["failures"].extend(
+            _check_program_onboarding_invariant(s, label, program_slugs, conformance_by_slug)
+        )
 
     return result
 
@@ -460,12 +553,14 @@ async def main() -> int:
     conformance_by_slug = {slug: r.classification for slug, r in program_conformance.items()}
     n_conformant = sum(1 for r in program_conformance.values() if r.classification == CONFORMANT)
     n_nonconformant = sum(1 for r in program_conformance.values() if r.classification == NONCONFORMANT)
-    n_conditional = len(program_conformance) - n_conformant - n_nonconformant
+    n_pathway_specific = sum(1 for r in program_conformance.values() if r.classification == PATHWAY_SPECIFIC)
+    n_conditional = len(program_conformance) - n_conformant - n_nonconformant - n_pathway_specific
 
     print(f"Canonical Integrity Gate — {len(projects)} library project record(s) discovered")
     print(
         f"Program onboarding conformance — {len(program_conformance)} optimizer-visible program(s): "
-        f"{n_conformant} CONFORMANT, {n_conditional} CONDITIONAL, {n_nonconformant} NONCONFORMANT\n"
+        f"{n_conformant} CONFORMANT, {n_conditional} CONDITIONAL, {n_pathway_specific} PATHWAY_SPECIFIC, "
+        f"{n_nonconformant} NONCONFORMANT\n"
     )
 
     any_failures = False
@@ -530,6 +625,16 @@ async def main() -> int:
         for slug, r in program_conformance.items():
             if r.classification == NONCONFORMANT:
                 print(f"  - {slug}: {'; '.join(r.reasons)}")
+
+    if n_pathway_specific:
+        print(
+            "\nPATHWAY_SPECIFIC programs (P1-CONF-001: executable ONLY through a specific "
+            "conditional/treaty pathway, deliberately absent from ordinary discovery — "
+            "not a data gap, not NONCONFORMANT):"
+        )
+        for slug, r in program_conformance.items():
+            if r.classification == PATHWAY_SPECIFIC:
+                print(f"  - {slug} ({r.jurisdiction_code}): {'; '.join(r.reasons)}")
 
     print()
     if any_failures:

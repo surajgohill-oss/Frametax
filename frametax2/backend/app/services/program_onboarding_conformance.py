@@ -67,6 +67,16 @@ from dataclasses import dataclass, field
 CONFORMANT = "CONFORMANT"
 CONDITIONAL = "CONDITIONAL"
 NONCONFORMANT = "NONCONFORMANT"
+#: Optimizer FINAL closeout, P1-CONF-001 (Codex, full optimizer audit):
+#: a program that is genuinely, deliberately never register()-ed into
+#: ordinary jurisdiction discovery (no doctrine, no
+#: ProgramRequirementsProfile) but DOES carry a real, cited, executable
+#: RateRule for a specific conditional/treaty pricing pathway. This is
+#: not a data-quality gap (NONCONFORMANT would misrepresent it as one)
+#: and it is not an ordinary program (CONFORMANT would misrepresent it
+#: as always independently priceable). See `classify_program_conformance`
+#: for the exact, generic, non-hardcoded detection rule.
+PATHWAY_SPECIFIC = "PATHWAY_SPECIFIC"
 
 
 @dataclass(frozen=True)
@@ -130,22 +140,47 @@ def classify_program_conformance(
     doctrine = get_doctrine(program_slug)
     assertions["unique_canonical_program_id"] = bool(program_slug and program_slug.strip())
 
-    # ── 2. Valid jurisdiction ───────────────────────────────────────────
-    jurisdiction_code = (
-        doctrine.jurisdiction_code if doctrine is not None
-        else (profile.jurisdiction_code if profile is not None else None)
-    )
-    valid_jurisdiction = _valid_jurisdiction_code(jurisdiction_code, known_jurisdiction_codes)
-    assertions["valid_jurisdiction"] = valid_jurisdiction
-    if not valid_jurisdiction:
-        reasons.append(f"jurisdiction_code={jurisdiction_code!r} is missing or unresolvable")
-
-    # ── 3. Economic mechanic supported (valid economic type) ──────────
+    # ── 3 (moved ahead of 2 — needed to detect pathway-specific status
+    # before jurisdiction resolution). Economic mechanic supported ──────
     rate_rules = get_rate_rules(program_slug)
     has_rate_rules = bool(rate_rules)
     assertions["economic_mechanic_supported"] = has_rate_rules
     if not has_rate_rules:
         reasons.append("no registered RateRule — program cannot be priced/executed at all")
+
+    # Optimizer FINAL closeout, P1-CONF-001 (Codex): a program with a real,
+    # executable RateRule but NEITHER a doctrine record NOR a
+    # ProgramRequirementsProfile has no ordinary-discovery identity at
+    # all — never a data-quality accident here, since every such RateRule
+    # is only ever materialized deliberately for a specific conditional/
+    # treaty pricing pathway (see program_rate_rules_worldwide.py's own
+    # module comment for the confirmed real case, au_producer_offset:
+    # "deliberately not register()-ed into ordinary jurisdiction
+    # discovery... Materialized as an executable RateRule ONLY for the
+    # conditional official-co-production pricing path"). This is a
+    # purely structural signal — no program_slug is referenced by name —
+    # so a future program with the same real shape is classified
+    # identically with zero code change here.
+    is_pathway_specific = has_rate_rules and doctrine is None and profile is None
+    assertions["pathway_specific_executable"] = is_pathway_specific
+
+    # ── 2. Valid jurisdiction ───────────────────────────────────────────
+    jurisdiction_code = (
+        doctrine.jurisdiction_code if doctrine is not None
+        else (profile.jurisdiction_code if profile is not None else None)
+    )
+    if jurisdiction_code is None and is_pathway_specific:
+        # The real jurisdiction is already known, cited canonical
+        # knowledge (national_cultural_status.py's own
+        # _CONFIRMED_SEPARATE_PATHWAY record) — it was simply never
+        # reachable through the ordinary doctrine/profile path because
+        # this program was deliberately excluded from that path.
+        from app.data.national_cultural_status import get_jurisdiction_code_for_linked_program
+        jurisdiction_code = get_jurisdiction_code_for_linked_program(program_slug)
+    valid_jurisdiction = _valid_jurisdiction_code(jurisdiction_code, known_jurisdiction_codes)
+    assertions["valid_jurisdiction"] = valid_jurisdiction
+    if not valid_jurisdiction:
+        reasons.append(f"jurisdiction_code={jurisdiction_code!r} is missing or unresolvable")
 
     # ── 4. Authoritative provenance present ─────────────────────────────
     provenance_summary = classify_program_provenance(program_slug)
@@ -209,7 +244,24 @@ def classify_program_conformance(
     assertions["optimizer_relevance_explicit"] = coverage is not None
 
     # ── Overall classification ──────────────────────────────────────────
-    if not has_rate_rules or not valid_jurisdiction:
+    # Optimizer FINAL closeout, P1-CONF-001: a pathway-specific program is
+    # classified in its OWN coherent branch, checked before the ordinary
+    # NONCONFORMANT test — its missing doctrine/profile is the deliberate,
+    # documented design (see `is_pathway_specific` above), never a real
+    # data gap, so it must never fall into NONCONFORMANT merely because
+    # `profile is None` also happens to be true of it. A pathway-specific
+    # program whose real jurisdiction still can't be resolved (no
+    # `_CONFIRMED_SEPARATE_PATHWAY` record either) remains NONCONFORMANT —
+    # this branch only reclassifies the case that IS coherently resolved.
+    if is_pathway_specific and valid_jurisdiction:
+        classification = PATHWAY_SPECIFIC
+        reasons.append(
+            "no ordinary doctrine/ProgramRequirementsProfile record exists BY DESIGN — this "
+            "program is executable ONLY through a specific conditional/treaty pricing pathway "
+            "(never ordinary single/full_relocation discovery); see program_rate_rules_worldwide.py's "
+            "own module comment for the confirmed real case and reasoning"
+        )
+    elif not has_rate_rules or not valid_jurisdiction:
         classification = NONCONFORMANT
     elif not has_provenance or not provenance_complete or profile is None or not has_eligibility_signal:
         classification = CONDITIONAL

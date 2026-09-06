@@ -93,7 +93,15 @@ async def test_recovered_58_programs_reach_the_fresh_served_project_response(db:
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    by_slug = {e.get("program_slug"): e for e in entries if e.get("program_slug")}
+    # Optimizer FINAL closeout, P1-REJ-001: component_relocation now also
+    # includes durably-persisted REJECTED attempts (is_fully_priced=False)
+    # that can legitimately share a program_slug with a real priced
+    # candidate (e.g. a rejected component route targeting the same
+    # program a priced full_relocation candidate also uses) — a naive
+    # unfiltered dict comprehension could have a rejected entry shadow the
+    # real priced one. This test is specifically about priced economics,
+    # so it scopes the lookup to priced entries only.
+    by_slug = {e.get("program_slug"): e for e in entries if e.get("program_slug") and e.get("is_fully_priced")}
 
     representative = ["it_tax_credit_foreign", "be_tax_shelter", "mt_mfc_rebate", "pl_pisf_cash_rebate"]
     found = [s for s in representative if s in by_slug]

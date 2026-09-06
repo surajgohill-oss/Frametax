@@ -176,7 +176,19 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # priced. Nothing was dropped: priced 91 -> 86, unpriceable 65 -> 70,
     # total unchanged.
     assert len(priced) == 311  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311 -- mandatory eligibility (canonical_requirements_gate_bridge) is now enforced in allocation_pricing.price_segment (a genuinely FAILED computable requirement, e.g. minimum local spend, blocks PRICED instead of being disclosure-only); the 9 component candidates that failed real minimum-spend gates were never persisted at all, matching the SAME existing "not fully priced -> never persisted, disclosed as a class not per-instance" component_relocation convention every other pricing failure already used (see canonical_evaluation.py's `if not pricing.is_fully_priced: continue`). Verified against Codex's four-project audit, which named exactly 9 FVD structures as PRICED-despite-FAILED.
-    assert len(unpriced) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: net -1 displaced (see test_canonical_authority_substrate.py)
+    # Optimizer FINAL closeout, P1-REJ-001: unpriced grew 45 -> 133 (+88).
+    # This is the exact FIX, not a regression: the 889-corpus-wide (88 for
+    # FVD specifically) threshold-failed component attempts that were
+    # PREVIOUSLY silently dropped (`continue`d past, never persisted) are
+    # now durably persisted and served as disclosed, never-priced
+    # RULE_REJECTED rows -- observability Codex named as a real gap
+    # (P1-REJ-001), not new economics. Independently verified: 133 total
+    # unpriced = 45 non-component (this test's original, still-correct
+    # scope: full_relocation/treaty/single_country causes, byte-identical
+    # to before) + 88 genuine component_relocation rejections (all with a
+    # real, disclosed rejection_reason_class — see
+    # test_component_rejection_persistence.py).
+    assert len(unpriced) == 133
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -186,7 +198,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
     assert accounting["review_required_count"] == 311  # P0-1 mandatory eligibility fix -- mirrors priced count above
-    assert accounting["unpriceable_count"] == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors unpriced count above
+    assert accounting["unpriceable_count"] == 133  # P1-REJ-001 -- mirrors unpriced count above
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -209,7 +221,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
     assert len(review_ranked) == 311  # P0-1 mandatory eligibility fix -- mirrors priced count above
-    assert len(unpriceable_ranked) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: mirrors unpriced count above
+    assert len(unpriceable_ranked) == 133  # P1-REJ-001 -- mirrors unpriced count above
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -416,7 +428,13 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # one previously-unpriced CA+CH bilateral co-pro opportunity drops out
     # (CH is authority-unresolved), so 34 + 30 - 1 = 63. Each still carries
     # its own distinct terminal status -- never flattened.
-    assert len(unpriceable) == 45  # master reconciliation: two-axis authority repaired  # Codex B/C: co-pro discovery + component enumeration widened  # 31-zero-rate-program repair: net -1 displaced (see test_canonical_authority_substrate.py)
+    # Optimizer FINAL closeout, P1-REJ-001: grew 45 -> 133 (+88) -- the
+    # 88 FVD component threshold-failed attempts previously silently
+    # dropped (never persisted) are now durably persisted/served as
+    # RULE_REJECTED rows (see test_fvd_accounting_matches_codex_diagnosis
+    # for the exact 45+88=133 reconciliation). Still not the invariant
+    # this test guards: distinct terminal causes.
+    assert len(unpriceable) == 133
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

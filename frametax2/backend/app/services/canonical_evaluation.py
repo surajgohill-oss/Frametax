@@ -599,7 +599,19 @@ from app.services.canonical_project_economics import (
 #: such rows). A pure code change with no fingerprint-input difference —
 #: without this bump, evaluate_project's own existing-row reuse check
 #: would keep serving the OLD, double-counted trace_json forever.
-ENGINE_VERSION = "canonical-1.53.0"
+#: Optimizer FINAL closeout (P1-REJ-001): bumped again — component-
+#: relocation generation now PERSISTS a disclosed, never-priced reject
+#: row for every threshold-failed (component, target) attempt instead of
+#: silently `continue`-ing past it. This changes the SET of
+#: StructureCalculationResult rows a given fingerprint produces (889 new
+#: rows in the current corpus) with no change to any existing priced
+#: candidate's own economics — a pure persistence-SHAPE change, exactly
+#: like the "1.1.0 segments addition" case this file's own
+#: current_result_fingerprint() docstring already documents. Without this
+#: bump, every current fingerprint's existing-row reuse check would keep
+#: serving the OLD row set — the new reject rows would never be created
+#: for any project already evaluated under 1.53.0.
+ENGINE_VERSION = "canonical-1.54.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1392,6 +1404,28 @@ def _price_component_relocation_candidate(
         financing_cost_usd=inputs.financing_cost_usd or 0.0,
     )
     return spec, allocation, pricing
+
+
+def _classify_component_rejection(blockers: tuple[str, ...] | list[str]) -> tuple[str, str]:
+    """Optimizer FINAL closeout, P1-REJ-001 — classify a rejected
+    component-relocation attempt's real blocker text into the SAME
+    rejection_reason_class vocabulary the full_relocation/single_country
+    reject path already uses (STATUS_RULE_REJECTED /
+    STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT), plus MINIMUM_SPEND_FAIL
+    for the specific, dominant real failure mode confirmed in the
+    rejection ledger: `evaluate_requirements_gate`'s own
+    min_local_spend_usd/min_total_budget_usd failure text (see
+    allocation_pricing.py's `_LABELS` dict and its "mandatory eligibility
+    requirement FAILED" blocker string). Never invents a new taxonomy —
+    reuses the exact real blocker text the pricing kernel already
+    produced, just as the full_relocation branch already does with
+    `pricing.blockers`."""
+    text = "; ".join(blockers) if blockers else ""
+    if "minimum-spend" in text or "minimum-budget" in text or "mandatory eligibility requirement" in text:
+        return STATUS_RULE_REJECTED, "MINIMUM_SPEND_FAIL"
+    if "does not conserve" in text or "Unallocated accounts" in text or "Duplicate account" in text:
+        return STATUS_RULE_REJECTED, "STATUTORY_CONDITIONS_UNMET"
+    return STATUS_RULE_REJECTED, "OTHER_EXPLICIT"
 
 
 def _opportunities_for_candidate(
@@ -3052,12 +3086,82 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     target.jurisdiction_code, target.program_slug, component,
                 )
                 if not pricing.is_fully_priced:
-                    # Genuinely unresolvable (e.g. the routed component's
-                    # allocated QPE doesn't clear the target program's own
-                    # minimum-spend threshold) — fail closed, never
-                    # persisted as a misleading candidate. Not silently
-                    # dropped from the ledger: disclosed as a class in the
-                    # capability ledger, not per-instance (would be noise).
+                    # Optimizer FINAL closeout, P1-REJ-001 (Codex, full
+                    # optimizer audit): this branch used to `continue`
+                    # here -- genuinely unresolvable (e.g. the routed
+                    # component's allocated QPE doesn't clear the target
+                    # program's own minimum-spend threshold), never
+                    # persisted as a misleading candidate. That reasoning
+                    # for NEVER PRICING it was and remains correct — but
+                    # dropping the ROW ENTIRELY meant 889 real,
+                    # meaningfully-evaluated component attempts (each
+                    # with an explicit, real blocker from the SAME
+                    # pricing kernel every priced candidate uses) could
+                    # not be reconstructed from persisted/served runtime
+                    # state without rerunning generation — an
+                    # observability/auditability gap, not an economics
+                    # gap. Fixed by persisting the SAME kind of disclosed,
+                    # never-priced reject row the full_relocation branch
+                    # already persists a few hundred lines above
+                    # (candidate_status/rejection_reason_class/reason,
+                    # total_incentive_value_usd=None,
+                    # true_net_cost_usd=None) — never converted into an
+                    # economic candidate, never surfaced as recommended
+                    # (is_fully_priced stays False, so it can never enter
+                    # the `comparable`/ranked pool downstream).
+                    _rej_status, _rej_class = _classify_component_rejection(pricing.blockers)
+                    _rej_structure = ProductionStructure(
+                        id=uuid.uuid4(),
+                        project_id=project.id,
+                        name=(
+                            f"{home_code} anchor — {component} routed to "
+                            f"{target.jurisdiction_code} (component/split, rejected)"
+                        ),
+                        description=(
+                            f"Anchor production stays in {home_code}; {component} work "
+                            f"(${spend_amount:,.0f} of real project budget) considered for "
+                            f"relocation to {target.jurisdiction_code} to claim "
+                            f"{_program_display_name(target.program_slug)}, but does not "
+                            "clear pricing."
+                        ),
+                        jurisdiction_allocations=[],
+                        claimed_program_ids=[s for s in (home_program_slug, target.program_slug) if s],
+                    )
+                    session.add(_rej_structure)
+                    await session.flush()
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_rej_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        calculation_trace_json={
+                            "candidate_status": _rej_status,
+                            "rejection_reason_class": _rej_class,
+                            "discovery_classification": "component_relocation",
+                            "structure_type": "component_relocation",
+                            "primary_jurisdiction": home_code,
+                            "program_slugs": [s for s in (home_program_slug, target.program_slug) if s],
+                            "program_slug": target.program_slug,
+                            "reason": "; ".join(pricing.blockers) or "Not fully priced.",
+                            "is_baseline": False,
+                            "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code,
+                            "anchor_program": home_program_slug,
+                            "component_allocations": [{
+                                "component": component,
+                                "jurisdiction_code": target.jurisdiction_code,
+                                "jurisdiction_display_name": (
+                                    jurisdiction_by_code[target.jurisdiction_code].name
+                                    if target.jurisdiction_code in jurisdiction_by_code
+                                    else _canonical_jurisdiction_name(target.jurisdiction_code)
+                                ),
+                                "program_slug": target.program_slug,
+                                "allocated_usd": spend_amount,
+                            }],
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
                     continue
 
                 component_jur = jurisdiction_by_code.get(home_code)
@@ -3693,6 +3797,60 @@ async def current_result_fingerprint(session, project_id) -> str | None:
         .order_by(StructureCalculationResult.created_at.desc())
         .limit(1)
     )).scalars().first()
+
+
+async def current_generation_fingerprint(session, project_id) -> str | None:
+    """Optimizer FINAL closeout, P1-FRESH-001 — the ONE canonical
+    generation identity every current-evaluation READ must key off,
+    extracted so no second freshness architecture is ever invented.
+
+    ROOT CAUSE (Codex, full optimizer audit + final P0 delta reaudit):
+    `current_result_fingerprint()` above answers "what fingerprint did
+    the newest current-engine row happen to use" -- a pure history read
+    that is only correct when a project's inputs have never been
+    reverted. `canonical_production_view.build_production_and_structures`
+    already had the CORRECT logic (recompute the fingerprint from the
+    project's actual current facts, the exact same computation
+    `evaluate_project()` itself uses, falling back to the newest-row
+    helper only when a fresh computation is impossible, e.g. no budget
+    yet) -- but `build_generic_pkg_and_economics` used the newest-row
+    helper directly. For a project whose current facts don't match its
+    most-recently-CREATED fingerprint (a reverted assumption, or a
+    fingerprint-affecting fact changed and changed back), the structure
+    view and the package/register view could each key off a DIFFERENT
+    real, legitimately-persisted generation -- an internally
+    inconsistent canonical read even though every individual row is
+    current-engine. Confirmed live for F#K Valentine's Day and Lips Like
+    Sugar (see OPTIMIZER_FINAL_CLOSEOUT_CLAUDE.md, Section 7).
+
+    This function is now THE single canonical generation identity: it
+    performs the exact same read-only reconstruction
+    `build_production_and_structures` already performed inline, moved
+    here so every current-evaluation reader (structure view, package/
+    register view, and any future one) calls the SAME function rather
+    than each re-implementing or half-implementing it. Falls back to
+    `current_result_fingerprint()` (newest-row) ONLY when a project
+    cannot currently evaluate at all (e.g. budget still missing) -- the
+    same graceful-degradation behavior the structure view already had,
+    preserved exactly.
+    """
+    fingerprint = None
+    econ = await build_project_economic_inputs(session, project_id, read_only=True)
+    if econ.ok:
+        role_known_codes = await role_known_codes_from_project(session, str(project_id))
+        script_facts = await script_facts_from_project(session, str(project_id))
+        coproduction_facts = await _coproduction_facts(session, project_id)
+        excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project_id))
+        discretionary_policy_facts = await _discretionary_policy_facts(session, project_id)
+        fingerprint = _compute_fingerprint(
+            econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
+            coproduction_facts=coproduction_facts,
+            excluded_jurisdiction_codes=excluded_jurisdiction_codes,
+            discretionary_policy_facts=discretionary_policy_facts,
+        )
+    if fingerprint is None:
+        fingerprint = await current_result_fingerprint(session, project_id)
+    return fingerprint
 
 
 async def _summarize_evaluation(

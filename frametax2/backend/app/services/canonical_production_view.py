@@ -44,7 +44,6 @@ from app.models.talent import TalentProfile
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     _QUALIFICATION_ADMITS_RECOMMENDED,
-    current_result_fingerprint,
 )
 
 # Production Page Integrity: the SAME leading-account-code convention
@@ -683,54 +682,18 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # rows by invoking evaluate_project() far more often than the
     # explicit "Begin Evaluation" action ever did, breaking the very
     # idempotency this fix depends on.
-    from app.services.canonical_evaluation import (
-        _compute_fingerprint, _coproduction_facts, _excluded_jurisdiction_codes,
-        _discretionary_policy_facts,
-    )
-    from app.services.canonical_project_economics import build_project_economic_inputs
-    from app.calculators.canonical_role_qualification_bridge import (
-        role_known_codes_from_project, script_facts_from_project,
-    )
-    fingerprint = None
-    # READ PURITY: this is a GET/read builder. read_only=True keeps
-    # fingerprint reconstruction side-effect free (no budget routing, no
-    # home-jurisdiction persistence, no ProjectFact write, no commit).
-    econ = await build_project_economic_inputs(session, project.id, read_only=True)
-    if econ.ok:
-        role_known_codes = await role_known_codes_from_project(session, str(project.id))
-        script_facts = await script_facts_from_project(session, str(project.id))
-        coproduction_facts = await _coproduction_facts(session, project.id)
-        # Batched producer-control closeout (2026-09-03) — MUST reuse the
-        # exact same fingerprint inputs evaluate_project() itself uses
-        # (see this function's own header comment above), or this
-        # read-only reconstruction silently diverges from what was
-        # actually persisted the moment a project has any jurisdiction
-        # exclusion on file: evaluate_project() persists rows under a
-        # fingerprint that includes excluded_jurisdiction_codes, and this
-        # function would otherwise compute a DIFFERENT fingerprint
-        # (excluded_jurisdiction_codes=None here) — the row-selection
-        # query below then matches nothing, and the whole production/
-        # structures payload silently renders empty. Confirmed as the
-        # exact failure mode live before this fix.
-        excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project.id))
-        # Item B (Final non-Globe closeout, 2026-09-04) — MUST reuse the
-        # exact same fingerprint inputs evaluate_project() itself uses,
-        # same reasoning as excluded_jurisdiction_codes directly above:
-        # a project with any discretionary-policy fact on file would
-        # otherwise silently diverge and render empty.
-        discretionary_policy_facts = await _discretionary_policy_facts(session, project.id)
-        fingerprint = _compute_fingerprint(
-            econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
-            coproduction_facts=coproduction_facts,
-            excluded_jurisdiction_codes=excluded_jurisdiction_codes,
-            discretionary_policy_facts=discretionary_policy_facts,
-        )
-    if fingerprint is None:
-        # A project that can't currently evaluate at all (e.g. budget
-        # still missing) has no fingerprint to key off — fall back to the
-        # best-effort prior behavior (most recent current-engine row) so
-        # this function keeps degrading gracefully rather than raising.
-        fingerprint = await current_result_fingerprint(session, project.id)
+    # Optimizer FINAL closeout, P1-FRESH-001 — this reconstruction (recompute
+    # the fingerprint from the project's ACTUAL current facts, the exact
+    # same computation evaluate_project() itself uses, falling back to the
+    # newest-row helper only when a fresh computation is impossible) is now
+    # the ONE shared canonical generation identity, extracted to
+    # canonical_evaluation.current_generation_fingerprint() so this view and
+    # build_generic_pkg_and_economics() below can never key off two
+    # different real generations for the same project. See that function's
+    # own docstring for the full root-cause history (Codex, final P0 delta
+    # reaudit: FVD and Lips Like Sugar could previously diverge).
+    from app.services.canonical_evaluation import current_generation_fingerprint
+    fingerprint = await current_generation_fingerprint(session, project.id)
 
     rows: list[tuple] = []
     if fingerprint:
@@ -1139,7 +1102,21 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     # coexist under one engine version. Reading them all and taking the first
     # is_baseline row served a register computed from inputs that are no
     # longer true. Pin the read to the CURRENT generation.
-    current_fingerprint = await current_result_fingerprint(session, project.id)
+    #
+    # Optimizer FINAL closeout, P1-FRESH-001 (Codex, full optimizer audit +
+    # final P0 delta reaudit) — this previously called
+    # current_result_fingerprint() directly: the newest current-engine ROW,
+    # not necessarily the fingerprint matching the project's CURRENT facts
+    # after a reverted assumption. build_production_and_structures() above
+    # already reconstructed the true current fingerprint from live facts;
+    # this function used the cheaper-but-wrong newest-row read instead,
+    # so the two views could genuinely diverge onto different real,
+    # legitimately-persisted generations for the same project. Confirmed
+    # live for F#K Valentine's Day and Lips Like Sugar. Both views now call
+    # the SAME shared reconstruction (current_generation_fingerprint) —
+    # never a second freshness architecture.
+    from app.services.canonical_evaluation import current_generation_fingerprint
+    current_fingerprint = await current_generation_fingerprint(session, project.id)
     baseline_rows = (await session.execute(
         select(StructureCalculationResult)
         .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)

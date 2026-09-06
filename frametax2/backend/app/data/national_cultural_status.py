@@ -513,6 +513,24 @@ def _base_incentive_is_national_status_countries() -> tuple[str, ...]:
     return tuple(sorted(countries.items()))
 
 
+def get_jurisdiction_code_for_linked_program(program_slug: str) -> str | None:
+    """Optimizer FINAL closeout, P1-CONF-001 — the one canonical reverse
+    lookup from a `linked_program_slug` back to its real jurisdiction,
+    generic over any program (never a per-slug special case). Exists
+    because a program materialized ONLY as an executable RateRule for a
+    conditional/treaty-specific pricing path (deliberately never
+    `register()`-ed into ordinary jurisdiction discovery — see
+    program_rate_rules_worldwide.py's own module comment for
+    `au_producer_offset`) has no doctrine/ProgramRequirementsProfile
+    record to resolve `jurisdiction_code` from, even though its real
+    jurisdiction is already known, cited canonical knowledge right here
+    in `_CONFIRMED_SEPARATE_PATHWAY`."""
+    for rec in _CONFIRMED_SEPARATE_PATHWAY:
+        if rec.linked_program_slug == program_slug:
+            return rec.jurisdiction_code
+    return None
+
+
 def get_jurisdiction_national_status(jurisdiction_code: str) -> JurisdictionNationalStatus:
     """The one canonical lookup. Returns a real, non-fabricated
     determination for every country in the current canonical universe --

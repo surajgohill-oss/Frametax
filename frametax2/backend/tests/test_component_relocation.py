@@ -31,7 +31,12 @@ async def test_fvd_component_relocation_candidates_exist_and_are_typed(db: Async
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    comp = [e for e in entries if e["structure_type"] == "component_relocation"]
+    # Optimizer FINAL closeout, P1-REJ-001: component_relocation now also
+    # includes durably-persisted REJECTED attempts (is_fully_priced=False,
+    # no segments, empty allocation) — this test is about PRICED candidate
+    # shape specifically (see test_component_rejection_persistence.py for
+    # the rejected-row coverage).
+    comp = [e for e in entries if e["structure_type"] == "component_relocation" and e["is_fully_priced"]]
     assert len(comp) > 0, "expected at least one component/split candidate for FVD"
     for e in comp:
         assert e["anchor_jurisdiction"] == "GR"
@@ -85,7 +90,9 @@ async def test_fvd_component_relocation_allocation_conserves_gross_budget(db: As
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    comp = [e for e in entries if e["structure_type"] == "component_relocation"]
+    # Optimizer FINAL closeout, P1-REJ-001: rejected component attempts
+    # carry no segments/gross_budget_usd by design — scope to PRICED rows.
+    comp = [e for e in entries if e["structure_type"] == "component_relocation" and e["is_fully_priced"]]
     assert comp
     for e in comp:
         total_allocated = sum(s["allocated_usd"] for s in e["segments"])
@@ -102,7 +109,9 @@ async def test_component_relocation_never_uses_default_domicile_for_routed_spend
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    comp = [e for e in entries if e["structure_type"] == "component_relocation"]
+    # Optimizer FINAL closeout, P1-REJ-001: rejected component attempts
+    # carry no segments by design — scope to PRICED rows.
+    comp = [e for e in entries if e["structure_type"] == "component_relocation" and e["is_fully_priced"]]
     assert comp
     for e in comp:
         ca = e["component_allocations"][0]

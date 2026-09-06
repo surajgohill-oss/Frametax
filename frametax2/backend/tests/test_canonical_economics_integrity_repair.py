@@ -239,18 +239,40 @@ async def test_workspace_view_get_performs_zero_writes(db: AsyncSession, project
 
 
 def test_read_only_builder_never_reaches_write_capable_recovery():
-    """Structural guard: the two GET builders must call the economic-input
+    """Structural guard: the GET builders must call the economic-input
     builder in read-only mode. A future edit that drops the flag reopens the
-    exact regression bb4b6a2 introduced."""
+    exact regression bb4b6a2 introduced.
+
+    Optimizer FINAL closeout, P1-FRESH-001: `canonical_production_view.py`'s
+    OWN inline fingerprint reconstruction (which used to contain this exact
+    literal read_only=True call) was extracted to a single shared function,
+    `canonical_evaluation.current_generation_fingerprint`, so BOTH of
+    canonical_production_view's builders (build_production_and_structures
+    AND build_generic_pkg_and_economics) can never key off two different
+    real generations for the same project (see
+    tests/test_canonical_generation_freshness.py). The read_only=True call
+    itself now lives in that one shared function instead of being inlined
+    separately in canonical_production_view.py — this test is updated to
+    check the ACTUAL current location of the call, and additionally proves
+    canonical_production_view.py genuinely delegates to it (never
+    reimplementing its own, potentially unsafe, fingerprint reconstruction)."""
     import inspect
 
-    from app.services import canonical_production_view, project_workspace_view
+    from app.services import canonical_evaluation, canonical_production_view, project_workspace_view
 
-    for module in (canonical_production_view, project_workspace_view):
-        src = inspect.getsource(module)
-        assert "build_project_economic_inputs(session, project.id, read_only=True)" in src, (
-            f"{module.__name__} must build economic inputs read-only on a GET"
-        )
+    assert "build_project_economic_inputs(session, project_id, read_only=True)" in inspect.getsource(
+        canonical_evaluation
+    ), "canonical_evaluation.current_generation_fingerprint must build economic inputs read-only"
+
+    src = inspect.getsource(canonical_production_view)
+    assert "current_generation_fingerprint(session, project.id)" in src, (
+        "canonical_production_view.py must delegate fingerprint reconstruction to the shared, "
+        "read-only current_generation_fingerprint() — never reimplement its own"
+    )
+
+    assert "build_project_economic_inputs(session, project.id, read_only=True)" in inspect.getsource(
+        project_workspace_view
+    ), "project_workspace_view must build economic inputs read-only on a GET"
 
 
 # ── CLUSTER 6 — a ceiling is a limit, never a guaranteed rate ────────────
