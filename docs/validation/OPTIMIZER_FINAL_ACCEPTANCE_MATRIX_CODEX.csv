@@ -1,0 +1,24 @@
+check_id,area,expected,observed,status,severity,evidence
+HISTORY-001,Repository history,"aa8229eb; 9874ff8; 25e1c4d ancestral","All ancestral to e757405; 7e5ed4 retrievable orphan",PASS,NOT_A_DEFECT,git merge-base and git cat-file
+CORPUS-001,Dynamic corpus,"Current real readiness","50 total; 14 ready; 36 non-ready",PASS,NOT_A_DEFECT,live Project enumeration and evaluate_project
+P0-SEL-001,Selection,"0 evaluator/persisted/served divergences",0,PASS,NOT_A_DEFECT,all 14 ready projects
+P0-PART-001,Participants,"0 mismatch/extra/missing/duplicate","0 across 3474 component attempts",PASS,NOT_A_DEFECT,independent claims_incentive derivation
+P1-FRESH-001,Freshness,"0 cross-generation or stale served rows",0,PASS,NOT_A_DEFECT,reconstructed fingerprints across all 14
+P1-REJ-001,Rejections,"expected equals persisted; no duplicate/priced/rankable rejects","889 expected = 889 persisted; all error counts 0",PASS,NOT_A_DEFECT,independent component/target/program reconstruction and second pass
+P1-CONF-001,Conformance,"one AU pathway-specific identity","PATHWAY_SPECIFIC; AU; 2 rules; 55 nested priced occurrences",PASS,NOT_A_DEFECT,current registries and served conditional traces
+P1-GATE-001-A,Gate selection,"integrated independent three-way check","evaluator/persisted/served comparison implemented",PASS,NOT_A_DEFECT,canonical_integrity_gate.py
+P1-GATE-001-B,Gate participant exactness,"all component rows protected","helper is after is_fully_priced continue; 889 rejects skipped",PARTIAL,P1,canonical_integrity_gate.py lines 446-447 and 514
+P1-GATE-001-C,Gate duplicate detection,"all component rows protected","negative helper test exists; rejected rows skipped",PARTIAL,P1,negative tests plus live integration path
+P1-GATE-001-D,Gate treaty conservation,"malformed allocations fail",PASS,PASS,NOT_A_DEFECT,integrated treaty oracle and negative test
+P1-GATE-001-E,Gate participant QPE,"independent QPE and incentive recomputation","only allocated gross x modeled rate upper bound; malformed low-QPE case returns no failures",FAIL,P1,direct pure-oracle counterexample
+P1-GATE-001-F,Gate pathway semantics,"nested conditional programs checked in live gate","helper correct but invocation unreachable for top-level-unpriced treaty rows",FAIL,P1,canonical_integrity_gate.py lines 446-447 and 538-540
+P1-GATE-001-G,Gate freshness,"independent gate invariant and malformed negative test","no declared invariant or negative test",FAIL,P1,_TESTED_INVARIANTS and negative-test inventory
+P1-GATE-001-H,Gate rejection accounting,"independent exact ledger gate and malformed negative tests","no declared invariant or negative test",FAIL,P1,_TESTED_INVARIANTS and negative-test inventory
+TREATY-001,Treaty runtime,"325 total; 282 solvable; 123 fully priced; 0 errors","325; 282; 123; 0 nonconserving/double-counted/recompute mismatches",PASS,NOT_A_DEFECT,independent scaled-input QPE and incentive recomputation
+PROGRAM-001,Program consumption,"125 visible; no silent omission/contradiction","125; 107 priced; 13 reasoned; 2 nonformulaic; 2 blocked; 1 pathway; 0 silent; 0 contradictions",PASS,NOT_A_DEFECT,current structures registries coverage and conformance
+ENGINE-001,Engine persistence,"1.54 current and safe reuse","1.54; no stale served rows; second pass reused",PASS,NOT_A_DEFECT,live result rows and rerun
+GATE-BUDGET,Canonical budget gate,"4 budgets x 16 families",PASS,PASS,NOT_A_DEFECT,canonical_budget_integrity_gate.py
+GATE-NONGLOBE,Canonical non-Globe live gate,"14 ready; declared families pass","14 PASS; 0 FAIL; 36 SKIP; 13 declared families",PASS,NONBLOCKING,canonical_integrity_gate.py live run
+TEST-FOCUSED,Focused tests,"0 failures","55 passed; 2 skipped",PASS,NOT_A_DEFECT,pytest focused command
+TEST-FULL,Full backend,"0 failures","4774 passed; 3 skipped; 12 warnings",PASS,NOT_A_DEFECT,pytest full suite
+VERDICT,Final acceptance,"open P0=0 and open P1=0","open P0=0; open P1=1 (P1-GATE-001)",FAIL,P1,task acceptance rule
