@@ -3773,7 +3773,37 @@ async def _summarize_evaluation(
         # smallest. No winner is the truthful answer.
         top_pair = None
     else:
-        top_pair = priced[0] if priced else None
+        # Optimizer FINAL P0 remediation (P0-SEL-001, Codex broader-
+        # corpus audit dcc6dde/8890cc8): this branch runs when the
+        # project has NO baseline row at all -- not even a blocked one.
+        # `relocation_cost_normalized` (== is_directly_comparable) is
+        # True ONLY for the baseline candidate (see every `is_baseline`
+        # assignment to it above and in the trace generators); every
+        # other priced candidate -- a relocation, a component route, a
+        # multi-program stack -- is a real, disclosed number that is
+        # never a fair comparison against the base jurisdiction (same
+        # RELOCATION_COMPARABILITY_NOTE reasoning canonical_production_
+        # view.py's own `comparable` pool already applies). With no
+        # baseline row present, therefore, there is definitionally no
+        # comparable candidate for THIS project's current evaluation --
+        # promoting `priced[0]` (the previous behavior) served the
+        # cheapest priced candidate purely because its raw, non-
+        # comparable number was smallest, exactly the false-winner
+        # pattern this file's own `_admits_recommended` docstring above
+        # already rejects for the blocked-baseline case. Confirmed live
+        # across the nine broader-corpus projects named in the Codex
+        # audit (10 Double Zero, Baron Samedi, Going Places,
+        # Interference, Rocky Mountain, The Cure, The System, Twilight
+        # of the Dead, Underwater): each has no current baseline row and
+        # was persisting its cheapest non-comparable relocation into
+        # Project.leading_structure_id while canonical_production_view.py
+        # correctly served canonical_selected_structure_id=null -- the
+        # exact evaluator/served divergence this fix closes. No project-
+        # specific or jurisdiction-specific exception; this is the same
+        # generic rule as the baseline-priced and baseline-blocked
+        # branches above: only a comparable candidate may ever be a
+        # winner, and here there is none.
+        top_pair = None
 
     # Repoint leading_structure_id whenever it's unset OR currently points
     # at a structure NOT produced by this canonical engine (a stale legacy

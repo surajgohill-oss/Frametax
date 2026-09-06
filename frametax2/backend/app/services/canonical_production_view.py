@@ -282,7 +282,6 @@ def _empty_structure_entry(
         trace.get("treaty_slug") in _MULTILATERAL_TREATY_SLUGS
         or len(_coprod_partners) < 2
     )
-    _participant_codes = [code] if (code and _home_is_party) else []
     # Scoped to component_relocation only: the audit confirmed single_
     # country/full_relocation's existing bare-primary participants
     # ("already correct — do not reopen") -- their segments can carry a
@@ -308,11 +307,37 @@ def _empty_structure_entry(
     # PARTICIPANT list, which downstream consumers (title, Globe,
     # Inspector, Reports) treat as "who actually participates
     # economically," excludes it.
+    #
+    # Optimizer FINAL P0 remediation (P0-PART-001, Codex broader-corpus
+    # audit dcc6dde/8890cc8): the P0-2 fix above only ever ADDED claiming
+    # segments on top of an unconditional `_participant_codes = [code]`
+    # seed. For a project whose PRIMARY jurisdiction is itself a
+    # non-claiming, stated-location-only segment (confirmed live: 1,878
+    # of 2,585 component rows across nine US-primary projects, e.g.
+    # `05b645a4-...`), the seed alone left the primary's own
+    # non-claiming code in the served list even though no filter would
+    # ever have added it there directly. The seed must apply the SAME
+    # claims_incentive test as every other component participant --
+    # never a special case for the primary jurisdiction, and never a
+    # jurisdiction-code/project-name special case. `code`'s own presence
+    # in `trace["segments"]` (never removed there) is untouched; only
+    # its membership in the canonical PARTICIPANT list is now gated.
     if structure_type == "component_relocation":
+        _primary_claims = next(
+            (
+                _seg.get("claims_incentive") is True
+                for _seg in trace.get("segments") or []
+                if _seg.get("jurisdiction_code") == code
+            ),
+            False,
+        )
+        _participant_codes = [code] if (code and _home_is_party and _primary_claims) else []
         for _seg in trace.get("segments") or []:
             _c = _seg.get("jurisdiction_code")
             if _c and _seg.get("claims_incentive") is True and _c not in _participant_codes:
                 _participant_codes.append(_c)
+    else:
+        _participant_codes = [code] if (code and _home_is_party) else []
     for _partner in _coprod_partners:
         _c = _partner.get("jurisdiction_code")
         if _c and _c not in _participant_codes:

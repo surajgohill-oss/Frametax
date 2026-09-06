@@ -153,6 +153,23 @@ async def _gate_one_project(
         result["skipped"] = view.get("status")
         return result
 
+    # Optimizer FINAL P0 remediation (P0-SEL-001, Codex broader-corpus
+    # audit dcc6dde/8890cc8): Codex found this gate's prior SELECTION
+    # check compared canonical_selected_structure_id only against the
+    # served view's OWN rank 1 -- both computed from the same `comparable`
+    # pool within this same call, so they could never actually diverge
+    # from each other. The real defect (a stale/invented evaluator winner
+    # persisted to Project.leading_structure_id while the served view
+    # correctly shows null) requires cross-checking the EVALUATOR's own
+    # result (`econ_status["top_result"]`, from _summarize_evaluation) and
+    # the PERSISTED `Project.leading_structure_id` -- fetched fresh here,
+    # not read off `view`, since leading_structure_id lives on the Project
+    # row, not the served payload.
+    project_row = await session.get(Project, project_id)
+    persisted_leading_id = str(project_row.leading_structure_id) if project_row and project_row.leading_structure_id else None
+    evaluator_top = econ_status.get("top_result")
+    evaluator_top_id = evaluator_top["structure_id"] if evaluator_top else None
+
     production = view["production"]
     allocated = view["structures"]["allocated_structures"]
     structures = allocated["structures"]
@@ -197,13 +214,20 @@ async def _gate_one_project(
 
     # ── 11. SELECTION CONSISTENCY — canonical_selected_structure_id
     # resolves exactly per its documented algorithm (Item A, corrected by
-    # Optimizer P0 wiring remediation P0-1). Codex found this gate's OWN
-    # prior version encoded the defective fallback ("lowest-NPC among ALL
-    # priced structures") as the expected behavior when no rank 1
-    # exists — exactly the bug that let LU/FVD's non-comparable Saudi
-    # PRICED_LOW_FIT candidates become canonical selections. Fixed:
-    # comparable rank 1 if it exists, else None — never a non-comparable
-    # fallback. ────────────────────────────────────────────────────────
+    # Optimizer P0 wiring remediation P0-1), AND the served view agrees
+    # with the EVALUATOR's own persisted winner (P0-SEL-001, Optimizer
+    # FINAL P0 remediation). Codex found this gate's PRIOR version only
+    # ever checked canonical_selected_structure_id against this same
+    # call's own rank 1 -- both computed from the identical `comparable`
+    # pool, so they could never diverge from each other and the check
+    # silently missed all nine broader-corpus divergences, where the
+    # served view was correct (null) but Project.leading_structure_id
+    # still pointed at a stale, non-comparable, evaluator-invented
+    # relocation. The gate now cross-checks THREE independent sources:
+    # the served canonical_selected_structure_id, the EVALUATOR's own
+    # top_result (econ_status, from _summarize_evaluation), and the
+    # PERSISTED Project.leading_structure_id -- all three must agree, or
+    # all three must be None. No project/jurisdiction-specific exception.
     comparable_ranked = [r for r in ranking if r.get("rank") == 1]
     canonical_id = allocated.get("canonical_selected_structure_id")
     if comparable_ranked:
@@ -217,6 +241,13 @@ async def _gate_one_project(
         result["failures"].append(
             f"SELECTION: canonical_selected_structure_id={canonical_id} but no comparable rank-1 "
             "candidate exists — must be None (P0-1: never a non-comparable/PRICED_LOW_FIT fallback)"
+        )
+    if not (evaluator_top_id == persisted_leading_id == canonical_id):
+        result["failures"].append(
+            f"SELECTION: evaluator/persisted/served divergence (P0-SEL-001) — "
+            f"evaluator_top={evaluator_top_id}, "
+            f"Project.leading_structure_id={persisted_leading_id}, "
+            f"canonical_selected_structure_id={canonical_id} — all three must agree or all be None"
         )
 
     # ── 10. PROJECT MODELING POLICY — served block well-formed, and the
@@ -352,18 +383,28 @@ async def _gate_one_project(
                     f"= {reconstructed} != served adjusted {adjusted}"
                 )
 
-        # PARTICIPANTS — Optimizer P0 wiring remediation P0-2: exact
-        # claiming-participant identity, not merely a count floor. A
-        # component's canonical participants must equal exactly {primary}
-        # union every segment whose own claims_incentive is True — a
-        # non-claiming stated-location segment (claims_incentive=False,
-        # e.g. LU's real US segment) must never appear.
+        # PARTICIPANTS — Optimizer P0 wiring remediation P0-2, strengthened
+        # by Optimizer FINAL P0 remediation (P0-PART-001, Codex broader-
+        # corpus audit dcc6dde/8890cc8): exact claiming-participant
+        # identity, never a count floor and never an unconditional
+        # {primary} seed. Codex found this gate's PRIOR version
+        # unconditionally added `primary_jurisdiction` to the expected
+        # set before applying the claims filter — the EXACT SAME bug as
+        # the production code it was meant to guard, so it reproduced
+        # rather than detected P0-PART-001 whenever a project's own
+        # primary segment does not claim an incentive (confirmed live:
+        # 1,878 of 2,585 component rows across nine US-primary projects).
+        # The expected set must be derived purely from segments whose OWN
+        # claims_incentive is True — the primary jurisdiction included
+        # ONLY if its own segment claims. A non-claiming stated-location
+        # segment (claims_incentive=False, e.g. a real US segment) must
+        # never appear in participants; it stays visible in segments.
         participants = s.get("participants") or []
         if s["structure_type"] == "component_relocation":
-            expected_participants = {s["primary_jurisdiction"]}
-            for seg in s.get("segments") or []:
-                if seg.get("claims_incentive") is True and seg.get("jurisdiction_code"):
-                    expected_participants.add(seg["jurisdiction_code"])
+            expected_participants = {
+                seg["jurisdiction_code"] for seg in (s.get("segments") or [])
+                if seg.get("claims_incentive") is True and seg.get("jurisdiction_code")
+            }
             if set(participants) != expected_participants:
                 result["failures"].append(
                     f"PARTICIPANTS: {label} component_relocation participants={participants} "

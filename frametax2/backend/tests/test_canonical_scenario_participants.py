@@ -243,3 +243,61 @@ async def test_single_country_and_treaty_participants_unaffected_by_p0_2_fix(db:
         treaty = next((s for s in structures if s["structure_type"] == "treaty_coproduction"), None)
         assert treaty is not None
         assert len(treaty["participants"]) >= 2
+
+
+# Optimizer FINAL P0 remediation (P0-PART-001) — the nine broader-corpus,
+# US-primary projects Codex found with a non-claiming primary/anchor
+# geography contaminating every one of their component_relocation rows.
+_P0_PART_001_PROJECT_IDS = {
+    "10 Double Zero": "3519feda-d280-435f-badc-1e4c788a2cb3",
+    "Baron Samedi": "fcbb9190-5b9c-4af8-96fa-359fce1cf79a",
+    "Going Places": "dee8feca-7b94-4330-ac19-79969e8facb8",
+    "Interference": "565744c5-86fd-4c1d-bdb5-fdd4b910d0b0",
+    "Rocky Mountain": "191f1422-79a1-4a6c-a3fb-cafa0c2c2343",
+    "The Cure": "f3c1a6f1-a357-407f-8072-7dfbba87ceae",
+    "The System": "e1f2444d-4eac-410e-9c92-45637b8f2ae0",
+    "Twilight of the Dead": "92167170-9e42-4bbb-9754-877ce1692b8a",
+    "Underwater": "f1292c56-0288-4575-91ec-1f00081f07a0",
+}
+
+
+async def test_p0_part_001_non_claiming_primary_excluded_across_broader_corpus(db: AsyncSession):
+    """Optimizer FINAL P0 remediation, P0-PART-001 — the real broader-
+    corpus regression Codex found: for a project whose PRIMARY
+    jurisdiction has no home incentive program (a real stated-location
+    segment with claims_incentive=False, program_slug=None), the primary
+    must NOT be seeded into component_relocation participants merely
+    because it is the primary. Confirmed before this fix: all 1,878
+    component rows across these nine projects incorrectly served US.
+    Required, corpus-wide, exact: served participants == the set of
+    segment jurisdiction codes with claims_incentive is True; non-
+    claiming geography (including the primary itself) remains visible
+    in segments, never in participants."""
+    total_checked = 0
+    for label, project_id in _P0_PART_001_PROJECT_IDS.items():
+        view = await build_production_and_structures(db, project_id)
+        structures = view["structures"]["allocated_structures"]["structures"]
+        components = [s for s in structures if s["structure_type"] == "component_relocation"]
+        assert components, f"{label}: expected at least one component_relocation structure"
+        for s in components:
+            expected = {
+                seg["jurisdiction_code"] for seg in (s.get("segments") or [])
+                if seg.get("claims_incentive") is True and seg.get("jurisdiction_code")
+            }
+            served = set(s.get("participants") or [])
+            assert served == expected, (
+                f"{label} structure {s['structure_id']}: participants={sorted(served)} != "
+                f"expected claiming set {sorted(expected)}"
+            )
+            # non-claiming primary must remain visible in segments
+            primary = s["primary_jurisdiction"]
+            primary_seg = next(
+                (seg for seg in s.get("segments") or [] if seg.get("jurisdiction_code") == primary), None,
+            )
+            if primary_seg is not None and primary_seg.get("claims_incentive") is False:
+                assert primary not in served, (
+                    f"{label} structure {s['structure_id']}: non-claiming primary {primary} "
+                    "must not appear in participants"
+                )
+            total_checked += 1
+    assert total_checked > 0, "expected real component_relocation rows to be checked across the corpus"
