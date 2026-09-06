@@ -61,8 +61,16 @@ async def db():
 async def test_component_relocation_participants_include_the_routed_destination(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     structures = view["structures"]["allocated_structures"]["structures"]
-    components = [s for s in structures if s["structure_type"] == "component_relocation"]
-    assert components, "expected at least one component_relocation structure in the real fixture"
+    # Optimizer FINAL closeout, P1-REJ-001: component_relocation now also
+    # includes durably-persisted REJECTED attempts (candidate_status=
+    # RULE_REJECTED, is_fully_priced=False) that carry no segments and
+    # therefore no real participants — by design, never a bug (see
+    # test_component_rejection_persistence.py). This test is about
+    # PRICED candidates' participant identity specifically.
+    components = [
+        s for s in structures if s["structure_type"] == "component_relocation" and s["is_fully_priced"]
+    ]
+    assert components, "expected at least one PRICED component_relocation structure in the real fixture"
     regressions = [
         s for s in components
         if len(s["participants"]) < 2 or s["primary_jurisdiction"] not in s["participants"]
@@ -156,7 +164,13 @@ async def test_generated_participants_equal_persisted_trace_participants_cross_p
     the same identity contract must hold for Little Utopia too."""
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     structures = view["structures"]["allocated_structures"]["structures"]
-    components = [s for s in structures if s["structure_type"] == "component_relocation"]
+    # Optimizer FINAL closeout, P1-REJ-001: component_relocation now also
+    # includes durably-persisted REJECTED attempts with empty participants
+    # by design (see test_component_rejection_persistence.py) — this test
+    # is about PRICED candidates specifically.
+    components = [
+        s for s in structures if s["structure_type"] == "component_relocation" and s["is_fully_priced"]
+    ]
     assert components
     for s in components[:20]:
         assert len(s["participants"]) >= 2, f"{s['label']}: {s['participants']}"
@@ -196,7 +210,15 @@ async def test_component_participants_exactly_equal_claiming_segments_not_merely
     for project_id, label in ((FVD_PROJECT_ID, "FVD"), (LITTLE_UTOPIA_PROJECT_ID, "LU")):
         view = await build_production_and_structures(db, project_id)
         structures = view["structures"]["allocated_structures"]["structures"]
-        components = [s for s in structures if s["structure_type"] == "component_relocation"]
+        # Optimizer FINAL closeout, P1-REJ-001: component_relocation now
+        # also includes durably-persisted REJECTED attempts with empty
+        # participants and no segments by design (see
+        # test_component_rejection_persistence.py) — `_claiming_
+        # participants` assumes a real, priced structure's own segments,
+        # so this exact-identity check is scoped to PRICED candidates.
+        components = [
+            s for s in structures if s["structure_type"] == "component_relocation" and s["is_fully_priced"]
+        ]
         assert components, f"{label}: expected component_relocation structures"
         mismatches = [
             (s["structure_id"], s["participants"], sorted(_claiming_participants(s)))
