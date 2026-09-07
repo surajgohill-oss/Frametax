@@ -87,9 +87,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import engine
 from app.models.jurisdiction import Jurisdiction
 from app.models.project import Project
+from app.models.production import ProductionStructure, StructureCalculationResult
 from app.services.canonical_evaluation import _is_discretionary_program
-from app.services.canonical_production_view import build_production_and_structures
-from app.services.canonical_evaluation import evaluate_project
+from app.services.canonical_production_view import (
+    build_generic_pkg_and_economics,
+    build_production_and_structures,
+)
+from app.services.canonical_evaluation import (
+    ENGINE_VERSION,
+    _price_candidate,
+    current_generation_fingerprint,
+    evaluate_project,
+)
+from app.services.canonical_project_economics import build_project_economic_inputs
 from app.services.program_onboarding_conformance import (
     CONFORMANT,
     NONCONFORMANT,
@@ -115,6 +125,14 @@ _TESTED_INVARIANTS = (
     # not a broadening into general treaty/co-production behavioral
     # acceptance (explicitly out of scope for this task).
     "TREATY ALLOCATION",
+    # Optimizer Final P1-GATE-001 remediation (Codex final acceptance
+    # audit, commit d04a7567): two invariant families the gate previously
+    # had NO declared check for at all (Codex Sections 9/17, defects G/H)
+    # -- added here, never as a second/parallel validation system, using
+    # the SAME served-payload/DB-row shapes every other invariant already
+    # reads.
+    "FRESHNESS",
+    "REJECTION ACCOUNTING",
 )
 #: GLOBE remains the one family this pass explicitly does not test, per
 #: sequencing — reported separately, never folded into _TESTED_INVARIANTS,
@@ -187,15 +205,28 @@ def _check_program_onboarding_invariant(
     ONLY inside a resolved conditional scenario must never silently
     escape this check merely because the top-level structure itself is
     never is_fully_priced=True. PATHWAY_SPECIFIC (P1-CONF-001) is a
-    valid, non-failing classification in both places."""
+    valid, non-failing classification in both places.
+
+    Optimizer Final P1-GATE-001 remediation (Codex final acceptance
+    audit, Defect #2): this function itself was already correct, but the
+    CALLER previously invoked it only after a top-level
+    `if not s["is_fully_priced"]: continue` — so for a treaty_
+    coproduction opportunity row (never top-level is_fully_priced=True by
+    construction; its real pricing lives entirely in conditional_
+    scenario) the nested check below was UNREACHABLE dead code in
+    practice. The caller now invokes this function for EVERY structure,
+    unconditionally — the top-level program_slugs check is therefore
+    gated HERE, internally, on `s["is_fully_priced"]`, rather than relying
+    on the caller to have already filtered."""
     failures: list[str] = []
-    for slug in program_slugs:
-        if conformance_by_slug.get(slug) == NONCONFORMANT:
-            failures.append(
-                f"PROGRAM ONBOARDING: {label} is PRICED using program {slug!r}, which is "
-                "classified NONCONFORMANT — a program with no resolvable jurisdiction and/or "
-                "no rate rule must never silently reach optimizer output"
-            )
+    if s.get("is_fully_priced"):
+        for slug in program_slugs:
+            if conformance_by_slug.get(slug) == NONCONFORMANT:
+                failures.append(
+                    f"PROGRAM ONBOARDING: {label} is PRICED using program {slug!r}, which is "
+                    "classified NONCONFORMANT — a program with no resolvable jurisdiction and/or "
+                    "no rate rule must never silently reach optimizer output"
+                )
     conditional = s.get("conditional_scenario")
     if isinstance(conditional, dict) and conditional.get("fully_priced"):
         for pc in conditional.get("priced_components") or []:
@@ -210,10 +241,60 @@ def _check_program_onboarding_invariant(
     return failures
 
 
-def _check_treaty_allocation_invariant(s: dict, label: str, declared_gross: float | None) -> list[str]:
+def _independently_recompute_participant_incentive(project_inputs, jurisdiction_code: str, program_slug: str, pct: float):
+    """Optimizer Final P1-GATE-001 remediation (Codex final acceptance
+    audit, Defect #1 / Section 9 item E): genuine independent
+    recomputation of ONE treaty participant's incentive from canonical
+    inputs, never a read of a served/cached value and never a second
+    pricing architecture. Reuses the EXACT same real production budget
+    (scaled to this participant's own allocated share -- the identical
+    dataclasses.replace-based scaling `_build_conditional_bilateral_
+    scenario`'s own `_allocated_inputs_for` helper already performs) and
+    the EXACT same canonical pricing kernel, `canonical_evaluation.
+    _price_candidate`, every priced candidate in the whole optimizer
+    already goes through. If the optimizer's own served
+    selected_incentive_usd for this participant disagrees with what this
+    same kernel produces from the same real inputs, that is a genuine
+    economic defect, not a formatting difference.
+
+    Returns (incentive_usd, qualifying_spend_usd) or (None, None) if the
+    program does not resolve for this participant's real inputs (a
+    disclosed data gap, not a defect in itself -- the caller decides
+    what to do when the served value also could not have been computed)."""
+    import dataclasses
+
+    scaled_lines = [
+        dataclasses.replace(line, amount_usd=round(line.amount_usd * pct, 2))
+        for line in project_inputs.budget_lines
+    ]
+    scaled_inputs = dataclasses.replace(
+        project_inputs,
+        budget_lines=scaled_lines,
+        gross_budget_usd=round(project_inputs.gross_budget_usd * pct, 2),
+        leaf_account_sum_usd=(
+            round(project_inputs.leaf_account_sum_usd * pct, 2)
+            if project_inputs.leaf_account_sum_usd is not None else None
+        ),
+    )
+    pricing, register, rr = _price_candidate(scaled_inputs, jurisdiction_code, program_slug)
+    if pricing is None or rr is None:
+        return None, None
+    from app.calculators.qualification_derivation import QualificationState
+    qualifying_spend = round(sum(
+        a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+    ), 2)
+    return (pricing.selected_incentive_usd or 0.0), qualifying_spend
+
+
+def _check_treaty_allocation_invariant(
+    s: dict, label: str, declared_gross: float | None, project_inputs=None,
+) -> list[str]:
     """TREATY ALLOCATION invariant, extracted as a pure function
     (P1-GATE-001) — see _check_participants_invariant's docstring for
-    why."""
+    why. `project_inputs` is optional (a real `ProjectEconomicInputs`,
+    or None to skip the independent-recomputation sub-check — used by
+    synthetic unit tests that only exercise the allocation-sum/upper-
+    bound checks without constructing a full real input set)."""
     failures: list[str] = []
     conditional = s.get("conditional_scenario")
     if not (conditional and conditional.get("status") == "CONDITIONAL_PROJECT_FACT_DEPENDENT"):
@@ -264,6 +345,41 @@ def _check_treaty_allocation_invariant(s: dict, label: str, declared_gross: floa
                         "participant-share QPE conservation violated (never just an "
                         "allocation-sum or loose combined-incentive check)"
                     )
+            # Optimizer Final P1-GATE-001 remediation (Codex final
+            # acceptance audit, Defect #1): the gross-share x modeled-rate
+            # bound above is a coarse UPPER BOUND only -- Codex's own
+            # counterexample (qpe_usd=100,000, selected_incentive_usd=
+            # 900,000) passed it because it stayed under the much looser
+            # ceiling. This is the REAL check: independently recompute
+            # each participant's own incentive from canonical inputs (its
+            # real allocated share of the one real project budget, priced
+            # by the SAME kernel every candidate uses) and require it to
+            # MATCH the served value closely, not merely stay under a
+            # ceiling. Only runs when a real ProjectEconomicInputs was
+            # supplied by the caller -- see this function's own docstring.
+            if project_inputs is not None and alloc:
+                for _pc in conditional.get("priced_components") or []:
+                    _code = _pc.get("jurisdiction_code")
+                    _served_incentive = _pc.get("selected_incentive_usd")
+                    _program_slug = _pc.get("program_slug")
+                    _pct = alloc.get(_code)
+                    if _code is None or _served_incentive is None or _program_slug is None or _pct is None:
+                        continue
+                    _recomputed_incentive, _recomputed_qpe = _independently_recompute_participant_incentive(
+                        project_inputs, _code, _program_slug, _pct / 100.0,
+                    )
+                    if _recomputed_incentive is None:
+                        continue  # program genuinely does not resolve for these real inputs -- a disclosed data gap, not this invariant's concern
+                    _tolerance = max(50.0, abs(_recomputed_incentive) * 0.02)  # 2% or $50, whichever is larger
+                    if abs(_served_incentive - _recomputed_incentive) > _tolerance:
+                        failures.append(
+                            f"TREATY ALLOCATION: {label} participant {_code} served "
+                            f"selected_incentive_usd={_served_incentive:,.2f} disagrees with the "
+                            f"INDEPENDENTLY RECOMPUTED incentive ${_recomputed_incentive:,.2f} "
+                            f"(recomputed qualifying spend ${_recomputed_qpe:,.2f}) from the same "
+                            "real project inputs and the same canonical pricing kernel — this is "
+                            "not merely a loose plausibility bound, the values must actually agree"
+                        )
     elif (
         alloc and abs(sum(alloc.values()) - 100.0) < 0.01
         and not conditional.get("canonical_data_gaps")
@@ -278,6 +394,126 @@ def _check_treaty_allocation_invariant(s: dict, label: str, declared_gross: floa
             f"TREATY ALLOCATION: {label} allocation sums to 100 (feasible) but "
             "fully_priced is not True — a resolved, complete allocation must be reported "
             "as fully priced, not silently left conditional"
+        )
+    return failures
+
+
+def _check_rejection_accounting_invariant(structures: list[dict]) -> list[str]:
+    """REJECTION ACCOUNTING invariant (P1-GATE-001, Codex final
+    acceptance audit, Defect #4) — extracted as a pure function, generic
+    over any served `structures` list (never a fixture/project-specific
+    branch), so it can be exercised with synthetic negative-test inputs.
+
+    Reuses the EXISTING disposition model — `is_fully_priced`,
+    `candidate_status`, `rejection_reason_class` — every structure
+    already carries; never a new/parallel taxonomy. Two real invariants:
+
+    1. Every `component_relocation` structure must end in an explicit,
+       non-silent disposition: either genuinely priced
+       (`is_fully_priced=True`, `candidate_status == "PRICED"`) or
+       genuinely rejected (`candidate_status == "RULE_REJECTED"` with a
+       real `rejection_reason_class`) — never neither. A structure with
+       `is_fully_priced=False` and no `rejection_reason_class` is a
+       silent economic disappearance: an attempt the optimizer
+       apparently evaluated (it exists as a served row) but never
+       recorded WHY it isn't priced.
+    2. No two component rows may share the exact same
+       (anchor jurisdiction, target jurisdiction, component, program)
+       identity — a duplicate attempt is itself a silent accounting
+       defect: the same real attempt persisted/reported twice, or one
+       row silently shadowing another.
+
+    This is deliberately a STRUCTURAL completeness/uniqueness check, not
+    a full re-derivation of the expected candidate universe (that
+    remains the job of a full audit, not a fast, permanent CI-style
+    gate) — see docs/validation/OPTIMIZER_FINAL_P1_GATE_REMEDIATION_
+    CLAUDE.md for the explicit scope rationale."""
+    failures: list[str] = []
+    seen_identities: dict[tuple, str] = {}
+    for s in structures:
+        if s.get("structure_type") != "component_relocation":
+            continue
+        label = f"{s.get('structure_id', '?')[:8]} {s.get('label', '')}"
+        priced = bool(s.get("is_fully_priced"))
+        rejection_class = s.get("rejection_reason_class")
+        candidate_status = s.get("candidate_status")
+        if not priced and not rejection_class:
+            failures.append(
+                f"REJECTION ACCOUNTING: {label} is neither priced nor carries a real "
+                f"rejection_reason_class (candidate_status={candidate_status!r}) — a component "
+                "attempt must never silently disappear with no recorded disposition"
+            )
+        if priced and candidate_status != "PRICED":
+            failures.append(
+                f"REJECTION ACCOUNTING: {label} is_fully_priced=True but candidate_status="
+                f"{candidate_status!r} != 'PRICED' — disposition fields disagree with each other"
+            )
+        comp_allocs = s.get("component_allocations") or []
+        if comp_allocs:
+            target = comp_allocs[0].get("jurisdiction_code")
+            component = comp_allocs[0].get("component")
+            program = comp_allocs[0].get("program_slug")
+            identity = (s.get("primary_jurisdiction"), target, component, program)
+            if identity in seen_identities:
+                failures.append(
+                    f"REJECTION ACCOUNTING: duplicate component attempt identity {identity} — "
+                    f"{label} and {seen_identities[identity]} both claim the same "
+                    "(anchor, target, component, program) attempt"
+                )
+            else:
+                seen_identities[identity] = label
+    return failures
+
+
+def _check_freshness_invariant(
+    reconstructed_fp: str | None, evaluator_fp: str | None,
+    served_current_fingerprints: set[str], label: str,
+) -> list[str]:
+    """FRESHNESS invariant (P1-GATE-001, Codex final acceptance audit,
+    Defect #3) — extracted as a pure function over plain fingerprint
+    values (never a DB session), so it can be exercised with synthetic
+    mismatched fingerprints in a negative test without mutating any real
+    project's persisted rows.
+
+    Reuses the EXISTING freshness/versioning architecture
+    (`canonical_evaluation.current_generation_fingerprint`, the same
+    reconstruction both canonical view builders already use — see
+    P1-FRESH-001) — never a second freshness system. `reconstructed_fp`
+    is the current generation as independently recomputed from this
+    project's REAL current facts; `evaluator_fp` is what `evaluate_project`
+    itself just reported (`state_fingerprint`); `served_current_
+    fingerprints` is the actual set of `input_fingerprint` values
+    currently persisted under the current `ENGINE_VERSION` for this
+    project. A project with no budget yet (both fingerprints None) is
+    not a freshness failure — it is out of this gate's scope, same as
+    every other invariant's skip semantics.
+
+    Two real invariants:
+    1. The reconstructed current fingerprint must equal what the
+       evaluator itself just reported — a mismatch means the evaluator
+       and the canonical reconstruction disagree about which generation
+       is current (the P1-FRESH-001 defect class, reintroduced).
+    2. The reconstructed current fingerprint must actually be among the
+       fingerprints persisted under the current engine version — a
+       served/validated result whose provenance fingerprint does not
+       exist among the current-engine rows at all cannot be current by
+       definition, regardless of how plausible its economics look."""
+    failures: list[str] = []
+    if reconstructed_fp is None and evaluator_fp is None:
+        return failures  # genuinely out of scope (e.g. no budget yet)
+    if reconstructed_fp != evaluator_fp:
+        failures.append(
+            f"FRESHNESS: {label} reconstructed current-generation fingerprint "
+            f"{reconstructed_fp!r} != evaluator state_fingerprint {evaluator_fp!r} — "
+            "the evaluator and the canonical reconstruction disagree about which "
+            "generation is current (the P1-FRESH-001 defect class)"
+        )
+    if reconstructed_fp is not None and reconstructed_fp not in served_current_fingerprints:
+        failures.append(
+            f"FRESHNESS: {label} reconstructed current fingerprint {reconstructed_fp!r} is not "
+            f"among the fingerprints actually persisted under the current engine version "
+            f"({sorted(served_current_fingerprints)}) — a served/validated result cannot be "
+            "current if no current-engine row exists for its own reconstructed generation"
         )
     return failures
 
@@ -300,6 +536,17 @@ async def _gate_one_project(
     if view.get("status") != "OK":
         result["skipped"] = view.get("status")
         return result
+
+    # Optimizer Final P1-GATE-001 remediation (Codex final acceptance
+    # audit, Defect #1): the REAL project economic inputs, fetched once
+    # per project, read-only (same READ PURITY contract every other GET
+    # builder in this codebase follows — no budget routing, no fact
+    # writes, no commit). Passed to _check_treaty_allocation_invariant so
+    # it can independently recompute participant incentives from the
+    # SAME real inputs the optimizer itself priced from, rather than
+    # trusting the served values.
+    econ = await build_project_economic_inputs(session, project_id, read_only=True)
+    project_inputs = econ.inputs if econ.ok else None
 
     # Optimizer FINAL P0 remediation (P0-SEL-001, Codex broader-corpus
     # audit dcc6dde/8890cc8): Codex found this gate's prior SELECTION
@@ -441,7 +688,32 @@ async def _gate_one_project(
         # Extracted to _check_treaty_allocation_invariant (see its own
         # docstring) so it can be exercised with synthetic negative-test
         # inputs.
-        result["failures"].extend(_check_treaty_allocation_invariant(s, label, declared_gross))
+        result["failures"].extend(
+            _check_treaty_allocation_invariant(s, label, declared_gross, project_inputs)
+        )
+
+        # Optimizer Final P1-GATE-001 remediation (Codex final acceptance
+        # audit, Defects #2 and #5): PARTICIPANTS and PROGRAM ONBOARDING
+        # used to be called only AFTER the `if not s["is_fully_priced"]:
+        # continue` below -- so (a) a treaty_coproduction opportunity row
+        # (never top-level is_fully_priced=True; real pricing lives in
+        # conditional_scenario) never reached the nested onboarding check
+        # at all, and (b) a REJECTED component_relocation row (P1-REJ-001,
+        # candidate_status=RULE_REJECTED) never reached the participant
+        # check, so a corrupted/malformed participant list on a rejected
+        # row was completely invisible to this gate. Both checks are
+        # internally safe to run unconditionally: _check_participants_
+        # invariant's expected set is genuinely empty for a rejected row
+        # with no segments (produces zero false failures on real rejected
+        # data), and _check_program_onboarding_invariant now gates its
+        # OWN top-level sub-check on is_fully_priced internally (see its
+        # docstring) rather than relying on the caller to have already
+        # filtered.
+        program_slugs = _program_slugs_of(s)
+        result["failures"].extend(_check_participants_invariant(s, label))
+        result["failures"].extend(
+            _check_program_onboarding_invariant(s, label, program_slugs, conformance_by_slug)
+        )
 
         if not s["is_fully_priced"]:
             continue
@@ -492,34 +764,14 @@ async def _gate_one_project(
                     f"= {reconstructed} != served adjusted {adjusted}"
                 )
 
-        # PARTICIPANTS — Optimizer P0 wiring remediation P0-2, strengthened
-        # by Optimizer FINAL P0 remediation (P0-PART-001, Codex broader-
-        # corpus audit dcc6dde/8890cc8): exact claiming-participant
-        # identity, never a count floor and never an unconditional
-        # {primary} seed. Codex found this gate's PRIOR version
-        # unconditionally added `primary_jurisdiction` to the expected
-        # set before applying the claims filter — the EXACT SAME bug as
-        # the production code it was meant to guard, so it reproduced
-        # rather than detected P0-PART-001 whenever a project's own
-        # primary segment does not claim an incentive (confirmed live:
-        # 1,878 of 2,585 component rows across nine US-primary projects).
-        # The expected set must be derived purely from segments whose OWN
-        # claims_incentive is True — the primary jurisdiction included
-        # ONLY if its own segment claims. A non-claiming stated-location
-        # segment (claims_incentive=False, e.g. a real US segment) must
-        # never appear in participants; it stays visible in segments.
-        # Extracted to _check_participants_invariant (see its own
-        # docstring, and P1-GATE-001's duplicate-detection strengthening)
-        # so it can be exercised with synthetic negative-test inputs.
-        result["failures"].extend(_check_participants_invariant(s, label))
-
         # STATUS (Section 5)
         if "administrative_allocation_risk" not in s:
             result["failures"].append(f"STATUS: {label} missing administrative_allocation_risk field")
 
         # PROGRAM CERTAINTY (Section 4 / Item generic) — a discretionary
         # program's structure must disclose administrative_allocation_risk.
-        program_slugs = _program_slugs_of(s)
+        # (PARTICIPANTS and PROGRAM ONBOARDING were already checked above,
+        # before the is_fully_priced continue — see that comment block.)
         if any(_is_discretionary_program(slug) for slug in program_slugs):
             if s.get("administrative_allocation_risk") is not True:
                 result["failures"].append(
@@ -528,16 +780,33 @@ async def _gate_one_project(
                     "separation is not actually wired at the structure level"
                 )
 
-        # PROGRAM ONBOARDING / CONFORMANCE — cross-check against the
-        # global program classification (Item C), strengthened by
-        # Optimizer FINAL closeout (P1-CONF-001/P1-GATE-001) to also
-        # examine a nested conditional_scenario's own priced programs.
-        # Extracted to _check_program_onboarding_invariant (see its own
-        # docstring) so it can be exercised with synthetic negative-test
-        # inputs.
-        result["failures"].extend(
-            _check_program_onboarding_invariant(s, label, program_slugs, conformance_by_slug)
+    # REJECTION ACCOUNTING — Optimizer Final P1-GATE-001 remediation
+    # (Codex final acceptance audit, Defect #4): every component_
+    # relocation structure must end in an explicit, non-silent
+    # disposition. Extracted to _check_rejection_accounting_invariant
+    # (see its own docstring) so it can be exercised with synthetic
+    # negative-test inputs. Runs once per project over the full
+    # structures list (not per-structure), since duplicate-identity
+    # detection is inherently a cross-structure check.
+    result["failures"].extend(_check_rejection_accounting_invariant(structures))
+
+    # FRESHNESS — Optimizer Final P1-GATE-001 remediation (Codex final
+    # acceptance audit, Defect #3). Extracted to _check_freshness_
+    # invariant (see its own docstring) so it can be exercised with
+    # synthetic negative-test inputs. Runs once per project.
+    reconstructed_fp = await current_generation_fingerprint(session, project_id)
+    evaluator_fp = econ_status.get("state_fingerprint")
+    served_current_fingerprints = set((await session.execute(
+        select(StructureCalculationResult.input_fingerprint)
+        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+        .where(
+            ProductionStructure.project_id == project_id,
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
         )
+    )).scalars().all())
+    result["failures"].extend(
+        _check_freshness_invariant(reconstructed_fp, evaluator_fp, served_current_fingerprints, title)
+    )
 
     return result
 
