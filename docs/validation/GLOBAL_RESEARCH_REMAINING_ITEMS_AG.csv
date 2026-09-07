@@ -1,0 +1,5 @@
+domain,missing_record_type,estimated_count,description,blocker_reason
+Treaty co-production relationships,Treaty records,38,No per-treaty status field exists in GLOBAL_CANONICAL_TREATY_DISPOSITION.json.,Record-by-record validation mechanically impossible from engine output.
+Official and qualifying co-production pathways,Pathway records,38,Missing record-level tracking of pathway qualification.,Granularity gap in treaty disposition.
+Reinvestment requirements and monetization effects,Primary programs,115,No dedicated registry exists tracking these constraints per-record.,Optimizer consumption is not proof of exhaustive research.
+Cultural tests and material eligibility gates,Primary and secondary programs,254,No artifact proves record-by-record cure of the earlier NO_GO status.,Evidence superseding the NO_GO cannot be traced.
