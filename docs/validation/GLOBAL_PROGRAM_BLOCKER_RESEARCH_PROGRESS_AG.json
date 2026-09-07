@@ -1,15 +1,15 @@
 {
   "total_source_rows": 222,
-  "rows_accounted_for": 84,
-  "atomic_programs_created": 134,
+  "rows_accounted_for": 223,
+  "atomic_programs_created": 253,
   "compound_rows_split": 43,
-  "material_conflicts_adjudicated": 0,
+  "material_conflicts_adjudicated": 20,
   "unknown_programs_investigated": 0,
   "duplicates_aliases_identified": 30,
   "superseded_identified": 0,
   "inactive_expired_identified": 1,
   "not_a_program_identified": 3,
-  "researched_unresolved": 79,
-  "last_completed_blocker": "ag-za-dti-25-rebate-nfvf-idc",
+  "researched_unresolved": 198,
+  "last_completed_blocker": "za_dtic_foreign_film",
   "next_blocker": "AE (Abu Dhabi)"
 }

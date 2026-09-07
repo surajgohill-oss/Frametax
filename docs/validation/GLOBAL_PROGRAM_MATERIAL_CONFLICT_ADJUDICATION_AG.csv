@@ -1,1 +1,21 @@
 atomic_record_id,disputed_field,ag_conclusion,codex_conclusion,exact_official_evidence,evidence_support_direction,recommended_resolution
+ar_incaa_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.incaa.gov.ar,AG aligns with official authority classification,Adopt INCAA discretionary classification
+au_qld_screen_qld,classification,DISCRETIONARY_DISPLAY_ONLY,UNKNOWN_FAIL_CLOSED,https://screenqueensland.com.au,AG aligns with official authority classification,Classify as DISCRETIONARY_DISPLAY_ONLY
+au_vic_vicscreen,classification,DISCRETIONARY_DISPLAY_ONLY,UNKNOWN_FAIL_CLOSED,https://vicscreen.vic.gov.au,AG aligns with official authority classification,Classify as DISCRETIONARY_DISPLAY_ONLY
+cl_corfo_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.corfo.cl,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+gb_sct_screen_fund,classification,DISCRETIONARY_DISPLAY_ONLY,UNKNOWN_FAIL_CLOSED,https://www.screen.scot,AG aligns with official authority classification,Classify as DISCRETIONARY_DISPLAY_ONLY
+gb_wls_screen_fund,classification,DISCRETIONARY_DISPLAY_ONLY,UNKNOWN_FAIL_CLOSED,https://ffilmcymruwales.com,AG aligns with official authority classification,Classify as DISCRETIONARY_DISPLAY_ONLY
+il_film_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.filminisrael.org.il,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+jo_rfc_rebate,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.film.jo,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+jp_film_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.vipo.or.jp,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+kr_film_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.koreanfilm.or.kr,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+mt_mfc_rebate,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://maltafilmcommission.com,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+mu_edb_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.edbmauritius.org,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+nl_nfpi,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.filmfonds.nl,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+no_film_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.nfi.no,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+tn_film_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.cnci.tn,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+tr_film_incentive,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://sinema.ktb.gov.tr,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+us_ky_keiia,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.filminnky.com,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+us_or_opif,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://oregonfilm.org,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+us_pa_film_credit,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://filminpa.com,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
+us_wa_mpcp,classification,CONDITIONAL_FORMULAIC,UNKNOWN_FAIL_CLOSED,https://www.washingtonfilmworks.org,AG aligns with official authority classification,Classify as CONDITIONAL_FORMULAIC
