@@ -149,3 +149,11 @@ dk_dfi,dk_dfi,DK,DFI Grants,Danish Film Institute,https://www.dfi.dk/en/internat
 dk_dr,dk_dr,DK,DR Broadcaster Fund,DR,https://www.dr.dk,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
 ee_film_estonia,ee_film_estonia,EE,Film Estonia Cash Rebate,EFI,https://filmi.ee/en/film-estonia,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
 ee_regional_funds,ee_regional_funds,EE,Estonia Regional Funds,Various,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
+au_nsw_pdv_rebate,au_nsw_pdv_rebate,AU-NSW,Screen NSW PDV Rebate,Screen NSW,https://www.screen.nsw.gov.au/funding/screen-nsw-pdv-rebate,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+au_pdv_offset,au_pdv_offset,AU,Australia PDV Offset,Office for the Arts,https://www.arts.gov.au/what-we-do/screen/australian-screen-production-incentive,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+au_producer_offset,au_producer_offset,AU,Australia Producer Offset,Screen Australia,https://www.screenaustralia.gov.au/funding-and-support/producer-offset,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+au_qld_pdv_rebate,au_qld_pdv_rebate,AU-QLD,Screen Queensland PDV Rebate,Screen Queensland,https://screenqueensland.com.au/investment-support/incentives/pdv/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+au_sa_pdv_rebate,au_sa_pdv_rebate,AU-SA,South Australia PDV Rebate,SAFC,https://www.safilm.com.au/pdv-rebate/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ca_bc_dave,ca_bc_dave,CA-BC,BC DAVE Tax Credit,Creative BC,https://creativebc.com/programs/motion-picture-tax-credits/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ca_bc_pstc,ca_bc_pstc,CA-BC,BC PSTC,Creative BC,https://creativebc.com/programs/motion-picture-tax-credits/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ca_federal_pstc,ca_federal_pstc,CA,Canada Federal PSTC,CAVCO,https://www.canada.ca/en/canadian-heritage/services/funding/cavco-programs/production-services-tax-credit.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
