@@ -140,3 +140,12 @@ ag-uz-uzbekistan-20-rebate-uzbekkino-grants,uz_uzbekkino,UZ,uz_uzbekkino,Defer t
 ag-za-dti-25-rebate-nfvf-idc,za_dtic_foreign_film,ZA,za_dtic_foreign_film,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
 ag-za-dti-25-rebate-nfvf-idc,za_nfvf,ZA,za_nfvf,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
 ag-za-dti-25-rebate-nfvf-idc,za_idc,ZA,za_idc,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+de_dfff,de_dfff,DE,DFFF,FFA / BKM,https://www.ffa.de/en/german-federal-film-fund-dfff.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+de_gmpf,de_gmpf,DE,GMPF,FFA / BKM,https://www.ffa.de/en/german-motion-picture-fund-gmpf.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+de_wcf,de_wcf,DE,World Cinema Fund,Berlinale,https://www.berlinale.de/en/berlinale/world-cinema-fund/wcf-classic/wcf-classic.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+de_broadcaster_funds,de_broadcaster_funds,DE,Broadcaster Funds,Unknown,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
+dk_production_incentive,dk_production_incentive,DK,Danish Production Incentive Scheme,SLKS,https://www.dfi.dk/en/international/production-incentive-scheme,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+dk_dfi,dk_dfi,DK,DFI Grants,Danish Film Institute,https://www.dfi.dk/en/international/funding,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+dk_dr,dk_dr,DK,DR Broadcaster Fund,DR,https://www.dr.dk,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
+ee_film_estonia,ee_film_estonia,EE,Film Estonia Cash Rebate,EFI,https://filmi.ee/en/film-estonia,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ee_regional_funds,ee_regional_funds,EE,Estonia Regional Funds,Various,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
