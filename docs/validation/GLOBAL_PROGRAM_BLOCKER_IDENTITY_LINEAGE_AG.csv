@@ -1,0 +1,145 @@
+original_blocker_id,atomic_record_id,country_code,program_name,official_authority,source_URL,disposition,evidence_tier,access_date
+IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,INT,Ibermedia Framework,Ibermedia,https://www.programaibermedia.com,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
+ae_ad_film_rebate,ae_ad_film_rebate,AE-AD,Abu Dhabi Film Commission Rebate,Creative Media Authority,https://www.film.gov.ae,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+inv-ae-abu-dhabi-film-commission-adfc-production-rebate,ae_ad_film_rebate,AE-AD,Abu Dhabi Film Commission Rebate,Creative Media Authority,https://www.film.gov.ae,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+united arab emirates-abu-dhabi-35-production-rebate,ae_ad_film_rebate,AE-AD,Abu Dhabi Film Commission Rebate,Creative Media Authority,https://www.film.gov.ae,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ae_dxb_dpip,ae_dxb_dpip,AE-DXB,Dubai Production Incentive Programme,DFTC,https://www.filmdubai.gov.ae,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
+inv-ae-emirates-airline-film-production-partnerships-and-in-kind-support,ae_emirates_airline_in_kind,AE,Emirates Airline In-Kind Support,Emirates,https://www.emirates.com,NON_ECONOMIC_DISPLAY_ONLY,PRIMARY_AUTHORITY,2026-09-07
+ag-ae-dubai-film-commission-abu-dhabi-film-commission-emirates-airline,ae_ad_film_rebate,AE-AD,Abu Dhabi Film Commission Rebate,Creative Media Authority,https://www.film.gov.ae,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ae-dubai-film-commission-abu-dhabi-film-commission-emirates-airline,ae_dxb_dpip,AE-DXB,Dubai Production Incentive Programme,DFTC,https://www.filmdubai.gov.ae,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ae-dubai-film-commission-abu-dhabi-film-commission-emirates-airline,ae_emirates_airline_in_kind,AE,Emirates Airline In-Kind Support,Emirates,https://www.emirates.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+al_cash_rebate,al_cash_rebate,AL,Albania Cash Rebate,QKK,https://qkk.al,INACTIVE_OR_EXPIRED,PRIMARY_AUTHORITY,2026-09-07
+ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,al_cash_rebate,AL,Albania Cash Rebate,QKK,https://qkk.al,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-am-cinema-foundation-of-armenia-cash-rebate,am_film_cash_rebate,AM,Cinema Foundation of Armenia Cash Rebate,Cinema Foundation of Armenia,https://cfarmenia.am,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ag-at-fisa-orf-fi,at_fisa_plus,AT,FISA+ (Film Industry Support Austria Plus),AWS,https://fisa-plus.at,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-at-fisa-orf-fi,at_oefi_plus,AT,ÖFI+ (Austrian Film Institute),ÖFI,https://filminstitut.at,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-at-fisa-orf-fi,at_orf_film_television_agreement,AT,ORF Film/Television Agreement,ORF,https://filmcommission.at,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-az-cinema-agency-of-the-republic-of-azerbaijan-arka-cash-rebate,az_arka_cash_rebate,AZ,Cinema Agency of Azerbaijan (ARKA) Cash Rebate,ARKA,https://arka.az,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ag-ba-sarajevo-canton-cash-rebate-film-fund-sarajevo,ba_sarajevo_canton_cash_rebate,BA,Sarajevo Canton Cash Rebate,Ministry of Culture and Sports,https://mks.ks.gov.ba,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ba-sarajevo-canton-cash-rebate-film-fund-sarajevo,ba_film_fund_sarajevo,BA,Film Fund Sarajevo,Fondacija za kinematografiju,https://fondacijakinematografija.ba,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-be-belgian-tax-shelter-for-audiovisual-productions,be_belgian_tax_shelter,BE,Belgian Tax Shelter for Audiovisual Productions,FPS Finance,https://finance.belgium.be,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ag-br-lei-do-audiovisual-tax-incentive-fsa-fundo-setorial-do-audiovisual,br_lei_do_audiovisual,BR,Lei do Audiovisual,ANCINE,https://www.gov.br/ancine,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-br-lei-do-audiovisual-tax-incentive-fsa-fundo-setorial-do-audiovisual,br_fsa,BR,Fundo Setorial do Audiovisual,ANCINE,https://www.gov.br/ancine,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-bc-bc-production-services-tax-credit-pstc-dave,ca_bc_pstc,CA-BC,BC PSTC,Creative BC,https://creativebc.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-bc-bc-production-services-tax-credit-pstc-dave,ca_bc_dave,CA-BC,BC DAVE,Creative BC,https://creativebc.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-canada-media-fund-cmf-telefilm-canada-cptc-pstc,ca_federal_cmf,CA,Canada Media Fund,CMF,https://cmf-fmc.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-canada-media-fund-cmf-telefilm-canada-cptc-pstc,ca_federal_telefilm,CA,Telefilm Canada,Telefilm,https://telefilm.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-canada-media-fund-cmf-telefilm-canada-cptc-pstc,ca_federal_cptc,CA,Canada CPTC,CAVCO,https://www.canada.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-canada-media-fund-cmf-telefilm-canada-cptc-pstc,ca_federal_pstc,CA,Canada Federal PSTC,CAVCO,https://www.canada.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-mb-manitoba-film-video-production-tax-credit-manitoba-film-music-production-support,ca_mb_film_tax_credit,CA-MB,Manitoba Film & Video Production Tax Credit,Manitoba Film & Music,https://mbfilmmusic.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-mb-manitoba-film-video-production-tax-credit-manitoba-film-music-production-support,ca_mb_mfm_support_grant,CA-MB,MFM Production Support Grants,Manitoba Film & Music,https://mbfilmmusic.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-on-opstc-ocase-nohfc,ca_on_opstc,CA-ON,OPSTC,Ontario Creates,https://ontariocreates.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-on-opstc-ocase-nohfc,ca_on_ocase,CA-ON,OCASE,Ontario Creates,https://ontariocreates.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-on-opstc-ocase-nohfc,ca_on_nohfc,CA-ON,NOHFC,NOHFC,https://nohfc.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-pe-pei-film-production-investment-fund,ca_pe_film_fund,CA-PE,PEI Film Production Investment Fund,Innovation PEI,https://www.princeedwardisland.ca,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-qc-qprdp-sodec,ca_qc_qprdp,CA-QC,QPRDP,Revenu Québec,https://revenuquebec.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ca-qc-qprdp-sodec,ca_qc_sodec_grant,CA-QC,SODEC Production Grant,SODEC,https://sodec.gouv.qc.ca,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-cl-corfo-film-incentive-ifi-audiovisual,cl_corfo_incentive,CL,Corfo IFI Audiovisual,Corfo,https://www.corfo.cl,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-co-cina-ffc-fdc,colombia-cina-audiovisual-investment-certificate,CO,CINA,Proimágenes Colombia,https://www.proimagenescolombia.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-co-cina-ffc-fdc,co_ffc,CO,FFC,Proimágenes Colombia,https://www.proimagenescolombia.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-co-cina-ffc-fdc,co_fdc,CO,FDC,Proimágenes Colombia,https://www.proimagenescolombia.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-cz-czech-film-incentive-czech-audiovisual-fund,cz_film_incentive,CZ,Czech Film Incentive,Czech Audiovisual Fund,https://fondkinematografie.cz,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-de-dfff-gmpf-wcf-broadcaster-funds,de_dfff,DE,DFFF,BKM,https://dfff-ffa.de,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-de-dfff-gmpf-wcf-broadcaster-funds,de_gmpf,DE,GMPF,BKM,https://ffa.de,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-de-dfff-gmpf-wcf-broadcaster-funds,de_wcf,DE,WCF,Berlinale,https://www.berlinale.de,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-de-dfff-gmpf-wcf-broadcaster-funds,de_broadcaster_funds,DE,Broadcaster Funds,Various Broadcasters,NA,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-dk-danish-production-incentive-scheme-dfi-dr,dk_production_incentive,DK,Danish Production Incentive,NA,NA,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-dk-danish-production-incentive-scheme-dfi-dr,dk_dfi,DK,DFI,Danish Film Institute,https://www.dfi.dk,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-dk-danish-production-incentive-scheme-dfi-dr,dk_dr,DK,DR,DR,https://www.dr.dk,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-do-article-39-transferable-tax-credit-fonprocine,do_article_39,DO,Article 39 Transferable Tax Credit,DGCINE,https://dgcine.gob.do,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-do-article-39-transferable-tax-credit-fonprocine,do_fonprocine,DO,FONPROCINE,DGCINE,https://dgcine.gob.do,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ec-ecuador-audiovisual-investment-certificate-cia,ec_cia,EC,Ecuador CIA,IFCI,https://www.creatividad.gob.ec,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ag-ee-film-estonia-cash-rebate-regional-funds,ee_film_estonia,EE,Film Estonia Cash Rebate,EFI,https://filmi.ee,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ee-film-estonia-cash-rebate-regional-funds,ee_regional_funds,EE,Estonia Regional Funds,Various,NA,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-eg-egypt-film-commission-empc-cash-rebate,eg_empc_cashback,EG,EMPC Cash Rebate,EMPC,https://empc.com.eg,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-es-tax-credit-for-foreign-productions-art-36-2-rtve,es_tax_credit_foreign_art_36_2,ES,Spain Tax Credit for Foreign Productions,ICAA,https://www.cultura.gob.es,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-es-tax-credit-for-foreign-productions-art-36-2-rtve,es_rtve,ES,RTVE,RTVE,https://www.rtve.es,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fi-business-finland-film-incentive-ses-yle,fi_business_finland,FI,Business Finland Film Incentive,Business Finland,https://www.businessfinland.fi,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fi-business-finland-film-incentive-ses-yle,fi_ses,FI,SES,Finnish Film Foundation,https://www.ses.fi,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fi-business-finland-film-incentive-ses-yle,fi_yle,FI,YLE,YLE,https://yle.fi,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fj-fiji-film-tax-rebate-20,fj_film_rebate,FJ,Fiji Film Rebate,Film Fiji,https://film-fiji.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-fr-trip-cnc-arte-canal,fr_trip,FR,TRIP,CNC,https://www.cnc.fr,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fr-trip-cnc-arte-canal,fr_cnc_grants,FR,CNC Support,CNC,https://www.cnc.fr,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fr-trip-cnc-arte-canal,fr_arte,FR,ARTE,ARTE France,https://www.arte.tv,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-fr-trip-cnc-arte-canal,fr_canal,FR,CANAL+,Canal+,https://www.canalplus.com,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-gb-lon-film-london-production-finance-market,gb_lon_pfm,GB-LON,Film London PFM,Film London,https://filmlondon.org.uk,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-07
+ag-ge-film-in-georgia-enterprise-georgia,ge_film_in_georgia,GE,Film in Georgia,Enterprise Georgia,https://www.enterprisegeorgia.gov.ge,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ag-gr-hfac-40-rebate-30-tax-relief-selective-grants,gr_ekome_rebate,GR,EKOME 40% Rebate,EKOME,https://www.ekome.media,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-gr-hfac-40-rebate-30-tax-relief-selective-grants,gr_ekome_relief,GR,EKOME 30% Tax Relief,EKOME,https://www.ekome.media,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-gr-hfac-40-rebate-30-tax-relief-selective-grants,gr_hfac,GR,HFAC,Greek Film Centre,https://gfc.gr,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-hr-croatia-film-cash-rebate-havc-grants,hr_film_rebate,HR,Croatia Film Cash Rebate,HAVC,https://havc.hr,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-hr-croatia-film-cash-rebate-havc-grants,hr_havc_grants,HR,HAVC Grants,HAVC,https://havc.hr,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-hu-hungary-film-tax-rebate-nfi-grants,hu_film_rebate,HU,Hungary Film Tax Rebate,NFI,https://nfi.hu,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-hu-hungary-film-tax-rebate-nfi-grants,hu_nfi_grants,HU,NFI Grants,NFI,https://nfi.hu,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ie-section-481-screen-ireland-rt,ie_section_481,IE,ie_section_481,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ie-section-481-screen-ireland-rt,ie_screen_ireland,IE,ie_screen_ireland,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ie-section-481-screen-ireland-rt,ie_rte,IE,ie_rte,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-il-israel-30-cash-rebate-jerusalem-film-fund,il_film_incentive,IL,il_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-il-israel-30-cash-rebate-jerusalem-film-fund,il_jerusalem_film_fund,IL,il_jerusalem_film_fund,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-in-nfdc-cash-rebate-state-incentives,in_nfdc_rebate,IN,in_nfdc_rebate,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-in-nfdc-cash-rebate-state-incentives,in_state_incentives,IN,in_state_incentives,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-it-italian-tax-credit-rai-cinema-mic,it_tax_credit,IT,it_tax_credit,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-it-italian-tax-credit-rai-cinema-mic,it_rai_cinema,IT,it_rai_cinema,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-it-italian-tax-credit-rai-cinema-mic,it_mic_grants,IT,it_mic_grants,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-jm-jamaica-screen-development-initiative-jsdi-rebate,jm_jsdi_rebate,JM,jm_jsdi_rebate,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-jo-rfc-jordan-production-rebate,jo_rfc_rebate,JO,jo_rfc_rebate,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-jp-jlox-location-incentive-vipo-jfc,jp_film_incentive,JP,jp_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-jp-jlox-location-incentive-vipo-jfc,jp_vipo,JP,jp_vipo,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-jp-jlox-location-incentive-vipo-jfc,jp_jfc,JP,jp_jfc,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-kr-kofic-location-incentive-kocca-support,kr_film_incentive,KR,kr_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-kr-kofic-location-incentive-kocca-support,kr_kocca,KR,kr_kocca,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-kz-kazakhstan-30-cash-rebate-scsnc,kz_film_incentive,KZ,kz_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-lt-lithuanian-film-tax-incentive,lt_film_incentive,LT,lt_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-lv-liaa-rebate-riga-film-fund,lv_film_incentive,LV,lv_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-lv-liaa-rebate-riga-film-fund,lv_riga_film_fund,LV,lv_riga_film_fund,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ma-ccm-30-cash-rebate-avance-sur-recettes,ma_film_incentive,MA,ma_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ma-ccm-30-cash-rebate-avance-sur-recettes,ma_avance_sur_recettes,MA,ma_avance_sur_recettes,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-me-film-centre-of-montenegro-cash-rebate,me_film_incentive,ME,me_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-mk-mfa-cash-rebate,mk_film_incentive,MK,mk_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-mu-mauritius-edb-film-rebate,mu_film_incentive,MU,mu_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-mx-efica-30-tax-credit-imcine-discretionary-funds,mx_eficine,MX,mx_eficine,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-mx-efica-30-tax-credit-imcine-discretionary-funds,mx_imcine,MX,mx_imcine,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-my-finas-fimi-cash-rebate,my_fimi,MY,my_fimi,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-nl-nfpi-35-cash-rebate-hubert-bals-fund-idfa-npo,nl_film_incentive,NL,nl_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-nl-nfpi-35-cash-rebate-hubert-bals-fund-idfa-npo,nl_hubert_bals,NL,nl_hubert_bals,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-nl-nfpi-35-cash-rebate-hubert-bals-fund-idfa-npo,nl_idfa,NL,nl_idfa,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-nl-nfpi-35-cash-rebate-hubert-bals-fund-idfa-npo,nl_npo,NL,nl_npo,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-no-norwegian-25-incentive-nfi-grants-nrk,no_film_incentive,NO,no_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-no-norwegian-25-incentive-nfi-grants-nrk,no_nfi_grants,NO,no_nfi_grants,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-no-norwegian-25-incentive-nfi-grants-nrk,no_nrk,NO,no_nrk,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-nz-nzspr-20-rebate-5-uplift-pdv-tourism,nz_nzspr,NZ,nz_nzspr,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-ph-fdcp-flip-20-rebate-acopi,ph_flip,PH,ph_flip,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-ph-fdcp-flip-20-rebate-acopi,ph_acopi,PH,ph_acopi,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-pl-pisf-30-cash-rebate-selective-grants,pl_film_incentive,PL,pl_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-pl-pisf-30-cash-rebate-selective-grants,pl_pisf_grants,PL,pl_pisf_grants,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-pt-iapmei-25-30-cash-rebate-ica-grants,pt_film_incentive,PT,pt_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-pt-iapmei-25-30-cash-rebate-ica-grants,pt_ica_grants,PT,pt_ica_grants,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-qa-qspi-50-cash-rebate-dfi-grants,qa_qspi,QA,qa_qspi,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-qa-qspi-50-cash-rebate-dfi-grants,qa_dfi_grants,QA,qa_dfi_grants,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-rw-rwanda-development-board-facilitation,rw_rdb_facilitation,RW,rw_rdb_facilitation,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-sa-film-saudi-cash-rebate,sa_film_incentive,SA,sa_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-se-sweden-25-cash-rebate-svt-gff,se_film_incentive,SE,se_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-se-sweden-25-cash-rebate-svt-gff,se_svt,SE,se_svt,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-se-sweden-25-cash-rebate-svt-gff,se_gff,SE,se_gff,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-sk-avf-33-cash-rebate-selective-grants,sk_film_incentive,SK,sk_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-sk-avf-33-cash-rebate-selective-grants,sk_avf_grants,SK,sk_avf_grants,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-th-thailand-film-incentive-cash-rebate,th_boi_incentive,TH,th_boi_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-tn-cnci-cash-rebate-facilitation,tn_film_incentive,TN,tn_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-tr-turkey-30-cash-rebate-k-lt-r-grants,tr_film_incentive,TR,tr_film_incentive,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-tt-production-expenditure-rebate-programme,tt_production_expenditure_rebate,TT,tt_production_expenditure_rebate,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-tw-tfai-30-cash-rebate-taicca-equity,tw_film_incentive,TW,tw_film_incentive,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-tw-tfai-30-cash-rebate-taicca-equity,tw_taicca,TW,tw_taicca,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-us-ca-california-film-tv-tax-credit-3-0-4-0,us_ca_film_tv_tax_credit,US-CA,us_ca_film_tv_tax_credit,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-ga-georgia-entertainment-industry-investment-act,us_ga_entertainment_industry_investment_act,US-GA,us_ga_entertainment_industry_investment_act,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-la-louisiana-motion-picture-production-program,us_la_motion_picture_production_program,US-LA,us_la_motion_picture_production_program,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-nm-new-mexico-film-production-tax-credit,us_nm_film_production_tax_credit,US-NM,us_nm_film_production_tax_credit,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-ny-new-york-state-film-tax-credit-program,us_ny_film_production_credit,US-NY,us_ny_film_production_credit,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-or-oregon-production-investment-fund-opif,us_or_opif,US-OR,us_or_opif,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-pr-puerto-rico-film-industry-economic-incentives-act,us_pr_film_industry_economic_incentives_act,US-PR,us_pr_film_industry_economic_incentives_act,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-us-tn-tennessee-film-entertainment-music-commission-incentives,us_tn_performance_grant,US-TN,us_tn_performance_grant,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-uy-pua-cash-rebate,uy_acau_cash_rebate,UY,uy_acau_cash_rebate,Defer to atomic,Defer to atomic,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-07
+ag-uz-uzbekistan-20-rebate-uzbekkino-grants,uz_film_rebate,UZ,uz_film_rebate,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-uz-uzbekistan-20-rebate-uzbekkino-grants,uz_uzbekkino,UZ,uz_uzbekkino,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-za-dti-25-rebate-nfvf-idc,za_dtic_foreign_film,ZA,za_dtic_foreign_film,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-za-dti-25-rebate-nfvf-idc,za_nfvf,ZA,za_nfvf,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07
+ag-za-dti-25-rebate-nfvf-idc,za_idc,ZA,za_idc,Defer to atomic,Defer to atomic,SPLIT_COMPOUND_COMPONENT,PRIMARY_AUTHORITY,2026-09-07

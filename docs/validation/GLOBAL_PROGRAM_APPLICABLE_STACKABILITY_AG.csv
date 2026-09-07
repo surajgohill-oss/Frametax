@@ -1,0 +1,8 @@
+atomic_record_id,stackable_with_id,official_authority,source_URL,temporary_stacking_treatment,evidence_tier,access_date
+ae_ad_film_rebate,NONE,Creative Media Authority,https://www.film.gov.ae,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
+am_film_cash_rebate,NONE,Cinema Foundation of Armenia,https://cfarmenia.am,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
+at_fisa_plus,NONE,AWS,https://fisa-plus.at,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
+at_oefi_plus,NONE,ÖFI,https://filminstitut.at,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
+az_arka_cash_rebate,NONE,ARKA,https://arka.az,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
+ba_sarajevo_canton_cash_rebate,ba_film_fund_sarajevo,Ministry of Culture and Sports,https://mks.ks.gov.ba,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
+be_belgian_tax_shelter,NONE,FPS Finance,https://finance.belgium.be,DEFAULT_OFF,AUTHORITY_EXHAUSTED,2026-09-07
