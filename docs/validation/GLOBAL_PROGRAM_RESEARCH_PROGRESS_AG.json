@@ -1,10 +1,10 @@
 {
-  "last_completed_canonical_program_ID": "gb_wls_screen_fund",
+  "last_completed_canonical_program_ID": "mt_mfc_rebate",
   "last_completed_field": "stackability",
-  "next_record": "il_film_incentive",
+  "next_record": "mu_edb_incentive",
   "next_field": "identity",
-  "records_completed": 6,
-  "fields_completed": 24,
-  "fields_remaining": 2014,
-  "current_batch_commit": "8f4e5a1"
+  "records_completed": 5,
+  "fields_completed": 30,
+  "fields_remaining": 3426,
+  "current_batch_commit": ""
 }
