@@ -1,10 +1,10 @@
 {
-  "last_completed_canonical_program_ID": "mt_mfc_rebate",
+  "last_completed_canonical_program_ID": "au_qld_pdv_rebate",
   "last_completed_field": "stackability",
-  "next_record": "mu_edb_incentive",
+  "next_record": "au_sa_pdv_rebate",
   "next_field": "identity",
-  "records_completed": 5,
-  "fields_completed": 30,
-  "fields_remaining": 3426,
+  "records_completed": 10,
+  "fields_completed": 60,
+  "fields_remaining": 3396,
   "current_batch_commit": ""
 }
