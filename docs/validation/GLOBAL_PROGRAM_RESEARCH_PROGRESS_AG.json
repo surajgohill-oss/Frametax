@@ -1,10 +1,10 @@
 {
-  "last_completed_canonical_program_ID": "ca_nl_all_spend_credit",
+  "last_completed_canonical_program_ID": "eg_empc_cashback",
   "last_completed_field": "stackability",
-  "next_record": "ca_qc_pstc",
+  "next_record": "fj_film_rebate",
   "next_field": "identity",
-  "records_completed": 15,
-  "fields_completed": 90,
-  "fields_remaining": 3366,
+  "records_completed": 20,
+  "fields_completed": 120,
+  "fields_remaining": 3336,
   "current_batch_commit": ""
 }
