@@ -234,3 +234,13 @@ no_film_incentive,no_film_incentive,NO,Norway Incentive Scheme,Norwegian Film In
 pa_film_rebate,pa_film_rebate,PA,Panama Cash Rebate,DICINE,https://dicine.gob.pa/incentivos/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
 proposed_australia_producer_offset_separate_statutory_program,au_producer_offset,AU,AU Producer Offset,Screen Australia,https://www.screenaustralia.gov.au,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 proposed_canada_british_columbia_film_incentive_bc_fibc,ca_bc_fibc,CA-BC,BC FIBC,Creative BC,https://creativebc.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_colombia_cina_audiovisual_investment_certificate,colombia_cina,CO,Colombia CINA,Proimagenes,https://www.proimagenescolombia.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_germany_german_motion_picture_fund_gmpf,de_gmpf,DE,Germany GMPF,FFA,https://www.ffa.de,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_netherlands_netherlands_film_production_incentive_high_end_series,nl_nfpi,NL,Netherlands NFPI,Film Fund,https://www.filmfonds.nl,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits,es_basque_tax_credit,ES-PV,Basque Tax Credit,Basque Government,https://www.euskadi.eus,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction,es_foreign_tax_credit_canary,ES-CN,Canary Islands Tax Deduction,Canary Islands Film,https://www.canaryislandsfilm.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_spain_navarre_navarre_audiovisual_production_tax_credit,es_navarre_tax_credit,ES-NC,Navarre Tax Credit,Navarra Film Commission,https://www.navarrefilm.com/en/incentives,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+proposed_united_kingdom_enhanced_avec_independent_film_tax_credit_iftc,gb_iftc_enhanced_avec,GB,UK IFTC,BFI/HMRC,https://www.bfi.org.uk,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_united_kingdom_uk_global_screen_fund_international_co_production,gb_uk_global_screen_fund,GB,UK Global Screen Fund,BFI,https://www.bfi.org.uk/apply-uk-global-screen-fund,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive,us_ar_incentive,US-AR,Arkansas Film Incentive,Arkansas Film Commission,https://www.arkansasedc.com/film/incentives,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+proposed_united_states_missouri_motion_media_production_tax_credit,us_mo_tax_credit,US-MO,Missouri Tax Credit,Missouri DED,https://ded.mo.gov/programs/business/film-production-tax-credit,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
