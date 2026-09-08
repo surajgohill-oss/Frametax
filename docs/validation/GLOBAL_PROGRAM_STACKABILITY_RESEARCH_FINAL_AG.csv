@@ -1,0 +1,9 @@
+primary_program_id,secondary_program_id,jurisdiction,stackability_status,shared_qpe_limitations,other_assistance_reductions,aid_intensity_limits,combined_caps,order_of_calculation,restrictions,optimizer_consequence,research_status
+ca_federal_pstc,ca_bc_pstc,CA-BC,ALLOWED,Both cap combined aid,Federal credit reduces provincial QPE,100%,None,Federal then Provincial,None,STACKED,VERIFIED_PRIMARY
+ca_federal_pstc,ca_on_opstc,CA-ON,ALLOWED,Both cap combined aid,Federal credit reduces provincial QPE,100%,None,Federal then Provincial,None,STACKED,VERIFIED_PRIMARY
+ca_federal_pstc,ca_qc_pstc,CA-QC,ALLOWED,Both cap combined aid,Federal credit reduces provincial QPE,100%,None,Federal then Provincial,None,STACKED,VERIFIED_PRIMARY
+au_producer_offset,au_nsw_pdv_rebate,AU-NSW,ALLOWED,None,None,100%,None,Independent,PDV only,STACKED,VERIFIED_PRIMARY
+au_producer_offset,au_qld_pdv_rebate,AU-QLD,ALLOWED,None,None,100%,None,Independent,PDV only,STACKED,VERIFIED_PRIMARY
+au_producer_offset,au_sa_pdv_rebate,AU-SA,ALLOWED,None,None,100%,None,Independent,PDV only,STACKED,VERIFIED_PRIMARY
+au_producer_offset,au_vic_pdv_rebate,AU-VIC,ALLOWED,None,None,100%,None,Independent,PDV only,STACKED,VERIFIED_PRIMARY
+gb_avec,gb_uk_global_screen_fund,GB,ALLOWED,None,Global Screen Fund reduces AVEC QPE,100%,None,GSF then AVEC,Co-pros only,STACKED,VERIFIED_PRIMARY
