@@ -214,3 +214,13 @@ inv-tr-ministry-of-culture-and-tourism-k-lt-r-film-production-grants,tr_domestic
 inv-tr-turkey-cinema-general-directorate-film-production-support,tr_domestic_support_gen,TR,Turkey Grants,Ministry of Culture,https://sinema.ktb.gov.tr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-us-ca-california-film-television-tax-credit-program-3-0,us_ca_film_tax_credit,US-CA,California Film Tax Credit,CFC,https://film.ca.gov,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-us-state-film-tax-credits-multi-state,us_multi_state,US,US Multi State,Various,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-za-department-of-arts-and-culture-dac-nfvf-development-fund,za_nfvf_fund,ZA,NFVF Fund,NFVF,https://www.nfvf.co.za,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-za-nfvf-department-of-trade-industry-dti-foreign-film-tv-production-rebate,za_dtic_foreign_film,ZA,DTIC Foreign Film,DTIC,http://www.thedtic.gov.za,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+jo_rfc_rebate,jo_rfc_rebate,JO,Jordan Cash Rebate,Royal Film Commission,https://www.film.jo/node/79,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+jp_film_incentive,jp_jloc,JP,Japan Incentive,JLOC,https://www.japanfilmfc.jp,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+jp_vipo_location_incentive,jp_vipo_location_incentive,JP,Japan VIPO Incentive,VIPO,https://www.vipo.or.jp,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+kr_film_incentive,kr_kofic_location_incentive,KR,Korea Film Incentive,KOFIC,https://www.koreanfilm.or.kr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+kr_kofic_location_incentive,kr_kofic_location_incentive,KR,KOFIC Location Incentive,KOFIC,https://www.koreanfilm.or.kr/eng/html/kofic/incentive.jsp,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+kz_investment_subsidy,kz_investment_subsidy,KZ,Kazakhstan Cash Rebate,Kazakh Cinema,https://kazakhcinema.kz/en/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+me_cash_rebate,me_cash_rebate,ME,Montenegro Cash Rebate,Film Centre Montenegro,https://fccg.me/en/incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+mk_cash_rebate,mk_cash_rebate,MK,North Macedonia Cash Rebate,Film Agency,https://filmfund.gov.mk/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08

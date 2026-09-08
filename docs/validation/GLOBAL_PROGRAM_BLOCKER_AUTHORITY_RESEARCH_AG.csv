@@ -70,3 +70,9 @@ ma_tourism,NOT_A_PROGRAM,CCM,https://www.ccm.ma,NA,NA,NA,NA,NA,NA,NA,NOT_A_PROGR
 nz_air_nz,NOT_A_PROGRAM,Air New Zealand,https://www.airnewzealand.co.nz,NA,NA,NA,NA,NA,NA,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
 nz_tourism,NOT_A_PROGRAM,Tourism NZ,https://www.tourismnewzealand.com,NA,NA,NA,NA,NA,NA,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
 us_multi_state,NOT_A_PROGRAM,Various,NA,NA,NA,NA,NA,NA,NA,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+jo_rfc_rebate,CONDITIONAL_FORMULAIC,Royal Film Commission,https://www.film.jo/node/79,Foreign productions,NA,$1M minimum,Up to 25%,Eligible Jordan spend,Cash Rebate,After audit,VERIFIED_VALUE,PRIMARY_AUTHORITY,2026-09-08
+jp_vipo_location_incentive,CONDITIONAL_FORMULAIC,VIPO,https://www.vipo.or.jp,Foreign/international projects,NA,500 million JPY,Up to 50%,Eligible local spend,Cash Rebate,After audit,VERIFIED_VALUE,PRIMARY_AUTHORITY,2026-09-08
+kr_kofic_location_incentive,CONDITIONAL_FORMULAIC,KOFIC,https://www.koreanfilm.or.kr/eng/html/kofic/incentive.jsp,"Foreign feature films, TV, documentaries",NA,50M KRW minimum,20-25%,Eligible Korean spend,Cash Rebate,After completion,VERIFIED_VALUE,PRIMARY_AUTHORITY,2026-09-08
+kz_investment_subsidy,CONDITIONAL_FORMULAIC,Kazakh Cinema,https://kazakhcinema.kz/en/,International projects,NA,None specified,Up to 30%,Eligible Kazakhstan spend,Cash Rebate,After completion,VERIFIED_VALUE,PRIMARY_AUTHORITY,2026-09-08
+me_cash_rebate,CONDITIONAL_FORMULAIC,Film Centre Montenegro,https://fccg.me/en/incentives/,International projects,Cultural test,EUR 100k,25%,Eligible Montenegro spend,Cash Rebate,After audit,VERIFIED_VALUE,PRIMARY_AUTHORITY,2026-09-08
+mk_cash_rebate,CONDITIONAL_FORMULAIC,Film Agency,https://filmfund.gov.mk/,"Feature films, TV",Cultural test,EUR 100k,20%,Eligible Macedonia spend,Cash Rebate,After audit,VERIFIED_VALUE,PRIMARY_AUTHORITY,2026-09-08

@@ -76,3 +76,13 @@ inv-tr-ministry-of-culture-and-tourism-k-lt-r-film-production-grants,https://sin
 inv-tr-turkey-cinema-general-directorate-film-production-support,https://sinema.ktb.gov.tr,Ministry of Culture,Overview,Confirmed duplicate of tr_domestic_support,2026-09-08
 inv-us-ca-california-film-television-tax-credit-program-3-0,https://film.ca.gov,California Film Commission,Overview,Confirmed duplicate of us_ca_film_tax_credit,2026-09-08
 inv-us-state-film-tax-credits-multi-state,NA,Various,Overview,"Confirmed aggregate concept, not an actual program",2026-09-08
+inv-za-department-of-arts-and-culture-dac-nfvf-development-fund,https://www.nfvf.co.za,NFVF,Overview,Confirmed duplicate of za_nfvf_fund,2026-09-08
+inv-za-nfvf-department-of-trade-industry-dti-foreign-film-tv-production-rebate,http://www.thedtic.gov.za,DTIC,Overview,Confirmed duplicate of za_dtic_foreign_film,2026-09-08
+jo_rfc_rebate,https://www.film.jo/node/79,RFC,Incentives,Confirmed 25% cash rebate,2026-09-08
+jp_film_incentive,https://www.japanfilmfc.jp,Japan Film Commission,Overview,Confirmed duplicate of jp_jloc,2026-09-08
+jp_vipo_location_incentive,https://www.vipo.or.jp,VIPO,Location Incentive,Confirmed up to 50% rebate,2026-09-08
+kr_film_incentive,https://www.koreanfilm.or.kr,KOFIC,Overview,Confirmed duplicate of kr_kofic_location_incentive,2026-09-08
+kr_kofic_location_incentive,https://www.koreanfilm.or.kr/eng/html/kofic/incentive.jsp,KOFIC,Location Incentive,Confirmed 20-25% cash rebate,2026-09-08
+kz_investment_subsidy,https://kazakhcinema.kz/en/,Kazakh Cinema,Rebate,Confirmed 30% cash rebate,2026-09-08
+me_cash_rebate,https://fccg.me/en/incentives/,Film Centre Montenegro,Incentives,Confirmed 25% cash rebate,2026-09-08
+mk_cash_rebate,https://filmfund.gov.mk/,North Macedonia Film Agency,Incentives,Confirmed 20% cash rebate,2026-09-08
