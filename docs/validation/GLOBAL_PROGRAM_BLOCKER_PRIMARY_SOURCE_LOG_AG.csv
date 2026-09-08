@@ -116,3 +116,13 @@ pt_scri_pt_cash_rebate,https://www.ica-ip.pt,ICA,Overview,Confirmed duplicate of
 pt_scri_pt_medium_budget,https://www.ica-ip.pt,ICA,Overview,Confirmed duplicate of pt_cash_rebate,2026-09-08
 qa_screen_production_incentive,https://www.dohafilminstitute.com/financing/,DFI,Financing,Confirmed discretionary grant structure,2026-09-08
 se_production_rebate,https://tillvaxtverket.se,Tillväxtverket,Produktionsrabatt,Confirmed 25% cash rebate,2026-09-08
+si_cash_rebate,https://www.film-center.si/en/film-in-slovenia/cash-rebate/,Slovenian Film Centre,Cash Rebate,Confirmed 25% cash rebate,2026-09-08
+spain-basque-provincial-audiovisual-tax-credits,https://www.euskadi.eus,Basque Government,Overview,Confirmed duplicate of es_basque_tax_credit,2026-09-08
+spain-canary-islands-54,https://www.canaryislandsfilm.com,Canary Islands Film,Overview,Confirmed duplicate of es_foreign_tax_credit_canary,2026-09-08
+spain-canary-islands-foreign-production-tax-deduction,https://www.canaryislandsfilm.com,Canary Islands Film,Overview,Confirmed duplicate of es_foreign_tax_credit_canary,2026-09-08
+spain-navarre-audiovisual-production-tax-credit,https://www.navarrefilm.com/en/incentives,Navarra Film Commission,Overview,Confirmed duplicate of es_navarre_tax_credit,2026-09-08
+th_boi_incentive,https://www.boi.go.th,BOI,Overview,Confirmed duplicate/overlap of import duty,2026-09-08
+th_prd_foreign_digital_content_incentive,https://tfo.dot.go.th/,TFO,Overview,Confirmed duplicate of th_tfo_rebate,2026-09-08
+tn_film_incentive,https://www.cnci.tn,CNCI,Overview,Confirmed duplicate of tn_cnci_rebate,2026-09-08
+tr_film_incentive,https://sinema.ktb.gov.tr,Ministry of Culture,Overview,Confirmed duplicate of tr_foreign_rebate,2026-09-08
+tt_production_expenditure_rebate,https://filmtt.co.tt/film-rebate/,FilmTT,Film Rebate,Confirmed up to 35% cash rebate,2026-09-08

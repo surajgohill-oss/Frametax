@@ -254,3 +254,13 @@ pt_scri_pt_cash_rebate,pt_cash_rebate,PT,Portugal Cash Rebate,ICA,https://www.ic
 pt_scri_pt_medium_budget,pt_cash_rebate,PT,Portugal Cash Rebate,ICA,https://www.ica-ip.pt,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 qa_screen_production_incentive,qa_dfi_grants,QA,DFI Grants,Doha Film Institute,https://www.dohafilminstitute.com/financing/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
 se_production_rebate,se_production_rebate,SE,Sweden Production Rebate,Tillväxtverket,https://tillvaxtverket.se,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+si_cash_rebate,si_cash_rebate,SI,Slovenia Cash Rebate,Slovenian Film Centre,https://www.film-center.si/en/film-in-slovenia/cash-rebate/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+spain-basque-provincial-audiovisual-tax-credits,es_basque_tax_credit,ES-PV,Basque Tax Credit,Basque Government,https://www.euskadi.eus,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+spain-canary-islands-54,es_foreign_tax_credit_canary,ES-CN,Canary Islands Tax Deduction,Canary Islands Film,https://www.canaryislandsfilm.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+spain-canary-islands-foreign-production-tax-deduction,es_foreign_tax_credit_canary,ES-CN,Canary Islands Tax Deduction,Canary Islands Film,https://www.canaryislandsfilm.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+spain-navarre-audiovisual-production-tax-credit,es_navarre_tax_credit,ES-NC,Navarre Tax Credit,Navarra Film Commission,https://www.navarrefilm.com/en/incentives,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+th_boi_incentive,th_boi_import_duty,TH,BoI Duty Waiver,BOI,https://www.boi.go.th,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+th_prd_foreign_digital_content_incentive,th_tfo_rebate,TH,TFO Rebate,TFO,https://tfo.dot.go.th/,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+tn_film_incentive,tn_cnci_rebate,TN,CNCI Rebate,CNCI,https://www.cnci.tn,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+tr_film_incentive,tr_foreign_rebate,TR,Turkey Foreign Rebate,Ministry of Culture,https://sinema.ktb.gov.tr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+tt_production_expenditure_rebate,tt_cash_rebate,TT,Trinidad and Tobago Rebate,FilmTT,https://filmtt.co.tt/film-rebate/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
