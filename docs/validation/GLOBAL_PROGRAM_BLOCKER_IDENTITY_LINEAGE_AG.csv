@@ -224,3 +224,13 @@ kr_kofic_location_incentive,kr_kofic_location_incentive,KR,KOFIC Location Incent
 kz_investment_subsidy,kz_investment_subsidy,KZ,Kazakhstan Cash Rebate,Kazakh Cinema,https://kazakhcinema.kz/en/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
 me_cash_rebate,me_cash_rebate,ME,Montenegro Cash Rebate,Film Centre Montenegro,https://fccg.me/en/incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
 mk_cash_rebate,mk_cash_rebate,MK,North Macedonia Cash Rebate,Film Agency,https://filmfund.gov.mk/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+mn_production_incentive,mn_production_incentive,MN,Mongolia Cash Rebate,Mongolian National Film Council,https://filmmongolia.gov.mn/incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+mt_mfc_rebate,mt_mfc_rebate,MT,Malta Cash Rebate,Malta Film Commission,https://maltafilmcommission.com/cash-rebate/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+mu_edb_incentive,mu_film_rebate_scheme,MU,Mauritius EDB Rebate,EDB,https://www.edbmauritius.org,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+mx_federal_film_incentive_2026,mx_eficine,MX,Mexico EFICINE,IMCINE,https://www.imcine.gob.mx,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+my_finas_rebate,my_finas_rebate,MY,FIMI Cash Rebate,FINAS,https://www.finas.gov.my/en/fimi/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+nl_nfpi,nl_nfpi,NL,Netherlands Film Production Incentive,Netherlands Film Fund,https://www.filmfonds.nl/en/page/3770/netherlands-film-production-incentive,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+no_film_incentive,no_film_incentive,NO,Norway Incentive Scheme,Norwegian Film Institute,https://www.nfi.no/eng/grantsfunding/the-incentive-scheme,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+pa_film_rebate,pa_film_rebate,PA,Panama Cash Rebate,DICINE,https://dicine.gob.pa/incentivos/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+proposed_australia_producer_offset_separate_statutory_program,au_producer_offset,AU,AU Producer Offset,Screen Australia,https://www.screenaustralia.gov.au,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+proposed_canada_british_columbia_film_incentive_bc_fibc,ca_bc_fibc,CA-BC,BC FIBC,Creative BC,https://creativebc.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
