@@ -264,3 +264,21 @@ th_prd_foreign_digital_content_incentive,th_tfo_rebate,TH,TFO Rebate,TFO,https:/
 tn_film_incentive,tn_cnci_rebate,TN,CNCI Rebate,CNCI,https://www.cnci.tn,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 tr_film_incentive,tr_foreign_rebate,TR,Turkey Foreign Rebate,Ministry of Culture,https://sinema.ktb.gov.tr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 tt_production_expenditure_rebate,tt_cash_rebate,TT,Trinidad and Tobago Rebate,FilmTT,https://filmtt.co.tt/film-rebate/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+ua_cash_rebate,ua_cash_rebate,UA,Ukraine Cash Rebate,USFA,https://usfa.gov.ua/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+united kingdom-enhanced-avec-independent-film-tax-credit-iftc,gb_iftc_enhanced_avec,GB,UK IFTC,BFI/HMRC,https://www.bfi.org.uk,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+united states-digital-product-and-motion-picture-industry-incentive,us_ar_incentive,US-AR,Arkansas Incentive,AFC,https://www.arkansasedc.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+united states-media-tax-credit,us_mt_media_tax_credit,US-MT,Montana Media Credit,MT Film,https://commerce.mt.gov,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+united states-motion-media-production-tax-credit,us_mo_tax_credit,US-MO,Missouri Tax Credit,DED,https://ded.mo.gov,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+united states-west-virginia-film-production-tax-credit,us_wv_film_tax_credit,US-WV,WV Film Credit,WV Tourism,https://wvtourism.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+us_il_film_production_services_credit,us_il_film_tax_credit,US-IL,Illinois Film Tax Credit,Illinois Film Office,https://dceo.illinois.gov/film.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_ky_keiia,us_ky_keiia,US-KY,Kentucky KEIIA,KY Film Office,https://ced.ky.gov/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_nv_film_credit,us_nv_film_credit,US-NV,Nevada Film Credit,Nevada Film Office,https://nevadafilm.com/incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_ny_post_production_credit,us_ny_post_production_credit,US-NY,NY Post Production,Empire State Development,https://esd.ny.gov/new-york-state-post-production-tax-credit-program,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_or_opif,us_or_opif,US-OR,Oregon OPIF,Oregon Film,https://oregonfilm.org/opif/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_pa_film_credit,us_pa_film_credit,US-PA,Pennsylvania Film Credit,PA DCED,https://dced.pa.gov/programs/film-tax-credit-program/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_tn_performance_grant,us_tn_performance_grant,US-TN,Tennessee Grant,TN Entertainment Comm.,https://www.tnentertainment.com/incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+us_wa_mpcp,us_wa_mpcp,US-WA,Washington MPCP,Washington Filmworks,https://www.washingtonfilmworks.org/funding/motion-picture-competitiveness-program,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+uy_acau_cash_rebate,uy_acau_cash_rebate,UY,Uruguay PUA,ACAU,https://acau.gub.uy/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+uy_tax_credit_2026,uy_acau_cash_rebate,UY,Uruguay PUA,ACAU,https://acau.gub.uy/,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+uz_film_rebate,uz_film_rebate,UZ,Uzbekistan Rebate,Uzbekkino,https://uzbekkino.uz/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+za_dtic_foreign_film,za_dtic_foreign_film,ZA,DTIC Foreign Film,DTIC,http://www.thedtic.gov.za/financial-and-non-financial-support/incentives/foreign-film-and-television-production-and-post-production-incentive/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
