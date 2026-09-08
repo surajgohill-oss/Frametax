@@ -46,3 +46,13 @@ inv-ca-on-ontario-film-and-television-tax-credit-ofttc,https://www.ontariocreate
 inv-ca-on-ontario-production-services-tax-credit-opstc,https://www.ontariocreates.ca,Ontario Creates,Overview,Confirmed duplicate of ca_on_opstc,2026-09-08
 inv-ca-qc-quebec-film-and-television-production-tax-credit-sodec,https://sodec.gouv.qc.ca,SODEC,Overview,Confirmed duplicate of domestic QC credit,2026-09-08
 inv-ca-qc-quebec-production-tax-credit-foreign-productions-qprdp,https://sodec.gouv.qc.ca,SODEC,Overview,Confirmed duplicate of ca_qc_pstc,2026-09-08
+inv-cl-chile-corfo-corfo-film-incentive,https://www.corfo.cl,CORFO,Overview,Confirmed duplicate of cl_corfo_incentive,2026-09-08
+inv-es-tax-credit-for-foreign-productions-canary-islands-mainland,https://sede.agenciatributaria.gob.es,Spain Tax Agency,Overview,Confirmed duplicate of es_foreign_tax_credit,2026-09-08
+inv-eu-eu-avms-directive-local-content-investment-obligations-streamers,https://eur-lex.europa.eu,EU Lex,AVMS,"Confirmed regulatory quota, not a program",2026-09-08
+inv-fr-chronologie-des-m-dias-svod-investment-obligation-france,https://www.cnc.fr,CNC,Overview,"Confirmed windowing regulation, not a program",2026-09-08
+inv-fr-cnc-cr-dit-d-imp-t-animation-et-jeux-vid-o,https://www.cnc.fr,CNC,Overview,Confirmed duplicate of fr_trip,2026-09-08
+inv-gb-uk-audio-visual-expenditure-credit-avec,https://www.bfi.org.uk,BFI,Overview,Confirmed duplicate of gb_avec,2026-09-08
+inv-hr-croatia-film-cash-rebate,https://www.filmincroatia.hr,Film in Croatia,Overview,Confirmed duplicate of hr_cash_rebate,2026-09-08
+inv-hu-hungary-film-tax-rebate-hipa,https://nfi.hu,NFI,Overview,Confirmed duplicate of hu_base_rebate,2026-09-08
+inv-ie-tourism-ireland-f-ilte-ireland-film-tourism-production-support,https://www.tourismireland.com,Tourism Ireland,Overview,"Confirmed marketing support, not a program",2026-09-08
+inv-il-israel-film-fund-maslool-incentive-for-foreign-productions,https://investinisrael.gov.il,Ministry of Economy,Overview,Confirmed duplicate of il_foreign_production_fund,2026-09-08

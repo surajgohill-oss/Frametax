@@ -184,3 +184,13 @@ inv-ca-on-ontario-film-and-television-tax-credit-ofttc,ca_on_ofttc,CA-ON,Ontario
 inv-ca-on-ontario-production-services-tax-credit-opstc,ca_on_opstc,CA-ON,Ontario OPSTC,Ontario Creates,https://www.ontariocreates.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-ca-qc-quebec-film-and-television-production-tax-credit-sodec,ca_qc_domestic,CA-QC,QC Domestic Tax Credit,SODEC,https://sodec.gouv.qc.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-ca-qc-quebec-production-tax-credit-foreign-productions-qprdp,ca_qc_pstc,CA-QC,QC PSTC,SODEC,https://sodec.gouv.qc.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-cl-chile-corfo-corfo-film-incentive,cl_corfo_incentive,CL,CORFO IFI,CORFO,https://www.corfo.cl,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-es-tax-credit-for-foreign-productions-canary-islands-mainland,es_foreign_tax_credit,ES,Spain Foreign Tax Credit,Agencia Tributaria,https://sede.agenciatributaria.gob.es,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-eu-eu-avms-directive-local-content-investment-obligations-streamers,eu_avms_directive,EU,EU AVMS Directive,EU Commission,https://eur-lex.europa.eu,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-fr-chronologie-des-m-dias-svod-investment-obligation-france,fr_chronologie_medias,FR,Chronologie des Medias,CNC,https://www.cnc.fr,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-fr-cnc-cr-dit-d-imp-t-animation-et-jeux-vid-o,fr_trip,FR,FR TRIP Animation,CNC,https://www.cnc.fr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-gb-uk-audio-visual-expenditure-credit-avec,gb_avec,GB,UK AVEC,BFI/HMRC,https://www.bfi.org.uk,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-hr-croatia-film-cash-rebate,hr_cash_rebate,HR,Croatia Cash Rebate,HAVC,https://www.filmincroatia.hr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-hu-hungary-film-tax-rebate-hipa,hu_base_rebate,HU,Hungary Tax Rebate,NFI,https://nfi.hu,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ie-tourism-ireland-f-ilte-ireland-film-tourism-production-support,ie_tourism_support,IE,Tourism Ireland Support,Tourism Ireland,https://www.tourismireland.com,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-il-israel-film-fund-maslool-incentive-for-foreign-productions,il_foreign_production_fund,IL,Israel Foreign Production Fund,Ministry of Economy,https://investinisrael.gov.il,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
