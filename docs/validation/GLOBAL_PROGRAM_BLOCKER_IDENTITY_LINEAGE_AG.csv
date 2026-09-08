@@ -157,3 +157,11 @@ au_sa_pdv_rebate,au_sa_pdv_rebate,AU-SA,South Australia PDV Rebate,SAFC,https://
 ca_bc_dave,ca_bc_dave,CA-BC,BC DAVE Tax Credit,Creative BC,https://creativebc.com/programs/motion-picture-tax-credits/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
 ca_bc_pstc,ca_bc_pstc,CA-BC,BC PSTC,Creative BC,https://creativebc.com/programs/motion-picture-tax-credits/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
 ca_federal_pstc,ca_federal_pstc,CA,Canada Federal PSTC,CAVCO,https://www.canada.ca/en/canadian-heritage/services/funding/cavco-programs/production-services-tax-credit.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-07
+ca_nl_all_spend_credit,ca_nl_all_spend_credit,CA-NL,NL All-Spend Film and Video Production Tax Credit,PictureNL,https://www.gov.nl.ca/fin/tax-programs-incentives/business/corporation-tax/all-spend-film-and-video-production-tax-credit/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+ca_qc_pstc,ca_qc_pstc,CA-QC,Quebec Tax Credit for Film Production Services,SODEC,https://sodec.gouv.qc.ca/en/financial-assistance/film-and-television/tax-credit-production-services/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+colombia-cina-audiovisual-investment-certificate,colombia_cina,CO,Colombia CINA Certificate,Proimagenes Colombia,https://www.proimagenescolombia.com/seccion/299/cina.html,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+cr_tax_return_incentive,cr_tax_return_incentive,CR,Costa Rica Tax Return Incentive,PROCOMER,https://www.procomer.com/film-friendly-zone/incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+cz_film_incentive_animation,cz_film_incentive_animation,CZ,Czech Film Incentive (Animation),Czech Film Fund,https://fondkinematografie.cz/english/film-incentives/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+eg_empc_cashback,eg_empc_cashback,EG,Egypt EMPC Cashback,EMPC,https://www.empc.com.eg/en/cash-rebate,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+fj_film_rebate,fj_film_rebate,FJ,Fiji Film Rebate,Film Fiji,https://www.filmfiji.gov.fj/incentives,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+gb_iftc_enhanced_avec,gb_iftc_enhanced_avec,GB,Independent Film Tax Credit,BFI / HMRC,https://www.bfi.org.uk/apply-uk-independent-film-tax-credit,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
