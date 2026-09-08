@@ -194,3 +194,13 @@ inv-hr-croatia-film-cash-rebate,hr_cash_rebate,HR,Croatia Cash Rebate,HAVC,https
 inv-hu-hungary-film-tax-rebate-hipa,hu_base_rebate,HU,Hungary Tax Rebate,NFI,https://nfi.hu,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-ie-tourism-ireland-f-ilte-ireland-film-tourism-production-support,ie_tourism_support,IE,Tourism Ireland Support,Tourism Ireland,https://www.tourismireland.com,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
 inv-il-israel-film-fund-maslool-incentive-for-foreign-productions,il_foreign_production_fund,IL,Israel Foreign Production Fund,Ministry of Economy,https://investinisrael.gov.il,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-is-iceland-post-production-and-vfx-incentive,is_iceland_reimbursement,IS,Iceland Reimbursement,Film in Iceland,https://www.filminiceland.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-jo-royal-film-commission-jordan-tourism-and-hospitality-support,jo_tourism,JO,Jordan Tourism Support,Royal Film Commission,https://www.film.jo,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-jp-japan-film-commission-location-incentive-jloc-prefecture-level,jp_jloc,JP,Japan JLOC,Japan Film Commission,https://www.japanfilmfc.jp,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-jp-vipo-visual-industry-promotion-organization-animation-support,jp_vipo,JP,Japan VIPO,VIPO,https://www.vipo.or.jp,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-kr-kocca-korea-creative-content-agency-animation-and-vfx-support,kr_kocca,KR,Korea KOCCA,KOCCA,https://www.kocca.kr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ma-centre-cin-matographique-marocain-ccm-production-rebate,ma_ccm_cash_rebate,MA,Morocco CCM Rebate,CCM,https://www.ccm.ma,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ma-centre-cin-matographique-marocain-ccm-tourism-production-facilitation,ma_tourism,MA,Morocco Tourism Facilitation,CCM,https://www.ccm.ma,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-mu-mauritius-edb-film-rebate-scheme,mu_film_rebate_scheme,MU,Mauritius EDB Rebate,EDB,https://www.edbmauritius.org,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-mx-mexico-eficine-article-226-tax-credit-and-procine-fund,mx_eficine,MX,Mexico EFICINE,IMCINE,https://www.imcine.gob.mx,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-nz-air-new-zealand-screen-production-partnership-programme,nz_air_nz,NZ,Air NZ Partnership,Air New Zealand,https://www.airnewzealand.co.nz,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
