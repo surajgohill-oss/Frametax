@@ -165,3 +165,12 @@ cz_film_incentive_animation,cz_film_incentive_animation,CZ,Czech Film Incentive 
 eg_empc_cashback,eg_empc_cashback,EG,Egypt EMPC Cashback,EMPC,https://www.empc.com.eg/en/cash-rebate,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
 fj_film_rebate,fj_film_rebate,FJ,Fiji Film Rebate,Film Fiji,https://www.filmfiji.gov.fj/incentives,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
 gb_iftc_enhanced_avec,gb_iftc_enhanced_avec,GB,Independent Film Tax Credit,BFI / HMRC,https://www.bfi.org.uk/apply-uk-independent-film-tax-credit,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+ge_film_rebate,ge_film_rebate,GE,Film in Georgia Cash Rebate,Enterprise Georgia,https://www.enterprisegeorgia.gov.ge/en/business-development/film-in-georgia,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+gh_film_tax_incentive,gh_film_tax_incentive,GH,Ghana Film Tax Incentive,National Film Authority,https://nfa.gov.gh/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+hungary-hungary-base-rebate,hu_base_rebate,HU,Hungary Tax Rebate,National Film Institute (NFI),https://nfi.hu/en/tax-rebate,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+il_film_incentive,il_film_incentive,IL,Israel Film Fund,Israel Film Fund,https://www.filmfund.org.il/,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+il_foreign_production_fund,il_foreign_production_fund,IL,Israel Fund for Foreign Productions,Ministry of Economy / Invest in Israel,https://investinisrael.gov.il/HowWeHelp/Pages/Foreign-productions.aspx,EXACT_IDENTITY_MATCH,PRIMARY_AUTHORITY,2026-09-08
+inv-au-australian-content-standard-streaming-service-investment-obligations,au_streaming_obligations,AU,Streaming Service Investment Obligations,ACMA,https://www.acma.gov.au,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-au-location-offset-post-digital-and-visual-effects-pdv-offset,au_pdv_offset,AU,AU PDV/Location Offset,Office for the Arts,https://www.arts.gov.au,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-au-nsw-nsw-government-screen-incentive-via-create-nsw,au_nsw_pdv_rebate,AU-NSW,NSW Government Screen Incentive,Screen NSW,https://www.screen.nsw.gov.au,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-au-tourism-australia-film-and-content-production-support,au_tourism_australia_support,AU,Tourism Australia Support,Tourism Australia,https://www.tourism.australia.com,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
