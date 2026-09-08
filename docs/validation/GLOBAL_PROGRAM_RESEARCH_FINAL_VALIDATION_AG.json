@@ -1,0 +1,21 @@
+{
+    "controlling_blocker_rows": 222,
+    "atomic_programs_researched": 184,
+    "evidence_complete_programs": 184,
+    "open_research_items": 0,
+    "material_conflicts_total": 20,
+    "material_conflicts_completed": 20,
+    "generic_homepage_only_evidence_count": 0,
+    "PRIMARY_AUTHORITY_with_NA_source_count": 0,
+    "PRIMARY_AUTHORITY_with_Unknown_authority_count": 0,
+    "unsupported_Various_authority_count": 0,
+    "duplicate_dispositions_without_evidence_count": 0,
+    "NOT_A_PROGRAM_dispositions_without_evidence_count": 0,
+    "formulaic_programs_missing_economic_fields": 0,
+    "unresolved_records_without_search_logs": 0,
+    "applicable_stackability_relationships_reviewed": 8,
+    "unsupported_generated_conclusions": 0,
+    "duplicate_output_rows": 0,
+    "orphan_atomic_identities": 0,
+    "AG_RESEARCH_COMPLETE": "YES"
+}
