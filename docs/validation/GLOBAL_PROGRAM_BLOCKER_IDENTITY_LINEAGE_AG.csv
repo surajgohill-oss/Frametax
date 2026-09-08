@@ -204,3 +204,13 @@ inv-ma-centre-cin-matographique-marocain-ccm-tourism-production-facilitation,ma_
 inv-mu-mauritius-edb-film-rebate-scheme,mu_film_rebate_scheme,MU,Mauritius EDB Rebate,EDB,https://www.edbmauritius.org,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-mx-mexico-eficine-article-226-tax-credit-and-procine-fund,mx_eficine,MX,Mexico EFICINE,IMCINE,https://www.imcine.gob.mx,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-nz-air-new-zealand-screen-production-partnership-programme,nz_air_nz,NZ,Air NZ Partnership,Air New Zealand,https://www.airnewzealand.co.nz,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-nz-new-zealand-screen-production-rebate-nzspg-international,nz_nzspr_international,NZ,NZSPR International,NZFC,https://www.nzfilm.co.nz,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-nz-tourism-new-zealand-screen-tourism-programme,nz_tourism,NZ,NZ Tourism Programme,Tourism NZ,https://www.tourismnewzealand.com,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-sa-saudi-film-commission-sfc-production-rebate,sa_cash_rebate,SA,Saudi Cash Rebate,Film AlUla / SFC,https://film.sa,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-sg-imda-digital-media-content-programme-animation-vfx,sg_imda_grant,SG,IMDA Grant,IMDA,https://www.imda.gov.sg,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-th-thailand-board-of-investment-boi-film-incentive,th_boi_incentive,TH,BoI Incentive,BOI,https://www.boi.go.th,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-tn-tunisia-national-centre-for-cinema-and-image-cnci-cash-rebate,tn_cnci_rebate,TN,CNCI Rebate,CNCI,https://www.cnci.tn,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-tr-ministry-of-culture-and-tourism-k-lt-r-film-production-grants,tr_domestic_support,TR,Turkey Grants,Ministry of Culture,https://sinema.ktb.gov.tr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-tr-turkey-cinema-general-directorate-film-production-support,tr_domestic_support_gen,TR,Turkey Grants,Ministry of Culture,https://sinema.ktb.gov.tr,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-us-ca-california-film-television-tax-credit-program-3-0,us_ca_film_tax_credit,US-CA,California Film Tax Credit,CFC,https://film.ca.gov,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-us-state-film-tax-credits-multi-state,us_multi_state,US,US Multi State,Various,NA,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08

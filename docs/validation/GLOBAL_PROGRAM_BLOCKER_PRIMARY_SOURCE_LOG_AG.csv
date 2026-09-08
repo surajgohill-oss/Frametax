@@ -66,3 +66,13 @@ inv-ma-centre-cin-matographique-marocain-ccm-tourism-production-facilitation,htt
 inv-mu-mauritius-edb-film-rebate-scheme,https://www.edbmauritius.org,EDB Mauritius,Overview,Confirmed duplicate of mu_film_rebate_scheme,2026-09-08
 inv-mx-mexico-eficine-article-226-tax-credit-and-procine-fund,https://www.imcine.gob.mx,IMCINE,Overview,Confirmed duplicate of mx_eficine,2026-09-08
 inv-nz-air-new-zealand-screen-production-partnership-programme,https://www.airnewzealand.co.nz,Air NZ,Overview,"Confirmed corporate partnership, not a program",2026-09-08
+inv-nz-new-zealand-screen-production-rebate-nzspg-international,https://www.nzfilm.co.nz,NZFC,Overview,Confirmed duplicate of nz_nzspr_international,2026-09-08
+inv-nz-tourism-new-zealand-screen-tourism-programme,https://www.tourismnewzealand.com,Tourism NZ,Overview,"Confirmed marketing support, not a program",2026-09-08
+inv-sa-saudi-film-commission-sfc-production-rebate,https://film.sa,SFC,Overview,Confirmed duplicate of sa_cash_rebate,2026-09-08
+inv-sg-imda-digital-media-content-programme-animation-vfx,https://www.imda.gov.sg,IMDA,Overview,Confirmed duplicate of sg_imda_grant,2026-09-08
+inv-th-thailand-board-of-investment-boi-film-incentive,https://www.boi.go.th,BOI,Overview,Confirmed duplicate/overlap of standard import duty waivers,2026-09-08
+inv-tn-tunisia-national-centre-for-cinema-and-image-cnci-cash-rebate,https://www.cnci.tn,CNCI,Overview,Confirmed duplicate of tn_cnci_rebate,2026-09-08
+inv-tr-ministry-of-culture-and-tourism-k-lt-r-film-production-grants,https://sinema.ktb.gov.tr,Ministry of Culture,Overview,Confirmed duplicate of tr_domestic_support,2026-09-08
+inv-tr-turkey-cinema-general-directorate-film-production-support,https://sinema.ktb.gov.tr,Ministry of Culture,Overview,Confirmed duplicate of tr_domestic_support,2026-09-08
+inv-us-ca-california-film-television-tax-credit-program-3-0,https://film.ca.gov,California Film Commission,Overview,Confirmed duplicate of us_ca_film_tax_credit,2026-09-08
+inv-us-state-film-tax-credits-multi-state,NA,Various,Overview,"Confirmed aggregate concept, not an actual program",2026-09-08
