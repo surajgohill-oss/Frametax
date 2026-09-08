@@ -174,3 +174,13 @@ inv-au-australian-content-standard-streaming-service-investment-obligations,au_s
 inv-au-location-offset-post-digital-and-visual-effects-pdv-offset,au_pdv_offset,AU,AU PDV/Location Offset,Office for the Arts,https://www.arts.gov.au,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-au-nsw-nsw-government-screen-incentive-via-create-nsw,au_nsw_pdv_rebate,AU-NSW,NSW Government Screen Incentive,Screen NSW,https://www.screen.nsw.gov.au,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
 inv-au-tourism-australia-film-and-content-production-support,au_tourism_australia_support,AU,Tourism Australia Support,Tourism Australia,https://www.tourism.australia.com,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-bc-bc-interactive-digital-media-tax-credit-idmtc,ca_bc_idmtc,CA-BC,BC IDMTC,Creative BC,https://creativebc.com/programs/interactive-digital-media-tax-credit/,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-bc-bc-production-services-tax-credit-pstc,ca_bc_pstc,CA-BC,BC PSTC,Creative BC,https://creativebc.com,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-canada-production-tax-credit-cptc-provincial-credits,ca_federal_cptc,CA,Canada CPTC,CAVCO,https://www.canada.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-crtc-online-streaming-act-bill-c-11-local-content-obligations,ca_crtc_bill_c11,CA,CRTC Bill C-11 Obligations,CRTC,https://crtc.gc.ca,NOT_A_PROGRAM,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-on-northern-ontario-heritage-fund-production-fund,ca_on_nohfc,CA-ON,NOHFC Production Fund,Ontario Creates / NOHFC,https://nohfc.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-on-ontario-computer-animation-and-special-effects-tax-credit-ocase,ca_on_ocase,CA-ON,Ontario OCASE,Ontario Creates,https://www.ontariocreates.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-on-ontario-film-and-television-tax-credit-ofttc,ca_on_ofttc,CA-ON,Ontario OFTTC,Ontario Creates,https://www.ontariocreates.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-on-ontario-production-services-tax-credit-opstc,ca_on_opstc,CA-ON,Ontario OPSTC,Ontario Creates,https://www.ontariocreates.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-qc-quebec-film-and-television-production-tax-credit-sodec,ca_qc_domestic,CA-QC,QC Domestic Tax Credit,SODEC,https://sodec.gouv.qc.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
+inv-ca-qc-quebec-production-tax-credit-foreign-productions-qprdp,ca_qc_pstc,CA-QC,QC PSTC,SODEC,https://sodec.gouv.qc.ca,DUPLICATE_OR_ALIAS,PRIMARY_AUTHORITY,2026-09-08
