@@ -1,0 +1,29 @@
+{
+  "active_claims_without_effective_date": 183,
+  "alias_or_duplicate_rows_over_atomic_count": 55,
+  "blocker_coverage": {
+    "ALL_LINEAGE_ATOMICS_HAVE_FINAL_ROW": 40,
+    "DIRECT_FINAL_ROW": 128,
+    "NO_FINAL_RESEARCH_COVERAGE": 42,
+    "PARTIAL_LINEAGE_ATOMIC_COVERAGE": 12
+  },
+  "domain_root_or_generic_rows": 26,
+  "duplicate_or_alias_claim_rows": 95,
+  "evidence_complete_programs": 0,
+  "not_a_program_claim_rows": 32,
+  "original_blocker_rows": 222,
+  "original_conflict_classifications_resolved": 17,
+  "original_conflict_classifications_unresolved": 3,
+  "original_conflict_rows": 20,
+  "original_conflicts_present_in_AG_final_20": 1,
+  "primary_output_rows": 184,
+  "rows_with_internal_AG_conflict": 58,
+  "stackability_rows_fully_accepted_as_AG_claimed": 0,
+  "stackability_rows_reviewed": 8,
+  "substituted_non_original_rows_in_AG_final_20": 19,
+  "unique_atomic_program_ids": 129,
+  "unique_source_blocker_ids": 184,
+  "unique_source_urls": 127,
+  "unique_source_urls_http_200": 41,
+  "unique_source_urls_not_http_200": 86
+}

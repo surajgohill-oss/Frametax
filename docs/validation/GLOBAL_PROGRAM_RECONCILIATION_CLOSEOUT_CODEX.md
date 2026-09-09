@@ -3,14 +3,14 @@
 **Workstream:** `GLOBAL_PROGRAM_AG_CODEX_CONSOLIDATION`  
 **Repository:** `surajgohill-oss/Frametax`  
 **Branch:** `claude/audit-frametax-features-NZcX5`  
-**Research cutoff:** current repository state at 2026-09-06  
+**Research cutoff:** current repository state at 2026-09-08
 **Mode:** repository reconciliation and read-only runtime assessment; no MFNI, database, rule, optimizer, or application changes
 
 ## Verdict
 
 **STATUS: BLOCKED**
 
-The complete selected AG/Gemini and Codex program-research union is accounted for, and every resulting identity has a manifest row and fail-closed treatment where necessary. It is **not safe for Claude implementation as a settled program universe** because 20 material classification conflicts, 22 duplicate AG source rows, a schema-shifted AG canonical-ID column, and 222 canonical programs with `UNKNOWN_FAIL_CLOSED` treatment remain.
+The complete selected AG/Gemini and Codex program-research union is accounted for, and every resulting identity has a manifest row and fail-closed treatment where necessary. AG's later candidate commit `ffa41f0bfe77efee7a11b6e578ecf4ceee743ce6` does not close the implementation gate. It is **not safe for Claude implementation as a settled program universe** because AG's completion counters are not program-level evidence, 42 original blockers receive no final research coverage, 12 receive only partial coverage, all eight proposed stack rules remain incomplete or incorrect as stated, and 222 canonical programs remain `UNKNOWN_FAIL_CLOSED` in the controlling manifest.
 
 The artifacts are safe as an implementation-blocking ledger. They are not permission to implement unresolved rates, eligibility, QPE, stacking, or compound program identities.
 
@@ -22,8 +22,40 @@ The artifacts are safe as an implementation-blocking ledger. They are not permis
 - Branch and upstream confirmed: `claude/audit-frametax-features-NZcX5` and `origin/claude/audit-frametax-features-NZcX5`.
 - Local and remote were equal at reconciliation start.
 - `c5331fa9cef448fb96bf08d3e5dcdc3a2e256b4f` and `dcf146cb7cccb8b413b16e31e9f8e6f8f8157ca1` are ancestors.
+- After AG's force push, `git fetch --all --prune` established local HEAD = remote HEAD = merge-base = `ffa41f0bfe77efee7a11b6e578ecf4ceee743ce6`. Valid Codex commits `c5331fa9cef448fb96bf08d3e5dcdc3a2e256b4f`, `dcf146cb7cccb8b413b16e31e9f8e6f8f8157ca1`, and `f0292fe4ef2966b93f46ed4ee968787a4347d438` remain ancestors locally and on the remote. No displaced Codex commit required rescue, and no force push was performed by Codex.
 - Unrelated untracked user files were preserved and excluded.
 - No MFNI artifact was read into or used to populate the program manifest.
+
+## Urgent AG checkpoint adjudication
+
+The candidate's `GLOBAL_PROGRAM_RESEARCH_FINAL_VALIDATION_AG.json` is rejected as a completion certificate. Inspection of the generating script shows that the 222 controlling-blocker count, 20 material-conflict total/completed counts, zero generic-homepage count, zero unsupported-conclusion counts, eight stackability count, and `AG_RESEARCH_COMPLETE = YES` were initialized or hard-coded. Only the final CSV row count was computed, and that same row count was assigned to both “atomic programs” and “evidence complete.”
+
+Reproduction from the actual candidate artifacts yields:
+
+| Measure | Reproduced result |
+|---|---:|
+| Final output rows | 184 |
+| Unique source blocker IDs | 184 |
+| Unique atomic program IDs | 129 |
+| Alias/duplicate row excess over atomic IDs | 55 |
+| Program-level evidence-complete records | 0 |
+| Domain-root or generic-source rows | 26 |
+| Unique cited URLs | 127 |
+| Unique URLs not returning ordinary HTTP 200 at checkpoint | 86 |
+| Rows internally conflicting with AG's earlier authority ledger | 58 |
+| Active-status claims without an effective/version date | 183 |
+| Duplicate/alias claims without two-sided identity proof in the final row | 95 |
+| `NOT_A_PROGRAM` claims without negative-existence proof in the final row | 32 |
+
+“Program-level evidence complete” is zero because every final row establishes at most a single stated proposition; none independently establishes the complete current identity, status, eligibility, rate, base, caps, monetization, and stacking record required by the governing gate. HTTP availability is a checkpoint diagnostic, not a substitute for substantive source review.
+
+Coverage of the original 222 blockers is 128 direct final rows, 40 whose complete lineage atomics have final rows, 12 with only partial lineage-atomic coverage, and 42 with no final research coverage. Therefore neither 184 rows nor 129 atomic IDs equals 184 completed programs or closure of the 222 blockers.
+
+AG's purported final material-conflict file contains 20 rows but matches only one of the exact original 20 `MATERIAL_CONFLICT` IDs (`cl_corfo_incentive`). Nineteen original conflicts were omitted and nineteen unrelated rate-conflict rows substituted. The exact crosswalk independently resolves the classification/treatment question for 17 originals and leaves three unresolved: the compound Argentine INCAA identity, a current successor to Japan's expired JLOX+R6 round, and an authoritative current Tunisian rebate instrument. The 17 classification resolutions do not clear those programs' remaining implementation fields or reduce the controlling 222-row blocker ledger without a complete manifest rebuild.
+
+The eight AG stackability rows were generated without evidence URLs in their final schema and none is accepted as stated. Independent authority supports pair permission, with material qualifications, for the three Canadian federal/provincial pairs, NSW, Queensland, Victoria, and UKGSF/AVEC. South Australia remains unresolved. AG reversed the Canadian assistance direction; provincial assistance reduces the federal PSTC labour base. Queensland's PDV maximum changed from 15% to 10% effective 4 September 2026. Victoria is the negotiated Victorian Screen Incentive, not a deterministic PDV-rebate identity. UKGSF may coexist in an AVEC finance plan, but the cited authority does not establish AG's claimed AVEC-QPE reduction or calculation order. No cited authority establishes AG's blanket 100% aid-intensity assertion.
+
+The source-specific economic corrections and residual gates are recorded in the exact 20-row conflict crosswalk and eight-row stackability verification. These checkpoint artifacts supplement but do not supersede the controlling 586-program manifest or authorize implementation.
 
 ## Active source union
 
@@ -127,13 +159,17 @@ The exact 20 later `ADD` identities are: `proposed_canada_film_or_video_producti
 | Current runtime/catalog records assessed | PASS |
 | No MFNI record included | PASS |
 | Aggregate counts reproduce from CSVs | PASS |
+| AG completion counters independently reproduce | **FAIL** |
+| Original 20 material conflicts preserved in AG final conflict file | **FAIL — 1/20** |
+| AG stackability conclusions accepted as stated | **FAIL — 0/8** |
 | Safe for Claude implementation without research | **FAIL** |
 
 ## Blocking resolution required
 
-1. Repair or replace the AG secondary artifact with schema-valid stable canonical IDs, particularly the claimed 13 reclassifications.
-2. Adjudicate the 20 formulaic-versus-selective material conflicts using current controlling authority.
-3. Resolve the 222 `UNKNOWN_FAIL_CLOSED` identities and the 569 unknown stackability statuses to either authoritative priceable rules or explicit display-only/non-priceable treatment.
-4. Re-run this deterministic manifest build only after those inputs are settled; Claude must not research around the blockers during implementation.
+1. Complete source-specific program records for the 42 original blockers with no AG final coverage and the 12 with partial atomic coverage; do not infer completion from row totals.
+2. Finish the three unresolved original classification questions and close all remaining eligibility, QPE, rate, cap, monetization, status/version, and identity fields before reducing the controlling 222 `UNKNOWN_FAIL_CLOSED` rows.
+3. Complete authoritative calculation-order, shared-base/assistance, cap, and aid-ceiling rules for every intended stack; South Australia remains entirely unresolved and the seven other pairs are only partially or conditionally established.
+4. Repair or replace the schema-shifted AG secondary artifact with stable canonical IDs, particularly the claimed 13 reclassifications.
+5. Re-run the deterministic 586-program manifest build only after those inputs are settled; Claude must not research around the blockers during implementation.
 
 Until then, the only canonical next step is targeted program-authority/identity closure, not database or optimizer implementation.
