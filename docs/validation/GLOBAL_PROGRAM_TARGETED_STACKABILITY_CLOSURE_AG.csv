@@ -1,5 +1,0 @@
-original_blocker_id,exact_programs_involved,combination_permitted,shared_QPE_restrictions,assistance_reductions,caps_or_aid_intensity_limits,order_of_calculation,exact_evidence,optimizer_consequence
-Argentina_Stackability,"ar_incaa_national, ar_buenos_aires_regional",NO,NA,NA,NA,NA,https://www.incaa.gov.ar/regulations (Section 4 states provincial funds exclude INCAA),AUTHORITY_EXHAUSTED_FAIL_CLOSED
-Japan_Stackability,"jp_vipo_location, jp_jloc",NO,NA,NA,NA,NA,https://www.vipo.or.jp/en/project/ (Guidelines state federal funds cannot be combined),AUTHORITY_EXHAUSTED_FAIL_CLOSED
-Tunisia_Stackability,"tn_cultural_fund, tn_tourism_fund",NO,NA,NA,NA,NA,https://www.cnci.tn/en/ (Comprehensive review found no stacking provision),AUTHORITY_EXHAUSTED_FAIL_CLOSED
-South_Australia_Stackability,"au_producer_offset, au_sa_pdv_rebate",NO,NA,NA,NA,NA,"https://safc.com.au/ (No clear rule on federal PO stacking, fail closed)",AUTHORITY_EXHAUSTED_FAIL_CLOSED
