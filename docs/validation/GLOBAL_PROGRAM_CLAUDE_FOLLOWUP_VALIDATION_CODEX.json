@@ -1,0 +1,89 @@
+{
+  "workstream": "CODEX_CANONICAL_INCENTIVE_WIRING_AUDIT_AND_BLOCKER_ADJUDICATION",
+  "status": "READY_FOR_CLAUDE_BOUNDED_REMEDIATION",
+  "accepted_research_base": "a5958b1211ac6e8071f40811a4781166466ef768",
+  "audited_claude_commit": "a7f51152cad58da8561377cd7bc8fae8476cacc7",
+  "counts": {
+    "manifest_rows": 586,
+    "claude_result_rows": 586,
+    "prior_all_programs": 303,
+    "claude_appended_entries": 164,
+    "current_all_programs": 467,
+    "reported_remaining_rows": 146,
+    "reported_remaining_breakdown": {
+      "B1": 46,
+      "B2": 6,
+      "B3": 17,
+      "INSUFFICIENT_AUTHORITATIVE_DATA": 77
+    },
+    "codex_classification": {
+      "FULLY_WIRED": 56,
+      "CORRECTLY_NON_PRICED": 422,
+      "ALIAS_RESOLVED": 1,
+      "RETIRED": 1,
+      "BLOCKED_B1": 46,
+      "BLOCKED_B2": 6,
+      "BLOCKED_B3": 12,
+      "OTHER_BLOCKER": 42
+    },
+    "bounded_followup_rows": 107,
+    "B4_code_paths": 1
+  },
+  "findings": {
+    "all_146_reconciled": true,
+    "missing_76_explanation": "The apparent 70-versus-146 gap is 77 INSUFFICIENT_AUTHORITATIVE_DATA rows less the separately counted B4 code path: B1+B2+B3+77 = 146; B4 is not a remaining CSV row.",
+    "insufficient_rows": "42 already price through pre-existing rules and have no accepted corrective fact; 35 remain non-priced. They are not new-research blockers in this bounded pass.",
+    "claude_new_economic_consumption_proven": false,
+    "claude_append_defect": "164 additions include 13 MERGE_ALIAS rows and one RETIRE row as independent entries, plus 28 same-jurisdiction same-program collisions with the pre-existing catalog.",
+    "B1": {
+      "display_only_zero_guaranteed": 13,
+      "fail_closed": 33,
+      "expected_value": 0
+    },
+    "B2_resolved": 6,
+    "B3_specs": 17,
+    "B3_open": 12,
+    "B3_closed": 5,
+    "B4_specified": true,
+    "runtime": {
+      "Little Utopia": {
+        "structures": 347,
+        "baseline": "mu_edb_incentive",
+        "rate_status": "PRICED",
+        "incentive": 573059.7,
+        "npc": 3791333.3,
+        "winner_status": "no Recommended; AUTHORITY_UNRESOLVED role gate",
+        "classification": "PREEXISTING_QUALIFICATION_GATE_NOT_CLAUDE_REGRESSION"
+      },
+      "F#K Valentine's Day": {
+        "structures": 444,
+        "baseline": "gr_cash_rebate",
+        "rate_status": "PRICED",
+        "incentive": 1445659.84,
+        "npc": 3072027.16,
+        "winner_status": "no Recommended; USER_FACT_REQUIRED cultural gate",
+        "classification": "PREEXISTING_QUALIFICATION_GATE_NOT_CLAUDE_REGRESSION"
+      },
+      "Bad Hombres": {
+        "structures": 344,
+        "baseline": "us_nm_film_credit",
+        "incentive": 596910.25,
+        "npc": 1885112.75,
+        "winner_status": "Recommended"
+      },
+      "Lips Like Sugar": {
+        "structures": 446,
+        "baseline": "us_ca_film_credit",
+        "incentive": 3459278.9,
+        "npc": 8524375.1,
+        "winner_status": "Recommended; must migrate via ca_film_30 alias without economic change"
+      }
+    }
+  },
+  "gates": {
+    "safe_for_claude_bounded_remediation": true,
+    "final_runtime_acceptance_granted": false,
+    "broad_research_performed": false,
+    "application_code_changed": false
+  }
+}
