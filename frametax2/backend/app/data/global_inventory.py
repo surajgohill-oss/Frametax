@@ -1036,3 +1036,21 @@ ALL_PROGRAMS = ALL_PROGRAMS + BROADCASTER_FUND_PROGRAMS
 from app.data.global_inventory_special_categories import SPECIAL_CATEGORY_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + SPECIAL_CATEGORY_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Optimizer Final Canonical Program Universe Wiring (2026-09-09) — 164
+# catalog entries for manifest programs previously absent from the database
+# entirely (docs/validation/CANONICAL_PROGRAM_IMPLEMENTATION_MANIFEST_FINAL_
+# CODEX.csv, required_action in {DISPLAY_ONLY, FAIL_CLOSED, MERGE_ALIAS,
+# RETIRE}, current_engine_status=ABSENT_FROM_DATABASE). Generated
+# programmatically from the manifest itself (see docs/validation/
+# GLOBAL_PROGRAM_CANONICAL_WIRING_CLAUDE.md) — never fabricated. Pure
+# additions: none of these canonical_program_ids were previously
+# registered anywhere. All entries are confidence_tier=DISCOVERY with
+# program_slug=None (never auto-priced). One canonical id
+# (ag-be-vlg-...-screen-flanders) is deliberately excluded as an alias of
+# the already-present canonical `vaf_flanders_audiovisual_fund`.
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_manifest_final import MANIFEST_FINAL_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + MANIFEST_FINAL_PROGRAMS

@@ -1,0 +1,85 @@
+{
+  "artifact": "GLOBAL_PROGRAM_DATABASE_PARITY_CLAUDE.json",
+  "generated": "2026-09-10",
+  "base_commit": "a5958b1211ac6e8071f40811a4781166466ef768",
+  "accepted_manifest_programs": 586,
+  "result_rows_reconciled": 586,
+  "sum_check_ok": true,
+  "manifest_required_action_counts": {
+    "DISPLAY_ONLY": 264,
+    "FAIL_CLOSED": 201,
+    "UPDATE": 81,
+    "MERGE_ALIAS": 13,
+    "ADD": 16,
+    "RETIRE": 1,
+    "NO_CHANGE": 10
+  },
+  "manifest_canonical_treatment_counts": {
+    "DISCRETIONARY_DISPLAY_ONLY": 211,
+    "UNKNOWN_FAIL_CLOSED": 201,
+    "CONDITIONAL_FORMULAIC": 53,
+    "AUTOMATIC_FORMULAIC": 54,
+    "NON_ECONOMIC_DISPLAY_ONLY": 53,
+    "SUPERSEDED_OR_ALIAS": 13,
+    "INACTIVE_OR_EXPIRED": 1
+  },
+  "implementation_status_counts": {
+    "VERIFIED_ALREADY_NON_PRICED": 265,
+    "DEFERRED_SYSTEMIC_CONFLICT": 46,
+    "RULE_IDENTIFIED_NOT_YET_WIRED": 17,
+    "IMPLEMENTED_THIS_PASS": 164,
+    "MERGED_ALIAS_OF_PRESENT_CANONICAL": 1,
+    "DEFERRED_INSUFFICIENT_AUTHORITATIVE_DATA": 77,
+    "BLOCKED_IDENTITY_CONFLICT": 6,
+    "VERIFIED_NO_CHANGE_NEEDED": 10
+  },
+  "disposition_rollup": {
+    "terminal_reconciled": 440,
+    "deferred_with_reason": 140,
+    "blocked_reported": 6,
+    "uncategorized": 0
+  },
+  "database_state": {
+    "all_programs_count": 467,
+    "manifest_final_catalog_entries_added": 164,
+    "manifest_final_distinct_canonical_ids": 164,
+    "registered_rate_rule_slugs": 125,
+    "registered_rate_rule_slugs_delta_this_pass": 0
+  },
+  "integrity_checks": {
+    "duplicate_canonical_ids": [],
+    "duplicate_canonical_id_count": 0,
+    "orphan_aliases": [],
+    "orphan_alias_count": 0,
+    "new_auto_priced_programs_this_pass": 0,
+    "migration_idempotent": true,
+    "all_catalog_additions_confidence_tier": [
+      "DISCOVERY"
+    ],
+    "all_catalog_additions_program_slug_none": true
+  },
+  "authority_exhausted": {
+    "manifest_authority_exhausted_rows": 201,
+    "gate_status": "PARTIAL \u2014 201 authority-exhausted programs carry FAIL_CLOSED / UNKNOWN_FAIL_CLOSED treatment in the manifest and are non-priced in the engine (never assigned program_slug). A dedicated resolve_program_rate() authority-exhaustion refusal gate was NOT added this pass because the bulk demotion of currently-priced slugs was deferred (systemic conflict cluster). No authority-exhausted program auto-prices today because none is registered with a slug; the explicit refusal gate remains a remaining item."
+  },
+  "parity_verdict": "BLOCKED_WITH_ENUMERATED_REMAINING_ITEMS \u2014 all 586 canonical programs have a deterministic non-fabricated disposition; 440 terminal reconciled, 77 manifest-directed display/no-economic-change, 63 with real remaining work (46 systemic-conflict + 17 formulaic corrections), 6 identity-mapping blockers. 0 duplicate canonical ids, 0 new auto-priced programs, 0 stale runtime paths, 0 regression across the four locked projects.",
+  "workstream": "GLOBAL_CANONICAL_INCENTIVE_UNIVERSE_WIRING_CLAUDE",
+  "status": "BLOCKED",
+  "mfni_status": "PARKED_UNCHANGED",
+  "settled_stackability": {
+    "artifact": "GLOBAL_PROGRAM_STACKABILITY_SETTLED_CODEX.csv",
+    "settled_relationships": 11,
+    "registered_slug_pair_rules_live": 228,
+    "manifest_rows_UNKNOWN_FAIL_CLOSED": 569,
+    "manifest_rows_PAIR_RULES_PRESENT": 17,
+    "new_pair_rules_added_this_pass": 0,
+    "verdict": "ALREADY_WIRED_AT_BASE_COMMIT \u2014 manifest stackability column marks the 17 non-fail-closed rows PAIR_RULES_PRESENT; all present in _SLUG_PAIR_RULES; 33 treaty-coproduction stacking tests pass."
+  },
+  "blocked_report": {
+    "B1_systemic_discretionary_conflict_rows": 46,
+    "B2_identity_mapping_ambiguity_rows": 6,
+    "B3_formulaic_corrections_not_hand_wired_rows": 17,
+    "B4_authority_exhaustion_refusal_gate": "NOT_ADDED_outcome_holds_by_construction_no_slug_no_price",
+    "insufficient_data_not_a_blocker_rows": 77
+  }
+}
