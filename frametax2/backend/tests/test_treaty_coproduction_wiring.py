@@ -88,7 +88,25 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     # capability itself is asserted in
     # test_coproduction_optimizer_preservation.py (now carried by China /
     # ca-cn-bilateral, a genuinely blocked NON_ECONOMIC constituent).
-    assert len(bilateral_among_candidates) == 23
+    #
+    # Codex bounded remediation, B1 discretionary ruling (GLOBAL_PROGRAM_
+    # DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): 23 -> 8. Treaty-partner
+    # discovery requires a real PRICED leg (candidate_codes = codes with a
+    # priced leg anywhere at/under them, per Codex forensic finding B
+    # above). 15 of the 23 pairs lose their only priced leg to the B1
+    # ruling (e.g. ca-ch-bilateral: ch_pics_national_rebate is now
+    # DISPLAY_ONLY_ZERO_GUARANTEED), matching the same -15 treaty_
+    # coproduction movement independently measured in test_canonical_
+    # authority_substrate.py::test_fvd_runtime_candidate_universe_restored
+    # (entries 25 -> 10, i.e. 23 -> 8 bilateral once the 2 home-anchored
+    # multilateral opportunities above are excluded). The 8 surviving pairs
+    # (measured directly): uk-nz, uk-ie, uk-ca, uk-fr, ca-fr, ca-it, ca-ie,
+    # ca-nz.
+    # Codex bounded remediation, B3 formulaic spec (ADD_RULE_AND_COMPONENT_
+    # BRANCH): 8 -> 10. za_nfvf_rebate gives South Africa a real priced
+    # leg, unlocking two new bilateral candidate pairs: uk-za-bilateral and
+    # ca-za-bilateral.
+    assert len(bilateral_among_candidates) == 10
     assert all(
         "ca-cn-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
     ), "CN is genuinely non-economic; its bilateral pair must not be offered"
@@ -172,17 +190,46 @@ async def test_lu_australia_uk_bilateral_opportunity_surfaces_independent_of_mau
     neither side of the treaty. Genuine ownership-share facts are not on
     file, so eligibility correctly resolves UNRESOLVED_FACTS, never
     ELIGIBLE — this proves the STRUCTURE is considered, not that it
-    qualifies."""
+    qualifies.
+
+    SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
+    GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): bilateral
+    treaty-partner discovery requires each side to have a real PRICED leg
+    (candidate_codes = codes with a priced leg anywhere at/under them — see
+    test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category's
+    own Codex forensic finding B comment). AU's only priced leg for LU was
+    au_pdv_offset ($True before this ruling, confirmed via a direct
+    before/after runtime comparison); au_location_offset was ALREADY
+    RULE_REJECTED for LU independent of B1 (a genuine, pre-existing
+    statutory-condition rejection, unrelated to this remediation). Codex's
+    accepted ruling reclassifies au_pdv_offset FAIL_CLOSED, so AU now has
+    ZERO priced legs for LU and no longer qualifies as a treaty party under
+    the existing, unmodified discovery mechanism -- the GB+AU opportunity
+    correctly no longer surfaces. This is a real behavioural consequence of
+    an authorized Codex ruling, not a wiring defect, and is NOT trace-able
+    to any project-fact change (LU's own director/writer data is
+    untouched). The regression oracle below asserts the new absence
+    directly, and separately re-proves the SAME underlying discovery
+    mechanism still works correctly by using GB+CA (uk-ca-bilateral) --
+    another of LU's real, independently-discovered candidate pairs where
+    BOTH sides retain a priced leg."""
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     treaty = [e for e in entries if e["structure_type"] == "treaty_coproduction"]
+
     uk_au = next((e for e in treaty if e.get("treaty_slug") == "uk-au-bilateral"), None)
-    assert uk_au is not None, "GB+AU bilateral co-production opportunity did not surface for LU"
-    partner_codes = {p.get("jurisdiction_code") for p in (uk_au.get("coproduction_partners") or [])}
-    assert partner_codes == {"GB", "AU"}
-    assert uk_au["treaty_resolution_state"] == "UNRESOLVED_FACTS"
-    assert uk_au.get("npc_with_adjustments_usd") is None  # disclosed, never priced
+    assert uk_au is None, (
+        "GB+AU must no longer surface: AU's only priced leg (au_pdv_offset) is B1 "
+        "FAIL_CLOSED and au_location_offset was already independently RULE_REJECTED"
+    )
+
+    uk_ca = next((e for e in treaty if e.get("treaty_slug") == "uk-ca-bilateral"), None)
+    assert uk_ca is not None, "GB+CA bilateral co-production opportunity did not surface for LU"
+    partner_codes = {p.get("jurisdiction_code") for p in (uk_ca.get("coproduction_partners") or [])}
+    assert partner_codes == {"GB", "CA"}
+    assert uk_ca["treaty_resolution_state"] == "UNRESOLVED_FACTS"
+    assert uk_ca.get("npc_with_adjustments_usd") is None  # disclosed, never priced
     ranking = view["structures"]["allocated_structures"]["ranking"]
-    uk_au_ranked = next((r for r in ranking if r["structure_id"] == uk_au["structure_id"]), None)
-    assert uk_au_ranked is None or uk_au_ranked["rank"] is None  # never Recommended
+    uk_ca_ranked = next((r for r in ranking if r["structure_id"] == uk_ca["structure_id"]), None)
+    assert uk_ca_ranked is None or uk_ca_ranked["rank"] is None  # never Recommended

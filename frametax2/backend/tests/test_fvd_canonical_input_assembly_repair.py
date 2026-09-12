@@ -132,22 +132,31 @@ async def test_landlocked_jurisdictions_remain_economically_discoverable(db: Asy
             "it must remain in the economic universe"
         )
 
-    # MASTER RECONCILIATION (2026-09-02): MN and UZ now price. Both are
-    # AUTHORITY_UNRESOLVED_NON_PRICEABLE, which is a provenance-completeness
-    # disclosure, never an economic block (git history: neither was blocked
-    # at bb4b6a2 -- this state has always been provenance-only). Both carry
-    # a real, unconditional guaranteed-floor rate (MN 30%, UZ 10%), so they
-    # price deterministically. The point this test exists to prove -- a soft
-    # marine mismatch never removes a candidate from the economic universe
-    # -- is asserted above (`code in served_codes`); here we additionally
-    # prove the soft mismatch doesn't block PRICING either, keeping the two
-    # gates provably independent in both directions.
+    # MASTER RECONCILIATION (2026-09-02): MN and UZ used to price here. Both
+    # are AUTHORITY_UNRESOLVED_NON_PRICEABLE, a provenance-completeness
+    # disclosure, never an economic block on its own (git history: neither
+    # was blocked at bb4b6a2 -- this state has always been provenance-only).
+    #
+    # SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
+    # GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): both
+    # mn_production_incentive AND uz_film_rebate are now separately named
+    # FAIL_CLOSED in Codex's accepted ruling -- an economic-axis block
+    # (authority_coverage_registry.economic_block_for_program) that
+    # outranks the provenance-axis two-axis contract for these two specific
+    # slugs. This is the SAME supersession already documented in
+    # test_canonical_authority_substrate.py::
+    # test_soft_feasibility_mismatch_does_not_reject_economic_candidate.
+    # The point this test exists to prove -- a soft marine mismatch never
+    # removes a candidate from the economic universe -- is unaffected and
+    # still asserted above (`code in served_codes`); the pricing half is
+    # replaced with the new, independent invariant: MN/UZ remain discovered
+    # but never price, and no incentive value leaks through.
     for code in ("MN", "UZ"):
         entry = by_code[code]
-        assert entry["is_fully_priced"] is True, (
-            f"{code} has a real guaranteed floor and must price deterministically"
+        assert entry["is_fully_priced"] is False, (
+            f"{code}'s program is B1 FAIL_CLOSED and must never price deterministically"
         )
-        assert entry.get("selected_incentive_usd")
+        assert not entry.get("selected_incentive_usd")
 
 
 async def test_marine_capable_jurisdictions_unaffected_by_capability_gate(db: AsyncSession):
@@ -160,20 +169,36 @@ async def test_marine_capable_jurisdictions_unaffected_by_capability_gate(db: As
     served = {e["primary_jurisdiction"] for e in structures}
 
     # Marine-capable AND authority-clean: unchanged, still priced.
-    for code in ("GR", "MT", "MU", "CA-NL"):
+    # CA-NL (ca_nl_all_spend_credit) is EXCLUDED here (Codex bounded
+    # remediation, B1 discretionary ruling: FAIL_CLOSED) -- asserted
+    # withheld-but-still-discovered below instead of priced.
+    for code in ("GR", "MT", "MU"):
         assert code in priced, f"{code} has real marine capability and must remain priced"
+    assert "CA-NL" in served, "CA-NL must remain discovered, not capability-rejected"
+    assert "CA-NL" not in priced, (
+        "ca_nl_all_spend_credit is B1 FAIL_CLOSED (Codex bounded remediation) and must "
+        "never price deterministically"
+    )
 
-    # MASTER RECONCILIATION (2026-09-02): AU-QLD, QA and SG all carry real,
-    # unconditional guaranteed-floor rates (15%, 40%, 30% respectively) and
-    # AUTHORITY_UNRESOLVED_NON_PRICEABLE is a provenance-completeness
-    # disclosure, not an economic block -- they price deterministically.
-    # This test's invariant ("the capability gate must not over-reject") is
-    # preserved by construction: they were never capability-rejected, and
-    # now correctly price too.
+    # MASTER RECONCILIATION (2026-09-02): AU-QLD, QA and SG all used to carry
+    # real, unconditional guaranteed-floor rates (15%, 40%, 30% respectively)
+    # and price deterministically, since AUTHORITY_UNRESOLVED_NON_PRICEABLE
+    # is a provenance-completeness disclosure, not an economic block.
+    #
+    # SUPERSEDED (Codex bounded remediation, B1 discretionary ruling): all
+    # three programs (au_qld_pdv_rebate, qa_screen_production_incentive,
+    # sg_made_with_singapore_rebate) are separately named in Codex's
+    # accepted B1 ruling -- an economic-axis block that outranks the
+    # provenance-axis contract here too. This test's invariant ("the
+    # capability gate must not over-reject") is preserved by construction:
+    # all three remain discovered/served, never capability-rejected; only
+    # the pricing outcome changed, and it changed for an authorized,
+    # unrelated reason (B1), not a capability-gate regression.
     for code in ("AU-QLD", "QA", "SG"):
         assert code in served, f"{code} must remain discovered, not capability-rejected"
-        assert code in priced, (
-            f"{code} has a real guaranteed floor and must price deterministically"
+        assert code not in priced, (
+            f"{code}'s program is B1 FAIL_CLOSED/DISPLAY_ONLY_ZERO_GUARANTEED and must "
+            "never price deterministically"
         )
 
 
@@ -194,10 +219,19 @@ async def test_qpe_is_derived_from_real_account_universe_not_one_flattened_total
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    by_code = {e["primary_jurisdiction"]: e for e in entries if e["is_fully_priced"]}
-    gr_qpe = sum(sg["qpe_usd"] for sg in by_code["GR"]["segments"])
-    mu_qpe = sum(sg["qpe_usd"] for sg in by_code["MU"]["segments"])
-    mt_qpe = sum(sg["qpe_usd"] for sg in by_code["MT"]["segments"])
+    # Codex bounded remediation (B3 formulaic additions expanded the FVD
+    # candidate universe with new group/co-production combos that also
+    # report primary_jurisdiction="GR"/"MT"/"MU" but program_slug=None):
+    # a dict-comprehension keyed by jurisdiction alone silently kept
+    # whichever combo happened to be LAST in iteration order -- already
+    # coincidental before this remediation, and broken by the larger
+    # discovery universe. Select the actual named single-program
+    # structure by program_slug instead, which is what the assertion's
+    # own docstring is actually about.
+    by_slug = {e["program_slug"]: e for e in entries if e["is_fully_priced"] and e["program_slug"]}
+    gr_qpe = sum(sg["qpe_usd"] for sg in by_slug["gr_cash_rebate"]["segments"])
+    mu_qpe = sum(sg["qpe_usd"] for sg in by_slug["mu_edb_incentive"]["segments"])
+    mt_qpe = sum(sg["qpe_usd"] for sg in by_slug["mt_mfc_rebate"]["segments"])
     assert gr_qpe != mt_qpe, "GR's 80%-cap must genuinely differentiate its QPE"
     assert mu_qpe != mt_qpe, "MU's HYBRID_CONDITIONAL doctrine must genuinely differentiate its QPE"
 
@@ -250,25 +284,34 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     assert gr["rate_floor"] == gr["rate_ceiling"] == 0.4
     assert entries["GR"]["npc_with_adjustments_usd"] == pytest.approx(3_072_027.16, abs=0.01)
 
-    ca_nl = seg("CA-NL")
-    assert ca_nl["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)
-    # Final-19 committee closeout: gov.nl.ca directly confirmed a flat 40%
-    # rate (no separate ceiling tier) -- the prior 45%-ceiling entry was
-    # carried forward unconfirmed from an older catalog figure and is now
-    # corrected/removed per the official source.
-    assert ca_nl["rate_floor"] == pytest.approx(0.40)
-    assert ca_nl["rate_ceiling"] == pytest.approx(0.40)
-    assert ca_nl["is_band_ceiling"] is False
-    assert ca_nl["ceiling_requires_confirmation"] is False
+    # SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
+    # GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): CA-NL
+    # (ca_nl_all_spend_credit) used to produce a real priced trace here
+    # (flat 40% rate, gov.nl.ca directly confirmed, Final-19 committee
+    # closeout). Codex's accepted ruling reclassifies it FAIL_CLOSED -- the
+    # B4 central authority gate refuses it before any rule lookup, so it no
+    # longer appears in `entries` (which is filtered to is_fully_priced
+    # single_country/full_relocation structures) at all. The underlying
+    # rate figure (40% flat, no ceiling) remains intact on the canonical
+    # RateRule for traceability -- checked directly, not via a priced trace.
+    from app.data.program_rate_rules import get_rate_rules as _get_rate_rules
+    ca_nl_rule = _get_rate_rules("ca_nl_all_spend_credit")[0]
+    assert ca_nl_rule.rate == pytest.approx(0.40)
+    assert ca_nl_rule.is_band_ceiling is False
+    assert "CA-NL" not in entries, "ca_nl_all_spend_credit is B1 FAIL_CLOSED and must not produce a priced trace"
 
-    # MASTER RECONCILIATION (2026-09-02): QA, SG and AU-QLD carry real
-    # guaranteed-floor rates (40%, 30%, 15%) and AUTHORITY_UNRESOLVED_
-    # NON_PRICEABLE is a provenance-completeness disclosure, not an economic
-    # block -- all three now produce a real priced trace again.
+    # MASTER RECONCILIATION (2026-09-02): QA, SG and AU-QLD used to carry
+    # real guaranteed-floor rates (40%, 30%, 15%) and produce a real priced
+    # trace, since AUTHORITY_UNRESOLVED_NON_PRICEABLE is a provenance-
+    # completeness disclosure, not an economic block.
+    #
+    # SUPERSEDED (Codex bounded remediation, B1 discretionary ruling): all
+    # three (qa_screen_production_incentive, sg_made_with_singapore_rebate,
+    # au_qld_pdv_rebate) are separately named FAIL_CLOSED/
+    # DISPLAY_ONLY_ZERO_GUARANTEED in Codex's accepted ruling and no longer
+    # appear in `entries` at all.
     for code in ("QA", "SG", "AU-QLD"):
-        assert code in entries, f"{code} must produce a priced trace"
-        assert entries[code]["is_fully_priced"] is True
-        assert seg(code)["qpe_usd"] > 0
+        assert code not in entries, f"{code}'s program is B1-blocked and must not produce a priced trace"
 
     mt = seg("MT")
     assert mt["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)

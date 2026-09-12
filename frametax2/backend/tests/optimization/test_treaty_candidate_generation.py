@@ -98,7 +98,11 @@ def test_little_utopia_mu_auto_enumeration_is_correctly_empty_not_a_regression()
     # priced ph_fdcp_flip program and was not independently repaired) --
     # see test_global_data_application_runtime.py's identical note for the
     # full accounting.
-    assert len(structures) == 203
+    # Codex bounded remediation, B3 formulaic spec: 203 -> 205 -- see the
+    # matching note in test_global_data_application_runtime.py::
+    # test_mauritius_calibration_is_byte_identical_after_application
+    # (za_nfvf_rebate adds +1 full_relocation + 1 component_relocation).
+    assert len(structures) == 205
     treaty_structures = [s for s in structures if s["structure_type"] == "treaty_coproduction"]
     assert treaty_structures == []
     assert served["coverage"]["reachable_treaty_partners"] == []

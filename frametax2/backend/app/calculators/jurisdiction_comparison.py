@@ -1211,7 +1211,11 @@ _CANADA_BC = JurisdictionIncentiveProfile(
 _CANADA_ON = JurisdictionIncentiveProfile(
     jurisdiction_code="CA-ON",
     jurisdiction_name="Canada — Ontario",
-    program_slug="ca_on_opstc",
+    # Codex bounded remediation, B2 identity ruling: rekeyed from
+    # ca_on_opstc to the surviving canonical identity on_opstc --
+    # program_slug_aliases.py keeps the old spelling (and the inv-ca-on-...
+    # evidence identity) resolving to the same RateRule data.
+    program_slug="on_opstc",
     program_name="Ontario Production Services Tax Credit (OPSTC)",
     confidence_tier="VERIFIED",
     incentive_type="tax_credit",
@@ -1502,10 +1506,14 @@ _US_GEORGIA = JurisdictionIncentiveProfile(
 _US_CALIFORNIA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-CA",
     jurisdiction_name="United States — California",
-    program_slug="us_ca_film_credit",
+    # Codex bounded remediation, B2 identity ruling: rekeyed from
+    # us_ca_film_credit to the surviving canonical identity ca_film_30 --
+    # program_slug_aliases.py keeps the old spelling resolving to the same
+    # RateRule data for backward compatibility.
+    program_slug="ca_film_30",
     program_name="California Film & Television Tax Credit Program 4.0",
     # Global Formulaic Economic Completion, batch 4: promoted PARSED ->
-    # VERIFIED, kept in sync with us_ca_film_credit's own RateRule tier.
+    # VERIFIED, kept in sync with ca_film_30's own RateRule tier.
     confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     base_rate=0.35,
@@ -1565,7 +1573,12 @@ _US_CALIFORNIA = JurisdictionIncentiveProfile(
 _US_NEW_YORK = JurisdictionIncentiveProfile(
     jurisdiction_code="US-NY",
     jurisdiction_name="United States — New York",
-    program_slug="us_ny_film_credit",
+    # Codex bounded remediation, B2 identity ruling: rekeyed from
+    # us_ny_film_credit to the surviving canonical identity ny_state_film --
+    # program_slug_aliases.py keeps the old spelling resolving to the same
+    # RateRule data. The separate post-production credit is intentionally
+    # NOT represented here (never absorbed into this profile).
+    program_slug="ny_state_film",
     program_name="New York State Film Tax Credit Program (Production)",
     confidence_tier="PARSED",
     incentive_type="tax_credit",
@@ -2272,7 +2285,11 @@ _JORDAN = JurisdictionIncentiveProfile(
 
 _THAILAND = JurisdictionIncentiveProfile(
     jurisdiction_code="TH", jurisdiction_name="Thailand",
-    program_slug="th_boi_incentive", program_name="Thailand BOI Film Incentive",
+    # Codex bounded remediation, B3/B1 rulings: rekeyed from th_boi_incentive
+    # -- that slug's real rate data was always th_film_incentive's own
+    # (see program_rate_rules_worldwide.py's TH_DOCTRINE); th_boi_incentive
+    # is a separate, now B1 FAIL_CLOSED program with no rate data of its own.
+    program_slug="th_film_incentive", program_name="Thailand Foreign Film Incentive (Cash Rebate)",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     base_rate=0.30, max_rate=0.30, is_refundable=True, is_transferable=False,
     annual_cap_local=None, min_spend_local=1_400_000.0, requires_cultural_test=False,

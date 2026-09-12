@@ -293,7 +293,12 @@ def test_internally_recovered_programs_are_provenance_verified():
         "ro_film_office_cash_rebate", "rs_film_commission_cash_rebate", "us_or_opif",
         "us_pr_film_incentives_act", "us_wa_motion_picture_competitiveness",
         "cl_corfo_incentive", "il_foreign_production_fund", "jp_vipo_location_incentive",
-        "ph_fdcp_flip", "th_boi_incentive",
+        "ph_fdcp_flip",
+        # Codex bounded remediation, B3/B1 rulings: rekeyed from
+        # th_boi_incentive -- that slug's real rate data recovered in this
+        # historical pass was always th_film_incentive's own; th_boi_incentive
+        # is now a separate, B1 FAIL_CLOSED program with no rate data.
+        "th_film_incentive",
     ]
     assert len(recovered_this_pass) == 23
     for slug in recovered_this_pass:

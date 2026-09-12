@@ -62,6 +62,7 @@ from itertools import combinations
 
 from app.calculators.apply_stacking_adjustments import apply_stacking_adjustments
 from app.calculators.evaluate_legal_stacking import evaluate_legal_stacking
+from app.data.authority_coverage_registry import economic_block_for_program
 from app.optimization.stacking_rules import _SLUG_PAIR_RULES
 from app.services.canonical_program_identity import _aliases_for
 
@@ -442,6 +443,14 @@ def price_program_group_stack(candidates: list[StackCandidate]) -> MultiProgramS
     test_canonical_stack_bridge.py's permutation-invariance test.
     """
     if len(candidates) < 2:
+        return None
+    # B4 central authority gate (Codex bounded remediation): no automatic
+    # stack may contain an accepted authority-exhausted / discretionary-
+    # display-only / retired / duplicate identity. Any blocked member ->
+    # no stack result; the rejection is preserved by canonical_evaluation.py
+    # exactly like every other None return here. Alias spellings inherit the
+    # canonical block (economic_block_for_program canonicalizes first).
+    if any(economic_block_for_program(c.program_slug) is not None for c in candidates):
         return None
     codes = [c.jurisdiction_code for c in candidates]
     if not eligible_group_for_combination(codes):

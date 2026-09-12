@@ -119,7 +119,24 @@ async def test_regression_all_fingerprint_readers_agree_when_an_exclusion_is_set
 async def test_reincluding_restores_the_candidate_with_unchanged_economics(db: AsyncSession):
     """Saudi ON restores participation while preserving its real
     conditional/discretionary economics — never a re-derived or
-    different NPC than before exclusion."""
+    different NPC than before exclusion.
+
+    SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
+    GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): this test
+    used to assert the re-included Saudi structure carries a priced NPC
+    plus an "Administrative/allocation risk" warning (the modeled-rate-
+    with-disclosed-risk architecture). Codex's accepted ruling reclassifies
+    sa_film_commission_rebate DISPLAY_ONLY_ZERO_GUARANTEED -- the B4
+    central authority gate now refuses it before any rate resolution, so
+    it never reaches that modeled-rate path at all (the SAME supersession
+    already documented in test_discretionary_program_policy.py::
+    test_authority_requirements_are_never_relaxed_by_this_policy). This
+    test's own actual invariant ("re-inclusion restores participation
+    without re-deriving different economics -- exclusion/inclusion is a
+    modeling preference, never a change to the real doctrine the structure
+    carries") is preserved and re-proven on the new doctrine: Saudi is
+    restored to the candidate universe, discovered but never priced,
+    consistently regardless of the exclusion toggle."""
     await _set_excluded(db, "SA", True)
     await evaluate_project(db, FVD_PROJECT_ID)
     view_excluded = await build_production_and_structures(db, FVD_PROJECT_ID)
@@ -137,13 +154,12 @@ async def test_reincluding_restores_the_candidate_with_unchanged_economics(db: A
     ]
     assert len(sa_structures) >= 1, "Saudi Arabia must be restored to the candidate universe"
     sa = sa_structures[0]
-    assert sa.get("npc_with_adjustments_usd") is not None
-    # Discretionary/preapproval disclosure must survive re-inclusion —
-    # exclusion/inclusion is a modeling preference, never a change to
-    # the real doctrine the structure carries.
-    assert any(
-        (w or "").startswith("Administrative/allocation risk") for w in (sa.get("warnings") or [])
-    ), "re-included Saudi structure must still carry its real discretionary/preapproval disclosure"
+    assert sa.get("is_fully_priced") is not True, (
+        "sa_film_commission_rebate is B1 DISPLAY_ONLY_ZERO_GUARANTEED -- re-inclusion must "
+        "never re-derive a priced result"
+    )
+    assert sa.get("npc_with_adjustments_usd") is None
+    assert sa.get("administrative_allocation_risk") is not True
 
 
 async def test_home_jurisdiction_cannot_be_excluded_from_its_own_candidate_universe(db: AsyncSession):

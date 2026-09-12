@@ -51,7 +51,7 @@ ACCEPTED_LU_NPC_USD = 3_791_333.30  # ITEM 4 REPAIR (budget classification): Lit
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.
 ONTARIO_PROGRAM_SLUGS = {
-    "ca_on_opstc",
+    "on_opstc",  # Codex bounded remediation, B2 identity ruling: rekeyed from ca_on_opstc
     "on_ofttc",
     "ontario_computer_animation_and_special_effects_tax_credit_ocase",
 }
@@ -202,9 +202,11 @@ def test_discovery_examines_every_program_sharing_a_jurisdiction_code():
 
 def test_discovery_does_not_duplicate_via_alias_spelling():
     """Aliases must resolve to canonical program IDs and must never create a
-    duplicate economic candidate — ca_on_opstc appears in BOTH
-    jurisdiction_comparison.ALL_PROFILES and executable_jurisdiction_registry;
-    it must still examine as exactly one candidate, not two."""
+    duplicate economic candidate — on_opstc appears in BOTH
+    jurisdiction_comparison.ALL_PROFILES and executable_jurisdiction_registry
+    (Codex bounded remediation, B2 identity ruling: rekeyed from
+    ca_on_opstc, now a compatibility alias); it must still examine as
+    exactly one candidate, not two."""
     result = discover_executable_jurisdictions(
         requirements=derive_production_requirements({}),
         production_type="feature_film",
@@ -213,7 +215,7 @@ def test_discovery_does_not_duplicate_via_alias_spelling():
     )
     opstc_examinations = [
         e for e in result.examinations
-        if e.jurisdiction_code == "CA-ON" and e.program_slug == "ca_on_opstc"
+        if e.jurisdiction_code == "CA-ON" and e.program_slug == "on_opstc"
     ]
     assert len(opstc_examinations) == 1
 

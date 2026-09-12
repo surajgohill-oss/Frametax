@@ -51,6 +51,8 @@ PROGRAM_SPEND_RULES_VERSION = "1.0.0"
 import enum
 from dataclasses import dataclass
 
+from app.data.program_slug_aliases import canonical_slug as _canonical_program_slug
+
 
 # ── Global qualification doctrine ────────────────────────────────────────────
 # Every incentive program is classified into exactly one doctrine. The
@@ -188,7 +190,7 @@ PROGRAM_DOCTRINE: dict[str, QualificationDoctrine] = {
     # subject to the cap (disclosed, not enforceable without a per-line ATL/
     # BTL ratio), BTL and production costs qualify broadly. Named cost
     # exclusions (story/script rights) are added as explicit rows below.
-    "us_ny_film_credit": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+    "ny_state_film": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,  # Codex B2 identity ruling: rekeyed from us_ny_film_credit
 
     # Georgia Film Tax Credit: Georgia DOR (dor.georgia.gov, official):
     # "costs for pre-production, production, and post-production related to
@@ -299,8 +301,16 @@ def get_program_doctrine(program_slug: str) -> QualificationDoctrine | None:
     programs: callers that report modeling provenance (how much of a
     result is read-from-statute vs. resolved under the canonical rule)
     depend on that distinction. Callers that need to EXECUTE should use
-    resolve_program_doctrine(), which applies the canonical rule below."""
-    return PROGRAM_DOCTRINE.get(program_slug)
+    resolve_program_doctrine(), which applies the canonical rule below.
+
+    Canonicalizes a known variant/legacy slug spelling first (Codex
+    bounded remediation, B2 identity ruling) so a rekeyed identity's old
+    spelling (e.g. us_ny_film_credit -> ny_state_film) still finds the
+    same doctrine classification."""
+    doctrine = PROGRAM_DOCTRINE.get(program_slug)
+    if doctrine is None:
+        doctrine = PROGRAM_DOCTRINE.get(_canonical_program_slug(program_slug))
+    return doctrine
 
 
 # ── Canonical doctrine resolution (execution path) ──────────────────────────

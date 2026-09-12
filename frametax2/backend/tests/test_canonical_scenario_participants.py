@@ -45,7 +45,7 @@ from app.db.session import engine
 # evaluator first (unused directly, but its import side effects resolve
 # the cycle) is acceptance-harness fragility, not a production defect —
 # documented, not fixed here (out of this task's exact P0 scope).
-import app.services.canonical_evaluation  # noqa: F401
+from app.services.canonical_evaluation import evaluate_project
 from app.services.canonical_production_view import build_production_and_structures
 
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
@@ -295,8 +295,25 @@ async def test_p0_part_001_non_claiming_primary_excluded_across_broader_corpus(d
     segment jurisdiction codes with claims_incentive is True; non-
     claiming geography (including the primary itself) remains visible
     in segments, never in participants."""
+    # Robustness fix (found while implementing Codex bounded remediation's
+    # B3 formulaic corrections): this test previously never called
+    # evaluate_project() itself, relying on these 9 projects' rows already
+    # being freshly persisted by some OTHER test's incidental side effect
+    # earlier in the same pytest session -- a fragile, execution-order-
+    # dependent coupling that silently returns zero structures (rather
+    # than failing loudly) whenever no earlier test happens to have
+    # evaluated a given project first. Any change that alters the global
+    # rate-rule/catalog registries (which legitimately invalidates every
+    # previously-persisted cached row's freshness fingerprint, by design
+    # -- see the OH-001 fingerprint comments throughout the data modules)
+    # can flip which project's implicit pre-seeding "happened to" still be
+    # in place, making this test's pass/fail outcome depend on file
+    # collection order rather than on the actual invariant it exists to
+    # protect. Calling evaluate_project() explicitly here removes that
+    # fragility without weakening the test's real assertions.
     total_checked = 0
     for label, project_id in _P0_PART_001_PROJECT_IDS.items():
+        await evaluate_project(db, project_id)
         view = await build_production_and_structures(db, project_id)
         structures = view["structures"]["allocated_structures"]["structures"]
         components = [s for s in structures if s["structure_type"] == "component_relocation"]

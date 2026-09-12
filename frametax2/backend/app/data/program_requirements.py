@@ -40,6 +40,8 @@ import enum
 from dataclasses import dataclass, field
 from typing import Optional
 
+from app.data.program_slug_aliases import canonical_slug
+
 PROGRAM_REQUIREMENTS_VERSION = "1.0.0"
 
 
@@ -162,8 +164,11 @@ def register(profile: ProgramRequirementsProfile) -> ProgramRequirementsProfile:
 
 def get_program_requirements(program_slug: str) -> Optional[ProgramRequirementsProfile]:
     """The structured requirements profile for a program, or None when not
-    yet populated — absence, never a fabricated default."""
-    return _REGISTRY.get(program_slug)
+    yet populated — absence, never a fabricated default. Canonicalizes a
+    known variant/legacy slug spelling first (program_slug_aliases.py) so
+    a rekeyed identity's old spelling (e.g. Codex bounded remediation's
+    us_ca_film_credit -> ca_film_30) still finds the same profile."""
+    return _REGISTRY.get(program_slug) or _REGISTRY.get(canonical_slug(program_slug))
 
 
 def all_program_requirements() -> dict[str, ProgramRequirementsProfile]:
@@ -285,7 +290,7 @@ register(ProgramRequirementsProfile(
 ))
 
 register(ProgramRequirementsProfile(
-    program_slug="us_ny_film_credit", jurisdiction_code="US-NY",
+    program_slug="ny_state_film", jurisdiction_code="US-NY",  # Codex B2 identity ruling: rekeyed from us_ny_film_credit
     min_total_budget_usd=250_000.0,  # lower of the two regional thresholds
     atl_cap_pct_of_other_costs=0.40,
     annual_program_cap_usd=700_000_000.0,  # PROGRAM-wide, not per-production
@@ -1025,7 +1030,7 @@ register(ProgramRequirementsProfile(
 ))
 
 register(ProgramRequirementsProfile(
-    program_slug="us_ca_film_credit", jurisdiction_code="US-CA",
+    program_slug="ca_film_30", jurisdiction_code="US-CA",  # Codex B2 identity ruling: rekeyed from us_ca_film_credit
     cultural_test_required=False,
     preapproval_mandatory=True,   # Credit Allocation Letter issued before principal photography; competitive ranked application windows
     refundable=True,              # Program 4.0 (post 2025-07-01): productions may elect a REFUNDABLE credit (see notes for 3.0)
@@ -1065,7 +1070,7 @@ register(ProgramRequirementsProfile(
 
 
 register(ProgramRequirementsProfile(
-    program_slug="ca_on_opstc", jurisdiction_code="CA-ON",
+    program_slug="on_opstc", jurisdiction_code="CA-ON",  # Codex B2 identity ruling: rekeyed from ca_on_opstc
     cultural_test_required=False,   # OPSTC is a production-SERVICES credit — no cultural/content test (unlike the domestic OFTTC)
     treaty_or_official_coproduction_required=False,
     min_total_budget_usd=707_463.74,  # production cost must exceed CAD 1,000,000 for a feature (see notes for series thresholds)
@@ -2132,7 +2137,7 @@ register(ProgramRequirementsProfile(
 ))
 
 register(ProgramRequirementsProfile(
-    program_slug="th_boi_incentive", jurisdiction_code="TH",
+    program_slug="th_film_incentive", jurisdiction_code="TH",  # Codex B3/B1 rulings: rekeyed from th_boi_incentive
     preapproval_mandatory=True,      # ICM Form 1 application + filming permission required before qualifying
     cultural_test_required=False,    # no cultural test; a discretionary +5% "Thai soft power / tourism promotion" uplift exists instead
     refundable=True,
@@ -2314,7 +2319,7 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
             "effective_date": None, "legacy_usd_value": 34_215_718.70,
         },
     },
-    "ca_on_opstc": {
+    "on_opstc": {  # Codex B2 identity ruling: rekeyed from ca_on_opstc
         "min_total_budget": {
             "amount": 1_000_000, "currency": "CAD", "basis": "Production cost must exceed this for a feature; series thresholds are CAD 100,000/episode (<30 min) and CAD 200,000/episode (longer)",
             "source": "Ontario Creates — OPSTC",
@@ -2402,7 +2407,7 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
             "effective_date": "2026-02-20", "legacy_usd_value": None,
         },
     },
-    "th_boi_incentive": {
+    "th_film_incentive": {  # Codex B3/B1 rulings: rekeyed from th_boi_incentive
         "min_local_spend": {
             "amount": 50_000_000, "currency": "THB", "basis": "Minimum qualified Thailand spend to Thai crew and Thai companies. No per-project cap on the rebate.",
             "source": "Thailand Film Office (TFO), Department of Tourism",
@@ -2794,8 +2799,14 @@ def get_statutory_amounts(program_slug: str) -> dict[str, dict]:
     profile. Where a value here conflicts with the profile's USD field,
     THIS is the legal source of truth — the USD field is a legacy derived
     convenience value retained for backward compatibility only.
+
+    Canonicalizes a known variant/legacy slug spelling first (see
+    get_program_requirements's own docstring for why).
     """
-    return STATUTORY_AMOUNTS_ORIGINAL_CURRENCY.get(program_slug, {})
+    amounts = STATUTORY_AMOUNTS_ORIGINAL_CURRENCY.get(program_slug)
+    if amounts is None:
+        amounts = STATUTORY_AMOUNTS_ORIGINAL_CURRENCY.get(canonical_slug(program_slug))
+    return amounts or {}
 
 
 def profiles_with_legacy_currency_conversions() -> dict[str, list[str]]:
@@ -3457,8 +3468,13 @@ UNKNOWN_FIELD_REGISTER: dict[str, dict[str, dict]] = {
 
 
 def get_unknown_fields(program_slug: str) -> dict[str, dict]:
-    """Structured justifications for every genuine Unknown on a program."""
-    return UNKNOWN_FIELD_REGISTER.get(program_slug, {})
+    """Structured justifications for every genuine Unknown on a program.
+    Canonicalizes a known variant/legacy slug spelling first (see
+    get_program_requirements's own docstring for why)."""
+    fields = UNKNOWN_FIELD_REGISTER.get(program_slug)
+    if fields is None:
+        fields = UNKNOWN_FIELD_REGISTER.get(canonical_slug(program_slug))
+    return fields or {}
 
 
 def all_unknown_fields_by_reason_code() -> dict[str, list[str]]:

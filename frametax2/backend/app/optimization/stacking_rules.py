@@ -67,7 +67,7 @@ _NAME_SLUG_RULES: list[tuple[str, str, str]] = [
     # Wave-6 — Canadian provinces
     ("CA-BC",  "production services tax credit", "ca_bc_pstc"),
     ("CA-BC",  "bc production services",         "ca_bc_pstc"),
-    ("CA-ON",  "opstc",                          "ca_on_opstc"),
+    ("CA-ON",  "opstc",                          "on_opstc"),  # Codex B2 identity ruling: rekeyed from ca_on_opstc
     ("CA-QC",  "québec production tax",          "ca_qc_qprdp"),
     ("CA-QC",  "quebec production tax",          "ca_qc_qprdp"),
     ("CA-QC",  "qprdp",                          "ca_qc_qprdp"),

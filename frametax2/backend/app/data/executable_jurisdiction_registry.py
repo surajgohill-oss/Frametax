@@ -49,7 +49,11 @@ from __future__ import annotations
 #: e.g. ca_bc_dave/au_pdv_offset's addition) invalidates cached served
 #: evaluations rather than being silently omitted from an already-cached
 #: candidate universe. Bump on any material change.
-EXECUTABLE_JURISDICTION_REGISTRY_VERSION = "1.1.0"
+#: Codex bounded remediation: bumped for the B2 identity rekeys
+#: (US_CA_DOCTRINE/CA_ON_DOCTRINE/US_NY_DOCTRINE program_slug changes) and
+#: the B3 formulaic DoctrineRecord corrections -- every previously-
+#: persisted served evaluation must be invalidated and recomputed fresh.
+EXECUTABLE_JURISDICTION_REGISTRY_VERSION = "1.2.0"
 
 from dataclasses import dataclass, field
 

@@ -489,8 +489,23 @@ class TestExecutableJurisdictionKnowledge:
         # registry's own definition of "priceable but not yet doctrine-
         # complete," derived directly rather than snapshotted, so it
         # never needs manual updates as new jurisdictions are added.
+        #
+        # Codex bounded remediation, B1 discretionary ruling (GLOBAL_
+        # PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): the real
+        # function (build_alternative_jurisdiction_comparisons) already had
+        # a SECOND, pre-existing catalog_only path this test's `expected`
+        # set previously never needed to exercise -- "rate rule present but
+        # did not resolve ... excluded rather than guessed" -- for any
+        # jurisdiction whose program HAS doctrine+rate but resolve_program_
+        # rate() still returns None. The B4 central authority gate now
+        # makes that happen deterministically for any B1-blocked program
+        # (e.g. DE's de_dfff, BE's be_tax_shelter), regardless of QPE, so
+        # `expected` must include the B4-blocked case too -- this is not a
+        # new code path in the real function, only a new REASON that path
+        # is now reached for.
         from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons, JURISDICTION_CODE
         from app.calculators import jurisdiction_comparison as jc
+        from app.data.authority_coverage_registry import economic_block_for_program
         from app.data.program_rate_rules import get_rate_rules
         from app.data.program_spend_rules import get_program_doctrine
         s = get_state()
@@ -499,14 +514,17 @@ class TestExecutableJurisdictionKnowledge:
         expected = {
             code for code, profile in jc.ALL_PROFILES.items()
             if code != JURISDICTION_CODE
-            and get_rate_rules(profile.program_slug)
-            and get_program_doctrine(profile.program_slug) is None
+            and (
+                not get_rate_rules(profile.program_slug)
+                or get_program_doctrine(profile.program_slug) is None
+                or economic_block_for_program(profile.program_slug) is not None
+            )
         }
         assert catalog_codes == expected
         executable_codes = {e["jurisdiction_code"] for e in out["executable"]}
         assert catalog_codes.isdisjoint(executable_codes)
         for c in out["catalog_only"]:
-            assert "not yet executable" in c["reason"]
+            assert "not yet executable" in c["reason"] or "excluded rather than guessed" in c["reason"]
 
     def test_territorial_exclusion_applies_to_alternative_jurisdictions_too(self):
         """LA-based post-production must be excluded for MT/IE/GR exactly

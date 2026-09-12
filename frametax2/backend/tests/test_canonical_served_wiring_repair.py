@@ -175,7 +175,6 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # now carry NON_GUARANTEED_SELECTIVE and are disclosed rather than
     # priced. Nothing was dropped: priced 91 -> 86, unpriceable 65 -> 70,
     # total unchanged.
-    assert len(priced) == 311  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311 -- mandatory eligibility (canonical_requirements_gate_bridge) is now enforced in allocation_pricing.price_segment (a genuinely FAILED computable requirement, e.g. minimum local spend, blocks PRICED instead of being disclosure-only); the 9 component candidates that failed real minimum-spend gates were never persisted at all, matching the SAME existing "not fully priced -> never persisted, disclosed as a class not per-instance" component_relocation convention every other pricing failure already used (see canonical_evaluation.py's `if not pricing.is_fully_priced: continue`). Verified against Codex's four-project audit, which named exactly 9 FVD structures as PRICED-despite-FAILED.
     # Optimizer FINAL closeout, P1-REJ-001: unpriced grew 45 -> 133 (+88).
     # This is the exact FIX, not a regression: the 889-corpus-wide (88 for
     # FVD specifically) threshold-failed component attempts that were
@@ -188,7 +187,20 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # to before) + 88 genuine component_relocation rejections (all with a
     # real, disclosed rejection_reason_class — see
     # test_component_rejection_persistence.py).
-    assert len(unpriced) == 133
+    #
+    # Codex bounded remediation, B1 discretionary ruling (GLOBAL_PROGRAM_
+    # DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): priced 311 -> 165,
+    # unpriced 133 -> 135. The B4 central authority gate now fails closed 46
+    # previously-priced discretionary/authority-exhausted programs. See
+    # test_canonical_authority_substrate.py::
+    # test_fvd_runtime_candidate_universe_restored for the exact, directly-
+    # measured mechanism (full_relocation entries unchanged at 123 with +46
+    # unpriced flips; component_relocation and treaty_coproduction entries
+    # shrink because their target/partner jurisdictions drop out of the
+    # priceable-target set) -- the same accounting applies here since this
+    # is the identical FVD candidate universe.
+    assert len(priced) == 169  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311; Codex bounded remediation B1: 311 -> 165; B3: 165 -> 169 (th_film_incentive/za_nfvf_rebate)
+    assert len(unpriced) == 137  # Codex bounded remediation B3: 135 -> 137
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -197,8 +209,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 311  # P0-1 mandatory eligibility fix -- mirrors priced count above
-    assert accounting["unpriceable_count"] == 133  # P1-REJ-001 -- mirrors unpriced count above
+    assert accounting["review_required_count"] == 169  # mirrors priced count above (Codex bounded remediation B1/B3)
+    assert accounting["unpriceable_count"] == 137  # mirrors unpriced count above (Codex bounded remediation B1/B3)
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -220,8 +232,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 311  # P0-1 mandatory eligibility fix -- mirrors priced count above
-    assert len(unpriceable_ranked) == 133  # P1-REJ-001 -- mirrors unpriced count above
+    assert len(review_ranked) == 169  # mirrors priced count above (Codex bounded remediation B1/B3)
+    assert len(unpriceable_ranked) == 137  # mirrors unpriced count above (Codex bounded remediation B1/B3)
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -338,40 +350,47 @@ async def test_australia_queensland_priced_flat_rate_not_comparable(db: AsyncSes
     and is still excluded from the comparable ranking on the same
     non-baseline basis as Malta/Mauritius.
 
-    AU-QLD (au_qld_pdv_rebate) is this invariant's original carrier, restored
-    (master reconciliation, 2026-09-02): AUTHORITY_UNRESOLVED_NON_PRICEABLE
-    is a provenance-completeness disclosure, not an economic block, and
-    AU-QLD carries a real, unconditional 15% floor rate -- it prices
-    deterministically, with its provenance gap disclosed as a warning
-    (PROVENANCE_DISCLOSURE_STATES), not zeroed. CA-NL (40% flat, authority-
-    verified) remains asserted alongside it as a second, independent
-    instance of the same flat-rate/non-comparable invariant.
+    SUPERSEDED carriers (Codex bounded remediation, B1 discretionary
+    ruling, GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv):
+    both of this invariant's original carriers -- AU-QLD (au_qld_pdv_rebate)
+    and CA-NL (ca_nl_all_spend_credit) -- are now separately named FAIL_
+    CLOSED in Codex's accepted ruling and no longer price at all (see
+    test_fvd_canonical_input_assembly_repair.py::
+    test_marine_capable_jurisdictions_unaffected_by_capability_gate /
+    test_representative_fvd_jurisdiction_traces for the direct proof both
+    are withheld-but-discovered, never priced). The underlying invariant
+    (a flat, non-band rate still prices and is still excluded from the
+    comparable ranking on the same non-baseline basis as Malta/Mauritius)
+    is unaffected by B1 and is proven here on two different, unblocked
+    flat-rate FVD candidates instead: IT (it_tax_credit_foreign, 40% flat,
+    mirroring CA-NL's old 40%) and BG (bg_film_encouragement_act_rebate,
+    25% flat).
     """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     rank_by_id = {r["structure_id"]: r for r in view["structures"]["allocated_structures"]["ranking"]}
 
-    au_qld = _single_segment_structures(entries, "AU-QLD")
-    assert len(au_qld) == 1
-    seg = au_qld[0]["segments"][0]
+    it = _single_segment_structures(entries, "IT")
+    assert len(it) == 1
+    seg = it[0]["segments"][0]
     assert seg["is_band_ceiling"] is False
     assert seg["ceiling_requires_confirmation"] is False
     assert seg["incentive_floor_usd"] == pytest.approx(seg["incentive_ceiling_usd"], abs=0.01)
 
-    rank = rank_by_id[au_qld[0]["structure_id"]]
+    rank = rank_by_id[it[0]["structure_id"]]
     assert rank["is_fully_priced"] is True
     assert rank["is_directly_comparable"] is False
 
-    # The invariant this test protects, on an authority-verified flat rate.
-    ca_nl = _single_segment_structures(entries, "CA-NL")
-    assert len(ca_nl) == 1
-    seg = ca_nl[0]["segments"][0]
+    # The invariant this test protects, on a second independent flat rate.
+    bg = _single_segment_structures(entries, "BG")
+    assert len(bg) == 1
+    seg = bg[0]["segments"][0]
     assert seg["is_band_ceiling"] is False
     assert seg["ceiling_requires_confirmation"] is False
     assert seg["incentive_floor_usd"] == pytest.approx(seg["incentive_ceiling_usd"], abs=0.01)
 
-    rank = rank_by_id[ca_nl[0]["structure_id"]]
+    rank = rank_by_id[bg[0]["structure_id"]]
     assert rank["is_fully_priced"] is True
     assert rank["is_directly_comparable"] is False
 
@@ -434,7 +453,21 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # RULE_REJECTED rows (see test_fvd_accounting_matches_codex_diagnosis
     # for the exact 45+88=133 reconciliation). Still not the invariant
     # this test guards: distinct terminal causes.
-    assert len(unpriceable) == 133
+    # Codex bounded remediation, B1 discretionary ruling: net +2, 133 -> 135
+    # -- three opposing movements that net to +2 (see test_canonical_
+    # authority_substrate.py::test_fvd_runtime_candidate_universe_restored
+    # for the exact, directly-measured full accounting): +46 full_relocation
+    # candidates flip from priced to a disclosed unpriceable row (one per
+    # newly B1-blocked program, always persisted per P1-REJ-001); -29
+    # component_relocation unpriceable rows disappear entirely (their target
+    # jurisdiction drops out of the priceable-target set, so the candidate
+    # is never generated at all -- the SAME "never persisted" convention
+    # this test already documents, not a new code path); -15
+    # treaty_coproduction unpriceable rows disappear the same way (shrinking
+    # candidate-jurisdiction pool for bilateral-partner discovery).
+    # 46 - 29 - 15 = +2. Still not the invariant this test guards: distinct
+    # terminal causes.
+    assert len(unpriceable) == 137  # Codex bounded remediation B3: 135 -> 137 (th_film_incentive/za_nfvf_rebate add new terminal causes)
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

@@ -55,17 +55,41 @@ def test_ac2_kazakhstan_single_uncorroborated_source_is_authority_insufficient()
 
 
 def test_ac3_thailand_prices_its_canonical_base_not_its_headline_maximum():
-    tiers = {r.tier_id: r for r in get_rate_rules("th_boi_incentive")}
+    """SUPERSEDED TWICE (Codex bounded remediation):
+    1. B1 discretionary ruling (GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_
+       RULING_CODEX.csv): th_boi_incentive used to resolve at runtime (base
+       15% tier, ceiling 30% tier genuinely unresolved). Codex's accepted
+       ruling reclassified th_boi_incentive FAIL_CLOSED.
+    2. B3 formulaic spec (ADD_RULE, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_
+       SPEC_CODEX.csv) + B1: this program's own tier data was ALWAYS
+       th_film_incentive's real, sourced data (see program_rate_rules_
+       worldwide.py's TH_DOCTRINE) mis-registered under th_boi_incentive
+       via a prior pass's now-superseded alias reconciliation. Rekeyed to
+       the identity the data actually describes; th_boi_incentive now
+       correctly carries NO rate data of its own (a separate, genuinely
+       authority-exhausted program).
+    AC-3's actual subject (a guaranteed floor vs. an unconfirmed "up to"
+    ceiling, never conflated) is intact and asserted below on
+    th_film_incentive, which is NOT B1-blocked and resolves normally; a
+    ceiling that can never even be REACHED (th_boi_incentive, fail-closed)
+    is a fortiori never treated as guaranteed."""
+    tiers = {r.tier_id: r for r in get_rate_rules("th_film_incentive")}
     assert "th-base-15" in tiers and "th-uplift-ceiling-30" in tiers
     assert tiers["th-base-15"].rate == 0.15
     assert tiers["th-base-15"].is_band_ceiling is False
     assert tiers["th-uplift-ceiling-30"].rate == 0.30
     assert tiers["th-uplift-ceiling-30"].is_band_ceiling is True
     assert any(c.kind == "discretionary_band" for c in tiers["th-uplift-ceiling-30"].conditions)
-    # and the ceiling is genuinely not treated as guaranteed at runtime
-    res = resolve_program_rate("th_boi_incentive", production_type="feature_film", qpe_usd=4_000_000.0)
+    res = resolve_program_rate("th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0)
     assert res is not None
+    assert res.floor_rate == 0.15
+    assert res.has_guaranteed_floor is True
     assert any(ev.satisfied is None for ev in res.conditions_evaluated)
+
+    # th_boi_incentive is a SEPARATE, genuinely B1 FAIL_CLOSED program with
+    # no rate data of its own -- never resolves at runtime.
+    assert get_rate_rules("th_boi_incentive") == ()
+    assert resolve_program_rate("th_boi_incentive", production_type="feature_film", qpe_usd=4_000_000.0) is None
 
 
 def test_no_still_priceable_program_encodes_an_up_to_maximum_as_a_flat_rate():

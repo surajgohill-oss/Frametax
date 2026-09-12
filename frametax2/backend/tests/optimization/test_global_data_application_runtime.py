@@ -164,7 +164,15 @@ def test_mauritius_calibration_is_byte_identical_after_application():
     # comment -- so it contributes no new candidate; its economics were
     # already counted in the 201 baseline via ph_fdcp_flip. Mauritius itself
     # remains untouched (asserted above).
-    assert len(served["structures"]) == 203
+    # Codex bounded remediation, B3 formulaic spec (ADD_RULE_AND_COMPONENT_
+    # BRANCH, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv): 203 -> 205.
+    # za_nfvf_rebate (South Africa NFVF Rebate) is a genuinely new,
+    # independently-priceable program (distinct from the already-blocked
+    # za_dtic_foreign_film) -- +1 full_relocation candidate for ZA (now 2
+    # ZA full_relocation entries, was 1) plus +1 component_relocation
+    # candidate now that ZA has a real priced target for LU's own routable
+    # components. Mauritius itself remains untouched (asserted above).
+    assert len(served["structures"]) == 205
 
 
 def test_selective_programs_contribute_zero_guaranteed_value():

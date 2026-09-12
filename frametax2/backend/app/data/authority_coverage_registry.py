@@ -230,7 +230,12 @@ from __future__ import annotations
 #: masquerading a pre-change row as current. Bump whenever COVERAGE_
 #: REGISTRY or BLOCKING_STATES changes in a way that could move a
 #: program's economic candidacy.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.3.0"
+#: Codex bounded remediation: bumped for the new B4 central authority gate
+#: (economic_block_for_program, the 46-program B1 discretionary ruling
+#: block set) and the B2 identity-rekey CANONICAL_RUNTIME_SLUG_BINDINGS
+#: changes -- every previously-persisted served evaluation must be
+#: invalidated and recomputed fresh, never silently served stale.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.4.0"
 
 from dataclasses import dataclass
 from typing import Literal
@@ -665,7 +670,12 @@ CANONICAL_RUNTIME_SLUG_BINDINGS: dict[str, str] = {
     "al_film_incentive": "al_cash_rebate",
     "bc_pstc": "ca_bc_pstc",
     "bg_film_incentive": "bg_film_encouragement_act_rebate",
-    "ca_film_30": "us_ca_film_credit",
+    # ca_film_30 REMOVED (Codex bounded remediation, B2 identity ruling):
+    # was "ca_film_30 -> us_ca_film_credit" (AG-corpus spelling -> old
+    # runtime slug). The rate rule was rekeyed so ca_film_30 IS now the
+    # runtime slug directly -- see program_slug_aliases.PROGRAM_SLUG_
+    # ALIASES["us_ca_film_credit"] = "ca_film_30" for the (now reversed)
+    # compatibility alias.
     "ca_mb_fvptc": "ca_mb_film_video_credit",
     "ca_nb_film_credit": "ca_nb_film_tax_credit",
     "ca_ns_pif": "ca_ns_production_incentive_fund",
@@ -686,7 +696,13 @@ CANONICAL_RUNTIME_SLUG_BINDINGS: dict[str, str] = {
     "mk_film_incentive": "mk_cash_rebate",
     "nl_nfpi": "nl_film_production_incentive",
     "nm_film_production": "us_nm_film_credit",
-    "on_opstc": "ca_on_opstc",
+    # on_opstc REMOVED (Codex bounded remediation, B2 identity ruling): was
+    # "on_opstc -> ca_on_opstc". The rate rule was rekeyed so on_opstc IS
+    # now the runtime slug directly (matching the spelling
+    # app.optimization.stacking_rules._SLUG_PAIR_RULES already used for
+    # every OPSTC stacking pair) -- see program_slug_aliases.
+    # PROGRAM_SLUG_ALIASES["ca_on_opstc"] and ["inv-ca-on-..."] for the
+    # (now reversed) compatibility aliases.
     "or_opif": "us_or_opif",
     "pl_film_incentive": "pl_pisf_cash_rebate",
     "proposed_canada_film_or_video_production_services_tax_credit_pstc": "ca_federal_pstc",
@@ -795,4 +811,190 @@ def coverage_state(program_slug: str | None) -> str:
 def is_covered_unpriceable(program_slug: str) -> bool:
     """Back-compat alias retained for the Consolidated Global Remediation tests."""
     return blocks_economic_candidacy(program_slug)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B4 — CENTRAL AUTHORITY-EXHAUSTION ECONOMIC BLOCK (Codex bounded remediation,
+#      GLOBAL_CANONICAL_INCENTIVE_BOUNDED_REMEDIATION_CLAUDE)
+#
+# GLOBAL_PROGRAM_FAIL_CLOSED_GATE_SPEC_CODEX.md requires an ACTIVE refusal
+# gate that preempts rate and stack resolution: a missing `program_slug` is
+# not a safety gate. The 46 B1 discretionary rulings
+# (GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv) are enforced
+# here as a runtime-owned block set, TRANSCRIBED from the accepted Codex
+# ruling into source — this module never reads a documentation CSV at
+# runtime. Both classifications produce the identical runtime outcome (no
+# automatic rate, no automatic stack, zero guaranteed NPC contribution); the
+# label is preserved only for served-layer disclosure.
+#
+#   FAIL_CLOSED (33)                  — accepted authority-exhausted; the
+#                                       unresolved proposition is preserved,
+#                                       automatic pricing OFF, automatic
+#                                       stacking OFF.
+#   DISPLAY_ONLY_ZERO_GUARANTEED (13) — real discretionary/selective award;
+#                                       may remain visible through conditional
+#                                       discovery, but guaranteed value is 0.
+#
+# Fail-closed status ALWAYS outranks a stale RateRule, DoctrineRecord,
+# project reference, or stacking edge. Alias spellings inherit the canonical
+# block (canonicalization happens first, below).
+# ─────────────────────────────────────────────────────────────────────────────
+from app.data.program_slug_aliases import canonical_slug as _canonical_slug  # noqa: E402
+
+#: canonical_program_id -> Codex binding_decision. 46 rows.
+_B1_DISCRETIONARY_RULING: dict[str, str] = {
+    "ae_ad_film_rebate": "FAIL_CLOSED",
+    "ag-us-pr-puerto-rico-film-industry-economic-incentives-act": "FAIL_CLOSED",
+    "al_cash_rebate": "FAIL_CLOSED",
+    "au_nsw_pdv_rebate": "FAIL_CLOSED",
+    "au_pdv_offset": "FAIL_CLOSED",
+    "au_qld_pdv_rebate": "FAIL_CLOSED",
+    "au_sa_pdv_rebate": "FAIL_CLOSED",
+    "be_tax_shelter": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "ca_nl_all_spend_credit": "FAIL_CLOSED",
+    "ca_qc_pstc": "FAIL_CLOSED",
+    "ca_sk_production_grant": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "ch_pics_national_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "cr_tax_return_incentive": "FAIL_CLOSED",
+    "de_dfff": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "dk_production_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "eg_empc_cashback": "FAIL_CLOSED",
+    "fj_film_rebate": "FAIL_CLOSED",
+    "ge_film_rebate": "FAIL_CLOSED",
+    "gh_film_tax_incentive": "FAIL_CLOSED",
+    "il_foreign_production_fund": "FAIL_CLOSED",
+    "in_national_film": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "lu_filmfund_tax_shelter_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "me_cash_rebate": "FAIL_CLOSED",
+    "mk_cash_rebate": "FAIL_CLOSED",
+    "mn_production_incentive": "FAIL_CLOSED",
+    "mx_federal_film_incentive_2026": "FAIL_CLOSED",
+    "no_film_incentive": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "pa_film_rebate": "FAIL_CLOSED",
+    "ph_fdcp_flip": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "pt_scri_pt_cash_rebate": "FAIL_CLOSED",
+    "pt_scri_pt_medium_budget": "FAIL_CLOSED",
+    "qa_screen_production_incentive": "FAIL_CLOSED",
+    "sa_film_commission_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "se_production_rebate": "FAIL_CLOSED",
+    "sg_made_with_singapore_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "th_boi_incentive": "FAIL_CLOSED",
+    "tt_production_expenditure_rebate": "FAIL_CLOSED",
+    "tw_bamid_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "ua_cash_rebate": "FAIL_CLOSED",
+    "us_il_film_production_services_credit": "FAIL_CLOSED",
+    "us_tn_performance_grant": "FAIL_CLOSED",
+    "us_wa_mpcp": "DISPLAY_ONLY_ZERO_GUARANTEED",
+    "uy_acau_cash_rebate": "FAIL_CLOSED",
+    "uy_tax_credit_2026": "FAIL_CLOSED",
+    "uz_film_rebate": "FAIL_CLOSED",
+    "za_dtic_foreign_film": "FAIL_CLOSED",
+}
+assert len(_B1_DISCRETIONARY_RULING) == 46
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 33
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 13
+
+#: Retired / superseded runtime identities that must never resolve to an
+#: automatic rate even if a stale RateRule survives (B2 KEEP_SEPARATE and B3
+#: RETIRE rulings; GLOBAL_PROGRAM_IDENTITY_MAPPING_RULING_CODEX.csv /
+#: GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv).
+_B4_RETIRED_OR_FAIL_CLOSED_IDENTITIES: dict[str, str] = {
+    "iceland_post_production_visual_effects_and_animation_incentive": "RETIRED_SUPERSEDED_IDENTITY",
+    "us_ny_post_production_credit": "KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED",
+}
+
+_B4_REASON: dict[str, str] = {
+    "FAIL_CLOSED": (
+        "AUTHORITY_EXHAUSTED_FAIL_CLOSED (Codex B1 discretionary ruling): accepted "
+        "authority is insufficient to price this program deterministically. Automatic "
+        "pricing and automatic stacking are OFF; the unresolved proposition is preserved. "
+        "Not a validated zero benefit."
+    ),
+    "DISPLAY_ONLY_ZERO_GUARANTEED": (
+        "DISPLAY_ONLY_ZERO_GUARANTEED (Codex B1 discretionary ruling): a real "
+        "discretionary/selective award. It may be surfaced as a pursuable opportunity "
+        "through conditional discovery, but its guaranteed incentive value and guaranteed "
+        "NPC contribution are zero. Never priced from a discretionary ceiling."
+    ),
+    "RETIRED_SUPERSEDED_IDENTITY": (
+        "Retired/superseded identity (Codex B3 ruling): no separate current program. A "
+        "surviving stale RateRule for this slug must not price; the national/main scheme "
+        "carries the economics under its own identity."
+    ),
+    "KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED": (
+        "Distinct post-production program held fail-closed (Codex B2 identity ruling): not "
+        "an alias of the main production credit, and accepted primary authority is not yet "
+        "complete. Automatic pricing and stacking are OFF."
+    ),
+}
+
+
+@dataclass(frozen=True)
+class EconomicBlock:
+    """Structured result of the B4 central authority gate. Truthy — callers
+    test `if economic_block_for_program(slug): ...`."""
+    canonical_program_id: str
+    matched_spelling: str
+    classification: str      # a _B4_REASON key, or an underlying CoverageState
+    reason: str
+
+    def __bool__(self) -> bool:  # always a block when returned
+        return True
+
+
+def _b4_spellings(program_id: str) -> set[str]:
+    """Every runtime spelling equivalent to `program_id`: itself, its alias
+    canonicalization, its canonical<->runtime binding in either direction."""
+    out = {program_id, _canonical_slug(program_id),
+           CANONICAL_RUNTIME_SLUG_BINDINGS.get(program_id, "")}
+    out |= {k for k, v in CANONICAL_RUNTIME_SLUG_BINDINGS.items() if v == program_id}
+    out.discard("")
+    return out
+
+
+def economic_block_for_program(program_id: str | None) -> EconomicBlock | None:
+    """B4 CENTRAL AUTHORITY GATE. Returns a structured block when an accepted
+    authority-exhausted, discretionary-display-only, retired/superseded, or
+    duplicate identity must NOT resolve to an automatic rate or enter an
+    automatic stack. Canonicalizes aliases FIRST. Runtime-owned: never reads a
+    documentation CSV. Fail-closed status outranks any stale RateRule,
+    DoctrineRecord, project reference, or stacking edge.
+
+    Call at the FIRST executable line of resolve_program_rate(),
+    classify_rate_resolution_failure(), price_program_pair_stack() and
+    price_program_group_stack() — before any _RULES_BY_PROGRAM lookup or
+    condition evaluation."""
+    if not program_id:
+        return None
+    spellings = _b4_spellings(program_id)
+
+    # 1. B1 discretionary ruling (46).
+    for s in spellings:
+        cls = _B1_DISCRETIONARY_RULING.get(s)
+        if cls is not None:
+            return EconomicBlock(
+                canonical_program_id=next(
+                    (c for c in _B1_DISCRETIONARY_RULING if c in spellings), program_id
+                ),
+                matched_spelling=s, classification=cls, reason=_B4_REASON[cls],
+            )
+    # 2. Retired / KEEP_SEPARATE fail-closed identities.
+    for s in spellings:
+        cls = _B4_RETIRED_OR_FAIL_CLOSED_IDENTITIES.get(s)
+        if cls is not None:
+            return EconomicBlock(
+                canonical_program_id=s, matched_spelling=s,
+                classification=cls, reason=_B4_REASON[cls],
+            )
+    # 3. Pre-existing coverage-registry economic blocks (authority-insufficient,
+    #    superseded, duplicate, non-economic, selective, handoff defect) — so a
+    #    single preflight covers every fail-closed identity, not only the 46.
+    for s in spellings:
+        rec = COVERAGE_REGISTRY.get(s)
+        if rec is not None and rec.blocks_economic_candidacy:
+            return EconomicBlock(
+                canonical_program_id=s, matched_spelling=s,
+                classification=rec.state, reason=rec.reason,
+            )
+    return None
 

@@ -58,7 +58,9 @@ class TestLegacyConversionsAreDeclaredNotHidden:
         # behind a USD field must appear here.
         expected = {
             "cy_film_rebate", "es_tax_credit_foreign", "hr_cash_rebate", "de_dfff",
-            "it_tax_credit_foreign", "ie_section_481", "fr_trip", "ca_on_opstc",
+            "it_tax_credit_foreign", "ie_section_481", "fr_trip",
+            # Codex bounded remediation, B2 identity ruling: rekeyed from ca_on_opstc
+            "on_opstc",
             "mt_mfc_rebate", "gr_cash_rebate", "ma_ccm_rebate",
             "kr_kofic_location_incentive",
         }

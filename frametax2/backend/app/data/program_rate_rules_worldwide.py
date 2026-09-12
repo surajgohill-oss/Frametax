@@ -1097,7 +1097,17 @@ _CA_ON_CITATION = (
 )
 CA_ON_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-ON",
-    program_slug="ca_on_opstc",
+    # Codex bounded remediation, B2 identity ruling (GLOBAL_PROGRAM_
+    # IDENTITY_MAPPING_RULING_CODEX.csv): surviving canonical identity is
+    # on_opstc (One Ontario OPSTC identity -- collapses ca_on_opstc and the
+    # inv-ca-on-... evidence identity). Rekeyed from ca_on_opstc -- that
+    # legacy slug is now a compatibility alias (program_slug_aliases.py)
+    # resolving to the exact same RateRule/DoctrineRecord data below; no
+    # economic value changed. _SLUG_PAIR_RULES in stacking_rules.py already
+    # used "on_opstc" as the canonical spelling for every stacking pair
+    # involving Ontario's OPSTC -- this rekey aligns the rate-rule identity
+    # with the stacking identity that already existed.
+    program_slug="on_opstc",
     program_name="Ontario Production Services Tax Credit (OPSTC)",
     # Global Economic Data + Base Pricing, batch 3.
     confidence_tier="VERIFIED",
@@ -2024,7 +2034,13 @@ _US_CA_CITATION = (
 )
 US_CA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-CA",
-    program_slug="us_ca_film_credit",
+    # Codex bounded remediation, B2 identity ruling (GLOBAL_PROGRAM_
+    # IDENTITY_MAPPING_RULING_CODEX.csv): surviving canonical identity is
+    # ca_film_30 (One California Program 4.0 identity). Rekeyed from
+    # us_ca_film_credit -- that legacy slug is now a compatibility alias
+    # (program_slug_aliases.py) resolving to the exact same RateRule/
+    # DoctrineRecord data below; no economic value changed.
+    program_slug="ca_film_30",
     program_name="California Film & Television Tax Credit Program 4.0",
     # Global Formulaic Economic Completion, batch 4: promoted PARSED ->
     # VERIFIED after independently fetching AB 1138's actual statute text
@@ -2108,7 +2124,16 @@ _US_NY_CITATION = (
 )
 US_NY_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-NY",
-    program_slug="us_ny_film_credit",
+    # Codex bounded remediation, B2 identity ruling (GLOBAL_PROGRAM_
+    # IDENTITY_MAPPING_RULING_CODEX.csv): surviving canonical identity is
+    # ny_state_film (main New York production credit; BIND_MAIN_CREDIT_
+    # ALIAS_ONLY -- does NOT absorb the separate post-production credit,
+    # see US_NY_POST_DOCTRINE below, kept fully independent and fail-closed
+    # per authority_coverage_registry's B4 gate). Rekeyed from
+    # us_ny_film_credit, now a compatibility alias resolving to the same
+    # data. ny_state_film was already the spelling coverage_report.py's own
+    # migration-seeding trackers used since migration 0016.
+    program_slug="ny_state_film",
     program_name="New York State Film Tax Credit Program (Production)",
     confidence_tier="PARSED",
     incentive_type="tax_credit",
@@ -2301,7 +2326,7 @@ US_NY_POST_DOCTRINE = register(DoctrineRecord(
             conditions=(
                 RateCondition(
                     condition_id="us-ny-post-mutual-exclusivity",
-                    description="MUTUALLY EXCLUSIVE with the main us_ny_film_credit "
+                    description="MUTUALLY EXCLUSIVE with the main ny_state_film "
                                 "Production Credit for the same costs — a structure "
                                 "must never claim both for the same segment. This "
                                 "program applies ONLY to a post-production-only "
@@ -2449,11 +2474,37 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                              "never been cross-referenced into program_rate_rules's own "
                              "SourceProvenance. No new research performed.",
     ),
+    # Codex bounded remediation, B3 formulaic spec (SCHEMA_EXTENSION_
+    # REQUIRED, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv):
+    # "Up to 20% Oregon payroll plus 25% other Oregon expenses ... two
+    # disjoint eligible bases ... block single blended rate until
+    # implemented." The prior us-or-combined-262 tier applied a single
+    # flat 26.2% ("20% goods/services + 6.2% labor") to ALL qpe_usd —
+    # exactly the fabricated blended-surrogate defect the spec names (its
+    # own negative test: "No 26.2% blended surrogate").
+    #
+    # Genuinely representing two disjoint rate bases (payroll spend vs.
+    # other Oregon spend) requires the calculation engine to receive a
+    # payroll/non-payroll QPE split — a new production-fact category no
+    # caller of resolve_program_rate() currently supplies, and adding one
+    # would mean threading a new parameter through the entire pricing call
+    # chain (allocation_pricing.py, canonical_evaluation.py, every other
+    # caller) — a calculation-engine redesign, out of scope for this
+    # bounded remediation ("do not redesign the optimizer architecture").
+    # The safe, spec-compliant interim representation reuses this engine's
+    # EXISTING ceiling/floor disclosure mechanism (the same one MU/MT/
+    # AU-PDV already use for an unconfirmable band): both real component
+    # rates are modeled as ceilings (is_band_ceiling=True), so
+    # resolve_program_rate() reports has_guaranteed_floor=False — NO
+    # guaranteed rate is auto-priced — while both real figures remain
+    # disclosed on the record for a human/UI reader. This is the honest
+    # "blocked until implemented" state the spec asks for, not a fabricated
+    # blend.
     tiers=(
         DoctrineRateTier(
-            tier_id="us-or-combined-262",
-            rate=0.262,
-            is_band_ceiling=False,
+            tier_id="us-or-payroll-ceiling-20",
+            rate=0.20,
+            is_band_ceiling=True,
             min_qpe_usd=1_000_000.0,
             conditions=(
                 RateCondition(
@@ -2463,6 +2514,57 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                           "$1 million in Oregon to qualify (corroborated "
                           "by 3 sources)",
                     kind="min_qpe_usd", threshold_usd=1_000_000.0,
+                ),
+                RateCondition(
+                    condition_id="us-or-payroll-component-basis",
+                    description="Up to 20% applies to the Oregon PAYROLL "
+                                "component of spend specifically, not total "
+                                "QPE — this engine has no payroll/other "
+                                "spend split, so this rate cannot be "
+                                "pre-applied without risking misapplying it "
+                                "to non-payroll spend",
+                    quote="Codex bounded remediation, accepted formulaic "
+                          "correction: 'Up to 20% Oregon payroll plus 25% "
+                          "other Oregon expenses'",
+                    kind="component_basis_not_modeled",
+                ),
+                RateCondition(
+                    condition_id="us-or-fund-competitive",
+                    description="Annual fund is limited and competitive — "
+                                "no single project may receive more than "
+                                "50% of the annual fund; rebate is not "
+                                "guaranteed even if criteria are met",
+                    quote="No single project can receive more than 50% of "
+                          "the OPIF fund in any fiscal year (corroborated "
+                          "by 3 sources)",
+                    kind="discretionary_band",
+                ),
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="us-or-other-ceiling-25",
+            rate=0.25,
+            is_band_ceiling=True,
+            min_qpe_usd=1_000_000.0,
+            conditions=(
+                RateCondition(
+                    condition_id="us-or-min-spend",
+                    description="Minimum Oregon qualifying expenditure",
+                    quote="a production must directly spend at least US "
+                          "$1 million in Oregon to qualify (corroborated "
+                          "by 3 sources)",
+                    kind="min_qpe_usd", threshold_usd=1_000_000.0,
+                ),
+                RateCondition(
+                    condition_id="us-or-other-component-basis",
+                    description="25% applies to OTHER (non-payroll) Oregon "
+                                "expenses specifically, not total QPE — see "
+                                "us-or-payroll-component-basis for the "
+                                "matching payroll-side condition",
+                    quote="Codex bounded remediation, accepted formulaic "
+                          "correction: 'Up to 20% Oregon payroll plus 25% "
+                          "other Oregon expenses'",
+                    kind="component_basis_not_modeled",
                 ),
                 RateCondition(
                     condition_id="us-or-fund-competitive",
@@ -2684,6 +2786,108 @@ ZA_DOCTRINE = register(DoctrineRecord(
 ))
 register_rate_rules(rate_rules_for(ZA_DOCTRINE))
 
+# ── South Africa: NFVF Rebate ───────────────────────────────────────────────
+# Codex bounded remediation, B3 formulaic spec (ADD_RULE_AND_COMPONENT_
+# BRANCH, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv). Distinct
+# canonical identity from za_dtic_foreign_film above (a SEPARATE program,
+# administered by a different body -- Codex's own accepted adjudication
+# treats DTIC's foreign-film incentive as B1 FAIL_CLOSED while this
+# identity is ADD_RULE, so no data is copied between them: "no cross-
+# program rule leakage"). Accepted correction text: "Foreign location
+# production: 25% QSAPE plus conditioned 5%; post-only: 25% plus
+# additions; production cap R25m and detailed gates."
+#
+# The foreign-location-production branch (25% base + conditional +5%) is
+# modeled below with its own real, distinct rate tiers. The post-
+# production-only branch ("25% plus additions") is NOT separately modeled
+# as its own tier/identity: the accepted manifest gives no specific
+# numeric "additions" or gate criteria for that branch (unlike, e.g., the
+# NY main-vs-post-production split, which has fully independent, sourced
+# figures) -- inventing specifics here would fabricate an eligibility
+# fact. Disclosed as an accepted-but-not-separately-modeled variant,
+# matching this file's own established convention for a genuine minimum-
+# spend/threshold alternative it does not compute (e.g. fr_trip's
+# 50%-of-world-budget alternative).
+_ZA_NFVF_CITATION = (
+    "Codex bounded remediation, accepted formulaic correction (GLOBAL_"
+    "PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv): 'Foreign location "
+    "production: 25% QSAPE plus conditioned 5%; post-only: 25% plus "
+    "additions; production cap R25m and detailed gates.' The post-only "
+    "branch's specific 'additions' and 'detailed gates' are not "
+    "separately modeled -- no specific numeric figure is given in the "
+    "accepted manifest for that branch, so it is disclosed here rather "
+    "than fabricated."
+)
+ZA_NFVF_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="ZA",
+    program_slug="za_nfvf_rebate",
+    program_name="South Africa NFVF Rebate",
+    confidence_tier="PARSED",
+    incentive_type="cash_rebate",
+    is_refundable=None,
+    is_transferable=False,
+    min_spend_usd=None,   # ZAR not convertible — no sourced ZAR/USD FX
+                           # rate exists in production_normalization.
+                           # FX_RATE_SNAPSHOTS
+    annual_cap_usd=None,  # ZAR 25,000,000 project cap real and confirmed
+                           # but NOT converted — same undisclosed-FX-rate
+                           # discipline as za_dtic_foreign_film above
+    requires_cultural_test=False,
+    citation=_ZA_NFVF_CITATION,
+    source_ref="codex-bounded-remediation-za-nfvf-rebate-formulaic-spec",
+    provenance=SourceProvenance(
+        issuing_authority="National Film and Video Foundation (NFVF), South Africa",
+        citation_detail="Foreign location production: 25% QSAPE plus "
+                         "conditioned 5%; production cap ZAR 25,000,000.",
+        interpretation_note="min_spend_usd/annual_cap_usd left None — ZAR "
+                             "not convertible, no sourced ZAR/USD FX basis "
+                             "on file. The post-production-only branch "
+                             "('25% plus additions') is disclosed in the "
+                             "citation but not separately modeled — no "
+                             "specific numeric figure is given for it in "
+                             "the accepted manifest.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="za-nfvf-base-25",
+            rate=0.25,
+            is_band_ceiling=False,
+            conditions=(
+                RateCondition(
+                    condition_id="za-nfvf-post-only-branch-not-modeled",
+                    description="A separate post-production-only branch "
+                                "('25% plus additions') is accepted but not "
+                                "separately modeled — no specific numeric "
+                                "figure or gate criteria given in the "
+                                "accepted manifest for that branch",
+                    quote="post-only: 25% plus additions (Codex bounded "
+                          "remediation, accepted formulaic correction)",
+                    kind="material_funding_risk_not_modeled",
+                ),
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="za-nfvf-conditional-ceiling-30",
+            rate=0.30,
+            is_band_ceiling=True,
+            conditions=(
+                RateCondition(
+                    condition_id="za-nfvf-conditioned-uplift",
+                    description="+5% requires meeting an unspecified "
+                                "condition ('conditioned 5%') — the "
+                                "accepted manifest does not state the exact "
+                                "qualifying criteria, so this cannot be "
+                                "pre-evaluated as a guaranteed uplift",
+                    quote="25% QSAPE plus conditioned 5% (Codex bounded "
+                          "remediation, accepted formulaic correction)",
+                    kind="discretionary_band",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(ZA_NFVF_DOCTRINE))
+
 # ── United Arab Emirates — Abu Dhabi: 35%++ Cashback Rebate ─────────────────
 #
 # Checked internal source first: global_inventory_extended.py had a
@@ -2812,14 +3016,33 @@ MA_DOCTRINE = register(DoctrineRecord(
             min_qpe_usd=1_000_000.0,
             conditions=(
                 RateCondition(
-                    condition_id="ma-min-spend-and-days",
-                    description="Minimum 10M MAD (~$1M) AND 18 shooting "
-                                "days in Morocco — the shoot-days "
-                                "condition is not pre-evaluable (no "
-                                "shooting-days fact exists in this engine)",
-                    quote="Minimum spend of 10 million MAD and 18 shooting "
-                          "days required (corroborated by 4 sources)",
+                    condition_id="ma-min-spend",
+                    description="Minimum 10M MAD (~$1M) qualifying Moroccan "
+                                "expenditure",
+                    quote="Minimum spend of 10 million MAD ... required "
+                          "(corroborated by 4 sources)",
                     kind="min_qpe_usd", threshold_usd=1_000_000.0,
+                ),
+                # Codex bounded remediation, B3 formulaic spec
+                # (UPDATE_THRESHOLD, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_
+                # SPEC_CODEX.csv): the 18-shooting-days requirement was
+                # previously bundled into the SAME condition as the dollar
+                # threshold under kind="min_qpe_usd" -- resolve_program_
+                # rate() only ever evaluates that kind against qpe_usd, so
+                # the real, separately-confirmed 18-day gate was silently
+                # never checked at all. Split into its own condition so it
+                # is honestly disclosed as USER_FACT_REQUIRED (no shooting-
+                # days fact exists in this engine) rather than silently
+                # dropped inside the spend condition.
+                RateCondition(
+                    condition_id="ma-min-shooting-days",
+                    description="Minimum 18 shooting days in Morocco — a "
+                                "real, separately-confirmed threshold, not "
+                                "pre-evaluable (no shooting-days fact "
+                                "exists in this engine)",
+                    quote="... and 18 shooting days required (corroborated "
+                          "by 4 sources)",
+                    kind="project_fact_dependent_eligibility",
                 ),
             ),
         ),
@@ -3298,9 +3521,25 @@ UY_DOCTRINE = register(DoctrineRecord(
 ))
 register_rate_rules(rate_rules_for(UY_DOCTRINE))
 
-# ── Thailand: BOI Film Incentive ────────────────────────────────────────────
+# ── Thailand: Foreign Film Incentive (cash rebate) ─────────────────────────
 # Checked internal source first: catalog had 15-20% DISCOVERY. STALE —
 # corroborated increase to 30%, min spend $1.4M.
+#
+# Codex bounded remediation, B3 formulaic spec (ADD_RULE, GLOBAL_PROGRAM_
+# FORMULAIC_RATE_RULE_SPEC_CODEX.csv) + B1 discretionary ruling
+# (GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): this
+# DoctrineRecord's own data was ALWAYS sourced from the canonical corpus's
+# th_film_incentive entry (see the CORRECT_DATA citation below, predating
+# this remediation) but had been registered under the DIFFERENT program
+# th_boi_incentive via a prior pass's alias reconciliation
+# (program_slug_aliases.py: "th_film_incentive" -> "th_boi_incentive",
+# "BOI in both spellings") that Codex's accepted adjudication supersedes:
+# th_film_incentive (this cash-rebate program, 15% base / up to 30%) and
+# th_boi_incentive (the separate BOI incentive, now B1 FAIL_CLOSED —
+# authority-exhausted, no defensible rate) are TWO DISTINCT programs, not
+# two spellings of one. Rekeyed to the identity the data actually
+# describes; the alias is REMOVED (see program_slug_aliases.py) so
+# th_boi_incentive correctly carries no rate data of its own.
 _TH_CITATION = (
     "thailand-business-news.com, overgrownproductions.com: 'rebate of up "
     "to 30% in cash,' 'must spend the equivalent of $1.4m US locally to "
@@ -3315,8 +3554,8 @@ _TH_CITATION = (
     "the same discretionary_band mechanism as Mauritius/Malta."
 )
 TH_DOCTRINE = register(DoctrineRecord(
-    jurisdiction_code="TH", program_slug="th_boi_incentive",
-    program_name="Thailand BOI Film Incentive", confidence_tier="PARSED",
+    jurisdiction_code="TH", program_slug="th_film_incentive",
+    program_name="Thailand Foreign Film Incentive (Cash Rebate)", confidence_tier="PARSED",
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=1_400_000.0, annual_cap_usd=None, requires_cultural_test=False,
     citation=_TH_CITATION, source_ref="thailand-business-news+overgrownproductions",
@@ -5578,7 +5817,45 @@ US_TX_DOCTRINE = register(DoctrineRecord(
                              "bonus' tier claim was not independently "
                              "confirmed and is not modeled.",
     ),
-    tiers=(DoctrineRateTier(tier_id="us-tx-ceiling-31", rate=0.31, is_band_ceiling=True),),
+    # Codex bounded remediation, B3 formulaic spec (UPDATE_TO_ALLOCATION_
+    # MODEL, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv): "guaranteed
+    # automatic rate is zero without allocation fact ... SB22 provides $300m
+    # per biennium through 2035; resident thresholds are phased ... Award/
+    # allocation fact required." This tier was ALREADY a lone band ceiling
+    # with no floor tier, so resolve_program_rate() already reports
+    # has_guaranteed_floor=False (zero guaranteed NPC without an award) —
+    # the two conditions below make that same real-world requirement
+    # EXPLICIT and disclosed, rather than an implicit consequence of the
+    # tier shape alone.
+    tiers=(DoctrineRateTier(
+        tier_id="us-tx-ceiling-31", rate=0.31, is_band_ceiling=True,
+        conditions=(
+            RateCondition(
+                condition_id="us-tx-award-allocation-required",
+                description="A production-specific grant award/allocation "
+                            "is required from the biennial-appropriated "
+                            "fund (SB22: $300M per biennium through 2035) "
+                            "— qualifying does not itself guarantee funding "
+                            "is available; never auto-priced without an "
+                            "award fact",
+                quote="Qualifying projects are eligible to receive a cash "
+                      "grant up to 31% of eligible Texas spending "
+                      "(gov.texas.gov, official); SB22 appropriates $300M "
+                      "per biennium through 2035 (Codex bounded "
+                      "remediation, accepted formulaic correction)",
+                kind="discretionary_band",
+            ),
+            RateCondition(
+                condition_id="us-tx-resident-threshold-phased",
+                description="Texas-resident crew/cast thresholds are phased "
+                            "in over time (SB22) — not pre-evaluable "
+                            "without a project-specific residency-mix fact",
+                quote="resident thresholds are phased (Codex bounded "
+                      "remediation, accepted formulaic correction)",
+                kind="project_fact_dependent_eligibility",
+            ),
+        ),
+    ),),
 ))
 register_rate_rules(rate_rules_for(US_TX_DOCTRINE))
 
@@ -6169,38 +6446,70 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
 register_rate_rules(rate_rules_for(CA_NB_DOCTRINE))
 
 # ── Netherlands: Netherlands Film Production Incentive (NFPI) ─────────────
-# Catalog had 30% flat -- corrected/expanded. Confirmed: 30-40% tax rebate.
+# Codex bounded remediation, B3 formulaic spec (UPDATE, GLOBAL_PROGRAM_
+# FORMULAIC_RATE_RULE_SPEC_CODEX.csv): the prior 30%/40% band rested on a
+# single, non-corroborated secondary search hit (rodriqueslaw.com) that
+# never disclosed its scaling criteria -- an unsupported band, not a real
+# statutory structure. Accepted correction: "35% of qualifying Dutch
+# costs, subject to points/independence tests, caps and format
+# thresholds." One flat 35% tier, with the real qualification gates
+# (points/independence test, format thresholds) modeled as explicit
+# project-fact-dependent eligibility conditions rather than a fabricated
+# rate band.
 NL_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="NL", program_slug="nl_film_production_incentive",
     program_name="Netherlands Film Production Incentive (NFPI)",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
-    citation="rodriqueslaw.com (single search hit, not further "
-              "corroborated this pass): 'The Netherlands offers a 30-40% "
-              "tax rebate.' Confirms catalog's 30% as the floor, adds a "
-              "40% ceiling not previously known.",
-    source_ref="rodriqueslaw.com-netherlands",
+    annual_cap_usd=None, requires_cultural_test=True,
+    citation="Codex bounded remediation, accepted formulaic correction "
+              "(GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv): '35% of "
+              "qualifying Dutch costs, subject to points/independence "
+              "tests, caps and format thresholds.' Supersedes the prior "
+              "30%/40% band, which rested on a single, non-corroborated "
+              "secondary search hit (rodriqueslaw.com) that never "
+              "disclosed its scaling criteria between 30% and 40% -- an "
+              "unsupported band, not a confirmed statutory structure.",
+    source_ref="codex-bounded-remediation-nl-nfpi-formulaic-spec",
     provenance=SourceProvenance(
         issuing_authority="Netherlands Film Fund (Nederlands Filmfonds)",
         source_url="https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive",
-        citation_detail="Netherlands Film Production Incentive — Netherlands Film Fund (Filmfonds)",
-        verified_date="2026-07-26",
-        interpretation_note="Recovered internally: this program already carried "
-                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
-                             "(a separate existing canonical provenance store) that had "
-                             "never been cross-referenced into program_rate_rules's own "
-                             "SourceProvenance. No new research performed.",
+        citation_detail="Accepted correction: flat 35% of qualifying Dutch "
+                         "costs, points/independence tests, caps and "
+                         "format thresholds retained as eligibility gates.",
+        interpretation_note="The prior 40% ceiling tier is REMOVED -- its "
+                             "sole source never disclosed how a production "
+                             "would move from 30% to 40%, so it was an "
+                             "unsupported band rather than a real statutory "
+                             "structure. Points/independence test and "
+                             "format-threshold facts are not collected by "
+                             "this engine and are modeled as USER_FACT_"
+                             "REQUIRED conditions, never assumed satisfied.",
     ),
-    tiers=(DoctrineRateTier(tier_id="nl-floor-30", rate=0.30, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="nl-ceiling-40", rate=0.40, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="nl-scaling-criteria-undisclosed",
-                                 description="Scaling from 30% to 40% -- "
-                                             "criteria not disclosed by "
-                                             "the single source checked",
-                                 quote="30-40% tax rebate (rodriqueslaw.com)",
-                                 kind="discretionary_band"),)),),
+    tiers=(DoctrineRateTier(
+        tier_id="nl-flat-35", rate=0.35, is_band_ceiling=False,
+        conditions=(
+            RateCondition(
+                condition_id="nl-points-independence-test",
+                description="Points/independence test required — an "
+                            "eligibility gate this engine does not "
+                            "pre-evaluate without a project-specific fact",
+                quote="35% of qualifying Dutch costs, subject to points/"
+                      "independence tests (Codex bounded remediation, "
+                      "accepted formulaic correction)",
+                kind="project_fact_dependent_eligibility",
+            ),
+            RateCondition(
+                condition_id="nl-format-threshold",
+                description="Format-specific threshold(s) apply — not "
+                            "modeled as a numeric gate absent a sourced "
+                            "figure; disclosed as a real eligibility fact",
+                quote="subject to ... format thresholds (Codex bounded "
+                      "remediation, accepted formulaic correction)",
+                kind="project_fact_dependent_eligibility",
+            ),
+        ),
+    ),),
 ))
 register_rate_rules(rate_rules_for(NL_DOCTRINE))
 
@@ -6278,6 +6587,12 @@ CZ_DOCTRINE = register(DoctrineRecord(
     program_name="Czech Film Incentive",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
+    # CZK 450,000,000 project incentive cap (Codex bounded remediation, B3
+    # formulaic spec) is real and confirmed but NOT converted -- no sourced
+    # CZK/USD FX rate exists in production_normalization.FX_RATE_SNAPSHOTS
+    # (would require fabricating an unsourced rate). See QPE_CAP_RULES
+    # (program_rate_rules.py) for the separately-modeled, executable 80%
+    # eligible-base cap, which needs no currency conversion.
     annual_cap_usd=None, requires_cultural_test=True,
     production_types=("feature_film",),
     citation="rodriqueslaw.com: 'The primary incentive rate will be 25%, "
@@ -6312,6 +6627,8 @@ CZ_ANIMATION_DOCTRINE = register(DoctrineRecord(
     program_name="Czech Film Incentive — Animation/Digital",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
+    # Same CZK 450,000,000 project cap and undisclosed-FX-rate reasoning as
+    # the live-action record above.
     annual_cap_usd=None, requires_cultural_test=True,
     production_types=("animation",),
     citation="rodriqueslaw.com: 'A 35% production incentive rate is also "

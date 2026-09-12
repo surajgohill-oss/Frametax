@@ -112,7 +112,7 @@ def test_solve_blocks_on_self_inconsistent_treaty_data_never_guesses():
 
 def test_conditional_scenario_user_decision_required_when_cultural_test_blocks_solve(monkeypatch):
     treaty = _synthetic_treaty("zz-yy-bilateral", "ZZ", "YY", cultural_test=True,
-                                maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"])
+                                maj_unlocks=["uk_avec"], min_unlocks=["bg_film_encouragement_act_rebate"])
     monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
 
     scenario = ce._build_conditional_bilateral_scenario(
@@ -133,7 +133,7 @@ def test_conditional_scenario_not_feasible_when_reresolution_fails(monkeypatch):
     NOT_FEASIBLE branch degrades safely rather than fabricating economics
     if re-resolution ever returns anything other than ELIGIBLE."""
     treaty = _synthetic_treaty("zz-yy-bilateral", "ZZ", "YY",
-                                maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"])
+                                maj_unlocks=["uk_avec"], min_unlocks=["bg_film_encouragement_act_rebate"])
     monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
     monkeypatch.setattr(ce, "evaluate_bilateral_coproduction_opportunity", lambda *a, **k: None)
 
@@ -170,14 +170,14 @@ def test_conditional_scenario_fully_prices_synthetic_generic_route_end_to_end(mo
     """THE mandatory generic, non-LU fixture (spec Section 12 / Runtime
     Acceptance item P): an entirely synthetic bilateral treaty between
     two fictitious ISO codes, unlocking two REAL canonical-rate-rule
-    programs (uk_avec, be_tax_shelter, chosen only because they carry
+    programs (uk_avec, bg_film_encouragement_act_rebate, chosen only because they carry
     real RateRule entries -- not because of any UK/Belgium storyline),
     proving the SAME pipeline (solve -> re-resolve -> canonical pricing
     -> conditional NPC) that LU's GB-AU route exercises, with zero
     project-specific branching."""
     treaty = _synthetic_treaty(
         "zz-yy-bilateral", "ZZ", "YY", maj_min=20.0, min_min=20.0, min_max=80.0,
-        maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"],
+        maj_unlocks=["uk_avec"], min_unlocks=["bg_film_encouragement_act_rebate"],
     )
     monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
 
@@ -192,7 +192,7 @@ def test_conditional_scenario_fully_prices_synthetic_generic_route_end_to_end(mo
     assert scenario["assumed_minority_contribution_pct"] == 20.0
     assert scenario["canonical_data_gaps"] == []
     priced_slugs = {c["program_slug"] for c in scenario["priced_components"]}
-    assert priced_slugs == {"uk_avec", "be_tax_shelter"}
+    assert priced_slugs == {"uk_avec", "bg_film_encouragement_act_rebate"}
     assert scenario["fully_priced"] is True
     assert scenario["status"] == "CONDITIONAL_PROJECT_FACT_DEPENDENT"
     assert scenario["conditional_incentive_usd"] > 0
@@ -327,7 +327,7 @@ def test_conditional_scenario_allocates_one_budget_never_prices_full_budget_twic
     full-budget prices."""
     treaty = _synthetic_treaty(
         "zz-yy-bilateral", "ZZ", "YY", maj_min=20.0, min_min=20.0, min_max=80.0,
-        maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"],
+        maj_unlocks=["uk_avec"], min_unlocks=["bg_film_encouragement_act_rebate"],
     )
     monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
 
@@ -378,7 +378,7 @@ def test_conditional_scenario_infeasible_split_fails_closed_never_fully_priced(m
     violates the treaty's own majority floor."""
     treaty = _synthetic_treaty(
         "zz-yy-bilateral", "ZZ", "YY", maj_min=50.0, min_min=60.0, min_max=80.0,
-        maj_unlocks=["uk_avec"], min_unlocks=["be_tax_shelter"],
+        maj_unlocks=["uk_avec"], min_unlocks=["bg_film_encouragement_act_rebate"],
     )
     monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
 

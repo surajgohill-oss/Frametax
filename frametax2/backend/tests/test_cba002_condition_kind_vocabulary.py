@@ -11,6 +11,8 @@ conditions whose semantics depend solely on prose text.
 """
 from __future__ import annotations
 
+import pytest
+
 from app.data.program_rate_rules import (
     CONDITION_KIND_STATE,
     CONDITION_STATE_AUTHORITY_UNRESOLVED,
@@ -19,10 +21,47 @@ from app.data.program_rate_rules import (
     CONDITION_STATE_NOT_APPLICABLE,
     CONDITION_STATE_SCRIPT_FACT_REQUIRED,
     CONDITION_STATE_USER_FACT_REQUIRED,
+    RateCondition,
+    RateRule,
     _RULES_BY_PROGRAM,
     get_qpe_cap,
     resolve_program_rate,
 )
+
+#: Codex bounded remediation, B1 discretionary ruling (GLOBAL_PROGRAM_
+#: DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): de_dfff is now FAIL_CLOSED
+#: and can no longer resolve at runtime, so it can no longer serve as this
+#: file's real-program example of the min_qpe_pct_of_total_budget condition
+#: kind. This file's own purpose is the GENERIC condition-kind vocabulary,
+#: not Germany specifically, so a synthetic, clearly-labeled test-only
+#: RateRule mirrors de_dfff's exact real tier/condition shape (one
+#: non-ceiling 30% tier, one min_qpe_pct_of_total_budget condition at a 20%
+#: threshold) on a fake slug -- proving the SAME production code path
+#: (resolve_program_rate's inline condition-evaluation branch) independently
+#: of any one real program's current authority status.
+_SYNTHETIC_MIN_QPE_PCT_SLUG = "_test_cba002_min_qpe_pct_of_budget_fixture"
+
+
+@pytest.fixture
+def synthetic_min_qpe_pct_program():
+    rule = RateRule(
+        program_slug=_SYNTHETIC_MIN_QPE_PCT_SLUG,
+        tier_id="test-min-spend-pct-of-budget",
+        rate=0.30, is_band_ceiling=False, production_types=("feature_film",),
+        min_qpe_usd=None,
+        conditions=(RateCondition(
+            condition_id="test-min-spend-pct-of-budget",
+            description="Test fixture mirroring de_dfff's real min-spend-pct-of-budget condition.",
+            quote="Test fixture -- not a real statutory citation.",
+            kind="min_qpe_pct_of_total_budget", threshold_pct=0.20,
+        ),),
+        confidence_tier="DISCOVERY", citation="test fixture", source_ref="test-fixture",
+    )
+    _RULES_BY_PROGRAM[_SYNTHETIC_MIN_QPE_PCT_SLUG] = (rule,)
+    try:
+        yield _SYNTHETIC_MIN_QPE_PCT_SLUG
+    finally:
+        del _RULES_BY_PROGRAM[_SYNTHETIC_MIN_QPE_PCT_SLUG]
 
 _VALID_STATES = {
     CONDITION_STATE_EXECUTABLE,
@@ -72,25 +111,30 @@ def test_cptc_uses_the_60_pct_qpe_cap_via_the_existing_mechanism():
     assert cap.cap_base == "total_worldwide_budget"
 
 
-def test_germany_min_qpe_pct_condition_pass_fail_and_unresolved():
+def test_germany_min_qpe_pct_condition_pass_fail_and_unresolved(synthetic_min_qpe_pct_program):
     """Runtime proof: the same condition kind resolves to all three real
-    outcomes depending on the facts supplied — pass, fail, unresolved."""
+    outcomes depending on the facts supplied — pass, fail, unresolved.
+
+    SUPERSEDED (Codex bounded remediation, B1 ruling): previously ran
+    directly against de_dfff (now FAIL_CLOSED); see the fixture's own
+    docstring for why a synthetic same-shape fixture replaces it here."""
+    slug = synthetic_min_qpe_pct_program
     r_pass = resolve_program_rate(
-        "de_dfff", production_type="feature_film",
+        slug, production_type="feature_film",
         qpe_usd=1_000_000, gross_budget_usd=4_000_000,
     )
     r_fail = resolve_program_rate(
-        "de_dfff", production_type="feature_film",
+        slug, production_type="feature_film",
         qpe_usd=500_000, gross_budget_usd=4_000_000,
     )
     r_unresolved = resolve_program_rate(
-        "de_dfff", production_type="feature_film",
+        slug, production_type="feature_film",
         qpe_usd=1_000_000, gross_budget_usd=None,
     )
     assert r_pass is not None and r_fail is not None and r_unresolved is not None
 
     def _cond(r):
-        return next(c for c in r.conditions_evaluated if c.condition_id == "de-min-spend-pct-of-budget")
+        return next(c for c in r.conditions_evaluated if c.condition_id == "test-min-spend-pct-of-budget")
 
     c_pass, c_fail, c_unresolved = _cond(r_pass), _cond(r_fail), _cond(r_unresolved)
     assert c_pass.satisfied is True and c_pass.condition_state == CONDITION_STATE_EXECUTABLE
@@ -144,30 +188,37 @@ def test_reclassified_egypt_fiji_conditions_are_project_fact_eligibility_gates()
 
 # ── CBA-002 continuation: TYPED RATE CONDITION -> QUALIFICATION propagation ──
 
-def test_condition_evaluation_carries_its_source_kind():
+def test_condition_evaluation_carries_its_source_kind(synthetic_min_qpe_pct_program):
     """The new ConditionEvaluation.kind field must reflect the real
     RateCondition.kind so downstream qualification propagation can filter
-    by real semantics, never by re-deriving them from prose."""
+    by real semantics, never by re-deriving them from prose.
+
+    SUPERSEDED (Codex bounded remediation, B1 ruling): see
+    synthetic_min_qpe_pct_program's docstring."""
+    slug = synthetic_min_qpe_pct_program
     r = resolve_program_rate(
-        "de_dfff", production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
+        slug, production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
     )
-    cond = next(c for c in r.conditions_evaluated if c.condition_id == "de-min-spend-pct-of-budget")
+    cond = next(c for c in r.conditions_evaluated if c.condition_id == "test-min-spend-pct-of-budget")
     assert cond.kind == "min_qpe_pct_of_total_budget"
 
 
-def test_qualification_propagation_downgrades_on_unmet_executable_condition():
+def test_qualification_propagation_downgrades_on_unmet_executable_condition(synthetic_min_qpe_pct_program):
+    """SUPERSEDED (Codex bounded remediation, B1 ruling): see
+    synthetic_min_qpe_pct_program's docstring."""
     from app.services.canonical_evaluation import _merge_rate_condition_into_qualification
     from app.calculators.canonical_qualification_result import QUAL_CURABLE_GAP, QUAL_QUALIFIES
 
+    slug = synthetic_min_qpe_pct_program
     r_fail = resolve_program_rate(
-        "de_dfff", production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
+        slug, production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
     )
     merged = _merge_rate_condition_into_qualification(
         {"state": QUAL_QUALIFIES, "reasoning_trace": [], "missing_facts": [], "curable_requirements": []},
-        r_fail, "de_dfff", "DE",
+        r_fail, slug, "DE",
     )
     assert merged["state"] == QUAL_CURABLE_GAP
-    assert "de-min-spend-pct-of-budget" in merged["curable_requirements"]
+    assert "test-min-spend-pct-of-budget" in merged["curable_requirements"]
 
 
 def test_qualification_propagation_no_impact_when_condition_satisfied():

@@ -85,8 +85,18 @@ def _known_slugs() -> set[str]:
 
 
 def _aliases_for(slug: str) -> tuple[str, ...]:
-    aliases = {k for k, v in CANONICAL_RUNTIME_SLUG_BINDINGS.items() if v == slug}
-    aliases.update(k for k, v in PROGRAM_SLUG_ALIASES.items() if v == slug)
+    """Every other spelling in `slug`'s equivalence class, regardless of
+    whether `slug` itself is the canonical identity or one of its known
+    variant/legacy spellings (Codex bounded remediation, B2 identity
+    ruling: callers like canonical_stack_bridge.py's
+    _slug_and_alias_candidates() pass whatever spelling a StructureSpec/
+    StackCandidate happens to carry — not always pre-canonicalized — so
+    this must resolve correctly starting from EITHER direction)."""
+    canonical = PROGRAM_SLUG_ALIASES.get(slug, slug)
+    aliases = {k for k, v in CANONICAL_RUNTIME_SLUG_BINDINGS.items() if v == canonical}
+    aliases.update(k for k, v in PROGRAM_SLUG_ALIASES.items() if v == canonical)
+    aliases.add(canonical)
+    aliases.discard(slug)
     return tuple(sorted(aliases))
 
 

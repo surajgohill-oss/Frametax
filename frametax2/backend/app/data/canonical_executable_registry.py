@@ -27,7 +27,8 @@ resolved doctrine and a non-empty RateRule tuple) as the authoritative
 list of EXECUTABLE JURISDICTIONS, and cross-references
 executable_jurisdiction_registry._REGISTRY to also surface SECONDARY
 program slugs for a jurisdiction that already has a different primary
-slug (e.g. US-NY: us_ny_film_credit is primary,
+slug (e.g. US-NY: ny_state_film is primary [Codex bounded remediation,
+B2 identity ruling: rekeyed from us_ny_film_credit],
 us_ny_post_production_credit is secondary; CZ: cz_film_incentive is
 primary, cz_film_incentive_animation is secondary).
 

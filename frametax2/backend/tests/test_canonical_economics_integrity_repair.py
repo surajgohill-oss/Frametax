@@ -114,16 +114,28 @@ def test_every_authority_unresolved_program_with_a_real_rate_still_prices():
 def test_authority_unresolved_program_prices_via_direct_price_segment():
     """The route that bypasses discovery entirely must ALSO reflect the
     two-axis contract: a real floor rate prices; provenance incompleteness
-    is disclosed separately (see canonical_evaluation.py), not gated here."""
+    is disclosed separately (see canonical_evaluation.py), not gated here.
+
+    Candidate-selection note (Codex bounded remediation, B1 discretionary
+    ruling): 5 of the AUTHORITY_UNRESOLVED_NON_PRICEABLE slugs with a real
+    floor rate (including al_cash_rebate, the slug this test's `next()`
+    used to pick deterministically) are ALSO named in Codex's accepted B1
+    ruling as FAIL_CLOSED -- an economic-axis block that outranks the
+    provenance-axis two-axis contract this test protects (see
+    authority_coverage_registry.economic_block_for_program). Excluding
+    B1-blocked slugs from the candidate pool keeps this test proving the
+    two-axis contract on a slug where it still actually applies, rather
+    than on one Codex has since overridden."""
     from app.calculators.allocation_pricing import price_segment
     from app.calculators.production_allocation import AccountAllocation, AssignmentKind
-    from app.data.authority_coverage_registry import COVERAGE_REGISTRY
+    from app.data.authority_coverage_registry import COVERAGE_REGISTRY, economic_block_for_program
     from app.data.program_rate_rules import get_rate_rules
 
     slug = next(
         s for s, rec in COVERAGE_REGISTRY.items()
         if rec.state == "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
         and any(not r.is_band_ceiling for r in get_rate_rules(s))
+        and economic_block_for_program(s) is None
     )
     alloc = AccountAllocation(
         account_code="2000", description="Production spend",
@@ -354,16 +366,30 @@ def test_unconfirmed_conditional_ceiling_cannot_become_a_deterministic_rate():
 def test_a_determinate_floorless_ceiling_still_prices():
     """No over-blocking. A program whose only tier is a band ceiling but
     whose conditions are ALL pre-evaluable is determinate and must keep
-    pricing -- the repair targets unconfirmable discretion, not the shape."""
+    pricing -- the repair targets unconfirmable discretion, not the shape.
+
+    SUPERSEDED example program (Codex bounded remediation, B3 formulaic
+    spec, UPDATE_TO_ALLOCATION_MODEL): this test used to use us_tx_miip as
+    its example of a "floorless ceiling with all-pre-evaluable conditions".
+    Codex's accepted ruling requires us_tx_miip to genuinely carry
+    unconfirmable award/allocation and phased-resident-threshold
+    conditions ("never auto-price 31% ceiling ... no award yields zero
+    guaranteed NPC") -- it is deliberately no longer determinate, which is
+    the CORRECT new behavior, not a regression in this test's own
+    generic invariant. us_nc_film_entertainment_grant (25% flat ceiling,
+    a single pre-evaluable min_qpe_usd condition, unaffected by this
+    remediation) is used instead to keep proving the same invariant this
+    test protects: a floorless ceiling with determinate conditions must
+    still price."""
     from app.data import program_rate_rules as prr
 
     rr = prr.resolve_program_rate(
-        "us_tx_miip", production_type="feature_film", qpe_usd=5_000_000.0,
+        "us_nc_film_entertainment_grant", production_type="feature_film", qpe_usd=5_000_000.0,
     )
     assert rr is not None and rr.has_guaranteed_floor is False
     assert not any(e.satisfied is None for e in rr.conditions_evaluated)
 
-    seg = _probe_segment("us_tx_miip")
+    seg = _probe_segment("us_nc_film_entertainment_grant")
     assert seg.executable is True
     assert seg.incentive_floor_usd > 0
 

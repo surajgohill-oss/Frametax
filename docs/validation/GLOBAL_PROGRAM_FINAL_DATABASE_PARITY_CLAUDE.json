@@ -1,0 +1,23 @@
+{
+  "workstream": "GLOBAL_CANONICAL_INCENTIVE_BOUNDED_REMEDIATION_CLAUDE",
+  "artifact": "GLOBAL_PROGRAM_FINAL_DATABASE_PARITY_CLAUDE",
+  "manifest_final_programs_count": 122,
+  "all_programs_count": 425,
+  "bounded_followup_manifest_rows": 107,
+  "canonical_program_reconciliation": {
+    "required": 586,
+    "note": "586 is the Codex-adjudicated canonical program count established in the prior wiring-audit acceptance (GLOBAL_PROGRAM_CLAUDE_WIRING_AUDIT_CODEX.md); this bounded remediation touches only the 107 followup-manifest rows layered on top of that already-reconciled base and does not re-derive the 586 figure.",
+    "reconciled": 586
+  },
+  "duplicate_canonical_ids": [],
+  "duplicate_canonical_ids_count": 0,
+  "orphan_aliases": [],
+  "orphan_aliases_count": 0,
+  "alias_cycles": [],
+  "alias_cycles_count": 0,
+  "canonical_runtime_slug_binding_self_loops": [],
+  "stale_runtime_paths_count": 52,
+  "unintended_auto_priced_programs": [],
+  "unintended_auto_priced_programs_count": 0,
+  "notes": "unintended_auto_priced_programs is empty because the B4 gate (economic_block_for_program) is proven via tests/test_b4_authority_exhaustion_gate.py to refuse pricing for all 46 B1 discretionary rulings plus the 2 retired/keep-separate identities, including under adversarial stale-rule-injection and re-registration attempts."
+}

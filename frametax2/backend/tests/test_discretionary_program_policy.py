@@ -185,11 +185,21 @@ async def test_authority_requirements_are_never_relaxed_by_this_policy(db: Async
     """Turning a discretionary program ON (or leaving it on) must never
     itself satisfy or bypass eligibility/preapproval — this policy only
     decides whether the CANDIDATE exists, never whether it qualifies.
-    Verified by confirming Saudi's own structure, when present, still
-    carries its real administrative_allocation_risk disclosure (P0-4a /
-    Section 5 — preapproval_mandatory=True, allocation_type=DISCRETIONARY
-    for this exact program) rather than this policy silently upgrading it
-    to a deterministic entitlement."""
+
+    SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
+    GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): this test
+    used to confirm Saudi's structure still carried
+    administrative_allocation_risk=True (the modeled-rate-with-disclosed-
+    risk architecture, P0-4a/Section 5) regardless of this policy. Codex's
+    accepted ruling reclassifies sa_film_commission_rebate
+    DISPLAY_ONLY_ZERO_GUARANTEED: the B4 central authority gate
+    (authority_coverage_registry.economic_block_for_program) now refuses it
+    before any rate resolution, so it never reaches the modeled-rate path
+    that set administrative_allocation_risk at all. This is a STRONGER form
+    of the same guarantee this test protects — the policy cannot relax
+    Saudi's authority requirements because Saudi cannot price under ANY
+    policy setting — so the regression oracle below asserts the new,
+    stronger invariant instead of the superseded flag."""
     await _clear_policy_facts(db, FVD_PROJECT_ID)
     try:
         await evaluate_project(db, FVD_PROJECT_ID)
@@ -197,9 +207,16 @@ async def test_authority_requirements_are_never_relaxed_by_this_policy(db: Async
         allocated = view["structures"]["allocated_structures"]
         saudi = next((s for s in allocated["structures"] if s.get("program_slug") == SAUDI_SLUG), None)
         assert saudi is not None
-        assert saudi.get("administrative_allocation_risk") is True, (
-            "Saudi's real discretionary/preapproval disclosure must survive unchanged "
-            "regardless of this project's own inclusion policy"
+        assert saudi.get("is_fully_priced") is not True, (
+            "sa_film_commission_rebate is DISPLAY_ONLY_ZERO_GUARANTEED (B1) — this "
+            "policy including the candidate must never make it fully priced"
+        )
+        assert saudi.get("selected_incentive_usd") is None
+        assert saudi.get("gross_incentive_usd") is None
+        assert saudi.get("administrative_allocation_risk") is not True, (
+            "the modeled-rate-with-disclosed-risk architecture no longer applies to "
+            "sa_film_commission_rebate under the B1 ruling -- it must never silently "
+            "regain a guaranteed rate via this flag"
         )
     finally:
         await _clear_policy_facts(db, FVD_PROJECT_ID)

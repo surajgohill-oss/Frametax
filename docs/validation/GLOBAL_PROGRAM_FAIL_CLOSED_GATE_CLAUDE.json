@@ -1,0 +1,32 @@
+{
+  "workstream": "GLOBAL_CANONICAL_INCENTIVE_BOUNDED_REMEDIATION_CLAUDE",
+  "gate": "B4_CENTRAL_AUTHORITY_EXHAUSTION_GATE",
+  "implementation": {
+    "helper": "app.data.authority_coverage_registry.economic_block_for_program",
+    "wired_into": [
+      "app.data.program_rate_rules.resolve_program_rate (first executable line)",
+      "app.data.program_rate_rules.classify_rate_resolution_failure (identical preflight, first line)",
+      "app.calculators.canonical_stack_bridge.price_program_group_stack (before eligibility/rule lookup; price_program_pair_stack wraps this)"
+    ],
+    "new_constant": "app.data.program_rate_rules.RATE_FAILURE_AUTHORITY_EXHAUSTED = 'AUTHORITY_EXHAUSTED_FAIL_CLOSED'",
+    "runtime_owned_block_set": "app.data.authority_coverage_registry._B1_DISCRETIONARY_RULING (46 entries, transcribed from the accepted Codex ruling into source -- never read from a documentation CSV at runtime)",
+    "canonicalization": "economic_block_for_program checks every known spelling (input, program_slug_aliases.canonical_slug(input), CANONICAL_RUNTIME_SLUG_BINDINGS both directions) before checking block state"
+  },
+  "b1_discretionary_block_set_size": 46,
+  "b1_display_only_count": 13,
+  "b1_fail_closed_count": 33,
+  "negative_controls": {
+    "1_stale_rate_rule_injected_under_fail_closed_id": "PASS (test_negative_1_stale_rate_rule_injected_under_fail_closed_id_refused)",
+    "2_stale_rule_via_legacy_alias": "PASS (test_negative_2_stale_rule_reached_via_legacy_alias_still_refused)",
+    "3_pair_and_group_stacks_with_blocked_member": "PASS (test_negative_3_pair_and_group_stacks_with_blocked_member_reject)",
+    "4_display_only_visible_zero_guaranteed": "PASS (test_negative_4_display_only_candidate_visible_zero_guaranteed)",
+    "5_unrelated_verified_rule_still_prices": "PASS (test_negative_5_unrelated_verified_rule_still_prices)",
+    "6_reregistration_cannot_reactivate": "PASS (test_negative_6_reregistering_a_blocked_slugs_rate_rule_cannot_reactivate_it)"
+  },
+  "positive_controls": {
+    "all_46_b1_ids_blocked": "PASS (test_all_46_b1_canonical_ids_are_blocked)",
+    "retired_and_keep_separate_identities_blocked": "PASS (test_retired_and_keep_separate_identities_are_blocked)"
+  },
+  "test_file": "tests/test_b4_authority_exhaustion_gate.py",
+  "status": "PASS"
+}

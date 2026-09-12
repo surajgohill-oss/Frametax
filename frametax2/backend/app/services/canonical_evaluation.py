@@ -134,12 +134,14 @@ from app.data.authority_coverage_registry import (
     STATE_REASON,
     coverage_state,
     coverage_state as _coverage_state,
+    economic_block_for_program as _economic_block_for_program,
 )
 from app.data.executable_jurisdiction_registry import get_doctrine as _get_doctrine
 from app.data.program_rate_rules import (
     CONDITION_STATE_AUTHORITY_UNRESOLVED,
     CONDITION_STATE_EXECUTABLE,
     CONDITION_STATE_USER_FACT_REQUIRED,
+    RATE_FAILURE_AUTHORITY_EXHAUSTED,
     RATE_FAILURE_NO_RULES,
     RateResolution,
     classify_rate_resolution_failure,
@@ -2451,7 +2453,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 failure = classify_rate_resolution_failure(
                     program_slug, inputs.production_type, qpe_for_probe,
                 )
-                if failure == RATE_FAILURE_NO_RULES:
+                if failure == RATE_FAILURE_AUTHORITY_EXHAUSTED:
+                    # B4 central authority gate (Codex bounded remediation):
+                    # accepted authority-exhausted / discretionary-display-only
+                    # / retired / duplicate identity. Fail closed — a visible
+                    # ROW carrying zero guaranteed value, never a NUMBER, never
+                    # Recommended. A stale RateRule cannot override this.
+                    candidate_status = STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT
+                    rejection_reason_class = "AUTHORITY_EXHAUSTED_FAIL_CLOSED"
+                    block = _economic_block_for_program(program_slug)
+                    reason = (
+                        block.reason if block is not None
+                        else "Program authority is exhausted; automatic pricing is refused."
+                    )
+                elif failure == RATE_FAILURE_NO_RULES:
                     candidate_status = STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT
                     rejection_reason_class = "AUTHORITY_INSUFFICIENT"
                     reason = "No statutory rate rules exist for this program."

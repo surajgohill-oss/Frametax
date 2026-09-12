@@ -56,7 +56,7 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 
 #: Task 8 control programs.
 PRICEABLE_CONTROL = "gr_cash_rebate"
-P0_CONTROLS = ("uk_avec", "ca_federal_pstc", "us_ca_film_credit")
+P0_CONTROLS = ("uk_avec", "ca_federal_pstc", "ca_film_30")  # Codex B2 identity ruling: rekeyed from us_ca_film_credit
 
 VALIDATION_JSON = (
     Path(__file__).resolve().parents[3]
@@ -74,17 +74,27 @@ async def db():
 
 async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: AsyncSession):
     """A landlocked jurisdiction with a real marine mismatch must still be
-    DISCOVERED and PRICED — feasibility never suppresses discovery or
-    pricing on its own.
+    DISCOVERED — feasibility never suppresses discovery on its own.
 
     MN and UZ are both landlocked with a soft marine mismatch, and both are
     AUTHORITY_UNRESOLVED_NON_PRICEABLE (a provenance-completeness gap, not
     an economic one -- master reconciliation, 2026-09-02). Both carry a
-    real, unconditional guaranteed-floor RateRule (MN 30%, UZ 10%), so under
-    the two-axis contract they price deterministically. This proves BOTH
-    independences at once: the soft feasibility mismatch never removed them
-    from discovery, and the provenance gap never removed them from pricing
-    -- each gate stays scoped to what it actually governs.
+    real, unconditional guaranteed-floor RateRule (MN 30%, UZ 10%).
+
+    SUPERSEDED pricing claim (Codex bounded remediation, B1 discretionary
+    ruling, GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv):
+    this test used to also assert MN/UZ price deterministically under the
+    two-axis contract. Both mn_production_incentive AND uz_film_rebate are
+    now named in Codex's accepted B1 ruling as FAIL_CLOSED -- the B4
+    central authority gate (authority_coverage_registry.
+    economic_block_for_program) outranks the provenance-axis two-axis
+    contract for these two specific slugs, exactly like al_cash_rebate in
+    test_canonical_economics_integrity_repair.py. The regression oracle
+    below keeps the half of this test's invariant B1 does NOT touch (soft
+    feasibility never suppresses DISCOVERY) and replaces the pricing
+    assertion with its own new, stronger invariant: MN/UZ are discovered
+    but never priced, and their fail-closed reason is disclosed, not
+    silently dropped.
     """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
@@ -93,10 +103,20 @@ async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: 
     for code in ("MN", "UZ"):
         assert code in entries, f"{code} was suppressed from discovery entirely"
         entry = entries[code]
-        assert entry["is_fully_priced"] is True, (
-            f"{code} has a real guaranteed floor and must price deterministically"
+        assert entry["is_fully_priced"] is False, (
+            f"{code}'s program is B1 FAIL_CLOSED and must never price deterministically"
         )
-        assert entry.get("selected_incentive_usd"), f"{code} priced with no incentive value"
+        # The B4 block on resolve_program_rate() means MN/UZ no longer reach
+        # the ordinary pricing path at all, so discovery falls back to the
+        # PRE-EXISTING capability-only disclosure mechanism
+        # (canonical_evaluation._capability_only_status), which independently
+        # reads coverage_state() (still AUTHORITY_UNRESOLVED_NON_PRICEABLE,
+        # unrelated to and unchanged by B4) -- a different, already-tested
+        # code path from the new AUTHORITY_EXHAUSTED_FAIL_CLOSED classifier,
+        # so the reason string is not over-specified here; only that a real,
+        # non-empty disclosure survives and no incentive value leaks through.
+        assert entry.get("rejection_reason_class"), f"{code} rejection reason silently dropped"
+        assert not entry.get("selected_incentive_usd")
 
 
 async def test_statutory_eligibility_failure_still_rejects_correctly(db: AsyncSession):
@@ -674,9 +694,57 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # test_fvd_accounting_matches_codex_diagnosis for the full
     # 45+88=133 reconciliation). priced is unaffected — these are never
     # priced candidates.
-    assert len(entries) == 444
-    assert len(priced) == 311
-    assert len(unpriced) == 133
+    #
+    # Codex bounded remediation, B1 discretionary ruling (GLOBAL_PROGRAM_
+    # DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): entries 444 -> 300,
+    # priced 311 -> 165, unpriced 133 -> 135. The B4 central authority gate
+    # (authority_coverage_registry.economic_block_for_program, wired into
+    # resolve_program_rate()) now fails closed 46 previously-priced
+    # discretionary/authority-exhausted programs. Measured directly against
+    # the real runtime (structure_type breakdown, before vs after this
+    # ruling), the movement is entirely explained by the SAME two
+    # pre-existing, unmodified mechanisms this file already documents:
+    #   * full_relocation: entries UNCHANGED at 123 (no candidate is
+    #     removed -- a full_relocation candidate always persists, priced or
+    #     not, per P1-REJ-001). priced drops 104 -> 58, unpriced rises
+    #     19 -> 65 (+46) -- exactly one candidate per B1-blocked program
+    #     flips from priced to a disclosed RULE_REJECTED/unpriceable row,
+    #     matching the B1 ruling's own count (46) exactly.
+    #   * component_relocation: entries drop 294 -> 165 (-129), priced
+    #     206 -> 106 (-100), unpriced 88 -> 59 (-29). Component routing
+    #     (post/vfx/music) targets "the full, real, independently-priceable
+    #     target universe" (Codex forensic findings B/C, above) -- once a
+    #     target jurisdiction's ONLY priced program is B1-blocked, that
+    #     jurisdiction drops out of the priceable-target set entirely, so
+    #     its component candidates are never generated (the SAME "a
+    #     component candidate that fails to price is never persisted"
+    #     convention already established above, not a new code path).
+    #   * treaty_coproduction: entries drop 25 -> 10 (-15), all of them
+    #     already unpriced both before and after (never priced candidates)
+    #     -- FVD's bilateral-partner discovery draws its candidate-
+    #     jurisdiction pool from the same priceable-target set, so it
+    #     shrinks by the same mechanism.
+    #   * single_country / multi_program: unchanged (1 / 1).
+    #   123 + 165 + 10 + 1 + 1 = 300 entries;
+    #   58 + 106 + 0 + 1 + 0 = 165 priced; 300 - 165 = 135 unpriced.
+    #
+    # Codex bounded remediation, B3 formulaic spec (ADD_RULE / ADD_RULE_AND_
+    # COMPONENT_BRANCH, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv):
+    # 300 -> 306, priced 165 -> 169, unpriced 135 -> 137. th_film_incentive
+    # (Thailand) and za_nfvf_rebate (South Africa) are genuinely new,
+    # independently-priceable programs. Measured directly: full_relocation
+    # 123 -> 124 (+1, za_nfvf_rebate's own full_relocation candidate --
+    # th_film_incentive's FVD full_relocation candidate already existed
+    # pre-remediation, just via a different, now-corrected identity
+    # spelling, so it contributes no NEW entry here); component_relocation
+    # 165 -> 168 (+3, both programs now have real priced targets for FVD's
+    # routable components); treaty_coproduction 10 -> 12 (+2: uk-za-
+    # bilateral and ca-za-bilateral, since ZA now has a priced leg).
+    #   124 + 168 + 12 + 1 + 1 = 306 entries;
+    #   59 + 109 + 0 + 1 + 0 = 169 priced; 306 - 169 = 137 unpriced.
+    assert len(entries) == 306
+    assert len(priced) == 169
+    assert len(unpriced) == 137
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):
@@ -1078,7 +1146,12 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     # CA-BC is withheld under cluster 5 (ca_bc_pstc declares
     # ca-bc-labour-only-base on its 36% base tier); asserted below as
     # withheld-but-disclosed instead of priced.
-    codes = ("HR", "NZ", "TT", "US-LA", "US-NM", "US-RI")
+    # TT (tt_production_expenditure_rebate) is withheld under Codex bounded
+    # remediation's B1 discretionary ruling (FAIL_CLOSED,
+    # GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv) -- the B4
+    # central authority gate now refuses it before any rule lookup, so it
+    # moves to the withheld-but-disclosed set alongside US-MD/CA-BC.
+    codes = ("HR", "NZ", "US-LA", "US-NM", "US-RI")
     seen_incentives = set()
     for code in codes:
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -1087,12 +1160,13 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
         seen_incentives.add(e["selected_incentive_usd"])
-    # Withheld, not erased: US-MD and CA-BC stay discovered and disclosed.
-    for code in ("US-MD", "CA-BC"):
+    # Withheld, not erased: US-MD, CA-BC and (Codex B1) TT stay discovered
+    # and disclosed, never silently priced.
+    for code in ("US-MD", "CA-BC", "TT"):
         withheld = next(x for x in entries if x["primary_jurisdiction"] == code)
         assert withheld["is_fully_priced"] is False
         assert not withheld.get("selected_incentive_usd")
-    assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"
+    assert len(seen_incentives) > 1, "all priced programs priced identically -- suspicious, check for a copy-paste QPE bug"
 
 
 # ── Global Economic Data + Base Pricing — batch 2: fresh primary-source
@@ -1117,21 +1191,31 @@ def test_batch2_coverage_veto_removed_including_alias_spellings():
 
 
 async def test_batch2_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
+    """SI (si_cash_rebate) is a floorless band ceiling with an unevaluable
+    si-eligible-applicant-scope condition -- withheld under cluster 6.
+
+    SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
+    GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): SA
+    (sa_film_commission_rebate) used to be the one batch-2 program asserted
+    PRICED here. Codex's accepted ruling reclassifies it
+    DISPLAY_ONLY_ZERO_GUARANTEED -- the B4 central authority gate now
+    refuses it before any rule lookup (see also
+    test_discretionary_program_policy.py's
+    test_authority_requirements_are_never_relaxed_by_this_policy, the same
+    supersession for FVD's Saudi structure). The regression oracle below
+    keeps the batch-2 registry-level proof (test_batch2_doctrine_records_
+    promoted_to_verified / test_batch2_coverage_veto_removed_including_
+    alias_spellings, both still green and unaffected -- VERIFIED tier and
+    the OLD provenance veto are real and unrelated to the NEW B1 economic
+    block) and replaces the runtime pricing proof with SA and SI both
+    withheld-but-disclosed."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    # SI (si_cash_rebate) is a floorless band ceiling with an unevaluable
-    # si-eligible-applicant-scope condition -- withheld under cluster 6, so
-    # only SA is asserted as priced here.
-    for code in ("SA",):
+    for code in ("SA", "SI"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
-        assert e["is_fully_priced"] is True, f"{code} did not price"
-        assert e["candidate_status"] == "PRICED"
-        assert e["selected_incentive_usd"] > 0
-        assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
-    si = next(x for x in entries if x["primary_jurisdiction"] == "SI")
-    assert si["is_fully_priced"] is False
-    assert not si.get("selected_incentive_usd")
+        assert e["is_fully_priced"] is False, f"{code} unexpectedly priced"
+        assert not e.get("selected_incentive_usd")
 
 
 # ── Global Economic Data + Base Pricing — batch 3: 8 more recover-before-
@@ -1221,7 +1305,18 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     # `no-competitive-allocation`) is now disclosed as a warning on the
     # priced result (see canonical_evaluation.py's
     # _competitive_allocation_disclosure), never as a zeroed incentive.
-    codes = ("CA-ON", "DE", "FR", "HU", "US-MN", "GB", "NO")
+    # DE (de_dfff) and NO (no_film_incentive) are withheld under Codex
+    # bounded remediation's B1 discretionary ruling
+    # (DISPLAY_ONLY_ZERO_GUARANTEED, GLOBAL_PROGRAM_DISCRETIONARY_
+    # ARCHITECTURE_RULING_CODEX.csv) -- the B4 central authority gate now
+    # refuses both before any rule lookup, so both are asserted
+    # withheld-but-disclosed below instead of priced. This SUPERSEDES the
+    # "MASTER RECONCILIATION" note above about Norway being restored to the
+    # priced set -- that restoration was correct on its own facts (real
+    # 25% flat rate, competitive-allocation risk disclosed as a warning,
+    # never blocked purely for being "competitive"); Codex's B1 ruling is a
+    # separate, later, explicitly authorized override of the same program.
+    codes = ("CA-ON", "FR", "HU", "US-MN", "GB")
     seen_incentives = set()
     for code in codes:
         # 31-zero-rate-program forensic classification (2026-09-02):
@@ -1250,6 +1345,11 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     assert es["is_fully_priced"] is False
     assert es["candidate_status"] == "RULE_REJECTED"
     assert es["blockers"], "ES must still disclose the real reason it did not price"
+
+    for code in ("DE", "NO"):
+        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert e["is_fully_priced"] is False, f"{code} unexpectedly priced"
+        assert not e.get("selected_incentive_usd")
 
 
 def test_batch1_2_3_promoted_programs_carry_structured_provenance():
@@ -1414,7 +1514,8 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     single_program_entries = [e for e in ca_on_entries if e["structure_type"] != "multi_program"]
     programs_used = {e["program_slug"] for e in single_program_entries if e.get("program_slug")}
     assert programs_used == {
-        "ca_on_opstc", "on_ofttc",
+        # Codex bounded remediation, B2 identity ruling: rekeyed from ca_on_opstc
+        "on_opstc", "on_ofttc",
         "ontario_computer_animation_and_special_effects_tax_credit_ocase",
     }
     npc_values = {e["npc_with_adjustments_usd"] for e in single_program_entries}
@@ -1428,7 +1529,7 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     # capability this assertion protects.
     assert len(multi_entries) == 1
     multi_slug_sets = {frozenset(e["program_slugs"]) for e in multi_entries}
-    assert multi_slug_sets == {frozenset({"ca_on_opstc", "on_ofttc"})}
+    assert multi_slug_sets == {frozenset({"on_opstc", "on_ofttc"})}  # Codex B2 identity ruling: rekeyed from ca_on_opstc
     assert all(
         "ca_federal_cptc" not in (e["program_slugs"] or []) for e in multi_entries
     ), "a withheld labour-base program must not appear in a priced combination"

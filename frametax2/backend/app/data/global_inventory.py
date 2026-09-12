@@ -1038,18 +1038,19 @@ from app.data.global_inventory_special_categories import SPECIAL_CATEGORY_PROGRA
 ALL_PROGRAMS = ALL_PROGRAMS + SPECIAL_CATEGORY_PROGRAMS
 
 # ---------------------------------------------------------------------------
-# Optimizer Final Canonical Program Universe Wiring (2026-09-09) — 164
+# Optimizer Final Canonical Program Universe Wiring (2026-09-09) — 122
 # catalog entries for manifest programs previously absent from the database
 # entirely (docs/validation/CANONICAL_PROGRAM_IMPLEMENTATION_MANIFEST_FINAL_
-# CODEX.csv, required_action in {DISPLAY_ONLY, FAIL_CLOSED, MERGE_ALIAS,
-# RETIRE}, current_engine_status=ABSENT_FROM_DATABASE). Generated
-# programmatically from the manifest itself (see docs/validation/
-# GLOBAL_PROGRAM_CANONICAL_WIRING_CLAUDE.md) — never fabricated. Pure
-# additions: none of these canonical_program_ids were previously
-# registered anywhere. All entries are confidence_tier=DISCOVERY with
-# program_slug=None (never auto-priced). One canonical id
-# (ag-be-vlg-...-screen-flanders) is deliberately excluded as an alias of
-# the already-present canonical `vaf_flanders_audiovisual_fund`.
+# CODEX.csv, required_action DISPLAY_ONLY or FAIL_CLOSED,
+# current_engine_status=ABSENT_FROM_DATABASE). Generated programmatically
+# from the manifest itself — never fabricated. All entries are
+# confidence_tier=DISCOVERY with program_slug=None (never auto-priced).
+#
+# Bounded remediation (2026-09-10): started at 164 appends; the Codex
+# follow-up (GLOBAL_PROGRAM_CLAUDE_FOLLOWUP_MANIFEST_CODEX.csv) removed 42
+# OTHER_CATALOG_IDENTITY rows — 14 non-entry (MERGE_ALIAS/RETIRE) identities
+# and 28 duplicates of a pre-existing ALL_PROGRAMS record — plus the earlier
+# ag-be-vlg-...-screen-flanders alias exclusion. Net 122.
 # ---------------------------------------------------------------------------
 from app.data.global_inventory_manifest_final import MANIFEST_FINAL_PROGRAMS  # noqa: E402
 

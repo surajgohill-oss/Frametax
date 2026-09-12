@@ -36,6 +36,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+# B4 central authority-exhaustion gate (Codex bounded remediation). Safe at
+# module top: authority_coverage_registry imports only dataclasses/typing and
+# program_slug_aliases (which imports nothing) — no path back to this module.
+from app.data.authority_coverage_registry import economic_block_for_program
+# B2 identity ruling (Codex bounded remediation): canonicalizes a known
+# variant/legacy slug spelling before every rate lookup, so a rekeyed
+# identity's old spelling (us_ca_film_credit -> ca_film_30,
+# ca_on_opstc/inv-ca-on-... -> on_opstc) still finds the same RateRule data
+# -- "old persisted payload readable" without touching every call site.
+from app.data.program_slug_aliases import canonical_slug as _canonical_program_slug
+
 # 1.1.0 -- Co-Pro Conditional Pricing Data Reconnection: au_producer_offset
 # materialized as an executable RateRule (40% feature / 30% other formats,
 # both real, already-cited canonical knowledge -- see program_rate_rules_
@@ -44,7 +55,16 @@ from dataclasses import dataclass, field
 # not registered into ordinary jurisdiction discovery). Bumped so every
 # previously-cached served row (which could only ever report this program
 # as CANONICAL_DATA_GAP) is invalidated and recomputed fresh.
-PROGRAM_RATE_RULES_VERSION = "1.2.0"
+#: Codex bounded remediation (GLOBAL_CANONICAL_INCENTIVE_BOUNDED_
+#: REMEDIATION_CLAUDE): bumped for the B2 identity rekeys (us_ca_film_
+#: credit -> ca_film_30, ca_on_opstc -> on_opstc, us_ny_film_credit ->
+#: ny_state_film), the B3 formulaic corrections (fr_trip, ma_ccm_rebate,
+#: nl_nfpi, th_film_incentive split from th_boi_incentive, us_or_opif,
+#: us_tx_miip, za_nfvf_rebate) and the B4 central authority gate -- every
+#: previously-persisted served evaluation must be invalidated and
+#: recomputed fresh against this rate-rule data, never silently served
+#: from a stale pre-remediation generation.
+PROGRAM_RATE_RULES_VERSION = "1.3.0"
 
 
 @dataclass(frozen=True)
@@ -198,6 +218,15 @@ CONDITION_KIND_STATE: dict[str, str] = {
     # reclassified onto the existing project_fact_dependent_eligibility kind.
     "min_qpe_pct_of_total_budget": CONDITION_STATE_EXECUTABLE,
     "unmodeled_spend_split_ratio": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # Codex bounded remediation, B3 formulaic spec (SCHEMA_EXTENSION_
+    # REQUIRED): a program whose real rate applies to a QPE SUB-COMPONENT
+    # (e.g. Oregon's payroll vs. other-expense split) that this engine does
+    # not track separately from total QPE. Genuinely different from
+    # unmodeled_spend_split_ratio (a labour-vs-QPE RATIO gate) -- this is a
+    # different RATE applying to a different BASE entirely, never
+    # pre-applicable to total QPE without risking a blended-surrogate
+    # misstatement.
+    "component_basis_not_modeled": CONDITION_STATE_AUTHORITY_UNRESOLVED,
     # Statutory content/points-test certification, ownership/entity facts,
     # and similar eligibility gates the engine cannot pre-evaluate without a
     # project-specific fact the user (not the statute) supplies.
@@ -1060,18 +1089,36 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                 kind="min_qpe_usd", threshold_usd=285_130.99,
             ),
             RateCondition(
+                # Codex bounded remediation, B3 formulaic spec (UPDATE_
+                # CONDITION): "Replace discretionary band with objective
+                # component-spend condition." The 40% VFX tier is a real,
+                # statute-confirmed OBJECTIVE spend threshold (EUR 2,000,000
+                # of French VFX expenditure) -- never a discretionary
+                # approval call like Mauritius's "up to 40%" -- so it is
+                # reclassified from discretionary_band (AUTHORITY_UNRESOLVED)
+                # to project_fact_dependent_uplift (USER_FACT_REQUIRED): this
+                # engine simply does not yet collect a VFX-specific spend
+                # split from total QPE, not that the criterion is
+                # unknowable. threshold_usd is the EUR 2,000,000 figure
+                # converted via the SAME sourced FX snapshot this project's
+                # other EUR conversions use (production_normalization.
+                # FX_RATE_SNAPSHOTS["2026-07-13"]["EUR"]=0.87679) —
+                # EUR 2,000,000 -> USD 2,281,047.91 — never a live per-request
+                # conversion, disclosed as a dated snapshot like every other
+                # EUR threshold in this module.
                 condition_id="fr-vfx-threshold",
                 description="40% rate requires French VFX expenditure "
-                            "exceeding EUR 2,000,000 — a real, confirmed "
-                            "threshold (not a discretionary approval band "
-                            "like MU's 'up to 40%'), but this engine has "
-                            "no fact tracking VFX-specific spend split "
-                            "from total QPE, so eligibility for this tier "
-                            "cannot be pre-evaluated and is modeled as the "
-                            "ceiling",
+                            "exceeding EUR 2,000,000 — a real, objective, "
+                            "statute-confirmed spend threshold (not a "
+                            "discretionary approval band like MU's 'up to "
+                            "40%'), but this engine has no fact tracking "
+                            "VFX-specific spend split from total QPE, so "
+                            "eligibility for this tier cannot be "
+                            "pre-evaluated and is modeled as the ceiling",
                 quote="40%, if the French VFX expenses are more than EUR "
                       "2M (cnc.fr, TRIP page)",
-                kind="discretionary_band",
+                kind="project_fact_dependent_uplift",
+                threshold_usd=2_281_047.91,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -1101,7 +1148,10 @@ _BUDGET_RATES_BY_PROGRAM: dict[str, tuple[BudgetEvidencedRate, ...]] = {
 
 
 def get_rate_rules(program_slug: str) -> tuple[RateRule, ...]:
-    return _RULES_BY_PROGRAM.get(program_slug, ())
+    rules = _RULES_BY_PROGRAM.get(program_slug)
+    if rules is None:
+        rules = _RULES_BY_PROGRAM.get(_canonical_program_slug(program_slug))
+    return rules or ()
 
 
 # ── QPE eligible-spend caps (Incentive/Optimizer Core Closeout) ─────────────
@@ -1185,6 +1235,34 @@ QPE_CAP_RULES: dict[str, QpeCapRule] = {
                      "modeled).",
         quote=_CA_CPTC_CAP_QUOTE, source_ref="canada.ca-cavco-official-final19-committee-agreed",
     ),
+    # Codex bounded remediation, B3 formulaic spec (UPDATE_AND_EXTEND,
+    # GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv): "eligible basis no
+    # more than 80% of budget" for the Czech Film Incentive -- reuses this
+    # SAME existing, already-tested QPE-cap mechanism (no new engine) for
+    # both the live-action and animation/digital records, since the 80%
+    # eligible-base cap is a program-level rule that applies regardless of
+    # which production-type tier resolves. The CZK 450,000,000 project
+    # incentive cap itself is NOT modeled here (no sourced CZK/USD FX rate
+    # in production_normalization.FX_RATE_SNAPSHOTS — left undisclosed
+    # rather than fabricated, same discipline as au_location_offset's AUD
+    # minimum spend).
+    "cz_film_incentive": QpeCapRule(
+        program_slug="cz_film_incentive", cap_pct=0.80, cap_base="total_worldwide_budget",
+        description="Eligible Czech spend is capped at 80% of the production's "
+                     "total (worldwide) production budget.",
+        quote="eligible basis no more than 80% of budget (Codex bounded "
+              "remediation, accepted formulaic correction)",
+        source_ref="codex-bounded-remediation-cz-film-incentive-formulaic-spec",
+    ),
+    "cz_film_incentive_animation": QpeCapRule(
+        program_slug="cz_film_incentive_animation", cap_pct=0.80, cap_base="total_worldwide_budget",
+        description="Eligible Czech spend is capped at 80% of the production's "
+                     "total (worldwide) production budget (same program-level "
+                     "cap as the live-action record).",
+        quote="eligible basis no more than 80% of budget (Codex bounded "
+              "remediation, accepted formulaic correction)",
+        source_ref="codex-bounded-remediation-cz-film-incentive-formulaic-spec",
+    ),
 }
 
 
@@ -1249,15 +1327,26 @@ def _blended_effective_rate(tier: RateRule, qpe_usd: float | None) -> float:
 #: (production_type + min_qpe_usd) and computes nothing new.
 RATE_FAILURE_NO_RULES = "NO_RATE_RULES"
 RATE_FAILURE_CONDITIONS_UNMET = "STATUTORY_CONDITIONS_UNMET"
+#: B4 central authority gate (Codex bounded remediation): resolve_program_rate()
+#: refused BEFORE any rule lookup because the program's accepted authority
+#: status is exhausted / discretionary-display-only / retired / duplicate.
+#: Outranks a stale RateRule. Distinct from NO_RATE_RULES (never had a rule)
+#: and STATUTORY_CONDITIONS_UNMET (has rules, production doesn't qualify).
+RATE_FAILURE_AUTHORITY_EXHAUSTED = "AUTHORITY_EXHAUSTED_FAIL_CLOSED"
 
 
 def classify_rate_resolution_failure(
     program_slug: str, production_type: str, qpe_usd: float | None,
 ) -> str:
     """Read-only: why did resolve_program_rate() return None? Never called
-    unless it already did. Returns RATE_FAILURE_NO_RULES (no statutory rate
-    rules exist for this program) or RATE_FAILURE_CONDITIONS_UNMET (rate
-    rules exist, but none apply to this production_type/QPE)."""
+    unless it already did. Returns RATE_FAILURE_AUTHORITY_EXHAUSTED (the B4
+    central authority gate refused the program outright),
+    RATE_FAILURE_NO_RULES (no statutory rate rules exist for this program) or
+    RATE_FAILURE_CONDITIONS_UNMET (rate rules exist, but none apply to this
+    production_type/QPE). The B4 preflight is identical to
+    resolve_program_rate()'s and runs first."""
+    if economic_block_for_program(program_slug) is not None:
+        return RATE_FAILURE_AUTHORITY_EXHAUSTED
     rules = get_rate_rules(program_slug)
     if not rules:
         return RATE_FAILURE_NO_RULES
@@ -1287,7 +1376,15 @@ def resolve_program_rate(
     Budget-evidenced rates are NEVER considered (Rule 2); any that exist
     for the program are reported as conflicts when they differ from the
     resolved rate (Rule 5).
+
+    B4 central authority gate (Codex bounded remediation): the FIRST
+    executable check, before any rule lookup — an accepted authority-
+    exhausted / discretionary-display-only / retired / duplicate identity
+    resolves to no rate, and a stale RateRule cannot override that.
     """
+    if economic_block_for_program(program_slug) is not None:
+        return None
+
     rules = get_rate_rules(program_slug)
     if not rules:
         return None

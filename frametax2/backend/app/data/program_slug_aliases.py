@@ -43,8 +43,15 @@ PROGRAM_SLUG_ALIASES: dict[str, str] = {
     # recorded as CANONICAL_DATA_HANDOFF_DEFECT in
     # authority_coverage_registry.py rather than bound to a different program.
     #
-    # "Thailand BOI Film Production Incentive" — BOI in both spellings.
-    "th_film_incentive": "th_boi_incentive",
+    # REMOVED (Codex bounded remediation, B3/B1 rulings): "th_film_incentive"
+    # -> "th_boi_incentive" was this prior pass's adjudication that both
+    # spellings named one BOI-administered program. Codex's accepted
+    # research supersedes this: th_film_incentive (cash rebate, 15% base /
+    # up to 30%, program_rate_rules_worldwide.py's TH_DOCTRINE) and
+    # th_boi_incentive (a separate program, now B1 FAIL_CLOSED --
+    # authority-exhausted) are two DISTINCT programs, not two spellings of
+    # one. Aliasing them together would have suppressed th_film_incentive's
+    # own real, sourced rate data under the wrong identity.
     # "Fiji Audio Visual Commission Production Incentive" — the single FAVC
     # production incentive.
     "fj_film_incentive": "fj_film_rebate",
@@ -57,6 +64,31 @@ PROGRAM_SLUG_ALIASES: dict[str, str] = {
     # of Quebec's Production Services Tax Credit.
     "proposed_canada_quebec_refundable_tax_credit_for_film_production_services":
         "ca_qc_pstc",
+    # Codex bounded remediation, B2 identity ruling (GLOBAL_PROGRAM_
+    # IDENTITY_MAPPING_RULING_CODEX.csv): the RateRule/DoctrineRecord for
+    # California Program 4.0 was rekeyed from us_ca_film_credit to the
+    # surviving canonical identity ca_film_30 -- this compatibility alias
+    # lets every old caller (tests, program_requirements.py profiles,
+    # national_cultural_status.py, historical references) that still
+    # spells it the old way resolve to the SAME data, never a duplicate
+    # priced identity.
+    "us_ca_film_credit": "ca_film_30",
+    # Same ruling: New York's main production credit's RateRule/
+    # DoctrineRecord was rekeyed from us_ny_film_credit to the surviving
+    # canonical identity ny_state_film (BIND_MAIN_CREDIT_ALIAS_ONLY --
+    # binds ONLY the legacy main-credit slug; the separately-tracked
+    # us_ny_post_production_credit stays a distinct, fail-closed identity,
+    # never absorbed).
+    "us_ny_film_credit": "ny_state_film",
+    # Same ruling: Ontario OPSTC's RateRule/DoctrineRecord was rekeyed from
+    # ca_on_opstc to the surviving canonical identity on_opstc (already
+    # the spelling _SLUG_PAIR_RULES used for every OPSTC stacking pair).
+    "ca_on_opstc": "on_opstc",
+    # Same ruling: the AG evidence-only duplicate identity for the same
+    # real-world Ontario OPSTC program collapses into the same canonical
+    # identity -- never a second priceable Ontario production-services
+    # candidate.
+    "inv-ca-on-ontario-production-services-tax-credit-opstc": "on_opstc",
     # Co-Pro Conditional Pricing Data Reconnection — "nz_spgi" is
     # treaty_engine.py's own abbreviation (New Zealand Screen Production
     # Grant International) for the SAME program already canonicalized
