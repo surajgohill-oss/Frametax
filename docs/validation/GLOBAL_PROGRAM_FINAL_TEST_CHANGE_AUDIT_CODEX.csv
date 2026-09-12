@@ -1,0 +1,21 @@
+file,change_type,classification,finding
+tests/data/test_statutory_currency_rule.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,California identity rekey.
+tests/optimization/test_global_data_application_runtime.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Attributed candidate-count change.
+tests/optimization/test_little_utopia_worldwide_acceptance.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Thailand identities separated and blocked BOI asserted.
+tests/optimization/test_treaty_candidate_generation.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Attributed candidate-count change.
+tests/test_canonical_authority_substrate.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,B1/B2 expectations and count oracles updated with attributed deltas.
+tests/test_canonical_economics_integrity_repair.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Generic invariant moved from newly blocked TX/B1 examples to unaffected controls.
+tests/test_canonical_knowledge_consolidation.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,B1 fail-closed programs removed from positive set and negatives added.
+tests/test_canonical_pricing_path_and_discovery.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Canonical identity rekey.
+tests/test_canonical_scenario_participants.py,MODIFIED_EXISTING,TEST_HARDENING_IMPROVEMENT,Explicit evaluation removes ordering dependency.
+tests/test_canonical_served_wiring_repair.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,B1 exclusions and B2 identity/count changes.
+tests/test_cba002_condition_kind_vocabulary.py,MODIFIED_EXISTING,TEST_HARDENING_IMPROVEMENT,Synthetic fixture preserves generic condition-kind behavior after Germany became blocked.
+tests/test_copro_conditional_pricing_bridge.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Blocked Belgium control replaced with executable Bulgaria control.
+tests/test_discretionary_program_policy.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,B1 zero-guaranteed treatment asserted.
+tests/test_fvd_canonical_input_assembly_repair.py,MODIFIED_EXISTING,TEST_HARDENING_IMPROVEMENT,Program-slug selection fixes last-wins jurisdiction ambiguity; B1 counts updated.
+tests/test_jurisdiction_preference.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Saudi B1 zero-guaranteed result.
+tests/test_optimizer_input_integration.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Expected catalog-only universe now includes B4 refusals and both valid reason classes.
+tests/test_prompt16_authority_disposition.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,Thailand identity rekey.
+tests/test_treaty_coproduction_wiring.py,MODIFIED_EXISTING,LEGITIMATE_EXPECTATION_UPDATE,B1/B3 candidate changes and executable treaty control.
+tests/test_b3_formulaic_consumption.py,NEW,PRODUCTION_COUPLED_FALSE_POSITIVE,"Calls discovery and price_segment directly; does not prove eligible/ineligible project facts, caps, selection, stacking, or canonical served output for 12/12."
+tests/test_b4_authority_exhaustion_gate.py,NEW,TEST_HARDENING_INCOMPLETE,"Useful direct/stack attacks, but omits required multi-hop alias attack that independently fails."

@@ -1,0 +1,48 @@
+{
+  "workstream": "CODEX_FINAL_CANONICAL_INCENTIVE_RUNTIME_ACCEPTANCE",
+  "status": "NOT_ACCEPTED",
+  "audited_commit": "e0a8caa64f5498f70c1e409c848a9d4652b11a21",
+  "specification_commit": "9baa3b68c90b81d3819bd29c30ff140812f2ab1b",
+  "accepted_research_commit": "a5958b1211ac6e8071f40811a4781166466ef768",
+  "independent_recomputation": {
+    "canonical_matrix_rows": 586,
+    "unique_canonical_ids": 586,
+    "duplicate_canonical_ids": [],
+    "b1_decisions": 46,
+    "b1_direct_unblocked": [],
+    "formulaic_spec_rows": 12,
+    "formulaic_rule_conformance_pass": 1,
+    "strict_formulaic_optimizer_consumption_pass": 0,
+    "current_catalog_rows": 425,
+    "manifest_final_rows": 122,
+    "current_runtime_identity_rows": 218,
+    "current_raw_rate_rule_keys": 126,
+    "raw_rate_rule_keys_blocked_by_b4": 50
+  },
+  "identity": {
+    "program_slug_aliases": 11,
+    "alias_cycles": [],
+    "orphan_aliases": [],
+    "duplicate_canonical_ids": []
+  },
+  "legacy": {
+    "claude_reported_rows_called_stale": 47,
+    "reclassified_reported_rows_as_protected_unreachable": 47,
+    "all_current_raw_blocked_rule_references": 50,
+    "reachable_stale_runtime_paths_in_current_unmutated_state": 0,
+    "corruption_bypass_found": "two-hop alias chain"
+  },
+  "followup": {
+    "rows_total": 107,
+    "rows_closed": 95,
+    "rows_open": 12,
+    "additional_current_p1_items": 1,
+    "remaining_items_total": 13
+  },
+  "tests": {
+    "named_regression_groups": "512 passed",
+    "full_backend": "4812 passed, 3 skipped, 0 failed",
+    "independent_corruption": "10 passed, 1 xfailed (multi-hop alias bypass)"
+  },
+  "mfni": "PARKED_UNCHANGED"
+}

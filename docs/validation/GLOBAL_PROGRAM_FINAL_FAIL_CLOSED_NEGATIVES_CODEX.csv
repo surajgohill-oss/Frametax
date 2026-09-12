@@ -1,0 +1,11 @@
+attack,target,result,evidence
+direct_slug_resolution,ae_ad_film_rebate,PASS,Injected positive RateRule refused with AUTHORITY_EXHAUSTED_FAIL_CLOSED.
+known_alias_resolution,fj_film_incentive -> fj_film_rebate,PASS,Known one-hop alias inherits terminal B4 block.
+retired_identity_aliased_active,iceland_post... -> ca_film_30,PASS,Retired spelling itself remains in B4 spellings and is refused.
+direct_candidate_stack,be_tax_shelter + eu_eurimages,PASS,Positive-valued blocked StackCandidate poisons group stack.
+legacy_rule_registration,de_dfff,PASS,register_rate_rules cannot override direct B4 block.
+conditional_fallback_positive,de_dfff with project-fact condition,PASS,Injected conditional rule still refused before condition evaluation.
+alternate_registry_exposure,be_tax_shelter,PASS,Alternate registration does not bypass direct B4 check.
+serialization_reconstruction,serialized be_tax_shelter StackCandidate,PASS,Reconstructed positive component is refused by stack preflight.
+duplicate_alias_chain,__audit__ -> fj_film_incentive -> fj_film_rebate,FAIL,B4 follows only one PROGRAM_SLUG_ALIASES hop; injected live rule resolves at 99%.
+display_only_positive_guaranteed,be_tax_shelter positive StackCandidate,PASS,Display-only identity cannot enter automatic stack.
