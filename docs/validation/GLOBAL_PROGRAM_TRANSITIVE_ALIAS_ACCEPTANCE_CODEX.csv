@@ -1,0 +1,60 @@
+record_type,reference_or_attack,classification,resolution_result,stack_result,verdict
+attack,direct canonical blocked ID,authority-exhausted,None,rejected,PASS
+attack,one-hop alias to blocked ID,transitive inherited block,None,rejected,PASS
+attack,two-hop alias to blocked ID,transitive inherited block,None,rejected,PASS
+attack,three-hop alias to blocked ID,transitive inherited block,None,rejected,PASS
+attack,alias to raw legacy rule key,transitive inherited block,None,rejected,PASS
+attack,blocked intermediate then clean terminal,intermediate block wins,None,rejected,PASS
+attack,mixed canonical and legacy binding chain,transitive inherited block,None,rejected,PASS
+attack,alias cycle,ALIAS_CYCLE_FAIL_CLOSED,None,rejected,PASS
+attack,broken/orphan alias,no rule at terminal,None,rejected,PASS
+protected_rule_key,ae_ad_film_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,ae_dxb_dpip,SUPERSEDED,None,rejected,PASS
+protected_rule_key,al_cash_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,au_nsw_pdv_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,au_pdv_offset,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,au_qld_pdv_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,au_sa_pdv_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,be_tax_shelter,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,ca_nl_all_spend_credit,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,ca_qc_pstc,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,ca_sk_creative_saskatchewan_grant,coverage-blocked,None,rejected,PASS
+protected_rule_key,ch_pics_national_rebate,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,cr_tax_return_incentive,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,de_dfff,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,dk_production_rebate,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,eg_empc_cashback,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,fj_film_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,ge_film_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,gh_film_tax_incentive,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,il_foreign_production_fund,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,in_national_film,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,jp_vipo_location_incentive,coverage-blocked,None,rejected,PASS
+protected_rule_key,kr_kofic_location_incentive,coverage-blocked,None,rejected,PASS
+protected_rule_key,kz_investment_subsidy,coverage-blocked,None,rejected,PASS
+protected_rule_key,lu_filmfund_tax_shelter_rebate,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,me_cash_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,mk_cash_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,mn_production_incentive,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,mx_federal_film_incentive_2026,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,no_film_incentive,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,pa_film_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,ph_fdcp_flip,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,pt_scri_pt_cash_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,pt_scri_pt_medium_budget,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,qa_screen_production_incentive,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,sa_film_commission_rebate,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,se_production_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,sg_made_with_singapore_rebate,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,tt_production_expenditure_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,tw_bamid_rebate,DISPLAY_ONLY_ZERO_GUARANTEED,None,rejected,PASS
+protected_rule_key,ua_cash_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,us_il_film_production_services_credit,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,us_ny_post_production_credit,KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,us_or_opif,UNPRICEABLE_AUTHORITY_INSUFFICIENT,None,rejected,PASS
+protected_rule_key,us_tn_performance_grant,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,us_wa_motion_picture_competitiveness,coverage-blocked,None,rejected,PASS
+protected_rule_key,uy_acau_cash_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,uy_tax_credit_2026,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,uz_film_rebate,FAIL_CLOSED,None,rejected,PASS
+protected_rule_key,za_dtic_foreign_film,FAIL_CLOSED,None,rejected,PASS

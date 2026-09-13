@@ -1,0 +1,19 @@
+test_file,test_function,pre_edit_result_under_claude_production,oracle_change_audit,verdict
+optimization/test_little_utopia_worldwide_acceptance.py,test_ac3_thailand_prices_its_canonical_base_not_its_headline_maximum,FAIL,"Changed discretionary condition to executable award condition; current replacement remains too weak because preapproval is absent",BLOCKING_ORACLE_GAP
+optimization/test_little_utopia_worldwide_acceptance.py,test_australia_hard_gate_still_binds_at_the_real_threshold,FAIL,"Correctly removed USD surrogate and added native fact assertions",VALID
+test_b3_formulaic_consumption.py,test_ae_dpip_dubai_fail_closed_abu_dhabi_separately_identified,PASS,"Proactively strengthened identity oracle; not one of the failures",VALID
+test_b3_formulaic_consumption.py,test_au_location_offset_prices_above_threshold_rejects_below,FAIL,"Native missing/below/above cases strengthened",VALID
+test_b3_formulaic_consumption.py,test_fr_trip_vfx_condition_is_user_fact_required_not_authority_unresolved,FAIL,"Makes the condition executable but blesses a USD-denominated fact contrary to controlling native-currency requirement",BLOCKING_ORACLE_GAP
+test_b3_formulaic_consumption.py,test_ma_ccm_rebate_spend_and_days_are_separate_conditions,FAIL,"Uses absence of a boolean as the claimed 17-day test; never submits numeric 17 or 18",BLOCKING_ORACLE_GAP
+test_b3_formulaic_consumption.py,test_nl_nfpi_flat_35_no_band,FAIL,"Adds two gates but omits the required cap oracle",BLOCKING_ORACLE_GAP
+test_b3_formulaic_consumption.py,test_us_or_opif_no_blended_surrogate_disclosed_component_ceilings,FAIL,"Valid component isolation assertions but still no real-slug optimizer consumption or cap oracle",BLOCKING_ORACLE_GAP
+test_b3_formulaic_consumption.py,test_us_tx_miip_zero_guaranteed_without_allocation_fact,PASS,"Proactively adds positive two-fact path; does not verify award-specific tier or phased thresholds",BLOCKING_ORACLE_GAP
+test_b3_formulaic_consumption.py,test_za_nfvf_rebate_prices_independently_of_za_dtic_foreign_film,FAIL,"Adds gate/cap predicates but asserts rejection rather than capped calculation and omits post branch",BLOCKING_ORACLE_GAP
+test_canonical_authority_substrate.py,test_fvd_runtime_candidate_universe_restored,FAIL,"Exact post-delta counts measured and mechanism partly attributed",VALID_COUNT_ORACLE
+test_canonical_knowledge_consolidation.py,test_au_pdv_did_not_inherit_location_offsets_threshold,FAIL,"Correctly asserts no Location threshold on PDV and native fact on Location",VALID
+test_canonical_served_wiring_repair.py,test_fvd_accounting_matches_codex_diagnosis,FAIL,"Exact priced/rejected totals measured",VALID_COUNT_ORACLE
+test_canonical_served_wiring_repair.py,test_fvd_unpriceable_causes_are_differentiated_not_flattened,FAIL,"Exact rejected total measured while distinct-cause oracle retained",VALID_COUNT_ORACLE
+test_codex_final_canonical_incentive_acceptance.py,test_duplicate_alias_chain_cannot_reach_injected_live_rule,"XPASS(strict), counted as pytest failure","Only xfail marker removed; assertions unchanged and now pass",VALID
+test_incentive_optimizer_core_closeout.py,test_australia_would_resolve_above_the_conservative_threshold,FAIL,"Correctly replaces unsupported USD-bound positive with native-fact negative",VALID
+test_optimizer_input_integration.py,test_min_spend_threshold_uses_real_fx_conversion,FAIL,"Changed EUR100k-derived value to EUR50k-derived USD constant; contradicts the native-currency acceptance requirement",BLOCKING_ORACLE_GAP
+test_treaty_coproduction_wiring.py,test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category,FAIL,"10 to 8 follows loss of ZA priced leg; exact output confirmed",VALID_COUNT_ORACLE

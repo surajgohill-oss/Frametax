@@ -1,0 +1,27 @@
+{
+  "workstream": "CODEX_FINAL_CANONICAL_INCENTIVE_RUNTIME_REVERIFICATION",
+  "fresh_subprocess": true,
+  "result": "PASS",
+  "rule_key_count": 126,
+  "doctrine_count": 119,
+  "orders_tested": [
+    "canonical_evaluation -> allocation_pricing",
+    "canonical_evaluation -> conditional_programs",
+    "canonical_evaluation -> program_rate_rules",
+    "allocation_pricing -> canonical_evaluation",
+    "allocation_pricing -> conditional_programs",
+    "allocation_pricing -> program_rate_rules",
+    "conditional_programs -> canonical_evaluation",
+    "conditional_programs -> allocation_pricing",
+    "conditional_programs -> program_rate_rules",
+    "program_rate_rules -> canonical_evaluation",
+    "program_rate_rules -> allocation_pricing",
+    "program_rate_rules -> conditional_programs",
+    "canonical_production_view first and reverse orders",
+    "executable_jurisdiction_registry first and reverse orders",
+    "allocation_pricing -> conditional_programs -> canonical_evaluation repeated three clean processes"
+  ],
+  "circular_imports": 0,
+  "partially_initialized_modules": 0,
+  "order_dependent_registry_results": 0
+}
