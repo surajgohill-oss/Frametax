@@ -83,8 +83,17 @@ def test_australia_full_relocation_is_not_fully_priced():
 
 def test_australia_would_resolve_above_the_conservative_threshold():
     """Confirms the gate is a real threshold, not a permanent block —
-    a hypothetically larger production clears it."""
-    rr = resolve_program_rate("au_location_offset", "feature_film", 15_000_000.0)
+    a hypothetically qualified production clears it.
+
+    Codex final runtime remediation (au_location_offset, P0): the prior
+    conservative USD $10,000,000 bound (derived from a fabricated 0.50
+    USD/AUD guess) is gone. qpe_usd alone can never clear the gate now —
+    only a caller-evidenced native AUD amount fact can."""
+    assert resolve_program_rate("au_location_offset", "feature_film", 15_000_000.0) is None
+    rr = resolve_program_rate(
+        "au_location_offset", "feature_film", 15_000_000.0,
+        amount_facts={"au_location_qape_aud": 25_000_000.0},
+    )
     assert rr is not None
     assert rr.modeled_rate == 0.30
 

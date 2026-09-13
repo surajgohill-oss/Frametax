@@ -106,7 +106,14 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     # BRANCH): 8 -> 10. za_nfvf_rebate gives South Africa a real priced
     # leg, unlocking two new bilateral candidate pairs: uk-za-bilateral and
     # ca-za-bilateral.
-    assert len(bilateral_among_candidates) == 10
+    #
+    # Codex final runtime remediation: 10 -> 8. za_nfvf_rebate's base tier
+    # now genuinely gates on a caller-evidenced "accepted production"
+    # fact (RateCondition.required_boolean_fact_key) rather than a
+    # disclosure-only condition -- FVD never evidences it, so South Africa
+    # no longer has an unconditional priced leg, and uk-za-bilateral/
+    # ca-za-bilateral drop back out (directly measured).
+    assert len(bilateral_among_candidates) == 8
     assert all(
         "ca-cn-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
     ), "CN is genuinely non-economic; its bilateral pair must not be offered"

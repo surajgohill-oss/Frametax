@@ -56,13 +56,30 @@ from __future__ import annotations
 EXECUTABLE_JURISDICTION_REGISTRY_VERSION = "1.2.0"
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from app.data.program_rate_rules import (
-    RateCondition,
-    RateRule,
-    SourceProvenance,
-    get_rate_rules,
-)
+# Codex final runtime remediation (P1:import_order): this module must NOT
+# import app.data.program_rate_rules at module scope. program_rate_rules.py
+# side-effect-imports program_rate_rules_worldwide.py at its own module
+# scope (to trigger rule registration), and program_rate_rules_worldwide.py
+# imports DoctrineRateTier/DoctrineRecord/register/rate_rules_for FROM this
+# module -- so a top-level import here closes a real circular-import loop.
+# A fresh process that imports THIS module before program_rate_rules (e.g.
+# via canonical_production_view) would previously fail with "cannot import
+# name 'DoctrineRateTier' from partially initialized module" because this
+# module hadn't finished defining its own classes yet when the cycle
+# re-entered it. RateCondition/RateRule/SourceProvenance are used only as
+# annotations here (safe under `from __future__ import annotations`, which
+# makes every annotation a lazily-evaluated string) so they only need to be
+# real objects for static type checkers, never at runtime; RateRule and
+# get_rate_rules are only actually CALLED inside function bodies
+# (rate_rules_for / get_provenance), well after both modules have finished
+# their own top-level initialization, so those two imports are deferred to
+# the function bodies that use them instead of module scope. This is a pure
+# import-structure change: no economics, registration behavior, or public
+# API shape changes.
+if TYPE_CHECKING:
+    from app.data.program_rate_rules import RateCondition, RateRule, SourceProvenance
 
 
 @dataclass(frozen=True)
@@ -118,6 +135,10 @@ def rate_rules_for(record: DoctrineRecord) -> tuple[RateRule, ...]:
     """Derives the executable RateRule tuple from a DoctrineRecord — the
     ONE place tier data becomes a RateRule, so a new jurisdiction never
     needs a hand-written parallel RateRule tuple."""
+    from app.data.program_rate_rules import RateRule  # deferred: see the
+    # TYPE_CHECKING import note at the top of this module -- breaks the
+    # executable_jurisdiction_registry <-> program_rate_rules <->
+    # program_rate_rules_worldwide circular-import loop.
     return tuple(
         RateRule(
             program_slug=record.program_slug,
@@ -169,8 +190,10 @@ def get_provenance(program_slug: str) -> SourceProvenance | None:
     directly in program_rate_rules.py with no DoctrineRecord — for those,
     falls back to the first executable RateRule's own provenance field,
     so the trace is complete regardless of which of the two authoring
-    patterns a program uses. Returns None only when neither path has a
+    patterns a program uses. Deferred import for the same reason as
+    rate_rules_for() above. Returns None only when neither path has a
     recorded provenance — never fabricates a value."""
+    from app.data.program_rate_rules import get_rate_rules  # deferred; see above
     record = get_doctrine(program_slug)
     if record is not None and record.provenance is not None:
         return record.provenance

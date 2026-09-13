@@ -73,18 +73,40 @@ def test_ac3_thailand_prices_its_canonical_base_not_its_headline_maximum():
     th_film_incentive, which is NOT B1-blocked and resolves normally; a
     ceiling that can never even be REACHED (th_boi_incentive, fail-closed)
     is a fortiori never treated as guaranteed."""
+    # Codex final runtime remediation (th_film_incentive, P0): "preapproval/
+    # award/effective conditions are not executable through optimizer
+    # inputs." The ceiling's discretionary_band condition (never gates,
+    # never gives a controlled input any way to prove the tier resolves)
+    # is reclassified to a genuinely EXECUTABLE required_boolean_fact_key
+    # gate. AC-3's actual subject is unaffected: without the award fact,
+    # the ceiling is not even eligible, so the guaranteed 15% base tier
+    # resolves alone -- still never conflating a guaranteed floor with an
+    # unconfirmed "up to" maximum.
     tiers = {r.tier_id: r for r in get_rate_rules("th_film_incentive")}
     assert "th-base-15" in tiers and "th-uplift-ceiling-30" in tiers
     assert tiers["th-base-15"].rate == 0.15
     assert tiers["th-base-15"].is_band_ceiling is False
     assert tiers["th-uplift-ceiling-30"].rate == 0.30
     assert tiers["th-uplift-ceiling-30"].is_band_ceiling is True
-    assert any(c.kind == "discretionary_band" for c in tiers["th-uplift-ceiling-30"].conditions)
+    ceiling_condition = next(
+        c for c in tiers["th-uplift-ceiling-30"].conditions if c.condition_id == "th-uplift-not-guaranteed"
+    )
+    assert ceiling_condition.required_boolean_fact_key == "th_film_incentive_boi_uplift_award_confirmed"
+
     res = resolve_program_rate("th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0)
     assert res is not None
+    assert res.modeled_rate == 0.15, "without the award fact, the ceiling is not eligible — the 15% floor alone resolves"
     assert res.floor_rate == 0.15
     assert res.has_guaranteed_floor is True
-    assert any(ev.satisfied is None for ev in res.conditions_evaluated)
+
+    # With the award genuinely evidenced, the 30% ceiling becomes eligible
+    # and resolves deterministically -- proving the gate is a real,
+    # two-sided threshold, not a permanent block.
+    res_awarded = resolve_program_rate(
+        "th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0,
+        evidenced_facts=frozenset({"th_film_incentive_boi_uplift_award_confirmed"}),
+    )
+    assert res_awarded.modeled_rate == 0.30
 
     # th_boi_incentive is a SEPARATE, genuinely B1 FAIL_CLOSED program with
     # no rate data of its own -- never resolves at runtime.
@@ -167,10 +189,23 @@ def test_mauritius_baseline_regression_including_the_non_claiming_us_segment():
 
 
 def test_australia_hard_gate_still_binds_at_the_real_threshold():
+    # Codex final runtime remediation (au_location_offset, P0): "No guessed
+    # USD surrogate." The prior conservative USD $10,000,000 bound is gone;
+    # the gate is now a genuine native-AUD amount fact. Absent it, the
+    # program never resolves regardless of qpe_usd — this is the correct,
+    # honest failure mode absent a real AUD/USD rate, not a defect.
     assert resolve_program_rate("au_location_offset", production_type="feature_film",
                                 qpe_usd=4_355_327.0) is None
     assert resolve_program_rate("au_location_offset", production_type="feature_film",
-                                qpe_usd=12_000_000.0) is not None
+                                qpe_usd=12_000_000.0) is None
+    assert resolve_program_rate(
+        "au_location_offset", production_type="feature_film", qpe_usd=12_000_000.0,
+        amount_facts={"au_location_qape_aud": 15_000_000.0},
+    ) is None, "AUD 15,000,000 is below the AUD 20,000,000 native threshold"
+    assert resolve_program_rate(
+        "au_location_offset", production_type="feature_film", qpe_usd=12_000_000.0,
+        amount_facts={"au_location_qape_aud": 25_000_000.0},
+    ) is not None
 
 
 def test_mauritius_treaty_zero_is_proven_not_assumed():

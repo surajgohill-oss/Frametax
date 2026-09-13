@@ -742,9 +742,23 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # bilateral and ca-za-bilateral, since ZA now has a priced leg).
     #   124 + 168 + 12 + 1 + 1 = 306 entries;
     #   59 + 109 + 0 + 1 + 0 = 169 priced; 306 - 169 = 137 unpriced.
-    assert len(entries) == 306
-    assert len(priced) == 169
-    assert len(unpriced) == 137
+    #
+    # Codex final runtime remediation: 306 -> 295 (-11), 169 -> 160 (-9),
+    # 137 -> 135 (-2), directly measured. au_location_offset/cz_film_
+    # incentive's project cap/ma_ccm_rebate/nl_nfpi/th_film_incentive's
+    # uplift/us_tx_miip/za_nfvf_rebate's RateCondition gates (native-
+    # currency amount_fact_min/required_boolean_fact_key) are now
+    # genuinely EXECUTABLE tier-eligibility gates rather than disclosure-
+    # only conditions that never affected which tier resolved -- FVD
+    # never evidences any of these new fact keys, so za_nfvf_rebate in
+    # particular no longer has an unconditional priced leg for FVD (losing
+    # its treaty_coproduction uk-za-bilateral/ca-za-bilateral unlock and
+    # its own full_relocation/component_relocation candidates), and the
+    # other programs' previously-auto-priced routes correctly withhold
+    # pricing FVD has no evidenced facts for.
+    assert len(entries) == 295
+    assert len(priced) == 160
+    assert len(unpriced) == 135
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):

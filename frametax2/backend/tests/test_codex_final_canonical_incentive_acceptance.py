@@ -1,8 +1,12 @@
 """Independent Codex adversarial checks for the final incentive-runtime audit.
 
-These tests do not alter production behavior.  Nine assert the current B4
-refusal boundary.  The strict xfail records the independently reproduced
-multi-hop-alias bypass that blocks final acceptance.
+These tests do not alter production behavior. All eleven assert the current
+B4 refusal boundary, including the two-hop alias-chain case
+(test_duplicate_alias_chain_cannot_reach_injected_live_rule) that was
+previously a strict xfail recording an independently reproduced
+multi-hop-alias bypass -- fixed in authority_coverage_registry.py by making
+economic_block_for_program's alias/binding traversal transitive, so it is
+now a normal passing assertion.
 """
 from __future__ import annotations
 
@@ -121,12 +125,13 @@ def test_display_only_program_with_positive_value_is_rejected_from_stack():
     assert price_program_group_stack([_candidate("be_tax_shelter"), clean]) is None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="B4 canonicalization follows only one PROGRAM_SLUG_ALIASES hop",
-)
 def test_duplicate_alias_chain_cannot_reach_injected_live_rule(isolated_registries):
-    """Required corruption case: a two-hop alias must inherit the terminal block."""
+    """Required corruption case: a two-hop alias must inherit the terminal
+    block. Codex final runtime remediation: economic_block_for_program's
+    alias/binding traversal is now transitive (see authority_coverage_
+    registry._b4_spellings), so this is a normal passing assertion, not an
+    xfail -- previously B4 canonicalization followed only one
+    PROGRAM_SLUG_ALIASES hop and this reproduced a genuine bypass."""
     outer = "__codex_audit_two_hop_alias__"
     PROGRAM_SLUG_ALIASES[outer] = "fj_film_incentive"
     _RULES_BY_PROGRAM[outer] = (_rule(outer),)

@@ -235,7 +235,13 @@ from __future__ import annotations
 #: block set) and the B2 identity-rekey CANONICAL_RUNTIME_SLUG_BINDINGS
 #: changes -- every previously-persisted served evaluation must be
 #: invalidated and recomputed fresh, never silently served stale.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.4.0"
+#: Codex final runtime remediation (B4:multi_hop_alias): bumped again for
+#: the transitive-alias-chain fix to economic_block_for_program -- a
+#: two-hop (or deeper) PROGRAM_SLUG_ALIASES/CANONICAL_RUNTIME_SLUG_BINDINGS
+#: chain now inherits its terminal disposition instead of being resolved
+#: only one hop, which could previously let a corrupted intermediate alias
+#: reach an injected rule undetected.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.5.0"
 
 from dataclasses import dataclass
 from typing import Literal
@@ -839,7 +845,7 @@ def is_covered_unpriceable(program_slug: str) -> bool:
 # project reference, or stacking edge. Alias spellings inherit the canonical
 # block (canonicalization happens first, below).
 # ─────────────────────────────────────────────────────────────────────────────
-from app.data.program_slug_aliases import canonical_slug as _canonical_slug  # noqa: E402
+from app.data.program_slug_aliases import PROGRAM_SLUG_ALIASES  # noqa: E402
 
 #: canonical_program_id -> Codex binding_decision. 46 rows.
 _B1_DISCRETIONARY_RULING: dict[str, str] = {
@@ -904,6 +910,15 @@ _B4_RETIRED_OR_FAIL_CLOSED_IDENTITIES: dict[str, str] = {
 }
 
 _B4_REASON: dict[str, str] = {
+    "ALIAS_CYCLE_FAIL_CLOSED": (
+        "ALIAS_CYCLE_FAIL_CLOSED (Codex B4 transitive-alias remediation): "
+        "PROGRAM_SLUG_ALIASES resolution for this identity does not "
+        "terminate at a fixed canonical spelling -- it revisits a spelling "
+        "already seen earlier in its own forward chain. A corrupted or "
+        "circular alias graph can never be treated as resolving to a safe, "
+        "priceable terminal identity, regardless of what any individual "
+        "member of the cycle would otherwise resolve to."
+    ),
     "FAIL_CLOSED": (
         "AUTHORITY_EXHAUSTED_FAIL_CLOSED (Codex B1 discretionary ruling): accepted "
         "authority is insufficient to price this program deterministically. Automatic "
@@ -942,21 +957,77 @@ class EconomicBlock:
         return True
 
 
+#: Hard ceiling on alias-chain hops walked while resolving a spelling's
+#: equivalence class. The live PROGRAM_SLUG_ALIASES/CANONICAL_RUNTIME_SLUG_
+#: BINDINGS graphs are tiny (well under 200 entries combined) and Codex's
+#: independent recomputation confirmed 0 cycles in the current data,  so
+#: this is purely a corruption backstop -- if traversal ever needs more
+#: hops than this to reach a fixed point, something is structurally wrong
+#: and MUST be treated as a cycle (see _alias_chain_has_cycle), never as
+#: "just a long chain".
+_B4_MAX_ALIAS_HOPS = 64
+
+
+def _alias_chain_has_cycle(program_id: str) -> bool:
+    """True when repeatedly canonicalizing `program_id` through
+    PROGRAM_SLUG_ALIASES (the actual directed alias-resolution relation,
+    not the broader bidirectional equivalence class) revisits a spelling
+    already seen earlier in its OWN forward chain -- a genuinely corrupted
+    alias graph, as opposed to two spellings that simply both belong to
+    the same equivalence class (which is normal and not a cycle)."""
+    seen = {program_id}
+    current = program_id
+    for _ in range(_B4_MAX_ALIAS_HOPS):
+        nxt = PROGRAM_SLUG_ALIASES.get(current)
+        if nxt is None:
+            return False  # chain terminates at a non-aliased spelling
+        if nxt in seen:
+            return True  # revisits an earlier hop -> cycle
+        seen.add(nxt)
+        current = nxt
+    return True  # never terminated within the hop ceiling -> treat as cyclic
+
+
 def _b4_spellings(program_id: str) -> set[str]:
-    """Every runtime spelling equivalent to `program_id`: itself, its alias
-    canonicalization, its canonical<->runtime binding in either direction."""
-    out = {program_id, _canonical_slug(program_id),
-           CANONICAL_RUNTIME_SLUG_BINDINGS.get(program_id, "")}
-    out |= {k for k, v in CANONICAL_RUNTIME_SLUG_BINDINGS.items() if v == program_id}
-    out.discard("")
-    return out
+    """Every runtime spelling transitively equivalent to `program_id`:
+    itself, every hop of its PROGRAM_SLUG_ALIASES forward chain (not just
+    the first hop -- a two-or-more-hop chain must inherit the terminal
+    disposition, and a BLOCKED intermediate hop must also block, not only
+    the final target), and its CANONICAL_RUNTIME_SLUG_BINDINGS binding
+    transitively in either direction. Always terminates: every expansion
+    step only adds spellings not already visited, over finite dicts, so
+    the fixed point is reached in at most len(PROGRAM_SLUG_ALIASES) +
+    len(CANONICAL_RUNTIME_SLUG_BINDINGS) steps regardless of shape --
+    cycle SAFETY here is structural, not a claim that the underlying
+    alias graph is acyclic (see _alias_chain_has_cycle for that check,
+    which economic_block_for_program runs first)."""
+    visited: set[str] = set()
+    frontier = {program_id}
+    for _ in range(_B4_MAX_ALIAS_HOPS):
+        frontier = {s for s in frontier if s and s not in visited}
+        if not frontier:
+            break
+        visited |= frontier
+        nxt: set[str] = set()
+        for s in frontier:
+            alias_target = PROGRAM_SLUG_ALIASES.get(s)
+            if alias_target is not None:
+                nxt.add(alias_target)
+            binding_target = CANONICAL_RUNTIME_SLUG_BINDINGS.get(s)
+            if binding_target is not None:
+                nxt.add(binding_target)
+            nxt |= {k for k, v in CANONICAL_RUNTIME_SLUG_BINDINGS.items() if v == s}
+        frontier = nxt - visited
+    return visited
 
 
 def economic_block_for_program(program_id: str | None) -> EconomicBlock | None:
     """B4 CENTRAL AUTHORITY GATE. Returns a structured block when an accepted
     authority-exhausted, discretionary-display-only, retired/superseded, or
     duplicate identity must NOT resolve to an automatic rate or enter an
-    automatic stack. Canonicalizes aliases FIRST. Runtime-owned: never reads a
+    automatic stack. Canonicalizes aliases FIRST -- transitively across the
+    ENTIRE alias/binding chain (every intermediate hop, not just the first),
+    with explicit cycle protection. Runtime-owned: never reads a
     documentation CSV. Fail-closed status outranks any stale RateRule,
     DoctrineRecord, project reference, or stacking edge.
 
@@ -966,6 +1037,17 @@ def economic_block_for_program(program_id: str | None) -> EconomicBlock | None:
     condition evaluation."""
     if not program_id:
         return None
+
+    # 0. A corrupted (circular) alias chain can never be treated as
+    #    resolving to a safe, priceable terminal identity -- fail closed
+    #    unconditionally, before even collecting the equivalence class.
+    if _alias_chain_has_cycle(program_id):
+        return EconomicBlock(
+            canonical_program_id=program_id, matched_spelling=program_id,
+            classification="ALIAS_CYCLE_FAIL_CLOSED",
+            reason=_B4_REASON["ALIAS_CYCLE_FAIL_CLOSED"],
+        )
+
     spellings = _b4_spellings(program_id)
 
     # 1. B1 discretionary ruling (46).

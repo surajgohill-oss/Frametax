@@ -771,6 +771,15 @@ def _compute_fingerprint(
         # above: a change to this producer-stated NPC input must invalidate
         # any stale cached evaluation row.
         "financing_cost_usd": inputs.financing_cost_usd,
+        # Codex final runtime remediation -- the SAME reasoning as
+        # financing_cost_usd/contingency directly above: a change to a
+        # producer's evidenced program-eligibility/native-currency facts
+        # must invalidate any stale cached evaluation row, or evidencing
+        # (or retracting) a fact like an AUD/CZK/MAD/ZAR native threshold
+        # or a preapproval/award confirmation would silently keep serving
+        # the pre-change persisted structures forever.
+        "evidenced_program_facts": sorted(inputs.evidenced_program_facts),
+        "amount_facts": sorted(inputs.amount_facts.items()),
         # Batched producer-control closeout (2026-09-03) -- a change to
         # which jurisdictions this PROJECT elects to exclude from its own
         # candidate universe must invalidate any stale cached evaluation
@@ -996,7 +1005,17 @@ def _price_candidate(
         a.amount_usd for a in register_probe if a.state == QualificationState.QUALIFIES
     ), 2)
 
-    rr = resolve_program_rate(program_slug, production_type=inputs.production_type, qpe_usd=qpe)
+    # Codex final runtime remediation: this early "does this program even
+    # have a resolvable rate" preflight must consult the SAME evidenced/
+    # amount facts price_allocated_structure below is given -- otherwise
+    # a program whose ONLY resolvable tier is gated on a caller-evidenced
+    # fact (e.g. au_location_offset's native AUD threshold) returns None
+    # HERE, before ever reaching the pricing call this function threads
+    # those facts into, and the fact never has any effect.
+    rr = resolve_program_rate(
+        program_slug, production_type=inputs.production_type, qpe_usd=qpe,
+        evidenced_facts=inputs.evidenced_program_facts, amount_facts=inputs.amount_facts,
+    )
     if rr is None:
         return None, register_probe, None
 
@@ -1048,6 +1067,14 @@ def _price_candidate(
         # documented default ("explicit inputs only, never a silent
         # assumption"), never assumed here.
         financing_cost_usd=inputs.financing_cost_usd or 0.0,
+        # Codex final runtime remediation — the SAME generic ProjectFact
+        # mechanism as financing_cost_usd/contingency above, threading a
+        # producer's real, evidenced program-eligibility/native-currency
+        # facts into resolve_program_rate() through the actual production
+        # pipeline. Absent (empty) is byte-identical prior behavior for
+        # every program without such a condition.
+        evidenced_requirement_facts=inputs.evidenced_program_facts,
+        amount_facts=inputs.amount_facts,
     )
     return pricing, register, rr
 
@@ -1404,6 +1431,14 @@ def _price_component_relocation_candidate(
         # documented default ("explicit inputs only, never a silent
         # assumption"), never assumed here.
         financing_cost_usd=inputs.financing_cost_usd or 0.0,
+        # Codex final runtime remediation — the SAME generic ProjectFact
+        # mechanism as financing_cost_usd/contingency above, threading a
+        # producer's real, evidenced program-eligibility/native-currency
+        # facts into resolve_program_rate() through the actual production
+        # pipeline. Absent (empty) is byte-identical prior behavior for
+        # every program without such a condition.
+        evidenced_requirement_facts=inputs.evidenced_program_facts,
+        amount_facts=inputs.amount_facts,
     )
     return spec, allocation, pricing
 
@@ -2190,6 +2225,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         production_type=inputs.production_type,
         qpe_usd=inputs.gross_budget_usd,
         home_code=inputs.jurisdiction_code,
+        # Codex final runtime remediation — the SAME evidenced/amount
+        # facts threaded into _price_candidate/price_allocated_structure
+        # below. Without this, a program whose only resolvable tier is
+        # gated on a caller-evidenced fact (e.g. au_location_offset's
+        # native AUD threshold) is classified "rejected" HERE, before
+        # ever reaching the pricing pass, and the fact never has any
+        # effect on the served structure's classification/blocker text.
+        evidenced_facts=inputs.evidenced_program_facts,
+        amount_facts=inputs.amount_facts,
     )
     # Canonical program identity, not jurisdiction_code, is the uniqueness
     # key here too — feasibility disclosure is keyed by (code, program_slug)
@@ -2209,6 +2253,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         production_type=inputs.production_type,
         qpe_usd=inputs.gross_budget_usd,
         home_code=inputs.jurisdiction_code,
+        evidenced_facts=inputs.evidenced_program_facts,
+        amount_facts=inputs.amount_facts,
     )
     #: REJECTION TRACE IDENTITY. A jurisdiction can examine SEVERAL programs
     #: (CA-ON alone has three). Keying a rejection lookup by jurisdiction

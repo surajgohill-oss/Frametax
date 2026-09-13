@@ -74,6 +74,8 @@ def discover_executable_jurisdictions(
     production_type: str,
     qpe_usd: float | None,
     home_code: str,
+    evidenced_facts: frozenset[str] | None = None,
+    amount_facts: dict[str, float] | None = None,
 ) -> DiscoveryResult:
     """Production-first discovery. Examine every implemented jurisdiction and,
     for each, first ask 'can this PRODUCTION be made here?' (capability match)
@@ -181,7 +183,10 @@ def discover_executable_jurisdictions(
             resolves = False
             priceable = False
             if not coverage_blocked and slug is not None and has_doctrine and has_rate:
-                rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe_usd)
+                rr = resolve_program_rate(
+                    slug, production_type=production_type, qpe_usd=qpe_usd,
+                    evidenced_facts=evidenced_facts, amount_facts=amount_facts,
+                )
                 resolves = rr is not None
                 priceable = resolves
 

@@ -1,0 +1,18 @@
+negative_case,chain_description,result,test_name
+one_hop_blocked_alias,outer -> ae_ad_film_rebate (B1 FAIL_CLOSED),PASS,test_one_hop_blocked_alias_refuses
+two_hop_blocked_alias_live_intermediate,"outer -> middle -> de_dfff (B1 DISPLAY_ONLY), middle also carries an injected live rule",PASS,test_two_hop_blocked_alias_with_live_intermediate_refuses
+three_hop_blocked_alias_chain,a -> b -> c -> za_dtic_foreign_film (B1 FAIL_CLOSED),PASS,test_three_hop_blocked_alias_chain_refuses
+blocked_intermediate_clean_terminal,"outer -> al_cash_rebate (B1 FAIL_CLOSED, blocked) -> ca_federal_cptc (clean)",PASS,test_blocked_intermediate_with_clean_terminal_still_refuses
+retired_source,iceland_post_production_visual_effects_and_animation_incentive (RETIRED),PASS,test_codex_final_canonical_incentive_acceptance.py::test_retired_identity_cannot_be_aliased_to_active_rule
+retired_source_multi_hop,outer -> iceland_post_production... (RETIRED) -> ca_film_30 (active),PASS,test_retired_identity_multi_hop_alias_cannot_reach_active_rule
+display_only_source,be_tax_shelter (B1 DISPLAY_ONLY_ZERO_GUARANTEED),PASS,test_codex_final_canonical_incentive_acceptance.py::test_display_only_program_with_positive_value_is_rejected_from_stack
+alias_cycle,"a -> b -> a (genuine 2-cycle, neither independently blocked)",PASS (ALIAS_CYCLE_FAIL_CLOSED),test_alias_cycle_fails_closed_even_with_no_independent_block
+alias_self_cycle,a -> a (degenerate self-reference),PASS (ALIAS_CYCLE_FAIL_CLOSED),test_alias_self_cycle_fails_closed
+missing_alias_target,"outer -> dangling (no rule, no further alias)",PASS (never a positive price),test_missing_alias_target_never_produces_a_positive_price
+direct_candidate_stack_injection,StackCandidate with a multi-hop-aliased slug -> be_tax_shelter,PASS,test_pair_and_group_stack_reject_multi_hop_aliased_blocked_candidate
+conditional_fallback,"outer -> de_dfff (B1 DISPLAY_ONLY), injected rule carries a project_fact_dependent_eligibility condition",PASS,test_conditional_fallback_through_multi_hop_chain_cannot_reactivate
+legacy_registry_reregistration,register_rate_rules() re-registration through a multi-hop chain -> be_tax_shelter,PASS,test_legacy_registry_reregistration_through_multi_hop_chain_cannot_bypass
+serialized_reconstruction,asdict()/StackCandidate(**raw) reconstruction of a multi-hop-aliased blocked candidate -> de_dfff,PASS,test_serialized_reconstruction_of_multi_hop_aliased_candidate_stays_blocked
+unrelated_program_unaffected,"ca_federal_cptc (clean, unrelated)","PASS (still prices, rate=0.25)",test_unrelated_verified_program_still_prices_after_transitive_rewrite
+california_rekey_unchanged,ca_film_30 / us_ca_film_credit (both spellings),PASS (identical modeled_rate via both spellings),test_california_rekey_economics_unchanged_after_transitive_rewrite
+codex_two_hop_oracle,__codex_audit_two_hop_alias__ -> fj_film_incentive -> fj_film_rebate (Codex's own reproduced bypass),"PASS (was strict xfail, now a normal passing test)",test_codex_final_canonical_incentive_acceptance.py::test_duplicate_alias_chain_cannot_reach_injected_live_rule

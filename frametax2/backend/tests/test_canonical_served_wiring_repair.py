@@ -199,8 +199,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # shrink because their target/partner jurisdictions drop out of the
     # priceable-target set) -- the same accounting applies here since this
     # is the identical FVD candidate universe.
-    assert len(priced) == 169  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311; Codex bounded remediation B1: 311 -> 165; B3: 165 -> 169 (th_film_incentive/za_nfvf_rebate)
-    assert len(unpriced) == 137  # Codex bounded remediation B3: 135 -> 137
+    assert len(priced) == 160  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311; Codex bounded remediation B1: 311 -> 165; B3: 165 -> 169 (th_film_incentive/za_nfvf_rebate); Codex final runtime remediation: 169 -> 160 (-9) -- au_location_offset/cz_film_incentive/ma_ccm_rebate/nl_nfpi/th_film_incentive/us_tx_miip/za_nfvf_rebate's genuinely-executable fact gates (native-currency/boolean) now correctly withhold pricing FVD never evidences, where the prior disclosure-only conditions had silently let these auto-price
+    assert len(unpriced) == 135  # Codex bounded remediation B3: 135 -> 137; Codex final runtime remediation: 137 -> 135 (mirrors priced count's -9; net -2 since fewer total candidates too, see test_fvd_runtime_candidate_universe_restored)
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -209,8 +209,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 169  # mirrors priced count above (Codex bounded remediation B1/B3)
-    assert accounting["unpriceable_count"] == 137  # mirrors unpriced count above (Codex bounded remediation B1/B3)
+    assert accounting["review_required_count"] == 160  # mirrors priced count above (Codex final runtime remediation: 169 -> 160)
+    assert accounting["unpriceable_count"] == 135  # mirrors unpriced count above (Codex final runtime remediation: 137 -> 135)
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -232,8 +232,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 169  # mirrors priced count above (Codex bounded remediation B1/B3)
-    assert len(unpriceable_ranked) == 137  # mirrors unpriced count above (Codex bounded remediation B1/B3)
+    assert len(review_ranked) == 160  # mirrors priced count above (Codex final runtime remediation: 169 -> 160)
+    assert len(unpriceable_ranked) == 135  # mirrors unpriced count above (Codex final runtime remediation: 137 -> 135)
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -467,7 +467,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # candidate-jurisdiction pool for bilateral-partner discovery).
     # 46 - 29 - 15 = +2. Still not the invariant this test guards: distinct
     # terminal causes.
-    assert len(unpriceable) == 137  # Codex bounded remediation B3: 135 -> 137 (th_film_incentive/za_nfvf_rebate add new terminal causes)
+    assert len(unpriceable) == 135  # Codex bounded remediation B3: 135 -> 137 (th_film_incentive/za_nfvf_rebate add new terminal causes); Codex final runtime remediation: 137 -> 135 -- see test_fvd_accounting_matches_codex_diagnosis for the exact reconciliation
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

@@ -1486,41 +1486,40 @@ AU_DOCTRINE = register(DoctrineRecord(
             tier_id="au-location-offset-30",
             rate=0.30,
             is_band_ceiling=False,
-            # Incentive/Optimizer Core Closeout: enforce the real AUD $20M
-            # minimum QAPE hard gate, reusing the SAME min_qpe_usd mechanism
-            # that already correctly blocks ~25 other jurisdictions (never a
-            # new gating code path). Root cause (canonical adjudication
-            # §6): no sourced AUD/USD FX rate exists in this project's
-            # FX_RATE_SNAPSHOTS table, so the threshold cannot be converted
-            # with a live rate without fabricating one. Fix: apply a
-            # disclosed, deliberately CONSERVATIVE (production-favorable)
-            # historical-bound rate of 0.50 USD/AUD — well below any
-            # AUD/USD rate observed in modern history (post-2001 lows are
-            # ~0.55-0.60) — giving threshold_usd = AUD 20,000,000 x 0.50 =
-            # USD 10,000,000. This is a bound, not a live conversion: if
-            # Little Utopia's USD QPE clears USD 10,000,000, the gate still
-            # requires re-evaluation against a real rate before being
-            # trusted; if it does NOT clear USD 10,000,000 (as here, QPE
-            # ~$4.05M), the gate is conclusively failed under ANY
-            # historically plausible AUD/USD rate, so blocking now is safe
-            # and does not depend on sourcing a live rate. Replace with a
-            # live-sourced FX_RATE_SNAPSHOTS conversion the moment one
-            # exists for AUD (see production_adjustment.py fx handling —
-            # same missing input also explains fx_delta_usd=$0 for AU).
-            min_qpe_usd=10_000_000.0,
+            # Codex final runtime remediation (au_location_offset, P0):
+            # the prior "conservative historical-bound rate" (0.50 USD/AUD,
+            # giving a USD $10,000,000 min_qpe_usd surrogate) was an
+            # UNSUPPORTED USD SURROGATE per Codex's controlling ruling —
+            # "No guessed USD surrogate" — even though it was deliberately
+            # engineered to only ever make the gate STRICTER, never
+            # overstate eligibility. Codex requires genuine NATIVE-CURRENCY
+            # threshold evaluation instead: no sourced AUD/USD FX rate
+            # exists in this project's FX_RATE_SNAPSHOTS table (only
+            # MUR/EUR/GBP/CAD are sourced), and fabricating one — even a
+            # conservative bound — is no longer accepted. amount_fact_key/
+            # amount_fact_min gate the tier on a caller-evidenced AUD
+            # amount directly (no conversion attempted in either
+            # direction): "au_location_qape_aud" >= AUD 20,000,000. A
+            # production that never evidences this fact — including one
+            # whose USD-denominated qpe_usd happens to be large — does NOT
+            # qualify; this is the correct, honest failure mode absent a
+            # real AUD/USD rate, not a defect.
+            min_qpe_usd=None,
             conditions=(
                 RateCondition(
-                    condition_id="au-min-qape-conservative-bound",
-                    description="AUD $20,000,000 minimum QAPE, applied as a "
-                                "conservative (production-favorable) USD "
-                                "bound of $10,000,000 (0.50 USD/AUD) pending "
-                                "a live-sourced AUD/USD rate — see tier "
-                                "comment for full reasoning",
+                    condition_id="au-min-qape-native-aud",
+                    description="AUD $20,000,000 minimum Qualifying "
+                                "Australian Production Expenditure (QAPE), "
+                                "evaluated natively in AUD against a "
+                                "caller-evidenced amount fact — never "
+                                "converted to/from USD (no sourced AUD/USD "
+                                "FX rate exists in this project's FX table)",
                     quote="A$20 million for a film (c21media.net, "
                           "corroborating the 2026 rate increase; "
                           "screenaustralia.gov.au for the 30% rate itself)",
-                    kind="min_qpe_usd",
-                    threshold_usd=10_000_000.0,
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="au_location_qape_aud",
+                    amount_fact_min=20_000_000.0,
                 ),
                 RateCondition(
                     condition_id="au-mutually-exclusive",
@@ -1535,17 +1534,6 @@ AU_DOCTRINE = register(DoctrineRecord(
                     quote="These three offsets are mutually exclusive "
                           "(screenaustralia.gov.au)",
                     kind="mutually_exclusive_alternative_program",
-                ),
-                RateCondition(
-                    condition_id="au-min-spend-aud-not-converted",
-                    description="AUD $20,000,000 minimum spend (film) — "
-                                "real and confirmed, but this engine has "
-                                "no sourced AUD/USD FX rate to convert it, "
-                                "so it cannot be pre-evaluated against a "
-                                "USD QPE fact",
-                    quote="A$20 million for a film (c21media.net, "
-                          "corroborating the 2026 rate increase)",
-                    kind="min_spend_currency_not_convertible",
                 ),
             ),
         ),
@@ -2483,28 +2471,29 @@ US_OR_DOCTRINE = register(DoctrineRecord(
     # exactly the fabricated blended-surrogate defect the spec names (its
     # own negative test: "No 26.2% blended surrogate").
     #
-    # Genuinely representing two disjoint rate bases (payroll spend vs.
-    # other Oregon spend) requires the calculation engine to receive a
-    # payroll/non-payroll QPE split — a new production-fact category no
-    # caller of resolve_program_rate() currently supplies, and adding one
-    # would mean threading a new parameter through the entire pricing call
-    # chain (allocation_pricing.py, canonical_evaluation.py, every other
-    # caller) — a calculation-engine redesign, out of scope for this
-    # bounded remediation ("do not redesign the optimizer architecture").
-    # The safe, spec-compliant interim representation reuses this engine's
-    # EXISTING ceiling/floor disclosure mechanism (the same one MU/MT/
-    # AU-PDV already use for an unconfirmable band): both real component
-    # rates are modeled as ceilings (is_band_ceiling=True), so
-    # resolve_program_rate() reports has_guaranteed_floor=False — NO
-    # guaranteed rate is auto-priced — while both real figures remain
-    # disclosed on the record for a human/UI reader. This is the honest
-    # "blocked until implemented" state the spec asks for, not a fabricated
-    # blend.
+    # Codex final runtime remediation (us_or_opif, P0): "20% payroll and
+    # 25% other-spend component bases are not modeled; program is only
+    # blocked/disclosed." The prior pass correctly REFUSED to fabricate a
+    # blended 26.2% surrogate, but genuinely representing two disjoint
+    # rate bases needs the calculation engine to receive a payroll/non-
+    # payroll QPE split — RateCondition.amount_fact_key/amount_fact_min
+    # (Codex final runtime remediation's new mechanism) now provides
+    # exactly that: a caller-evidenced "us_or_payroll_qpe_usd"/
+    # "us_or_other_qpe_usd" component amount (in USD -- Oregon is a US
+    # jurisdiction, so no currency conversion is needed or attempted)
+    # gates each tier, and resolve_program_rate()'s qpe_basis_used field
+    # makes the incentive computed against THAT component amount, never
+    # the segment's combined total QPE (never misapplying 20%/25% to the
+    # wrong base, and never a single blended rate). Both tiers are now
+    # genuinely determinate (is_band_ceiling=False) once their own
+    # component fact is evidenced above the USD 1,000,000 minimum; a
+    # caller that supplies only the segment's total qpe_usd (no component
+    # facts) satisfies neither tier — "Single total-QPE input rejects".
     tiers=(
         DoctrineRateTier(
             tier_id="us-or-payroll-ceiling-20",
             rate=0.20,
-            is_band_ceiling=True,
+            is_band_ceiling=False,
             min_qpe_usd=1_000_000.0,
             conditions=(
                 RateCondition(
@@ -2517,16 +2506,18 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                 ),
                 RateCondition(
                     condition_id="us-or-payroll-component-basis",
-                    description="Up to 20% applies to the Oregon PAYROLL "
-                                "component of spend specifically, not total "
-                                "QPE — this engine has no payroll/other "
-                                "spend split, so this rate cannot be "
-                                "pre-applied without risking misapplying it "
-                                "to non-payroll spend",
+                    description="20% applies to the Oregon PAYROLL "
+                                "component of spend specifically, not "
+                                "total QPE — evaluated against a caller-"
+                                "evidenced payroll-only amount fact, USD, "
+                                "no conversion needed",
                     quote="Codex bounded remediation, accepted formulaic "
                           "correction: 'Up to 20% Oregon payroll plus 25% "
                           "other Oregon expenses'",
-                    kind="component_basis_not_modeled",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="us_or_payroll_qpe_usd",
+                    amount_fact_min=1_000_000.0,
+                    is_component_basis=True,
                 ),
                 RateCondition(
                     condition_id="us-or-fund-competitive",
@@ -2544,7 +2535,7 @@ US_OR_DOCTRINE = register(DoctrineRecord(
         DoctrineRateTier(
             tier_id="us-or-other-ceiling-25",
             rate=0.25,
-            is_band_ceiling=True,
+            is_band_ceiling=False,
             min_qpe_usd=1_000_000.0,
             conditions=(
                 RateCondition(
@@ -2558,13 +2549,19 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="us-or-other-component-basis",
                     description="25% applies to OTHER (non-payroll) Oregon "
-                                "expenses specifically, not total QPE — see "
+                                "expenses specifically, not total QPE — "
+                                "evaluated against a caller-evidenced "
+                                "other-spend amount fact, USD, no "
+                                "conversion needed; see "
                                 "us-or-payroll-component-basis for the "
                                 "matching payroll-side condition",
                     quote="Codex bounded remediation, accepted formulaic "
                           "correction: 'Up to 20% Oregon payroll plus 25% "
                           "other Oregon expenses'",
-                    kind="component_basis_not_modeled",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="us_or_other_qpe_usd",
+                    amount_fact_min=1_000_000.0,
+                    is_component_basis=True,
                 ),
                 RateCondition(
                     condition_id="us-or-fund-competitive",
@@ -2818,6 +2815,24 @@ _ZA_NFVF_CITATION = (
     "accepted manifest for that branch, so it is disclosed here rather "
     "than fabricated."
 )
+# Codex final runtime remediation (za_nfvf_rebate, P0): shared by both
+# tiers below — the ZAR 25,000,000 project cap, evaluated natively in ZAR
+# against a caller-evidenced incentive-value fact via amount_fact_max,
+# never converted to/from USD (no sourced ZAR/USD FX rate exists in this
+# project's FX table). Absence of the fact does not retroactively block
+# an otherwise-eligible tier; a caller that DOES evidence a ZAR incentive
+# value above the cap is genuinely refused.
+_ZA_NFVF_PROJECT_CAP_CONDITION = RateCondition(
+    condition_id="za-nfvf-project-cap-zar",
+    description="ZAR 25,000,000 maximum incentive per project, evaluated "
+                "natively in ZAR against a caller-evidenced incentive-"
+                "value amount fact — never converted to/from USD",
+    quote="production cap R25m (Codex bounded remediation, accepted "
+          "formulaic correction)",
+    kind="project_fact_dependent_eligibility",
+    amount_fact_key="za_nfvf_incentive_value_zar",
+    amount_fact_max=25_000_000.0,
+)
 ZA_NFVF_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="ZA",
     program_slug="za_nfvf_rebate",
@@ -2847,12 +2862,36 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
                              "specific numeric figure is given for it in "
                              "the accepted manifest.",
     ),
+    # Codex final runtime remediation (za_nfvf_rebate, P0): "25% floor
+    # prices broad QPE while ZAR25m cap, accepted gates, and post-only
+    # component branch are unenforced." _ZA_NFVF_PROJECT_CAP_CONDITION
+    # makes the ZAR 25,000,000 project cap genuinely EXECUTABLE (same
+    # amount_fact_max mechanism as cz_film_incentive, never converting
+    # to/from USD); za-nfvf-accepted-production-gate makes the "accepted
+    # production" gate genuinely EXECUTABLE (required_boolean_fact_key) so
+    # an unaccepted/ungated production correctly rejects rather than
+    # silently pricing broad QPE. The post-only component branch remains
+    # disclosed-only — the accepted manifest gives no specific numeric
+    # figure or gate criteria for it, so nothing is invented.
     tiers=(
         DoctrineRateTier(
             tier_id="za-nfvf-base-25",
             rate=0.25,
             is_band_ceiling=False,
             conditions=(
+                RateCondition(
+                    condition_id="za-nfvf-accepted-production-gate",
+                    description="Requires the production to be an accepted "
+                                "NFVF-registered foreign location "
+                                "production — evaluated against a "
+                                "caller-evidenced fact, never assumed",
+                    quote="Foreign location production: 25% QSAPE "
+                          "(Codex bounded remediation, accepted formulaic "
+                          "correction)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="za_nfvf_accepted_production_confirmed",
+                ),
+                _ZA_NFVF_PROJECT_CAP_CONDITION,
                 RateCondition(
                     condition_id="za-nfvf-post-only-branch-not-modeled",
                     description="A separate post-production-only branch "
@@ -2871,6 +2910,19 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
             rate=0.30,
             is_band_ceiling=True,
             conditions=(
+                RateCondition(
+                    condition_id="za-nfvf-accepted-production-gate",
+                    description="Requires the production to be an accepted "
+                                "NFVF-registered foreign location "
+                                "production — evaluated against a "
+                                "caller-evidenced fact, never assumed",
+                    quote="Foreign location production: 25% QSAPE "
+                          "(Codex bounded remediation, accepted formulaic "
+                          "correction)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="za_nfvf_accepted_production_confirmed",
+                ),
+                _ZA_NFVF_PROJECT_CAP_CONDITION,
                 RateCondition(
                     condition_id="za-nfvf-conditioned-uplift",
                     description="+5% requires meeting an unspecified "
@@ -3013,15 +3065,33 @@ MA_DOCTRINE = register(DoctrineRecord(
             tier_id="ma-flat-30",
             rate=0.30,
             is_band_ceiling=False,
-            min_qpe_usd=1_000_000.0,
+            # Codex final runtime remediation (ma_ccm_rebate, P0): the
+            # spend threshold previously used kind="min_qpe_usd" with a
+            # USD $1,000,000 SURROGATE for MAD 10,000,000 -- an unsupported
+            # guessed conversion (no sourced MAD/USD FX rate exists in
+            # this project's FX table). Removed; the tier no longer has a
+            # min_qpe_usd gate at all. Both the spend and shooting-days
+            # requirements are now genuinely EXECUTABLE, native-currency/
+            # fact-based gates below (amount_fact_key/required_boolean_
+            # fact_key), so a controlled production that evidences MAD
+            # 10,000,000+ and 18+ Moroccan shooting days resolves
+            # deterministically, and one that evidences only 17 days
+            # genuinely rejects -- neither was previously possible.
+            min_qpe_usd=None,
             conditions=(
                 RateCondition(
                     condition_id="ma-min-spend",
-                    description="Minimum 10M MAD (~$1M) qualifying Moroccan "
-                                "expenditure",
+                    description="Minimum MAD 10,000,000 qualifying "
+                                "Moroccan expenditure, evaluated natively "
+                                "in MAD against a caller-evidenced amount "
+                                "fact — never converted to/from USD (no "
+                                "sourced MAD/USD FX rate exists in this "
+                                "project's FX table)",
                     quote="Minimum spend of 10 million MAD ... required "
                           "(corroborated by 4 sources)",
-                    kind="min_qpe_usd", threshold_usd=1_000_000.0,
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="ma_ccm_qualifying_spend_mad",
+                    amount_fact_min=10_000_000.0,
                 ),
                 # Codex bounded remediation, B3 formulaic spec
                 # (UPDATE_THRESHOLD, GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_
@@ -3030,19 +3100,24 @@ MA_DOCTRINE = register(DoctrineRecord(
                 # threshold under kind="min_qpe_usd" -- resolve_program_
                 # rate() only ever evaluates that kind against qpe_usd, so
                 # the real, separately-confirmed 18-day gate was silently
-                # never checked at all. Split into its own condition so it
-                # is honestly disclosed as USER_FACT_REQUIRED (no shooting-
-                # days fact exists in this engine) rather than silently
-                # dropped inside the spend condition.
+                # never checked at all. Split into its own condition.
+                #
+                # Codex final runtime remediation: required_boolean_
+                # fact_key makes this GENUINELY executable (a caller-
+                # evidenced "ma_ccm_18_shooting_days_confirmed" fact) —
+                # previously it was disclosure-only (kind alone), so no
+                # controlled input could ever prove 17 days genuinely
+                # rejects.
                 RateCondition(
                     condition_id="ma-min-shooting-days",
                     description="Minimum 18 shooting days in Morocco — a "
-                                "real, separately-confirmed threshold, not "
-                                "pre-evaluable (no shooting-days fact "
-                                "exists in this engine)",
+                                "real, separately-confirmed threshold, "
+                                "evaluated against a caller-evidenced "
+                                "shooting-days-met fact",
                     quote="... and 18 shooting days required (corroborated "
                           "by 4 sources)",
                     kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ma_ccm_18_shooting_days_confirmed",
                 ),
             ),
         ),
@@ -3579,15 +3654,26 @@ TH_DOCTRINE = register(DoctrineRecord(
             min_qpe_usd=1_400_000.0,
             conditions=(
                 RateCondition(
+                    # Codex final runtime remediation (th_film_incentive,
+                    # P0): "preapproval/award/effective conditions are not
+                    # executable through optimizer inputs." The uplift is
+                    # an OBJECTIVE award/preapproval-gated criterion (BOI
+                    # uplift categories are awarded, not discretionary
+                    # "up to" language the way MU's Committee discretion
+                    # is) -- reclassified from discretionary_band
+                    # (AUTHORITY_UNRESOLVED, never gates) to a genuine
+                    # required_boolean_fact_key gate: a production that
+                    # evidences BOI preapproval/award confirmation resolves
+                    # 30%; absent it, the guaranteed floor is the base 15%.
                     condition_id="th-uplift-not-guaranteed",
-                    description="The 30% figure is an 'up to' maximum reached only "
-                                "via BOI uplift criteria; the canonical corpus "
-                                "expressly directs that uplifts are not to be summed "
-                                "unless expressly permitted, so the ceiling is not "
-                                "guaranteed for this production",
+                    description="The 30% figure is reached only via BOI "
+                                "uplift criteria that require preapproval/ "
+                                "award confirmation — evaluated against a "
+                                "caller-evidenced fact, never assumed",
                     quote="'rebate of up to 30% in cash' (thailand-business-news.com); "
                           "canonical base_rate 0.15, maximum_effective_rate 0.30",
-                    kind="discretionary_band",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="th_film_incentive_boi_uplift_award_confirmed",
                 ),
             ),
         ),
@@ -5793,7 +5879,17 @@ US_TX_DOCTRINE = register(DoctrineRecord(
     program_name="Texas Moving Image Industry Incentive Program (MIIP)",
     confidence_tier="VERIFIED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=200_000_000.0, requires_cultural_test=False,
+    # Codex final runtime remediation (us_tx_miip, P0): "funding cap data
+    # conflict remains (200m annual vs 300m biennial spec)." Codex's
+    # controlling ruling: "USD 300m biennial pool through 2035" -- the
+    # 300m figure is Codex-authoritative and replaces the prior 200m. Note
+    # the field name says "annual" (this dataclass has no biennial-cap
+    # field) but the underlying fund is genuinely appropriated PER
+    # BIENNIUM (SB22), not per year -- still used as the binding dollar
+    # ceiling by allocation_pricing._resolve_incentive_dollar_cap either
+    # way, so this remains a real, conservative upper bound on any single
+    # production regardless of the period label.
+    annual_cap_usd=300_000_000.0, requires_cultural_test=False,
     citation="gov.texas.gov/film/page/tmiiip_filmtv (Office of the Texas "
               "Governor, Texas Film Commission, official, fetched "
               "directly): 'Qualifying projects are eligible to receive a "
@@ -5830,29 +5926,58 @@ US_TX_DOCTRINE = register(DoctrineRecord(
     tiers=(DoctrineRateTier(
         tier_id="us-tx-ceiling-31", rate=0.31, is_band_ceiling=True,
         conditions=(
+            # Codex final runtime remediation (us_tx_miip, P0): "awarded
+            # tier/resident-threshold path is absent." Both conditions
+            # below are now genuinely EXECUTABLE required_boolean_fact_key
+            # gates rather than disclosure-only (discretionary_band never
+            # gates; a plain project_fact_dependent_eligibility with no
+            # fact key always discloses satisfied=None but never actually
+            # lets a controlled input prove the tier resolves). Since this
+            # is a LONE ceiling tier with no separate floor tier,
+            # resolve_program_rate() already reports has_guaranteed_floor=
+            # False -- when BOTH facts below are evidenced (satisfied=True
+            # for both), price_segment's floorless-ceiling gate
+            # ("a floorless ceiling whose conditions ARE all evaluable
+            # stays priced -- it is determinate") lets the 31% price
+            # deterministically; absent either fact, the segment stays
+            # allocated/disclosed with NO deterministic incentive value —
+            # "No award yields zero guaranteed NPC" / "Never auto-price
+            # 31% ceiling".
             RateCondition(
                 condition_id="us-tx-award-allocation-required",
                 description="A production-specific grant award/allocation "
                             "is required from the biennial-appropriated "
                             "fund (SB22: $300M per biennium through 2035) "
                             "— qualifying does not itself guarantee funding "
-                            "is available; never auto-priced without an "
-                            "award fact",
+                            "is available; evaluated against a caller-"
+                            "evidenced award-confirmed fact",
                 quote="Qualifying projects are eligible to receive a cash "
                       "grant up to 31% of eligible Texas spending "
                       "(gov.texas.gov, official); SB22 appropriates $300M "
                       "per biennium through 2035 (Codex bounded "
                       "remediation, accepted formulaic correction)",
-                kind="discretionary_band",
+                kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="us_tx_miip_award_confirmed",
+                # This is a LONE band-ceiling tier with no separate floor —
+                # gates_tier_eligibility=False keeps it selected/disclosed
+                # (rather than resolve_program_rate() returning None
+                # outright) so "up to 31%, pending award confirmation"
+                # remains visible; the existing floorless-ceiling
+                # mechanism still refuses to PRICE it until this condition
+                # (and the resident-threshold one below) both genuinely
+                # evaluate satisfied=True. See RateCondition docstring.
+                gates_tier_eligibility=False,
             ),
             RateCondition(
                 condition_id="us-tx-resident-threshold-phased",
                 description="Texas-resident crew/cast thresholds are phased "
-                            "in over time (SB22) — not pre-evaluable "
-                            "without a project-specific residency-mix fact",
+                            "in over time (SB22) — evaluated against a "
+                            "caller-evidenced resident-threshold-met fact",
                 quote="resident thresholds are phased (Codex bounded "
                       "remediation, accepted formulaic correction)",
                 kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="us_tx_miip_resident_threshold_met",
+                gates_tier_eligibility=False,
             ),
         ),
     ),),
@@ -6489,24 +6614,34 @@ NL_DOCTRINE = register(DoctrineRecord(
     tiers=(DoctrineRateTier(
         tier_id="nl-flat-35", rate=0.35, is_band_ceiling=False,
         conditions=(
+            # Codex final runtime remediation (nl_nfpi, P0): both
+            # conditions were disclosure-only (kind alone never gates tier
+            # selection) -- "points/independence/format/cap facts cannot
+            # drive an eligible positive or ineligible rejection."
+            # required_boolean_fact_key makes them genuinely EXECUTABLE: a
+            # qualified production evidences both facts and resolves 35%;
+            # an ineligible one (either fact unevidenced) genuinely
+            # rejects.
             RateCondition(
                 condition_id="nl-points-independence-test",
-                description="Points/independence test required — an "
-                            "eligibility gate this engine does not "
-                            "pre-evaluate without a project-specific fact",
+                description="Points/independence test required, evaluated "
+                            "against a caller-evidenced fact",
                 quote="35% of qualifying Dutch costs, subject to points/"
                       "independence tests (Codex bounded remediation, "
                       "accepted formulaic correction)",
                 kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="nl_nfpi_points_independence_test_passed",
             ),
             RateCondition(
                 condition_id="nl-format-threshold",
-                description="Format-specific threshold(s) apply — not "
-                            "modeled as a numeric gate absent a sourced "
-                            "figure; disclosed as a real eligibility fact",
+                description="Format-specific threshold(s) apply, evaluated "
+                            "against a caller-evidenced fact — no numeric "
+                            "figure is sourced for this gate, so it is "
+                            "modeled as a boolean pass/fail",
                 quote="subject to ... format thresholds (Codex bounded "
                       "remediation, accepted formulaic correction)",
                 kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="nl_nfpi_format_threshold_met",
             ),
         ),
     ),),
@@ -6582,6 +6717,29 @@ register_rate_rules(rate_rules_for(AT_DOCTRINE))
 # tier) for ANY production_type, misapplying 35% to live-action features.
 # Scoped correctly as a SEPARATE record with production_types=("animation",)
 # below rather than a second tier on this one.
+# Codex final runtime remediation (cz_film_incentive, P0): "CZK450m
+# per-project incentive cap is recorded only and unenforced." No sourced
+# CZK/USD FX rate exists (see comment above), so the cap is modeled as a
+# genuine, EXECUTABLE ceiling on a caller-evidenced native-CZK incentive-
+# value fact via amount_fact_max — never converted to/from USD. Absence
+# of the fact does not retroactively block an otherwise-eligible
+# production (there is nothing to disclose a violation of); a caller that
+# DOES evidence a CZK incentive value above the cap is genuinely refused.
+# Shared by both the live-action and animation records (same statutory
+# cap, same currency, same fact key).
+_CZ_PROJECT_CAP_CONDITION = RateCondition(
+    condition_id="cz-project-incentive-cap-czk",
+    description="CZK 450,000,000 maximum incentive per project, evaluated "
+                "natively in CZK against a caller-evidenced incentive-"
+                "value amount fact — never converted to/from USD (no "
+                "sourced CZK/USD FX rate exists in this project's FX table)",
+    quote="the maximum support per project is CZK 450 million "
+          "(sfa.gov.cz production-incentives page)",
+    kind="project_fact_dependent_eligibility",
+    amount_fact_key="cz_incentive_value_czk",
+    amount_fact_max=450_000_000.0,
+)
+
 CZ_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CZ", program_slug="cz_film_incentive",
     program_name="Czech Film Incentive",
@@ -6618,7 +6776,10 @@ CZ_DOCTRINE = register(DoctrineRecord(
                              "figure's own direct primary-page confirmation "
                              "remains a disclosed gap.",
     ),
-    tiers=(DoctrineRateTier(tier_id="cz-live-action-25", rate=0.25, is_band_ceiling=False),),
+    tiers=(DoctrineRateTier(
+        tier_id="cz-live-action-25", rate=0.25, is_band_ceiling=False,
+        conditions=(_CZ_PROJECT_CAP_CONDITION,),
+    ),),
 ))
 register_rate_rules(rate_rules_for(CZ_DOCTRINE))
 
@@ -6648,7 +6809,9 @@ CZ_ANIMATION_DOCTRINE = register(DoctrineRecord(
                                  quote="animation and digital productions "
                                        "that don't include live action "
                                        "(rodriqueslaw.com)",
-                                 kind="production_type"),)),),
+                                 kind="production_type"),
+                                 _CZ_PROJECT_CAP_CONDITION,
+                             ),),),
 ))
 register_rate_rules(rate_rules_for(CZ_ANIMATION_DOCTRINE))
 
@@ -6762,19 +6925,64 @@ IS_GENERAL_DOCTRINE = register(DoctrineRecord(
                              "SourceProvenance. No new research performed.",
     ),
     tiers=(DoctrineRateTier(tier_id="is-base-25", rate=0.25, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="is-ceiling-35", rate=0.35, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="is-larger-scale-requirements-undisclosed",
-                                 description="35% requires 'larger-scale "
-                                             "productions that fulfil "
-                                             "certain requirements' -- "
-                                             "exact requirements not "
-                                             "disclosed by the source checked",
-                                 quote="cash back can increase to 35% for "
-                                       "larger-scale productions that "
-                                       "fulfil certain requirements "
-                                       "(rodriqueslaw.com)",
-                                 kind="discretionary_band"),)),),
+           DoctrineRateTier(
+               tier_id="is-ceiling-35", rate=0.35, is_band_ceiling=True,
+               # Codex final runtime remediation (is_film_reimbursement,
+               # P0): "35% enhanced spend/days/staff conjunction was not
+               # implemented; remains an unresolved band." Codex's own
+               # accepted manifest (GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_
+               # SPEC_CODEX.csv, is_film_reimbursement row) confirms no
+               # numeric spend/days/staff figures are on file for this
+               # program ("stored: []") -- only that the enhanced tier is
+               # a STRUCTURED CONJUNCTION of three statutory gates, "not a
+               # discretionary ceiling". Reclassified from a single vague
+               # discretionary_band into three separate, genuinely
+               # EXECUTABLE required_boolean_fact_key conditions (spend,
+               # days, staff) -- a tier is only eligible when ALL THREE
+               # are evidenced (the engine's tier-eligibility gate already
+               # requires every condition on a tier to pass), which is
+               # exactly the conjunction the manifest specifies. No
+               # numeric threshold is invented for any of the three
+               # (none is sourced) -- each is a caller-evidenced pass/fail
+               # fact, never inferred from category labels alone (per the
+               # manifest's own explicit warning).
+               conditions=(
+                   RateCondition(
+                       condition_id="is-enhanced-spend-threshold",
+                       description="Enhanced statutory spend requirement "
+                                   "for the 35% tier — no numeric figure "
+                                   "is sourced; evaluated as a caller-"
+                                   "evidenced pass/fail fact",
+                       quote="cash back can increase to 35% for "
+                             "larger-scale productions that fulfil "
+                             "certain requirements (rodriqueslaw.com)",
+                       kind="project_fact_dependent_eligibility",
+                       required_boolean_fact_key="is_film_enhanced_spend_threshold_met",
+                   ),
+                   RateCondition(
+                       condition_id="is-enhanced-shoot-days",
+                       description="Enhanced statutory shoot-days "
+                                   "requirement for the 35% tier — no "
+                                   "numeric figure is sourced; evaluated "
+                                   "as a caller-evidenced pass/fail fact",
+                       quote="larger-scale productions that fulfil "
+                             "certain requirements (rodriqueslaw.com)",
+                       kind="project_fact_dependent_eligibility",
+                       required_boolean_fact_key="is_film_enhanced_shoot_days_met",
+                   ),
+                   RateCondition(
+                       condition_id="is-enhanced-staffing",
+                       description="Enhanced statutory staffing "
+                                   "requirement for the 35% tier — no "
+                                   "numeric figure is sourced; evaluated "
+                                   "as a caller-evidenced pass/fail fact",
+                       quote="larger-scale productions that fulfil "
+                             "certain requirements (rodriqueslaw.com)",
+                       kind="project_fact_dependent_eligibility",
+                       required_boolean_fact_key="is_film_enhanced_staffing_met",
+                   ),
+               ),
+           ),),
 ))
 register_rate_rules(rate_rules_for(IS_GENERAL_DOCTRINE))
 

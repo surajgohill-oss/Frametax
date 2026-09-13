@@ -143,12 +143,26 @@ def test_au_pdv_is_an_alternative_to_location_offset_never_an_addition():
 def test_au_pdv_did_not_inherit_location_offsets_threshold():
     """PDV's real minimum QAPE is materially lower than the Location
     Offset's AUD $20M and is NOT recorded in this project. Borrowing the
-    Location Offset's USD 10,000,000 bound would be a fabrication that
-    wrongly excludes eligible productions."""
+    Location Offset's threshold in any form would wrongly exclude eligible
+    productions.
+
+    Codex final runtime remediation (au_location_offset, P0): the prior
+    USD $10,000,000 conservative-bound surrogate is gone -- min_qpe_usd is
+    now None and the real AUD 20,000,000 threshold is evaluated natively
+    via a caller-evidenced amount fact (RateCondition.amount_fact_key/
+    amount_fact_min), never a guessed USD conversion. PDV must still carry
+    neither the old surrogate NOR the new native gate -- confirming no
+    cross-program leakage in either representation."""
     location = _RULES_BY_PROGRAM["au_location_offset"][0]
     pdv = _RULES_BY_PROGRAM["au_pdv_offset"][0]
-    assert location.min_qpe_usd == 10_000_000.0
+    assert location.min_qpe_usd is None
+    location_native_condition = next(
+        c for c in location.conditions if c.condition_id == "au-min-qape-native-aud"
+    )
+    assert location_native_condition.amount_fact_key == "au_location_qape_aud"
+    assert location_native_condition.amount_fact_min == 20_000_000.0
     assert pdv.min_qpe_usd is None
+    assert not any(c.amount_fact_key == "au_location_qape_aud" for c in pdv.conditions)
 
 
 # ── Section 8/20: runtime reads canonical knowledge, never research docs ──

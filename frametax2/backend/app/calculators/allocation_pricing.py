@@ -321,6 +321,7 @@ def price_segment(
     confirmed_ceiling_programs: frozenset[str] | None = None,
     contingency_expected_utilization_pct: float | None = None,
     evidenced_requirement_facts: frozenset[str] | None = None,
+    amount_facts: dict[str, float] | None = None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -354,7 +355,21 @@ def price_segment(
     specific production by real evidence (a certificate, an approval
     letter) — never a canonical rule change, only a per-scenario override.
     Omitted (None) = no ceiling is assumed confirmed, which is the safe
-    default and what Little Utopia currently uses everywhere."""
+    default and what Little Utopia currently uses everywhere.
+
+    amount_facts (Codex final runtime remediation, 11 B3 formulaic rows):
+    optional dict of caller-attested numeric facts keyed by an arbitrary
+    string (a native-currency amount or a component-basis sub-total),
+    threaded straight through to resolve_program_rate()'s own
+    amount_facts parameter — see RateCondition.amount_fact_key. Omitted
+    (None) = byte-identical prior behavior for every program without such
+    a condition. evidenced_requirement_facts (already an existing
+    parameter, used by evaluate_requirements_gate below) is ALSO threaded
+    into resolve_program_rate()'s evidenced_facts parameter — the two
+    fact namespaces (mandatory-requirement fact-ids vs. rate-condition
+    fact-ids) never collide as long as callers use distinct key strings,
+    exactly like confirmed_ceiling_programs and this parameter already
+    coexist without collision."""
     allocated = round(sum(a.amount_usd for a in allocations), 2)
     codes = tuple(sorted({a.account_code for a in allocations}))
 
@@ -461,7 +476,9 @@ def price_segment(
                 qpe = cap_ceiling
 
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
-                               gross_budget_usd=gross_budget_usd)
+                               gross_budget_usd=gross_budget_usd,
+                               evidenced_facts=evidenced_requirement_facts,
+                               amount_facts=amount_facts)
 
     # A CEILING IS A LIMIT, NEVER A GUARANTEED RATE. When a program's only
     # tiers are band ceilings there is no statutory floor to fall back on,
@@ -649,7 +666,20 @@ def price_segment(
             ) + cap_blocker,
         )
 
-    if qpe_cap_applied > 0:
+    if rr.qpe_basis_used is not None:
+        # Component-basis program (Codex final runtime remediation,
+        # us_or_opif): the selected tier's rate is gated on a caller-
+        # supplied component amount (e.g. payroll-only spend), not this
+        # segment's total QPE. build_risk_cases() has no way to re-derive
+        # a component sub-total from `register` (which only classifies
+        # QUALIFIES/EXCLUDED for the whole segment), so the incentive is
+        # computed directly against the component basis — the same
+        # qpe_usd*rate reduction the capped-QPE branch below already
+        # relies on for an identical reason (no structuring_paths/grey
+        # areas/overrides are exposed by this caller either way).
+        floor_incentive_usd = round(rr.qpe_basis_used * rr.floor_rate, 2)
+        ceiling_incentive_usd = round(rr.qpe_basis_used * rr.modeled_rate, 2)
+    elif qpe_cap_applied > 0:
         # A QPE cap was applied above. build_risk_cases() re-derives its
         # own QPE total directly from `register`'s QUALIFIES-state
         # accounts (the full, uncapped statutory register — kept
@@ -836,12 +866,19 @@ def price_allocated_structure(
     contingency_allocations: dict | None = None,
     confirmed_ceiling_programs: frozenset[str] | None = None,
     contingency_expected_utilization_pct: float | None = None,
+    evidenced_requirement_facts: frozenset[str] | None = None,
+    amount_facts: dict[str, float] | None = None,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
     primary jurisdiction against the original geography) and applied
     ONCE here. Financing/implementation default to zero — explicit
     inputs only, never a silent assumption.
+
+    evidenced_requirement_facts/amount_facts (Codex final runtime
+    remediation): project-wide fact sets, passed straight through to
+    every segment's price_segment call — see price_segment's own
+    docstring. Omitted (None) = byte-identical prior behavior.
 
     contingency_allocations (Task 91): optional {account_code:
     ContingencyAllocation}, defaulting to None (byte-identical prior
@@ -908,6 +945,8 @@ def price_allocated_structure(
             gross_budget_usd=gross_budget_usd,
             confirmed_ceiling_programs=confirmed_ceiling_programs,
             contingency_expected_utilization_pct=contingency_expected_utilization_pct,
+            evidenced_requirement_facts=evidenced_requirement_facts,
+            amount_facts=amount_facts,
         )
         segments.append(seg)
         blockers.extend(seg.blockers)

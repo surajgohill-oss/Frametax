@@ -86,6 +86,24 @@ FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT = "contingency_expected_utilization_pc
 #: price_allocated_structure's own default, never defaulted here.
 FACT_FINANCING_COST_USD = "financing_cost_usd"
 
+#: Codex final runtime remediation (11 B3 formulaic connection repairs) —
+#: the SAME generic ProjectFact model, extended with two new key
+#: conventions so a producer's real, evidenced program-eligibility facts
+#: (a preapproval granted, an award confirmed, a certificate issued) and
+#: real, evidenced native-currency/component-basis amounts (e.g. AUD
+#: qualifying spend, MAD qualifying spend, Oregon payroll-only QPE) reach
+#: program_rate_rules.resolve_program_rate()'s evidenced_facts/
+#: amount_facts parameters through the REAL production pipeline, not only
+#: a direct test call. Both are namespaced by prefix so an arbitrary
+#: number of program-specific fact keys need no schema/migration:
+#:   fact_key = f"{FACT_EVIDENCED_PROGRAM_FACT_PREFIX}{fact_id}"     value="true"
+#:   fact_key = f"{FACT_AMOUNT_FACT_PREFIX}{fact_key_name}"          value="<number>"
+#: Absent means genuinely unset (an empty set/dict), never defaulted to
+#: "satisfied" or a guessed amount — exactly the same doctrine as every
+#: other ProjectFact convention in this module.
+FACT_EVIDENCED_PROGRAM_FACT_PREFIX = "evidenced_program_fact:"
+FACT_AMOUNT_FACT_PREFIX = "amount_fact:"
+
 #: Leading account-code token on a budget line description, e.g.
 #: "1400 CAST" -> ("1400", "CAST"). Film budgets are account-coded by
 #: convention; a line without a code cannot participate in
@@ -155,6 +173,12 @@ class ProjectEconomicInputs:
     #: than a convention someone has to remember.
     source_budget_finance_usd: float = 0.0
 
+    #: Codex final runtime remediation — see FACT_EVIDENCED_PROGRAM_FACT_
+    #: PREFIX/FACT_AMOUNT_FACT_PREFIX above. Empty means genuinely no such
+    #: facts are on file, never defaulted to "satisfied"/a guessed amount.
+    evidenced_program_facts: frozenset[str] = field(default_factory=frozenset)
+    amount_facts: dict[str, float] = field(default_factory=dict)
+
     @property
     def reconciliation_variance_usd(self) -> float:
         return round(self.leaf_account_sum_usd - self.gross_budget_usd, 2)
@@ -220,6 +244,40 @@ def _fact_float(rows: list[ProjectFact], key: str) -> float | None:
         return float(row.value)
     except (TypeError, ValueError):
         return None
+
+
+def _evidenced_program_facts(rows: list[ProjectFact]) -> frozenset[str]:
+    """Codex final runtime remediation — every fact_id whose ProjectFact
+    row is `f"{FACT_EVIDENCED_PROGRAM_FACT_PREFIX}{fact_id}"` with a
+    truthy value (e.g. "true"). A row with a falsy value ("false", "0",
+    empty) does NOT evidence the fact — absence and an explicit false are
+    both "not evidenced", never conflated with true."""
+    out: set[str] = set()
+    for row in rows:
+        if not row.fact_key.startswith(FACT_EVIDENCED_PROGRAM_FACT_PREFIX):
+            continue
+        value = (row.value or "").strip().lower()
+        if value in ("true", "1", "yes"):
+            out.add(row.fact_key[len(FACT_EVIDENCED_PROGRAM_FACT_PREFIX):])
+    return frozenset(out)
+
+
+def _amount_facts(rows: list[ProjectFact]) -> dict[str, float]:
+    """Codex final runtime remediation — every fact_id whose ProjectFact
+    row is `f"{FACT_AMOUNT_FACT_PREFIX}{fact_key_name}"` with a parseable
+    numeric value. An unparseable value is dropped (a genuine missing
+    fact), never coerced to 0."""
+    out: dict[str, float] = {}
+    for row in rows:
+        if not row.fact_key.startswith(FACT_AMOUNT_FACT_PREFIX):
+            continue
+        if row.value in (None, ""):
+            continue
+        try:
+            out[row.fact_key[len(FACT_AMOUNT_FACT_PREFIX):]] = float(row.value)
+        except (TypeError, ValueError):
+            continue
+    return out
 
 
 #: Generic project.format -> the production_type vocabulary the statutory
@@ -574,6 +632,8 @@ async def build_project_economic_inputs(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
         financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
+        evidenced_program_facts=_evidenced_program_facts(fact_rows),
+        amount_facts=_amount_facts(fact_rows),
         # Financing ALREADY inside the source gross budget. Derived from the
         # normalized lines' own canonical category, so it follows the source
         # document rather than a per-production assumption.

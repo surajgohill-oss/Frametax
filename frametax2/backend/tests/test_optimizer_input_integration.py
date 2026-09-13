@@ -562,13 +562,20 @@ class TestExecutableJurisdictionKnowledge:
 
     def test_min_spend_threshold_uses_real_fx_conversion(self):
         """MT/IE/GR min-spend thresholds are EUR in the source profile —
-        converted to USD via the real sourced FX rate, not a rough guess."""
+        converted to USD via the real sourced FX rate, not a rough guess.
+
+        Codex final runtime remediation (mt_mfc_rebate, B3): Codex's own
+        accepted manifest explicitly controls a EUR 50,000 minimum spend
+        threshold, superseding this session's earlier preservation of the
+        directly-PDF-extracted EUR 100,000 / S.2.3 figure (see
+        program_rate_rules.py's MT_RATE_RULES module comment for the full
+        conflict-resolution history). EUR 50,000 -> USD 57,026.20 via the
+        SAME real, sourced, dated FX snapshot (FX_RATE_SNAPSHOTS
+        ["2026-07-13"]["EUR"]=0.87679) this test's own docstring already
+        describes as the correct methodology."""
         from app.data.program_rate_rules import get_rate_rules
         mt_rule = get_rate_rules("mt_mfc_rebate")[0]
-        # Corrected 2026-07-26: confirmed general-case min spend is EUR
-        # 100,000 (was incorrectly EUR 50,000 -- that figure applies only
-        # to the separate, unpriced "Difficult Audiovisual Work" category).
-        assert mt_rule.min_qpe_usd == pytest.approx(113_000.0, abs=1.0)
+        assert mt_rule.min_qpe_usd == pytest.approx(57_026.20, abs=1.0)
 
     def test_alternative_jurisdiction_carries_travel_and_fx_deltas(self):
         s = get_state()

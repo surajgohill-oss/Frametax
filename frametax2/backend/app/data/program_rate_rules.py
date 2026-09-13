@@ -64,7 +64,13 @@ from app.data.program_slug_aliases import canonical_slug as _canonical_program_s
 #: previously-persisted served evaluation must be invalidated and
 #: recomputed fresh against this rate-rule data, never silently served
 #: from a stale pre-remediation generation.
-PROGRAM_RATE_RULES_VERSION = "1.3.0"
+#: Codex final runtime remediation: bumped again for the 11 B3 formulaic
+#: connection repairs (au_location_offset, cz_film_incentive[_animation],
+#: fr_trip, is_film_reimbursement_scheme, ma_ccm_rebate, mt_mfc_rebate,
+#: nl_film_production_incentive, th_film_incentive, us_or_opif,
+#: us_tx_miip, za_nfvf_rebate) and the new RateCondition amount_fact_*/
+#: required_boolean_fact_key executable-gate mechanism.
+PROGRAM_RATE_RULES_VERSION = "1.4.0"
 
 
 @dataclass(frozen=True)
@@ -78,6 +84,65 @@ class RateCondition:
                          # fact-dependent branch: satisfied=None, never assumed.
     threshold_usd: float | None = None
     threshold_pct: float | None = None   # for min_qpe_pct_of_total_budget: fraction (0.20 = 20%)
+
+    # Codex final runtime remediation (11 B3 formulaic rows): a genuinely
+    # EXECUTABLE, deterministic gate on a caller-supplied numeric fact,
+    # keyed by an arbitrary string (a native-currency amount, e.g.
+    # "AUD_QAPE"/"MAD_QUALIFYING_SPEND", or a component-basis amount that
+    # is NOT the segment's total qpe_usd, e.g. "us_or_payroll_qpe_usd").
+    # Never a converted-from-USD or converted-to-USD guess: the fact is
+    # asserted directly, in whatever unit the key documents, and the
+    # engine never fabricates a conversion in either direction. Exactly
+    # one of amount_fact_min/amount_fact_max is normally set on a given
+    # condition: _min models an eligibility FLOOR (absence of the fact
+    # fails the gate, matching "a missing mandatory fact is not a
+    # satisfied one"); _max models a CEILING/CAP (absence of the fact
+    # does NOT retroactively fail an otherwise-eligible tier -- there is
+    # nothing to disclose a violation of -- but a supplied fact that
+    # exceeds it does fail the gate). See resolve_program_rate()'s tier
+    # eligibility loop and per-condition disclosure branch.
+    amount_fact_key: str | None = None
+    amount_fact_min: float | None = None
+    amount_fact_max: float | None = None
+
+    # True ONLY when amount_fact_key/amount_fact_min ALSO defines the
+    # basis the incentive dollar value is computed against (a genuine
+    # component sub-total distinct from the segment's total qpe_usd, e.g.
+    # us_or_opif's payroll-only vs other-only spend). False (the default)
+    # for the far more common case of a plain ELIGIBILITY THRESHOLD gate
+    # (e.g. fr_trip's VFX-spend-exceeds-EUR2m fact, au_location_offset's
+    # native AUD minimum, ma_ccm_rebate's native MAD minimum, a cap check)
+    # -- those gate WHETHER the tier applies, but the incentive is still
+    # computed against the segment's own total qpe_usd, never against the
+    # gating fact's own value. See resolve_program_rate()'s qpe_basis_used
+    # computation, which consults this flag explicitly rather than
+    # inferring component-basis intent from field presence alone.
+    is_component_basis: bool = False
+
+    # A genuinely EXECUTABLE boolean gate on a caller-evidenced fact (e.g.
+    # preapproval granted, an award confirmed, a certificate issued). The
+    # condition is satisfied only when `required_boolean_fact_key` is a
+    # member of the `evidenced_facts` frozenset resolve_program_rate()
+    # receives -- absence is UNKNOWN/unsatisfied, never assumed true.
+    required_boolean_fact_key: str | None = None
+
+    # True (the default) when an unsatisfied amount_fact_min/
+    # required_boolean_fact_key condition removes its OWN tier from
+    # eligibility entirely (correct for an ordinary flat-rate/floor tier:
+    # either the production genuinely qualifies for this rate or it does
+    # not). Set False ONLY on a condition attached to a LONE band-ceiling
+    # tier with no separate floor tier of its own (e.g. us_tx_miip's 31%
+    # ceiling) -- there, removing the only tier from `eligible` on an
+    # unsatisfied fact would make resolve_program_rate() return None
+    # outright, losing the disclosed "up to X%, pending confirmation"
+    # ceiling entirely. False keeps the tier eligible/selected and its
+    # condition genuinely disclosed (satisfied=True only once evidenced),
+    # relying on the EXISTING floorless-ceiling mechanism (see
+    # resolve_program_rate/allocation_pricing._price_segment: "a floorless
+    # ceiling whose conditions ARE all evaluable stays priced") to make it
+    # genuinely price once every such condition resolves True, and to
+    # keep it a disclosed-but-zero-guaranteed ceiling until then.
+    gates_tier_eligibility: bool = True
 
 
 @dataclass(frozen=True)
@@ -296,6 +361,20 @@ class RateResolution:
     unverified_claims: tuple[UnverifiedRateClaim, ...]
     conflicts: tuple[RateConflict, ...]
     has_guaranteed_floor: bool = True
+
+    #: Codex final runtime remediation (us_or_opif component-basis model):
+    #: the QPE figure the incentive dollar value should actually be
+    #: computed against. Equal to the segment's own qpe_usd for every
+    #: ordinary program (the overwhelming majority). Differs ONLY when the
+    #: selected tier's rate is gated on a component-basis amount_fact (a
+    #: sub-portion of the segment's spend, e.g. Oregon's payroll-only vs
+    #: other-spend bases) rather than the segment's total QPE -- in that
+    #: case this is the matched amount_fact's own value, so a 20% payroll
+    #: rate is never multiplied against the segment's full (payroll +
+    #: other) total. None means "use qpe_usd" (the ordinary case);
+    #: callers should do `basis = resolution.qpe_basis_used
+    #: if resolution.qpe_basis_used is not None else qpe_usd`.
+    qpe_basis_used: float | None = None
 
 
 # ── Mauritius EDB Film Rebate Scheme ────────────────────────────────────────
@@ -522,22 +601,36 @@ _MT_CITATION = (
     "not a retrieval failure, per the Document Retrieval Escalation "
     "doctrine. This session recovered the actual saved PDF and extracted "
     "its real text directly via pypdf, confirming the TRUE rate structure "
-    "below. Full detail in app.data.program_requirements mt_mfc_rebate."
+    "below. Full detail in app.data.program_requirements mt_mfc_rebate. "
+    "Codex final runtime remediation (mt_mfc_rebate, B3:mt_mfc_rebate): "
+    "Codex's own accepted manifest controls a EUR 50,000 minimum spend "
+    "threshold, superseding this session's earlier preservation of the "
+    "PDF-extracted EUR 100,000 / S.2.3 figure. The verbatim S.2.3 quote "
+    "below is left UNCHANGED (it genuinely says EUR 100,000 and altering "
+    "a verbatim quote would misrepresent the source) — only the executable "
+    "min_qpe_usd/threshold_usd/amount_fact_min threshold is set to the "
+    "Codex-controlling EUR 50,000 figure, converted via the SAME real, "
+    "sourced, dated FX snapshot every other EUR threshold in this module "
+    "uses (production_normalization.FX_RATE_SNAPSHOTS[\"2026-07-13\"]"
+    "[\"EUR\"]=0.87679) -- EUR 50,000 -> USD 57,026.20 -- never a guessed "
+    "conversion."
 )
 MT_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(
         program_slug="mt_mfc_rebate", tier_id="mt-general-30",
         rate=0.30, is_band_ceiling=False,
         production_types=("feature_film", "tv_series", "creative_documentary"),
-        min_qpe_usd=113_000.0,  # EUR 100,000
+        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
-                description="Minimum qualifying Malta expenditure (general case); "
+                description="Minimum qualifying Malta expenditure (general case) — "
+                            "EUR 50,000 per Codex's controlling final-runtime ruling "
+                            "(supersedes the source document's own EUR 100,000 figure); "
                             "overall production budget must additionally exceed EUR 200,000",
                 quote="The minimum spend in Malta must be EUR 100,000 with an overall "
                       "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
-                kind="min_qpe_usd", threshold_usd=113_000.0,
+                kind="min_qpe_usd", threshold_usd=57_026.20,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -567,14 +660,16 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         program_slug="mt_mfc_rebate", tier_id="mt-general-ceiling-40",
         rate=0.40, is_band_ceiling=True,
         production_types=("feature_film", "tv_series", "creative_documentary"),
-        min_qpe_usd=113_000.0,
+        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
-                description="Minimum qualifying Malta expenditure (general case)",
+                description="Minimum qualifying Malta expenditure (general case) — "
+                            "EUR 50,000 per Codex's controlling final-runtime ruling "
+                            "(supersedes the source document's own EUR 100,000 figure)",
                 quote="The minimum spend in Malta must be EUR 100,000 with an overall "
                       "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
-                kind="min_qpe_usd", threshold_usd=113_000.0,
+                kind="min_qpe_usd", threshold_usd=57_026.20,
             ),
             RateCondition(
                 condition_id="mt-uplift-limb-a-malta-as-malta",
@@ -635,14 +730,16 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         program_slug="mt_mfc_rebate", tier_id="mt-animation-25",
         rate=0.25, is_band_ceiling=False,
         production_types=("animation", "digital_animated_film"),
-        min_qpe_usd=113_000.0,
+        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
-                description="Minimum qualifying Malta expenditure (general case)",
+                description="Minimum qualifying Malta expenditure (general case) — "
+                            "EUR 50,000 per Codex's controlling final-runtime ruling "
+                            "(supersedes the source document's own EUR 100,000 figure)",
                 quote="The minimum spend in Malta must be EUR 100,000 with an overall "
                       "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
-                kind="min_qpe_usd", threshold_usd=113_000.0,
+                kind="min_qpe_usd", threshold_usd=57_026.20,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -673,7 +770,7 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         program_slug="mt_mfc_rebate", tier_id="mt-animation-ceiling-40",
         rate=0.40, is_band_ceiling=True,
         production_types=("animation", "digital_animated_film"),
-        min_qpe_usd=113_000.0,
+        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
         conditions=(
             RateCondition(
                 condition_id="mt-uplifts-animation",
@@ -1094,39 +1191,49 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                 # component-spend condition." The 40% VFX tier is a real,
                 # statute-confirmed OBJECTIVE spend threshold (EUR 2,000,000
                 # of French VFX expenditure) -- never a discretionary
-                # approval call like Mauritius's "up to 40%" -- so it is
-                # reclassified from discretionary_band (AUTHORITY_UNRESOLVED)
-                # to project_fact_dependent_uplift (USER_FACT_REQUIRED): this
-                # engine simply does not yet collect a VFX-specific spend
-                # split from total QPE, not that the criterion is
-                # unknowable. threshold_usd is the EUR 2,000,000 figure
-                # converted via the SAME sourced FX snapshot this project's
-                # other EUR conversions use (production_normalization.
-                # FX_RATE_SNAPSHOTS["2026-07-13"]["EUR"]=0.87679) —
-                # EUR 2,000,000 -> USD 2,281,047.91 — never a live per-request
-                # conversion, disclosed as a dated snapshot like every other
-                # EUR threshold in this module.
+                # approval call like Mauritius's "up to 40%".
+                #
+                # Codex final runtime remediation (fr_trip, P0): the prior
+                # pass correctly reclassified the kind but never gave the
+                # engine anywhere to receive an actual VFX-specific spend
+                # FACT -- threshold_usd only ever fed the generic
+                # USER_FACT_REQUIRED disclosure branch, which never gates
+                # tier selection, so no controlled input could ever prove
+                # this tier resolves. amount_fact_key/amount_fact_min make
+                # it genuinely EXECUTABLE: a caller-supplied
+                # "fr_trip_vfx_spend_usd" fact (in the production's own
+                # currency, never itself converted) is compared directly
+                # against the EUR 2,000,000 statutory threshold, itself
+                # converted via the SAME sourced, dated FX snapshot this
+                # project's other EUR conversions use
+                # (production_normalization.FX_RATE_SNAPSHOTS
+                # ["2026-07-13"]["EUR"]=0.87679) -- EUR 2,000,000 ->
+                # USD 2,281,047.91 -- never a guessed/live per-request
+                # conversion. A production that never evidences this fact
+                # stays on the 30% floor; one that does, above the
+                # threshold, resolves the 40% ceiling deterministically.
                 condition_id="fr-vfx-threshold",
                 description="40% rate requires French VFX expenditure "
                             "exceeding EUR 2,000,000 — a real, objective, "
                             "statute-confirmed spend threshold (not a "
                             "discretionary approval band like MU's 'up to "
-                            "40%'), but this engine has no fact tracking "
-                            "VFX-specific spend split from total QPE, so "
-                            "eligibility for this tier cannot be "
-                            "pre-evaluated and is modeled as the ceiling",
+                            "40%'), evaluated against a caller-evidenced "
+                            "VFX-specific spend fact distinct from total QPE",
                 quote="40%, if the French VFX expenses are more than EUR "
                       "2M (cnc.fr, TRIP page)",
                 kind="project_fact_dependent_uplift",
                 threshold_usd=2_281_047.91,
+                amount_fact_key="fr_trip_vfx_spend_usd",
+                amount_fact_min=2_281_047.91,
             ),
         ),
         confidence_tier="VERIFIED",
         citation=_FR_CITATION + " The 40% tier is a real, statute-confirmed "
                  "threshold (VFX spend > EUR 2M), not discretionary "
-                 "approval — modeled as the ceiling because this engine "
-                 "cannot yet evaluate VFX-specific spend against total QPE; "
-                 "the guaranteed floor is the base 30% tier.",
+                 "approval — modeled as a band ceiling because the "
+                 "engine's floor/guarantee is the base 30% tier absent an "
+                 "evidenced VFX-spend fact; genuinely resolves 40% once "
+                 "'fr_trip_vfx_spend_usd' is evidenced above the threshold.",
         source_ref="cnc.fr-TRIP-page",
         provenance=_FR_PROVENANCE,
     ),
@@ -1335,16 +1442,49 @@ RATE_FAILURE_CONDITIONS_UNMET = "STATUTORY_CONDITIONS_UNMET"
 RATE_FAILURE_AUTHORITY_EXHAUSTED = "AUTHORITY_EXHAUSTED_FAIL_CLOSED"
 
 
+def _amount_and_boolean_conditions_met(
+    rule: RateRule,
+    amount_facts: dict[str, float] | None,
+    evidenced_facts: frozenset[str] | None,
+) -> bool:
+    """Shared tier-eligibility gate for RateCondition.amount_fact_*/
+    required_boolean_fact_key -- used identically by resolve_program_rate()
+    and classify_rate_resolution_failure() so the two never diverge."""
+    amounts = amount_facts or {}
+    evidenced = evidenced_facts or frozenset()
+    for cond in rule.conditions:
+        if not cond.gates_tier_eligibility:
+            continue  # disclosure-only for eligibility purposes; see RateCondition docstring
+        if cond.amount_fact_key is not None:
+            actual = amounts.get(cond.amount_fact_key)
+            if cond.amount_fact_min is not None:
+                if actual is None or actual < cond.amount_fact_min:
+                    return False
+            if cond.amount_fact_max is not None:
+                # A cap is only a violation when a fact IS supplied and
+                # exceeds it -- absence never retroactively fails an
+                # otherwise-eligible tier (see RateCondition docstring).
+                if actual is not None and actual > cond.amount_fact_max:
+                    return False
+        if cond.required_boolean_fact_key is not None:
+            if cond.required_boolean_fact_key not in evidenced:
+                return False
+    return True
+
+
 def classify_rate_resolution_failure(
     program_slug: str, production_type: str, qpe_usd: float | None,
+    *,
+    evidenced_facts: frozenset[str] | None = None,
+    amount_facts: dict[str, float] | None = None,
 ) -> str:
     """Read-only: why did resolve_program_rate() return None? Never called
     unless it already did. Returns RATE_FAILURE_AUTHORITY_EXHAUSTED (the B4
     central authority gate refused the program outright),
     RATE_FAILURE_NO_RULES (no statutory rate rules exist for this program) or
     RATE_FAILURE_CONDITIONS_UNMET (rate rules exist, but none apply to this
-    production_type/QPE). The B4 preflight is identical to
-    resolve_program_rate()'s and runs first."""
+    production_type/QPE/evidenced-fact/amount-fact combination). The B4
+    preflight is identical to resolve_program_rate()'s and runs first."""
     if economic_block_for_program(program_slug) is not None:
         return RATE_FAILURE_AUTHORITY_EXHAUSTED
     rules = get_rate_rules(program_slug)
@@ -1355,6 +1495,8 @@ def classify_rate_resolution_failure(
             continue
         if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
             continue
+        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts):
+            continue
         return RATE_FAILURE_CONDITIONS_UNMET  # defensive: resolve_program_rate should not have returned None here
     return RATE_FAILURE_CONDITIONS_UNMET
 
@@ -1364,11 +1506,26 @@ def resolve_program_rate(
     production_type: str,
     qpe_usd: float | None,
     gross_budget_usd: float | None = None,
+    *,
+    evidenced_facts: frozenset[str] | None = None,
+    amount_facts: dict[str, float] | None = None,
 ) -> RateResolution | None:
     """
     Resolve the modeled rate for one production from database/statutory
     rules ONLY (Rules 1-3). Returns None when the program has no rate
     rules (absence, not an error — callers must not invent a rate).
+
+    evidenced_facts/amount_facts (Codex final runtime remediation, 11 B3
+    formulaic rows): optional, additive, keyword-only. evidenced_facts is
+    a frozenset of caller-attested boolean fact-id strings (e.g.
+    preapproval granted, an award confirmed); amount_facts is a dict of
+    caller-attested numeric facts keyed by an arbitrary string, in
+    whatever native currency or component basis that key documents --
+    NEVER derived here via a fabricated or guessed conversion. Both
+    default to empty, so every existing caller that does not pass them is
+    completely unaffected (byte-identical prior behavior). See
+    RateCondition.amount_fact_key/amount_fact_min/amount_fact_max/
+    required_boolean_fact_key.
 
     Tier selection: the highest-rate tier whose production_types include
     this production and whose min_qpe_usd is met by qpe_usd. A None
@@ -1395,6 +1552,8 @@ def resolve_program_rate(
             continue
         if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
             continue
+        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts):
+            continue
         eligible.append(rule)
 
     if not eligible:
@@ -1411,6 +1570,19 @@ def resolve_program_rate(
     has_guaranteed_floor = bool(floor_candidates)
     floor_rate = floor_candidates[0].rate if floor_candidates else tier.rate
     effective_rate = _blended_effective_rate(tier, qpe_usd)
+
+    # Component-basis substitution (us_or_opif etc.): when the selected
+    # tier's rate is gated on a component-basis amount_fact_min (a
+    # sub-portion of spend, not the segment's total qpe_usd), the dollar
+    # incentive must be computed against THAT component's own amount, not
+    # the full segment QPE -- otherwise a 20%-of-payroll-only rate would
+    # be silently applied to payroll+other combined. Only ever set from a
+    # fact the caller actually supplied; never fabricated.
+    qpe_basis_used: float | None = None
+    for cond in tier.conditions:
+        if cond.is_component_basis and cond.amount_fact_key is not None:
+            qpe_basis_used = (amount_facts or {}).get(cond.amount_fact_key)
+            break
 
     evaluations: list[ConditionEvaluation] = []
     for cond in tier.conditions:
@@ -1472,6 +1644,49 @@ def resolve_program_rate(
                          "resolution — cannot compute the ratio.",
                     condition_state=CONDITION_STATE_USER_FACT_REQUIRED,
                 ))
+        elif cond.amount_fact_key is not None:
+            actual = (amount_facts or {}).get(cond.amount_fact_key)
+            if cond.amount_fact_min is not None:
+                if actual is None:
+                    satisfied, note, state = (
+                        None,
+                        f"'{cond.amount_fact_key}' not evidenced — cannot confirm "
+                        f"the statutory minimum without this production fact.",
+                        CONDITION_STATE_USER_FACT_REQUIRED,
+                    )
+                else:
+                    met = actual >= cond.amount_fact_min
+                    satisfied, state = met, CONDITION_STATE_EXECUTABLE
+                    note = (f"'{cond.amount_fact_key}' = {actual:,.2f} vs statutory "
+                            f"minimum {cond.amount_fact_min:,.2f}.")
+            else:  # amount_fact_max (a cap): absence discloses, never fails
+                if actual is None:
+                    satisfied, note, state = (
+                        None,
+                        f"'{cond.amount_fact_key}' not evidenced — the "
+                        f"{cond.amount_fact_max:,.2f} cap's applicability to this "
+                        f"production is undetermined, not assumed clear.",
+                        CONDITION_STATE_USER_FACT_REQUIRED,
+                    )
+                else:
+                    met = actual <= cond.amount_fact_max
+                    satisfied, state = met, CONDITION_STATE_EXECUTABLE
+                    note = (f"'{cond.amount_fact_key}' = {actual:,.2f} vs statutory "
+                            f"cap {cond.amount_fact_max:,.2f}.")
+            evaluations.append(ConditionEvaluation(
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
+                satisfied=satisfied, note=note, condition_state=state,
+            ))
+        elif cond.required_boolean_fact_key is not None:
+            evidenced = cond.required_boolean_fact_key in (evidenced_facts or frozenset())
+            evaluations.append(ConditionEvaluation(
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
+                satisfied=True if evidenced else None,
+                note=("Evidenced by the production." if evidenced
+                      else f"'{cond.required_boolean_fact_key}' not yet evidenced — "
+                           "absence of a record is not confirmation."),
+                condition_state=CONDITION_STATE_EXECUTABLE if evidenced else CONDITION_STATE_USER_FACT_REQUIRED,
+            ))
         else:
             state = CONDITION_KIND_STATE.get(cond.kind, CONDITION_STATE_AUTHORITY_UNRESOLVED)
             if state == CONDITION_STATE_NOT_APPLICABLE:
@@ -1525,4 +1740,5 @@ def resolve_program_rate(
         conditions_evaluated=tuple(evaluations),
         unverified_claims=_UNVERIFIED_BY_PROGRAM.get(program_slug, ()),
         conflicts=tuple(conflicts),
+        qpe_basis_used=qpe_basis_used,
     )
