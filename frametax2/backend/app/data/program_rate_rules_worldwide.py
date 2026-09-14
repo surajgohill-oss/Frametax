@@ -2519,21 +2519,39 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                     amount_fact_min=1_000_000.0,
                     is_component_basis=True,
                     # Codex final three-program conservation repair
-                    # (P0-OR-001, fifth pass): "Composite component
+                    # (P0-OR-001, fifth pass) + Oregon full-pipeline
+                    # completion (sixth pass): "Composite component
                     # facts ... are not bound to canonical lines/
                     # payees." A caller-asserted payroll figure with no
                     # relationship to this segment's own real budget
                     # lines could exceed the entire source budget
                     # (Codex's exact reproducer: USD50m against a
-                    # USD4.5m real budget). This names the REAL
-                    # AccountAllocation.component tag ("payroll") this
-                    # segment's own producer-routed allocations use for
-                    # Oregon payroll spend — allocation_pricing.
-                    # price_segment now derives/reconciles this fact
-                    # directly from those real, traced lines (per-payee
-                    # capped — see oregon_per_payee_capped_total),
-                    # exactly like South Africa's post/VFX QSAPPE basis.
-                    component_basis_line_components=("payroll",),
+                    # USD4.5m real budget). Sixth-pass correction: the
+                    # fifth pass named AccountAllocation.component=
+                    # "payroll" -- a value the REAL production composer
+                    # (production_allocation.component_for) never
+                    # emits (it only ever produces "post"/"vfx"/"music"/
+                    # "above_the_line"/"travel_and_living"/"overhead"/
+                    # "administration"/"principal_photography"), so that
+                    # binding was unreachable through the real DB
+                    # pipeline. component_basis_spend_categories names
+                    # the REAL, composer-reachable spend_category
+                    # dimension instead — every labor category
+                    # (production_allocation.component_for maps
+                    # atl_writer/atl_director/atl_producer/atl_cast to
+                    # "above_the_line"; btl_crew_labor/btl_resident_
+                    # labor/btl_nonresident_labor fall to the default
+                    # "principal_photography" bucket alongside non-labor
+                    # BTL spend, so spend_category — not component — is
+                    # the only real dimension that cleanly isolates
+                    # payroll). allocation_pricing.price_segment derives/
+                    # reconciles this fact directly from those real,
+                    # traced lines (per-payee capped — see
+                    # oregon_per_payee_capped_total).
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
                 ),
                 # Codex final wiring remediation (P0-OR-001): disposition
                 # B (conditional formula opportunity). REPLACES the prior
@@ -2666,13 +2684,19 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                     amount_fact_key="us_or_other_qpe_usd",
                     amount_fact_min=1_000_000.0,
                     is_component_basis=True,
-                    # Codex final three-program conservation repair
-                    # (P0-OR-001, fifth pass): see us-or-payroll-
-                    # component-basis's own comment. Real, non-payroll
-                    # Oregon production spend is routed with
-                    # AccountAllocation.component "production" (this
-                    # engine's ordinary default tag) or "other".
-                    component_basis_line_components=("production", "other"),
+                    # Codex final Oregon full-pipeline completion
+                    # (P0-OR-001, sixth pass): see us-or-payroll-
+                    # component-basis's own comment for why spend_
+                    # category (not component) is the real, composer-
+                    # reachable dimension. "Other" is the complement of
+                    # the SAME labor category set — every real
+                    # qualifying line whose spend_category is NOT one of
+                    # the payroll-side labor categories.
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
+                    component_basis_spend_categories_exclude=True,
                 ),
                 # Codex final wiring remediation (P0-OR-001): the SAME
                 # three real gates as the payroll tier above — see that

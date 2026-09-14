@@ -183,9 +183,32 @@ def discover_executable_jurisdictions(
             resolves = False
             priceable = False
             if not coverage_blocked and slug is not None and has_doctrine and has_rate:
+                # Codex final Oregon full-pipeline completion (P0-OR-001,
+                # sixth pass): this is a CAPABILITY probe, run before any
+                # real AccountAllocation/qualification-register exists for
+                # this candidate — a composite program's exact,
+                # canonical-line-derived component facts (see
+                # allocation_pricing.price_segment's reconciliation block)
+                # are therefore never yet available here. Without a probe
+                # value, us_or_opif's real composite branch
+                # (_resolve_us_or_opif_composite) correctly returns None
+                # (no fact = no claim), which would wrongly mark a real,
+                # eligible Oregon production as incapable before pricing
+                # ever gets a chance to derive the real basis from its
+                # actual budget. Using the segment's own qpe_usd as a
+                # PROBE-ONLY value for both composite facts is safe here:
+                # it only ever affects this capability signal (whether
+                # price_segment is even attempted later), never an actual
+                # priced dollar figure -- price_segment's own strict,
+                # exact-match canonical-line reconciliation remains the
+                # sole authority for the real number.
+                _probe_facts = dict(amount_facts or {})
+                if slug == "us_or_opif" and qpe_usd:
+                    _probe_facts.setdefault("us_or_payroll_qpe_usd", qpe_usd)
+                    _probe_facts.setdefault("us_or_other_qpe_usd", qpe_usd)
                 rr = resolve_program_rate(
                     slug, production_type=production_type, qpe_usd=qpe_usd,
-                    evidenced_facts=evidenced_facts, amount_facts=amount_facts,
+                    evidenced_facts=evidenced_facts, amount_facts=_probe_facts,
                 )
                 resolves = rr is not None
                 priceable = resolves

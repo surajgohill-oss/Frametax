@@ -63,21 +63,54 @@ reproducer: USD50,000,000 payroll + USD50,000,000 other accepted against a real
 USD4,517,687 source budget, producing a persisted incentive of USD10,600,000 and NPC of
 **-USD6,082,313**); `oregon_per_payee_capped_total()` had no production caller at all.
 
-Fix: the SAME generic line-reconciliation mechanism built for South Africa is reused here.
-`us-or-payroll-component-basis` now declares `component_basis_line_components=("payroll",)` and
-`us-or-other-component-basis` declares `("production", "other")` — real
-`AccountAllocation.component` tags. `price_segment()`'s reconciliation block derives (or
-validates an exact-match caller scalar against) the real qualifying line subtotal for each, and
-— specifically for the payroll basis — applies `oregon_per_payee_capped_total()` (OAR
-951-002-0010's real USD1,000,000 per-payee exclusion) to each contributing traced line's own
-amount *before* summing, so `oregon_per_payee_capped_total` is now a genuine, invoked production
-dependency, not merely test-called. A caller-asserted basis with no exact relationship to the
-real, per-payee-capped canonical lines is rejected before any candidate is priced or persisted —
+Fix (fifth pass): the SAME generic line-reconciliation mechanism built for South Africa was
+reused. `price_segment()`'s reconciliation block derives (or validates an exact-match caller
+scalar against) the real qualifying line subtotal for payroll/other, and — specifically for the
+payroll basis — applies `oregon_per_payee_capped_total()` (OAR 951-002-0010's real
+USD1,000,000 per-payee exclusion) to each contributing traced line's own amount *before*
+summing, so `oregon_per_payee_capped_total` is now a genuine, invoked production dependency, not
+merely test-called. A caller-asserted basis with no exact relationship to the real,
+per-payee-capped canonical lines is rejected before any candidate is priced or persisted —
 closing the negative-NPC reproducer at the source. The existing combined-USD1,000,000 threshold,
 multiplicative 1.10 uplift, and dated USD10,600,000 fund cap are unchanged.
-`test_final_wiring_oregon_conditional_formula.py`'s prior `pytest.skip()` (when no priced
-Oregon candidate existed in FVD's discovered universe) is replaced with a deterministic,
-never-skipping kernel-level proof plus a best-effort (non-failing-on-absence) FVD cross-check.
+
+**Sixth-pass correction (this pass) — the real DB pipeline surfaced two further defects the
+fifth pass's kernel-only tests could not see:**
+
+1. **Wrong reconciliation dimension.** The fifth pass matched Oregon's payroll/other bases
+   against `AccountAllocation.component` values `"payroll"`/`"production"`/`"other"` — but the
+   real production composer (`production_allocation.component_for`) *never emits those values*;
+   it only ever produces `post`/`vfx`/`music`/`above_the_line`/`travel_and_living`/`overhead`/
+   `administration`/`principal_photography`. The mechanism was correct in isolation but
+   unreachable through any real, composer-built allocation. Fixed with a new
+   `RateCondition.component_basis_spend_categories` field (and
+   `component_basis_spend_categories_exclude` for the complement side) that matches on the real,
+   composer-reachable `spend_category` dimension instead — labor categories
+   (`atl_writer`/`atl_director`/`atl_producer`/`atl_cast`/`btl_crew_labor`/`btl_resident_labor`/
+   `btl_nonresident_labor`) for payroll, their complement for other.
+2. **Two pre-pricing discovery probes had no access to derived facts.** Both
+   `production_discovery.py`'s `resolves_for_production` capability check and
+   `canonical_evaluation.py::_price_candidate`'s own preflight call `resolve_program_rate` on a
+   candidate *before* any `AccountAllocation`/qualification register exists for it — so a
+   composite program's exact, canonical-line-derived facts (only computable inside
+   `price_segment`, after allocation) were never available at either point, and a real, eligible
+   Oregon production was misclassified `STATUTORY_CONDITIONS_UNMET` before ever reaching real
+   pricing. Both now pass the segment's own real qualifying-spend total (`qpe_usd`, already
+   computed at that point) as a `us_or_opif`-scoped, PROBE-ONLY value for both composite facts —
+   sufficient only to let a real, eligible candidate continue to `price_segment`, whose own
+   strict, exact-match, per-payee-capped canonical-line reconciliation (never this probe) remains
+   the sole authority for the real priced number.
+
+`tests/test_oregon_full_db_pipeline.py` (new) proves the complete, real, database-backed
+pipeline — real `BudgetLineItem` rows (the same structured representation the PDF-ingestion path
+itself produces) → discovery → composite formula → per-payee cap → uplift → fund cap →
+persistence → retrieval → identical reuse — reproducing the independently expected
+**USD814,000** exactly, proving `EVALUATION_COMPLETE` → `EVALUATION_REUSED` with a stable
+`structure_id` and exactly one persisted result row both times (no duplicate), rejecting Codex's
+exact USD50,000,000/USD50,000,000-vs-USD4,517,687 hostile reproducer before any candidate is
+priced (never a negative NPC), and proving the real per-payee cap through the pipeline (a real
+USD2,000,000 single payee line prices at USD200,000 — 20% of the capped USD1,000,000, never
+USD400,000). Zero skips.
 
 ## Focused test results
 
@@ -85,6 +118,7 @@ never-skipping kernel-level proof plus a best-effort (non-failing-on-absence) FV
 |---|---|
 | `test_final_wiring_nl_company_period_conservation.py` (rewritten: public-writer concurrency, event-transition, idempotency, currency, amount validation, missing-period, isolation) | 23 passed |
 | `test_final_wiring_oregon_conditional_formula.py` (rewritten: multi-payee lines, per-payee cap, asserted-mismatch rejection, deterministic no-skip provisional proof) | 11 passed |
+| `test_oregon_full_db_pipeline.py` (new, this pass — genuine DB-backed pipeline: positive USD814,000 + persistence + reuse, hostile USD50m/USD50m reject, per-payee cap, missing-data fail-closed) | 4 passed, 0 skipped |
 | `test_final_formulaic_full_pipeline_consumption.py` (full file — all 12 formulaic programs, including ZA + Oregon new/updated cases) | 26 passed |
 | `test_b3_formulaic_consumption.py` + `test_final_wiring_selection_predicate.py` + `test_copro_qualification_wiring.py` (Selection — frozen area regression check) | 41 passed |
 
@@ -122,15 +156,13 @@ findings and independently re-tested against the real production kernels.
 
 ## Known limitations disclosed (not blocking)
 
-- The full "clone 34 real FVD budget-document rows into a fresh isolated Oregon project, run the
-  complete `evaluate_project` → persistence → retrieval → identical-reuse pipeline, then delete
-  the project" methodology Codex's own audit used was **not** independently re-executed this
-  pass under the 45-minute implementation budget. In its place: (a) exhaustive, deterministic
-  `price_segment`/`resolve_program_rate` kernel-level proof of the exact same positive
-  (USD814,000-class) and negative (USD50m-vs-USD4.5m) arithmetic Codex's DB pipeline exercised,
-  and (b) a real DB-backed cross-check against FVD's own currently-discovered candidate universe
-  (non-skipping, but Oregon is not part of FVD's accepted baseline so it may legitimately find
-  zero Oregon candidates there — that absence is not treated as a failure).
+- Rather than literally cloning FVD's own 34 real budget-document rows (Codex's own audit
+  methodology, which used a scratch script never checked into this repository), this pass built
+  an equivalent-in-kind isolated Oregon project from real, structured `BudgetLineItem` rows
+  (the same structured representation the real PDF-ingestion path produces, read by
+  `canonical_project_economics.py` identically either way). The full pipeline is genuinely
+  exercised end to end; the source-row provenance differs only in not being FVD's literal 34
+  rows.
 - Two harmless, isolated migration-test databases from an earlier pass in this workstream
   (`frametax2_migtest_1789412124`, `frametax2_migtest_fresh_1789412169`) remain undropped —
   `dropdb` was denied twice by the Bash tool's own destructive-action permission layer in that

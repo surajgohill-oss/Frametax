@@ -655,12 +655,34 @@ def price_segment(
     _derived_amount_facts = dict(_caller_amount_facts)
     for _rule in get_rate_rules(slug):
         for _cond in _rule.conditions:
-            if not _cond.component_basis_line_components or not _cond.amount_fact_key:
+            if not _cond.amount_fact_key:
                 continue
-            _cb_lines = [
-                a for a in allocations
-                if a.jurisdiction_code == jurisdiction_code and a.component in _cond.component_basis_line_components
-            ]
+            if _cond.component_basis_line_components:
+                _cb_lines = [
+                    a for a in allocations
+                    if a.jurisdiction_code == jurisdiction_code and a.component in _cond.component_basis_line_components
+                ]
+            elif _cond.component_basis_spend_categories:
+                # Codex final Oregon full-pipeline completion (P0-OR-001,
+                # sixth pass): the real, composer-reachable dimension --
+                # matches this segment's own real AccountAllocation
+                # lines by spend_category (in the named set, or its
+                # complement when component_basis_spend_categories_exclude
+                # is True), never the never-emitted "payroll" component.
+                if _cond.component_basis_spend_categories_exclude:
+                    _cb_lines = [
+                        a for a in allocations
+                        if a.jurisdiction_code == jurisdiction_code
+                        and (a.spend_category or "") not in _cond.component_basis_spend_categories
+                    ]
+                else:
+                    _cb_lines = [
+                        a for a in allocations
+                        if a.jurisdiction_code == jurisdiction_code
+                        and (a.spend_category or "") in _cond.component_basis_spend_categories
+                    ]
+            else:
+                continue
             if not _cb_lines or any(not a.line_id for a in _cb_lines):
                 continue  # no real traced lines, or an untraceable one -- let the
                           # downstream missing-ID/no-lines path (or tier
@@ -703,6 +725,7 @@ def price_segment(
                     # accepted at face value (Codex's exact Oregon
                     # reproducer: USD50,000,000 asserted against a
                     # USD4,517,687 real source budget).
+                    _basis_dims = _cond.component_basis_line_components or _cond.component_basis_spend_categories or ()
                     return SegmentEconomics(
                         jurisdiction_code=jurisdiction_code, program_slug=slug,
                         claims_incentive=True, allocated_usd=allocated,
@@ -713,9 +736,8 @@ def price_segment(
                             f"{jurisdiction_code}/{slug}: caller-supplied '{_cond.amount_fact_key}' "
                             f"= {_caller_val!r} does not EXACTLY match the real, exactly-traced, "
                             f"qualifying (and, where applicable, per-payee-capped) canonical line "
-                            f"subtotal ${_derived_subtotal:,.2f} for component(s) "
-                            f"{'/'.join(_cond.component_basis_line_components)} -- rejected before "
-                            "pricing rather than accepted as an unreconciled scalar.",
+                            f"subtotal ${_derived_subtotal:,.2f} for {'/'.join(_basis_dims)} -- "
+                            "rejected before pricing rather than accepted as an unreconciled scalar.",
                         ),
                     )
             _derived_amount_facts[_cond.amount_fact_key] = _derived_subtotal

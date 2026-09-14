@@ -140,6 +140,28 @@ class RateCondition:
     # repair, out of its bounded scope).
     component_basis_line_components: tuple[str, ...] | None = None
 
+    # Codex final Oregon full-pipeline completion (P0-OR-001, sixth
+    # pass): component_basis_line_components matches on
+    # AccountAllocation.component -- a LOCATION-ROUTING tag
+    # (production_allocation.COMPONENT_BY_SPEND_CATEGORY maps to
+    # "post"/"vfx"/"music"/"above_the_line"/"travel_and_living"/
+    # "overhead"/"administration"/"principal_photography", never
+    # "payroll"/"production"/"other"). The real production composer
+    # NEVER emits a "payroll" component, so an Oregon condition keyed on
+    # component_basis_line_components=("payroll",) can never match any
+    # real, composer-produced allocation -- only hand-built test
+    # fixtures. component_basis_spend_categories matches on the SAME
+    # lines' own real spend_category instead (e.g. LABOR_CATEGORIES for
+    # payroll) -- the genuinely correct, composer-reachable dimension
+    # for Oregon's payroll/other split. None (the default) means this
+    # condition uses component_basis_line_components (or neither).
+    component_basis_spend_categories: tuple[str, ...] | None = None
+    # When set alongside component_basis_spend_categories, matches every
+    # traced line whose spend_category is NOT in that tuple (the
+    # "other"/complement side of a two-condition split) instead of IN
+    # it. False (the default) means "IN" (the payroll side).
+    component_basis_spend_categories_exclude: bool = False
+
     # A genuinely EXECUTABLE boolean gate on a caller-evidenced fact (e.g.
     # preapproval granted, an award confirmed, a certificate issued). The
     # condition is satisfied only when `required_boolean_fact_key` is a

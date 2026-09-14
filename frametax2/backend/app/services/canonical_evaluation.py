@@ -1106,9 +1106,27 @@ def _price_candidate(
     # fact (e.g. au_location_offset's native AUD threshold) returns None
     # HERE, before ever reaching the pricing call this function threads
     # those facts into, and the fact never has any effect.
+    # Codex final Oregon full-pipeline completion (P0-OR-001, sixth
+    # pass): this preflight runs BEFORE the real per-line allocation
+    # exists, so a composite program's exact, canonical-line-derived
+    # component facts (allocation_pricing.price_segment's own
+    # reconciliation, the true, strict gate) are not yet available here
+    # either -- register_probe (just computed above, from this SAME
+    # production's real budget lines) already knows the real QUALIFYING
+    # total, though. Using it as a PROBE-ONLY value for both of
+    # us_or_opif's composite facts here is safe and narrowly scoped: it
+    # only ever affects whether this preflight lets a real, eligible
+    # Oregon production continue to the real pricing call below, never
+    # an actual priced dollar figure -- price_segment's own strict,
+    # exact-match reconciliation (never this probe) remains the sole
+    # authority for the real composite basis and the real number.
+    _preflight_amount_facts = dict(inputs.amount_facts or {})
+    if program_slug == "us_or_opif" and qpe:
+        _preflight_amount_facts.setdefault("us_or_payroll_qpe_usd", qpe)
+        _preflight_amount_facts.setdefault("us_or_other_qpe_usd", qpe)
     rr = resolve_program_rate(
         program_slug, production_type=inputs.production_type, qpe_usd=qpe,
-        evidenced_facts=inputs.evidenced_program_facts, amount_facts=inputs.amount_facts,
+        evidenced_facts=inputs.evidenced_program_facts, amount_facts=_preflight_amount_facts,
         fx_context=inputs.fx_context,
     )
     if rr is None:
