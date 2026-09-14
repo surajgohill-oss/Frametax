@@ -1,0 +1,5 @@
+project,project_id,candidate_count,priced_count,unpriceable_count,anchor_program,incentive_usd,npc_usd,selection_state,expected_match,candidate_count_delta
+Little Utopia,fa5cade5-0669-4816-bfe6-72146f8d3bae,241,124,117,mu_edb_incentive,573059.70,3791333.30,"No verified winner; distinct Manitoba conditional",PASS,0
+F#K Valentine's Day,6c6f1c13-2d49-4bbc-bafb-2a12efa93112,292,159,133,gr_cash_rebate,1445659.84,3072027.16,"No verified winner; distinct Greece+Romania conditional",PASS,0
+Bad Hombres,4355ae88-a636-4c18-af60-ad73b2646124,238,122,116,us_nm_film_credit,596910.25,1885112.75,"Verified winner unchanged; no competing conditional",PASS,0
+Lips Like Sugar,ab10b319-978e-44d3-9331-af2a5f2cccc2,294,175,119,ca_film_30,3459278.90,8524375.10,"Verified winner unchanged; no competing conditional",PASS,0
