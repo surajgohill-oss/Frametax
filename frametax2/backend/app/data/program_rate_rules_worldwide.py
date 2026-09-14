@@ -2894,18 +2894,51 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="za-nfvf-post-only-gate",
                     description="Distinct post-production-only services "
-                                "base, gated separately from the general "
-                                "accepted-production gate above — the "
-                                "accepted manifest states 'post-only: 25% "
-                                "plus additions' with no different numeric "
-                                "figure for the 'additions', so this tier "
-                                "shares the same 25% rate under its own "
-                                "gate identity rather than fabricating a "
-                                "different number",
+                                "election, gated separately from the "
+                                "general accepted-production gate above — "
+                                "the accepted manifest states 'post-only: "
+                                "25% plus additions' with no different "
+                                "numeric RATE for the 'additions', so this "
+                                "tier shares the same 25% rate under its "
+                                "own gate identity rather than fabricating "
+                                "a different rate",
                     quote="post-only: 25% plus additions (Codex bounded "
                           "remediation, accepted formulaic correction)",
                     kind="project_fact_dependent_eligibility",
                     required_boolean_fact_key="za_nfvf_post_production_only_confirmed",
+                ),
+                # Codex final P0 (za_nfvf_rebate): "Post-only boolean
+                # prices broad production QPE; post-only basis ...
+                # remain absent" -- "Use separate production QSAPE and
+                # post QSAPPE bases/gates." QSAPE (Qualifying South
+                # African Production Expenditure) is the GENERAL base's
+                # own segment qpe_usd; QSAPPE (Qualifying South African
+                # Post-Production Expenditure) is a genuinely NARROWER,
+                # separately-tracked spend category (post-production
+                # services only) -- never the same broad production
+                # allocation the general 25%/30% tiers price against.
+                # is_component_basis=True makes resolve_program_rate()
+                # compute the incentive against THIS fact's own value,
+                # never the segment's full production qpe_usd; absence
+                # (amount_fact_min set) fails this tier's eligibility
+                # closed, so a post-only election with no genuine QSAPPE
+                # figure on file can never silently price the broad
+                # production base under the post-only label.
+                RateCondition(
+                    condition_id="za-nfvf-post-qsappe-basis",
+                    description="The post-production-only rate applies to "
+                                "Qualifying South African Post-Production "
+                                "Expenditure (QSAPPE) — a distinct, "
+                                "narrower basis than the general QSAPE "
+                                "production base above, evaluated against "
+                                "a caller-evidenced native-USD fact, never "
+                                "the segment's broad production QPE",
+                    quote="post-only: 25% plus additions (Codex bounded "
+                          "remediation, accepted formulaic correction)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="za_nfvf_post_qsappe_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
                 ),
             ),
         ),
@@ -3726,14 +3759,20 @@ TH_DOCTRINE = register(DoctrineRecord(
                 _TH_PREAPPROVAL_CONDITION,
                 RateCondition(
                     condition_id="th-tier-20-native-spend",
-                    description="THB 100,000,000-150,000,000 qualified "
-                                "Thailand spend band for the 20% tier, "
-                                "evaluated natively in THB",
+                    description="THB 100,000,000-150,000,000 (inclusive) "
+                                "qualified Thailand spend band for the 20% "
+                                "tier, evaluated natively in THB",
                     quote="20% for THB 100-150 million (TFO, Incentive "
                           "Measures Guidelines 2025)",
                     kind="project_fact_dependent_eligibility",
                     amount_fact_key="th_film_incentive_qualifying_spend_thb",
                     amount_fact_min=100_000_000.0,
+                    # Codex final P0: the adjacent 25% tier's own threshold
+                    # is EXCLUSIVE of THB150m ("25% ABOVE THB150m"), so this
+                    # tier's own upper bound must be INCLUSIVE of THB150m
+                    # (the statute's "100-150 million" band) -- otherwise
+                    # exactly THB150,000,000 would fall into neither tier.
+                    amount_fact_max=150_000_000.0,
                 ),
             ),
         ),
@@ -3743,14 +3782,20 @@ TH_DOCTRINE = register(DoctrineRecord(
                 _TH_PREAPPROVAL_CONDITION,
                 RateCondition(
                     condition_id="th-tier-25-native-spend",
-                    description="Above THB 150,000,000 qualified Thailand "
-                                "spend for the 25% tier, evaluated "
+                    description="STRICTLY above THB 150,000,000 qualified "
+                                "Thailand spend for the 25% tier, evaluated "
                                 "natively in THB",
                     quote="25% above THB 150 million (TFO, Incentive "
                           "Measures Guidelines 2025)",
                     kind="project_fact_dependent_eligibility",
                     amount_fact_key="th_film_incentive_qualifying_spend_thb",
                     amount_fact_min=150_000_000.0,
+                    # Codex final P0: "The 'above THB150m' 25% tier is coded
+                    # inclusive at exactly THB150m" -- "ABOVE" is exclusive
+                    # (>150m, never >=150m); exactly THB150,000,000 belongs
+                    # to the adjacent 20% tier's own inclusive upper bound
+                    # (see th-tier-20-native-spend's amount_fact_max).
+                    amount_fact_min_exclusive=True,
                 ),
             ),
         ),
@@ -3761,14 +3806,15 @@ TH_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="th-tier-25-native-spend-for-ceiling",
                     description="The 30% ceiling requires the same "
-                                "THB 150,000,000+ base as the 25% tier, "
-                                "plus the discretionary Soft Power uplift "
-                                "below",
+                                "STRICTLY-above-THB150,000,000 base as the "
+                                "25% tier, plus the discretionary Soft "
+                                "Power uplift below",
                     quote="25% above THB 150 million (TFO, Incentive "
                           "Measures Guidelines 2025)",
                     kind="project_fact_dependent_eligibility",
                     amount_fact_key="th_film_incentive_qualifying_spend_thb",
                     amount_fact_min=150_000_000.0,
+                    amount_fact_min_exclusive=True,
                 ),
                 RateCondition(
                     condition_id="th-soft-power-uplift",
@@ -6034,6 +6080,18 @@ US_TX_DOCTRINE = register(DoctrineRecord(
     # tier shape alone.
     tiers=(DoctrineRateTier(
         tier_id="us-tx-ceiling-31", rate=0.31, is_band_ceiling=True,
+        # Codex final P0 (us_tx_miip): "Award facts select only maximum
+        # 31%; phased tiers and pool not executable" -- "Carry exact
+        # awarded rate/tier as structured project fact and validate it
+        # against authorized range/period." A production's REAL award
+        # letter states its OWN specific rate (up to the 31% statutory
+        # ceiling), not always the maximum -- us_tx_miip_awarded_rate_pct
+        # carries that exact value; a missing or out-of-[0, 0.31] value
+        # fails closed via the same floorless-ceiling mechanism the four
+        # conditions below already use, never silently substituting the
+        # ceiling as a guessed default.
+        awarded_rate_fact_key="us_tx_miip_awarded_rate_pct",
+        awarded_rate_min=0.0, awarded_rate_max=0.31,
         conditions=(
             # Codex final runtime remediation (us_tx_miip, P0): "awarded
             # tier/resident-threshold path is absent." Both conditions

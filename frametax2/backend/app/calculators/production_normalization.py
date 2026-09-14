@@ -283,6 +283,41 @@ def mark_fx_refresh_failed(error: str) -> None:
     FX_LAST_REFRESH_ERROR = error
 
 
+def build_fx_context(snapshot_date: Optional[str] = None) -> "CanonicalFXContext":
+    """Codex final P0 (canonical_fx) — the ONE place a canonical,
+    immutable FX context is built from this module's live state. Reads
+    FX_LIVE_SNAPSHOT_DATE/FX_RATE_SNAPSHOTS/FX_FRESHNESS_STATUS exactly
+    ONCE, right here, and freezes them into a CanonicalFXContext whose
+    `rates` is a fresh COPY (never a live reference into
+    FX_RATE_SNAPSHOTS[date], which a later live refresh could still
+    mutate). Every downstream cap/threshold evaluation
+    (program_rate_rules._fx_native_amount, convert_incentive_cap_to_usd,
+    allocation_pricing._resolve_incentive_dollar_cap) accepts this as an
+    explicit argument instead of importing and re-reading the mutable
+    global mid-calculation — the fix for "repeated calls must follow one
+    project-selected snapshot" and "one project's FX choice cannot affect
+    another."
+
+    snapshot_date=None (the default) selects the CURRENT live/static
+    snapshot (FX_LIVE_SNAPSHOT_DATE) — this is what every existing caller
+    gets when it does not explicitly request a historical date, so a
+    single call's behavior is unchanged from before this fix; the context
+    it receives is simply now pinned/immutable rather than re-read.
+    Explicitly passing one of FX_RATE_SNAPSHOTS' own historical dates
+    (e.g. "2026-01-13") selects that dated snapshot instead — always
+    treated as "fresh" (staleness is a live-refresh-pipeline concept, not
+    a property of a deliberately-chosen historical date)."""
+    from app.calculators.apply_fx_rates import CanonicalFXContext
+
+    date = snapshot_date or FX_LIVE_SNAPSHOT_DATE
+    rates = dict(FX_RATE_SNAPSHOTS.get(date, {}))
+    freshness = FX_FRESHNESS_STATUS if date == FX_LIVE_SNAPSHOT_DATE else "fresh"
+    return CanonicalFXContext(
+        snapshot_date=date, rates=rates, source=FX_LIVE_SNAPSHOT_SOURCE,
+        freshness_status=freshness,
+    )
+
+
 def fx_rate_snapshot(currency: str) -> dict[str, Optional[float]]:
     """The engine-side data the UI's current/1M/6M/12M FX display needs
     (Part 7 — engine provides the data, no UI built here). Returns None

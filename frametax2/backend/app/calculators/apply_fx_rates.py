@@ -95,3 +95,154 @@ def convert_usd_to_local(
         rate_used=rate,
         rate_date=rate_date,
     )
+
+
+# ── Canonical, immutable, project-selected FX context (Codex final P0 —
+# canonical_fx) ──────────────────────────────────────────────────────────
+#
+# Root cause of Codex's finding ("Cap/threshold helpers read mutable
+# global live date; missing/zero rates raise; negative rates produce
+# negative economics; stale state ignored"): program_rate_rules.py's
+# _fx_native_amount()/convert_incentive_cap_to_usd() imported
+# production_normalization.FX_LIVE_SNAPSHOT_DATE/FX_RATE_SNAPSHOTS FRESH
+# on every single call — a mutable module-global, not a value pinned once
+# per evaluation. Two consequences, both real: (1) if a live FX refresh
+# (app/services/fx_refresh.py) mutates FX_LIVE_SNAPSHOT_DATE between two
+# calls within the SAME canonical evaluation, different candidates in the
+# same result could silently be priced against different snapshots; (2)
+# convert_to_usd/convert_usd_to_local RAISE on a missing rate and divide
+# by whatever rate is present with NO validation — a zero rate raises
+# ZeroDivisionError, a corrupted negative rate silently produces a
+# negative cap/incentive, and a live-refresh failure (FX_FRESHNESS_STATUS
+# == "stale_fallback") was never even consulted.
+#
+# CanonicalFXContext is an explicit, immutable, single-snapshot value —
+# built ONCE (by production_normalization.build_fx_context()) and passed
+# down through resolve_program_rate()/price_segment()/
+# _resolve_incentive_dollar_cap() as a plain function argument, never
+# re-read from a global mid-calculation. `rates` is always a fresh COPY
+# of the source snapshot dict (never a live reference into a table a
+# later live refresh could mutate), so a context, once built, can never
+# change under the caller.
+FX_STATUS_RESOLVED = "RESOLVED"
+FX_STATUS_MISSING = "MISSING_RATE"
+FX_STATUS_NONPOSITIVE = "NONPOSITIVE_RATE"
+FX_STATUS_STALE_UNACCEPTED = "STALE_UNACCEPTED_SNAPSHOT"
+
+
+@dataclass(frozen=True)
+class CanonicalFXContext:
+    """One immutable, explicit FX snapshot selected for a single canonical
+    evaluation (or, for a caller not yet threading a project-level
+    context, for a single call) — see production_normalization.
+    build_fx_context(), the ONE place this reads the live mutable global,
+    exactly once, into this frozen value."""
+    snapshot_date: str
+    rates: dict[str, float]   # currency -> local units per USD; a frozen COPY
+    source: str
+    #: "fresh" | "stale_fallback" | "never_refreshed" — see
+    #: production_normalization.FX_FRESHNESS_STATUS. A HISTORICAL
+    #: (deliberately-dated, non-live) context is always "fresh": staleness
+    #: is a property of the LIVE refresh pipeline having failed, not of a
+    #: deliberately-chosen historical date.
+    freshness_status: str = "never_refreshed"
+
+
+@dataclass(frozen=True)
+class FXRateResolution:
+    """Typed, NEVER-raised outcome of resolving one currency's rate
+    against a CanonicalFXContext. Replaces convert_to_usd/
+    convert_usd_to_local's raise-on-missing and unguarded division for
+    every cap/threshold evaluation path, which must fail CLOSED (a typed
+    non-priceable disposition disclosed in the trace) rather than crash
+    the request or silently compute nonsense (negative/zero-derived)
+    economics."""
+    status: str   # FX_STATUS_*
+    currency: str
+    rate: float | None
+    snapshot_date: str
+    source: str
+    detail: str
+
+    @property
+    def ok(self) -> bool:
+        return self.status == FX_STATUS_RESOLVED
+
+
+def resolve_fx_rate(context: CanonicalFXContext, currency: str) -> FXRateResolution:
+    """The one place a currency's rate is validated against an explicit
+    CanonicalFXContext. Never raises; always returns a typed disposition.
+    USD needs no rate — accepted currency itself is implicitly USD-safe."""
+    currency = currency.upper()
+    if currency == "USD":
+        return FXRateResolution(
+            status=FX_STATUS_RESOLVED, currency="USD", rate=1.0,
+            snapshot_date=context.snapshot_date, source=context.source,
+            detail="USD requires no conversion.",
+        )
+    if context.freshness_status == "stale_fallback":
+        return FXRateResolution(
+            status=FX_STATUS_STALE_UNACCEPTED, currency=currency, rate=None,
+            snapshot_date=context.snapshot_date, source=context.source,
+            detail=(
+                f"FX context '{context.snapshot_date}' is flagged stale_fallback "
+                "(a live refresh previously failed and this snapshot was retained "
+                "for disclosure rather than silently marked fresh — see "
+                "production_normalization.mark_fx_refresh_failed) — rejected for "
+                "a new economic calculation, never silently consumed."
+            ),
+        )
+    rate = context.rates.get(currency)
+    if rate is None:
+        return FXRateResolution(
+            status=FX_STATUS_MISSING, currency=currency, rate=None,
+            snapshot_date=context.snapshot_date, source=context.source,
+            detail=f"No sourced FX rate for {currency} in the {context.snapshot_date} snapshot.",
+        )
+    if rate <= 0:
+        return FXRateResolution(
+            status=FX_STATUS_NONPOSITIVE, currency=currency, rate=rate,
+            snapshot_date=context.snapshot_date, source=context.source,
+            detail=(
+                f"Rate for {currency} on {context.snapshot_date} is non-positive "
+                f"({rate}) — corrupted/invalid data, never used to compute economics."
+            ),
+        )
+    return FXRateResolution(
+        status=FX_STATUS_RESOLVED, currency=currency, rate=rate,
+        snapshot_date=context.snapshot_date, source=context.source,
+        detail=f"Resolved {currency} rate {rate} from {context.snapshot_date} ({context.source}).",
+    )
+
+
+def convert_to_usd_ctx(
+    amount: float, source_currency: str, context: CanonicalFXContext,
+) -> tuple[FXConversionResult | None, FXRateResolution]:
+    """Context-based, never-raising sibling of convert_to_usd(). Returns
+    (None, resolution) with a typed failure status when the rate cannot
+    be safely resolved — the caller must treat that as non-priceable,
+    never fall back to a guessed/implicit 1.0 rate."""
+    res = resolve_fx_rate(context, source_currency)
+    if not res.ok:
+        return None, res
+    usd_amount = float(amount) / float(res.rate)
+    return FXConversionResult(
+        source_currency=source_currency.upper(), target_currency="USD",
+        source_amount=amount, target_amount=usd_amount, rate_used=res.rate,
+        rate_date=context.snapshot_date,
+    ), res
+
+
+def convert_usd_to_local_ctx(
+    amount_usd: float, target_currency: str, context: CanonicalFXContext,
+) -> tuple[FXConversionResult | None, FXRateResolution]:
+    """Context-based, never-raising sibling of convert_usd_to_local()."""
+    res = resolve_fx_rate(context, target_currency)
+    if not res.ok:
+        return None, res
+    local_amount = float(amount_usd) * float(res.rate)
+    return FXConversionResult(
+        source_currency="USD", target_currency=target_currency.upper(),
+        source_amount=amount_usd, target_amount=local_amount, rate_used=res.rate,
+        rate_date=context.snapshot_date,
+    ), res

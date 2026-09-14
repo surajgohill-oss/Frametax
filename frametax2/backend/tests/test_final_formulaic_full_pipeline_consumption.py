@@ -251,7 +251,7 @@ def test_cz_film_incentive_80pct_and_incentive_value_cap_boundaries():
     # CZK450,000,000 incentive-value cap, applied to the calculated
     # incentive -- never a caller-attested reject value.
     cap = get_incentive_value_cap("cz_film_incentive")
-    cap_usd = convert_incentive_cap_to_usd(cap).target_amount
+    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
     assert cap.cap_currency == "CZK" and cap.cap_native_amount == 450_000_000.0
     large_qpe = (cap_usd / 0.25) * 2
     over_cap = probe(large_qpe, large_qpe * 10)  # budget large enough that the 80% cap does not bind here
@@ -510,7 +510,7 @@ def test_nl_nfpi_company_cap_applies_to_calculated_incentive():
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
 
     cap = get_incentive_value_cap("nl_film_production_incentive")
-    cap_usd = convert_incentive_cap_to_usd(cap).target_amount
+    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
     assert cap.cap_currency == "EUR" and cap.cap_native_amount == 3_000_000.0
 
     large_qpe = (cap_usd / 0.35) * 2  # comfortably over the cap once rated at 35%
@@ -533,6 +533,82 @@ def test_nl_nfpi_company_cap_applies_to_calculated_incentive():
         "cap, never rejected outright"
     )
     assert seg.incentive_cap_usd == pytest.approx(cap_usd, abs=0.01)
+
+
+def test_nl_nfpi_company_period_cap_consumes_prior_awards_across_projects():
+    """Codex final P0 (nl_film_production_incentive): "EUR3m company-year
+    cap ... does not consume prior company-period awards." nl_film_
+    production_incentive's cap is PER COMPANY PER YEAR, not per-project --
+    a second production from the SAME company must not be able to claim a
+    FULL fresh EUR3,000,000 on top of what the company's first production
+    already received this year. Proven directly against the real pricing
+    kernel by simulating "Project A" (this company's first NL production,
+    no prior awards) and "Project B" (the SAME company's second
+    production, evidencing Project A's own EUR2,000,000 award as its
+    prior-period fact) -- the acceptance case: 'two projects for one
+    company cannot jointly exceed the company-year cap.'"""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+    from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
+
+    cap = get_incentive_value_cap("nl_film_production_incentive")
+    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
+    common_facts = frozenset({"nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met"})
+
+    def probe(large_qpe: float, prior_awards_eur: float | None):
+        alloc = AccountAllocation(
+            account_code="2000", description="spend", amount_usd=large_qpe, component="production",
+            jurisdiction_code="NL", assignment_kind=AssignmentKind.FIXED,
+            rationale="company-period cap consumption probe", governing_decision="codex-final-p0-canonical-fx",
+        )
+        amount_facts = (
+            {"nl_nfpi_company_period_prior_awards_eur": prior_awards_eur}
+            if prior_awards_eur is not None else None
+        )
+        return price_segment(
+            jurisdiction_code="NL", program_slug="nl_film_production_incentive", allocations=[alloc],
+            spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
+            production_type="feature_film", gross_budget_usd=large_qpe,
+            evidenced_requirement_facts=common_facts, amount_facts=amount_facts,
+        )
+
+    large_qpe = (cap_usd / 0.35) * 2  # comfortably over the FULL cap even alone
+
+    # Project A: this company's first NL production this year, no prior awards on file.
+    project_a = probe(large_qpe, None)
+    assert project_a.executable is True
+    assert project_a.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01), (
+        "with no prior-award aggregate on file, Project A alone is capped at the full EUR3m-equivalent"
+    )
+
+    # Project B: the SAME company's second NL production, evidencing that
+    # Project A already received the full EUR3,000,000 cap this year --
+    # Project B's own remaining company-period cap must be EUR 0.
+    project_b_exhausted = probe(large_qpe, 3_000_000.0)
+    assert project_b_exhausted.executable is True
+    assert project_b_exhausted.incentive_floor_usd == 0.0, (
+        "the company already exhausted its EUR3,000,000 annual cap via Project A -- "
+        "Project B must receive $0, never a second fresh cap"
+    )
+
+    # Partial consumption: Project A received EUR2,000,000 -- Project B's
+    # remaining cap is EUR1,000,000-equivalent, genuinely LESS than the
+    # full per-project cap.
+    project_b_partial = probe(large_qpe, 2_000_000.0)
+    assert project_b_partial.executable is True
+    assert project_b_partial.incentive_floor_usd < project_a.incentive_floor_usd, (
+        "Project B's remaining company-period cap must be genuinely smaller than "
+        "Project A's full cap once EUR2,000,000 of the shared ceiling is already consumed"
+    )
+    assert project_b_partial.incentive_floor_usd == pytest.approx(cap_usd / 3.0, abs=0.01), (
+        "EUR1,000,000 remaining (of the EUR3,000,000 cap) converts to exactly one third of "
+        "the full cap-equivalent USD figure"
+    )
+
+    # Joint total across both real projects must never exceed the single company-year cap.
+    joint_total = project_a.incentive_floor_usd  # Project A alone already hits the full cap
+    assert joint_total == pytest.approx(cap_usd, abs=0.01)
+    assert project_b_exhausted.incentive_floor_usd + project_a.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01)
 
 
 # ── 9. th_film_incentive ──────────────────────────────────────────────
@@ -578,6 +654,53 @@ async def test_th_film_incentive_base_and_award_uplift(db: AsyncSession, clean_f
     assert tier25["selected_incentive_usd"] > tier15["selected_incentive_usd"], (
         "the objective 25% tier (THB 150m+) must genuinely exceed the 15% tier once evidenced"
     )
+
+
+# Codex final P0 (th_film_incentive): "The 'above THB150m' 25% tier is
+# coded inclusive at exactly THB150m -- the rule text says 20% for
+# THB100m-150m and 25% above THB150m. Both the 25% tier and 30% ceiling
+# use inclusive amount_fact_min=150_000_000; an independent probe
+# measured exactly THB150m at a 25% floor rather than 20%." Fixed via the
+# new RateCondition.amount_fact_min_exclusive flag (exclusive lower bound
+# on the 25% tier) + an inclusive amount_fact_max=150,000,000 upper bound
+# on the 20% tier, so THB150,000,000 exactly belongs to exactly one tier
+# (20%), never both/neither. Proven at the EXACT boundary Codex's own
+# acceptance case specifies: 149,999,999 and 150,000,000 select 20%;
+# 150,000,001 selects 25% -- against FVD's real USD 3,701,238.00 QPE.
+
+TH_TIER20_INCENTIVE_USD = 740_247.60   # 20% of FVD's real QPE
+TH_TIER25_INCENTIVE_USD = 925_309.50   # 25% of FVD's real QPE
+
+async def test_th_film_incentive_exact_150m_boundary_is_exclusive_on_25pct_tier(db: AsyncSession, clean_facts):
+    async def _at_spend(spend_thb: float) -> dict:
+        await _clear_test_facts(db)
+        await _add_facts(
+            db,
+            _boolean_fact("th_film_incentive_preapproval_confirmed"),
+            _amount_fact("th_film_incentive_qualifying_spend_thb", spend_thb),
+        )
+        return await _structure_for(db, "th_film_incentive")
+
+    below = await _at_spend(149_999_999.0)
+    assert below["is_fully_priced"] is True
+    assert below["selected_incentive_usd"] == pytest.approx(TH_TIER20_INCENTIVE_USD, abs=0.01), (
+        "THB 149,999,999 must select the 20% tier"
+    )
+
+    exact = await _at_spend(150_000_000.0)
+    assert exact["is_fully_priced"] is True
+    assert exact["selected_incentive_usd"] == pytest.approx(TH_TIER20_INCENTIVE_USD, abs=0.01), (
+        "THB 150,000,000 exactly is the 20% tier's own INCLUSIVE upper bound ('100-150 million'), "
+        "never the 25% tier's EXCLUSIVE 'above 150 million' threshold -- this is the exact defect "
+        "Codex's independent probe found (measured a 25% floor at exactly THB150m instead of 20%)"
+    )
+
+    above = await _at_spend(150_000_001.0)
+    assert above["is_fully_priced"] is True
+    assert above["selected_incentive_usd"] == pytest.approx(TH_TIER25_INCENTIVE_USD, abs=0.01), (
+        "THB 150,000,001 (one unit above the boundary) must select the 25% tier"
+    )
+    assert above["selected_incentive_usd"] > exact["selected_incentive_usd"]
 
 
 # ── 10. us_or_opif — permanently B4-blocked by a separate, pre-existing,
@@ -675,6 +798,7 @@ async def test_us_or_opif_coverage_veto_is_reconciled_and_correctly_remains_bloc
 # award alone, or resident facts alone, or a genuinely-failed resident
 # percentage must never auto-price the 31% ceiling.
 
+TX_QPE_USD = 3_701_238.00  # FVD's real QPE
 TX_EXPECTED_INCENTIVE_USD = 1_147_383.78  # 31% of FVD's real USD 3,701,238.00 QPE
 
 async def test_us_tx_miip_award_and_resident_threshold(db: AsyncSession, clean_facts):
@@ -683,16 +807,41 @@ async def test_us_tx_miip_award_and_resident_threshold(db: AsyncSession, clean_f
 
     await _add_facts(db, _boolean_fact("us_tx_miip_award_confirmed"))
     partial = await _structure_for(db, "us_tx_miip")
-    assert partial["is_fully_priced"] is False, "award alone without resident/pool facts must never auto-price the 31% ceiling"
+    assert partial["is_fully_priced"] is False, "award alone without resident/pool/rate facts must never auto-price the ceiling"
 
     await _add_facts(
         db,
         _boolean_fact("us_tx_miip_pool_period_valid"),
         _amount_fact("us_tx_miip_resident_crew_pct", 20.0),
         _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", 0.28),
     )
     crew_fails = await _structure_for(db, "us_tx_miip")
     assert crew_fails["is_fully_priced"] is False, "crew residency at 20% (< 35%) is a genuine failure, not just unresolved, and must never price"
+
+    # PREVIOUS WEAKNESS (Codex final P0 reverification): this test
+    # asserted a single hardcoded TX_EXPECTED_INCENTIVE_USD (31% of FVD's
+    # QPE) regardless of what rate was actually "awarded" -- Codex's own
+    # words: "Texas hardcodes 31%." FIX: RateRule.awarded_rate_fact_key
+    # now consumes the production's own exact awarded rate; this test
+    # proves TWO different below-ceiling awarded rates each produce their
+    # OWN correct economics against FVD's real QPE, never the 31% max.
+    # This would FAIL against the prior defective implementation, which
+    # had no mechanism to distinguish a 24%/28% award from the 31% ceiling.
+    await _clear_test_facts(db)
+    await _add_facts(
+        db,
+        _boolean_fact("us_tx_miip_award_confirmed"),
+        _boolean_fact("us_tx_miip_pool_period_valid"),
+        _amount_fact("us_tx_miip_resident_crew_pct", 40.0),
+        _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", 0.24),
+    )
+    awarded_24 = await _structure_for(db, "us_tx_miip")
+    assert awarded_24["is_fully_priced"] is True
+    assert awarded_24["selected_incentive_usd"] == pytest.approx(TX_QPE_USD * 0.24, abs=0.01), (
+        "a 24% awarded rate must price at 24%, never the 31% ceiling"
+    )
 
     await _clear_test_facts(db)
     await _add_facts(
@@ -701,10 +850,41 @@ async def test_us_tx_miip_award_and_resident_threshold(db: AsyncSession, clean_f
         _boolean_fact("us_tx_miip_pool_period_valid"),
         _amount_fact("us_tx_miip_resident_crew_pct", 40.0),
         _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", 0.28),
+    )
+    awarded_28 = await _structure_for(db, "us_tx_miip")
+    assert awarded_28["is_fully_priced"] is True
+    assert awarded_28["selected_incentive_usd"] == pytest.approx(TX_QPE_USD * 0.28, abs=0.01), (
+        "a 28% awarded rate must price at 28%, never the 31% ceiling"
+    )
+    assert awarded_28["selected_incentive_usd"] > awarded_24["selected_incentive_usd"]
+
+    await _clear_test_facts(db)
+    await _add_facts(
+        db,
+        _boolean_fact("us_tx_miip_award_confirmed"),
+        _boolean_fact("us_tx_miip_pool_period_valid"),
+        _amount_fact("us_tx_miip_resident_crew_pct", 40.0),
+        _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", 0.31),
     )
     full = await _structure_for(db, "us_tx_miip")
     assert full["is_fully_priced"] is True
     assert full["selected_incentive_usd"] == pytest.approx(TX_EXPECTED_INCENTIVE_USD, abs=0.01)
+
+    # A malformed/out-of-authorized-range awarded rate (above the 31%
+    # statutory ceiling) must fail closed, never clamp.
+    await _clear_test_facts(db)
+    await _add_facts(
+        db,
+        _boolean_fact("us_tx_miip_award_confirmed"),
+        _boolean_fact("us_tx_miip_pool_period_valid"),
+        _amount_fact("us_tx_miip_resident_crew_pct", 40.0),
+        _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", 0.45),
+    )
+    malformed = await _structure_for(db, "us_tx_miip")
+    assert malformed["is_fully_priced"] is False, "an awarded rate above the 31% statutory ceiling must reject, never clamp to 31%"
 
 
 # ── 12. za_nfvf_rebate ────────────────────────────────────────────────
@@ -726,31 +906,53 @@ async def test_za_nfvf_rebate_accepted_gate_and_cap(db: AsyncSession, clean_fact
 
 
 def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch():
-    """The ZAR25m cap boundary and the distinct post-only gate, proven
-    directly against the real pricing kernel — FVD's real QPE never
-    approaches the ~USD1.53m cap-equivalent, so this boundary cannot be
-    exercised through FVD alone."""
+    """PREVIOUS WEAKNESS (Codex final P0 reverification): this test
+    labeled a `component="production"` allocation (the SAME broad
+    production spend the general accepted-production gate prices) as the
+    "post-only" case, and asserted the post-only branch produces the SAME
+    incentive as the general branch on that SAME broad base -- exactly
+    Codex's own finding: "Claude's direct test labels a
+    component='production' allocation as the post-only case." This
+    encoded the defect it should have caught: the post-only tier priced
+    broad production QPE, never a genuinely distinct, narrower
+    post-production basis.
+
+    FIX: RateCondition.is_component_basis on a new za-nfvf-post-qsappe-
+    basis condition -- the post-only tier now requires and prices against
+    a SEPARATE, caller-evidenced za_nfvf_post_qsappe_usd fact (Qualifying
+    South African POST-PRODUCTION Expenditure), genuinely narrower than
+    the segment's own broad production qpe_usd. This test proves: (1) the
+    post-only election ALONE, with no QSAPPE fact, no longer silently
+    prices the broad production base (it correctly rejects); (2) once a
+    genuine, narrower QSAPPE fact is evidenced, the post-only branch
+    prices 25% of THAT figure, provably DIFFERENT from (and here, smaller
+    than) the general branch's 25%-of-broad-production-QPE result; (3)
+    the ZAR25m cap still applies correctly to the general branch's
+    calculated incentive. This would FAIL against the prior defective
+    implementation, which had no separate QSAPPE fact/gate at all and
+    would have silently priced the post-only branch identically to the
+    general branch on the same broad allocation."""
     from app.calculators.allocation_pricing import price_segment
     from app.calculators.production_allocation import AccountAllocation, AssignmentKind
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
 
     cap = get_incentive_value_cap("za_nfvf_rebate")
-    cap_usd = convert_incentive_cap_to_usd(cap).target_amount
+    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
     assert cap.cap_currency == "ZAR" and cap.cap_native_amount == 25_000_000.0
 
     large_qpe = (cap_usd / 0.25) * 2  # comfortably over the cap once rated at 25%
 
-    def probe(evidenced):
+    def probe(evidenced, amount_facts=None):
         alloc = AccountAllocation(
-            account_code="2000", description="spend", amount_usd=large_qpe, component="production",
+            account_code="2000", description="broad production spend", amount_usd=large_qpe, component="production",
             jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
-            rationale="cap/post-only boundary probe", governing_decision="codex-final-nine-remediation",
+            rationale="cap/post-only boundary probe", governing_decision="codex-final-p0-canonical-fx",
         )
         return price_segment(
             jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=[alloc],
             spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
             production_type="feature_film", gross_budget_usd=large_qpe,
-            evidenced_requirement_facts=evidenced,
+            evidenced_requirement_facts=evidenced, amount_facts=amount_facts,
         )
 
     capped = probe(frozenset({"za_nfvf_accepted_production_confirmed"}))
@@ -760,9 +962,32 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
         "cap, never rejected outright"
     )
 
-    post_only = probe(frozenset({"za_nfvf_post_production_only_confirmed"}))
-    assert post_only.executable is True, "the distinct post-only gate must independently unlock the same 25% base"
-    assert post_only.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01)
+    # Post-only election ALONE (no genuine QSAPPE fact) must no longer
+    # silently price the broad production base -- this is the exact
+    # antipattern the prior test's own weak oracle failed to catch.
+    post_only_no_basis = probe(frozenset({"za_nfvf_post_production_only_confirmed"}))
+    assert post_only_no_basis.executable is False, (
+        "the post-only election alone, without a genuine QSAPPE basis fact, must reject -- "
+        "it must never silently price the broad production QPE under the post-only label"
+    )
+
+    # A genuinely NARROWER post-production-only spend figure (a real
+    # subset of the production's total budget) correctly prices its OWN
+    # 25%, provably distinct from (smaller than) the general branch.
+    narrow_post_qsappe_usd = 400_000.0
+    post_only_with_basis = probe(
+        frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": narrow_post_qsappe_usd},
+    )
+    assert post_only_with_basis.executable is True
+    assert post_only_with_basis.incentive_floor_usd == pytest.approx(narrow_post_qsappe_usd * 0.25, abs=0.01), (
+        "the post-only branch must price 25% of the SEPARATE, narrower QSAPPE fact, "
+        "never the segment's own broad production QPE"
+    )
+    assert post_only_with_basis.incentive_floor_usd < capped.incentive_floor_usd, (
+        "the post-only branch's economics on a genuinely narrower basis must be materially "
+        "different from (here, far smaller than) the general branch's broad-QPE economics"
+    )
 
     neither = probe(frozenset())
     assert neither.executable is False, "neither the accepted-production nor the post-only gate is evidenced — must reject"

@@ -103,7 +103,7 @@ def classify(slug: str) -> dict:
     # ── Priceable. Record the rest of the contract for coherence. ────────
     record["disposition"] = "PRICEABLE"
 
-    cap_usd, cap_type, cap_basis = _resolve_incentive_dollar_cap(slug)
+    cap_usd, cap_type, cap_basis, _fx_err = _resolve_incentive_dollar_cap(slug)
     record["dollar_cap_usd"] = cap_usd
     record["dollar_cap_type"] = cap_type
     record["dollar_cap_basis"] = cap_basis

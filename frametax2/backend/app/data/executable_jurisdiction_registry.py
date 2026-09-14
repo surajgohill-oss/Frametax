@@ -93,6 +93,13 @@ class DoctrineRateTier:
     min_qpe_usd: float | None = None
     conditions: tuple[RateCondition, ...] = ()
     graduated_brackets: tuple[tuple[float, float], ...] | None = None
+    #: Codex final P0 (us_tx_miip) -- see RateRule's own field docstring
+    #: in program_rate_rules.py. Mirrored here so a DoctrineRateTier-
+    #: authored jurisdiction (rate_rules_for() below) can use the same
+    #: mechanism as a directly-authored RateRule.
+    awarded_rate_fact_key: str | None = None
+    awarded_rate_min: float | None = None
+    awarded_rate_max: float | None = None
 
 
 @dataclass(frozen=True)
@@ -153,6 +160,9 @@ def rate_rules_for(record: DoctrineRecord) -> tuple[RateRule, ...]:
             source_ref=record.source_ref,
             graduated_brackets=tier.graduated_brackets,
             provenance=record.provenance,
+            awarded_rate_fact_key=tier.awarded_rate_fact_key,
+            awarded_rate_min=tier.awarded_rate_min,
+            awarded_rate_max=tier.awarded_rate_max,
         )
         for tier in record.tiers
     )

@@ -34,7 +34,7 @@ of Commerce and Industry's Film Rebate Scheme page (mcci.org).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 # B4 central authority-exhaustion gate (Codex bounded remediation). Safe at
 # module top: authority_coverage_registry imports only dataclasses/typing and
@@ -165,6 +165,41 @@ class RateCondition:
     fx_native_currency: str | None = None
     fx_native_threshold_amount: float | None = None
 
+    # Codex final P0 (th_film_incentive): "The 'above THB150m' 25% tier is
+    # coded inclusive at exactly THB150m" -- the statutory language names
+    # an ADJACENT tier boundary ("20% for THB100-150m; 25% ABOVE THB150m"),
+    # where the lower tier's own upper bound is INCLUSIVE (>=100m and
+    # <=150m) and the higher tier's threshold is EXCLUSIVE (>150m, never
+    # >=150m). False (the default) keeps amount_fact_min's existing
+    # inclusive (actual >= min) comparison, correct for every other
+    # existing threshold in this codebase (none of which name an adjacent
+    # boundary this way). True switches ONLY this condition's comparison
+    # to strictly-greater-than (actual > min) -- never changes
+    # amount_fact_max's own semantics, which stay inclusive on the lower
+    # tier so THB150,000,000 exactly still selects the 20% tier, never
+    # neither tier.
+    amount_fact_min_exclusive: bool = False
+
+    # Codex final P0 (mt_mfc_rebate): "Certificate fact selects the 40%
+    # RateResolution but unresolved limb conditions keep served selected
+    # incentive at 30%." A discretionary_band condition (a CRITERION the
+    # awarding authority weighs internally -- e.g. Malta's individual
+    # +5%/+5% uplift limbs) always discloses satisfied=None on its own,
+    # by design (the engine can never pre-evaluate a genuinely
+    # discretionary criterion). But once a caller-evidenced fact naming
+    # the AUTHORITATIVE AWARD ITSELF is present (e.g.
+    # "mt_mfc_uplift_certificate_confirmed" — an actual Commissioner
+    # certificate, not a prediction of one), that award IS the real-world
+    # confirmation event; the individual criteria that led to it are no
+    # longer separate engine-verifiable gates. Set ONLY on a
+    # discretionary_band condition, naming the boolean fact key that,
+    # once evidenced, supersedes this specific criterion's own
+    # unresolved disclosure with a genuine satisfied=True. None (the
+    # default) preserves the existing "always None" discretionary
+    # disclosure for every condition without a real, separate awarded-
+    # fact confirmation.
+    superseded_by_boolean_fact_key: str | None = None
+
 
 @dataclass(frozen=True)
 class SourceProvenance:
@@ -222,6 +257,25 @@ class RateRule:
     source_ref: str
     graduated_brackets: tuple[tuple[float, float], ...] | None = None
     provenance: SourceProvenance | None = None
+
+    # Codex final P0 (us_tx_miip): "Award facts select only maximum 31%;
+    # phased tiers and pool not executable" -- "Carry exact awarded
+    # rate/tier as structured project fact and validate it against
+    # authorized range/period." A TIER whose real award varies by
+    # production (a discretionary/competitive fund awards a SPECIFIC
+    # rate per production, not always the statutory ceiling) names the
+    # caller-supplied numeric fact carrying that EXACT awarded rate
+    # (a fraction, e.g. 0.24 for 24%) here -- resolve_program_rate() then
+    # uses THIS value (not the tier's own static `rate`, which remains
+    # the authorized CEILING for validation) as the modeled/floor rate.
+    # A missing, malformed, or out-of-[awarded_rate_min, awarded_rate_max]
+    # value fails this tier's eligibility closed -- never silently
+    # substitutes the ceiling `rate` as a guessed default. None (the
+    # default, every other program) means the tier's own static `rate` is
+    # authoritative, unaffected by this mechanism.
+    awarded_rate_fact_key: str | None = None
+    awarded_rate_min: float | None = None
+    awarded_rate_max: float | None = None
 
 
 @dataclass(frozen=True)
@@ -730,6 +784,14 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                 kind="project_fact_dependent_eligibility",
                 required_boolean_fact_key="mt_mfc_uplift_certificate_confirmed",
             ),
+            # Codex final P0 (mt_mfc_rebate): "Certificate fact selects the
+            # 40% RateResolution but unresolved limb conditions keep
+            # served selected incentive at 30%." superseded_by_boolean_
+            # fact_key names the SAME mt-uplift-certificate gate above --
+            # once the Commissioner's actual certificate is evidenced, the
+            # individual criteria the Commissioner weighed internally are
+            # no longer separate unresolved engine gates; the certificate
+            # IS the authoritative awarded-rate confirmation.
             RateCondition(
                 condition_id="mt-uplift-limb-a-malta-as-malta",
                 description="Limb (a), +5%: Malta portrayed as Malta, or local "
@@ -740,6 +802,7 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                       "current per Screen Malta Financial Incentives Guidelines "
                       "2024, S.3.4)",
                 kind="discretionary_band",
+                superseded_by_boolean_fact_key="mt_mfc_uplift_certificate_confirmed",
             ),
             RateCondition(
                 condition_id="mt-uplift-limb-b-local-resources",
@@ -755,6 +818,7 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                       "(Screen Malta Financial Incentives Guidelines 2024, "
                       "S.3.4 and Annex 1)",
                 kind="discretionary_band",
+                superseded_by_boolean_fact_key="mt_mfc_uplift_certificate_confirmed",
             ),
         ),
         confidence_tier="VERIFIED",
@@ -868,6 +932,7 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                       "of local resources. Maximum Rebate: 40% (MFC Cash Rebate "
                       "Guidelines, Jan 2019, S.3.2.1)",
                 kind="discretionary_band",
+                superseded_by_boolean_fact_key="mt_mfc_uplift_certificate_confirmed",
             ),
         ),
         confidence_tier="VERIFIED",
@@ -1490,6 +1555,21 @@ class IncentiveValueCapRule:
     quote: str
     source_ref: str
 
+    # Codex final P0 (nl_film_production_incentive): "EUR3m company-year
+    # cap ... does not consume prior company-period awards." Set ONLY on
+    # a cap that is denominated PER COMPANY PER PERIOD (e.g. NL's "up to
+    # EUR 3 million per year per production company" — several
+    # productions from the SAME company share ONE annual ceiling, unlike
+    # cz_film_incentive's/za_nfvf_rebate's genuinely PER-PROJECT caps).
+    # Names the caller-supplied amount_fact_key carrying this company's
+    # own prior awards already granted THIS period from its OTHER
+    # productions (native currency, same as cap_currency) — reduces the
+    # effective remaining cap by that amount before conversion, so two
+    # projects for the same company cannot jointly exceed the shared
+    # ceiling. None (the default, every other program) means the cap is
+    # purely per-project — unaffected by this mechanism.
+    company_period_prior_award_fact_key: str | None = None
+
 
 INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
     "cz_film_incentive": IncentiveValueCapRule(
@@ -1535,6 +1615,15 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
         quote="COMPANY CAP: up to EUR 3 million per year per production company — a "
               "real, published company-level cap. (Netherlands Film Fund, 2026 programme)",
         source_ref="filmfonds.nl-netherlands-film-production-incentive-2026",
+        # Codex final P0: "does not consume prior company-period awards."
+        # This is a PER-COMPANY PER-YEAR cap (several productions from
+        # the same company share it), not a per-project cap -- the
+        # caller-supplied nl_nfpi_company_period_prior_awards_eur fact
+        # (native EUR, the SAME company's other productions' already-
+        # granted awards this year) reduces the effective remaining cap
+        # for THIS project, so two projects for one company cannot
+        # jointly exceed the shared EUR 3,000,000 ceiling.
+        company_period_prior_award_fact_key="nl_nfpi_company_period_prior_awards_eur",
     ),
 }
 
@@ -1543,18 +1632,29 @@ def get_incentive_value_cap(program_slug: str) -> IncentiveValueCapRule | None:
     return INCENTIVE_VALUE_CAP_RULES.get(program_slug)
 
 
-def convert_incentive_cap_to_usd(cap: IncentiveValueCapRule) -> "FXConversionResult":
-    """The one place a native incentive-value cap is converted to USD —
-    always via the real, dated, sourced FX snapshot (never a guessed or
-    caller-supplied rate). Returns the full FXConversionResult so the
-    rate/date/direction can be disclosed in the served trace."""
-    from app.calculators import apply_fx_rates
-    from app.calculators.production_normalization import FX_LIVE_SNAPSHOT_DATE, FX_RATE_SNAPSHOTS
+def convert_incentive_cap_to_usd(
+    cap: IncentiveValueCapRule, fx_context: "CanonicalFXContext | None" = None,
+) -> "tuple[FXConversionResult | None, FXRateResolution]":
+    """The one place a native incentive-value cap is converted to USD.
 
-    rates = FX_RATE_SNAPSHOTS.get(FX_LIVE_SNAPSHOT_DATE, {})
-    return apply_fx_rates.convert_to_usd(
-        cap.cap_native_amount, cap.cap_currency, rates, rate_date=FX_LIVE_SNAPSHOT_DATE,
-    )
+    Codex final P0 (canonical_fx): previously read the mutable global
+    FX_LIVE_SNAPSHOT_DATE/FX_RATE_SNAPSHOTS fresh on every call and
+    called the raising convert_to_usd() — a missing rate raised
+    ValueError, a zero rate raised ZeroDivisionError, and a corrupted
+    negative rate silently produced a negative cap. Now accepts an
+    explicit, immutable fx_context (built once per evaluation via
+    production_normalization.build_fx_context() and threaded down from
+    price_segment()); fx_context=None builds one fresh, single-call
+    context (never a leak across calls). Returns (conversion_or_None,
+    resolution) — the caller MUST check resolution.ok before trusting the
+    conversion; a non-ok resolution means this cap cannot be safely
+    evaluated and the candidate must be treated as non-priceable, never
+    silently uncapped or crashed."""
+    from app.calculators import apply_fx_rates
+    from app.calculators.production_normalization import build_fx_context
+
+    context = fx_context if fx_context is not None else build_fx_context()
+    return apply_fx_rates.convert_to_usd_ctx(cap.cap_native_amount, cap.cap_currency, context)
 
 
 def register_rate_rules(rules: tuple[RateRule, ...]) -> None:
@@ -1622,21 +1722,46 @@ RATE_FAILURE_CONDITIONS_UNMET = "STATUTORY_CONDITIONS_UNMET"
 RATE_FAILURE_AUTHORITY_EXHAUSTED = "AUTHORITY_EXHAUSTED_FAIL_CLOSED"
 
 
-def _fx_native_amount(qpe_usd: float | None, currency: str) -> "tuple[float, float, str] | None":
-    """Converts qpe_usd into `currency` via the real, dated, sourced FX
-    snapshot -- returns (native_amount, rate_used, rate_date) or None
-    when qpe_usd is unknown or the currency has no sourced rate (never a
-    guessed/fabricated conversion in that case)."""
+def _fx_native_amount(
+    qpe_usd: float | None, currency: str, fx_context: "CanonicalFXContext | None" = None,
+) -> "tuple[float, float, str] | None":
+    """Converts qpe_usd into `currency` via an explicit CanonicalFXContext
+    -- returns (native_amount, rate_used, rate_date) or None when qpe_usd
+    is unknown, the currency's rate cannot be safely resolved (missing,
+    non-positive, or the context is flagged stale_fallback), or no
+    fx_context was given and none could be defaulted. Codex final P0
+    (canonical_fx): fx_context=None builds one fresh, single-call context
+    via production_normalization.build_fx_context() -- never a leaked
+    mid-calculation re-read of the mutable global. See
+    _fx_native_amount_resolution() for the full typed disposition when a
+    caller needs to disclose WHY this returned None."""
     if qpe_usd is None:
         return None
-    from app.calculators import apply_fx_rates
-    from app.calculators.production_normalization import FX_LIVE_SNAPSHOT_DATE, FX_RATE_SNAPSHOTS
-
-    rates = FX_RATE_SNAPSHOTS.get(FX_LIVE_SNAPSHOT_DATE, {})
-    if currency.upper() not in rates:
+    result, resolution = _fx_native_amount_resolution(qpe_usd, currency, fx_context)
+    if result is None or not resolution.ok:
         return None
-    result = apply_fx_rates.convert_usd_to_local(qpe_usd, currency, rates, rate_date=FX_LIVE_SNAPSHOT_DATE)
     return result.target_amount, result.rate_used, result.rate_date
+
+
+def _fx_native_amount_resolution(
+    qpe_usd: float | None, currency: str, fx_context: "CanonicalFXContext | None" = None,
+) -> "tuple[FXConversionResult | None, FXRateResolution]":
+    """Full typed disposition backing _fx_native_amount() -- lets a
+    caller (resolve_program_rate()'s disclosure loop) report the EXACT
+    reason a native-currency threshold could not be evaluated (missing
+    rate / non-positive rate / stale-unaccepted snapshot), never a flat
+    unexplained None."""
+    from app.calculators import apply_fx_rates
+    from app.calculators.production_normalization import build_fx_context
+
+    context = fx_context if fx_context is not None else build_fx_context()
+    if qpe_usd is None:
+        return None, apply_fx_rates.FXRateResolution(
+            status=apply_fx_rates.FX_STATUS_MISSING, currency=currency.upper(), rate=None,
+            snapshot_date=context.snapshot_date, source=context.source,
+            detail="QPE is unknown — cannot convert to evaluate this native threshold.",
+        )
+    return apply_fx_rates.convert_usd_to_local_ctx(qpe_usd, currency, context)
 
 
 def _amount_and_boolean_conditions_met(
@@ -1644,6 +1769,7 @@ def _amount_and_boolean_conditions_met(
     amount_facts: dict[str, float] | None,
     evidenced_facts: frozenset[str] | None,
     qpe_usd: float | None = None,
+    fx_context: "CanonicalFXContext | None" = None,
 ) -> bool:
     """Shared tier-eligibility gate for RateCondition.amount_fact_*/
     required_boolean_fact_key/fx_native_* -- used identically by
@@ -1657,7 +1783,12 @@ def _amount_and_boolean_conditions_met(
         if cond.amount_fact_key is not None:
             actual = amounts.get(cond.amount_fact_key)
             if cond.amount_fact_min is not None:
-                if actual is None or actual < cond.amount_fact_min:
+                if actual is None:
+                    return False
+                if cond.amount_fact_min_exclusive:
+                    if actual <= cond.amount_fact_min:
+                        return False
+                elif actual < cond.amount_fact_min:
                     return False
             if cond.amount_fact_max is not None:
                 # A cap is only a violation when a fact IS supplied and
@@ -1669,7 +1800,7 @@ def _amount_and_boolean_conditions_met(
             if cond.required_boolean_fact_key not in evidenced:
                 return False
         if cond.fx_native_currency is not None and cond.fx_native_threshold_amount is not None:
-            converted = _fx_native_amount(qpe_usd, cond.fx_native_currency)
+            converted = _fx_native_amount(qpe_usd, cond.fx_native_currency, fx_context)
             if converted is None or converted[0] < cond.fx_native_threshold_amount:
                 return False
     return True
@@ -1680,6 +1811,7 @@ def classify_rate_resolution_failure(
     *,
     evidenced_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
+    fx_context: "CanonicalFXContext | None" = None,
 ) -> str:
     """Read-only: why did resolve_program_rate() return None? Never called
     unless it already did. Returns RATE_FAILURE_AUTHORITY_EXHAUSTED (the B4
@@ -1698,7 +1830,7 @@ def classify_rate_resolution_failure(
             continue
         if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
             continue
-        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd):
+        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd, fx_context):
             continue
         return RATE_FAILURE_CONDITIONS_UNMET  # defensive: resolve_program_rate should not have returned None here
     return RATE_FAILURE_CONDITIONS_UNMET
@@ -1712,6 +1844,7 @@ def resolve_program_rate(
     *,
     evidenced_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
+    fx_context: "CanonicalFXContext | None" = None,
 ) -> RateResolution | None:
     """
     Resolve the modeled rate for one production from database/statutory
@@ -1755,7 +1888,7 @@ def resolve_program_rate(
             continue
         if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
             continue
-        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd):
+        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd, fx_context):
             continue
         eligible.append(rule)
 
@@ -1763,6 +1896,59 @@ def resolve_program_rate(
         return None
 
     tier = eligible[0]
+
+    # Codex final P0 (us_tx_miip): "Award facts select only maximum 31%"
+    # -- when this tier names an awarded_rate_fact_key, the caller-
+    # supplied EXACT awarded rate (validated against [awarded_rate_min,
+    # awarded_rate_max]) replaces the tier's own static `rate` for every
+    # downstream computation (floor_rate, modeled_rate, incentive
+    # dollars). A missing or out-of-range value does NOT change
+    # eligibility here (preserving the existing "disclosed, pending
+    # confirmation" ceiling semantics for a program with no other
+    # guaranteed floor) -- it instead surfaces as a synthetic condition
+    # below (satisfied=None if missing, satisfied=False if present but
+    # invalid), so the SAME floorless-ceiling fail-closed guard
+    # (allocation_pricing.py: "satisfied is not True") already blocks
+    # pricing until a genuinely valid awarded rate is evidenced.
+    _awarded_rate_value: float | None = None
+    _awarded_rate_condition: "ConditionEvaluation | None" = None
+    if tier.awarded_rate_fact_key is not None:
+        _raw_awarded = (amount_facts or {}).get(tier.awarded_rate_fact_key)
+        if _raw_awarded is None:
+            _awarded_rate_condition = ConditionEvaluation(
+                f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
+                "", kind="awarded_rate_fact", satisfied=None,
+                note=(f"'{tier.awarded_rate_fact_key}' not evidenced — the authorized "
+                      f"rate ceiling ({tier.rate:.0%}) is never assumed to be the actual "
+                      "production-specific awarded rate."),
+                condition_state=CONDITION_STATE_USER_FACT_REQUIRED,
+            )
+        elif (
+            (tier.awarded_rate_min is not None and _raw_awarded < tier.awarded_rate_min)
+            or (tier.awarded_rate_max is not None and _raw_awarded > tier.awarded_rate_max)
+        ):
+            _awarded_rate_condition = ConditionEvaluation(
+                f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
+                "", kind="awarded_rate_fact", satisfied=False,
+                note=(f"'{tier.awarded_rate_fact_key}' = {_raw_awarded:.4f} is outside the "
+                      f"authorized range [{tier.awarded_rate_min}, {tier.awarded_rate_max}] "
+                      "— a malformed or out-of-range awarded rate/tier must reject, never "
+                      "clamp to the ceiling or silently accept."),
+                condition_state=CONDITION_STATE_EXECUTABLE,
+            )
+        else:
+            _awarded_rate_value = _raw_awarded
+            _awarded_rate_condition = ConditionEvaluation(
+                f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
+                "", kind="awarded_rate_fact", satisfied=True,
+                note=(f"'{tier.awarded_rate_fact_key}' = {_raw_awarded:.4f} is within the "
+                      f"authorized range [{tier.awarded_rate_min}, {tier.awarded_rate_max}] — "
+                      "this production's own awarded rate, not the program's authorized ceiling."),
+                condition_state=CONDITION_STATE_EXECUTABLE,
+            )
+        if _awarded_rate_value is not None:
+            tier = replace(tier, rate=_awarded_rate_value)
+
     floor_candidates = [r for r in eligible if not r.is_band_ceiling]
     # A lone band ceiling has NO guaranteed floor. floor_rate still repeats
     # the ceiling so existing arithmetic/disclosure is unchanged, but
@@ -1807,14 +1993,27 @@ def resolve_program_rate(
                 condition_state=CONDITION_STATE_EXECUTABLE,
             ))
         elif cond.kind == "discretionary_band":
-            evaluations.append(ConditionEvaluation(
-                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
-                satisfied=None,
-                note="Cannot be pre-satisfied: the awarded rate within the 'up to' "
-                     "band is set by the authority at approval. The engine models "
-                     "the ceiling; the guaranteed floor is the non-band tier.",
-                condition_state=CONDITION_STATE_AUTHORITY_UNRESOLVED,
-            ))
+            superseding_key = cond.superseded_by_boolean_fact_key
+            if superseding_key is not None and superseding_key in (evidenced_facts or frozenset()):
+                evaluations.append(ConditionEvaluation(
+                    cond.condition_id, cond.description, cond.quote, kind=cond.kind,
+                    satisfied=True,
+                    note=(f"Confirmed by the authoritative awarded-rate fact "
+                          f"'{superseding_key}' — the discretionary criteria this "
+                          "condition documents are the awarding authority's own "
+                          "internal factors, not a separate engine-verifiable gate "
+                          "once the actual award/certificate is evidenced."),
+                    condition_state=CONDITION_STATE_EXECUTABLE,
+                ))
+            else:
+                evaluations.append(ConditionEvaluation(
+                    cond.condition_id, cond.description, cond.quote, kind=cond.kind,
+                    satisfied=None,
+                    note="Cannot be pre-satisfied: the awarded rate within the 'up to' "
+                         "band is set by the authority at approval. The engine models "
+                         "the ceiling; the guaranteed floor is the non-band tier.",
+                    condition_state=CONDITION_STATE_AUTHORITY_UNRESOLVED,
+                ))
         elif cond.kind == "graduated_bracket_applied":
             evaluations.append(ConditionEvaluation(
                 cond.condition_id, cond.description, cond.quote, kind=cond.kind,
@@ -1858,10 +2057,14 @@ def resolve_program_rate(
                         CONDITION_STATE_USER_FACT_REQUIRED,
                     )
                 else:
-                    met = actual >= cond.amount_fact_min
+                    met = (
+                        actual > cond.amount_fact_min if cond.amount_fact_min_exclusive
+                        else actual >= cond.amount_fact_min
+                    )
                     satisfied, state = met, CONDITION_STATE_EXECUTABLE
+                    comparator = "exclusive minimum (strictly above)" if cond.amount_fact_min_exclusive else "minimum"
                     note = (f"'{cond.amount_fact_key}' = {actual:,.2f} vs statutory "
-                            f"minimum {cond.amount_fact_min:,.2f}.")
+                            f"{comparator} {cond.amount_fact_min:,.2f}.")
             else:  # amount_fact_max (a cap): absence discloses, never fails
                 if actual is None:
                     satisfied, note, state = (
@@ -1891,12 +2094,12 @@ def resolve_program_rate(
                 condition_state=CONDITION_STATE_EXECUTABLE if evidenced else CONDITION_STATE_USER_FACT_REQUIRED,
             ))
         elif cond.fx_native_currency is not None and cond.fx_native_threshold_amount is not None:
-            converted = _fx_native_amount(qpe_usd, cond.fx_native_currency)
+            converted = _fx_native_amount(qpe_usd, cond.fx_native_currency, fx_context)
             if converted is None:
+                _, _fx_res = _fx_native_amount_resolution(qpe_usd, cond.fx_native_currency, fx_context)
                 satisfied, note, state = (
                     None,
-                    f"No sourced {cond.fx_native_currency}/USD FX rate on file, or QPE "
-                    "unknown — cannot convert to evaluate this native threshold.",
+                    f"Cannot convert to evaluate this native threshold: {_fx_res.detail}",
                     CONDITION_STATE_AUTHORITY_UNRESOLVED,
                 )
             else:
@@ -1929,6 +2132,9 @@ def resolve_program_rate(
                 cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=satisfied, note=note, condition_state=state,
             ))
+
+    if _awarded_rate_condition is not None:
+        evaluations.append(_awarded_rate_condition)
 
     conflicts: list[RateConflict] = []
     for ber in _BUDGET_RATES_BY_PROGRAM.get(program_slug, ()):

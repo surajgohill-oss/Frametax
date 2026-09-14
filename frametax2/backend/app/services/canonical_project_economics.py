@@ -179,6 +179,19 @@ class ProjectEconomicInputs:
     evidenced_program_facts: frozenset[str] = field(default_factory=frozenset)
     amount_facts: dict[str, float] = field(default_factory=dict)
 
+    #: Codex final P0 (canonical_fx) — the ONE immutable
+    #: apply_fx_rates.CanonicalFXContext this project's WHOLE evaluation
+    #: is priced against, built once by canonical_evaluation.
+    #: evaluate_project() (via production_normalization.build_fx_context())
+    #: and attached here (via dataclasses.replace) so every downstream
+    #: pricing helper that already receives `inputs` can read it without a
+    #: new parameter threaded through every call site individually. None
+    #: means genuinely not yet set (e.g. a caller that builds
+    #: ProjectEconomicInputs directly, bypassing evaluate_project) — every
+    #: FX-consuming call site treats None as "build a fresh, single-call
+    #: context", never as "assume USD 1.0".
+    fx_context: "object | None" = None
+
     @property
     def reconciliation_variance_usd(self) -> float:
         return round(self.leaf_account_sum_usd - self.gross_budget_usd, 2)

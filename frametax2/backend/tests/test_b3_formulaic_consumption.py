@@ -393,14 +393,26 @@ def test_us_or_opif_no_blended_surrogate_disclosed_component_ceilings():
 # an award/allocation fact) ───────────────────────────────────────────────
 
 def test_us_tx_miip_zero_guaranteed_without_allocation_fact():
-    """Codex final-nine remediation (us_tx_miip, P0): "phased tiers and
-    pool not executable" -- the old vague "resident_threshold_met" boolean
-    is replaced by two independent NUMERIC 35% crew/cast gates plus a
-    separate pool-period-validity gate, alongside the pre-existing award
-    gate. All four are gates_tier_eligibility=False (this is a lone
-    floorless ceiling); the floorless-ceiling mechanism in
-    allocation_pricing.py only prices when every condition genuinely
-    evaluates satisfied=True."""
+    """PREVIOUS WEAKNESS (Codex final P0 reverification): this test
+    hardcoded 31% as the served rate once the four pre-existing gates
+    (award, pool period, crew/cast residency) were satisfied, matching
+    Codex's own words ("Texas hardcodes 31%") -- "All four modeled gates
+    force modeled_rate=31%; no awarded-rate/tier value is consumed; award
+    confirmation becomes maximum award." A real Texas award letter states
+    its OWN specific rate up to the 31% statutory ceiling, not always the
+    maximum.
+
+    FIX: RateRule.awarded_rate_fact_key (us_tx_miip_awarded_rate_pct) is
+    a FIFTH, independent condition -- the production's actual awarded
+    rate (validated against [0, 0.31]) now REPLACES the static 31%
+    ceiling for every downstream calculation. This test proves the
+    authoritative economic result at two DIFFERENT below-ceiling awarded
+    rates (24% and 28%), the exact 31% ceiling, and that a missing or
+    out-of-range (35%, above the statutory ceiling) awarded-rate fact
+    correctly fails closed -- this test would FAIL against the prior
+    defective implementation because ANY awarded rate below 31% would
+    still have priced at the hardcoded 31%, and there is no mechanism at
+    all to distinguish 24% from 28% from 31%."""
     from app.data.program_rate_rules import CONDITION_STATE_EXECUTABLE, resolve_program_rate
 
     r = resolve_program_rate("us_tx_miip", production_type="feature_film", qpe_usd=5_000_000.0)
@@ -411,44 +423,79 @@ def test_us_tx_miip_zero_guaranteed_without_allocation_fact():
     assert "us-tx-resident-crew-pct" in ids, "the 35% crew gate must be its own numeric condition"
     assert "us-tx-resident-cast-pct" in ids, "the 35% cast gate must be its own numeric condition"
     assert "us-tx-pool-period-valid" in ids
+    assert "us-tx-ceiling-31-awarded-rate" in ids, "the exact awarded rate/tier must be its own condition"
     for c in r.conditions_evaluated:
         assert c.satisfied is None, "no condition may be silently assumed satisfied"
 
     seg = _probe_segment("us_tx_miip", 5_000_000.0)
     assert seg.executable is False, "no award yields zero guaranteed NPC"
 
-    full_facts = dict(
+    base_facts = dict(
         evidenced_facts=frozenset({"us_tx_miip_award_confirmed", "us_tx_miip_pool_period_valid"}),
         amount_facts={"us_tx_miip_resident_crew_pct": 40.0, "us_tx_miip_resident_cast_pct": 40.0},
     )
 
-    # Codex final runtime remediation: with ALL FOUR facts genuinely
-    # evidenced (award, pool period, and both numeric residency
-    # percentages at or above the 35% statutory minimum), every condition
-    # resolves satisfied=True and the (still floorless) ceiling genuinely
-    # prices — "Award document facts permit specified tier."
-    r_awarded = resolve_program_rate(
-        "us_tx_miip", production_type="feature_film", qpe_usd=5_000_000.0, **full_facts,
+    # Missing awarded-rate fact: every OTHER gate satisfied, but the
+    # exact awarded rate is still unresolved -- must not auto-price at
+    # the statutory ceiling.
+    r_no_awarded_rate = resolve_program_rate(
+        "us_tx_miip", production_type="feature_film", qpe_usd=5_000_000.0, **base_facts,
     )
-    assert r_awarded.modeled_rate == 0.31
-    for c in r_awarded.conditions_evaluated:
-        assert c.satisfied is True
-        assert c.condition_state == CONDITION_STATE_EXECUTABLE
+    assert r_no_awarded_rate is not None
+    awarded_cond = next(c for c in r_no_awarded_rate.conditions_evaluated if c.condition_id == "us-tx-ceiling-31-awarded-rate")
+    assert awarded_cond.satisfied is None
+    seg_no_awarded_rate = _probe_segment("us_tx_miip", 5_000_000.0, **base_facts)
+    assert seg_no_awarded_rate.executable is False, "an unconfirmed exact awarded rate must never auto-price the ceiling"
 
-    seg_awarded = _probe_segment("us_tx_miip", 5_000_000.0, **full_facts)
-    assert seg_awarded.executable is True
-    assert seg_awarded.incentive_floor_usd == 5_000_000.0 * 0.31
+    # Two DIFFERENT below-ceiling awarded rates must each price their OWN
+    # exact rate, never the 31% maximum.
+    for awarded_pct, expected_incentive in ((0.24, 1_200_000.0), (0.28, 1_400_000.0)):
+        facts = dict(base_facts)
+        facts["amount_facts"] = dict(base_facts["amount_facts"], us_tx_miip_awarded_rate_pct=awarded_pct)
+        r_awarded = resolve_program_rate(
+            "us_tx_miip", production_type="feature_film", qpe_usd=5_000_000.0, **facts,
+        )
+        assert r_awarded.modeled_rate == pytest.approx(awarded_pct), (
+            f"the production's own awarded rate ({awarded_pct:.0%}) must be consumed, never the 31% ceiling"
+        )
+        for c in r_awarded.conditions_evaluated:
+            assert c.satisfied is True
+            assert c.condition_state == CONDITION_STATE_EXECUTABLE
+
+        seg_awarded = _probe_segment("us_tx_miip", 5_000_000.0, **facts)
+        assert seg_awarded.executable is True
+        assert seg_awarded.incentive_floor_usd == pytest.approx(expected_incentive), (
+            f"5,000,000 x {awarded_pct:.0%} = {expected_incentive:,.2f}, not the 31% maximum"
+        )
+
+    # The exact 31% ceiling itself must also still be a valid awarded rate.
+    facts_ceiling = dict(base_facts)
+    facts_ceiling["amount_facts"] = dict(base_facts["amount_facts"], us_tx_miip_awarded_rate_pct=0.31)
+    seg_ceiling = _probe_segment("us_tx_miip", 5_000_000.0, **facts_ceiling)
+    assert seg_ceiling.executable is True
+    assert seg_ceiling.incentive_floor_usd == pytest.approx(5_000_000.0 * 0.31)
+
+    # A malformed/out-of-authorized-range awarded rate (above the 31%
+    # statutory ceiling) must reject, never clamp to 31%.
+    facts_malformed = dict(base_facts)
+    facts_malformed["amount_facts"] = dict(base_facts["amount_facts"], us_tx_miip_awarded_rate_pct=0.35)
+    seg_malformed = _probe_segment("us_tx_miip", 5_000_000.0, **facts_malformed)
+    assert seg_malformed.executable is False, "an awarded rate above the 31% statutory ceiling must reject, never clamp"
 
     # A genuine numeric FAILURE (crew residency below the 35% statutory
     # minimum) must correctly block pricing even with every other fact
-    # satisfied -- this proves the allocation_pricing.py floorless-ceiling
-    # guard checks `satisfied is not True`, not merely `satisfied is None`
-    # (a bug fixed in this remediation: a definite False was previously
-    # never distinguished from an unresolved None).
+    # (including a valid awarded rate) satisfied -- this proves the
+    # allocation_pricing.py floorless-ceiling guard checks `satisfied is
+    # not True`, not merely `satisfied is None` (a bug fixed in this
+    # remediation: a definite False was previously never distinguished
+    # from an unresolved None).
     seg_crew_fails = _probe_segment(
         "us_tx_miip", 5_000_000.0,
         evidenced_facts=frozenset({"us_tx_miip_award_confirmed", "us_tx_miip_pool_period_valid"}),
-        amount_facts={"us_tx_miip_resident_crew_pct": 20.0, "us_tx_miip_resident_cast_pct": 40.0},
+        amount_facts={
+            "us_tx_miip_resident_crew_pct": 20.0, "us_tx_miip_resident_cast_pct": 40.0,
+            "us_tx_miip_awarded_rate_pct": 0.28,
+        },
     )
     assert seg_crew_fails.executable is False, "20% resident crew < 35% statutory minimum must reject"
 
@@ -491,7 +538,7 @@ def test_za_nfvf_rebate_prices_independently_of_za_dtic_foreign_film():
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
 
     cap = get_incentive_value_cap("za_nfvf_rebate")
-    cap_usd = convert_incentive_cap_to_usd(cap).target_amount
+    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
     assert cap.cap_currency == "ZAR" and cap.cap_native_amount == 25_000_000.0
 
     large_qpe = (cap_usd / 0.25) * 2  # comfortably over the cap once rated at 25%

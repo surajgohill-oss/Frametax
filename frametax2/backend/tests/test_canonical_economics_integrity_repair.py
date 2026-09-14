@@ -422,13 +422,13 @@ def test_dollar_cap_resolver_prefers_the_smallest_applicable_cap():
     provenance must be named -- never an invented ceiling."""
     from app.calculators.allocation_pricing import _resolve_incentive_dollar_cap
 
-    cap, kind, basis = _resolve_incentive_dollar_cap("cy_film_rebate")
+    cap, kind, basis, _fx_err = _resolve_incentive_dollar_cap("cy_film_rebate")
     assert cap == pytest.approx(650_000.0)
     assert kind == "per_project"
     assert "per_project_cap_usd" in basis
 
     # A program with no declared dollar cap must report absence, not zero.
-    cap, kind, basis = _resolve_incentive_dollar_cap("gr_cash_rebate")
+    cap, kind, basis, _fx_err = _resolve_incentive_dollar_cap("gr_cash_rebate")
     assert cap is None and kind is None and basis is None
 
 
@@ -483,7 +483,7 @@ def test_no_priced_segment_ever_exceeds_its_own_declared_dollar_cap():
     for slug in _RULES_BY_PROGRAM:
         if blocks_economic_candidacy(slug):
             continue
-        cap, _, _ = _resolve_incentive_dollar_cap(slug)
+        cap, _, _, _fx_err = _resolve_incentive_dollar_cap(slug)
         if not cap:
             continue
         seg = _probe_segment_amount(slug, 500_000_000.0)

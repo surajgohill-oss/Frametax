@@ -123,8 +123,17 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
         # about keeping in sync; must carry the identical
         # discretionary_policy_facts evaluate_project() itself uses.
         discretionary_policy_facts = await _discretionary_policy_facts(session, project.id)
+        # Codex final P0 (canonical_fx) — same fix as canonical_evaluation.
+        # current_generation_fingerprint(): evaluate_project() attaches a
+        # freshly-built fx_context to `inputs` before computing its
+        # fingerprint (fx_snapshot_date is now part of the payload), so
+        # this THIRD read-only reconstruction must attach the identical
+        # context or it silently diverges.
+        import dataclasses
+        from app.calculators.production_normalization import build_fx_context
+        econ_inputs = dataclasses.replace(econ.inputs, fx_context=build_fx_context())
         fingerprint = _compute_fingerprint(
-            econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
+            econ_inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,
             excluded_jurisdiction_codes=excluded_jurisdiction_codes,
             discretionary_policy_facts=discretionary_policy_facts,

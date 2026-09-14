@@ -43,8 +43,33 @@ from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
+    _QUALIFICATION_ADMITS_PRICING,
     _QUALIFICATION_ADMITS_RECOMMENDED,
 )
+
+#: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
+#: PART C / leading conditional recommendation) -- the qualification
+#: states that are BOTH priced (_QUALIFICATION_ADMITS_PRICING) AND NOT
+#: already resolved (_QUALIFICATION_ADMITS_RECOMMENDED): CURABLE_GAP,
+#: USER_FACT_REQUIRED, SCRIPT_FACT_REQUIRED, AUTHORITY_UNRESOLVED,
+#: RULE_DATA_INCOMPLETE. Each of these names a real, evidence-based,
+#: genuinely UNLOCKABLE reason a candidate cannot yet be recommended --
+#: never a hard ineligibility (QUAL_HARD_FAIL is excluded entirely from
+#: _QUALIFICATION_ADMITS_PRICING and so never reaches this set) and never
+#: the SEPARATE, permanent, program-level authority-insufficient veto
+#: (candidate_status STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT is
+#: is_fully_priced=False, structurally excluded from this pool already --
+#: see _recommendation_category's own docstring for why that is a
+#: DIFFERENT "authority" concept from QUAL_AUTHORITY_UNRESOLVED).
+_CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES = frozenset(
+    _QUALIFICATION_ADMITS_PRICING - _QUALIFICATION_ADMITS_RECOMMENDED
+)
+
+REC_VERIFIED_RECOMMENDATION = "VERIFIED_RECOMMENDATION"
+REC_LEADING_CONDITIONAL = "LEADING_CONDITIONAL"
+REC_UNLOCKABLE_ALTERNATIVE = "UNLOCKABLE_ALTERNATIVE"
+REC_REJECTED = "REJECTED"
+REC_AUTHORITY_UNRESOLVED_FAIL_CLOSED = "AUTHORITY_UNRESOLVED_FAIL_CLOSED"
 
 # Production Page Integrity: the SAME leading-account-code convention
 # canonical_project_economics.py's own _ACCOUNT_CODE_RE already uses to
@@ -554,6 +579,37 @@ def _qualification_admits_recommended(entry: dict) -> bool:
     return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
 
 
+def _is_conditional_eligible(entry: dict) -> bool:
+    """Codex final P0 (leading conditional recommendation) — the exact
+    predicate for membership in the LEADING_CONDITIONAL/UNLOCKABLE_
+    ALTERNATIVE pool. True only for a candidate that is:
+      1. is_fully_priced (calculable, evidence-supported economics —
+         requirement 2) — a HARD_FAIL candidate never reaches
+         is_fully_priced=True at all (QUAL_HARD_FAIL is excluded from
+         _QUALIFICATION_ADMITS_PRICING in canonical_evaluation.py), so
+         this alone already satisfies requirement 3 (never legally
+         ineligible).
+      2. is_directly_comparable (the SAME base pool `comparable` uses —
+         requirement 1: same optimizer objective/ranking basis).
+      3. role_qualification.state is a genuine, explicit, still-
+         unresolved-but-priced state (requirement 5: blocked only by an
+         explicit user fact / qualification step / discretionary
+         approval / other unlockable requirement) -- deliberately
+         EXCLUDES a None state (no role_qualification data at all is NOT
+         "blocked by an explicit unlockable requirement"; that candidate
+         either already admits Recommended, per _qualification_admits_
+         recommended, or is excluded by is_directly_comparable already).
+    A retired, stale, or authority-vetoed program's candidate is
+    is_fully_priced=False (STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT /
+    RULE_REJECTED / etc. — see canonical_evaluation.py's B4 central
+    authority gate), so it never reaches this predicate at all
+    (requirement 4)."""
+    if not entry.get("is_fully_priced") or not entry.get("is_directly_comparable"):
+        return False
+    state = (entry.get("role_qualification") or {}).get("state")
+    return state in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES
+
+
 def _scenario_category(entry: dict, rank: int | None) -> str:
     """Deterministic, single-signal-source category. Precedence:
     1. A registered treaty co-production instrument is attached
@@ -765,23 +821,110 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     )
     unpriced = [e for e in structure_entries if not e["is_fully_priced"]]
 
+    # Codex final P0 (leading conditional recommendation) — a project
+    # with MANY priced candidates but NO verified winner (comparable is
+    # empty) previously exposed nothing beyond "no recommendation exists"
+    # even when a real, priced, is_directly_comparable candidate is
+    # blocked ONLY by an explicitly-identified, genuinely unlockable
+    # qualification state (a user fact, a curable gap, an authority-
+    # research residual — never a hard ineligibility, a retired/fail-
+    # closed/authority-vetoed program, or a merely-not-yet-regionally-
+    # normalized relocation candidate). This pool uses the EXACT SAME
+    # comparability gate (`is_directly_comparable`) and the EXACT SAME
+    # ranking objective (`npc_with_adjustments_usd` ascending) `comparable`
+    # itself uses — the only thing relaxed is `_qualification_admits_
+    # recommended`, replaced with the qualification states that are both
+    # priced AND still genuinely unresolved
+    # (_CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES). Deliberately surfaced
+    # ONLY when no verified winner exists (`not comparable`) — Bad
+    # Hombres/Lips Like Sugar, which DO have a verified winner, must never
+    # also show a competing "leading conditional" option.
+    conditional_pool = (
+        sorted(
+            (e for e in structure_entries if _is_conditional_eligible(e)),
+            key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
+        )
+        if not comparable else []
+    )
+    _leading_conditional_id = conditional_pool[0]["structure_id"] if conditional_pool else None
+    _unlockable_alternative_ids = {e["structure_id"] for e in conditional_pool[1:]}
+
     ranking: list[dict] = []
     for i, e in enumerate(comparable, start=1):
         e["scenario_category"] = _scenario_category(e, rank=i)
         r = _ranking_entry(e)
         r["rank"] = i
         r["scenario_category"] = e["scenario_category"]
+        r["recommendation_category"] = REC_VERIFIED_RECOMMENDATION
         ranking.append(r)
     for e in review_required:
         e["scenario_category"] = _scenario_category(e, rank=None)
         r = _ranking_entry(e)
         r["scenario_category"] = e["scenario_category"]
+        r["recommendation_category"] = (
+            REC_LEADING_CONDITIONAL if e["structure_id"] == _leading_conditional_id
+            else REC_UNLOCKABLE_ALTERNATIVE if e["structure_id"] in _unlockable_alternative_ids
+            else None  # ALTERNATIVE/PRICED_LOW_FIT for a reason outside this 5-category scheme
+        )
         ranking.append(r)
     for e in unpriced:
         e["scenario_category"] = _scenario_category(e, rank=None)
         r = _ranking_entry(e)
         r["scenario_category"] = e["scenario_category"]
+        r["recommendation_category"] = (
+            REC_AUTHORITY_UNRESOLVED_FAIL_CLOSED
+            if e.get("candidate_status") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+            else REC_REJECTED
+        )
         ranking.append(r)
+
+    def _blocking_requirements(entry: dict) -> list[str]:
+        rq = entry.get("role_qualification") or {}
+        reqs = list(rq.get("missing_facts") or ()) + list(rq.get("curable_requirements") or ())
+        return reqs or [
+            f"Qualification state '{rq.get('state')}' must be resolved before this "
+            "structure can become a verified recommendation."
+        ]
+
+    def _conditional_entry(entry: dict, next_alternative: dict | None) -> dict:
+        rq = entry.get("role_qualification") or {}
+        why_ranked_first = (
+            (f"Lower estimated NPC (${entry['npc_with_adjustments_usd']:,.2f}) than the next "
+             f"unlockable alternative (${next_alternative['npc_with_adjustments_usd']:,.2f}) "
+             "under the same optimizer ranking objective used for verified winners.")
+            if next_alternative is not None and entry["npc_with_adjustments_usd"] is not None
+            and next_alternative["npc_with_adjustments_usd"] is not None
+            else "No other unlockable alternative currently exists in this project's candidate universe."
+        )
+        return {
+            "structure_id": entry["structure_id"],
+            "label": entry["label"],
+            "structure_type": entry.get("structure_type"),
+            "program_slug": entry.get("program_slug"),
+            "program_slugs": entry.get("program_slugs"),
+            "primary_jurisdiction": entry.get("primary_jurisdiction"),
+            # Named "estimated", never "verified"/"guaranteed" — Requirement 9.
+            "estimated_incentive_usd": entry["selected_incentive_usd"],
+            "estimated_npc_usd": entry["npc_with_adjustments_usd"],
+            "qualification_state": rq.get("state"),
+            "qualification_route": rq.get("qualification_route"),
+            "blocking_requirements": _blocking_requirements(entry),
+            "why_ranked_first": why_ranked_first,
+            "risk_disclosure": (
+                "LEADING CONDITIONAL recommendation, not a verified winner. Its incentive is "
+                "an ESTIMATE, never guaranteed or verified, until every blocking requirement "
+                "above is resolved. Recomputes automatically when this project's facts change."
+            ),
+        }
+
+    leading_conditional_structure = (
+        _conditional_entry(conditional_pool[0], conditional_pool[1] if len(conditional_pool) > 1 else None)
+        if conditional_pool else None
+    )
+    unlockable_alternatives = [
+        _conditional_entry(e, conditional_pool[i + 2] if i + 2 < len(conditional_pool) else None)
+        for i, e in enumerate(conditional_pool[1:])
+    ]
 
     # Final non-Globe closeout, Item A — canonical scenario-selection
     # source. Codex found Reports.jsx reading ONLY rank==1 while
@@ -1031,6 +1174,14 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             # Workspace, Reports) must resolve to when no producer override
             # is active. None only when no structure is fully priced yet.
             "canonical_selected_structure_id": canonical_selected_structure_id,
+            # Codex final P0 (leading conditional recommendation) — see
+            # the conditional_pool comment above `ranking`'s own build
+            # loop. None whenever a verified winner already exists
+            # (canonical_selected_structure_id is not None) or no
+            # is_directly_comparable priced candidate is blocked only by
+            # a genuinely unlockable qualification state.
+            "leading_conditional_structure": leading_conditional_structure,
+            "unlockable_alternatives": unlockable_alternatives,
             "stack_combinations": {},
             "advisor_routing_decisions_input": {},
             # Restoration-phase candidate accounting, matching the earlier

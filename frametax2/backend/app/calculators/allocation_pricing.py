@@ -50,7 +50,7 @@ No LLM calls. Deterministic and testable.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace as _dataclasses_replace
 
 from app.calculators import treaty_engine as te
 from app.calculators.optimization_engine import RiskCase, build_risk_cases
@@ -255,7 +255,9 @@ def _segment_lines(
 
 
 
-def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, str | None]:
+def _resolve_incentive_dollar_cap(
+    slug: str, fx_context=None, amount_facts: dict[str, float] | None = None,
+) -> tuple[float | None, str | None, str | None, "object | None"]:
     """The binding DOLLAR cap on one production's incentive for `slug`.
 
     Three canonical sources exist and mean different things:
@@ -280,8 +282,15 @@ def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, 
         reject-only check.
 
     The binding cap is the smallest applicable one. Returns
-    (cap_usd, cap_type, basis) or (None, None, None) when the program
-    declares no dollar cap -- absence, never an invented ceiling.
+    (cap_usd, cap_type, basis, fx_error) or (None, None, None, None) when
+    the program declares no dollar cap -- absence, never an invented
+    ceiling. fx_error is a non-None apply_fx_rates.FXRateResolution ONLY
+    when a native-currency cap (IncentiveValueCapRule) exists but its FX
+    conversion could not be safely resolved (Codex final P0 canonical_fx
+    -- missing/non-positive rate or a stale_fallback context) — the
+    caller MUST treat that as fail-closed/non-priceable, never silently
+    drop the cap (which would let an over-cap incentive through
+    uncapped) and never crash.
     """
     from app.data.executable_jurisdiction_registry import get_doctrine
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
@@ -317,18 +326,45 @@ def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, 
 
     native_cap = get_incentive_value_cap(slug)
     if native_cap is not None:
-        conversion = convert_incentive_cap_to_usd(native_cap)
+        effective_cap = native_cap
+        cap_basis_suffix = ""
+        # Codex final P0 (nl_film_production_incentive): a PER-COMPANY
+        # PER-PERIOD cap must consume prior awards already granted this
+        # SAME period to this SAME company's OTHER productions, so two
+        # projects for one company cannot jointly exceed the shared
+        # ceiling. Absence of the fact means no prior-award aggregate is
+        # on file for this company this period -- the full native cap
+        # applies to this project in isolation (disclosed, never a
+        # fabricated aggregate).
+        if native_cap.company_period_prior_award_fact_key is not None:
+            prior_awards = (amount_facts or {}).get(native_cap.company_period_prior_award_fact_key)
+            if prior_awards is not None and prior_awards > 0:
+                remaining = max(0.0, native_cap.cap_native_amount - prior_awards)
+                effective_cap = _dataclasses_replace(native_cap, cap_native_amount=remaining)
+                cap_basis_suffix = (
+                    f", less {native_cap.cap_currency} {prior_awards:,.0f} already granted "
+                    f"this period to this company's other productions -> {native_cap.cap_currency} "
+                    f"{remaining:,.0f} remaining"
+                )
+        conversion, fx_resolution = convert_incentive_cap_to_usd(effective_cap, fx_context)
+        if not fx_resolution.ok:
+            # Fail closed: a native-currency cap exists but cannot be
+            # safely converted (missing/non-positive rate, or the
+            # context is flagged stale_fallback). Never silently drop
+            # the cap (fail-open, letting an over-cap incentive through
+            # uncapped) and never let a raised exception escape.
+            return None, None, None, fx_resolution
         candidates.append((
             round(conversion.target_amount, 2), "per_project_native",
             f"IncentiveValueCapRule ({native_cap.cap_currency} "
             f"{native_cap.cap_native_amount:,.0f} @ {conversion.rate_used} "
-            f"{native_cap.cap_currency}/USD, {conversion.rate_date})",
+            f"{native_cap.cap_currency}/USD, {conversion.rate_date}){cap_basis_suffix}",
         ))
 
     if not candidates:
-        return None, None, None
+        return None, None, None, None
     cap_usd, cap_type, basis = min(candidates, key=lambda c: c[0])
-    return cap_usd, cap_type, basis
+    return cap_usd, cap_type, basis, None
 
 
 def price_segment(
@@ -344,6 +380,7 @@ def price_segment(
     contingency_expected_utilization_pct: float | None = None,
     evidenced_requirement_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
+    fx_context=None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -500,7 +537,7 @@ def price_segment(
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
                                gross_budget_usd=gross_budget_usd,
                                evidenced_facts=evidenced_requirement_facts,
-                               amount_facts=amount_facts)
+                               amount_facts=amount_facts, fx_context=fx_context)
 
     # A CEILING IS A LIMIT, NEVER A GUARANTEED RATE. When a program's only
     # tiers are band ceilings there is no statutory floor to fall back on,
@@ -767,7 +804,30 @@ def price_segment(
     # rate so the cap can never be mistaken for a base or a rate, and to
     # BOTH the floor and ceiling figures so a capped program cannot present
     # an uncapped upside. The pre-cap amount is preserved for audit.
-    cap_usd, cap_type, cap_basis = _resolve_incentive_dollar_cap(slug)
+    cap_usd, cap_type, cap_basis, cap_fx_error = _resolve_incentive_dollar_cap(slug, fx_context, amount_facts)
+    if cap_fx_error is not None:
+        # Codex final P0 (canonical_fx): a native-currency cap exists for
+        # this program but its FX conversion could not be safely
+        # resolved (missing/non-positive rate, or a stale_fallback
+        # context). Fail closed -- disclosed, non-priceable -- rather
+        # than silently drop the cap (fail-open) or let a raised
+        # exception escape.
+        return SegmentEconomics(
+            jurisdiction_code=jurisdiction_code, program_slug=slug,
+            claims_incentive=True, allocated_usd=allocated,
+            account_codes=codes, executable=False,
+            qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+            doctrine=doctrine.value,
+            qpe_cap_applied_usd=qpe_cap_applied,
+            rate_ceiling=rr.modeled_rate, statutory_basis=rr.basis,
+            blockers=(
+                f"{jurisdiction_code}/{slug}: this program's native-currency incentive "
+                f"cap cannot be safely converted to USD ({cap_fx_error.status}: "
+                f"{cap_fx_error.detail}). A genuinely unsafe FX disposition must never "
+                "silently uncap the incentive or crash the request -- segment is "
+                "allocated and disclosed but carries NO deterministic incentive value.",
+            ),
+        )
     incentive_uncapped_usd = None
     incentive_cap_applied = 0.0
     cap_notes: tuple[str, ...] = ()
@@ -895,6 +955,7 @@ def price_allocated_structure(
     contingency_expected_utilization_pct: float | None = None,
     evidenced_requirement_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
+    fx_context=None,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
@@ -918,7 +979,19 @@ def price_allocated_structure(
     contingency_expected_utilization_pct (Consolidated Backend
     Correction, Part 19-20 / CBA-009): passed through to every segment's
     price_segment call — see its docstring. Omitted (None) = genuinely
-    unset, disclosed as a grey area rather than assumed."""
+    unset, disclosed as a grey area rather than assumed.
+
+    fx_context (Codex final P0, canonical_fx): the ONE immutable
+    CanonicalFXContext this ENTIRE structure is priced against — built
+    once per canonical evaluation (see canonical_evaluation.evaluate_
+    project) and passed straight through to every segment's price_segment
+    call, never re-read from the mutable global mid-structure. Distinct
+    from fx_delta_usd/fx_basis above, which model a SCENARIO exchange-
+    rate movement delta on relocation/travel costs (production_
+    normalization.compute_fx_normalization) — a different, pre-existing
+    mechanism this parameter does not touch. Omitted (None) = each
+    segment builds its own single-call context (safe, just not pinned
+    across the whole structure)."""
     blockers: list[str] = list()
     notes: list[str] = []
 
@@ -974,6 +1047,7 @@ def price_allocated_structure(
             contingency_expected_utilization_pct=contingency_expected_utilization_pct,
             evidenced_requirement_facts=evidenced_requirement_facts,
             amount_facts=amount_facts,
+            fx_context=fx_context,
         )
         segments.append(seg)
         blockers.extend(seg.blockers)

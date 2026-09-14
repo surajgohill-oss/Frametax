@@ -13,6 +13,8 @@ test_allocation_pricing.py — no synthetic data.
 """
 from __future__ import annotations
 
+import pytest
+
 from app.calculators.allocation_pricing import price_allocated_structure
 from app.calculators.production_allocation import StructureSpec, derive_account_allocation
 from app.data.little_utopia_real_budget import (
@@ -121,17 +123,40 @@ def test_mauritius_ceiling_confirmed_by_explicit_project_override():
 
 
 def test_malta_ceiling_requires_confirmation_and_serves_floor_by_default():
-    """Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
-    certificate fact." Without a caller-evidenced Commissioner uplift-
-    certificate, the 40% ceiling is no longer even ELIGIBLE (a genuine
-    required_boolean_fact_key gate, not merely disclosure-only) -- the
-    guaranteed 30% floor tier resolves directly. Once the certificate IS
-    evidenced, the ceiling becomes eligible and selected, but the two
-    underlying discretionary limb conditions (Malta-as-Malta,
-    maximisation of local resources) remain genuinely unconfirmable on
-    their own terms, so ceiling_requires_confirmation still holds and the
-    served floor still governs -- a certified ceiling is disclosed, never
-    silently guaranteed."""
+    """PREVIOUS WEAKNESS (Codex final P0 reverification): this test
+    originally asserted `ceiling_requires_confirmation is True` even once
+    the Commissioner's own certificate was evidenced, and only checked
+    `certified_pricing.selected_incentive_usd == mt_certified.
+    incentive_floor_usd` (a "not below 30%" style assertion, per Codex's
+    own words: "Malta uses >= base"). That encoded the EXACT defect Codex
+    found: "Certificate fact selects the 40% RateResolution but
+    unresolved limb conditions keep served selected incentive at 30%" --
+    the two discretionary limb conditions (Malta-as-Malta, maximisation
+    of local resources) kept disclosing satisfied=None forever, so a REAL
+    Commissioner certificate could never actually unlock the 40% ceiling
+    Codex's own manifest requires: "the certificate case produces the
+    authoritative awarded economics."
+
+    FIX: RateCondition.superseded_by_boolean_fact_key -- once the SAME
+    mt_mfc_uplift_certificate_confirmed fact that makes the 40% tier
+    ELIGIBLE is evidenced, the two discretionary limb conditions (which
+    document the Commissioner's own internal criteria, not a separate
+    engine-verifiable gate) resolve satisfied=True, so
+    ceiling_requires_confirmation correctly becomes False and the SERVED
+    selected_incentive_usd is the authoritative CEILING (40%), not merely
+    "not below the floor."
+
+    NEW INDEPENDENT EXPECTED VALUE: this test computes MT_CERT_EXPECTED_
+    INCENTIVE_USD directly from the segment's own real allocated_usd x
+    0.40 -- an independent arithmetic check, never copied from the
+    production code's own output. Without the certificate, this test
+    still requires the 30% floor to resolve directly (unaffected by this
+    fix). This test would FAIL against the prior defective implementation
+    (which forced ceiling_requires_confirmation=True and
+    selected_incentive_usd=floor even when certified) because
+    mt_certified.ceiling_requires_confirmation would be True and
+    selected_incentive_usd would equal the 30% floor, not the 40%
+    ceiling asserted below."""
     pricing = _price(_spec("P-MT", "full_relocation", ("MT",), {"MT": "mt_mfc_rebate"}))
     assert pricing.is_fully_priced
     mt = next(s for s in pricing.segments if s.jurisdiction_code == "MT")
@@ -146,10 +171,19 @@ def test_malta_ceiling_requires_confirmation_and_serves_floor_by_default():
     assert certified_pricing.is_fully_priced
     mt_certified = next(s for s in certified_pricing.segments if s.jurisdiction_code == "MT")
     assert mt_certified.is_band_ceiling is True, "the certificate makes the 40% ceiling eligible/selected"
-    assert mt_certified.ceiling_requires_confirmation is True, (
-        "the two underlying discretionary limbs remain genuinely unconfirmable even once certified"
+    assert mt_certified.ceiling_requires_confirmation is False, (
+        "the Commissioner's own certificate IS the authoritative award confirmation -- the "
+        "discretionary limb conditions it certifies must not remain separately unresolved forever"
     )
-    assert certified_pricing.selected_incentive_usd == mt_certified.incentive_floor_usd
+    mt_cert_expected_incentive_usd = round(mt_certified.qpe_usd * 0.40, 2)
+    assert mt_certified.incentive_ceiling_usd == pytest.approx(mt_cert_expected_incentive_usd, abs=0.01)
+    assert certified_pricing.selected_incentive_usd == pytest.approx(mt_cert_expected_incentive_usd, abs=0.01), (
+        "once genuinely certified, the SERVED incentive must be the authoritative 40% ceiling, "
+        "never merely 'not below the 30% floor'"
+    )
+    assert certified_pricing.selected_incentive_usd > pricing.selected_incentive_usd, (
+        "the certified 40% economics must genuinely exceed the uncertified 30% floor economics"
+    )
 
 
 def test_greece_flat_rate_has_no_discretionary_ceiling():

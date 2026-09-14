@@ -780,6 +780,13 @@ def _compute_fingerprint(
         # the pre-change persisted structures forever.
         "evidenced_program_facts": sorted(inputs.evidenced_program_facts),
         "amount_facts": sorted(inputs.amount_facts.items()),
+        # Codex final P0 (canonical_fx) — a change to the project-selected
+        # FX snapshot date (e.g. a live refresh moving FX_LIVE_SNAPSHOT_
+        # DATE forward) must invalidate any stale cached evaluation row,
+        # same reasoning as evidenced_program_facts/amount_facts directly
+        # above — a native-currency threshold/cap resolved under an older
+        # snapshot must not silently keep serving the pre-refresh figures.
+        "fx_snapshot_date": inputs.fx_context.snapshot_date if inputs.fx_context is not None else None,
         # Batched producer-control closeout (2026-09-03) -- a change to
         # which jurisdictions this PROJECT elects to exclude from its own
         # candidate universe must invalidate any stale cached evaluation
@@ -1015,6 +1022,7 @@ def _price_candidate(
     rr = resolve_program_rate(
         program_slug, production_type=inputs.production_type, qpe_usd=qpe,
         evidenced_facts=inputs.evidenced_program_facts, amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
     )
     if rr is None:
         return None, register_probe, None
@@ -1075,6 +1083,7 @@ def _price_candidate(
         # every program without such a condition.
         evidenced_requirement_facts=inputs.evidenced_program_facts,
         amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
     )
     return pricing, register, rr
 
@@ -1439,6 +1448,7 @@ def _price_component_relocation_candidate(
         # every program without such a condition.
         evidenced_requirement_facts=inputs.evidenced_program_facts,
         amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
     )
     return spec, allocation, pricing
 
@@ -2095,6 +2105,24 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         )
         return {"status": status, "blockers": econ.blockers}
     inputs = econ.inputs
+
+    # Codex final P0 (canonical_fx) — ONE immutable, project-selected FX
+    # context built here, ONCE, for this entire evaluation run, and
+    # threaded through every price_allocated_structure() call below
+    # (which threads it into every segment's price_segment()). Previously
+    # each cap/native-threshold conversion re-imported and re-read the
+    # mutable production_normalization.FX_LIVE_SNAPSHOT_DATE/
+    # FX_RATE_SNAPSHOTS globals at an arbitrary point during its own
+    # calculation — if a live FX refresh (app/services/fx_refresh.py)
+    # mutated that global mid-evaluation, two candidates in the SAME
+    # served result could silently be priced against two different
+    # snapshots. Building it once here and passing it explicitly makes
+    # "one evaluation, one snapshot" true by construction, never by
+    # convention.
+    import dataclasses
+    from app.calculators.production_normalization import build_fx_context
+    fx_context = build_fx_context()
+    inputs = dataclasses.replace(inputs, fx_context=fx_context)
 
     # Fresh Project Source-Document Ingestion: the retroactive counterpart
     # to material_routing._route_screenplay's commit-time script analysis
@@ -3903,8 +3931,20 @@ async def current_generation_fingerprint(session, project_id) -> str | None:
         coproduction_facts = await _coproduction_facts(session, project_id)
         excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project_id))
         discretionary_policy_facts = await _discretionary_policy_facts(session, project_id)
+        # Codex final P0 (canonical_fx) — evaluate_project() attaches a
+        # freshly-built fx_context to `inputs` (via dataclasses.replace)
+        # before computing ITS fingerprint, and that context's
+        # snapshot_date is now part of the fingerprint payload (see
+        # _compute_fingerprint). This read-only reconstruction MUST do
+        # the exact same attachment, or it computes a DIFFERENT
+        # fingerprint than evaluate_project() persisted rows under —
+        # exactly the "two views, two fingerprints" divergence this
+        # function's own docstring exists to prevent.
+        import dataclasses
+        from app.calculators.production_normalization import build_fx_context
+        econ_inputs = dataclasses.replace(econ.inputs, fx_context=build_fx_context())
         fingerprint = _compute_fingerprint(
-            econ.inputs, role_known_codes=role_known_codes, script_facts=script_facts,
+            econ_inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,
             excluded_jurisdiction_codes=excluded_jurisdiction_codes,
             discretionary_policy_facts=discretionary_policy_facts,
