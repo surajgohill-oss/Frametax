@@ -386,6 +386,30 @@ def _resolve_incentive_dollar_cap(
                     "project's production_company_identifier and target_shoot_year to "
                     "resolve."
                 )
+            # Codex final four-row remediation (P0-NL-001, fourth pass):
+            # "Sibling existence with unknown award evidence remains
+            # unresolved and no full cap is asserted." A sibling Project
+            # existing is not itself proof of an award (it could be
+            # unevaluated, in progress, or simply never recorded) -- so
+            # before has_other_productions is trusted at all, sibling
+            # coverage must be confirmed COMPLETE: either no siblings
+            # exist at all (vacuously complete), or siblings exist and
+            # the incentive award ledger has at least one recorded row
+            # for every one of them this exact period/program. Absence
+            # of this fact -- with identity already known -- means a
+            # sibling's award status is genuinely unresolved and must
+            # fail closed, never silently default to a full cap.
+            coverage_key = native_cap.company_period_sibling_coverage_complete_fact_key
+            if coverage_key is not None and coverage_key not in evidenced:
+                return None, None, None, None, (
+                    f"{native_cap.program_slug}: this company has other productions "
+                    "on file that may share this per-company-per-period cap, but the "
+                    "incentive award ledger has not been checked or recorded for at "
+                    "least one of them this award period -- sibling coverage is "
+                    "unresolved. A sibling production's unknown award status is never "
+                    "treated as zero or silently ignored; record its real award status "
+                    "in the incentive award ledger to resolve."
+                )
             has_other_key = native_cap.company_period_has_other_productions_fact_key
             has_other_productions = has_other_key is not None and has_other_key in evidenced
             if has_other_productions:
@@ -805,7 +829,20 @@ def price_segment(
             ) + cap_blocker,
         )
 
-    if rr.qpe_basis_used is not None:
+    if rr.composite_incentive_usd is not None:
+        # Codex final four-row remediation (P0-OR-001, fourth pass):
+        # Oregon's ONE composite calculation (payroll_QPE x 20% +
+        # other_QPE x 25%) was already computed, in full, by
+        # program_rate_rules._resolve_us_or_opif_composite() — this is
+        # the pre-uplift gross figure, used directly as BOTH floor and
+        # ceiling (Oregon's composite formula is fully determinate once
+        # both component facts are supplied; there is no separate
+        # floor/ceiling split the way a discretionary band has one).
+        # The SAME uplift/dollar-cap machinery every other program
+        # already uses (immediately below) still applies unchanged.
+        floor_incentive_usd = rr.composite_incentive_usd
+        ceiling_incentive_usd = rr.composite_incentive_usd
+    elif rr.qpe_basis_used is not None:
         # Component-basis program (Codex final runtime remediation,
         # us_or_opif; Codex final wiring remediation P0-ZA-001, third
         # pass, za_nfvf_rebate): the selected tier's rate is gated on a
@@ -852,16 +889,37 @@ def price_segment(
                 a for a in allocations
                 if a.jurisdiction_code == jurisdiction_code and a.component in rr.qpe_basis_line_components
             ]
+            # Codex final four-row remediation (P0-ZA-001, fourth pass):
+            # "exact qualifying Post/VFX source lines; excluded/
+            # unresolved/duplicate/missing-ID/wrong-project/wrong-
+            # participant lines cannot price." A missing real line_id is
+            # an untraceable line -- it can never be reconciled to this
+            # SAME segment's own qualification register below, so it is
+            # rejected outright rather than silently priced (or silently
+            # dropped from the bound, which would UNDER-state the basis
+            # and be just as wrong in the other direction).
+            _missing_id_lines = [a for a in _traced_lines if not a.line_id]
+            if _missing_id_lines:
+                return SegmentEconomics(
+                    jurisdiction_code=jurisdiction_code, program_slug=slug,
+                    claims_incentive=True, allocated_usd=allocated,
+                    account_codes=codes, executable=False,
+                    qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                    doctrine=doctrine.value,
+                    blockers=(
+                        f"{jurisdiction_code}/{slug}: {len(_missing_id_lines)} classified "
+                        f"{'/'.join(rr.qpe_basis_line_components)} allocation line(s) carry no "
+                        "real source line_id -- an untraceable line can never be reconciled "
+                        "into an exact qualifying-line component basis; rejected rather than "
+                        "priced on an unidentifiable line.",
+                    ),
+                )
             _seen_line_ids: set[str] = set()
             _duplicate_line_ids: set[str] = set()
-            _traced_subtotal = 0.0
             for _a in _traced_lines:
-                if _a.line_id and _a.line_id in _seen_line_ids:
+                if _a.line_id in _seen_line_ids:
                     _duplicate_line_ids.add(_a.line_id)
-                    continue
-                if _a.line_id:
-                    _seen_line_ids.add(_a.line_id)
-                _traced_subtotal += _a.amount_usd
+                _seen_line_ids.add(_a.line_id)
             if _duplicate_line_ids:
                 return SegmentEconomics(
                     jurisdiction_code=jurisdiction_code, program_slug=slug,
@@ -876,10 +934,39 @@ def price_segment(
                         "source budget line can never be counted twice toward a component basis.",
                     ),
                 )
-            _basis_upper_bound = round(_traced_subtotal, 2)
+            # THE CORE FIX: the traced subtotal is no longer the RAW
+            # allocated amount for every classified post/VFX line -- it
+            # is the EXACT sum of only the QUALIFYING portion of each
+            # such line, read from THIS SAME segment's own qualification
+            # register (`register`, derived moments ago from these SAME
+            # allocations -- never a second, separately-computed
+            # register). An EXCLUDED, GREY_AREA_REQUIRES_AUTHORITY,
+            # STRUCTURING_OPPORTUNITY, or NOT_APPLICABLE line contributes
+            # $0, never its full allocated amount. Grouped by line_id
+            # (not account_code, which is a reusable classification
+            # field, never a unique key) so a contingency line SPLIT
+            # into a qualifying-deployed portion and a non-qualifying-
+            # undeployed portion (qualification_derivation.py's
+            # contingency-utilization branch; both split rows share the
+            # ORIGINAL line's real line_id) correctly contributes only
+            # its own qualifying sub-amount -- Codex's exact adverse
+            # case: a component=post, spend_category=contingency line
+            # with no confirmed deployment prices $0 toward QSAPPE, not
+            # its full claimed amount.
+            _qualifies_by_line_id: dict[str, float] = {}
+            for _entry in register:
+                if _entry.state == QualificationState.QUALIFIES and _entry.line_id:
+                    _qualifies_by_line_id[_entry.line_id] = (
+                        _qualifies_by_line_id.get(_entry.line_id, 0.0) + _entry.amount_usd
+                    )
+            _traced_subtotal = round(
+                sum(_qualifies_by_line_id.get(_a.line_id, 0.0) for _a in _traced_lines), 2,
+            )
+            _basis_upper_bound = _traced_subtotal
             _basis_bound_label = (
-                f"the exact classified {'/'.join(rr.qpe_basis_line_components)} allocated line "
-                f"subtotal ${_basis_upper_bound:,.2f}"
+                f"the exact QUALIFYING classified {'/'.join(rr.qpe_basis_line_components)} "
+                f"allocated line subtotal ${_basis_upper_bound:,.2f} (excluded/unresolved/"
+                "duplicate/missing-ID lines contribute nothing toward this basis)"
             )
         if _basis < 0 or _basis > _basis_upper_bound:
             return SegmentEconomics(

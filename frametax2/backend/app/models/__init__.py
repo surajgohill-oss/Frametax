@@ -54,3 +54,4 @@ from app.models.project_activity import ProjectActivity  # noqa: F401
 from app.models.project_location_requirement import ProjectLocationRequirement  # noqa: F401
 from app.models.project_person import ProjectPerson  # noqa: F401
 from app.models.final_production_result import FinalProductionResult  # noqa: F401
+from app.models.incentive_award_ledger import IncentiveAwardLedgerEntry  # noqa: F401

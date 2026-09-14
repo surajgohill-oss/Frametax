@@ -1690,8 +1690,22 @@ _US_OREGON = JurisdictionIncentiveProfile(
     program_name="Oregon Production Investment Fund (OPIF)",
     confidence_tier="PARSED",
     incentive_type="cash_rebate",
-    base_rate=0.262,
-    max_rate=0.262,
+    # Codex final four-row remediation (P0-OR-001, fourth pass): 0.262
+    # was a flat BLENDED surrogate ("20% base + 6.2% separate labor
+    # rebate = 26.2%") -- exactly the fabricated single-rate surrogate
+    # the served pricing kernel already refuses to model (program_
+    # rate_rules_worldwide.US_OR_DOCTRINE's own comment: "No 26.2%
+    # blended surrogate"). Oregon's real structure is TWO DISJOINT bases
+    # -- 20% on payroll QPE, 25% on other (non-payroll) QPE -- never one
+    # combined rate applied to total spend. base_rate is the lower of
+    # the two real disjoint bases (payroll); max_rate is the higher real
+    # disjoint base WITH the evidenced 10% regional uplift applied
+    # (0.25 x 1.10 = 0.275) -- "with all uplifts", per this field's own
+    # docstring, never a fabricated blend of unrelated programs. The
+    # separate Greenlight Oregon labor-only program (whose stacking
+    # produced the old "26.2%" figure) is NOT modeled here.
+    base_rate=0.20,
+    max_rate=0.275,
     is_refundable=True,
     is_transferable=False,
     annual_cap_local=21_200_000.0,
@@ -1718,13 +1732,17 @@ _US_OREGON = JurisdictionIncentiveProfile(
     authority_name="Oregon Film",
     authority_url_hint="oregonfilm.org",
     notes=(
-        "Mostly CONFIRMED, not stale — unlike every other US state checked "
-        "this batch. 20% base + 6.2% separate labor rebate = 26.2% "
-        "combined effective rate (corroborated by 3 independent sources). "
-        "Min spend $1,000,000. Annual fund cap $21,200,000 — a real, "
-        "small, competitive fund; no single project may receive more than "
-        "50% of the annual fund in any fiscal year (not guaranteed even "
-        "if criteria are met). Oregon has no state sales tax (confirmed)."
+        "Composite calculation, TWO disjoint bases (corroborated by 3 independent "
+        "sources, corrected per Codex final four-row remediation P0-OR-001, fourth "
+        "pass): 20% rebate on Oregon PAYROLL QPE, 25% rebate on OTHER (non-payroll) "
+        "Oregon QPE, applied to a combined $1,000,000 minimum Oregon spend — never a "
+        "single flat 26.2% blended rate (that figure improperly combined this program "
+        "with the separate Greenlight Oregon labor-only program). A 10% regional "
+        "uplift multiplies the otherwise-allowable incentive outside the Portland "
+        "metro area. Annual fund cap $21,200,000 (July 1 - June 30 fiscal year) — a "
+        "real, small, competitive fund; no single project may receive more than 50% "
+        "of the annual fund ($10,600,000) in any fiscal year (not guaranteed even if "
+        "criteria are met). Oregon has no state sales tax (confirmed)."
     ),
     data_gaps=[
         "ATL/VFX/music qualifying treatment not confirmed",

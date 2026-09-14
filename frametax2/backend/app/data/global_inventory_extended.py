@@ -40,25 +40,38 @@ _EXTENDED_PROGRAMS: list[GlobalProgramEntry] = [
         jurisdiction_name="United States — Oregon",
         program_name="Oregon Production Investment Fund (OPIF)",
         program_type="cash_rebate",
+        # Codex final four-row remediation (P0-OR-001, fourth pass):
+        # this DISCOVERY-tier record's 20%/10%/$750K figures predated
+        # (and conflicted with) the corroborated, VERIFIED structure in
+        # program_rate_rules_worldwide.US_OR_DOCTRINE -- real disjoint
+        # 20% payroll / 25% other bases, $1,000,000 combined min spend,
+        # $21,200,000 annual fund / $10,600,000 project cap. Reconciled
+        # here so this reachable record can never disclose a
+        # conflicting Oregon formula.
         base_rate=0.20,
-        max_rate=0.20,
+        max_rate=0.25,
         is_refundable=True,
         is_transferable=False,
-        min_spend_usd=750_000,
-        annual_cap_usd=None,
+        min_spend_usd=1_000_000,
+        annual_cap_usd=21_200_000,
         requires_cultural_test=False,
         requires_local_entity=False,
         confidence_tier="VERIFIED",
         source_title="Oregon Film Office — OPIF programme summary",
-        source_url="https://oregonfilm.org/incentives/",
+        source_url="https://oregonfilm.org/article/oregon-production-investment-fund-opif/",
         effective_from="2009-01-01",
         notes=(
-            "20% cash rebate on Oregon-sourced goods and services; "
-            "10% rebate on Oregon resident wages. Min $750K Oregon spend. "
-            "Annual fund is competitive/capped. "
-            "VERIFIED: 20% OPIF rebate rate confirmed from Oregon Film Office (effective 2009)."
+            "Composite calculation, two disjoint bases: 20% cash rebate on Oregon "
+            "PAYROLL QPE; 25% cash rebate on OTHER (non-payroll) Oregon QPE -- never "
+            "a single blended rate. Combined $1,000,000 minimum Oregon spend (never "
+            "each base independently). 10% regional uplift outside the Portland metro "
+            "area. Annual fund $21,200,000; no single project may receive more than "
+            "50% of the fund ($10,600,000) in a fiscal year. VERIFIED and reconciled "
+            "against the authoritative program_rate_rules_worldwide.US_OR_DOCTRINE "
+            "(Codex final four-row remediation, P0-OR-001, fourth pass) -- see that "
+            "module for the served, executable formula this record only summarizes."
         ),
-        unknown_fields=["annual_cap", "atl_inclusion", "processing_timeline"],
+        unknown_fields=["atl_inclusion", "processing_timeline"],
     ),
 
     GlobalProgramEntry(

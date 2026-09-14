@@ -153,23 +153,50 @@ async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSessi
 
 
 async def test_role_qualification_survives_persistence_and_api(db: AsyncSession):
-    """Codex final wiring remediation (P0-SEL-ALT-001): component/stack
-    structures now ALSO carry a real, non-None role_qualification -- a
-    deliberately minimal {"state": <worst-of-participants>} aggregate
-    (canonical_evaluation.py's _component_qual_state/_combo_qual_state;
-    per-member detail remains on each single-program candidate's own
-    trace, by design). This test's intent is the FULL single-program
-    role_qualification shape specifically, so it must select a
-    single-program entry rather than "any entry with role_qualification
-    truthy" -- the previous, order-dependent selection could pick up a
-    minimal aggregate dict and wrongly fail on a real, intentional shape
-    difference between structure types, not a persistence defect."""
+    """A single-program candidate's role_qualification retains the FULL
+    canonical_role_qualification_bridge shape end to end through
+    persistence and the served API."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    any_rq = next(
+    single_program_rq = next(
         e for e in _entries(view)
         if e.get("role_qualification") and "regime_id" in e["role_qualification"]
     )
-    rq = any_rq["role_qualification"]
+    rq = single_program_rq["role_qualification"]
     for key in ("regime_id", "jurisdiction_code", "state", "role_findings", "reasoning_trace"):
         assert key in rq
+
+
+async def test_component_stack_participant_qualification_aggregate_contract(db: AsyncSession):
+    """Codex final four-row remediation (P0-SEL-ALT-001): "Do not weaken
+    test_copro_qualification_wiring.py to select only full single-program
+    shapes. Assert the aggregate contract directly." A component/stack
+    structure's `participant_qualifications` must retain, for EVERY
+    participant, the full per-participant detail -- never collapsed to
+    the worst-state-only `role_qualification` dict."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    component_entry = next(
+        e for e in _entries(view)
+        if e.get("structure_type") == "component_relocation" and e.get("participant_qualifications")
+    )
+    participants = component_entry["participant_qualifications"]
+    assert len(participants) == 2, "the anchor AND the routed target must both be retained as participants"
+    for p in participants:
+        for key in (
+            "participant_id", "program_slug", "qualification_state", "qualification_route",
+            "missing_facts", "curable_requirements", "failed_requirements", "reasoning_trace",
+            "authority_state", "administrative_allocation_disclosure",
+        ):
+            assert key in p, f"participant entry missing required key {key!r}: {p}"
+    slugs = {p["program_slug"] for p in participants}
+    assert "gr_cash_rebate" in slugs, "the anchor program must be a retained participant"
+    gr = next(p for p in participants if p["program_slug"] == "gr_cash_rebate")
+    assert any("gr_aggregate" in f for f in gr["missing_facts"]), (
+        "Greece's own real missing fact (gr_aggregate) must survive aggregation, "
+        f"observed {gr['missing_facts']}"
+    )
+    # role_qualification itself stays the worst-of-participants SEVERITY
+    # signal only (admission/ranking gate) -- unchanged, never itself
+    # expanded into the full per-participant list.
+    assert set(component_entry["role_qualification"].keys()) == {"state"}

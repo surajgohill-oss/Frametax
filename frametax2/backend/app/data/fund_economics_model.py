@@ -2736,11 +2736,25 @@ _r(FundEconomicsEntry(
     has_equity_participation=False,
     is_soft_money=True,
     has_territorial_spend_requirement=True,
-    typical_max_award_usd=14_000_000,
+    # Codex final four-row remediation (P0-OR-001, fourth pass): the
+    # prior $14,000,000 figure was a stale, unreconciled leftover that
+    # matched neither the real $21,200,000 annual fund nor the real
+    # $10,600,000 (50%-of-fund) per-project cap -- see
+    # program_rate_rules.INCENTIVE_VALUE_CAP_RULES["us_or_opif"], the
+    # single authoritative per-project cap figure. Corrected to the SAME
+    # real, sourced $10,600,000 figure so this reachable record can
+    # never disclose a conflicting Oregon maximum-award number.
+    typical_max_award_usd=10_600_000,
     is_competitive=True,
     stackable_with_incentives=True,
     is_government_assistance=True,
-    notes="Oregon Production Investment Fund (OPIF): 20% rebate on qualifying Oregon expenditure. Government assistance. US state — no federal stacking.",
+    notes="Oregon Production Investment Fund (OPIF): composite calculation — 20% rebate on "
+          "Oregon payroll QPE plus 25% rebate on other Oregon QPE (two disjoint bases, never "
+          "a single blended rate), subject to a combined $1,000,000 minimum Oregon spend, a "
+          "10% regional uplift outside the Portland metro area, and a $10,600,000 (50% of "
+          "the $21,200,000 annual fund) per-project cap. Government assistance. US state — "
+          "no federal stacking. See program_rate_rules_worldwide.US_OR_DOCTRINE for the "
+          "authoritative rate structure.",
 ))
 
 _r(FundEconomicsEntry(

@@ -213,6 +213,137 @@ def test_relocation_completeness_wrong_jurisdiction_evidence_does_not_count():
     assert set(missing) == {"travel", "fx", "local_cost", "inkind"}
 
 
+# ── Synthetic component/stack/treaty fixtures with a hard failure ───────
+# Codex final four-row remediation (P0-SEL-ALT-001): "Component, stack,
+# and treaty fixtures with at least two participants and one hard
+# failure. Exact blocker equality, not subset-only assertions." Direct,
+# hand-built entry dicts against the now-module-level
+# _blocking_requirements/_conditional_entry -- no DB, no production
+# helper used to build the expectation.
+
+from app.services.canonical_production_view import _blocking_requirements, _conditional_entry
+
+
+def _participant(participant_id, program_slug, *, state=None, missing=(), curable=(), failed=(),
+                  reasoning=(), admin_disclosure=None):
+    return {
+        "participant_id": participant_id,
+        "program_slug": program_slug,
+        "qualification_state": state,
+        "qualification_route": "test_route",
+        "missing_facts": list(missing),
+        "curable_requirements": list(curable),
+        "failed_requirements": list(failed),
+        "reasoning_trace": list(reasoning),
+        "authority_state": "PRICEABLE_VALIDATED",
+        "administrative_allocation_disclosure": admin_disclosure,
+    }
+
+
+def test_two_participant_component_fixture_exact_blocker_union():
+    """Two participants, BOTH with real missing/curable facts and one
+    administrative disclosure -- the union must be the exact
+    concatenation, nothing dropped, nothing invented."""
+    entry = {
+        "is_baseline": False,
+        "is_directly_comparable": False,
+        "relocation_missing_dimensions": ["travel", "fx"],
+        "relocation_completeness_jurisdiction": "RO",
+        "primary_jurisdiction": "GR",
+        "role_qualification": {"state": "USER_FACT_REQUIRED"},
+        "participant_qualifications": [
+            _participant("GR", "gr_cash_rebate", state="USER_FACT_REQUIRED",
+                         missing=["gr_aggregate: needs 20 points"]),
+            _participant("RO", "ro_film_office_cash_rebate", state="CURABLE_GAP",
+                         curable=["ro_local_spend_threshold"],
+                         admin_disclosure="RO administrative allocation risk disclosed"),
+        ],
+    }
+    blockers = _blocking_requirements(entry)
+    assert blockers == [
+        "gr_aggregate: needs 20 points",
+        "ro_local_spend_threshold",
+        "RO administrative allocation risk disclosed",
+        "relocation_travel_evidenced__RO",
+        "relocation_fx_evidenced__RO",
+    ], blockers
+
+
+def test_two_participant_fixture_with_one_hard_failure_excludes_structure_and_retains_both_blockers():
+    """One hard-failing participant among two must exclude the WHOLE
+    structure from the conditional pool (via the worst-of aggregate
+    state), while the retained blocker union still names BOTH
+    participants -- the disclosure never silently drops the clean
+    participant's own detail just because the other one hard-fails."""
+    entry = {
+        "is_fully_priced": True,
+        "is_baseline": False,
+        "is_directly_comparable": False,
+        "relocation_missing_dimensions": ["travel"],
+        "relocation_completeness_jurisdiction": "XX",
+        "primary_jurisdiction": "YY",
+        "role_qualification": {"state": "HARD_FAIL"},
+        "participant_qualifications": [
+            _participant("YY", "yy_program", state="QUALIFIES"),
+            _participant("XX", "xx_program", state="HARD_FAIL",
+                         failed=["xx_ownership_control_requirement"]),
+        ],
+    }
+    assert _is_conditional_eligible(entry) is False, (
+        "one hard-failing participant must block the whole structure from the conditional pool"
+    )
+    blockers = _blocking_requirements(entry)
+    assert "xx_ownership_control_requirement" in blockers, (
+        "the hard-failing participant's own blocker must still be disclosed"
+    )
+
+
+def test_stack_fixture_three_participants_exact_equality_reasoning_fallback():
+    """A stack (3 participants) where one has empty requirement lists but
+    a real reasoning_trace (the Manitoba/RULE_DATA_INCOMPLETE shape) —
+    the trace must be disclosed, prefixed by its own program_slug, exact
+    equality against the full retained set."""
+    entry = {
+        "is_baseline": False,
+        "is_directly_comparable": True,  # comparable branch: no relocation dims appended
+        "role_qualification": {"state": "CURABLE_GAP"},
+        "participant_qualifications": [
+            _participant("AA", "aa_program", state="CURABLE_GAP", curable=["aa_min_spend"]),
+            _participant("BB", "bb_program", state="RULE_DATA_INCOMPLETE",
+                         reasoning=["no NationalityRequirement rows for bb_program"]),
+            _participant("CC", "cc_program", state="NOT_APPLICABLE",
+                         reasoning=["no cultural test applies"]),
+        ],
+    }
+    blockers = _blocking_requirements(entry)
+    assert blockers == [
+        "aa_min_spend",
+        "bb_program: no NationalityRequirement rows for bb_program",
+        "cc_program: no cultural test applies",
+    ], blockers
+
+
+def test_label_mutation_leaves_identity_and_blockers_unchanged():
+    """Changing only a structure's display label must never change its
+    identity (structure_id) or its disclosed blocker set — identity and
+    disclosure are keyed on stable data, never the label."""
+    base_participants = [_participant("RO", "ro_program", state="CURABLE_GAP", curable=["ro_gate"])]
+    entry_a = {
+        "structure_id": "same-stable-id", "label": "Original Label",
+        "is_baseline": False, "is_directly_comparable": True,
+        "role_qualification": {"state": "CURABLE_GAP"},
+        "participant_qualifications": base_participants,
+        "selected_incentive_usd": 100.0, "npc_with_adjustments_usd": 900.0,
+    }
+    entry_b = dict(entry_a, label="Completely Different Label Text")
+    assert entry_a["structure_id"] == entry_b["structure_id"]
+    assert _blocking_requirements(entry_a) == _blocking_requirements(entry_b)
+    conditional_a = _conditional_entry(entry_a, None)
+    conditional_b = _conditional_entry(entry_b, None)
+    assert conditional_a["structure_id"] == conditional_b["structure_id"]
+    assert conditional_a["blocking_requirements"] == conditional_b["blocking_requirements"]
+
+
 # ── Real LU/FVD assertions (Codex's exact required real-project checks) ─
 
 LITTLE_UTOPIA_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
@@ -237,6 +368,12 @@ async def test_little_utopia_leading_conditional_never_exposes_none_state(db: As
     code = lc.get("primary_jurisdiction") or "CA-MB"
     expected = {f"relocation_{dim}_evidenced__CA-MB" for dim in _RELOCATION_DIMENSIONS}
     assert expected <= blockers, f"expected {expected} subset of {blockers}"
+    # Codex final four-row remediation (P0-SEL-ALT-001): "Little Utopia
+    # Manitoba must disclose the actual RULE_DATA_INCOMPLETE reason as a
+    # blocker, not only relocation facts."
+    assert any("NationalityRequirement" in b for b in blockers), (
+        f"Manitoba's real RULE_DATA_INCOMPLETE reason must be disclosed, observed {blockers}"
+    )
     assert astr.get("canonical_selected_structure_id") is None, (
         "Little Utopia has no verified winner -- unchanged"
     )
@@ -263,6 +400,15 @@ async def test_fvd_leading_conditional_never_exposes_none_state_and_names_romani
     assert not any(b.startswith("relocation_") and b.endswith("__GR") for b in blockers), (
         "relocation-completeness blockers must target the TARGET (RO) jurisdiction "
         "the component actually relocates to, never the anchor (GR)"
+    )
+    # Codex final four-row remediation (P0-SEL-ALT-001): "FVD Greece+
+    # Romania must include Greece gr_aggregate, every applicable
+    # Romanian/program/allocation gate."
+    assert any("gr_aggregate" in b for b in blockers), (
+        f"Greece's own real gr_aggregate missing fact must be disclosed, observed {blockers}"
+    )
+    assert any("ro_film_office_cash_rebate" in b or "cultural_test_required" in b for b in blockers), (
+        f"Romania's own participant detail must be disclosed, observed {blockers}"
     )
     assert astr.get("canonical_selected_structure_id") is None, (
         "F#K Valentine's Day has no verified winner -- unchanged"

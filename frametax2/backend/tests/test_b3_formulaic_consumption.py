@@ -293,6 +293,13 @@ def test_nl_nfpi_flat_35_no_band():
             # real Project's production_company_identifier/
             # target_shoot_year columns.
             "nl_nfpi_company_period_identity_known",
+            # Codex final four-row remediation (P0-NL-001, fourth pass):
+            # sibling coverage must ALSO be confirmed complete (here, the
+            # vacuous "no sibling Project on file at all" case) before a
+            # full cap is asserted -- see canonical_evaluation.
+            # _company_period_prior_award_facts's own docstring for the
+            # three-gate design this direct kernel-level probe stands in for.
+            "nl_nfpi_company_period_sibling_coverage_complete",
         }),
     )
     assert seg_full.executable is True

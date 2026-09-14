@@ -408,6 +408,12 @@ def _empty_structure_entry(
         # candidate; None for any row persisted before this enrichment
         # existed or for a program with no role/nationality rule data.
         "role_qualification": trace.get("role_qualification"),
+        # Codex final four-row remediation (P0-SEL-ALT-001): the full
+        # per-participant qualification/gate aggregate for component/
+        # stack structures (empty list for single-program candidates,
+        # which already retain their own complete role_qualification
+        # dict directly — see _blocking_requirements' fallback below).
+        "participant_qualifications": trace.get("participant_qualifications") or [],
         "is_fully_priced": is_priced,
         "candidate_status": trace.get("candidate_status"),
         # Codex Defect 4 — the actual terminal cause (never flattened to a
@@ -589,6 +595,108 @@ def _qualification_admits_recommended(entry: dict) -> bool:
     on, as distinct from a real, resolved-to-unresolved state."""
     state = ((entry.get("role_qualification") or {}).get("state"))
     return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
+
+
+def _blocking_requirements(entry: dict) -> list[str]:
+    """Codex final four-row remediation (P0-SEL-ALT-001): "Replace
+    state-only component/stack/treaty aggregation with one generic
+    structured aggregate... the union of blockers must never be
+    discarded." For a component/stack structure, unions EVERY
+    participant's own missing_facts/curable_requirements/
+    failed_requirements (see participant_qualifications, built by
+    canonical_evaluation._participant_qualification_aggregate) —
+    never just the worst-state string. A single-program candidate
+    (no participants) falls back to its own, already-complete
+    role_qualification dict, UNCHANGED except for one real fix:
+    reasoning_trace is now also read when the three requirement
+    lists are all empty — the ONLY place a RULE_DATA_INCOMPLETE/
+    NOT_APPLICABLE state's real explanation lives (e.g. Manitoba's
+    "cultural_qualification_model.py has no NationalityRequirement
+    rows" note), previously silently dropped.
+
+    A pure, module-level function (extracted from a nested closure with
+    no captured state) specifically so it is independently unit-
+    testable with hand-built entry dicts — Codex's exact requirement:
+    "Assert the aggregate contract directly.\""""
+    reqs: list[str] = []
+    participants = entry.get("participant_qualifications") or []
+    if participants:
+        for p in participants:
+            missing = list(p.get("missing_facts") or [])
+            curable = list(p.get("curable_requirements") or [])
+            failed = list(p.get("failed_requirements") or [])
+            reqs.extend(missing)
+            reqs.extend(curable)
+            reqs.extend(failed)
+            if not (missing or curable or failed):
+                for trace in p.get("reasoning_trace") or []:
+                    reqs.append(f"{p.get('program_slug')}: {trace}")
+            if p.get("administrative_allocation_disclosure"):
+                reqs.append(p["administrative_allocation_disclosure"])
+        rq_state = (entry.get("role_qualification") or {}).get("state")
+    else:
+        rq = entry.get("role_qualification") or {}
+        missing = list(rq.get("missing_facts") or [])
+        curable = list(rq.get("curable_requirements") or [])
+        failed = list(rq.get("failed_requirements") or [])
+        reqs = missing + curable + failed
+        if not reqs:
+            for trace in rq.get("reasoning_trace") or []:
+                reqs.append(trace)
+        rq_state = rq.get("state")
+
+    # Codex final wiring remediation (P0-SEL-ALT-001): disclose EVERY
+    # actual missing relocation dimension by name, against the
+    # CORRECT jurisdiction (relocation_completeness_jurisdiction —
+    # the component's TARGET code for a component/split structure,
+    # never the anchor primary_jurisdiction the prior pass used).
+    # Never one blanket jurisdiction boolean standing in for travel/
+    # FX/local-cost/in-kind.
+    if not entry.get("is_baseline") and not entry.get("is_directly_comparable"):
+        code = entry.get("relocation_completeness_jurisdiction") or entry.get("primary_jurisdiction", "")
+        for dim in entry.get("relocation_missing_dimensions") or []:
+            reqs.append(f"relocation_{dim}_evidenced__{code}")
+
+    if not reqs:
+        reqs = [
+            f"Qualification state '{rq_state}' must be resolved before this "
+            "structure can become a verified recommendation."
+        ]
+    return reqs
+
+
+def _conditional_entry(entry: dict, next_alternative: dict | None) -> dict:
+    """Also extracted to module level (see _blocking_requirements above)
+    for direct unit-testability; no behavior change."""
+    rq = entry.get("role_qualification") or {}
+    why_ranked_first = (
+        (f"Lower estimated NPC (${entry['npc_with_adjustments_usd']:,.2f}) than the next "
+         f"unlockable alternative (${next_alternative['npc_with_adjustments_usd']:,.2f}) "
+         "under the same optimizer ranking objective used for verified winners.")
+        if next_alternative is not None and entry["npc_with_adjustments_usd"] is not None
+        and next_alternative["npc_with_adjustments_usd"] is not None
+        else "No other unlockable alternative currently exists in this project's candidate universe."
+    )
+    return {
+        "structure_id": entry["structure_id"],
+        "label": entry["label"],
+        "structure_type": entry.get("structure_type"),
+        "program_slug": entry.get("program_slug"),
+        "program_slugs": entry.get("program_slugs"),
+        "primary_jurisdiction": entry.get("primary_jurisdiction"),
+        # Named "estimated", never "verified"/"guaranteed" — Requirement 9.
+        "estimated_incentive_usd": entry["selected_incentive_usd"],
+        "estimated_npc_usd": entry["npc_with_adjustments_usd"],
+        "qualification_state": rq.get("state"),
+        "qualification_route": rq.get("qualification_route"),
+        "blocking_requirements": _blocking_requirements(entry),
+        "why_ranked_first": why_ranked_first,
+        "risk_disclosure": (
+            "LEADING CONDITIONAL recommendation, not a verified winner. Its incentive is "
+            "an ESTIMATE, never guaranteed or verified, until every blocking requirement "
+            "above is resolved. Recomputes automatically when this project's facts change."
+        ),
+    }
 
 
 def _is_conditional_eligible(entry: dict) -> bool:
@@ -927,60 +1035,6 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             else REC_REJECTED
         )
         ranking.append(r)
-
-    def _blocking_requirements(entry: dict) -> list[str]:
-        rq = entry.get("role_qualification") or {}
-        reqs = list(rq.get("missing_facts") or ()) + list(rq.get("curable_requirements") or ())
-
-        # Codex final wiring remediation (P0-SEL-ALT-001): disclose EVERY
-        # actual missing relocation dimension by name, against the
-        # CORRECT jurisdiction (relocation_completeness_jurisdiction —
-        # the component's TARGET code for a component/split structure,
-        # never the anchor primary_jurisdiction the prior pass used).
-        # Never one blanket jurisdiction boolean standing in for travel/
-        # FX/local-cost/in-kind.
-        if not entry.get("is_baseline") and not entry.get("is_directly_comparable"):
-            code = entry.get("relocation_completeness_jurisdiction") or entry.get("primary_jurisdiction", "")
-            for dim in entry.get("relocation_missing_dimensions") or []:
-                reqs.append(f"relocation_{dim}_evidenced__{code}")
-
-        if not reqs:
-            reqs = [
-                f"Qualification state '{rq.get('state')}' must be resolved before this "
-                "structure can become a verified recommendation."
-            ]
-        return reqs
-
-    def _conditional_entry(entry: dict, next_alternative: dict | None) -> dict:
-        rq = entry.get("role_qualification") or {}
-        why_ranked_first = (
-            (f"Lower estimated NPC (${entry['npc_with_adjustments_usd']:,.2f}) than the next "
-             f"unlockable alternative (${next_alternative['npc_with_adjustments_usd']:,.2f}) "
-             "under the same optimizer ranking objective used for verified winners.")
-            if next_alternative is not None and entry["npc_with_adjustments_usd"] is not None
-            and next_alternative["npc_with_adjustments_usd"] is not None
-            else "No other unlockable alternative currently exists in this project's candidate universe."
-        )
-        return {
-            "structure_id": entry["structure_id"],
-            "label": entry["label"],
-            "structure_type": entry.get("structure_type"),
-            "program_slug": entry.get("program_slug"),
-            "program_slugs": entry.get("program_slugs"),
-            "primary_jurisdiction": entry.get("primary_jurisdiction"),
-            # Named "estimated", never "verified"/"guaranteed" — Requirement 9.
-            "estimated_incentive_usd": entry["selected_incentive_usd"],
-            "estimated_npc_usd": entry["npc_with_adjustments_usd"],
-            "qualification_state": rq.get("state"),
-            "qualification_route": rq.get("qualification_route"),
-            "blocking_requirements": _blocking_requirements(entry),
-            "why_ranked_first": why_ranked_first,
-            "risk_disclosure": (
-                "LEADING CONDITIONAL recommendation, not a verified winner. Its incentive is "
-                "an ESTIMATE, never guaranteed or verified, until every blocking requirement "
-                "above is resolved. Recomputes automatically when this project's facts change."
-            ),
-        }
 
     leading_conditional_structure = (
         _conditional_entry(conditional_pool[0], conditional_pool[1] if len(conditional_pool) > 1 else None)

@@ -157,6 +157,15 @@ def expand_contingency_lines(
                 amount_usd=undeployed,
                 spend_category="contingency",
                 is_memo=False,
+                # Codex final four-row remediation (P0-ZA-001, fourth
+                # pass): the SAME source line_id as the original —
+                # these are dollar-conserving SPLIT portions of one
+                # real source line, never a new/duplicate line. This is
+                # what lets a component-basis reconciliation (e.g. ZA's
+                # post/VFX QSAPPE) correctly sum ONLY the qualifying
+                # split portion of a deployed-contingency line, rather
+                # than losing traceability back to the real source line.
+                line_id=line.line_id,
             ))
         for d in alloc.deployments:
             expanded.append(BudgetLine(
@@ -168,5 +177,6 @@ def expand_contingency_lines(
                 amount_usd=d.amount_usd,
                 spend_category=d.destination_spend_category,
                 is_memo=False,
+                line_id=line.line_id,
             ))
     return expanded

@@ -569,6 +569,12 @@ def test_nl_nfpi_company_cap_applies_to_calculated_incentive():
         evidenced_requirement_facts=frozenset({
             "nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met",
             "nl_nfpi_company_period_identity_known",
+            # Codex final four-row remediation (P0-NL-001, fourth pass):
+            # sibling coverage confirmed complete (the vacuous "no
+            # sibling Project on file" case) -- required alongside
+            # identity_known before a full cap is asserted. See
+            # canonical_evaluation._company_period_prior_award_facts.
+            "nl_nfpi_company_period_sibling_coverage_complete",
         }),
     )
     assert seg.executable is True
@@ -772,6 +778,275 @@ async def test_us_or_opif_conditional_formula_opportunity_lifted_veto():
         "absent an evidenced award/contract/fund confirmation, this condition must never "
         "read as satisfied -- provisional economics only"
     )
+
+
+# ── 10b. us_or_opif composite formula (Codex final four-row remediation,
+# P0-OR-001, fourth pass): "ONE composite calculation: payroll_QPE x 20%
+# + other_QPE x 25%; combined $1M Oregon-spend threshold; per-payee QPE
+# limitation applied before rates; multiplicative 1.10 regional uplift;
+# dated fund cap; conditional until every award/contract/fund gate is
+# evidenced." The prior (third) pass's two separate competing tiers
+# could only ever price ONE of payroll/other at a time (the ordinary
+# single-winning-tier tournament picks the higher-rate eligible tier) —
+# never their SUM. This is Codex's exact rejection of "pre-existing
+# architectural limitation" as an excuse. ──────────────────────────────
+
+def test_us_or_opif_composite_formula_exact_literal_values():
+    from app.data.program_rate_rules import resolve_program_rate
+
+    # Codex's exact literal reproducer #1: $2,000,000 payroll +
+    # $2,000,000 other must return $900,000 (before uplift/cap), never
+    # $500,000 (a single-tier result would pick only the 25% "other"
+    # tier: $2,000,000 x 0.25 = $500,000, silently dropping the payroll
+    # dollars entirely).
+    rr = resolve_program_rate(
+        "us_or_opif", "feature_film", None,
+        amount_facts={"us_or_payroll_qpe_usd": 2_000_000.0, "us_or_other_qpe_usd": 2_000_000.0},
+    )
+    assert rr is not None and rr.composite_incentive_usd == pytest.approx(900_000.0, abs=0.01), (
+        f"$2M payroll + $2M other must be $900,000 (400,000 + 500,000), never $500,000; "
+        f"observed {rr.composite_incentive_usd if rr else None}"
+    )
+
+    # Codex's exact literal reproducer #2: $500,000 payroll + $700,000
+    # other = $275,000 -- NOT non-executable. The combined total
+    # ($1,200,000) clears the real COMBINED $1,000,000 threshold even
+    # though NEITHER component alone reaches $1,000,000.
+    rr2 = resolve_program_rate(
+        "us_or_opif", "feature_film", None,
+        amount_facts={"us_or_payroll_qpe_usd": 500_000.0, "us_or_other_qpe_usd": 700_000.0},
+    )
+    assert rr2 is not None, "combined $1,200,000 Oregon spend must be executable, never blocked"
+    assert rr2.composite_incentive_usd == pytest.approx(275_000.0, abs=0.01), (
+        f"$500k payroll + $700k other must be $275,000 (100,000 + 175,000); "
+        f"observed {rr2.composite_incentive_usd}"
+    )
+
+    # Codex's exact literal reproducer #3: $1,100,000 payroll +
+    # $100,000 other = $245,000 -- the "other" component ($100,000) is
+    # FAR below what a per-component $1,000,000 minimum would require,
+    # proving the combined-only threshold (never a per-component one).
+    rr3 = resolve_program_rate(
+        "us_or_opif", "feature_film", None,
+        amount_facts={"us_or_payroll_qpe_usd": 1_100_000.0, "us_or_other_qpe_usd": 100_000.0},
+    )
+    assert rr3 is not None
+    assert rr3.composite_incentive_usd == pytest.approx(245_000.0, abs=0.01), (
+        f"$1.1M payroll + $100k other must be $245,000 (220,000 + 25,000); "
+        f"observed {rr3.composite_incentive_usd}"
+    )
+
+    # Combined total below the real $1,000,000 threshold: must never
+    # price (falls through / rejects), never a fabricated partial figure.
+    below_threshold = resolve_program_rate(
+        "us_or_opif", "feature_film", None,
+        amount_facts={"us_or_payroll_qpe_usd": 400_000.0, "us_or_other_qpe_usd": 400_000.0},
+    )
+    assert below_threshold is None or below_threshold.composite_incentive_usd is None, (
+        "a combined $800,000 Oregon spend (below the real $1,000,000 threshold) must "
+        "never price a composite incentive"
+    )
+
+    # Only ONE component fact present: falls through to the ordinary
+    # single-tier tournament (existing, pre-fourth-pass behavior),
+    # never fabricates a composite from a single number.
+    one_only = resolve_program_rate(
+        "us_or_opif", "feature_film", 2_000_000.0,
+        amount_facts={"us_or_payroll_qpe_usd": 2_000_000.0},
+    )
+    assert one_only is not None and one_only.composite_incentive_usd is None
+    assert one_only.qpe_basis_used == pytest.approx(2_000_000.0)
+
+    # Multiplicative regional uplift and the shared award/contract/fund
+    # gates are BOTH still real, machine-readable conditions on the
+    # composite resolution -- proving "conditional until every award/
+    # contract/fund gate is evidenced" survives the composite path.
+    rr_uplift = resolve_program_rate(
+        "us_or_opif", "feature_film", None,
+        amount_facts={"us_or_payroll_qpe_usd": 2_000_000.0, "us_or_other_qpe_usd": 2_000_000.0},
+        evidenced_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
+    )
+    assert rr_uplift.incentive_uplift_multiplier == pytest.approx(1.10)
+    assert rr_uplift.composite_incentive_usd == pytest.approx(900_000.0, abs=0.01), (
+        "the uplift multiplier must be carried on the resolution for allocation_pricing "
+        "to apply downstream -- the composite_incentive_usd itself stays the PRE-uplift figure"
+    )
+    award_cond = next(
+        c for c in rr_uplift.conditions_evaluated if c.condition_id == "us-or-award-contract-fund-confirmed"
+    )
+    assert award_cond.satisfied is not True, (
+        "the composite path must ALSO carry the real award/contract/fund confirmation gate "
+        "as a machine-readable condition -- never silently satisfied by component-fact presence alone"
+    )
+    fund_cond = next(
+        c for c in rr_uplift.conditions_evaluated if c.condition_id == "us-or-fund-amount-current"
+    )
+    assert fund_cond.satisfied is not True
+
+    # Malformed component amounts (negative, NaN, +/-infinity) must
+    # never price -- reject before arithmetic, exactly like every other
+    # component-basis program in this codebase.
+    for bad in (-5.0, float("nan"), float("inf"), float("-inf")):
+        malformed = resolve_program_rate(
+            "us_or_opif", "feature_film", None,
+            amount_facts={"us_or_payroll_qpe_usd": bad, "us_or_other_qpe_usd": 1_000_000.0},
+        )
+        assert malformed is None or malformed.composite_incentive_usd is None, (
+            f"malformed payroll component {bad!r} must never price a composite incentive"
+        )
+
+
+def test_us_or_opif_per_payee_qpe_limitation_exact_boundary():
+    """Codex final four-row remediation (P0-OR-001, fourth pass):
+    "per-payee QPE limitation applied before rates" -- OAR 951-002-0010's
+    real USD1,000,000 per-individual/company QPE exclusion, proven as an
+    independently-testable pure function with an exact boundary and a
+    one-cent-over adverse case."""
+    from app.data.program_rate_rules import oregon_per_payee_capped_total
+
+    # Exact boundary: a payee at EXACTLY $1,000,000 contributes their
+    # full amount (the cap is inclusive, never excluding the boundary
+    # value itself).
+    assert oregon_per_payee_capped_total([1_000_000.0]) == pytest.approx(1_000_000.0)
+
+    # One cent over: contributes only the capped $1,000,000, never
+    # $1,000,000.01.
+    assert oregon_per_payee_capped_total([1_000_000.01]) == pytest.approx(1_000_000.0)
+
+    # Multiple payees: each capped independently, then summed. Payee A
+    # at $1,500,000 contributes only $1,000,000; payee B at $600,000
+    # (under the cap) contributes their real full amount.
+    assert oregon_per_payee_capped_total([1_500_000.0, 600_000.0]) == pytest.approx(1_600_000.0)
+
+    # A negative payee amount is not a real compensation figure --
+    # rejected outright, never silently zeroed or included as-is.
+    with pytest.raises(ValueError):
+        oregon_per_payee_capped_total([-100.0])
+    with pytest.raises(ValueError):
+        oregon_per_payee_capped_total([float("nan")])
+
+    # Real-world composite usage: two payroll payees, one over the cap,
+    # one under -- the per-payee-capped total (never the raw sum) is
+    # what should be submitted as us_or_payroll_qpe_usd before rating.
+    from app.data.program_rate_rules import resolve_program_rate
+    capped_payroll = oregon_per_payee_capped_total([1_500_000.0, 600_000.0])  # -> 1,600,000.0
+    rr = resolve_program_rate(
+        "us_or_opif", "feature_film", None,
+        amount_facts={"us_or_payroll_qpe_usd": capped_payroll, "us_or_other_qpe_usd": 500_000.0},
+    )
+    assert rr is not None
+    assert rr.composite_incentive_usd == pytest.approx(1_600_000.0 * 0.20 + 500_000.0 * 0.25, abs=0.01)
+
+
+def test_us_or_opif_composite_dated_fund_cap_and_uplift_order_of_operations():
+    """Codex final wiring remediation (P0-OR-001)'s ordering requirement
+    ("qualifying base x rate (+ uplift) = gross incentive, THEN the
+    applicable dollar cap clips it") must survive the fourth-pass
+    composite formula unchanged -- proven directly against the real
+    price_segment kernel, never a hand-simulated arithmetic stand-in."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+    from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
+
+    cap = get_incentive_value_cap("us_or_opif")
+    assert cap.cap_currency == "USD" and cap.cap_native_amount == 10_600_000.0
+    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
+    assert cap_usd == pytest.approx(10_600_000.0, abs=0.01), "US-domestic cap needs no FX conversion"
+
+    # A large enough composite base that, WITH the 1.10 uplift, exceeds
+    # the $10,600,000 project cap -- proves cap clipping happens AFTER
+    # uplift, never before.
+    large_payroll = 30_000_000.0
+    large_other = 30_000_000.0
+    alloc = [
+        AccountAllocation(
+            account_code="9000", description="OR payroll+other spend", amount_usd=large_payroll + large_other,
+            component="production", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-OR-001 fourth-pass cap/uplift order-of-operations probe",
+            governing_decision="codex-final-four-row-remediation-p0-or-001",
+            line_id="or-large-1",
+        ),
+    ]
+    result = price_segment(
+        jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=alloc,
+        spend_category_by_code={"9000": "production"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=large_payroll + large_other,
+        amount_facts={"us_or_payroll_qpe_usd": large_payroll, "us_or_other_qpe_usd": large_other},
+        evidenced_requirement_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
+    )
+    assert result.executable is True
+    # gross = 30M*0.20 + 30M*0.25 = 6,000,000 + 7,500,000 = 13,500,000;
+    # uplifted = 13,500,000 * 1.10 = 14,850,000; clipped to the
+    # $10,600,000 project cap.
+    assert result.incentive_floor_usd == pytest.approx(10_600_000.0, abs=0.01), (
+        f"a composite incentive that exceeds the project cap even AFTER the uplift must be "
+        f"reduced to exactly the cap; observed {result.incentive_floor_usd}"
+    )
+
+    # A modest composite base, uplifted, that stays comfortably under
+    # the cap prices its own real, uncapped, uplifted figure.
+    modest_alloc = [
+        AccountAllocation(
+            account_code="9000", description="OR modest spend", amount_usd=2_000_000.0,
+            component="production", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-OR-001 fourth-pass modest probe", governing_decision="codex-final-four-row-remediation-p0-or-001",
+            line_id="or-modest-1",
+        ),
+    ]
+    modest = price_segment(
+        jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=modest_alloc,
+        spend_category_by_code={"9000": "production"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=2_000_000.0,
+        amount_facts={"us_or_payroll_qpe_usd": 1_000_000.0, "us_or_other_qpe_usd": 1_000_000.0},
+        evidenced_requirement_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
+    )
+    assert modest.executable is True
+    # gross = 1,000,000*0.20 + 1,000,000*0.25 = 450,000; uplifted =
+    # 450,000 * 1.10 = 495,000 -- well under the cap, priced in full.
+    assert modest.incentive_floor_usd == pytest.approx(495_000.0, abs=0.01)
+
+    # A brand-new production with real composite component facts but NO
+    # award/contract/fund confirmation still prices real, deterministic
+    # PROVISIONAL economics (never skipped/zeroed) -- disposition B.
+    unconfirmed = price_segment(
+        jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=modest_alloc,
+        spend_category_by_code={"9000": "production"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=2_000_000.0,
+        amount_facts={"us_or_payroll_qpe_usd": 1_000_000.0, "us_or_other_qpe_usd": 1_000_000.0},
+    )
+    assert unconfirmed.executable is True, (
+        "a brand-new project with genuine composite component facts must reach real "
+        "provisional Oregon economics -- never skipped or blocked entirely"
+    )
+    assert unconfirmed.incentive_floor_usd == pytest.approx(450_000.0, abs=0.01), (
+        "without the uplift fact, the provisional figure is the un-uplifted gross composite"
+    )
+
+
+def test_us_or_opif_greenlight_labor_only_never_duplicates():
+    """Codex final four-row remediation (P0-OR-001, fourth pass):
+    "explicitly model or fail-closed the Greenlight labor-only
+    interaction." Greenlight Oregon (whose stacking with OPIF's labor
+    portion produced the old, now-removed, flat 26.2% blended figure —
+    see jurisdiction_comparison.py's own corrected notes) is NOT
+    registered as its own executable program_slug/rate rule anywhere in
+    this codebase — it exists ONLY as disclosed, unmodeled documentation
+    text. This is the fail-closed state Codex required: with no
+    executable Greenlight candidate at all, there is no reachable code
+    path through which its labor rebate could ever be silently summed
+    alongside OPIF's own payroll component, so no duplication is
+    possible by construction."""
+    from app.data.authority_coverage_registry import economic_block_for_program
+    from app.data.program_rate_rules import get_rate_rules
+
+    for slug in ("us_or_greenlight", "or_greenlight", "greenlight_oregon", "us_or_opif_greenlight"):
+        assert get_rate_rules(slug) == (), (
+            f"'{slug}' must not be a registered, executable rate-rule program -- Greenlight "
+            "Oregon must never silently duplicate OPIF's own payroll component"
+        )
+        # An unregistered slug has no coverage-block state to lift either
+        # -- confirms it simply does not exist as a priceable candidate.
+        assert economic_block_for_program(slug) is None
 
 
 # ── 11. us_tx_miip ────────────────────────────────────────────────────
@@ -1105,6 +1380,140 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
 
     neither = probe(frozenset())
     assert neither.executable is False, "neither the accepted-production nor the post-only gate is evidenced — must reject"
+
+
+def test_za_nfvf_rebate_qsappe_reconciles_to_exact_qualifying_lines_only():
+    """Codex final four-row remediation (P0-ZA-001, fourth pass). Exact
+    reproducer: a component="post" allocation line whose spend_category
+    is "contingency" (not a confirmed, deployed, qualifying category) —
+    amount=$400,000, claimed QSAPPE=$400,000 — must REJECT with a $0
+    qualifying basis, never silently price 25% ($100,000) against the
+    line's raw allocated amount. The PRIOR (third-pass) fix bounded the
+    claim by the exact classified post/vfx line SUBTOTAL, but that
+    subtotal was the RAW allocated amount for any line whose `component`
+    was post/vfx — it never checked whether that line's own
+    qualification-register STATE was actually QUALIFIES. A component=
+    post line that is really unconfirmed/unresolved contingency spend
+    passed this bound anyway. THE FIX reconciles the traced subtotal to
+    only the QUALIFYING portion of each classified line, per this same
+    segment's own qualification register."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    contingency_post_alloc = [
+        AccountAllocation(
+            account_code="5100", description="post contingency reserve", amount_usd=400_000.0,
+            component="post", jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-ZA-001 fourth-pass exact adverse reproducer",
+            governing_decision="codex-final-four-row-remediation-p0-za-001",
+            line_id="contingency-post-1", spend_category="contingency",
+        ),
+    ]
+    rejected = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=contingency_post_alloc,
+        spend_category_by_code={"5100": "contingency"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=400_000.0,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+    )
+    assert rejected.executable is False, (
+        "a component=post line whose spend_category is unconfirmed contingency (not an "
+        "actually-QUALIFIES source line) must reject the claimed QSAPPE -- never silently "
+        "price 25% of its raw allocated amount"
+    )
+    # Never a partial/wrong price either -- confirm no incentive value
+    # leaked through under either floor or ceiling.
+    assert rejected.incentive_floor_usd in (None, 0.0)
+    assert rejected.incentive_ceiling_usd in (None, 0.0)
+
+    # Independent control: the SAME $400,000 amount, SAME component=
+    # "post", but a genuinely QUALIFYING spend_category ("post" -- see
+    # the passing `combined`/`post_only_with_basis` cases above) prices
+    # the full 25% -- proving the rejection above is specifically about
+    # qualification state, not a regression in the basic mechanism.
+    genuine_post_alloc = [
+        AccountAllocation(
+            account_code="5100", description="real post spend", amount_usd=400_000.0,
+            component="post", jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-ZA-001 fourth-pass control", governing_decision="codex-final-four-row-remediation-p0-za-001",
+            line_id="genuine-post-1", spend_category="post",
+        ),
+    ]
+    accepted = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=genuine_post_alloc,
+        spend_category_by_code={"5100": "post"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=400_000.0,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+    )
+    assert accepted.executable is True
+    assert accepted.incentive_floor_usd == pytest.approx(100_000.0, abs=0.01)
+
+
+def test_za_nfvf_rebate_qsappe_partial_split_contingency_line_reconciles_to_deployed_portion():
+    """A contingency line explicitly SPLIT (via ContingencyAllocation)
+    into a confirmed-deployed post-production portion and an undeployed
+    remainder must contribute ONLY the deployed, qualifying portion to
+    the QSAPPE basis -- proving line-level (not whole-line) conservation
+    survives contingency expansion, and that the expanded lines still
+    carry the ORIGINAL real line_id (never a fresh disconnected one)."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.contingency_treatment import ContingencyAllocation, ContingencyDeployment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    alloc = [
+        AccountAllocation(
+            account_code="5200", description="contingency reserve", amount_usd=1_000_000.0,
+            component="post", jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-ZA-001 fourth-pass split reproducer",
+            governing_decision="codex-final-four-row-remediation-p0-za-001",
+            line_id="contingency-split-1", spend_category="contingency",
+        ),
+    ]
+    contingency_allocations = {
+        "5200": ContingencyAllocation(
+            source_account_code="5200", source_description="contingency reserve",
+            original_amount_usd=1_000_000.0,
+            deployments=(
+                ContingencyDeployment(
+                    destination_account_code="5201", destination_description="post-production overage",
+                    destination_spend_category="post", amount_usd=400_000.0,
+                    note="confirmed deployed", deployed_by="test", deployed_at="2026-01-01",
+                ),
+            ),
+        ),
+    }
+    result = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=alloc,
+        spend_category_by_code={"5200": "contingency"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=1_000_000.0,
+        contingency_allocations=contingency_allocations,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+    )
+    assert result.executable is True, (
+        f"the confirmed-deployed $400,000 portion is a real qualifying post line -- the "
+        f"claim must price; blockers={result.blockers}"
+    )
+    assert result.incentive_floor_usd == pytest.approx(100_000.0, abs=0.01), (
+        "only the deployed $400,000 (never the full $1,000,000 reserve) must form the "
+        "qualifying basis"
+    )
+
+    # Claiming the FULL $1,000,000 (the whole undeployed reserve, never
+    # actually confirmed post spend) must still reject.
+    over_claim = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=alloc,
+        spend_category_by_code={"5200": "contingency"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=1_000_000.0,
+        contingency_allocations=contingency_allocations,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 1_000_000.0},
+    )
+    assert over_claim.executable is False, (
+        "claiming the full undeployed reserve (only $400,000 of which is a confirmed, "
+        "qualifying deployed post line) must reject"
+    )
 
 
 # ── Regression: FVD's locked baseline is provably unchanged after every

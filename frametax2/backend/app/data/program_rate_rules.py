@@ -506,6 +506,20 @@ class RateResolution:
     #: must never apply an ADDITIVE percentage-point interpretation.
     incentive_uplift_multiplier: float | None = None
 
+    #: Codex final four-row remediation (P0-OR-001, fourth pass): "ONE
+    #: composite calculation: payroll_QPE x 20% + other_QPE x 25%." Set
+    #: ONLY by the dedicated Oregon (us_or_opif) composite branch of
+    #: resolve_program_rate() when BOTH the payroll and other component
+    #: facts are present -- the PRE-UPLIFT gross incentive dollar value,
+    #: already summed across both disjoint bases (never a single-tier
+    #: basis x rate figure). allocation_pricing.price_segment() must use
+    #: this value directly (in place of the ordinary basis x rate
+    #: computation) whenever it is not None, then apply the SAME
+    #: incentive_uplift_multiplier / dollar-cap machinery every other
+    #: program already uses. None (the default) leaves every other
+    #: program's arithmetic byte-identical.
+    composite_incentive_usd: float | None = None
+
 
 # ── Mauritius EDB Film Rebate Scheme ────────────────────────────────────────
 
@@ -1664,6 +1678,25 @@ class IncentiveValueCapRule:
     company_period_identity_known_fact_key: str | None = None
     company_period_has_other_productions_fact_key: str | None = None
 
+    # Codex final four-row remediation (P0-NL-001, fourth pass): "Sibling
+    # existence with unknown award evidence remains unresolved and no
+    # full cap is asserted." Evidenced ONLY by canonical_evaluation.
+    # _company_period_prior_award_facts when at least one real
+    # IncentiveAwardLedgerEntry row exists for the exact (company,
+    # period, program) triple -- i.e. the ledger has genuinely been
+    # checked/recorded for every sibling production this cap could be
+    # shared with. A sibling Project existing is NOT itself proof of an
+    # award (it could be unevaluated, still in progress, or simply never
+    # recorded) -- so when siblings exist but this fact is unset, the
+    # resolver (allocation_pricing._resolve_incentive_dollar_cap) must
+    # fail this segment closed as unresolved, never assert a full/
+    # remaining cap from silence. When no siblings exist at all, this key
+    # is legitimately never set either -- there being nothing to resolve
+    # is a real "alone" state, distinct from "unresolved", and the
+    # resolver's existing has_other_productions-unset path already
+    # applies the full cap correctly in that case.
+    company_period_sibling_coverage_complete_fact_key: str | None = None
+
     # Codex final wiring remediation (P0-OR-001): "Keep the fund amount/
     # date explicit and fail conditional if missing/stale; never treat
     # missing cap as unlimited." When set, this cap applies ONLY once the
@@ -1732,6 +1765,7 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
         company_period_prior_award_fact_key="nl_nfpi_company_period_prior_awards_eur",
         company_period_identity_known_fact_key="nl_nfpi_company_period_identity_known",
         company_period_has_other_productions_fact_key="nl_nfpi_company_period_has_other_productions",
+        company_period_sibling_coverage_complete_fact_key="nl_nfpi_company_period_sibling_coverage_complete",
     ),
     # Codex final wiring remediation (P0-OR-001): "Final project award <=
     # 50% of dated annual OPIF fund; current official page says
@@ -1974,6 +2008,172 @@ def classify_rate_resolution_failure(
     return RATE_FAILURE_CONDITIONS_UNMET
 
 
+# ── Oregon (us_or_opif) composite formula (Codex final four-row remediation,
+# P0-OR-001, fourth pass) ───────────────────────────────────────────────────
+
+_OREGON_PAYROLL_TIER_ID = "us-or-payroll-ceiling-20"
+_OREGON_OTHER_TIER_ID = "us-or-other-ceiling-25"
+_OREGON_PAYROLL_RATE = 0.20
+_OREGON_OTHER_RATE = 0.25
+_OREGON_COMBINED_MIN_QPE_USD = 1_000_000.0
+_OREGON_PER_PAYEE_QPE_EXCLUSION_USD = 1_000_000.0
+
+
+def oregon_per_payee_capped_total(
+    payee_amounts_usd: "list[float] | tuple[float, ...]",
+    per_payee_cap_usd: float = _OREGON_PER_PAYEE_QPE_EXCLUSION_USD,
+) -> float:
+    """Codex final four-row remediation (P0-OR-001, fourth pass): OAR
+    951-002-0010's real per-individual/company USD1,000,000 QPE
+    exclusion, applied BEFORE the 20%/25% rates — a pure, independently
+    testable function (never folded silently into resolve_program_rate's
+    own arithmetic, and never applied AFTER rating). Each payee's own
+    qualifying compensation is capped at per_payee_cap_usd before being
+    summed into either component basis; a payee whose real compensation
+    exceeds the cap contributes only the cap, never their full amount.
+    Raises ValueError on a negative/non-finite entry — a malformed
+    payee amount is rejected outright, never silently zeroed or
+    included as-is."""
+    total = 0.0
+    for amt in payee_amounts_usd:
+        if not isinstance(amt, (int, float)) or isinstance(amt, bool) or not math.isfinite(amt) or amt < 0:
+            raise ValueError(f"payee amount {amt!r} is not a finite, non-negative number")
+        total += min(amt, per_payee_cap_usd)
+    return round(total, 2)
+
+
+def _resolve_us_or_opif_composite(
+    rules: tuple["RateRule", ...],
+    amount_facts: dict[str, float] | None,
+    evidenced_facts: frozenset[str] | None,
+) -> "RateResolution | None":
+    """Codex final four-row remediation (P0-OR-001, fourth pass) — see
+    resolve_program_rate's own call site for why this is a dedicated,
+    self-contained branch rather than a generalization of the ordinary
+    single-winning-tier tournament. Returns None (never a fabricated
+    composite) whenever fewer than both component facts are present, or
+    either is malformed, or the COMBINED total is below the real
+    USD1,000,000 statutory threshold (never each component
+    independently — Codex's exact reproducer: USD1,100,000 payroll +
+    USD100,000 other, where the "other" component alone is far below
+    USD1,000,000, must still combine to USD245,000, never reject on a
+    per-component minimum that does not exist in the statute) — in every
+    None case the caller falls straight through to the ordinary
+    single-tier tournament, unchanged."""
+    amount_facts = amount_facts or {}
+    evidenced_facts = evidenced_facts or frozenset()
+    payroll_qpe = amount_facts.get("us_or_payroll_qpe_usd")
+    other_qpe = amount_facts.get("us_or_other_qpe_usd")
+    if payroll_qpe is None or other_qpe is None:
+        return None
+
+    payroll_tier = next((r for r in rules if r.tier_id == _OREGON_PAYROLL_TIER_ID), None)
+    other_tier = next((r for r in rules if r.tier_id == _OREGON_OTHER_TIER_ID), None)
+    if payroll_tier is None or other_tier is None:
+        return None  # doctrine not registered as expected -- never fabricate a composite
+
+    def _valid(amt) -> bool:
+        return isinstance(amt, (int, float)) and not isinstance(amt, bool) and math.isfinite(amt) and amt >= 0
+
+    if not _valid(payroll_qpe) or not _valid(other_qpe):
+        return None  # malformed component -- disclosed via the ordinary "did not resolve" path
+
+    combined = round(payroll_qpe + other_qpe, 2)
+    if combined < _OREGON_COMBINED_MIN_QPE_USD:
+        return None  # below the real COMBINED statutory threshold -- never priced
+
+    gross = round(payroll_qpe * _OREGON_PAYROLL_RATE + other_qpe * _OREGON_OTHER_RATE, 2)
+    blended_rate = round(gross / combined, 6) if combined > 0 else 0.0
+
+    incentive_uplift_multiplier: float | None = None
+    for tier in (payroll_tier, other_tier):
+        for cond in tier.conditions:
+            if (cond.regional_uplift_multiplier_fact_key is not None
+                    and cond.regional_uplift_multiplier_fact_key in evidenced_facts):
+                incentive_uplift_multiplier = cond.regional_uplift_multiplier
+                break
+        if incentive_uplift_multiplier is not None:
+            break
+
+    evaluations: list[ConditionEvaluation] = [
+        ConditionEvaluation(
+            "us-or-combined-min-spend", "Combined Oregon qualifying expenditure (payroll + other)",
+            "a production must directly spend at least US $1 million in Oregon to qualify "
+            "(corroborated by 3 sources) -- applied to the COMBINED payroll + other total, "
+            "never each disjoint component independently",
+            satisfied=True, kind="min_qpe_usd", condition_state=CONDITION_STATE_EXECUTABLE,
+            note=(f"combined Oregon QPE ${combined:,.2f} (payroll ${payroll_qpe:,.2f} + "
+                  f"other ${other_qpe:,.2f}) vs the real combined threshold "
+                  f"${_OREGON_COMBINED_MIN_QPE_USD:,.2f}."),
+        ),
+        ConditionEvaluation(
+            "us-or-payroll-component-basis", "20% Oregon payroll component",
+            "Codex bounded remediation, accepted formulaic correction: 'Up to 20% Oregon "
+            "payroll plus 25% other Oregon expenses'",
+            satisfied=True, kind="project_fact_dependent_eligibility", condition_state=CONDITION_STATE_EXECUTABLE,
+            note=f"'us_or_payroll_qpe_usd' = {payroll_qpe:,.2f}, priced at 20%.",
+        ),
+        ConditionEvaluation(
+            "us-or-other-component-basis", "25% other (non-payroll) Oregon component",
+            "Codex bounded remediation, accepted formulaic correction: 'Up to 20% Oregon "
+            "payroll plus 25% other Oregon expenses'",
+            satisfied=True, kind="project_fact_dependent_eligibility", condition_state=CONDITION_STATE_EXECUTABLE,
+            note=f"'us_or_other_qpe_usd' = {other_qpe:,.2f}, priced at 25%.",
+        ),
+    ]
+    # The SAME real award/contract/fund-availability/per-payee-compliance
+    # gate and the SAME dated-fund-currency gate as the single-tier path
+    # (each modeled as its own machine-readable condition, per Codex's
+    # "represent ... as separate machine-readable gates (not one bundled
+    # boolean)") -- both tiers declare the identical condition_ids, so
+    # only the first occurrence of each is emitted here.
+    _seen_shared_ids: set[str] = set()
+    for tier in (payroll_tier, other_tier):
+        for cond in tier.conditions:
+            if cond.condition_id not in ("us-or-award-contract-fund-confirmed", "us-or-fund-amount-current"):
+                continue
+            if cond.condition_id in _seen_shared_ids:
+                continue
+            _seen_shared_ids.add(cond.condition_id)
+            evidenced = cond.required_boolean_fact_key is not None and cond.required_boolean_fact_key in evidenced_facts
+            evaluations.append(ConditionEvaluation(
+                cond.condition_id, cond.description, cond.quote,
+                satisfied=True if evidenced else None,
+                note=("Evidenced by the production." if evidenced
+                      else f"'{cond.required_boolean_fact_key}' not yet evidenced — "
+                           "absence of a record is not confirmation."),
+                condition_state=CONDITION_STATE_EXECUTABLE if evidenced else CONDITION_STATE_USER_FACT_REQUIRED,
+                kind=cond.kind,
+            ))
+    if incentive_uplift_multiplier is not None:
+        evaluations.append(ConditionEvaluation(
+            "us-or-regional-uplift", "10% regional increase outside the Portland metropolitan zone",
+            "an increase of 10 percent of the amount otherwise allowable under subsections "
+            "(2) and (3) (ORS 284.368, verified via direct fetch of oregonlegislature.gov)",
+            satisfied=True, kind="project_fact_dependent_uplift", condition_state=CONDITION_STATE_EXECUTABLE,
+            note="Evidenced regional uplift — multiplies the composite incentive by 1.10.",
+        ))
+
+    return RateResolution(
+        program_slug="us_or_opif",
+        modeled_rate=blended_rate,
+        floor_rate=blended_rate,
+        has_guaranteed_floor=True,
+        is_band_ceiling=False,
+        tier_id="us-or-composite-payroll20-other25",
+        basis=(
+            "Composite calculation (Codex final four-row remediation, P0-OR-001): "
+            f"payroll QPE ${payroll_qpe:,.2f} x 20% + other QPE ${other_qpe:,.2f} x 25% = "
+            f"${gross:,.2f} gross, before any evidenced regional uplift or fund cap."
+        ),
+        conditions_evaluated=tuple(evaluations),
+        unverified_claims=_UNVERIFIED_BY_PROGRAM.get("us_or_opif", ()),
+        conflicts=(),
+        composite_incentive_usd=gross,
+        incentive_uplift_multiplier=incentive_uplift_multiplier,
+    )
+
+
 def resolve_program_rate(
     program_slug: str,
     production_type: str,
@@ -2019,6 +2219,22 @@ def resolve_program_rate(
     rules = get_rate_rules(program_slug)
     if not rules:
         return None
+
+    # Codex final four-row remediation (P0-OR-001, fourth pass): Oregon's
+    # required "ONE composite calculation: payroll_QPE x 20% + other_QPE
+    # x 25%" cannot be expressed by the ordinary single-winning-tier
+    # tournament below, which selects exactly ONE eligible RateRule by
+    # rate. This dedicated, fully self-contained, opt-in branch runs
+    # ONLY for us_or_opif and ONLY when BOTH component facts are
+    # present; otherwise it returns None and execution falls straight
+    # through to the SAME generic tournament every other program uses,
+    # completely unchanged (a caller supplying only one component fact
+    # still gets that single tier's own pre-existing disclosure/
+    # eligibility behavior, byte-identical to before this pass).
+    if program_slug == "us_or_opif":
+        _composite = _resolve_us_or_opif_composite(rules, amount_facts, evidenced_facts)
+        if _composite is not None:
+            return _composite
 
     eligible: list[RateRule] = []
     for rule in sorted(rules, key=lambda r: -r.rate):

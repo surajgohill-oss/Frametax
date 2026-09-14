@@ -1500,7 +1500,13 @@ register(ProgramRequirementsProfile(
               "Oregon (both Oregon and non-Oregon residents eligible for the labor rebate); the "
               "labor portion can STACK with the separate Greenlight Oregon programme for an "
               "effective 26.2% labor rebate. ANNUAL FUND CAP CONFIRMED: $21,200,000 per fiscal "
-              "year (2026-07-01 to 2026-06-30 cycle) — resolves the prior profile's unpopulated "
+              "year (2026-07-01 to 2027-06-30 cycle -- corrected, Codex final four-row "
+              "remediation P0-OR-001, fourth pass, from a mistakenly self-contradictory "
+              "'2026-07-01 to 2026-06-30' interval that named the SAME year twice, going "
+              "backward in time; Oregon's state fiscal year runs July 1 through June 30 of "
+              "the FOLLOWING calendar year -- the July 1-June 30 cycle structure itself was "
+              "already-settled evidence, only the erroneous end-year needed correcting, "
+              "never a newly invented date) — resolves the prior profile's unpopulated "
               "annual_program_cap_usd field. APPLICATION GATES (previously unrecorded): a Letter of "
               "Intent is required; equipment must be rented or purchased directly from Oregon "
               "vendors (billing through out-of-state 'pass-through' companies does not qualify); "
@@ -1517,7 +1523,7 @@ register(ProgramRequirementsProfile(
     ),
     additional_facts={
         "rate_structure": "25% cash rebate on production-related goods/services paid to Oregon vendors; 20% cash rebate on payroll wages for Oregon work (Oregon and non-Oregon residents both eligible). Labor portion stacks with Greenlight Oregon for an effective 26.2% labor rebate.",
-        "annual_fund_cap": "$21,200,000 per fiscal year (July 1 - June 30).",
+        "annual_fund_cap": "$21,200,000 per fiscal year (July 1 - June 30 of the following calendar year).",
         "application_gates": "Letter of Intent required; equipment must be sourced directly from Oregon vendors (no out-of-state pass-through billing); must comply with Oregon independent-contractor law.",
         "eligible_work": "Film/TV productions, interactive media, commercial production, post-production-only work from Oregon-based companies. Non-scripted work has limited eligibility requiring direct inquiry.",
         "policy_requirements_unconfirmed": "A written DEI policy and a written anti-harassment/reporting policy are reported (WebSearch summary citing Oregon Film) as part of the OPIF contract -- not independently re-confirmed on the official page fetched this session.",

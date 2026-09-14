@@ -224,6 +224,7 @@ def derive_qualification_register(
                 authority_basis=basis, reason=reason, financial_impact_usd=amt,
                 structuring_mechanism=mechanism, resolving_evidence=evidence,
                 incentive_upside_usd=upside, grey_reason=grey_reason,
+                line_id=line.line_id,
             ))
 
         # 1. Memo lines are never a qualification question.
@@ -309,6 +310,7 @@ def derive_qualification_register(
                            f"{pct:.0f}% expected contingency utilization — priced as qualifying "
                            "category spend, not the full undeployed reserve.",
                     financial_impact_usd=expected_deployed_usd,
+                    line_id=line.line_id,
                 ))
             if expected_undeployed_usd > 0:
                 register.append(AccountQualification(
@@ -321,6 +323,7 @@ def derive_qualification_register(
                            "an undeployed reserve is not incurred production spend regardless of the "
                            "category's own statutory eligibility.",
                     financial_impact_usd=expected_undeployed_usd,
+                    line_id=line.line_id,
                 ))
             continue
 

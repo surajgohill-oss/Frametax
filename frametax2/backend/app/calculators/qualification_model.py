@@ -113,6 +113,20 @@ class AccountQualification:
     resolving_evidence: Optional[str] = None
     incentive_upside_usd: Optional[float] = None  # at the modeled program rate, if state is upside-bearing
     grey_reason: Optional["GreyReason"] = None  # set iff state == GREY_AREA_REQUIRES_AUTHORITY (Part 4 A-F)
+    # Codex final four-row remediation (P0-ZA-001, fourth pass): "exact
+    # line-level conservation" -- account_code is a CLASSIFICATION field
+    # (real budgets legitimately reuse a code across distinct lines, per
+    # AccountAllocation's own docstring), never a unique key, so a
+    # program-level component basis (e.g. ZA's post/VFX QSAPPE) cannot
+    # be reconciled to the exact qualifying SOURCE LINE by account_code
+    # alone. line_id traces this entry back to the exact
+    # qualification_derivation.BudgetLine.line_id (in turn the exact
+    # AccountAllocation.line_id) it was derived from -- "" (the default)
+    # ONLY for legacy/direct construction sites that predate this field
+    # and never claim a component-basis reconciliation; every entry
+    # qualification_derivation.derive_qualification_register itself
+    # produces sets a real line_id.
+    line_id: str = ""
 
 
 # ── Reinvestment intelligence model (data structures only) ─────────────────

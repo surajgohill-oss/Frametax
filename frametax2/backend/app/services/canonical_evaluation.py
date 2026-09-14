@@ -1880,6 +1880,58 @@ def _merge_rate_condition_into_qualification(
     return merged
 
 
+def _participant_qualification_aggregate(
+    program_slugs: tuple[str, ...],
+    qual_detail_by_program: dict[str, tuple[str, dict | None]],
+) -> list[dict]:
+    """Codex final four-row remediation (P0-SEL-ALT-001) — a generic,
+    structured PER-PARTICIPANT qualification/gate aggregate. Replaces the
+    prior `{"state": worst_state}` collapse for component/stack
+    structures, which discarded every participant's own missing_facts/
+    curable_requirements/failed_requirements/reasoning_trace/authority/
+    administrative-allocation disclosure — exactly Codex's finding:
+    "Component/stack aggregation persists only the worst state and
+    discards every participant/program missing fact."
+
+    Retains, for EVERY participant/claimed program in the structure: its
+    canonical jurisdiction id, program slug, qualification state/route,
+    missing/curable/failed requirements, reasoning trace (the ONLY place
+    a RULE_DATA_INCOMPLETE/NOT_APPLICABLE state's real explanation lives
+    when the three requirement lists are empty — e.g. Manitoba's "no
+    NationalityRequirement rows" note), authority coverage state, and any
+    administrative-allocation-risk disclosure. Never collapsed, never
+    deduplicated across participants — canonical_production_view.py's
+    `_blocking_requirements()` unions every field from every entry here,
+    so a structure's disclosed blockers are always the COMPLETE retained
+    set, never a subset.
+
+    qual_detail_by_program is keyed by program_slug alone (the same key
+    _qual_state_by_program already uses, for the identical federal-
+    member-examined-under-a-different-jurisdiction-code reason); each
+    value is (jurisdiction_code_captured_under, full_role_qualification_
+    dict_or_None). A program_slug this function is asked about that was
+    never examined (should not happen for a real candidate's own claimed
+    programs, but defensively handled) yields an explicit, empty-detail
+    entry rather than a KeyError or a silently dropped participant."""
+    out: list[dict] = []
+    for slug in program_slugs:
+        code, detail = qual_detail_by_program.get(slug, (None, None))
+        detail = detail or {}
+        out.append({
+            "participant_id": code,
+            "program_slug": slug,
+            "qualification_state": detail.get("state"),
+            "qualification_route": detail.get("qualification_route"),
+            "missing_facts": list(detail.get("missing_facts") or []),
+            "curable_requirements": list(detail.get("curable_requirements") or []),
+            "failed_requirements": list(detail.get("failed_requirements") or []),
+            "reasoning_trace": list(detail.get("reasoning_trace") or []),
+            "authority_state": coverage_state(slug),
+            "administrative_allocation_disclosure": _competitive_allocation_disclosure(slug),
+        })
+    return out
+
+
 def _capability_only_status(examination) -> tuple[str, str, str]:
     """Real terminal status for a capability_only candidate (Codex Defect
     4) — reads fields discover_executable_jurisdictions() already computed
@@ -2180,57 +2232,74 @@ def _discretionary_policy_resolve(program_slug: str, facts: dict[str, str]) -> s
 async def _company_period_prior_award_facts(
     session: AsyncSession, project: Project, inputs: "ProjectEconomicInputs",
 ) -> tuple[frozenset[str], dict[str, float]]:
-    """Codex final wiring remediation (P0-NL-001, third pass) — the ONE
-    place any program's company/period-scoped prior-award aggregate is
-    ever computed, from a REAL cross-project database query, never a
-    caller-supplied scalar. Generic over every IncentiveValueCapRule
-    declaring company_period_prior_award_fact_key (currently only
-    nl_film_production_incentive) — no NL-specific branch, no side
-    ledger; this reads and writes only the SAME canonical Project/
-    ProductionStructure/StructureCalculationResult tables and the SAME
-    evidenced_program_facts/amount_facts contract every other program
-    fact in this codebase already uses.
+    """Codex final four-row remediation (P0-NL-001, fourth pass) — the
+    ONE place any program's company/period-scoped prior-award aggregate
+    is ever computed. Codex's exact rejection of the prior (third-pass)
+    version: "Do not read StructureCalculationResult or any candidate/
+    scenario output as a prior award." A ProductionStructure/
+    StructureCalculationResult row is the optimizer's own PRICED
+    ESTIMATE for one candidate structure — never a real-world grant,
+    approval, or contract; summing those rows let a company's own
+    hypothetical, un-awarded candidate economics silently count as if
+    they were real awards, and let a sibling that had simply never been
+    EVALUATED (not "denied an award" — just never run) silently read as
+    "no other production", handing out a fresh full cap that should have
+    been unresolved.
+
+    THE FIX: reads ONLY app.models.incentive_award_ledger.
+    IncentiveAwardLedgerEntry, via app.services.
+    incentive_award_ledger_service — a durable, append-only, explicitly
+    real-world-evidenced record, written ONLY by an explicit act
+    recording a real grant/denial/pending decision, NEVER auto-populated
+    from optimizer output. Every USD figure this function ever touches
+    is a native-currency ledger amount converted to USD/back exactly
+    ONCE by the caller (allocation_pricing._resolve_incentive_dollar_cap)
+    — this function itself performs NO FX conversion at all (the prior
+    version's "convert each sibling's stored USD estimate back to EUR"
+    round-trip is gone entirely; the ledger already stores native EUR).
 
     Returns (evidenced_facts, amounts) to be UNIONED into
     inputs.evidenced_program_facts / inputs.amount_facts before pricing
     runs, so the result participates in the SAME fingerprint/cache
     identity every other calculation-driving fact already does.
 
-    IDENTITY GATE: inputs.production_company_identifier and
-    inputs.award_period_year must BOTH be set (from the canonical
-    Project.production_company_identifier/target_shoot_year columns —
-    see canonical_project_economics.build_project_economic_inputs).
-    Missing either means company_period_identity_known_fact_key is
-    simply never added to the evidenced set — the cap resolver in
-    allocation_pricing.py then correctly fails this program closed
-    (conditional/non-priceable), never an affirmative zero.
+    THREE-GATE RESOLUTION, generic over every IncentiveValueCapRule
+    declaring company_period_prior_award_fact_key (currently only
+    nl_film_production_incentive):
 
-    AGGREGATE QUERY: every OTHER real, persisted Project row sharing the
-    EXACT SAME production_company_identifier and award_period_year
-    (this project's own id excluded) is queried. For each sibling with a
-    current-generation evaluation on file, its own persisted
-    total_incentive_value_usd for this SAME program (matched by
-    program_slug/program_slugs in its trace) is converted BACK to the
-    cap's native currency using THIS evaluation's own canonical FX
-    context (apply_fx_rates.convert_usd_to_local_ctx — the SAME context
-    every other conversion in this evaluation uses, never a second or
-    guessed rate) and summed. Zero siblings found is a real, evidenced
-    zero (identity known, genuinely alone this period) — the full native
-    cap applies, correctly distinct from "identity unknown".
+    1. IDENTITY GATE — inputs.production_company_identifier and
+       inputs.award_period_year must both be set. Missing either means
+       company_period_identity_known_fact_key is never added; the cap
+       resolver fails this program closed (unknown company/period).
 
-    NON-RECURSIVE BY DESIGN: a sibling's rows are looked up via
-    current_result_fingerprint (the newest-persisted-row read), never
-    current_generation_fingerprint — the latter itself calls this exact
-    function to include company/period facts in ITS OWN fingerprint,
-    so two mutual siblings would otherwise recurse into each other
-    without bound. This means a sibling whose own facts changed SINCE
-    its last real evaluate_project() call (without being re-evaluated)
-    contributes its last-PERSISTED award, not a hypothetical freshly-
-    recomputed one — the same "append-only, newest-row" semantics
-    current_result_fingerprint's own docstring already documents for
-    every other stale-generation reader in this codebase."""
-    from app.calculators import apply_fx_rates
+    2. SIBLING-COVERAGE GATE — every OTHER real Project row sharing the
+       EXACT SAME company+period (this project excluded) is found. If
+       NONE exist, this company genuinely has no other production this
+       period — a real, verifiable "alone" state requiring no ledger
+       entry at all (company_period_has_other_productions_fact_key is
+       simply never set — the cap resolver's existing "no claim -> full
+       cap" path applies, unchanged). If ANY sibling projects exist, the
+       ledger MUST have at least one entry for this exact
+       (company, period, program) triple before anything is trusted —
+       absence means "a sibling production's award status is
+       unresolved", and company_period_sibling_coverage_complete_
+       fact_key is never set, so the cap resolver fails closed. This is
+       the EXACT adverse case Codex named: "Sibling existence with
+       unknown award evidence remains unresolved and no full cap is
+       asserted" — a sibling PROJECT existing is not proof of an award,
+       but it IS proof that "we simply never checked" cannot be treated
+       as "there is nothing to check".
+
+    3. AWARD-SUM GATE — once sibling coverage is confirmed complete (by
+       the ledger having at least one real entry for this triple, even
+       if every entry is a non-cap-consuming status like PENDING/
+       DENIED), the REAL sum of APPROVED/GRANTED native amounts is the
+       trustworthy remaining-cap input — company_period_has_other_
+       productions_fact_key is set (even when the sum is exactly $0.00,
+       a real EVIDENCED zero, explicitly distinct from the "no ledger
+       row at all" unresolved case in gate 2)."""
     from app.data.program_rate_rules import INCENTIVE_VALUE_CAP_RULES
+    from app.services.incentive_award_ledger_service import company_period_program_award_summary
 
     evidenced: set[str] = set()
     amounts: dict[str, float] = {}
@@ -2259,41 +2328,42 @@ async def _company_period_prior_award_facts(
         if cap.company_period_identity_known_fact_key:
             evidenced.add(cap.company_period_identity_known_fact_key)
 
-        total_native = 0.0
-        found_any = False
-        for sibling_id in sibling_ids:
-            sibling_fp = await current_result_fingerprint(session, sibling_id)
-            if not sibling_fp:
-                continue
-            rows = (await session.execute(
-                select(StructureCalculationResult)
-                .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-                .where(
-                    ProductionStructure.project_id == sibling_id,
-                    StructureCalculationResult.input_fingerprint == sibling_fp,
-                    StructureCalculationResult.engine_version == ENGINE_VERSION,
-                )
-            )).scalars().all()
-            for row in rows:
-                trace = row.calculation_trace_json or {}
-                slugs = trace.get("program_slugs") or (
-                    [trace.get("program_slug")] if trace.get("program_slug") else []
-                )
-                if cap.program_slug not in slugs:
-                    continue
-                if trace.get("candidate_status") != STATUS_PRICED:
-                    continue
-                incentive_usd = row.total_incentive_value_usd
-                if incentive_usd is None:
-                    continue
-                conversion, resolution = apply_fx_rates.convert_usd_to_local_ctx(
-                    float(incentive_usd), cap.cap_currency, inputs.fx_context,
-                )
-                if resolution.ok and conversion is not None:
-                    total_native += conversion.target_amount
-                    found_any = True
+        if not sibling_ids:
+            # Gate 2, real "alone" branch: no other production exists
+            # for this company/period at all — nothing to be unresolved
+            # about. Coverage is VACUOUSLY complete (there is nothing to
+            # cover), so sibling_coverage_complete IS evidenced here —
+            # this is what lets the resolver distinguish "genuinely
+            # alone" (full cap applies) from "siblings exist but were
+            # never checked" (unresolved, below). has_other_productions
+            # stays unset either way; the resolver's existing "no claim
+            # -> full cap" path applies, unchanged.
+            if cap.company_period_sibling_coverage_complete_fact_key:
+                evidenced.add(cap.company_period_sibling_coverage_complete_fact_key)
+            continue
 
-        if found_any and cap.company_period_has_other_productions_fact_key:
+        has_rows, total_native = await company_period_program_award_summary(
+            session,
+            production_company_identifier=company,
+            award_period_year=period,
+            program_slug=cap.program_slug,
+        )
+        if not has_rows:
+            # Gate 2 fails: sibling project(s) exist but the ledger has
+            # NEVER been checked/recorded for this exact triple — this
+            # is genuinely unresolved, never a zero. Neither
+            # sibling_coverage_complete nor has_other_productions is
+            # set (deliberately NOT added — see docstring gate 2); the
+            # cap resolver must fail this segment closed.
+            continue
+
+        # Gate 2 passes (real ledger coverage exists); Gate 3: the real,
+        # evidenced sum — possibly exactly $0.00 if every recorded row
+        # is PENDING/DENIED, which is a genuine, trustworthy zero,
+        # distinct from "no ledger row at all" above.
+        if cap.company_period_sibling_coverage_complete_fact_key:
+            evidenced.add(cap.company_period_sibling_coverage_complete_fact_key)
+        if cap.company_period_has_other_productions_fact_key:
             evidenced.add(cap.company_period_has_other_productions_fact_key)
             amounts[cap.company_period_prior_award_fact_key] = round(total_native, 2)
 
@@ -2658,6 +2728,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # depends on removing it).
     _qual_state_by_code_program: dict[tuple[str, str], str | None] = {}
     _qual_state_by_program: dict[str, str | None] = {}
+    # Codex final four-row remediation (P0-SEL-ALT-001): the FULL merged
+    # role_qualification dict (missing_facts/curable_requirements/
+    # failed_requirements/reasoning_trace/qualification_route), keyed by
+    # program_slug alone (same key as _qual_state_by_program, same
+    # worse-wins semantics), so component/stack aggregation can retain
+    # every participant's complete detail instead of collapsing to a
+    # single severity string. Value is (jurisdiction_code, full_dict) so
+    # the aggregate can disclose WHICH jurisdiction the retained detail
+    # was captured under, even though the dict itself is looked up by
+    # program identity alone (the same federal-member-under-a-different-
+    # code reason _qual_state_by_program's own comment already documents).
+    _qual_detail_by_program: dict[str, tuple[str, dict | None]] = {}
 
     # role_known_codes/script_facts (Canonical Co-production Qualification
     # Reconnection / Worldwide Qualification Consumption Closeout) are
@@ -2837,10 +2919,12 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # examination erase an earlier real gap.
         if program_slug not in _qual_state_by_program:
             _qual_state_by_program[program_slug] = _this_qual_state
+            _qual_detail_by_program[program_slug] = (code, _role_qualification)
         else:
             _prior_state = _qual_state_by_program[program_slug]
             if _QUAL_STATE_SEVERITY.get(_this_qual_state, 2) < _QUAL_STATE_SEVERITY.get(_prior_state, 2):
                 _qual_state_by_program[program_slug] = _this_qual_state
+                _qual_detail_by_program[program_slug] = (code, _role_qualification)
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # Two-axis authority correction: a program priced under a
         # PROVENANCE_DISCLOSURE_STATES disposition (real rate data, but its
@@ -3223,6 +3307,14 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             key=lambda s: _QUAL_STATE_SEVERITY.get(s, 2),
             default=None,
         )
+        # Codex final four-row remediation (P0-SEL-ALT-001): the FULL
+        # per-participant aggregate, retaining every member's own
+        # missing/curable/failed requirements and reasoning — never
+        # collapsed to _combo_qual_state alone (which stays the admission/
+        # ranking severity signal, unchanged).
+        _combo_participant_qualifications = _participant_qualification_aggregate(
+            stack_result.program_slugs, _qual_detail_by_program,
+        )
         program_label = " + ".join(stack_result.program_slugs)
         structure = ProductionStructure(
             id=uuid.uuid4(),
@@ -3364,14 +3456,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "conditional_compatibility": _conditional_compatibility_dict,
                 # CBA-002 continuation — a combined structure is never
                 # Recommended-eligible on its own if any member individually
-                # carries a real, unresolved qualification gap. Only the
-                # `state` key is populated (the Recommended-admission gate
-                # at _admits_recommended/canonical_production_view.py reads
-                # exactly and only this key); per-member detail remains on
-                # each single-program candidate's own trace.
+                # carries a real, unresolved qualification gap. `state` is
+                # the admission/ranking severity signal
+                # (_admits_recommended/canonical_production_view.py read
+                # exactly and only this key for that decision).
+                # Codex final four-row remediation (P0-SEL-ALT-001):
+                # participant_qualifications ALSO now carries every
+                # member's own full detail (was: entirely discarded) — see
+                # _participant_qualification_aggregate's own docstring.
                 "role_qualification": (
                     {"state": _combo_qual_state} if _combo_qual_state is not None else None
                 ),
+                "participant_qualifications": _combo_participant_qualifications,
             },
             input_fingerprint=fingerprint,
         ))
@@ -3610,6 +3706,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     key=lambda s: _QUAL_STATE_SEVERITY.get(s, 2),
                     default=None,
                 )
+                # Codex final four-row remediation (P0-SEL-ALT-001): the
+                # FULL per-participant aggregate for BOTH the anchor
+                # (home_program_slug -- e.g. FVD's gr_cash_rebate, whose
+                # own gr_aggregate cultural-test missing_fact was
+                # previously discarded entirely) and the routed target,
+                # never collapsed to _component_qual_state alone.
+                _component_participant_qualifications = _participant_qualification_aggregate(
+                    tuple(s for s in (home_program_slug, target.program_slug) if s),
+                    _qual_detail_by_program,
+                )
                 # The COMPONENT itself relocates to target.jurisdiction_code
                 # (never home_code, the anchor that never moves) — relocation
                 # completeness is evaluated against the jurisdiction the
@@ -3662,6 +3768,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         "role_qualification": (
                             {"state": _component_qual_state} if _component_qual_state is not None else None
                         ),
+                        "participant_qualifications": _component_participant_qualifications,
                         "anchor_jurisdiction": home_code,
                         "anchor_program": home_program_slug,
                         "component_allocations": [{
