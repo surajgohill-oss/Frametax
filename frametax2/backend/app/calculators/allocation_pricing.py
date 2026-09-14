@@ -633,6 +633,94 @@ def price_segment(
                 qpe_cap_applied = round(qpe - cap_ceiling, 2)
                 qpe = cap_ceiling
 
+    # Codex final three-program conservation repair (P0-ZA-001, fifth
+    # pass): "absent scalar rejects instead of deriving." A program
+    # whose winning tier is gated on an exact qualifying-line component
+    # basis (e.g. ZA's post/VFX QSAPPE) must become ELIGIBLE directly
+    # from its OWN real, traced qualifying lines -- never require a
+    # redundant caller-supplied scalar just to unlock tier eligibility.
+    # For every RateCondition across this program's own registered
+    # tiers that declares component_basis_line_components, the real
+    # traced QUALIFYING subtotal is computed HERE (from this SAME
+    # segment's own register/allocations) and injected into amount_facts
+    # under that condition's own amount_fact_key -- OVERRIDING any
+    # caller-supplied value, since the real traced line data is always
+    # the authoritative source of truth, never a caller's separate
+    # claim. This is what lets resolve_program_rate's tier-eligibility
+    # check see the real basis without the caller ever needing to
+    # duplicate it, and what makes a caller-supplied MISMATCHED value
+    # (Codex's exact adverse reproducer) simply never reach pricing at
+    # all -- the real derived figure is used instead.
+    _caller_amount_facts = dict(amount_facts or {})
+    _derived_amount_facts = dict(_caller_amount_facts)
+    for _rule in get_rate_rules(slug):
+        for _cond in _rule.conditions:
+            if not _cond.component_basis_line_components or not _cond.amount_fact_key:
+                continue
+            _cb_lines = [
+                a for a in allocations
+                if a.jurisdiction_code == jurisdiction_code and a.component in _cond.component_basis_line_components
+            ]
+            if not _cb_lines or any(not a.line_id for a in _cb_lines):
+                continue  # no real traced lines, or an untraceable one -- let the
+                          # downstream missing-ID/no-lines path (or tier
+                          # ineligibility, for a program with no such
+                          # path) handle disclosure
+            _seen_cb_ids: set[str] = set()
+            if any(a.line_id in _seen_cb_ids or _seen_cb_ids.add(a.line_id) for a in _cb_lines):
+                continue  # duplicate line_id -- let the downstream duplicate check handle disclosure
+            _qualifies_cb: dict[str, float] = {}
+            for _entry in register:
+                if _entry.state == QualificationState.QUALIFIES and _entry.line_id:
+                    _qualifies_cb[_entry.line_id] = _qualifies_cb.get(_entry.line_id, 0.0) + _entry.amount_usd
+            # Codex final three-program conservation repair (P0-OR-001,
+            # fifth pass): "per-payee QPE limitation applied before
+            # rates." When this condition is Oregon's own payroll basis,
+            # EACH real traced line's own qualifying amount is treated
+            # as one payee's compensation and capped at OAR
+            # 951-002-0010's real USD1,000,000 per-payee exclusion
+            # BEFORE being summed -- oregon_per_payee_capped_total is
+            # now genuinely invoked from this production pricing path,
+            # never only from a test.
+            if _cond.amount_fact_key == "us_or_payroll_qpe_usd":
+                from app.data.program_rate_rules import oregon_per_payee_capped_total
+                _per_line_amounts = [_qualifies_cb.get(a.line_id, 0.0) for a in _cb_lines]
+                _derived_subtotal = oregon_per_payee_capped_total(_per_line_amounts)
+            else:
+                _derived_subtotal = round(sum(_qualifies_cb.get(a.line_id, 0.0) for a in _cb_lines), 2)
+            if _cond.amount_fact_key in _caller_amount_facts:
+                _caller_val = _caller_amount_facts[_cond.amount_fact_key]
+                if (not isinstance(_caller_val, (int, float)) or isinstance(_caller_val, bool)
+                        or not math.isfinite(_caller_val)
+                        or abs(round(_caller_val, 2) - _derived_subtotal) > 0.005):
+                    # Codex final three-program conservation repair
+                    # (P0-OR-001/P0-ZA-001, fifth pass): "Composite
+                    # component facts ... are not bound to canonical
+                    # lines/payees" -- a caller-asserted figure with no
+                    # exact relationship to this segment's own real,
+                    # per-payee-capped, qualifying traced lines must
+                    # reject the WHOLE segment before pricing, never be
+                    # accepted at face value (Codex's exact Oregon
+                    # reproducer: USD50,000,000 asserted against a
+                    # USD4,517,687 real source budget).
+                    return SegmentEconomics(
+                        jurisdiction_code=jurisdiction_code, program_slug=slug,
+                        claims_incentive=True, allocated_usd=allocated,
+                        account_codes=codes, executable=False,
+                        qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                        doctrine=doctrine.value,
+                        blockers=(
+                            f"{jurisdiction_code}/{slug}: caller-supplied '{_cond.amount_fact_key}' "
+                            f"= {_caller_val!r} does not EXACTLY match the real, exactly-traced, "
+                            f"qualifying (and, where applicable, per-payee-capped) canonical line "
+                            f"subtotal ${_derived_subtotal:,.2f} for component(s) "
+                            f"{'/'.join(_cond.component_basis_line_components)} -- rejected before "
+                            "pricing rather than accepted as an unreconciled scalar.",
+                        ),
+                    )
+            _derived_amount_facts[_cond.amount_fact_key] = _derived_subtotal
+    amount_facts = _derived_amount_facts
+
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
                                gross_budget_usd=gross_budget_usd,
                                evidenced_facts=evidenced_requirement_facts,
@@ -870,7 +958,25 @@ def price_segment(
         # closed -- never silently clamps the basis down and prices a
         # smaller-but-still-invented number.
         _basis = rr.qpe_basis_used
-        if not isinstance(_basis, (int, float)) or isinstance(_basis, bool) or not math.isfinite(_basis):
+        # Codex final three-program conservation repair (P0-ZA-001, fifth
+        # pass): "Exact qualifying line subtotal is computed but used
+        # only as a maximum for a caller scalar" -- a caller-supplied
+        # scalar SMALLER than the real exact subtotal (e.g. USD300,000
+        # claimed against a real USD400,000 qualifying line) was
+        # accepted and priced at the SMALLER, wrong figure; with NO
+        # scalar at all, the segment was non-executable even though the
+        # real exact subtotal was fully known and derivable. Neither is
+        # correct: when this program declares qpe_basis_line_components,
+        # the engine-DERIVED exact qualifying-line subtotal (computed
+        # below) is the basis itself -- never a caller ceiling. Presence
+        # of `_basis` (a caller scalar) here is validated only for
+        # finiteness BEFORE this point is known; a None value (no caller
+        # scalar at all) is fine for a line-components program (derived
+        # directly below) but remains a hard reject for every other
+        # component-basis program that has no derivation mechanism.
+        if rr.qpe_basis_line_components is None and (
+            not isinstance(_basis, (int, float)) or isinstance(_basis, bool) or not math.isfinite(_basis)
+        ):
             return SegmentEconomics(
                 jurisdiction_code=jurisdiction_code, program_slug=slug,
                 claims_incentive=True, allocated_usd=allocated,
@@ -880,6 +986,20 @@ def price_segment(
                 blockers=(
                     f"{jurisdiction_code}/{slug}: component basis {_basis!r} is not a finite "
                     "non-negative number -- rejected before arithmetic, never used to compute economics.",
+                ),
+            )
+        if rr.qpe_basis_line_components is not None and _basis is not None and (
+            not isinstance(_basis, (int, float)) or isinstance(_basis, bool) or not math.isfinite(_basis)
+        ):
+            return SegmentEconomics(
+                jurisdiction_code=jurisdiction_code, program_slug=slug,
+                claims_incentive=True, allocated_usd=allocated,
+                account_codes=codes, executable=False,
+                qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                doctrine=doctrine.value,
+                blockers=(
+                    f"{jurisdiction_code}/{slug}: caller-supplied component basis {_basis!r} is "
+                    "not a finite non-negative number -- rejected before arithmetic.",
                 ),
             )
         _basis_upper_bound = qpe
@@ -959,16 +1079,54 @@ def price_segment(
                     _qualifies_by_line_id[_entry.line_id] = (
                         _qualifies_by_line_id.get(_entry.line_id, 0.0) + _entry.amount_usd
                     )
-            _traced_subtotal = round(
-                sum(_qualifies_by_line_id.get(_a.line_id, 0.0) for _a in _traced_lines), 2,
-            )
+            # Codex final three-program conservation repair (P0-OR-001,
+            # fifth pass): this bound must apply the SAME per-payee cap
+            # as the pre-resolve_program_rate derivation above (line
+            # ~654) for Oregon's payroll condition specifically --
+            # otherwise an uncapped bound here would conflict with the
+            # correctly-capped value already injected into
+            # rr.qpe_basis_used, producing a false mismatch rejection.
+            if "us_or_payroll_qpe_usd" in (amount_facts or {}) and rr.qpe_basis_line_components == ("payroll",):
+                from app.data.program_rate_rules import oregon_per_payee_capped_total
+                _traced_subtotal = oregon_per_payee_capped_total(
+                    [_qualifies_by_line_id.get(_a.line_id, 0.0) for _a in _traced_lines],
+                )
+            else:
+                _traced_subtotal = round(
+                    sum(_qualifies_by_line_id.get(_a.line_id, 0.0) for _a in _traced_lines), 2,
+                )
             _basis_upper_bound = _traced_subtotal
             _basis_bound_label = (
                 f"the exact QUALIFYING classified {'/'.join(rr.qpe_basis_line_components)} "
                 f"allocated line subtotal ${_basis_upper_bound:,.2f} (excluded/unresolved/"
                 "duplicate/missing-ID lines contribute nothing toward this basis)"
             )
-        if _basis < 0 or _basis > _basis_upper_bound:
+            # Codex final three-program conservation repair (P0-ZA-001,
+            # fifth pass): THE FIX. The engine-derived exact qualifying-
+            # line subtotal (_traced_subtotal) IS the pricing basis —
+            # never a caller ceiling a smaller scalar can undercut. If a
+            # caller-supplied scalar is ALSO present (e.g. for disclosure/
+            # confirmation/provenance), it is required to match the
+            # derived subtotal EXACTLY (to the cent) — any mismatch,
+            # smaller OR larger, rejects the whole segment rather than
+            # silently preferring either figure.
+            if _basis is not None and abs(round(_basis, 2) - round(_basis_upper_bound, 2)) > 0.005:
+                return SegmentEconomics(
+                    jurisdiction_code=jurisdiction_code, program_slug=slug,
+                    claims_incentive=True, allocated_usd=allocated,
+                    account_codes=codes, executable=False,
+                    qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                    doctrine=doctrine.value,
+                    blockers=(
+                        f"{jurisdiction_code}/{slug}: caller-supplied component basis "
+                        f"${_basis:,.2f} does not EXACTLY match {_basis_bound_label} -- a "
+                        "confirming scalar must equal the engine-derived exact qualifying-"
+                        "line subtotal to the cent; any mismatch is rejected rather than "
+                        "silently preferring either figure.",
+                    ),
+                )
+            _basis = _basis_upper_bound
+        elif _basis is None or _basis < 0 or _basis > _basis_upper_bound:
             return SegmentEconomics(
                 jurisdiction_code=jurisdiction_code, program_slug=slug,
                 claims_incentive=True, allocated_usd=allocated,
@@ -976,7 +1134,7 @@ def price_segment(
                 qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
                 doctrine=doctrine.value,
                 blockers=(
-                    f"{jurisdiction_code}/{slug}: component basis ${_basis:,.2f} is outside "
+                    f"{jurisdiction_code}/{slug}: component basis {_basis!r} is outside "
                     f"[0, {_basis_bound_label}] for this segment -- a claimed component "
                     "sub-total can never exceed (or be less than zero of) the segment's own "
                     "real, exactly-traced qualifying spend; rejected rather than priced on an "

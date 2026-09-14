@@ -1,0 +1,18 @@
+checkpoint,status,evidence,expected,actual
+exact_codex_reproducer_smaller_scalar_rejects,PASS,"test_za_nfvf_rebate_qsappe_smaller_caller_scalar_rejects_not_undercut -- real Post line=400000, claimed scalar=300000",Reject; never price 75000,executable=False; incentive_floor_usd in (None, 0.0)
+absent_scalar_derives_directly,PASS,same test -- no amount_facts at all against the same real 400000 line,Basis derives as 400000; incentive=100000,"executable=True; incentive_floor_usd=100,000.00"
+exact_match_scalar_control,PASS,same test -- claimed scalar=400000 exactly matches real line,incentive=100000,"100,000.00"
+excluded_contingency_line_prices_zero,PASS,"test_za_nfvf_rebate_qsappe_reconciles_to_exact_qualifying_lines_only -- component=post, spend_category=contingency, amount=claim=400000",Reject; never price 100000,executable=False; incentive in (None,0.0)
+genuine_post_control,PASS,same test -- same 400000 amount, real qualifying post spend_category,Prices 25% = 100000,100000.00
+partial_split_contingency_conserves_deployed_portion,PASS,"test_za_nfvf_rebate_qsappe_partial_split_contingency_line_reconciles_to_deployed_portion -- 1,000,000 reserve, 400,000 confirmed deployed to post",Only the deployed 400000 forms the basis,"executable=True; incentive=100,000.00 (not 250,000)"
+full_undeployed_reserve_claim_rejects,PASS,same test -- claim=1000000 (the whole reserve),Reject,executable=False
+missing_line_id_rejects,PASS,pre-existing coverage in earlier pass's suite (unchanged this pass),Reject before arithmetic,executable=False
+duplicate_line_id_rejects,PASS,pre-existing coverage (test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch),Reject; duplicate blocker,executable=False; duplicate line_id blocker present
+zero_post_vfx_lines_rejects,PASS,same test -- claim against allocation with zero classified post/vfx lines,Reject,executable=False
+one_cent_over_traced_subtotal_rejects,PASS,same test -- claim=400000.01 against real 400000 line,Reject,executable=False
+negative_nan_inf_component_basis_rejects,PASS,same test -- -5.0/NaN/+inf/-inf,Reject all,All reject
+combined_post_plus_vfx_lines,PASS,same test -- 300000 post + 100000 vfx = 400000 combined subtotal,Prices 25% = 100000,100000.00
+zar_cap_applies_to_calculated_incentive,PASS,test_za_nfvf_rebate_accepted_gate_and_cap + cap-applies test,ZAR25,000,000-equivalent cap reduces an over-cap calculated incentive,Reduced to cap exactly
+general_branch_byte_identical,PASS,test_za_nfvf_rebate_accepted_gate_and_cap,USD925309.50 unchanged,925309.50
+full_formulaic_matrix_no_regression,PASS,"tests/test_final_formulaic_full_pipeline_consumption.py, full file",26 passed,26 passed
+south_africa_gate,PASS,All 10 za_nfvf_rebate-scoped tests,Exact line-derived QSAPPE in all cases,All pass

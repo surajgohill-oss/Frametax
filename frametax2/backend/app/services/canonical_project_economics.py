@@ -686,9 +686,13 @@ async def build_project_economic_inputs(
         # Codex final wiring remediation (P0-NL-001) — read directly from
         # the canonical Project row, never inferred/derived from title or
         # id. None/None (the default for every existing project) means
-        # genuinely unknown company/period.
+        # genuinely unknown company/period. Codex final three-program
+        # conservation repair (fifth pass): award_period_year now reads
+        # the project's OWN explicit award_period_year column, never
+        # target_shoot_year (a production-planning fact, not a real
+        # statement of the statutory award period).
         production_company_identifier=project.production_company_identifier,
-        award_period_year=project.target_shoot_year,
+        award_period_year=project.award_period_year,
     ))
 
 

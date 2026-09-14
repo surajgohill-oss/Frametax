@@ -31,14 +31,28 @@ class Project(Base):
     # STABLE identity for the real-world legal production company entity
     # behind this project — never the project's own title or id, never
     # inferred. Two projects sharing this SAME identifier (and the SAME
-    # target_shoot_year, reused as the award period/year) are the SAME
-    # company for cross-project, per-company-per-year incentive cap
-    # conservation (e.g. nl_film_production_incentive's EUR3,000,000
-    # ceiling). NULL means "no canonical company identity on file" —
-    # any company/period-scoped cap must remain conditional/non-priceable
-    # until this is set, never treated as an affirmative "no other
-    # productions" zero.
+    # award_period_year, below) are the SAME company for cross-project,
+    # per-company-per-year incentive cap conservation (e.g.
+    # nl_film_production_incentive's EUR3,000,000 ceiling). NULL means
+    # "no canonical company identity on file" — any company/period-scoped
+    # cap must remain conditional/non-priceable until this is set, never
+    # treated as an affirmative "no other productions" zero.
     production_company_identifier: Mapped[str | None] = mapped_column(String(255), index=True)
+
+    # Codex final three-program conservation repair (P0-NL-001, fifth
+    # pass): "Do not infer award period from target_shoot_year." Codex's
+    # exact finding: target_shoot_year is a SCRIPT/PRODUCTION-PLANNING
+    # fact (when principal photography is expected), never a real,
+    # explicit statement of which statutory award PERIOD/YEAR a
+    # producer's incentive application belongs to — a production could
+    # shoot in one calendar year and apply/be awarded in a different
+    # fiscal/award period. This is a SEPARATE, explicit, producer-
+    # supplied fact, never derived or defaulted from target_shoot_year.
+    # NULL (the default, every existing project) means "no explicit
+    # award period on file" — any company/period-scoped cap must remain
+    # conditional/non-priceable until this is set, exactly like
+    # production_company_identifier's own NULL semantics above.
+    award_period_year: Mapped[int | None] = mapped_column(Integer, index=True)
 
     # Lifecycle — USER-CONTROLLED ONLY. The engine (optimizer, document
     # completeness, incentive qualification, scenario selection) must never

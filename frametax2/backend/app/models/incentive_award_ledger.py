@@ -93,6 +93,22 @@ class IncentiveAwardLedgerEntry(Base):
 
     program_slug: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
+    # Codex final three-program conservation repair (P0-NL-001, fifth
+    # pass): "no award-event identity/supersession... one real award
+    # counted once." A stable, caller-supplied identity for ONE real
+    # award decision (e.g. the producer's own application/reference
+    # number) — every row sharing the SAME award_event_id is a STATUS
+    # TRANSITION of the SAME real award (PENDING -> APPROVED -> GRANTED),
+    # never a second, additional award. Read-side conservation
+    # (company_period_program_award_summary) collapses to exactly the
+    # NEWEST row per award_event_id before summing, so an
+    # APPROVED->GRANTED transition for one award is counted once, never
+    # twice. NOT NULL: every real award must have a real, stable
+    # identity — an anonymous row can never be reconciled against a
+    # future status update, so it would either be silently ignored on
+    # supersession or double-counted as a second award.
+    award_event_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+
     # Codex: "native-EUR approved/granted award amount" — generic
     # (native_currency is a real column, not hardcoded EUR) so this
     # table is reusable for any future native-currency company/period
@@ -123,5 +139,13 @@ class IncentiveAwardLedgerEntry(Base):
         Index(
             "ix_award_ledger_company_period_program",
             "production_company_identifier", "award_period_year", "program_slug",
+        ),
+        # Codex final three-program conservation repair (P0-NL-001, fifth
+        # pass): every status-transition row for the SAME real award
+        # shares this triple + award_event_id — used by the read-side
+        # newest-row-per-event collapse.
+        Index(
+            "ix_award_ledger_event",
+            "production_company_identifier", "award_period_year", "program_slug", "award_event_id",
         ),
     )

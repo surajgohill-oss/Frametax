@@ -1,0 +1,21 @@
+checkpoint,status,evidence,expected,actual
+public_writer_cap_conservation,PASS,test_two_concurrent_public_writer_sessions_cannot_exceed_cap -- two real concurrent AsyncSession calls to record_incentive_award(),Exactly one of two concurrent EUR3000000 claims succeeds; total <= EUR3000000,"1 success, 1 ValueError rejection; real summed total = EUR3,000,000.00"
+award_event_transition_counts_once,PASS,test_approved_to_granted_transition_counts_once -- same award_event_id APPROVED then GRANTED,EUR2000000 summed once,"EUR2,000,000.00 (not EUR4,000,000)"
+distinct_second_award_adds_on_top,PASS,same test -- different award_event_id for same triple,EUR2500000 combined,"EUR2,500,000.00"
+duplicate_event_idempotent,PASS,test_duplicate_award_event_insertion_is_idempotent -- 3x identical insert same event_id,"1 row, total unchanged",1 row; EUR1000000.00 total
+wrong_currency_rejected,PASS,test_wrong_currency_rejected -- USD write against EUR-capped program,ValueError raised; no row written,ValueError raised; has_rows=False after
+nonfinite_zero_negative_amounts_rejected,PASS,test_nonfinite_zero_and_negative_amounts_rejected -- NaN/inf/-inf/0/-1,ValueError for all 5; no row written,ValueError for all 5; has_rows=False after
+unverified_never_consumes_cap,PASS,test_unverified_approved_award_never_consumes_cap,Full cap still applies (unverified claim ignored),Full EUR3m-equivalent cap applied
+missing_award_period_fails_closed,PASS,test_missing_award_period_fails_closed -- real company identity but award_period_year=None,is_fully_priced=False,is_fully_priced=False
+company_isolation,PASS,test_wrong_company_isolation_at_ledger_service_level,has_rows=False for different company,has_rows=False
+period_isolation,PASS,test_wrong_period_isolation_at_ledger_service_level,has_rows=False for different period,has_rows=False
+program_isolation,PASS,test_wrong_program_isolation_at_ledger_service_level,has_rows=False for different program_slug,has_rows=False
+alone_full_cap,PASS,test_project_alone_no_siblings_prices_full_cap,Full cap when no sibling Project exists,"USD3,421,571.87"
+sibling_no_ledger_row_unresolved,PASS,test_sibling_project_exists_with_no_ledger_row_remains_unresolved,is_fully_priced=False,is_fully_priced=False
+sibling_recorded_evidenced_reduces_cap,PASS,test_sibling_recorded_approved_evidenced_award_reduces_remaining_cap,60% of full cap after EUR1.2m recorded,60% of full cap
+sibling_denied_evidenced_zero,PASS,test_sibling_recorded_denied_award_is_evidenced_zero_not_unresolved,Full cap (real evidenced zero),Full cap
+repeated_evaluation_stable,PASS,test_repeated_evaluation_is_stable -- 3x evaluate_project same project,Identical result each time,Identical
+reversed_order_symmetric,PASS,test_reversed_evaluation_order_produces_symmetric_conservation,50% of full cap for both A and B regardless of order,50% for both
+migration_cycle,PASS,alembic upgrade/downgrade/re-upgrade on real dev DB (0073<->0074),Clean cycle,Clean cycle
+award_period_column_explicit,PASS,"Project.award_period_year (new), canonical_project_economics.py + canonical_evaluation.py both read it, never target_shoot_year",No inference from target_shoot_year,Confirmed via code + missing_award_period_fails_closed test
+netherlands_gate,PASS,All 23 owning tests + migration,All conservation properties hold via public writer,All pass

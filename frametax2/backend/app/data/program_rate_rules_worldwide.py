@@ -2518,6 +2518,22 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                     amount_fact_key="us_or_payroll_qpe_usd",
                     amount_fact_min=1_000_000.0,
                     is_component_basis=True,
+                    # Codex final three-program conservation repair
+                    # (P0-OR-001, fifth pass): "Composite component
+                    # facts ... are not bound to canonical lines/
+                    # payees." A caller-asserted payroll figure with no
+                    # relationship to this segment's own real budget
+                    # lines could exceed the entire source budget
+                    # (Codex's exact reproducer: USD50m against a
+                    # USD4.5m real budget). This names the REAL
+                    # AccountAllocation.component tag ("payroll") this
+                    # segment's own producer-routed allocations use for
+                    # Oregon payroll spend — allocation_pricing.
+                    # price_segment now derives/reconciles this fact
+                    # directly from those real, traced lines (per-payee
+                    # capped — see oregon_per_payee_capped_total),
+                    # exactly like South Africa's post/VFX QSAPPE basis.
+                    component_basis_line_components=("payroll",),
                 ),
                 # Codex final wiring remediation (P0-OR-001): disposition
                 # B (conditional formula opportunity). REPLACES the prior
@@ -2650,6 +2666,13 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                     amount_fact_key="us_or_other_qpe_usd",
                     amount_fact_min=1_000_000.0,
                     is_component_basis=True,
+                    # Codex final three-program conservation repair
+                    # (P0-OR-001, fifth pass): see us-or-payroll-
+                    # component-basis's own comment. Real, non-payroll
+                    # Oregon production spend is routed with
+                    # AccountAllocation.component "production" (this
+                    # engine's ordinary default tag) or "other".
+                    component_basis_line_components=("production", "other"),
                 ),
                 # Codex final wiring remediation (P0-OR-001): the SAME
                 # three real gates as the payroll tier above — see that

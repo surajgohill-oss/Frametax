@@ -2319,7 +2319,11 @@ async def _company_period_prior_award_facts(
     sibling_ids = (await session.execute(
         select(Project.id).where(
             Project.production_company_identifier == company,
-            Project.target_shoot_year == period,
+            # Codex final three-program conservation repair (P0-NL-001,
+            # fifth pass): the real, explicit award_period_year column,
+            # never target_shoot_year (a production-planning fact, not a
+            # statement of the statutory award period).
+            Project.award_period_year == period,
             Project.id != project.id,
         )
     )).scalars().all()
@@ -2347,6 +2351,12 @@ async def _company_period_prior_award_facts(
             production_company_identifier=company,
             award_period_year=period,
             program_slug=cap.program_slug,
+            # Codex final three-program conservation repair (P0-NL-001,
+            # fifth pass): defense in depth — never numerically combine
+            # a mismatched-currency row into this cap's own native total,
+            # even though record_incentive_award already refuses to
+            # write one in the first place.
+            expected_currency=cap.cap_currency,
         )
         if not has_rows:
             # Gate 2 fails: sibling project(s) exist but the ledger has

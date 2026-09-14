@@ -60,6 +60,7 @@ from app.models.enums import ProjectFactSourceType
 from app.models.incentive_award_ledger import (
     AWARD_STATUS_APPROVED,
     AWARD_STATUS_DENIED,
+    AWARD_STATUS_GRANTED,
     AWARD_STATUS_PENDING,
     EVIDENCE_STATE_EVIDENCED,
     EVIDENCE_STATE_UNVERIFIED,
@@ -132,7 +133,11 @@ async def _make_nl_project(
         title=f"NL Conservation Production {suffix}",
         home_jurisdiction_id=nl.id,
         production_company_identifier=company_identifier,
-        target_shoot_year=award_period_year,
+        # Codex final three-program conservation repair (P0-NL-001,
+        # fifth pass): the real, explicit award_period_year column,
+        # never target_shoot_year (a production-planning fact, not a
+        # statement of the statutory award period).
+        award_period_year=award_period_year,
     )
     db.add(project)
     await db.commit()
@@ -258,6 +263,7 @@ async def test_sibling_recorded_approved_evidenced_award_reduces_remaining_cap(d
             db,
             production_company_identifier=company, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=1_200_000.0,
             evidence_state=EVIDENCE_STATE_EVIDENCED, evidence_note="test: real grant letter on file",
             project_id=project_a.id,
@@ -293,6 +299,7 @@ async def test_sibling_recorded_denied_award_is_evidenced_zero_not_unresolved(db
             db,
             production_company_identifier=company, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_DENIED, native_currency="EUR", native_amount=None,
             evidence_state=EVIDENCE_STATE_EVIDENCED, evidence_note="test: application denied, on file",
             project_id=project_a.id,
@@ -330,6 +337,7 @@ async def test_unverified_approved_award_never_consumes_cap(db: AsyncSession):
             db,
             production_company_identifier=company, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=3_000_000.0,
             evidence_state=EVIDENCE_STATE_UNVERIFIED, evidence_note="test: unverified claim, no grant letter on file",
             project_id=project_a.id,
@@ -361,6 +369,7 @@ async def test_different_company_same_year_remains_isolated(db: AsyncSession):
             db,
             production_company_identifier=company_a, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=3_000_000.0,
             evidence_state=EVIDENCE_STATE_EVIDENCED, project_id=project_a.id,
         )
@@ -386,6 +395,7 @@ async def test_wrong_period_isolation_at_ledger_service_level(db: AsyncSession):
     await record_incentive_award(
         db, production_company_identifier=company, award_period_year=2040,
         program_slug="nl_film_production_incentive",
+        award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
         status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=3_000_000.0,
         evidence_state=EVIDENCE_STATE_EVIDENCED,
     )
@@ -407,6 +417,7 @@ async def test_wrong_program_isolation_at_ledger_service_level(db: AsyncSession)
     await record_incentive_award(
         db, production_company_identifier=company, award_period_year=2040,
         program_slug="nl_film_production_incentive",
+        award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
         status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=3_000_000.0,
         evidence_state=EVIDENCE_STATE_EVIDENCED,
     )
@@ -429,6 +440,7 @@ async def test_wrong_company_isolation_at_ledger_service_level(db: AsyncSession)
     await record_incentive_award(
         db, production_company_identifier=company_a, award_period_year=2040,
         program_slug="nl_film_production_incentive",
+        award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
         status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=3_000_000.0,
         evidence_state=EVIDENCE_STATE_EVIDENCED,
     )
@@ -477,6 +489,7 @@ async def test_repeated_evaluation_is_stable(db: AsyncSession):
         await record_incentive_award(
             db, production_company_identifier=company, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=1_500_000.0,
             evidence_state=EVIDENCE_STATE_EVIDENCED, project_id=project_a.id,
         )
@@ -522,12 +535,14 @@ async def test_reversed_evaluation_order_produces_symmetric_conservation(db: Asy
         await record_incentive_award(
             db, production_company_identifier=company, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-a-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=1_000_000.0,
             evidence_state=EVIDENCE_STATE_EVIDENCED, project_id=project_a.id,
         )
         await record_incentive_award(
             db, production_company_identifier=company, award_period_year=year,
             program_slug="nl_film_production_incentive",
+            award_event_id=f"evt-b-{uuid.uuid4().hex[:10]}",
             status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=500_000.0,
             evidence_state=EVIDENCE_STATE_EVIDENCED, project_id=project_b.id,
         )
@@ -677,68 +692,236 @@ def test_resolver_rejects_negative_and_over_cap_aggregates_directly():
     )
 
 
-# ── 9. Real concurrency: two genuine async DB sessions, one advisory lock
+# ── 9. Real concurrency: two genuine async DB sessions, PUBLIC writer ──
+# Codex final three-program conservation repair (P0-NL-001, fifth pass):
+# "Claude's prior concurrency test bypassed the public writer and
+# implemented its own safe read-decide-write sequence." This section
+# calls record_incentive_award() ITSELF, from two real, independent,
+# concurrent AsyncSession connections -- proving the PUBLIC writer's own
+# advisory-locked cap enforcement (not a test-local reimplementation of
+# it) is what prevents the cap from being exceeded.
 
-async def _read_decide_write_topup(company: str, year: int, program: str, cap_native: float) -> float:
-    """Models the REAL read-decide-write critical section a caller
-    (an incentive-office admin action, or a future auto-reconciliation
-    job) performs: lock the exact (company, period, program) triple,
-    read the CURRENT real total, and record a NEW award that tops the
-    company up to the full cap (i.e. records exactly the remaining
-    headroom as a fresh APPROVED/EVIDENCED award). Uses its OWN,
-    independent AsyncSession/connection -- a real second database
-    session, never a shared session or a sequential local variable."""
+async def _public_writer_full_award(company: str, year: int, program: str, event_id: str, amount: float) -> IncentiveAwardLedgerEntry | Exception:
+    """Calls the REAL, PUBLIC record_incentive_award() from its OWN,
+    independent AsyncSession/connection -- a genuine second database
+    session, never a shared session. Returns the written entry on
+    success or the caught exception on rejection (so both concurrent
+    outcomes can be inspected without one coroutine's exception
+    cancelling the other via asyncio.gather)."""
     async with AsyncSession(engine, expire_on_commit=False) as session:
-        key1, key2 = _advisory_lock_keys(company, year, program)
-        await session.execute(text("SELECT pg_advisory_xact_lock(:k1, :k2)"), {"k1": key1, "k2": key2})
-        _has_rows, total = await company_period_program_award_summary(
-            session, production_company_identifier=company, award_period_year=year, program_slug=program,
-        )
-        remaining = round(max(0.0, cap_native - total), 2)
-        entry = IncentiveAwardLedgerEntry(
-            production_company_identifier=company, award_period_year=year, program_slug=program,
-            status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=remaining,
-            evidence_state=EVIDENCE_STATE_EVIDENCED, evidence_note="concurrency test top-up",
-        )
-        session.add(entry)
-        await session.commit()
-        return remaining
+        try:
+            return await record_incentive_award(
+                session,
+                production_company_identifier=company, award_period_year=year, program_slug=program,
+                award_event_id=event_id,
+                status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=amount,
+                evidence_state=EVIDENCE_STATE_EVIDENCED, evidence_note="concurrency test — public writer",
+            )
+        except Exception as exc:  # noqa: BLE001 - deliberately captured, not re-raised, for gather()
+            return exc
 
 
-async def test_two_concurrent_sessions_cannot_both_consume_full_remaining_cap(db: AsyncSession):
+async def test_two_concurrent_public_writer_sessions_cannot_exceed_cap(db: AsyncSession):
+    """Two REAL, independent, concurrent calls to the PUBLIC
+    record_incentive_award() for the SAME triple, each claiming the
+    FULL EUR3,000,000 cap as a DISTINCT award event. Without the public
+    writer's own real read-decide-write cap enforcement (inside the
+    advisory lock), both would commit and the real ledger total would
+    reach EUR6,000,000 — exactly Codex's own reproduced defect. With the
+    fix, the lock serializes the two calls; whichever commits SECOND
+    must see the first's already-committed EUR3,000,000 and reject
+    itself (its own prospective total, EUR6,000,000, exceeds the cap)."""
     company = f"kvk-{uuid.uuid4().hex[:10]}"
     year = 2039
     program = "nl_film_production_incentive"
     cap_native = 3_000_000.0
     try:
-        # Two REAL, independent async sessions/connections racing to
-        # "top up to the cap" for the SAME triple, starting from a
-        # genuinely empty ledger. Without the transaction-scoped
-        # advisory lock serializing the read-then-write critical
-        # section, both could read total=0 concurrently and each write
-        # a EUR3,000,000 award, jointly consuming EUR6,000,000 -- double
-        # the real shared cap.
-        remaining_1, remaining_2 = await asyncio.gather(
-            _read_decide_write_topup(company, year, program, cap_native),
-            _read_decide_write_topup(company, year, program, cap_native),
+        result_1, result_2 = await asyncio.gather(
+            _public_writer_full_award(company, year, program, f"evt-race-1-{uuid.uuid4().hex[:6]}", cap_native),
+            _public_writer_full_award(company, year, program, f"evt-race-2-{uuid.uuid4().hex[:6]}", cap_native),
         )
-
-        results = sorted([remaining_1, remaining_2])
-        assert results == [pytest.approx(0.0, abs=0.01), pytest.approx(cap_native, abs=0.01)], (
-            f"two concurrent sessions racing to top up the SAME shared cap must "
-            f"never both observe the full EUR{cap_native:,.2f} headroom -- exactly "
-            f"one must see it consumed by the other's already-committed row; "
-            f"observed {results}"
+        outcomes = [result_1, result_2]
+        successes = [r for r in outcomes if isinstance(r, IncentiveAwardLedgerEntry)]
+        rejections = [r for r in outcomes if isinstance(r, Exception)]
+        assert len(successes) == 1 and len(rejections) == 1, (
+            f"exactly ONE of two concurrent EUR3,000,000 claims for the SAME cap must "
+            f"succeed and the other must be rejected by the public writer's own cap "
+            f"enforcement; observed successes={len(successes)} rejections={len(rejections)} "
+            f"({outcomes!r})"
         )
+        assert "exceed" in str(rejections[0]).lower() or "cap" in str(rejections[0]).lower()
 
         # Independent verification: the REAL total now on file for this
-        # triple must be exactly the cap -- never double-booked.
+        # triple, read through the SAME public summary function, must
+        # equal exactly the cap -- never double-booked.
         _has_rows, total = await company_period_program_award_summary(
             db, production_company_identifier=company, award_period_year=year, program_slug=program,
         )
         assert total == pytest.approx(cap_native, abs=0.01), (
-            f"the real, committed ledger total for this triple must equal the "
-            f"shared cap exactly ({cap_native:,.2f}), never exceed it; observed {total}"
+            f"the real, committed ledger total for this triple must equal the shared cap "
+            f"exactly ({cap_native:,.2f}), never exceed it; observed {total}"
         )
     finally:
         await _teardown_ledger(db, company)
+
+
+async def test_approved_to_granted_transition_counts_once():
+    """Codex's exact finding: 'APPROVED -> GRANTED can count one award
+    twice.' A single real award's status transition (recorded as a NEW
+    append-only row, same award_event_id) must be summed as ONE award,
+    never two."""
+    company = f"kvk-{uuid.uuid4().hex[:10]}"
+    year = 2050
+    event_id = f"evt-transition-{uuid.uuid4().hex[:8]}"
+    async with AsyncSession(engine, expire_on_commit=False) as db:
+        try:
+            await record_incentive_award(
+                db, production_company_identifier=company, award_period_year=year,
+                program_slug="nl_film_production_incentive", award_event_id=event_id,
+                status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=2_000_000.0,
+                evidence_state=EVIDENCE_STATE_EVIDENCED,
+            )
+            await record_incentive_award(
+                db, production_company_identifier=company, award_period_year=year,
+                program_slug="nl_film_production_incentive", award_event_id=event_id,
+                status=AWARD_STATUS_GRANTED, native_currency="EUR", native_amount=2_000_000.0,
+                evidence_state=EVIDENCE_STATE_EVIDENCED,
+            )
+            _has_rows, total = await company_period_program_award_summary(
+                db, production_company_identifier=company, award_period_year=year,
+                program_slug="nl_film_production_incentive",
+            )
+            assert total == pytest.approx(2_000_000.0, abs=0.01), (
+                f"one real award's APPROVED -> GRANTED transition (same award_event_id) must "
+                f"sum to EUR2,000,000 once, never EUR4,000,000; observed {total}"
+            )
+
+            # A genuinely SECOND, distinct award (different event_id) for
+            # the SAME triple correctly adds on top.
+            await record_incentive_award(
+                db, production_company_identifier=company, award_period_year=year,
+                program_slug="nl_film_production_incentive", award_event_id=f"evt-second-{uuid.uuid4().hex[:8]}",
+                status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=500_000.0,
+                evidence_state=EVIDENCE_STATE_EVIDENCED,
+            )
+            _has_rows, total_2 = await company_period_program_award_summary(
+                db, production_company_identifier=company, award_period_year=year,
+                program_slug="nl_film_production_incentive",
+            )
+            assert total_2 == pytest.approx(2_500_000.0, abs=0.01)
+        finally:
+            await _teardown_ledger(db, company)
+
+
+async def test_duplicate_award_event_insertion_is_idempotent():
+    """Codex requirement: 'Duplicate award-event insertion is rejected
+    or idempotently resolved.' An identical repeat of the newest row for
+    the SAME award_event_id must not create a second row / inflate the
+    total."""
+    company = f"kvk-{uuid.uuid4().hex[:10]}"
+    year = 2051
+    event_id = f"evt-dup-{uuid.uuid4().hex[:8]}"
+    async with AsyncSession(engine, expire_on_commit=False) as db:
+        try:
+            for _ in range(3):
+                await record_incentive_award(
+                    db, production_company_identifier=company, award_period_year=year,
+                    program_slug="nl_film_production_incentive", award_event_id=event_id,
+                    status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=1_000_000.0,
+                    evidence_state=EVIDENCE_STATE_EVIDENCED,
+                )
+            _has_rows, total = await company_period_program_award_summary(
+                db, production_company_identifier=company, award_period_year=year,
+                program_slug="nl_film_production_incentive",
+            )
+            assert total == pytest.approx(1_000_000.0, abs=0.01), (
+                f"three identical inserts for the SAME award_event_id must never inflate the "
+                f"total beyond the one real award's amount; observed {total}"
+            )
+            row_count = (await db.execute(
+                select(IncentiveAwardLedgerEntry).where(
+                    IncentiveAwardLedgerEntry.production_company_identifier == company,
+                    IncentiveAwardLedgerEntry.award_period_year == year,
+                    IncentiveAwardLedgerEntry.award_event_id == event_id,
+                )
+            )).scalars().all()
+            assert len(row_count) == 1, (
+                f"an identical repeat of the newest row for one award_event_id must be resolved "
+                f"idempotently (no duplicate row), observed {len(row_count)} rows"
+            )
+        finally:
+            await _teardown_ledger(db, company)
+
+
+async def test_wrong_currency_rejected():
+    """Codex's exact finding: 'A USD row is numerically added as though
+    it were EUR.' A USD-denominated write against nl_film_production_incentive
+    (a EUR-capped program) must be REJECTED at write time, never accepted
+    into the ledger at all."""
+    company = f"kvk-{uuid.uuid4().hex[:10]}"
+    async with AsyncSession(engine, expire_on_commit=False) as db:
+        try:
+            with pytest.raises(ValueError, match="(?i)currency"):
+                await record_incentive_award(
+                    db, production_company_identifier=company, award_period_year=2052,
+                    program_slug="nl_film_production_incentive", award_event_id=f"evt-usd-{uuid.uuid4().hex[:8]}",
+                    status=AWARD_STATUS_APPROVED, native_currency="USD", native_amount=1_000_000.0,
+                    evidence_state=EVIDENCE_STATE_EVIDENCED,
+                )
+            _has_rows, total = await company_period_program_award_summary(
+                db, production_company_identifier=company, award_period_year=2052,
+                program_slug="nl_film_production_incentive",
+            )
+            assert _has_rows is False and total == 0.0, "a rejected write must leave no trace in the ledger"
+        finally:
+            await _teardown_ledger(db, company)
+
+
+async def test_nonfinite_zero_and_negative_amounts_rejected():
+    """Codex requirement: 'NaN, infinity, zero and negative amounts are
+    rejected.' An APPROVED/GRANTED award is a real grant of money — it
+    must carry a finite, strictly positive amount."""
+    company = f"kvk-{uuid.uuid4().hex[:10]}"
+    async with AsyncSession(engine, expire_on_commit=False) as db:
+        try:
+            for bad_amount in (float("nan"), float("inf"), float("-inf"), 0.0, -1.0):
+                with pytest.raises(ValueError):
+                    await record_incentive_award(
+                        db, production_company_identifier=company, award_period_year=2053,
+                        program_slug="nl_film_production_incentive",
+                        award_event_id=f"evt-bad-{uuid.uuid4().hex[:8]}",
+                        status=AWARD_STATUS_APPROVED, native_currency="EUR", native_amount=bad_amount,
+                        evidence_state=EVIDENCE_STATE_EVIDENCED,
+                    )
+            _has_rows, total = await company_period_program_award_summary(
+                db, production_company_identifier=company, award_period_year=2053,
+                program_slug="nl_film_production_incentive",
+            )
+            assert _has_rows is False and total == 0.0, "every rejected write must leave no trace in the ledger"
+        finally:
+            await _teardown_ledger(db, company)
+
+
+async def test_missing_award_period_fails_closed(db: AsyncSession):
+    """A project with a real company identity but NO explicit
+    award_period_year on file must leave the company-period cap
+    conditional/non-priceable — never inferred from target_shoot_year
+    (removed) or defaulted to any value."""
+    project = await _make_nl_project(
+        db, label="NL MISSING PERIOD", company_identifier=f"kvk-{uuid.uuid4().hex[:10]}", award_period_year=None,
+    )
+    try:
+        await evaluate_project(db, project.id)
+        view = await build_production_and_structures(db, project.id)
+        entries = view["structures"]["allocated_structures"]["structures"]
+        nl_entry = next(
+            (e for e in entries if e.get("is_baseline") and e.get("program_slug") == "nl_film_production_incentive"),
+            None,
+        )
+        assert nl_entry is not None
+        assert nl_entry["is_fully_priced"] is False, (
+            "a real company identity with NO explicit award_period_year must remain "
+            "conditional/non-priceable, never inferred from any other date field"
+        )
+    finally:
+        await _teardown(db, project.id)

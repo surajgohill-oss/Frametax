@@ -1,0 +1,1 @@
+id,priority,area,confirmed_defect,exact_adverse_reproducer,expected,actual,smallest_bounded_repair,acceptance_oracle

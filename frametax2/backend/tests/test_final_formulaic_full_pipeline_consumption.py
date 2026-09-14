@@ -953,31 +953,50 @@ def test_us_or_opif_composite_dated_fund_cap_and_uplift_order_of_operations():
     cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
     assert cap_usd == pytest.approx(10_600_000.0, abs=0.01), "US-domestic cap needs no FX conversion"
 
+    # Codex final three-program conservation repair (P0-OR-001, fifth
+    # pass): payroll/other bases must now be reconciled to REAL,
+    # separately-tagged canonical lines (component="payroll" vs
+    # component="production"/"other") -- never a free caller scalar.
+    # No caller-supplied amount_facts here at all: both bases are
+    # DERIVED directly from these real lines.
+
     # A large enough composite base that, WITH the 1.10 uplift, exceeds
     # the $10,600,000 project cap -- proves cap clipping happens AFTER
-    # uplift, never before.
-    large_payroll = 30_000_000.0
-    large_other = 30_000_000.0
-    alloc = [
+    # uplift, never before. 25 real payroll lines under the $1M per-
+    # payee cap (so the derived payroll basis equals their real sum,
+    # unclipped) plus one large other-spend line.
+    payroll_lines = [
         AccountAllocation(
-            account_code="9000", description="OR payroll+other spend", amount_usd=large_payroll + large_other,
-            component="production", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
-            rationale="P0-OR-001 fourth-pass cap/uplift order-of-operations probe",
-            governing_decision="codex-final-four-row-remediation-p0-or-001",
-            line_id="or-large-1",
-        ),
+            account_code="9001", description=f"OR payroll payee {i}", amount_usd=800_000.0,
+            component="payroll", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-OR-001 fifth-pass cap/uplift order-of-operations probe",
+            governing_decision="codex-final-three-program-conservation-repair-p0-or-001",
+            line_id=f"or-payroll-{i}", spend_category="btl_crew_labor",
+        )
+        for i in range(38)  # 38 * 800,000 = 30,400,000
     ]
+    other_line = AccountAllocation(
+        account_code="9000", description="OR other production spend", amount_usd=30_000_000.0,
+        component="production", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
+        rationale="P0-OR-001 fifth-pass cap/uplift order-of-operations probe",
+        governing_decision="codex-final-three-program-conservation-repair-p0-or-001",
+        line_id="or-other-large", spend_category="production",
+    )
+    alloc = payroll_lines + [other_line]
+    total_budget = sum(a.amount_usd for a in alloc)
     result = price_segment(
         jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=alloc,
-        spend_category_by_code={"9000": "production"}, offshore_payroll_accounts=frozenset(),
-        production_type="feature_film", gross_budget_usd=large_payroll + large_other,
-        amount_facts={"us_or_payroll_qpe_usd": large_payroll, "us_or_other_qpe_usd": large_other},
+        spend_category_by_code={"9001": "btl_crew_labor", "9000": "production"},
+        offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=total_budget,
         evidenced_requirement_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
     )
-    assert result.executable is True
-    # gross = 30M*0.20 + 30M*0.25 = 6,000,000 + 7,500,000 = 13,500,000;
-    # uplifted = 13,500,000 * 1.10 = 14,850,000; clipped to the
-    # $10,600,000 project cap.
+    assert result.executable is True, f"blockers={result.blockers}"
+    # payroll basis = 38*800,000 = 30,400,000 (real, unclipped -- each
+    # payee is under the $1M cap); other basis = 30,000,000.
+    # gross = 30,400,000*0.20 + 30,000,000*0.25 = 6,080,000 + 7,500,000
+    # = 13,580,000; uplifted = 13,580,000*1.10 = 14,938,000; clipped to
+    # the $10,600,000 project cap.
     assert result.incentive_floor_usd == pytest.approx(10_600_000.0, abs=0.01), (
         f"a composite incentive that exceeds the project cap even AFTER the uplift must be "
         f"reduced to exactly the cap; observed {result.incentive_floor_usd}"
@@ -987,39 +1006,65 @@ def test_us_or_opif_composite_dated_fund_cap_and_uplift_order_of_operations():
     # the cap prices its own real, uncapped, uplifted figure.
     modest_alloc = [
         AccountAllocation(
-            account_code="9000", description="OR modest spend", amount_usd=2_000_000.0,
+            account_code="9001", description="OR modest payroll", amount_usd=1_000_000.0,
+            component="payroll", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-OR-001 fifth-pass modest probe", governing_decision="codex-final-three-program-conservation-repair-p0-or-001",
+            line_id="or-modest-payroll", spend_category="btl_crew_labor",
+        ),
+        AccountAllocation(
+            account_code="9000", description="OR modest other", amount_usd=1_000_000.0,
             component="production", jurisdiction_code="US-OR", assignment_kind=AssignmentKind.FIXED,
-            rationale="P0-OR-001 fourth-pass modest probe", governing_decision="codex-final-four-row-remediation-p0-or-001",
-            line_id="or-modest-1",
+            rationale="P0-OR-001 fifth-pass modest probe", governing_decision="codex-final-three-program-conservation-repair-p0-or-001",
+            line_id="or-modest-other", spend_category="production",
         ),
     ]
     modest = price_segment(
         jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=modest_alloc,
-        spend_category_by_code={"9000": "production"}, offshore_payroll_accounts=frozenset(),
+        spend_category_by_code={"9001": "btl_crew_labor", "9000": "production"},
+        offshore_payroll_accounts=frozenset(),
         production_type="feature_film", gross_budget_usd=2_000_000.0,
-        amount_facts={"us_or_payroll_qpe_usd": 1_000_000.0, "us_or_other_qpe_usd": 1_000_000.0},
         evidenced_requirement_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
     )
-    assert modest.executable is True
+    assert modest.executable is True, f"blockers={modest.blockers}"
     # gross = 1,000,000*0.20 + 1,000,000*0.25 = 450,000; uplifted =
     # 450,000 * 1.10 = 495,000 -- well under the cap, priced in full.
     assert modest.incentive_floor_usd == pytest.approx(495_000.0, abs=0.01)
 
-    # A brand-new production with real composite component facts but NO
+    # A brand-new production with real composite component lines but NO
     # award/contract/fund confirmation still prices real, deterministic
     # PROVISIONAL economics (never skipped/zeroed) -- disposition B.
     unconfirmed = price_segment(
         jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=modest_alloc,
-        spend_category_by_code={"9000": "production"}, offshore_payroll_accounts=frozenset(),
+        spend_category_by_code={"9001": "btl_crew_labor", "9000": "production"},
+        offshore_payroll_accounts=frozenset(),
         production_type="feature_film", gross_budget_usd=2_000_000.0,
-        amount_facts={"us_or_payroll_qpe_usd": 1_000_000.0, "us_or_other_qpe_usd": 1_000_000.0},
     )
     assert unconfirmed.executable is True, (
-        "a brand-new project with genuine composite component facts must reach real "
-        "provisional Oregon economics -- never skipped or blocked entirely"
+        f"a brand-new project with genuine composite component lines must reach real "
+        f"provisional Oregon economics -- never skipped or blocked entirely; blockers={unconfirmed.blockers}"
     )
     assert unconfirmed.incentive_floor_usd == pytest.approx(450_000.0, abs=0.01), (
         "without the uplift fact, the provisional figure is the un-uplifted gross composite"
+    )
+
+    # Codex's EXACT Oregon adverse reproducer: an asserted payroll/other
+    # figure with NO relationship to the real canonical lines (here,
+    # USD50,000,000 asserted against real lines totaling USD2,000,000)
+    # must REJECT before pricing -- never persist a candidate whose
+    # incentive/cap arithmetic produces a negative NPC.
+    oversized = price_segment(
+        jurisdiction_code="US-OR", program_slug="us_or_opif", allocations=modest_alloc,
+        spend_category_by_code={"9001": "btl_crew_labor", "9000": "production"},
+        offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=2_000_000.0,
+        amount_facts={"us_or_payroll_qpe_usd": 50_000_000.0, "us_or_other_qpe_usd": 50_000_000.0},
+        evidenced_requirement_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
+    )
+    assert oversized.executable is False, (
+        f"an asserted USD50,000,000 payroll/other basis against real lines totaling only "
+        f"USD2,000,000 must reject before pricing, never persist an over-cap/negative-NPC "
+        f"candidate; observed executable={oversized.executable} "
+        f"incentive={oversized.incentive_floor_usd}"
     )
 
 
@@ -1380,6 +1425,74 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
 
     neither = probe(frozenset())
     assert neither.executable is False, "neither the accepted-production nor the post-only gate is evidenced — must reject"
+
+
+def test_za_nfvf_rebate_qsappe_smaller_caller_scalar_rejects_not_undercut():
+    """Codex final three-program conservation repair (P0-ZA-001, fifth
+    pass) — Codex's EXACT adverse reproducer: 'One qualifying Post
+    line=400000 and amount_fact QSAPPE=300000.' The prior pass's fix
+    still used the caller's smaller scalar (300000, incentive 75000) as
+    the actual pricing basis, only checking it was <= the real subtotal.
+    THE FIX derives the basis directly from the real line and rejects a
+    mismatched caller scalar outright -- the basis must never be
+    75000 (25% of a caller-invented smaller number)."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    real_post_line = [
+        AccountAllocation(
+            account_code="5300", description="real post spend", amount_usd=400_000.0,
+            component="post", jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="P0-ZA-001 fifth-pass exact Codex reproducer",
+            governing_decision="codex-final-three-program-conservation-repair-p0-za-001",
+            line_id="real-post-400k", spend_category="post",
+        ),
+    ]
+    mismatched = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=real_post_line,
+        spend_category_by_code={"5300": "post"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=400_000.0,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 300_000.0},
+    )
+    assert mismatched.executable is False, (
+        "a caller scalar (300,000) smaller than the real exact qualifying line (400,000) "
+        "must reject -- never silently price the smaller, wrong number"
+    )
+    assert mismatched.incentive_floor_usd in (None, 0.0), (
+        f"must never price 75,000 (25% of the caller's invented 300,000); observed "
+        f"{mismatched.incentive_floor_usd}"
+    )
+
+    # With NO caller scalar at all, the real exact qualifying line alone
+    # derives the basis directly and prices the CORRECT 25% of 400,000.
+    derived = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=real_post_line,
+        spend_category_by_code={"5300": "post"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=400_000.0,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+    )
+    assert derived.executable is True, (
+        "a real exact qualifying post line, with NO caller scalar at all, must become "
+        "eligible and price directly from the traced line -- never require a redundant "
+        "caller-supplied scalar just to unlock eligibility"
+    )
+    assert derived.incentive_floor_usd == pytest.approx(100_000.0, abs=0.01), (
+        f"must price exactly 25% of the real 400,000 qualifying line; observed "
+        f"{derived.incentive_floor_usd}"
+    )
+
+    # A caller scalar that EXACTLY matches the real line still prices
+    # correctly (unchanged from the already-accepted control).
+    exact_match = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=real_post_line,
+        spend_category_by_code={"5300": "post"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=400_000.0,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+    )
+    assert exact_match.executable is True
+    assert exact_match.incentive_floor_usd == pytest.approx(100_000.0, abs=0.01)
 
 
 def test_za_nfvf_rebate_qsappe_reconciles_to_exact_qualifying_lines_only():
