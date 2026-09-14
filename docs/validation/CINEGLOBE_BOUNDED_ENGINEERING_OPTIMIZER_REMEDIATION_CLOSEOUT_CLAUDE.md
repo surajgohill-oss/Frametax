@@ -5,9 +5,9 @@
 **Prior commit under repair:** `4ea0fd832ec52d0ae3e152a404395efa3cbfffc9` (Codex NOT_ACCEPTED)
 **Worktree used:** `/Users/Suraj/cineglobe-frametax-claude-remediation` on `claude/audit-frametax-features-NZcX5` (created fresh; `/Users/Suraj/cineglobe-frametax` (`ag/ui-refinement-review`) and `/Users/Suraj/ag-oregon-research` (`ag/oregon-authority-gap-research`) were never modified — confirmed untouched at both start and end via `git worktree list`)
 
-## Overall status: `NOT_COMPLETE_WITH_EXACT_REMAINING_ITEMS`
+## Overall status: `IMPLEMENTED_PENDING_CODEX_ACCEPTANCE` (all seven rows closed)
 
-Six of seven rows are implemented and verified. One row (`P0-SEL-ALT-001`) was attempted, produced a confirmed adverse regression on first implementation, was reverted to the safe pre-existing state, and is reported honestly incomplete rather than forced through.
+**Second pass (Codex, `PLATFORM: Codex`, workstream `CINEGLOBE_BOUNDED_ENGINEERING_OPTIMIZER_REMEDIATION_P0_SEL_ALT_001`):** Codex accepted the first six rows and rejected the P0-SEL-ALT-001 revert, providing the exact root-cause diagnosis the first attempt missed and the exact required fix (see the updated P0-SEL-ALT-001 section below). That fix is now implemented, verified against the real pipeline (Bad Hombres/Little Utopia/F#K Valentine's Day/Lips Like Sugar), and additionally verified against the **entire** backend test suite (4,899 passed, 3 skipped, 0 failed, in 1h38m — run in full per Codex's explicit instruction in this second pass, superseding the first pass's "do not run the full suite" scope limit for this one verification step).
 
 ## Per-row disposition
 
@@ -40,15 +40,22 @@ Six of seven rows are implemented and verified. One row (`P0-SEL-ALT-001`) was a
 - Verified the exact adversarial case: $1 allocated segment claiming a $1,000,000 QSAPPE now correctly rejects (was: `executable=True, incentive=$250,000`). Regression-verified: exact-match, in-bounds, and general-branch (non-component-basis) cases all still price correctly; `us_or_opif`'s own existing component-basis tests (a shared code path) show no regression.
 - Tests: `tests/test_final_formulaic_full_pipeline_consumption.py::test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch` (extended with the conservation adversarial case plus negative/NaN/±infinity basis cases).
 
-### P0-SEL-ALT-001 (LU/FVD distinct alternative selection) — **NOT COMPLETE**
+### P0-SEL-ALT-001 (LU/FVD distinct alternative selection) — IMPLEMENTED, VERIFIED (second pass)
 
-**Attempted and reverted.** The blanket `is_directly_comparable=is_baseline` copy at the single-program `STATUS_PRICED` branch (`canonical_evaluation.py`) was replaced with a structured completeness check (`is_baseline OR (pricing.is_fully_priced AND pricing.npc_with_adjustments_usd is not None)`), reasoning that travel/FX/local-cost normalization now runs generically for every candidate (per the module's own "STALE" comment on `RELOCATION_COMPARABILITY_NOTE`) and only the uniformly-undisclosed in-kind dimension remains absent.
+**First attempt (reverted, documented for the record):** the blanket `is_directly_comparable=is_baseline` copy at the single-program `STATUS_PRICED` branch was replaced with `is_baseline OR (pricing.is_fully_priced AND pricing.npc_with_adjustments_usd is not None)`, on the reasoning that travel/FX/local-cost normalization now runs generically for every candidate. Empirically wrong: Bad Hombres' `ca_film_30` (Canada) and five other relocation candidates all became `is_directly_comparable=True` and displaced the real `us_nm_film_credit` baseline as canonical winner, because a benchmark model successfully returning a number is not the same fact as a producer having verified relocation friction for that specific candidate — the fix let an effectively-unevidenced delta silently act as if it were zero/negligible. Reverted cleanly before commit.
 
-**This was empirically wrong and was reverted.** Running the real pipeline against Bad Hombres showed six of its relocation candidates (`ca_film_30`, `us_ky_keiia`, `ny_state_film`, `my_finas_rebate`, `ro_film_office_cash_rebate`, `us_la_film_incentive`) all became `is_directly_comparable=True` with lower `npc_with_adjustments_usd` than Bad Hombres' own real baseline (`us_nm_film_credit`), and the canonical winner swapped from `us_nm_film_credit` to `ca_film_30` — a direct, confirmed violation of this task's explicit "preserve Bad Hombres/Lips Like Sugar economics exactly" requirement. The "generic normalization" is real (the fields are genuinely computed), but is not yet accurate/complete enough to trust as a true apples-to-apples comparison against a production's own home jurisdiction — real, un-modeled relocation friction (full-crew/cast travel logistics, not just the travel budget line; genuine in-kind value; production continuity risk) means a naive lower NPC does not currently establish a candidate is a genuinely comparable alternative. The change was fully reverted (`canonical_evaluation.py` now contains only the unrelated, verified P0-FX-001 fingerprint fix); all 100 tests across the 10 files touching `is_directly_comparable` pass identically to the pre-attempt state, and all four real-project recomputations below confirm byte-identical figures to the required anchors.
+**Codex's second-pass diagnosis (accepted) and required fix (implemented):** the correct gate is not "did the calculator return a number" but "does an explicit, affirmative, EVIDENCED fact confirm every required relocation dimension (travel, local-cost, in-kind replacement) has been fully accounted for or deliberately zeroed, for THIS specific candidate jurisdiction." Implemented as `_relocation_normalization_is_complete(is_baseline, code, inputs)` in `canonical_evaluation.py`: baseline is always comparable by construction; a non-baseline candidate is comparable only when `f"relocation_completeness_evidenced__{code}"` is present in `inputs.evidenced_program_facts` — a real, persisted `ProjectFact` boolean row, the same mechanism every other boolean gate in this codebase already uses. Applied only at the single-program `STATUS_PRICED` branch (the multi-program stack branch's `risk_adjusted_net_cost_usd` is still genuinely un-normalized raw NPC and correctly remains untouched, unchanged from the first pass's reasoning).
 
-**What would be required to close this safely:** a genuinely reliable, currently-nonexistent per-candidate signal for "this candidate's relocation-adjusted NPC is complete and trustworthy enough to rank against the baseline" — not merely "the normalization fields were populated." Building that signal is new economic-modeling work (quantifying real relocation friction generically), not a bug fix, and is out of this bounded remediation's scope. The row is left in its pre-existing, safe state: every non-baseline candidate remains disclosed (priced, visible, with `RELOCATION_COMPARABILITY_NOTE`) but not admitted to the comparable ranking pool — the same behavior commit `4ea0fd8` shipped, now with an honest record of why a fix was attempted and reverted rather than a second unverified claim of completion.
+No caller in this codebase sets this fact for any project today, so the mechanism is now honest (checks for verified evidence rather than inferring completeness from a benchmark estimate) while correctly, safely leaving every non-baseline candidate exactly as non-comparable as before any of this repair — no new comparable winner is invented anywhere in the corpus.
 
-No code changes were left in place for this row. `leading_conditional_structure`/`unlockable_alternatives` continue to work exactly as before (Little Utopia → Mauritius; F#K Valentine's Day → Greece — see recomputation table below).
+**Verified against the real pipeline:**
+- **Bad Hombres**: `canonical_selected_structure_id` resolves to `us_nm_film_credit` (rank 1, $596,910.25 incentive / $1,885,112.75 NPC); exactly one candidate is `is_directly_comparable` (the baseline) — `ca_film_30` (Canada) and every other relocation candidate correctly remain non-comparable, disclosed but not ranked.
+- **Lips Like Sugar**: `ca_film_30` retained exactly ($3,459,278.90 / $8,524,375.10).
+- **Little Utopia**: `leading_conditional_structure` still surfaces Mauritius (`mu_edb_incentive`), with its exact missing dimension disclosed (`qualification_state: "AUTHORITY_UNRESOLVED"` — the cultural-test-applicability authority gap); `canonical_selected_structure_id` still `None` (no comparable winner exists, correctly unchanged).
+- **F#K Valentine's Day**: `leading_conditional_structure` still surfaces Greece (`gr_cash_rebate`), same disclosure mechanism, `canonical_selected_structure_id` still `None`.
+- **Full backend suite**: 4,899 passed, 3 skipped, 0 failed (1h38m) — run in full per Codex's explicit second-pass instruction.
+
+Tests: no new test file was added for this row in the second pass (the fix is a single, narrowly-scoped function change verified directly against the real persisted four-project corpus above plus the complete pre-existing suite, which already exercises `is_directly_comparable`/`relocation_cost_normalized` across 10 files); a future evidence-capture UI that actually sets `relocation_completeness_evidenced__{code}` facts should add its own coverage at that time.
 
 ### P0-OR-001 (Oregon terminal disposition) — VERIFIED, NO CHANGE NEEDED
 
@@ -81,12 +88,12 @@ Oregon remains excluded from priced-consumption numerators; it is present (not s
 | Bad Hombres | `us_nm_film_credit` (canonical winner, rank 1) | $596,910.25 | $1,885,112.75 |
 | Lips Like Sugar | `ca_film_30` (canonical winner, rank 1) | $3,459,278.90 | $8,524,375.10 |
 
-All four match the required anchors/figures exactly. Manitoba/Romania were never hardcoded as alternate winners (P0-SEL-ALT-001 was reverted — no alternate-selection code shipped at all).
+All four match the required anchors/figures exactly, recomputed a second time after the P0-SEL-ALT-001 fix landed. Manitoba/Romania were never hardcoded as alternate winners — the shipped fix requires real, currently-nonexistent evidence before any non-baseline candidate can ever become comparable, so no alternate winner is invented anywhere in the corpus.
 
 ## Files changed
 
 - `frametax2/backend/app/calculators/apply_fx_rates.py` — FX immutability + finiteness (P0-FX-001)
-- `frametax2/backend/app/services/canonical_evaluation.py` — fingerprint digest only (P0-FX-001); no P0-SEL-ALT-001 changes remain
+- `frametax2/backend/app/services/canonical_evaluation.py` — fingerprint digest (P0-FX-001); `_relocation_normalization_is_complete()` evidenced-fact gate (P0-SEL-ALT-001, second pass)
 - `frametax2/backend/app/services/canonical_project_economics.py` — amount-fact finiteness (P0-FX-001)
 - `frametax2/backend/app/data/program_rate_rules.py` — Texas exclusive-floor/finiteness (P0-TX-001); NL company-period cap evidence gates (P0-NL-001)
 - `frametax2/backend/app/calculators/allocation_pricing.py` — ZA/shared component-basis conservation (P0-ZA-001); NL company-period cap resolution (P0-NL-001); cap-unresolved fail-closed branch
@@ -100,10 +107,11 @@ All four match the required anchors/figures exactly. Manitoba/Romania were never
 
 ## Timeouts / incomplete items
 
-- No individual command, test file, or grouped test run exceeded its budgeted hard timeout during this pass.
-- One pre-existing, unrelated test-ordering DB-state leak was discovered between `tests/test_canonical_served_wiring_repair.py` and `tests/test_copro_qualification_wiring.py` (neither file touched by this remediation) — reproduced in isolation with only those two files, confirming it predates and is unrelated to this pass. Not fixed (out of bounded scope); both files pass individually.
-- P0-SEL-ALT-001 is the sole `INCOMPLETE` row — see above for the concrete adverse evidence and what would be required to close it safely.
+- No individual command, test file, or grouped test run exceeded its budgeted hard timeout during either pass.
+- The full-suite run in the second pass (4,899 tests, 1h38m) was run in the background per this project's own persisted anti-loop discipline (never block the session on an unbounded foreground wait) and completed cleanly with no stall, no orphaned process, and no DB-session contention — unlike the prior (pre-remediation) workstream's documented full-suite stall.
+- One pre-existing, unrelated test-ordering DB-state leak was discovered between `tests/test_canonical_served_wiring_repair.py` and `tests/test_copro_qualification_wiring.py` (neither file touched by this remediation) when run together in a partial subset — reproduced in isolation with only those two files, confirming it predates and is unrelated to this pass. Not fixed (out of bounded scope). Notably, this exact pairing did NOT reproduce as a failure inside the full-suite run (different collection order), consistent with it being a known class of order-dependent test flakiness rather than a real defect in either file's own logic.
+- All seven rows are now closed. No `INCOMPLETE` rows remain.
 
 ## Excluded areas
 
-No files outside the FX/NL/TX/ZA/AE/Oregon dependency cone and the frozen exclusion list were changed. No frontend, no broad worldwide research, no MFNI workstream. The full backend suite was never run.
+No files outside the FX/NL/TX/ZA/AE/Oregon/SEL-ALT dependency cone and the frozen exclusion list were changed. No frontend, no broad worldwide research, no MFNI workstream. The full backend suite was run exactly once, in the second pass, per Codex's explicit instruction for that one verification step.

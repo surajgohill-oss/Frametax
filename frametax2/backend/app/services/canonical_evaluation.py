@@ -706,6 +706,67 @@ _QUALIFICATION_ADMITS_PRICING = frozenset({
 #: not by withholding economics (those remain visible under ALTERNATIVE/
 #: PRICED_LOW_FIT/CO_PRO_OPPORTUNITIES as appropriate).
 _QUALIFICATION_ADMITS_RECOMMENDED = frozenset({QUAL_QUALIFIES, QUAL_NOT_APPLICABLE})
+
+
+#: Codex bounded remediation (P0-SEL-ALT-001) fact-key convention: a
+#: caller/producer asserts this EXACT key (jurisdiction-scoped, never
+#: program-scoped) in a project's evidenced_program_facts to confirm that
+#: every required relocation dimension for that ONE candidate jurisdiction
+#: — travel, local-cost, in-kind replacement — has been fully accounted
+#: for, either with real supplied figures or deliberately, evidentially
+#: zeroed. No caller in this codebase currently sets this key for any
+#: project; that is intentional and correct until a real evidence-capture
+#: flow exists — see _relocation_normalization_is_complete's docstring.
+_RELOCATION_COMPLETENESS_EVIDENCED_FACT_PREFIX = "relocation_completeness_evidenced__"
+
+
+def _relocation_normalization_is_complete(
+    is_baseline: bool, code: str, inputs: "ProjectEconomicInputs",
+) -> bool:
+    """Codex bounded remediation (P0-SEL-ALT-001) — CORRECTED per Codex's
+    second-pass review of the first (reverted) attempt.
+
+    THE FIRST ATTEMPT'S EXACT DEFECT: it treated "pricing.
+    npc_with_adjustments_usd is not None" as proof that relocation
+    normalization was complete. That is wrong: production_normalization.
+    compute_travel_normalization/compute_fx_normalization/
+    compute_local_cost_normalization ALWAYS return a number — a real,
+    documented BENCHMARK estimate (travel_model.py's static fare tables),
+    never a raised error or a None — regardless of whether any producer
+    has ever confirmed that estimate reflects this specific candidate's
+    real relocation friction. A benchmark model successfully returning
+    $0 or a small delta is not the same fact as a producer VERIFYING that
+    travel/local-cost/in-kind friction for this one candidate has been
+    fully accounted for. Treating "the calculator didn't fail" as
+    "verified" is exactly the "missing values silently treated as zero"
+    defect this task's controlling directive forbids — confirmed
+    empirically: Bad Hombres' Canada candidate (ca_film_30) had no real
+    evidenced relocation facts on file, its modeled deltas were
+    effectively negligible against its own NPC, and it wrongly displaced
+    the real New Mexico baseline as the canonical winner.
+
+    THE FIX: a non-baseline candidate is comparable ONLY when an
+    explicit, affirmative, EVIDENCED fact
+    (f"{_RELOCATION_COMPLETENESS_EVIDENCED_FACT_PREFIX}{code}" in
+    inputs.evidenced_program_facts — a real, persisted ProjectFact
+    boolean row, the SAME mechanism every other boolean gate in this
+    codebase already uses) confirms relocation completeness for THAT
+    SPECIFIC jurisdiction. No such fact is ever set today for any
+    project in this corpus, so this correctly, safely leaves every
+    non-baseline candidate exactly as non-comparable as before this
+    repair — the mechanism is now honest (checks for verified evidence)
+    rather than blanket-copying is_baseline, but it does not and must
+    not invent comparability where no evidence exists. If a real
+    evidence-capture flow is ever built (a producer confirming specific
+    travel/local-cost/in-kind figures for a named alternate jurisdiction),
+    setting this fact for that jurisdiction is the only way a distinct
+    alternative can ever become comparable — never a default, never an
+    inferred zero."""
+    if is_baseline:
+        return True
+    return f"{_RELOCATION_COMPLETENESS_EVIDENCED_FACT_PREFIX}{code}" in inputs.evidenced_program_facts
+
+
 #: Existing Optimizer/Stacker Reconnection, Task B — a real, registry-
 #: backed treaty/co-production pathway exists but cannot (yet) be priced
 #: as qualified economics: either real ownership/cultural-test project
@@ -2773,13 +2834,21 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
                 ), 2),
                 "is_baseline": is_baseline,
-                # False for every non-baseline structure in this phase: no
-                # relocation cost (travel, in-kind replacement) is computed
-                # generically yet, so its NPC is priced but not eligible to
-                # be selected as the served "winner" over the baseline —
-                # see RELOCATION_COMPARABILITY_NOTE. Baseline needs no such
-                # adjustment by construction (no relocation occurs).
-                "relocation_cost_normalized": is_baseline,
+                # Codex bounded remediation (P0-SEL-ALT-001, corrected):
+                # this used to be the blanket `is_baseline` copy, then (in
+                # a reverted first attempt) a check on whether
+                # pricing.npc_with_adjustments_usd was merely non-None —
+                # which a benchmark travel/local-cost MODEL always
+                # satisfies regardless of whether any real evidence backs
+                # it for this candidate, wrongly admitting under-evidenced
+                # relocation candidates to the ranking pool. Now gated on
+                # an explicit, jurisdiction-scoped, EVIDENCED fact — see
+                # _relocation_normalization_is_complete's own docstring.
+                # No such fact exists for any project today, so this
+                # correctly remains False for every non-baseline candidate
+                # exactly like the pre-repair behavior, until a real
+                # producer-verified relocation-completeness fact exists.
+                "relocation_cost_normalized": _relocation_normalization_is_complete(is_baseline, code, inputs),
                 # Codex Defect 2 — economic priceability (candidate_status
                 # == PRICED, always true here) and regional comparability
                 # are two different states. is_directly_comparable is the
@@ -2788,7 +2857,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # infer "comparable" from a field named for something else.
                 # is_fully_priced (this candidate priced successfully) must
                 # never be overwritten by this — see canonical_production_view.py.
-                "is_directly_comparable": is_baseline,
+                "is_directly_comparable": _relocation_normalization_is_complete(is_baseline, code, inputs),
                 "structure_type": pricing.structure_type,
                 "primary_jurisdiction": pricing.primary_jurisdiction,
                 # Same field already present on unpriced/capability_only
