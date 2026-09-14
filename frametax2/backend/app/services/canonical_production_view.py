@@ -45,6 +45,7 @@ from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     _QUALIFICATION_ADMITS_PRICING,
     _QUALIFICATION_ADMITS_RECOMMENDED,
+    _RELOCATION_DIMENSIONS,
 )
 
 #: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
@@ -536,6 +537,17 @@ def _empty_structure_entry(
         # persisted before this field existed). Comparability, not
         # priceability; is_fully_priced above is never derived from this.
         "is_directly_comparable": bool(trace.get("is_directly_comparable", trace.get("relocation_cost_normalized"))),
+        # Codex final wiring remediation (P0-SEL-ALT-001): the EXACT,
+        # per-dimension causes of non-comparability (never a single
+        # blanket flag), plus the jurisdiction they were evaluated
+        # against (the component's TARGET code for a component/split
+        # structure, never the anchor). Empty list for the baseline and
+        # for a fully-evidenced candidate; absent on rows persisted
+        # before this field existed (pre-repair rows), which is handled
+        # as an empty/unknown-cause list by the admission gate below —
+        # never silently treated as "no cause needed".
+        "relocation_missing_dimensions": list(trace.get("relocation_missing_dimensions") or []),
+        "relocation_completeness_jurisdiction": trace.get("relocation_completeness_jurisdiction") or code,
         "reason": trace.get("reason"),
         "warnings": result.warnings or [],
         # Canonical authority substrate + feasibility boundary repair,
@@ -580,29 +592,72 @@ def _qualification_admits_recommended(entry: dict) -> bool:
 
 
 def _is_conditional_eligible(entry: dict) -> bool:
-    """Codex final P0 (leading conditional recommendation) — the exact
-    predicate for membership in the LEADING_CONDITIONAL/UNLOCKABLE_
-    ALTERNATIVE pool. True only for a candidate that is:
-      1. is_fully_priced (calculable, evidence-supported economics)
+    """Codex final wiring remediation (P0-SEL-ALT-001, third pass) — the
+    exact predicate for membership in the LEADING_CONDITIONAL/UNLOCKABLE_
+    ALTERNATIVE pool. Replaces the `67fbc30` intervention Codex's delta
+    audit rejected: "accepts every fully priced non-baseline non-
+    comparable entry whose role state is None, QUALIFIES,
+    NOT_APPLICABLE, or any conditional state. It does not inspect why
+    the row is non-comparable."
+
+    True only for a candidate that is:
+      1. is_fully_priced (calculable, evidence-supported economics) —
+         a HARD_FAIL candidate never reaches is_fully_priced=True at all
+         (QUAL_HARD_FAIL is excluded from _QUALIFICATION_ADMITS_PRICING
+         in canonical_evaluation.py), so this alone already excludes
+         every hard legal/authority/identity/retired veto.
       2. NOT the baseline (the baseline must never be the distinct
-         leading conditional alternative, per Codex P0-SEL-ALT-001).
-      3. Either directly comparable (blocked only by a curable state),
-         or non-comparable specifically because it lacks relocation
-         facts (a valid conditional alternative).
-    """
+         leading conditional alternative).
+      3a. Directly comparable AND its role_qualification.state is a
+          genuine, explicit, still-unresolved-but-priced state (the
+          SAME rule this predicate always used for comparable rows) — OR
+      3b. NOT directly comparable, but ONLY because of an explicit,
+          fully-enumerated, exclusively-curable cause:
+            - role_qualification.state must NOT be None ("no absent
+              aggregate state may be emitted as an actionable
+              conditional" — this task's own controlling invariant;
+              None means no qualification signal was ever computed for
+              this candidate/its participants, which is never, by
+              itself, proof of curability).
+            - state must be QUALIFIES/NOT_APPLICABLE (already admits
+              Recommended) or a genuine curable-unresolved state —
+              never anything else (defensive; HARD_FAIL structurally
+              cannot reach here, but this never assumes that silently).
+            - entry["relocation_missing_dimensions"] must be non-empty
+              (a complete, real cause was enumerated — never an absent/
+              unknown cause) AND every listed cause must be one of the
+              approved curable relocation dimensions
+              (_RELOCATION_DIMENSIONS: travel/fx/local_cost/inkind) —
+              a structural, non-curable cause (e.g. a multi-program
+              stack's un-normalized NPC, carrying the
+              _STACK_NORMALIZATION_NOT_COMPUTED sentinel) is NEVER a
+              dimension name and therefore always excludes the row.
+    Component/treaty structures' role_qualification.state is already the
+    WORST-of-all-participants aggregate (canonical_evaluation.py's
+    _component_qual_state/_combo_qual_state) — a single hard-failing
+    participant therefore blocks the WHOLE structure here via the same
+    state check, never silently admitted through one clean member."""
     if not entry.get("is_fully_priced"):
         return False
     if entry.get("is_baseline"):
         return False
-        
+
     state = (entry.get("role_qualification") or {}).get("state")
-    
+
     if entry.get("is_directly_comparable"):
         return state in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES
-    else:
-        # A non-comparable relocation candidate can still be surfaced as a conditional alternative
-        # if its qualification state is either clear (None/admits recommended) or explicitly curable.
-        return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED or state in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES
+
+    # Non-comparable: an absent aggregate qualification state is never,
+    # by itself, proof of curability — excluded outright.
+    if state is None:
+        return False
+    if state not in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES and state not in _QUALIFICATION_ADMITS_RECOMMENDED:
+        return False
+
+    missing = entry.get("relocation_missing_dimensions") or []
+    if not missing:
+        return False  # no enumerated cause at all — unknown/unclassified, excluded
+    return all(dim in _RELOCATION_DIMENSIONS for dim in missing)
 
 
 def _scenario_category(entry: dict, rank: int | None) -> str:
@@ -876,11 +931,18 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     def _blocking_requirements(entry: dict) -> list[str]:
         rq = entry.get("role_qualification") or {}
         reqs = list(rq.get("missing_facts") or ()) + list(rq.get("curable_requirements") or ())
-        
-        # Codex P0-SEL-ALT-001: Expose the missing relocation fact for non-baseline candidates
+
+        # Codex final wiring remediation (P0-SEL-ALT-001): disclose EVERY
+        # actual missing relocation dimension by name, against the
+        # CORRECT jurisdiction (relocation_completeness_jurisdiction —
+        # the component's TARGET code for a component/split structure,
+        # never the anchor primary_jurisdiction the prior pass used).
+        # Never one blanket jurisdiction boolean standing in for travel/
+        # FX/local-cost/in-kind.
         if not entry.get("is_baseline") and not entry.get("is_directly_comparable"):
-            code = entry.get("primary_jurisdiction", "")
-            reqs.append(f"relocation_completeness_evidenced__{code}")
+            code = entry.get("relocation_completeness_jurisdiction") or entry.get("primary_jurisdiction", "")
+            for dim in entry.get("relocation_missing_dimensions") or []:
+                reqs.append(f"relocation_{dim}_evidenced__{code}")
 
         if not reqs:
             reqs = [

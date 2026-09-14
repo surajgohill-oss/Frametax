@@ -2519,16 +2519,104 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                     amount_fact_min=1_000_000.0,
                     is_component_basis=True,
                 ),
+                # Codex final wiring remediation (P0-OR-001): disposition
+                # B (conditional formula opportunity). REPLACES the prior
+                # disclosure-only "us-or-fund-competitive" (kind=
+                # discretionary_band, never a real gate -- discretionary_
+                # band is deliberately excluded from qualification-state
+                # propagation) with a REAL, evidence-based eligibility
+                # gate. Bundles, per OAR Chapter 951 Division 2: (1)
+                # application filed before production, (2) agency
+                # comparative/discretionary approval, (3) contract
+                # execution, (4) fund availability, and (5) confirmation
+                # that the submitted payroll/other QPE figures already
+                # exclude any compensation above the USD1,000,000
+                # per-individual/company QPE exclusion (OAR
+                # 951-002-0010 -- a QPE-side exclusion, separate from the
+                # final project/fund award cap in INCENTIVE_VALUE_CAP_
+                # RULES["us_or_opif"] below). Absent, this program prices
+                # PROVISIONAL economics only (is_fully_priced=True, a
+                # real disclosed dollar figure) and is EXCLUDED from
+                # verified-winner/rank-1 (project_fact_dependent_
+                # eligibility is one of canonical_evaluation.
+                # _RATE_CONDITION_ELIGIBILITY_KINDS, so an unresolved
+                # instance downgrades qualification_state to
+                # USER_FACT_REQUIRED, which _qualification_admits_
+                # recommended already excludes from rank 1) — never an
+                # unconditional entitlement.
                 RateCondition(
-                    condition_id="us-or-fund-competitive",
-                    description="Annual fund is limited and competitive — "
-                                "no single project may receive more than "
-                                "50% of the annual fund; rebate is not "
-                                "guaranteed even if criteria are met",
-                    quote="No single project can receive more than 50% of "
-                          "the OPIF fund in any fiscal year (corroborated "
-                          "by 3 sources)",
-                    kind="discretionary_band",
+                    condition_id="us-or-award-contract-fund-confirmed",
+                    description="Application before production, agency "
+                                "comparative/discretionary approval, "
+                                "contract execution, fund availability, "
+                                "and per-payee QPE-exclusion compliance "
+                                "are ALL required before an OPIF award is "
+                                "real — evaluated against a caller-"
+                                "evidenced confirmation fact. Absent, "
+                                "this program prices PROVISIONAL "
+                                "economics only.",
+                    quote="Applications ... subject to agency discretion "
+                          "... contract execution ... fund availability "
+                          "(OAR Chapter 951 Division 2); USD1,000,000 "
+                          "per-individual/company QPE exclusion (OAR "
+                          "951-002-0010)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="us_or_opif_award_confirmed",
+                    # Codex final wiring remediation (P0-OR-001): disposition
+                    # B is "conditional formula opportunity", never a hard
+                    # price block -- False keeps this tier SELECTED/priced
+                    # (provisional economics) even when unevidenced, relying
+                    # on the qualification-state downgrade (this condition's
+                    # kind is in _RATE_CONDITION_ELIGIBILITY_KINDS) to exclude
+                    # it from verified-winner/rank-1, never on removing the
+                    # tier from eligibility entirely (which would make the
+                    # program price NOTHING pre-confirmation, contradicting
+                    # "show provisional economics only").
+                    gates_tier_eligibility=False,
+                ),
+                # Separately gates the DATED fund figure the final
+                # project cap (INCENTIVE_VALUE_CAP_RULES["us_or_opif"])
+                # applies — "never treat missing cap as unlimited". This
+                # is a data-currency concern, distinct from award status.
+                RateCondition(
+                    condition_id="us-or-fund-amount-current",
+                    description="The USD21,200,000 annual fund figure "
+                                "(and the resulting USD10,600,000 50%-"
+                                "of-fund project cap) must be confirmed "
+                                "current, not stale, before it can be "
+                                "relied on.",
+                    quote="current USD21.2m annual fund (Oregon Film "
+                          "OPIF program page, oregonfilm.org); no single "
+                          "project over 50% of the fund in a fiscal "
+                          "year (OAR 951-002-0010(5))",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="us_or_opif_fund_amount_current_confirmed",
+                    gates_tier_eligibility=False,
+                ),
+                # Multiplicative regional increase — ORS 284.368's exact
+                # text: "an increase of 10 percent OF THE AMOUNT
+                # otherwise allowable", confirmed via direct fetch
+                # against oregonlegislature.gov. NEVER +10 percentage
+                # points on the 20%/25% rate itself — that would be a
+                # materially different (larger, wrong) figure. Applied
+                # in allocation_pricing.price_segment() AFTER the base
+                # rate x basis calculation, BEFORE the final dollar cap.
+                RateCondition(
+                    condition_id="us-or-regional-uplift",
+                    description="A 10% regional increase applies when "
+                                "shooting outside the Portland "
+                                "metropolitan zone — MULTIPLIES the "
+                                "otherwise-allowable incentive by 1.10, "
+                                "never adds 10 percentage points to the "
+                                "rate.",
+                    quote="an increase of 10 percent of the amount "
+                          "otherwise allowable under subsections (2) "
+                          "and (3) (ORS 284.368, verified via direct "
+                          "fetch of oregonlegislature.gov/bills_laws/"
+                          "ors/ors284.html)",
+                    kind="project_fact_dependent_uplift",
+                    regional_uplift_multiplier_fact_key="us_or_opif_regional_uplift_confirmed",
+                    regional_uplift_multiplier=1.10,
                 ),
             ),
         ),
@@ -2563,16 +2651,72 @@ US_OR_DOCTRINE = register(DoctrineRecord(
                     amount_fact_min=1_000_000.0,
                     is_component_basis=True,
                 ),
+                # Codex final wiring remediation (P0-OR-001): the SAME
+                # three real gates as the payroll tier above — see that
+                # tier's own comment for the full rationale. Duplicated
+                # (not shared) because each DoctrineRateTier owns its own
+                # conditions tuple, exactly like us-or-min-spend above.
                 RateCondition(
-                    condition_id="us-or-fund-competitive",
-                    description="Annual fund is limited and competitive — "
-                                "no single project may receive more than "
-                                "50% of the annual fund; rebate is not "
-                                "guaranteed even if criteria are met",
-                    quote="No single project can receive more than 50% of "
-                          "the OPIF fund in any fiscal year (corroborated "
-                          "by 3 sources)",
-                    kind="discretionary_band",
+                    condition_id="us-or-award-contract-fund-confirmed",
+                    description="Application before production, agency "
+                                "comparative/discretionary approval, "
+                                "contract execution, fund availability, "
+                                "and per-payee QPE-exclusion compliance "
+                                "are ALL required before an OPIF award is "
+                                "real — evaluated against a caller-"
+                                "evidenced confirmation fact. Absent, "
+                                "this program prices PROVISIONAL "
+                                "economics only.",
+                    quote="Applications ... subject to agency discretion "
+                          "... contract execution ... fund availability "
+                          "(OAR Chapter 951 Division 2); USD1,000,000 "
+                          "per-individual/company QPE exclusion (OAR "
+                          "951-002-0010)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="us_or_opif_award_confirmed",
+                    # Codex final wiring remediation (P0-OR-001): disposition
+                    # B is "conditional formula opportunity", never a hard
+                    # price block -- False keeps this tier SELECTED/priced
+                    # (provisional economics) even when unevidenced, relying
+                    # on the qualification-state downgrade (this condition's
+                    # kind is in _RATE_CONDITION_ELIGIBILITY_KINDS) to exclude
+                    # it from verified-winner/rank-1, never on removing the
+                    # tier from eligibility entirely (which would make the
+                    # program price NOTHING pre-confirmation, contradicting
+                    # "show provisional economics only").
+                    gates_tier_eligibility=False,
+                ),
+                RateCondition(
+                    condition_id="us-or-fund-amount-current",
+                    description="The USD21,200,000 annual fund figure "
+                                "(and the resulting USD10,600,000 50%-"
+                                "of-fund project cap) must be confirmed "
+                                "current, not stale, before it can be "
+                                "relied on.",
+                    quote="current USD21.2m annual fund (Oregon Film "
+                          "OPIF program page, oregonfilm.org); no single "
+                          "project over 50% of the fund in a fiscal "
+                          "year (OAR 951-002-0010(5))",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="us_or_opif_fund_amount_current_confirmed",
+                    gates_tier_eligibility=False,
+                ),
+                RateCondition(
+                    condition_id="us-or-regional-uplift",
+                    description="A 10% regional increase applies when "
+                                "shooting outside the Portland "
+                                "metropolitan zone — MULTIPLIES the "
+                                "otherwise-allowable incentive by 1.10, "
+                                "never adds 10 percentage points to the "
+                                "rate.",
+                    quote="an increase of 10 percent of the amount "
+                          "otherwise allowable under subsections (2) "
+                          "and (3) (ORS 284.368, verified via direct "
+                          "fetch of oregonlegislature.gov/bills_laws/"
+                          "ors/ors284.html)",
+                    kind="project_fact_dependent_uplift",
+                    regional_uplift_multiplier_fact_key="us_or_opif_regional_uplift_confirmed",
+                    regional_uplift_multiplier=1.10,
                 ),
             ),
         ),
@@ -2939,6 +3083,13 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
                     amount_fact_key="za_nfvf_post_qsappe_usd",
                     amount_fact_min=0.01,
                     is_component_basis=True,
+                    # Codex final wiring remediation (P0-ZA-001, third
+                    # pass): QSAPPE must be reconciled to the EXACT
+                    # classified allocated post/VFX line subtotal, never
+                    # bounded by the segment's broad production QPE. See
+                    # RateCondition.component_basis_line_components's own
+                    # docstring.
+                    component_basis_line_components=("post", "vfx"),
                 ),
             ),
         ),

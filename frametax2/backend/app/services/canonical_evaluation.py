@@ -708,63 +708,70 @@ _QUALIFICATION_ADMITS_PRICING = frozenset({
 _QUALIFICATION_ADMITS_RECOMMENDED = frozenset({QUAL_QUALIFIES, QUAL_NOT_APPLICABLE})
 
 
-#: Codex bounded remediation (P0-SEL-ALT-001) fact-key convention: a
-#: caller/producer asserts this EXACT key (jurisdiction-scoped, never
-#: program-scoped) in a project's evidenced_program_facts to confirm that
-#: every required relocation dimension for that ONE candidate jurisdiction
-#: — travel, local-cost, in-kind replacement — has been fully accounted
-#: for, either with real supplied figures or deliberately, evidentially
-#: zeroed. No caller in this codebase currently sets this key for any
-#: project; that is intentional and correct until a real evidence-capture
-#: flow exists — see _relocation_normalization_is_complete's docstring.
-_RELOCATION_COMPLETENESS_EVIDENCED_FACT_PREFIX = "relocation_completeness_evidenced__"
+#: Codex final wiring remediation (P0-SEL-ALT-001, third pass) — the
+#: distinct relocation-cost dimensions this codebase can, in principle,
+#: evidence per candidate jurisdiction. Mirrors the four adjustment
+#: fields already served on every priced candidate's own "adjustments"
+#: dict (travel_incremental_delta_usd, fx_delta_usd,
+#: local_cost_delta_usd, inkind_replacement_delta_usd). Codex's exact
+#: finding on the second pass's single blanket
+#: relocation_completeness_evidenced__{code} fact: "one jurisdiction
+#: boolean substitutes for dimension-level evidence" — REPLACED here
+#: with one evidenced fact PER dimension, so travel/FX/local-cost/
+#: in-kind are represented and evaluated individually, never collapsed
+#: into a single flag.
+_RELOCATION_DIMENSIONS: tuple[str, ...] = ("travel", "fx", "local_cost", "inkind")
+
+#: Codex final wiring remediation — a stack (multi-program) candidate's
+#: risk_adjusted_net_cost_usd is still raw, un-normalized NPC (see the
+#: multi-program STATUS_PRICED branch below); this is NOT a curable
+#: evidence gap a producer can supply a fact to unlock — it is a
+#: structural engine-capability gap. Used as the sentinel
+#: "missing dimension" for stack candidates so the conditional-pool
+#: admission gate in canonical_production_view.py can correctly treat it
+#: as an UNCLASSIFIED/non-curable cause (excluded), never conflate it
+#: with a genuinely curable, fact-suppliable relocation-evidence gap.
+_STACK_NORMALIZATION_NOT_COMPUTED = "stack_normalization_not_computed"
 
 
-def _relocation_normalization_is_complete(
-    is_baseline: bool, code: str, inputs: "ProjectEconomicInputs",
-) -> bool:
-    """Codex bounded remediation (P0-SEL-ALT-001) — CORRECTED per Codex's
-    second-pass review of the first (reverted) attempt.
+def _relocation_completeness(
+    is_baseline: bool, code: str | None, inputs: "ProjectEconomicInputs",
+) -> tuple[bool, tuple[str, ...]]:
+    """Codex final wiring remediation (P0-SEL-ALT-001, third pass) —
+    structured, PER-DIMENSION completeness decision. Supersedes both the
+    first (reverted) attempt, which treated "the calculator returned a
+    number" as proof of completeness, and the second attempt, which
+    required a single blanket jurisdiction-scoped fact standing in for
+    every dimension at once — Codex's exact finding: "one jurisdiction
+    boolean substitutes for dimension-level evidence... it does not
+    disclose the missing dimensions."
 
-    THE FIRST ATTEMPT'S EXACT DEFECT: it treated "pricing.
-    npc_with_adjustments_usd is not None" as proof that relocation
-    normalization was complete. That is wrong: production_normalization.
-    compute_travel_normalization/compute_fx_normalization/
-    compute_local_cost_normalization ALWAYS return a number — a real,
-    documented BENCHMARK estimate (travel_model.py's static fare tables),
-    never a raised error or a None — regardless of whether any producer
-    has ever confirmed that estimate reflects this specific candidate's
-    real relocation friction. A benchmark model successfully returning
-    $0 or a small delta is not the same fact as a producer VERIFYING that
-    travel/local-cost/in-kind friction for this one candidate has been
-    fully accounted for. Treating "the calculator didn't fail" as
-    "verified" is exactly the "missing values silently treated as zero"
-    defect this task's controlling directive forbids — confirmed
-    empirically: Bad Hombres' Canada candidate (ca_film_30) had no real
-    evidenced relocation facts on file, its modeled deltas were
-    effectively negligible against its own NPC, and it wrongly displaced
-    the real New Mexico baseline as the canonical winner.
+    A dimension is accounted for only when an explicit, evidenced
+    ProjectFact confirms it — either a real supplied figure
+    (f"relocation_{dim}_evidenced__{code}") or an explicit, evidenced
+    not-applicable assertion (f"relocation_{dim}_not_applicable__{code}",
+    e.g. FX genuinely does not apply to a same-currency relocation).
+    Absence of BOTH facts for a dimension is a genuine, disclosed gap —
+    "non-applicable dimensions must be explicit, not silently zero"
+    (this task's own controlling invariant).
 
-    THE FIX: a non-baseline candidate is comparable ONLY when an
-    explicit, affirmative, EVIDENCED fact
-    (f"{_RELOCATION_COMPLETENESS_EVIDENCED_FACT_PREFIX}{code}" in
-    inputs.evidenced_program_facts — a real, persisted ProjectFact
-    boolean row, the SAME mechanism every other boolean gate in this
-    codebase already uses) confirms relocation completeness for THAT
-    SPECIFIC jurisdiction. No such fact is ever set today for any
-    project in this corpus, so this correctly, safely leaves every
-    non-baseline candidate exactly as non-comparable as before this
-    repair — the mechanism is now honest (checks for verified evidence)
-    rather than blanket-copying is_baseline, but it does not and must
-    not invent comparability where no evidence exists. If a real
-    evidence-capture flow is ever built (a producer confirming specific
-    travel/local-cost/in-kind figures for a named alternate jurisdiction),
-    setting this fact for that jurisdiction is the only way a distinct
-    alternative can ever become comparable — never a default, never an
-    inferred zero."""
-    if is_baseline:
-        return True
-    return f"{_RELOCATION_COMPLETENESS_EVIDENCED_FACT_PREFIX}{code}" in inputs.evidenced_program_facts
+    Returns (is_complete, missing_dimensions). is_complete is always
+    True, with an empty missing tuple, for the baseline (no relocation
+    occurs, by construction) — every dimension is trivially inapplicable
+    to staying in one's own home jurisdiction. No caller in this
+    codebase sets any of these facts today, so every non-baseline
+    candidate correctly remains incomplete with a FULL, real, per-
+    dimension missing list — never a single blanket flag standing in for
+    every dimension, and never a fabricated completeness claim."""
+    if is_baseline or not code:
+        return True, ()
+    facts = inputs.evidenced_program_facts
+    missing = tuple(
+        dim for dim in _RELOCATION_DIMENSIONS
+        if f"relocation_{dim}_evidenced__{code}" not in facts
+        and f"relocation_{dim}_not_applicable__{code}" not in facts
+    )
+    return (not missing), missing
 
 
 #: Existing Optimizer/Stacker Reconnection, Task B — a real, registry-
@@ -841,6 +848,13 @@ def _compute_fingerprint(
         # the pre-change persisted structures forever.
         "evidenced_program_facts": sorted(inputs.evidenced_program_facts),
         "amount_facts": sorted(inputs.amount_facts.items()),
+        # Codex final wiring remediation (P0-NL-001): explicit, even
+        # though also implicitly covered via evidenced_program_facts/
+        # amount_facts above -- a company/period identity change (or a
+        # sibling project's award changing) must invalidate any stale
+        # cached row for THIS project.
+        "production_company_identifier": inputs.production_company_identifier,
+        "award_period_year": inputs.award_period_year,
         # Codex adverse finding (P0-FX-001): hashing ONLY fx_snapshot_date
         # let two contexts sharing a date but differing in rates, source,
         # or freshness_status (e.g. a same-day live-refresh CORRECTION, or
@@ -2163,6 +2177,129 @@ def _discretionary_policy_resolve(program_slug: str, facts: dict[str, str]) -> s
     return default if default in ("include", "exclude") else "include"
 
 
+async def _company_period_prior_award_facts(
+    session: AsyncSession, project: Project, inputs: "ProjectEconomicInputs",
+) -> tuple[frozenset[str], dict[str, float]]:
+    """Codex final wiring remediation (P0-NL-001, third pass) — the ONE
+    place any program's company/period-scoped prior-award aggregate is
+    ever computed, from a REAL cross-project database query, never a
+    caller-supplied scalar. Generic over every IncentiveValueCapRule
+    declaring company_period_prior_award_fact_key (currently only
+    nl_film_production_incentive) — no NL-specific branch, no side
+    ledger; this reads and writes only the SAME canonical Project/
+    ProductionStructure/StructureCalculationResult tables and the SAME
+    evidenced_program_facts/amount_facts contract every other program
+    fact in this codebase already uses.
+
+    Returns (evidenced_facts, amounts) to be UNIONED into
+    inputs.evidenced_program_facts / inputs.amount_facts before pricing
+    runs, so the result participates in the SAME fingerprint/cache
+    identity every other calculation-driving fact already does.
+
+    IDENTITY GATE: inputs.production_company_identifier and
+    inputs.award_period_year must BOTH be set (from the canonical
+    Project.production_company_identifier/target_shoot_year columns —
+    see canonical_project_economics.build_project_economic_inputs).
+    Missing either means company_period_identity_known_fact_key is
+    simply never added to the evidenced set — the cap resolver in
+    allocation_pricing.py then correctly fails this program closed
+    (conditional/non-priceable), never an affirmative zero.
+
+    AGGREGATE QUERY: every OTHER real, persisted Project row sharing the
+    EXACT SAME production_company_identifier and award_period_year
+    (this project's own id excluded) is queried. For each sibling with a
+    current-generation evaluation on file, its own persisted
+    total_incentive_value_usd for this SAME program (matched by
+    program_slug/program_slugs in its trace) is converted BACK to the
+    cap's native currency using THIS evaluation's own canonical FX
+    context (apply_fx_rates.convert_usd_to_local_ctx — the SAME context
+    every other conversion in this evaluation uses, never a second or
+    guessed rate) and summed. Zero siblings found is a real, evidenced
+    zero (identity known, genuinely alone this period) — the full native
+    cap applies, correctly distinct from "identity unknown".
+
+    NON-RECURSIVE BY DESIGN: a sibling's rows are looked up via
+    current_result_fingerprint (the newest-persisted-row read), never
+    current_generation_fingerprint — the latter itself calls this exact
+    function to include company/period facts in ITS OWN fingerprint,
+    so two mutual siblings would otherwise recurse into each other
+    without bound. This means a sibling whose own facts changed SINCE
+    its last real evaluate_project() call (without being re-evaluated)
+    contributes its last-PERSISTED award, not a hypothetical freshly-
+    recomputed one — the same "append-only, newest-row" semantics
+    current_result_fingerprint's own docstring already documents for
+    every other stale-generation reader in this codebase."""
+    from app.calculators import apply_fx_rates
+    from app.data.program_rate_rules import INCENTIVE_VALUE_CAP_RULES
+
+    evidenced: set[str] = set()
+    amounts: dict[str, float] = {}
+
+    company = inputs.production_company_identifier
+    period = inputs.award_period_year
+    if company is None or period is None:
+        return frozenset(evidenced), amounts
+
+    cap_rules = [
+        cap for cap in INCENTIVE_VALUE_CAP_RULES.values()
+        if cap.company_period_prior_award_fact_key is not None
+    ]
+    if not cap_rules:
+        return frozenset(evidenced), amounts
+
+    sibling_ids = (await session.execute(
+        select(Project.id).where(
+            Project.production_company_identifier == company,
+            Project.target_shoot_year == period,
+            Project.id != project.id,
+        )
+    )).scalars().all()
+
+    for cap in cap_rules:
+        if cap.company_period_identity_known_fact_key:
+            evidenced.add(cap.company_period_identity_known_fact_key)
+
+        total_native = 0.0
+        found_any = False
+        for sibling_id in sibling_ids:
+            sibling_fp = await current_result_fingerprint(session, sibling_id)
+            if not sibling_fp:
+                continue
+            rows = (await session.execute(
+                select(StructureCalculationResult)
+                .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+                .where(
+                    ProductionStructure.project_id == sibling_id,
+                    StructureCalculationResult.input_fingerprint == sibling_fp,
+                    StructureCalculationResult.engine_version == ENGINE_VERSION,
+                )
+            )).scalars().all()
+            for row in rows:
+                trace = row.calculation_trace_json or {}
+                slugs = trace.get("program_slugs") or (
+                    [trace.get("program_slug")] if trace.get("program_slug") else []
+                )
+                if cap.program_slug not in slugs:
+                    continue
+                if trace.get("candidate_status") != STATUS_PRICED:
+                    continue
+                incentive_usd = row.total_incentive_value_usd
+                if incentive_usd is None:
+                    continue
+                conversion, resolution = apply_fx_rates.convert_usd_to_local_ctx(
+                    float(incentive_usd), cap.cap_currency, inputs.fx_context,
+                )
+                if resolution.ok and conversion is not None:
+                    total_native += conversion.target_amount
+                    found_any = True
+
+        if found_any and cap.company_period_has_other_productions_fact_key:
+            evidenced.add(cap.company_period_has_other_productions_fact_key)
+            amounts[cap.company_period_prior_award_fact_key] = round(total_native, 2)
+
+    return frozenset(evidenced), amounts
+
+
 async def evaluate_project(session: AsyncSession, project_id) -> dict:
     """The canonical served evaluation entry point for any project."""
     project = await session.get(Project, project_id)
@@ -2196,6 +2333,26 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     from app.calculators.production_normalization import build_fx_context
     fx_context = build_fx_context()
     inputs = dataclasses.replace(inputs, fx_context=fx_context)
+
+    # Codex final wiring remediation (P0-NL-001, third pass): computed
+    # ONCE here, from THIS evaluation's own canonical FX context, and
+    # unioned into evidenced_program_facts/amount_facts BEFORE the
+    # fingerprint below is computed -- so a change in canonical company
+    # identity, award period, or a sibling project's own persisted award
+    # correctly invalidates any stale cached row for this project (both
+    # fields already participate in _compute_fingerprint's existing
+    # "evidenced_program_facts"/"amount_facts" payload). See
+    # _company_period_prior_award_facts's own docstring for the full
+    # identity/query/conversion contract.
+    _company_period_evidenced, _company_period_amounts = await _company_period_prior_award_facts(
+        session, project, inputs,
+    )
+    if _company_period_evidenced or _company_period_amounts:
+        inputs = dataclasses.replace(
+            inputs,
+            evidenced_program_facts=inputs.evidenced_program_facts | _company_period_evidenced,
+            amount_facts={**inputs.amount_facts, **_company_period_amounts},
+        )
 
     # Fresh Project Source-Document Ingestion: the retroactive counterpart
     # to material_routing._route_screenplay's commit-time script analysis
@@ -2805,6 +2962,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             qualifying_spend_usd=_qpe_for_stack,
             incentive_type=doctrine_record.incentive_type if doctrine_record else "",
         ))
+        _reloc_complete, _reloc_missing = _relocation_completeness(is_baseline, code, inputs)
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd,
@@ -2834,21 +2992,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
                 ), 2),
                 "is_baseline": is_baseline,
-                # Codex bounded remediation (P0-SEL-ALT-001, corrected):
-                # this used to be the blanket `is_baseline` copy, then (in
-                # a reverted first attempt) a check on whether
-                # pricing.npc_with_adjustments_usd was merely non-None —
-                # which a benchmark travel/local-cost MODEL always
-                # satisfies regardless of whether any real evidence backs
-                # it for this candidate, wrongly admitting under-evidenced
-                # relocation candidates to the ranking pool. Now gated on
-                # an explicit, jurisdiction-scoped, EVIDENCED fact — see
-                # _relocation_normalization_is_complete's own docstring.
-                # No such fact exists for any project today, so this
-                # correctly remains False for every non-baseline candidate
-                # exactly like the pre-repair behavior, until a real
-                # producer-verified relocation-completeness fact exists.
-                "relocation_cost_normalized": _relocation_normalization_is_complete(is_baseline, code, inputs),
+                # Codex final wiring remediation (P0-SEL-ALT-001, third
+                # pass): replaced the single blanket
+                # relocation_completeness_evidenced__{code} fact with a
+                # structured, PER-DIMENSION completeness decision — see
+                # _relocation_completeness's own docstring. No such fact
+                # exists for any project today, so this correctly remains
+                # False for every non-baseline candidate exactly like the
+                # pre-repair behavior, until real producer-verified
+                # per-dimension relocation-completeness facts exist.
+                "relocation_cost_normalized": _reloc_complete,
                 # Codex Defect 2 — economic priceability (candidate_status
                 # == PRICED, always true here) and regional comparability
                 # are two different states. is_directly_comparable is the
@@ -2857,7 +3010,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # infer "comparable" from a field named for something else.
                 # is_fully_priced (this candidate priced successfully) must
                 # never be overwritten by this — see canonical_production_view.py.
-                "is_directly_comparable": _relocation_normalization_is_complete(is_baseline, code, inputs),
+                "is_directly_comparable": _reloc_complete,
+                # Codex final wiring remediation (P0-SEL-ALT-001): the
+                # EXACT, per-dimension causes of non-comparability — never
+                # a single blanket flag. Empty for the baseline and for a
+                # fully-evidenced candidate. Consulted by
+                # canonical_production_view.py's conditional-pool
+                # admission gate to prove every blocker belongs to the
+                # approved curable (missing relocation evidence) category
+                # before ever admitting a non-comparable row as a
+                # conditional alternative.
+                "relocation_missing_dimensions": list(_reloc_missing),
+                "relocation_completeness_jurisdiction": code,
                 "structure_type": pricing.structure_type,
                 "primary_jurisdiction": pricing.primary_jurisdiction,
                 # Same field already present on unpriced/capability_only
@@ -3133,6 +3297,21 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # priced-but-review exactly like one. No new comparability
                 # concept invented — this is the same is_baseline test.
                 "is_directly_comparable": is_baseline,
+                # Codex final wiring remediation (P0-SEL-ALT-001): a
+                # non-baseline stack's non-comparability is a STRUCTURAL
+                # engine-capability gap (relocation-cost normalization is
+                # never computed for multi-program stacks at all — see
+                # the comment above), never a producer-suppliable
+                # evidence gap. The sentinel below is deliberately NOT one
+                # of _RELOCATION_DIMENSIONS, so canonical_production_
+                # view.py's conditional-pool admission gate correctly
+                # treats it as an unclassified/non-curable cause and
+                # excludes it — a stack can never wrongly present as a
+                # "curable" leading conditional alternative.
+                "relocation_missing_dimensions": (
+                    [] if is_baseline else [_STACK_NORMALIZATION_NOT_COMPUTED]
+                ),
+                "relocation_completeness_jurisdiction": code,
                 "stacking_rule_type": stack_result.rule_type,
                 # A rejected combination must explain itself -- never an
                 # unexplained drop into the unpriceable bucket.
@@ -3414,6 +3593,30 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         _component_administrative_allocation_risk = True
                         if _component_disclosure not in _component_warnings:
                             _component_warnings.append(_component_disclosure)
+                # Codex final wiring remediation (P0-SEL-ALT-001): a
+                # component/split structure has TWO participant programs
+                # (the home anchor and the routed target) — its aggregate
+                # qualification must be the WORST of both, the SAME
+                # worst-of-members pattern the multi-program stack branch
+                # already uses (_combo_qual_state above), never left
+                # entirely absent. This is the exact gap Codex's audit
+                # named: "FVD gr_cash_rebate + ro_film_office_cash_rebate
+                # has no aggregate qualification/participant blocker."
+                _component_qual_state = min(
+                    (s for s in (
+                        _qual_state_by_program.get(home_program_slug),
+                        _qual_state_by_program.get(target.program_slug),
+                    ) if s is not None),
+                    key=lambda s: _QUAL_STATE_SEVERITY.get(s, 2),
+                    default=None,
+                )
+                # The COMPONENT itself relocates to target.jurisdiction_code
+                # (never home_code, the anchor that never moves) — relocation
+                # completeness is evaluated against the jurisdiction the
+                # money actually moves to, per-dimension, never the anchor.
+                _reloc_complete, _reloc_missing = _relocation_completeness(
+                    False, target.jurisdiction_code, inputs,
+                )
                 session.add(StructureCalculationResult(
                     id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
                     total_budget_usd=inputs.gross_budget_usd,
@@ -3452,8 +3655,13 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         "primary_jurisdiction": home_code,
                         "program_slugs": [s for s in (home_program_slug, target.program_slug) if s],
                         "is_baseline": False,
-                        "relocation_cost_normalized": False,
-                        "is_directly_comparable": False,
+                        "relocation_cost_normalized": _reloc_complete,
+                        "is_directly_comparable": _reloc_complete,
+                        "relocation_missing_dimensions": list(_reloc_missing),
+                        "relocation_completeness_jurisdiction": target.jurisdiction_code,
+                        "role_qualification": (
+                            {"state": _component_qual_state} if _component_qual_state is not None else None
+                        ),
                         "anchor_jurisdiction": home_code,
                         "anchor_program": home_program_slug,
                         "component_allocations": [{
@@ -4024,6 +4232,26 @@ async def current_generation_fingerprint(session, project_id) -> str | None:
         import dataclasses
         from app.calculators.production_normalization import build_fx_context
         econ_inputs = dataclasses.replace(econ.inputs, fx_context=build_fx_context())
+        # Codex final wiring remediation (P0-NL-001): evaluate_project()
+        # ALSO unions the real cross-project company/period facts into
+        # evidenced_program_facts/amount_facts before computing ITS
+        # fingerprint (see _company_period_prior_award_facts) -- this
+        # read-only reconstruction MUST do the exact same union, for the
+        # exact same reason the fx_context attachment above does: a
+        # fingerprint divergence here would mean build_production_and_
+        # structures() can never find the rows evaluate_project() just
+        # persisted, for ANY project using this mechanism.
+        project_row = await session.get(Project, project_id)
+        if project_row is not None:
+            _cp_evidenced, _cp_amounts = await _company_period_prior_award_facts(
+                session, project_row, econ_inputs,
+            )
+            if _cp_evidenced or _cp_amounts:
+                econ_inputs = dataclasses.replace(
+                    econ_inputs,
+                    evidenced_program_facts=econ_inputs.evidenced_program_facts | _cp_evidenced,
+                    amount_facts={**econ_inputs.amount_facts, **_cp_amounts},
+                )
         fingerprint = _compute_fingerprint(
             econ_inputs, role_known_codes=role_known_codes, script_facts=script_facts,
             coproduction_facts=coproduction_facts,

@@ -338,37 +338,66 @@ def _resolve_incentive_dollar_cap(
 
     native_cap = get_incentive_value_cap(slug)
     if native_cap is not None:
+        # Codex final wiring remediation (P0-OR-001): "never treat
+        # missing cap as unlimited" -- when this cap names a required
+        # evidence fact (a dated, discretionary fund figure that can go
+        # stale), the fact must be evidenced BEFORE the cap -- and
+        # therefore the whole segment -- can price at all. Missing
+        # evidence fails closed, exactly like an unresolved company-
+        # period aggregate below; it is never silently dropped (which
+        # would let an uncapped incentive through) and never treated as
+        # "no cap applies".
+        if native_cap.cap_requires_evidence_fact_key is not None:
+            _cap_evidenced = evidenced_requirement_facts or frozenset()
+            if native_cap.cap_requires_evidence_fact_key not in _cap_evidenced:
+                return None, None, None, None, (
+                    f"{native_cap.program_slug}: this program's final award cap is a "
+                    "dated, discretionary fund figure that must be confirmed current "
+                    "before it can be safely applied -- "
+                    f"'{native_cap.cap_requires_evidence_fact_key}' is not evidenced. "
+                    "A missing/unconfirmed cap is never treated as unlimited; the "
+                    "segment remains conditional/non-priceable until confirmed."
+                )
         effective_cap = native_cap
         cap_basis_suffix = ""
-        # Codex bounded remediation (P0-NL-001): a PER-COMPANY PER-PERIOD
-        # cap must consume prior awards already granted this SAME period
-        # to this SAME company's OTHER productions, so two projects for
-        # one company cannot jointly exceed the shared ceiling -- but a
-        # missing/unknown aggregate must NEVER be treated as zero. The
-        # has_other_productions evidence flag distinguishes "no
-        # company-period interaction was ever claimed" (absent -- full
-        # native cap applies, unchanged from every other single-
-        # production project) from "interaction IS claimed but its
-        # dollar amount is unresolved" (evidenced but no evidenced,
-        # finite, in-range amount -- fail closed, never full-cap).
+        # Codex final wiring remediation (P0-NL-001, third pass): a
+        # PER-COMPANY PER-PERIOD cap must consume prior awards already
+        # granted this SAME period to this SAME canonical company's
+        # OTHER productions, so two projects for one company cannot
+        # jointly exceed the shared ceiling -- and now genuinely bound
+        # to canonical identity (see IncentiveValueCapRule's own
+        # docstring): identity_known is evidenced ONLY by
+        # evaluate_project() from real Project.production_company_
+        # identifier/target_shoot_year columns, and has_other_productions
+        # (with its amount) is evidenced ONLY by evaluate_project()'s own
+        # real cross-project database query -- never a caller-supplied
+        # scalar or boolean.
         if native_cap.company_period_prior_award_fact_key is not None:
             evidenced = evidenced_requirement_facts or frozenset()
+            identity_key = native_cap.company_period_identity_known_fact_key
+            identity_known = identity_key is not None and identity_key in evidenced
+            if not identity_known:
+                return None, None, None, None, (
+                    f"{native_cap.program_slug}: this program's per-company-per-period "
+                    "cap requires a canonical production-company identity AND award "
+                    "period -- neither is known for this project, so company-period "
+                    "consumption cannot be verified. Unknown company/period remains "
+                    "conditional/non-priceable, never an affirmative zero. Set this "
+                    "project's production_company_identifier and target_shoot_year to "
+                    "resolve."
+                )
             has_other_key = native_cap.company_period_has_other_productions_fact_key
             has_other_productions = has_other_key is not None and has_other_key in evidenced
             if has_other_productions:
-                evidenced_key = native_cap.company_period_aggregate_evidenced_fact_key
-                aggregate_evidenced = evidenced_key is not None and evidenced_key in evidenced
                 raw_prior = (amount_facts or {}).get(native_cap.company_period_prior_award_fact_key)
-                if not aggregate_evidenced or raw_prior is None:
+                if raw_prior is None:
                     return None, None, None, None, (
                         f"{native_cap.program_slug}: this company has other "
                         f"{native_cap.cap_currency}-denominated productions on file for "
-                        "this award period, but the prior-awards aggregate is missing or "
-                        "not evidenced -- an unresolved company-period consumption can "
-                        "never be treated as zero (a free scalar not bound to canonical "
-                        "company or award period). Segment is disclosed but carries no "
-                        "deterministic incentive value until the aggregate is supplied "
-                        "with explicit evidence."
+                        "this award period, but the prior-awards aggregate is missing -- "
+                        "an unresolved company-period consumption can never be treated "
+                        "as zero. Segment is disclosed but carries no deterministic "
+                        "incentive value until the aggregate is resolved."
                     )
                 if (not isinstance(raw_prior, (int, float)) or isinstance(raw_prior, bool)
                         or not math.isfinite(raw_prior)):
@@ -778,33 +807,31 @@ def price_segment(
 
     if rr.qpe_basis_used is not None:
         # Component-basis program (Codex final runtime remediation,
-        # us_or_opif; Codex adverse finding P0-ZA-001, za_nfvf_rebate):
-        # the selected tier's rate is gated on a caller-supplied
-        # component amount (e.g. payroll-only spend, or ZA's post-
-        # production-only QSAPPE), not this segment's total QPE.
+        # us_or_opif; Codex final wiring remediation P0-ZA-001, third
+        # pass, za_nfvf_rebate): the selected tier's rate is gated on a
+        # caller-supplied component amount (e.g. payroll-only spend, or
+        # ZA's post-production-only QSAPPE), not this segment's total QPE.
         #
-        # Codex adverse finding (P0-ZA-001): the RAW caller-supplied
-        # amount_fact was multiplied directly with NO reconciliation
-        # against this segment's own real, qualifying, allocated spend --
-        # an allocation of $1 plus a supplied za_nfvf_post_qsappe_usd of
-        # $1,000,000 priced an executable $250,000 incentive out of thin
-        # air. The required invariant ("0 <= QSAPPE <= qualifying
-        # allocated post spend <= allocated/project spend") is enforced
-        # here, generically, for EVERY component-basis program (never a
-        # program-specific special case): the component basis must be a
-        # finite, non-negative number that never EXCEEDS this segment's
-        # own real qualifying QPE (`qpe`, already derived above from the
-        # real register's QUALIFIES-state lines) -- for a component-
-        # relocation segment, `qpe` already represents exactly the real,
-        # routed, qualifying spend for that component (post/vfx/other),
-        # so bounding the caller's claimed sub-total by it is the
-        # "conservatively within the canonical qualifying allocated
-        # register" fallback the spec permits when a fully independent
-        # post-specific classified register does not yet exist. A
-        # violation fails the WHOLE segment closed -- never silently
-        # clamps the basis down and prices a smaller-but-still-invented
-        # number, which would hide the caller's bad input instead of
-        # rejecting it.
+        # Codex's exact P0-ZA-001 third-pass finding: "Broad production
+        # QPE is not a valid upper-bound oracle" -- bounding the claimed
+        # basis by the segment's own total qpe_usd (the prior, second-pass
+        # fix) still let a component=production allocation with ZERO
+        # classified post/VFX spend accept an arbitrary claimed QSAPPE up
+        # to the FULL broad production total (independent reproducer:
+        # $1,000,000 production-only allocation, $400,000 claimed QSAPPE,
+        # $0 classified post/VFX spend -> wrongly priced $100,000).
+        #
+        # THE FIX: when the winning RateCondition names
+        # component_basis_line_components (e.g. ("post", "vfx") for South
+        # Africa), the upper bound is the EXACT traced subtotal of this
+        # segment's own real AccountAllocation lines whose `component` is
+        # in that tuple -- never the broad qpe_usd. Duplicate line_ids
+        # among those lines are rejected outright (never double-counted).
+        # A program without this refinement (e.g. us_or_opif, unaffected,
+        # out of this repair's scope) keeps the prior, coarser qpe_usd
+        # bound unchanged. Either way, a violation fails the WHOLE segment
+        # closed -- never silently clamps the basis down and prices a
+        # smaller-but-still-invented number.
         _basis = rr.qpe_basis_used
         if not isinstance(_basis, (int, float)) or isinstance(_basis, bool) or not math.isfinite(_basis):
             return SegmentEconomics(
@@ -818,7 +845,43 @@ def price_segment(
                     "non-negative number -- rejected before arithmetic, never used to compute economics.",
                 ),
             )
-        if _basis < 0 or _basis > qpe:
+        _basis_upper_bound = qpe
+        _basis_bound_label = f"qualifying allocated spend ${qpe:,.2f}"
+        if rr.qpe_basis_line_components:
+            _traced_lines = [
+                a for a in allocations
+                if a.jurisdiction_code == jurisdiction_code and a.component in rr.qpe_basis_line_components
+            ]
+            _seen_line_ids: set[str] = set()
+            _duplicate_line_ids: set[str] = set()
+            _traced_subtotal = 0.0
+            for _a in _traced_lines:
+                if _a.line_id and _a.line_id in _seen_line_ids:
+                    _duplicate_line_ids.add(_a.line_id)
+                    continue
+                if _a.line_id:
+                    _seen_line_ids.add(_a.line_id)
+                _traced_subtotal += _a.amount_usd
+            if _duplicate_line_ids:
+                return SegmentEconomics(
+                    jurisdiction_code=jurisdiction_code, program_slug=slug,
+                    claims_incentive=True, allocated_usd=allocated,
+                    account_codes=codes, executable=False,
+                    qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                    doctrine=doctrine.value,
+                    blockers=(
+                        f"{jurisdiction_code}/{slug}: duplicate line_id(s) "
+                        f"{sorted(_duplicate_line_ids)!r} among the classified "
+                        f"{'/'.join(rr.qpe_basis_line_components)} allocation lines -- the same "
+                        "source budget line can never be counted twice toward a component basis.",
+                    ),
+                )
+            _basis_upper_bound = round(_traced_subtotal, 2)
+            _basis_bound_label = (
+                f"the exact classified {'/'.join(rr.qpe_basis_line_components)} allocated line "
+                f"subtotal ${_basis_upper_bound:,.2f}"
+            )
+        if _basis < 0 or _basis > _basis_upper_bound:
             return SegmentEconomics(
                 jurisdiction_code=jurisdiction_code, program_slug=slug,
                 claims_incentive=True, allocated_usd=allocated,
@@ -827,9 +890,9 @@ def price_segment(
                 doctrine=doctrine.value,
                 blockers=(
                     f"{jurisdiction_code}/{slug}: component basis ${_basis:,.2f} is outside "
-                    f"[0, qualifying allocated spend ${qpe:,.2f}] for this segment -- a claimed "
-                    "component sub-total can never exceed (or be less than zero of) the "
-                    "segment's own real qualifying spend; rejected rather than priced on an "
+                    f"[0, {_basis_bound_label}] for this segment -- a claimed component "
+                    "sub-total can never exceed (or be less than zero of) the segment's own "
+                    "real, exactly-traced qualifying spend; rejected rather than priced on an "
                     "unreconciled scalar.",
                 ),
             )
@@ -863,6 +926,20 @@ def price_segment(
             structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
             jurisdiction_code=jurisdiction_code,
         ).cases[RiskCase.CONSERVATIVE].incentive_usd
+
+    # Codex final wiring remediation (P0-OR-001): "qualifying base x rate
+    # (+ uplift) = gross incentive, THEN the applicable dollar cap clips
+    # it" (see the Cluster 7 comment below) -- a MULTIPLICATIVE uplift on
+    # the already-computed incentive (e.g. Oregon's evidenced 10%
+    # regional increase, "of the amount otherwise allowable" -- never
+    # +10 percentage points on the rate itself). Applied to both floor
+    # and ceiling, AFTER the base rate x basis calculation, BEFORE the
+    # final dollar cap -- the exact sequence this codebase already
+    # documents. None/1.0 (no evidenced uplift fact) leaves every other
+    # program byte-identical.
+    if rr.incentive_uplift_multiplier is not None:
+        floor_incentive_usd = round(floor_incentive_usd * rr.incentive_uplift_multiplier, 2)
+        ceiling_incentive_usd = round(ceiling_incentive_usd * rr.incentive_uplift_multiplier, 2)
 
     trace = tuple(
         {

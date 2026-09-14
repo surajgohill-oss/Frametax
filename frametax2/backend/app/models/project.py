@@ -27,6 +27,19 @@ class Project(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     metadata_json: Mapped[dict | None] = mapped_column(JSONB)
 
+    # Codex final wiring remediation (P0-NL-001): a producer-supplied,
+    # STABLE identity for the real-world legal production company entity
+    # behind this project — never the project's own title or id, never
+    # inferred. Two projects sharing this SAME identifier (and the SAME
+    # target_shoot_year, reused as the award period/year) are the SAME
+    # company for cross-project, per-company-per-year incentive cap
+    # conservation (e.g. nl_film_production_incentive's EUR3,000,000
+    # ceiling). NULL means "no canonical company identity on file" —
+    # any company/period-scoped cap must remain conditional/non-priceable
+    # until this is set, never treated as an affirmative "no other
+    # productions" zero.
+    production_company_identifier: Mapped[str | None] = mapped_column(String(255), index=True)
+
     # Lifecycle — USER-CONTROLLED ONLY. The engine (optimizer, document
     # completeness, incentive qualification, scenario selection) must never
     # write this column. See enums.ProjectLifecycle and CAPABILITY_LEDGER.md

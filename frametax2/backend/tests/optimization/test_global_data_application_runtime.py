@@ -59,28 +59,32 @@ def test_no_blocked_program_is_ranked_as_an_economic_candidate():
 def test_price_segment_hard_blocks_a_covered_program_even_when_directly_specified():
     """The pricing kernel is the authoritative gate -- a StructureSpec that
     names a blocked program directly (bypassing discovery) must still not
-    price. us_or_opif retains live doctrine AND a PARSED-tier rate
-    rule, so this proves the block is the coverage registry, not an
+    price. kz_investment_subsidy retains live doctrine AND a PARSED-tier
+    rate rule, so this proves the block is the coverage registry, not an
     absence of data.
 
-    uk_avec, then ca_federal_pstc, were the original fixtures here, but
-    both were individually recovered/verified in later batches (batch 3
-    for uk_avec; the Historical-37 recovery/adjudication pass for
-    ca_federal_pstc, which found its existing PARSED-tier data already
-    substantively sufficient to calculate) and removed from the coverage
-    veto -- neither would still prove this gate. See
+    uk_avec, then ca_federal_pstc, then us_or_opif, were the original
+    fixtures here, but each was individually recovered/verified in a
+    later pass (batch 3 for uk_avec; the Historical-37 recovery/
+    adjudication pass for ca_federal_pstc; Codex final wiring remediation
+    P0-OR-001, disposition B, for us_or_opif -- current official ORS/OAR/
+    Oregon Film sources now independently resolve a conditional formula,
+    so its coverage veto is correctly lifted) and removed from the
+    coverage veto -- none of the three would still prove this gate. See
     DELIBERATELY_PROMOTED_CANONICAL_IDS in
-    tests/data/test_authority_coverage_registry.py. us_or_opif (Oregon
-    Production Investment Fund) remains one of the few programs still
-    genuinely UNPRICEABLE_AUTHORITY_INSUFFICIENT while holding real
-    RateRule data, per a live check of COVERAGE_REGISTRY at the time this
-    fixture was chosen."""
+    tests/data/test_authority_coverage_registry.py. kz_investment_subsidy
+    (Kazakhstan) remains one of the few programs still genuinely
+    UNPRICEABLE_AUTHORITY_INSUFFICIENT while holding real RateRule data,
+    per a live check of COVERAGE_REGISTRY at the time this fixture was
+    chosen."""
     from app.data.program_rate_rules import get_rate_rules
 
-    assert len(get_rate_rules("us_or_opif")) > 0, "fixture assumption: us_or_opif still holds rate rules"
+    assert len(get_rate_rules("kz_investment_subsidy")) > 0, (
+        "fixture assumption: kz_investment_subsidy still holds rate rules"
+    )
     seg = price_segment(
-        jurisdiction_code="US-OR",
-        program_slug="us_or_opif",
+        jurisdiction_code="KZ",
+        program_slug="kz_investment_subsidy",
         allocations=[],
         spend_category_by_code={},
         offshore_payroll_accounts=frozenset(),

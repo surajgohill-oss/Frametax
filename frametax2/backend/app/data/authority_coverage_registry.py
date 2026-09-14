@@ -536,7 +536,12 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("nohfc_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Northern Ontario Heritage Fund — Production Fund"),
     ("nordic_ftvf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Nordic Region / Nordic Region", "Nordisk Film & TV Fond"),
     ("om_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Oman", "om_film_commission"),
-    ("or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF)"),
+    # or_opif (canonical spelling; alias-bound to runtime us_or_opif)
+    # REMOVED alongside us_or_opif below — see that row's comment for the
+    # full Codex final wiring remediation (P0-OR-001) rationale. Both
+    # spellings must be un-blocked together, or the alias binding
+    # ("or_opif": "us_or_opif" in CANONICAL_RUNTIME_SLUG_BINDINGS) would
+    # leave the canonical spelling still vetoing the runtime one.
     ("pa_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Panama", "Panama Film Commission Production Facilitation"),
     ("pk_pfc_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Pakistan", "pk_pfc_rebate"),
     ("proposed_australia_producer_offset_separate_statutory_program", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia", "Producer Offset (separate statutory program)"),
@@ -561,7 +566,23 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("tourism_ireland___fáilte_ireland_production_support", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ireland", "Tourism Ireland / Fáilte Ireland Production Support"),
     ("ug_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uganda", "ug_film_commission"),
     ("us_itvs_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States", "ITVS International Documentary Fund"),
-    ("us_or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF) [runtime slug of or_opif]"),
+    # us_or_opif REMOVED (Codex final wiring remediation, P0-OR-001,
+    # disposition B): "current official sources now support a conditional
+    # formula opportunity" -- ORS 284.368, OAR Chapter 951 Division 2, and
+    # the Oregon Film OPIF program page independently resolve the rate
+    # bases, minimum spend, per-payee QPE exclusion, fund/project cap, and
+    # regional uplift. The coverage-registry BLOCKING veto is lifted;
+    # "conditional, never unconditional entitlement" is now enforced by
+    # the REAL gates on program_rate_rules_worldwide.US_OR_DOCTRINE
+    # (us-or-award-contract-fund-confirmed, us-or-fund-amount-current) --
+    # absent their evidenced facts, the program still prices PROVISIONAL
+    # economics but is excluded from verified-winner/rank-1 via the
+    # existing qualification-state machinery (project_fact_dependent_
+    # eligibility is one of canonical_evaluation.
+    # _RATE_CONDITION_ELIGIBILITY_KINDS). The final project cap
+    # (INCENTIVE_VALUE_CAP_RULES["us_or_opif"]) separately fails the
+    # segment closed if its own dated-fund evidence is missing --
+    # "never treat missing cap as unlimited".
     ("us_sundance_doc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States", "Sundance Institute — Documentary Fund"),
     ("uy_xxi_incentive", "SUPERSEDED", "Uruguay", "Uruguay XXI Film Incentive"),
     ("uz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uzbekistan", "uz_film_incentive"),

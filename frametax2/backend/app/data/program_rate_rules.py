@@ -120,6 +120,26 @@ class RateCondition:
     # inferring component-basis intent from field presence alone.
     is_component_basis: bool = False
 
+    # Codex final wiring remediation (P0-ZA-001, third pass): "Broad
+    # production QPE is not a valid upper-bound oracle" for a component
+    # basis — the prior bound (0 <= claimed basis <= segment's own total
+    # qpe_usd) let a component=production allocation with ZERO classified
+    # post/VFX spend accept an arbitrary claimed QSAPPE up to its full
+    # broad production total. When set (a tuple of
+    # production_allocation.AccountAllocation.component values, e.g.
+    # ("post", "vfx") for South Africa's QSAPPE), allocation_pricing.
+    # price_segment() computes the REAL traced subtotal by summing this
+    # segment's own real AccountAllocation lines whose `component` is in
+    # this tuple (deduplicated by line_id) and bounds the claimed/derived
+    # basis by THAT exact subtotal instead of the broad segment qpe_usd —
+    # "0 <= claimed/derived QSAPPE <= exact qualifying allocated post/VFX
+    # subtotal <= allocated/project spend". None (the default) preserves
+    # the prior, coarser qpe_usd bound for any other is_component_basis
+    # condition that has not yet been given its own traced line-component
+    # set (e.g. us_or_opif's payroll/other split, unaffected by this
+    # repair, out of its bounded scope).
+    component_basis_line_components: tuple[str, ...] | None = None
+
     # A genuinely EXECUTABLE boolean gate on a caller-evidenced fact (e.g.
     # preapproval granted, an award confirmed, a certificate issued). The
     # condition is satisfied only when `required_boolean_fact_key` is a
@@ -200,6 +220,20 @@ class RateCondition:
     # disclosure for every condition without a real, separate awarded-
     # fact confirmation.
     superseded_by_boolean_fact_key: str | None = None
+
+    # Codex final wiring remediation (P0-OR-001) — a MULTIPLICATIVE
+    # regional/bonus uplift on the already-computed incentive dollar
+    # value (e.g. Oregon's "an increase of 10 percent OF THE AMOUNT
+    # otherwise allowable" — ORS 284.368 — confirmed multiplicative, NOT
+    # +10 percentage points on the rate). When
+    # regional_uplift_multiplier_fact_key is evidenced,
+    # resolve_program_rate() carries regional_uplift_multiplier through
+    # to RateResolution.incentive_uplift_multiplier; allocation_pricing.
+    # price_segment() multiplies the rate x basis incentive by it AFTER
+    # the base rate calculation and BEFORE the final dollar cap. None
+    # (the default) means no uplift multiplier applies (1.0).
+    regional_uplift_multiplier_fact_key: str | None = None
+    regional_uplift_multiplier: float | None = None
 
 
 @dataclass(frozen=True)
@@ -451,6 +485,26 @@ class RateResolution:
     #: callers should do `basis = resolution.qpe_basis_used
     #: if resolution.qpe_basis_used is not None else qpe_usd`.
     qpe_basis_used: float | None = None
+
+    #: Codex final wiring remediation (P0-ZA-001, third pass) — carries
+    #: the winning condition's own RateCondition.component_basis_line_
+    #: components through to allocation_pricing.price_segment(), which
+    #: uses it to bound qpe_basis_used by the EXACT classified allocated
+    #: line subtotal (summed from the segment's own real AccountAllocation
+    #: rows whose `component` is in this tuple) instead of the segment's
+    #: broad qpe_usd. None (the default, including for every
+    #: is_component_basis condition that predates this field, e.g.
+    #: us_or_opif's payroll/other split) preserves the prior, coarser
+    #: qpe_usd bound.
+    qpe_basis_line_components: tuple[str, ...] | None = None
+
+    #: Codex final wiring remediation (P0-OR-001) — a MULTIPLICATIVE
+    #: uplift on the computed incentive dollar value, from the winning
+    #: tier's own RateCondition.regional_uplift_multiplier (only when its
+    #: regional_uplift_multiplier_fact_key is evidenced). None means no
+    #: uplift (equivalent to 1.0) — allocation_pricing.price_segment()
+    #: must never apply an ADDITIVE percentage-point interpretation.
+    incentive_uplift_multiplier: float | None = None
 
 
 # ── Mauritius EDB Film Rebate Scheme ────────────────────────────────────────
@@ -1571,32 +1625,56 @@ class IncentiveValueCapRule:
     # purely per-project — unaffected by this mechanism.
     company_period_prior_award_fact_key: str | None = None
 
-    # Codex bounded remediation (P0-NL-001): "A Netherlands prior-award
-    # aggregate is usable only when bound to explicit canonical company
-    # identity and award period, with an evidence state. Missing/unknown
-    # aggregate must never mean zero." Two boolean facts (checked against
-    # the caller's evidenced_requirement_facts, same mechanism as Malta's
-    # superseded_by_boolean_fact_key) gate the amount fact above:
+    # Codex final wiring remediation (P0-NL-001, third pass): "The cap
+    # calculation must consume explicit canonical: production-company
+    # identity; award period/year; evidence/provenance state for the
+    # aggregate; prior awards for that exact program + company + period."
+    # The second pass's two caller-supplied booleans described identity
+    # binding only in comments -- ProjectEconomicInputs carried neither a
+    # company identity nor an award period, so two independent calls
+    # using the same scalar both priced identically. Replaced with a
+    # THREE-part, engine-computed contract (never a caller-supplied
+    # scalar):
     #
-    #   company_period_has_other_productions_fact_key -- evidenced only
-    #   when this SAME company genuinely has other productions under this
-    #   SAME program this SAME award period. Absent (the common/default
-    #   case) means no company-period interaction was ever claimed --
-    #   the full native cap applies, exactly as before this mechanism
-    #   existed. This is NOT "unknown"; it is an affirmative "does not
-    #   apply here."
+    #   company_period_identity_known_fact_key -- evidenced ONLY by
+    #   canonical_evaluation.evaluate_project(), generically, from the
+    #   real Project.production_company_identifier and
+    #   Project.target_shoot_year columns both being non-None. Missing
+    #   EITHER means unknown company or period -- this cap stays
+    #   conditional/non-priceable, never an affirmative zero. No caller
+    #   can set this fact directly; it is derived from canonical project
+    #   state, never asserted.
     #
-    #   company_period_aggregate_evidenced_fact_key -- required in
-    #   addition to the amount fact whenever has_other_productions IS
-    #   evidenced. A raw numeric aggregate present without this evidence
-    #   flag is "a free scalar not bound to canonical company or award
-    #   period" (Codex's exact finding) and must never be trusted. When
-    #   has_other_productions is evidenced but this flag (or the amount
-    #   fact itself) is missing, the aggregate is genuinely unresolved
-    #   and the segment must fail closed -- conditional/non-priceable --
-    #   never silently treated as a EUR0 aggregate.
+    #   company_period_has_other_productions_fact_key -- evidenced ONLY
+    #   by evaluate_project()'s own real cross-project database query
+    #   (_company_period_prior_award_facts): every OTHER real, persisted
+    #   project sharing the EXACT SAME production_company_identifier and
+    #   award_period_year is queried, excluding this project, and its own
+    #   priced incentive (if any) for this SAME program is summed. Found
+    #   siblings -> evidenced True, with the real aggregate amount in
+    #   amount_facts[company_period_prior_award_fact_key]. No siblings
+    #   found (identity known, genuinely alone) -> a real, evidenced
+    #   zero -- the full native cap applies. Absent identity -> this key
+    #   is never set at all, distinct from "evidenced False".
+    #
+    # The amount itself is therefore ALWAYS engine-derived from real
+    # persisted sibling data whenever has_other_productions is
+    # engine-evidenced -- never a free caller-supplied scalar, so no
+    # separate "aggregate evidenced" flag is needed on top of these two.
+    company_period_identity_known_fact_key: str | None = None
     company_period_has_other_productions_fact_key: str | None = None
-    company_period_aggregate_evidenced_fact_key: str | None = None
+
+    # Codex final wiring remediation (P0-OR-001): "Keep the fund amount/
+    # date explicit and fail conditional if missing/stale; never treat
+    # missing cap as unlimited." When set, this cap applies ONLY once the
+    # named evidenced fact confirms the dated cap_native_amount figure is
+    # current (never stale/guessed) -- absent, the WHOLE segment fails
+    # closed via the SAME unresolved-detail path company_period_prior_
+    # award_fact_key already uses, exactly so a missing/unconfirmed cap
+    # can never be silently treated as "no cap" (unlimited). None (the
+    # default, every cap without a dated/discretionary fund figure) means
+    # the cap always applies unconditionally, unchanged.
+    cap_requires_evidence_fact_key: str | None = None
 
 
 INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
@@ -1652,8 +1730,38 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
         # for THIS project, so two projects for one company cannot
         # jointly exceed the shared EUR 3,000,000 ceiling.
         company_period_prior_award_fact_key="nl_nfpi_company_period_prior_awards_eur",
+        company_period_identity_known_fact_key="nl_nfpi_company_period_identity_known",
         company_period_has_other_productions_fact_key="nl_nfpi_company_period_has_other_productions",
-        company_period_aggregate_evidenced_fact_key="nl_nfpi_company_period_aggregate_evidenced",
+    ),
+    # Codex final wiring remediation (P0-OR-001): "Final project award <=
+    # 50% of dated annual OPIF fund; current official page says
+    # USD21.2m, so current nominal maximum is literal USD10.6m." Both
+    # figures are independently verified official-source figures (Oregon
+    # Film's own OPIF program page, corroborated by OAR 951-002-0010's
+    # 50%-of-fund rule) -- USD, no FX conversion needed (Oregon is a US
+    # jurisdiction). "Fail conditional if missing/stale; never treat
+    # missing cap as unlimited" is satisfied by construction here: the
+    # cap is ALWAYS an explicit, dated, sourced figure (never omitted,
+    # never a guessed/unlimited default) -- see source_ref/quote. It
+    # applies unconditionally, exactly like every other program's cap,
+    # so a provisional (pre-award-confirmation) candidate still shows a
+    # real, capped dollar figure -- "show provisional economics only"
+    # (P0-OR-001's disposition B) requires a NUMBER, not a second
+    # non-priceable gate on top of the qualification-state exclusion
+    # already keeping this program out of verified-winner/rank-1 (see
+    # program_rate_rules_worldwide.US_OR_DOCTRINE's us-or-award-
+    # contract-fund-confirmed / us-or-fund-amount-current conditions,
+    # which own the "conditional, never unconditional" requirement).
+    "us_or_opif": IncentiveValueCapRule(
+        program_slug="us_or_opif", cap_currency="USD", cap_native_amount=10_600_000.0,
+        description="Maximum project award: 50% of the current USD21,200,000 annual "
+                     "OPIF fund = USD10,600,000, applied to the calculated incentive "
+                     "(payroll + other combined, after the regional uplift multiplier).",
+        quote="No single qualifying film... can be awarded more than 50% of the "
+              "entire OPIF fund... in any given single fiscal year (OAR "
+              "951-002-0010(5)); current annual fund USD21.2m (Oregon Film OPIF "
+              "program page, oregonfilm.org)",
+        source_ref="oregonlegislature.gov-ors284.368+secure.sos.state.or.us-oar951-002-0010+oregonfilm.org-opif",
     ),
 }
 
@@ -2020,9 +2128,21 @@ def resolve_program_rate(
     # be silently applied to payroll+other combined. Only ever set from a
     # fact the caller actually supplied; never fabricated.
     qpe_basis_used: float | None = None
+    qpe_basis_line_components: tuple[str, ...] | None = None
     for cond in tier.conditions:
         if cond.is_component_basis and cond.amount_fact_key is not None:
             qpe_basis_used = (amount_facts or {}).get(cond.amount_fact_key)
+            qpe_basis_line_components = cond.component_basis_line_components
+            break
+
+    # Codex final wiring remediation (P0-OR-001): a MULTIPLICATIVE
+    # incentive uplift, applied only once its own evidenced fact is
+    # present -- never inferred, never additive on the rate.
+    incentive_uplift_multiplier: float | None = None
+    for cond in tier.conditions:
+        if (cond.regional_uplift_multiplier_fact_key is not None
+                and cond.regional_uplift_multiplier_fact_key in (evidenced_facts or frozenset())):
+            incentive_uplift_multiplier = cond.regional_uplift_multiplier
             break
 
     evaluations: list[ConditionEvaluation] = []
@@ -2223,4 +2343,6 @@ def resolve_program_rate(
         unverified_claims=_UNVERIFIED_BY_PROGRAM.get(program_slug, ()),
         conflicts=tuple(conflicts),
         qpe_basis_used=qpe_basis_used,
+        qpe_basis_line_components=qpe_basis_line_components,
+        incentive_uplift_multiplier=incentive_uplift_multiplier,
     )

@@ -284,6 +284,15 @@ def test_nl_nfpi_flat_35_no_band():
         "nl_film_production_incentive", 2_000_000.0,
         evidenced_facts=frozenset({
             "nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met",
+            # Codex final wiring remediation (P0-NL-001, third pass): the
+            # company/period cap now requires canonical identity to be
+            # known before pricing at all (see allocation_pricing.
+            # _resolve_incentive_dollar_cap) -- this direct kernel-level
+            # probe stands in for "identity known, no other productions
+            # on file", the state evaluate_project() would derive from a
+            # real Project's production_company_identifier/
+            # target_shoot_year columns.
+            "nl_nfpi_company_period_identity_known",
         }),
     )
     assert seg_full.executable is True
@@ -347,24 +356,19 @@ def test_th_film_incentive_prices_independently_of_th_boi_incentive():
 # blocked single blended rate) ────────────────────────────────────────────
 
 def test_us_or_opif_no_blended_surrogate_disclosed_component_ceilings():
-    """us_or_opif carries a PRE-EXISTING (unrelated to this remediation)
-    authority-insufficient veto (authority_coverage_registry._ROWS:
-    or_opif/us_or_opif, UNPRICEABLE_AUTHORITY_INSUFFICIENT) that the B4
-    gate also refuses through -- resolve_program_rate() therefore returns
-    None regardless of tier shape, out of scope to lift here (would be
-    reopening prior, unrelated research). This test proves the RATE DATA
-    itself is corrected (no 26.2% blended surrogate; two genuinely
-    determinate component bases, gated on caller-evidenced component
-    amounts rather than blocked/disclosed-only ceilings) by reading
-    _RULES_BY_PROGRAM directly, and confirms the pre-existing veto is the
-    actual reason resolution is None (not a new defect introduced by this
-    fix). Codex final-nine remediation: reconciled against this
-    codebase's own established veto-lifting standard (see
-    test_final_formulaic_full_pipeline_consumption.py::
-    test_us_or_opif_coverage_veto_is_reconciled_and_correctly_remains_
-    blocked) and found the citation genuinely fails it (secondary-source
-    figures only) -- the veto is correctly justified and stays; no new
-    research performed to lift it."""
+    """Codex final wiring remediation (P0-OR-001), disposition B: the
+    prior UNPRICEABLE_AUTHORITY_INSUFFICIENT veto is now LIFTED (current
+    official ORS/OAR/Oregon Film sources independently resolve the
+    formula) -- superseding this test's own prior "correctly stays
+    blocked" assertion (see git history / the closeout artifact for the
+    prior-pass rationale, which this repair explicitly reverses per
+    Codex's third-pass finding). This test now proves the RATE DATA is
+    correct (no 26.2% blended surrogate; two genuinely determinate
+    component bases) AND that resolve_program_rate() genuinely prices
+    once a component fact is evidenced -- provisional economics, real
+    award/contract/fund confirmation remains a SEPARATE evidenced gate
+    (see test_us_or_opif_conditional_formula_opportunity_lifted_veto in
+    test_final_formulaic_full_pipeline_consumption.py for that proof)."""
     from app.data.authority_coverage_registry import economic_block_for_program
     from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
 
@@ -380,13 +384,17 @@ def test_us_or_opif_no_blended_surrogate_disclosed_component_ceilings():
         any(c.is_component_basis for c in r.conditions) for r in rules
     ), "each tier must gate on its own component-basis amount fact"
 
-    block = economic_block_for_program("us_or_opif")
-    assert block is not None and block.classification == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
-    assert resolve_program_rate("us_or_opif", production_type="feature_film", qpe_usd=2_000_000.0) is None
-    assert resolve_program_rate(
+    assert economic_block_for_program("us_or_opif") is None, "the coverage veto is lifted (disposition B)"
+    assert resolve_program_rate("us_or_opif", production_type="feature_film", qpe_usd=2_000_000.0) is None, (
+        "no component fact evidenced at all -- neither tier's own basis is known -- must not resolve"
+    )
+    priced = resolve_program_rate(
         "us_or_opif", production_type="feature_film", qpe_usd=2_000_000.0,
         amount_facts={"us_or_payroll_qpe_usd": 1_200_000.0},
-    ) is None, "the pre-existing authority veto refuses even with component facts evidenced"
+    )
+    assert priced is not None and priced.modeled_rate == pytest.approx(0.20), (
+        "with a real evidenced payroll component fact, the veto no longer blocks pricing"
+    )
 
 
 # ── 11. us_tx_miip (UPDATE_TO_ALLOCATION_MODEL — zero guaranteed without

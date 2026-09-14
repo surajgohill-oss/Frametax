@@ -496,8 +496,42 @@ async def test_nl_nfpi_points_independence_format_facts(db: AsyncSession, clean_
 
     await _add_facts(db, _boolean_fact("nl_nfpi_format_threshold_met"))
     full = await _structure_for(db, "nl_film_production_incentive")
-    assert full["is_fully_priced"] is True
-    assert full["selected_incentive_usd"] == pytest.approx(NL_EXPECTED_INCENTIVE_USD, abs=0.01)
+    assert full["is_fully_priced"] is False, (
+        "Codex final wiring remediation (P0-NL-001, third pass): the shared FVD fixture "
+        "project has no canonical production_company_identifier/target_shoot_year on file, "
+        "so nl_film_production_incentive's company/period cap now correctly stays "
+        "conditional/non-priceable even once both RATE-eligibility facts (points/"
+        "independence, format threshold) are satisfied -- this is the exact new, deliberate "
+        "invariant, not a regression."
+    )
+
+    # The RATE portion (this test's actual subject -- points/independence
+    # + format-threshold facts controlling the 35% tier) is proven
+    # directly against resolve_program_rate(), which is entirely
+    # independent of the company/period cap mechanism above -- the exact
+    # decoupling that lets this test keep validating rate-eligibility
+    # facts without mutating the shared FVD fixture's real identity
+    # columns (a locked anchor project; see FVD_EXPECTED_INCENTIVE_USD/
+    # FVD_EXPECTED_NPC_USD elsewhere in this file).
+    from app.data.program_rate_rules import resolve_program_rate
+
+    no_facts = resolve_program_rate(
+        "nl_film_production_incentive", "feature_film", 3_701_238.00, evidenced_facts=frozenset(),
+    )
+    assert no_facts is None
+    one_fact = resolve_program_rate(
+        "nl_film_production_incentive", "feature_film", 3_701_238.00,
+        evidenced_facts=frozenset({"nl_nfpi_points_independence_test_passed"}),
+    )
+    assert one_fact is None, "format-threshold fact still missing — must not resolve on one of two facts"
+    both_facts = resolve_program_rate(
+        "nl_film_production_incentive", "feature_film", 3_701_238.00,
+        evidenced_facts=frozenset({
+            "nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met",
+        }),
+    )
+    assert both_facts is not None and both_facts.modeled_rate == pytest.approx(0.35, abs=1e-9)
+    assert round(both_facts.modeled_rate * 3_701_238.00, 2) == pytest.approx(NL_EXPECTED_INCENTIVE_USD, abs=0.01)
 
 
 def test_nl_nfpi_company_cap_applies_to_calculated_incentive():
@@ -523,8 +557,18 @@ def test_nl_nfpi_company_cap_applies_to_calculated_incentive():
         jurisdiction_code="NL", program_slug="nl_film_production_incentive", allocations=[alloc],
         spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
         production_type="feature_film", gross_budget_usd=large_qpe,
+        # Codex final wiring remediation (P0-NL-001, third pass): the
+        # company/period cap now requires canonical identity to be known
+        # BEFORE any conservation logic runs (see allocation_pricing.
+        # _resolve_incentive_dollar_cap). This direct kernel-level call
+        # bypasses evaluate_project()'s real Project-column-derived
+        # identity_known fact, so it is supplied explicitly here,
+        # standing in for "identity known, no other productions on
+        # file" -- exactly the state a real, standalone production with
+        # a real company/year on file (and no siblings) would carry.
         evidenced_requirement_facts=frozenset({
             "nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met",
+            "nl_nfpi_company_period_identity_known",
         }),
     )
     assert seg.executable is True
@@ -535,129 +579,19 @@ def test_nl_nfpi_company_cap_applies_to_calculated_incentive():
     assert seg.incentive_cap_usd == pytest.approx(cap_usd, abs=0.01)
 
 
-def test_nl_nfpi_company_period_cap_consumes_prior_awards_across_projects():
-    """Codex final P0 (nl_film_production_incentive): "EUR3m company-year
-    cap ... does not consume prior company-period awards." nl_film_
-    production_incentive's cap is PER COMPANY PER YEAR, not per-project --
-    a second production from the SAME company must not be able to claim a
-    FULL fresh EUR3,000,000 on top of what the company's first production
-    already received this year. Proven directly against the real pricing
-    kernel by simulating "Project A" (this company's first NL production,
-    no prior awards) and "Project B" (the SAME company's second
-    production, evidencing Project A's own EUR2,000,000 award as its
-    prior-period fact) -- the acceptance case: 'two projects for one
-    company cannot jointly exceed the company-year cap.'
-
-    Codex bounded remediation (P0-NL-001): "A Netherlands prior-award
-    aggregate is usable only when bound to explicit canonical company
-    identity and award period, with an evidence state. Missing/unknown
-    aggregate must never mean zero." Project B's claim is only trusted
-    here because BOTH company_period_has_other_productions AND
-    company_period_aggregate_evidenced are explicitly evidenced -- a raw
-    amount_facts entry alone (the pre-remediation shape of this test) is
-    now correctly ignored as an unbound free scalar, which is exactly why
-    an additional adverse case below proves the unresolved-aggregate path
-    fails closed rather than silently defaulting to the full fresh cap."""
-    from app.calculators.allocation_pricing import price_segment
-    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
-    from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
-
-    cap = get_incentive_value_cap("nl_film_production_incentive")
-    cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
-    rate_facts = frozenset({"nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met"})
-    company_period_facts = frozenset({
-        "nl_nfpi_company_period_has_other_productions",
-        "nl_nfpi_company_period_aggregate_evidenced",
-    })
-
-    def probe(large_qpe: float, prior_awards_eur: float | None, *, claim_other_productions: bool = True):
-        alloc = AccountAllocation(
-            account_code="2000", description="spend", amount_usd=large_qpe, component="production",
-            jurisdiction_code="NL", assignment_kind=AssignmentKind.FIXED,
-            rationale="company-period cap consumption probe", governing_decision="codex-final-p0-canonical-fx",
-        )
-        amount_facts = (
-            {"nl_nfpi_company_period_prior_awards_eur": prior_awards_eur}
-            if prior_awards_eur is not None else None
-        )
-        evidenced = rate_facts | (company_period_facts if claim_other_productions else frozenset())
-        return price_segment(
-            jurisdiction_code="NL", program_slug="nl_film_production_incentive", allocations=[alloc],
-            spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
-            production_type="feature_film", gross_budget_usd=large_qpe,
-            evidenced_requirement_facts=evidenced, amount_facts=amount_facts,
-        )
-
-    large_qpe = (cap_usd / 0.35) * 2  # comfortably over the FULL cap even alone
-
-    # Project A: this company's first NL production this year, no prior awards claimed at all.
-    project_a = probe(large_qpe, None, claim_other_productions=False)
-    assert project_a.executable is True
-    assert project_a.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01), (
-        "with no company-period interaction ever claimed, Project A alone is capped at the "
-        "full EUR3m-equivalent"
-    )
-
-    # Project B: the SAME company's second NL production, evidencing that
-    # Project A already received the full EUR3,000,000 cap this year --
-    # Project B's own remaining company-period cap must be EUR 0.
-    project_b_exhausted = probe(large_qpe, 3_000_000.0)
-    assert project_b_exhausted.executable is True
-    assert project_b_exhausted.incentive_floor_usd == 0.0, (
-        "the company already exhausted its EUR3,000,000 annual cap via Project A -- "
-        "Project B must receive $0, never a second fresh cap"
-    )
-
-    # Partial consumption: Project A received EUR2,000,000 -- Project B's
-    # remaining cap is EUR1,000,000-equivalent, genuinely LESS than the
-    # full per-project cap.
-    project_b_partial = probe(large_qpe, 2_000_000.0)
-    assert project_b_partial.executable is True
-    assert project_b_partial.incentive_floor_usd < project_a.incentive_floor_usd, (
-        "Project B's remaining company-period cap must be genuinely smaller than "
-        "Project A's full cap once EUR2,000,000 of the shared ceiling is already consumed"
-    )
-    assert project_b_partial.incentive_floor_usd == pytest.approx(cap_usd / 3.0, abs=0.01), (
-        "EUR1,000,000 remaining (of the EUR3,000,000 cap) converts to exactly one third of "
-        "the full cap-equivalent USD figure"
-    )
-
-    # Joint total across both real projects must never exceed the single company-year cap.
-    joint_total = project_a.incentive_floor_usd  # Project A alone already hits the full cap
-    assert joint_total == pytest.approx(cap_usd, abs=0.01)
-    assert project_b_exhausted.incentive_floor_usd + project_a.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01)
-
-    # Adverse (Codex P0-NL-001): the company IS claimed to have other
-    # productions this period, but the aggregate amount is missing --
-    # this must fail closed (non-priceable), never silently default to
-    # the full fresh cap the way absence-of-any-claim (Project A) does.
-    unresolved = probe(large_qpe, None, claim_other_productions=True)
-    assert unresolved.executable is False, (
-        "has_other_productions evidenced with no evidenced amount must fail closed, "
-        "never fall back to the full cap"
-    )
-    assert any("can never be treated as zero" in b for b in unresolved.blockers), unresolved.blockers
-
-    # Adverse: the raw amount fact is present but NOT bound by the
-    # aggregate_evidenced flag -- "a free scalar not bound to canonical
-    # company or award period" must also fail closed, exactly like the
-    # missing-amount case above.
-    alloc = AccountAllocation(
-        account_code="2000", description="spend", amount_usd=large_qpe, component="production",
-        jurisdiction_code="NL", assignment_kind=AssignmentKind.FIXED,
-        rationale="unbound scalar probe", governing_decision="codex-final-p0-canonical-fx",
-    )
-    unbound_scalar = price_segment(
-        jurisdiction_code="NL", program_slug="nl_film_production_incentive", allocations=[alloc],
-        spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
-        production_type="feature_film", gross_budget_usd=large_qpe,
-        evidenced_requirement_facts=rate_facts | {"nl_nfpi_company_period_has_other_productions"},
-        amount_facts={"nl_nfpi_company_period_prior_awards_eur": 2_000_000.0},
-    )
-    assert unbound_scalar.executable is False, (
-        "a numeric aggregate without the aggregate_evidenced flag is an unbound free scalar "
-        "-- must fail closed, never silently trusted"
-    )
+# Codex final wiring remediation (P0-NL-001, third pass): the prior
+# version of this test used two local variable names ("Project A"/
+# "Project B") around identical direct price_segment() calls sharing a
+# caller-supplied scalar -- exactly the "not two actual canonical
+# project-input identities" weak oracle Codex's delta audit rejected.
+# Removed and superseded by
+# tests/test_final_wiring_nl_company_period_conservation.py, which
+# creates two REAL, separately-persisted canonical Project rows (through
+# the ordinary generic ingestion path) sharing an explicit
+# production_company_identifier/target_shoot_year, evaluates each with
+# the real evaluate_project() orchestration, and proves conservation
+# from REAL cross-project persisted data -- never a caller-supplied
+# scalar standing in for identity.
 
 
 # ── 9. th_film_incentive ──────────────────────────────────────────────
@@ -752,91 +686,92 @@ async def test_th_film_incentive_exact_150m_boundary_is_exclusive_on_25pct_tier(
     assert above["selected_incentive_usd"] > exact["selected_incentive_usd"]
 
 
-# ── 10. us_or_opif — permanently B4-blocked by a separate, pre-existing,
-# out-of-scope authority-insufficient veto (COVERAGE_REGISTRY, predates
-# this remediation and is not part of the 13-item manifest). The
-# component-basis RATE MODEL itself is proven correct directly against
-# the real, registered RateRule/RateCondition data — never a mocked
-# object — which is the closest genuine consumption proof available
-# for a program this codebase already adjudicated authority-insufficient
-# at a layer this remediation is not authorized to reopen. ──────────────
+# ── 10. us_or_opif — Codex final wiring remediation (P0-OR-001),
+# disposition B: conditional formula opportunity. The prior
+# UNPRICEABLE_AUTHORITY_INSUFFICIENT veto is LIFTED (current official
+# ORS 284.368 / OAR Chapter 951 Division 2 / Oregon Film OPIF program
+# page sources — independently fetched and verified directly against
+# oregonlegislature.gov and secure.sos.state.or.us during this pass —
+# now resolve rate bases, minimum spend, fund/project cap, and regional
+# uplift). The program prices real, DETERMINISTIC component-basis
+# economics, but real award/contract/fund confirmation remains an
+# explicit, evidenced gate that keeps it PROVISIONAL (excluded from
+# verified-winner/rank-1) until supplied — never an unconditional
+# entitlement. ──────────────────────────────────────────────────────────
 
-async def test_us_or_opif_coverage_veto_is_reconciled_and_correctly_remains_blocked():
-    """Codex final-nine remediation (us_or_opif, P0): "Real slug remains
-    B4-blocked; caps absent; proof uses synthetic copied slug ... Reconcile
-    accepted coverage disposition without new research; if authority
-    remains insufficient keep blocked and remove completion claim;
-    otherwise wire both component awards and caps through real slug."
+async def test_us_or_opif_conditional_formula_opportunity_lifted_veto():
+    """Codex final wiring remediation (P0-OR-001): "Replace stale
+    authority veto with dated conditional formula disposition using the
+    verified sources and separate QPE compensation cap from final
+    project/fund cap; do not model 10 percentage points."
 
-    This is a RECONCILIATION check, not a consumption-proof test --
-    us_or_opif is NOT claimed to reach real optimizer consumption here.
-    authority_coverage_registry.py already documents a real, established
-    precedent for lifting a stale UNPRICEABLE_AUTHORITY_INSUFFICIENT veto
-    when it contradicts already-accepted, primary-sourced runtime data
-    (Georgia us_ga_film_credit, and 18 further programs across three
-    correction batches) -- but ALSO an explicit standard for when NOT to:
-    "a citation that only cites a secondary/aggregator source ... were
-    deliberately left PARSED and still vetoed -- promotion requires the
-    SPECIFIC figure being relied on to be primary-sourced."
-
-    Oregon's own RateRule citation fails that exact standard: the 20%/25%/
-    USD1m/$21.2M figures are corroborated by 3 secondary industry sources
-    (wrapbook.com, shamelstudio.com, vensure.com), and the citation
-    explicitly states "oregonfilm.org's own official page confirmed
-    general structure ... but not these exact figures on direct fetch."
-    Reconciling against the SAME standard already applied to every other
-    program in this file, the veto is CORRECTLY JUSTIFIED and must remain
-    -- lifting it would require fetching a new primary source, which is
-    new research and out of this bounded remediation's scope. The
-    component-basis RATE MODEL (qpe_basis_used substitution, distinct
-    payroll/other tiers) is still proven correct as DATA, directly against
-    the real registered RateRule objects -- never a synthetic copied slug
-    standing in for the real one, and never claimed as consumption proof."""
+    Proves: (1) the coverage veto is lifted (both canonical spellings);
+    (2) each component basis (payroll 20%, other 25%) prices correctly
+    on its OWN, literal arithmetic; (3) the regional uplift is
+    MULTIPLICATIVE (x1.10), never additive; (4) the final project cap
+    (50% of the current USD21,200,000 annual fund = USD10,600,000)
+    applies; (5) award/contract/fund confirmation is a real, evidenced
+    gate (award-contract-fund-confirmed / fund-amount-current), not
+    satisfied by mere presence of component facts -- so the qualification
+    state stays genuinely unresolved (USER_FACT_REQUIRED) until it is
+    supplied, keeping this program provisional/excluded from verified-
+    winner ranking without blocking it from pricing at all."""
     from app.data.authority_coverage_registry import economic_block_for_program
-    from app.data.program_rate_rules import _amount_and_boolean_conditions_met, get_rate_rules
+    from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
 
-    block = economic_block_for_program("us_or_opif")
-    assert block is not None and block.classification == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
-
-    # Confirm the citation genuinely fails the primary-source promotion
-    # bar this codebase already applies elsewhere -- the reconciliation
-    # finding, verified directly against the real data, not asserted.
-    from app.data.executable_jurisdiction_registry import get_doctrine
-    doctrine = get_doctrine("us_or_opif")
-    assert "wrapbook.com" in doctrine.citation or "3 independent production-industry sources" in doctrine.citation
-    assert "not these exact figures on direct fetch" in doctrine.citation, (
-        "the citation must still honestly disclose that the OFFICIAL Oregon Film page "
-        "does not itself confirm the specific rate/threshold/cap figures relied on -- "
-        "this is precisely why the veto remains correctly justified"
-    )
+    assert economic_block_for_program("us_or_opif") is None, "the coverage veto must be lifted"
+    assert economic_block_for_program("or_opif") is None, "both canonical spellings must be un-blocked together"
 
     rules = get_rate_rules("us_or_opif")
     payroll = next(r for r in rules if r.tier_id == "us-or-payroll-ceiling-20")
     other = next(r for r in rules if r.tier_id == "us-or-other-ceiling-25")
-    assert payroll.is_band_ceiling is False and other.is_band_ceiling is False, (
-        "both component tiers must be determinate (not blocked/disclosed-only ceilings) "
-        "once their own component fact is evidenced -- correct DATA, even though the "
-        "coverage veto correctly keeps them unreachable in the real pipeline"
+    assert payroll.is_band_ceiling is False and other.is_band_ceiling is False
+
+    # Each component basis prices correctly, literally, on its own.
+    payroll_only = resolve_program_rate(
+        "us_or_opif", "feature_film", 2_000_000.0,
+        amount_facts={"us_or_payroll_qpe_usd": 2_000_000.0},
     )
+    assert payroll_only is not None and payroll_only.modeled_rate == pytest.approx(0.20)
+    assert payroll_only.qpe_basis_used == pytest.approx(2_000_000.0)
+    assert round(payroll_only.qpe_basis_used * payroll_only.modeled_rate, 2) == pytest.approx(400_000.0)
 
-    # Direct proof of the real gating logic (not a mock, not a synthetic
-    # copied slug), against the ACTUAL registered RateRule objects for
-    # the REAL program_slug "us_or_opif":
-    assert _amount_and_boolean_conditions_met(payroll, {"us_or_payroll_qpe_usd": 1_200_000.0}, None) is True
-    assert _amount_and_boolean_conditions_met(payroll, {"us_or_other_qpe_usd": 1_200_000.0}, None) is False
-    assert _amount_and_boolean_conditions_met(payroll, None, None) is False
-    assert _amount_and_boolean_conditions_met(other, {"us_or_other_qpe_usd": 1_200_000.0}, None) is True
-    assert _amount_and_boolean_conditions_met(other, {"us_or_payroll_qpe_usd": 1_200_000.0}, None) is False
+    other_only = resolve_program_rate(
+        "us_or_opif", "feature_film", 2_000_000.0,
+        amount_facts={"us_or_other_qpe_usd": 2_000_000.0},
+    )
+    assert other_only is not None and other_only.modeled_rate == pytest.approx(0.25)
+    assert round(other_only.qpe_basis_used * other_only.modeled_rate, 2) == pytest.approx(500_000.0)
 
-    # And the real, unmodified program_slug genuinely never resolves,
-    # with or without component facts -- the veto, never the tier shape,
-    # is what blocks it either way.
-    from app.data.program_rate_rules import resolve_program_rate
-    assert resolve_program_rate("us_or_opif", "feature_film", 1_500_000.0) is None
-    assert resolve_program_rate(
-        "us_or_opif", "feature_film", 1_500_000.0,
-        amount_facts={"us_or_payroll_qpe_usd": 1_200_000.0},
-    ) is None, "the coverage veto refuses even with component facts evidenced -- correctly still blocked"
+    # Multiplicative regional uplift: x1.10, never +10 percentage points.
+    uplifted = resolve_program_rate(
+        "us_or_opif", "feature_film", 2_000_000.0,
+        amount_facts={"us_or_other_qpe_usd": 2_000_000.0},
+        evidenced_facts=frozenset({"us_or_opif_regional_uplift_confirmed"}),
+    )
+    assert uplifted is not None and uplifted.incentive_uplift_multiplier == pytest.approx(1.10)
+    assert uplifted.modeled_rate == pytest.approx(0.25), (
+        "the uplift must never touch the RATE itself (would be additive/wrong); "
+        "it is applied to the computed incentive downstream in allocation_pricing"
+    )
+    without_uplift = resolve_program_rate(
+        "us_or_opif", "feature_film", 2_000_000.0, amount_facts={"us_or_other_qpe_usd": 2_000_000.0},
+    )
+    assert without_uplift.incentive_uplift_multiplier is None, "no uplift fact -> no multiplier, never inferred"
+
+    # Award/contract/fund confirmation is a REAL, evidenced gate -- mere
+    # component-fact presence does not satisfy it.
+    no_award = resolve_program_rate(
+        "us_or_opif", "feature_film", 2_000_000.0,
+        amount_facts={"us_or_other_qpe_usd": 2_000_000.0},
+    )
+    award_condition = next(
+        c for c in no_award.conditions_evaluated if c.condition_id == "us-or-award-contract-fund-confirmed"
+    )
+    assert award_condition.satisfied is not True, (
+        "absent an evidenced award/contract/fund confirmation, this condition must never "
+        "read as satisfied -- provisional economics only"
+    )
 
 
 # ── 11. us_tx_miip ────────────────────────────────────────────────────
@@ -992,32 +927,27 @@ async def test_za_nfvf_rebate_accepted_gate_and_cap(db: AsyncSession, clean_fact
 
 
 def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch():
-    """PREVIOUS WEAKNESS (Codex final P0 reverification): this test
-    labeled a `component="production"` allocation (the SAME broad
-    production spend the general accepted-production gate prices) as the
-    "post-only" case, and asserted the post-only branch produces the SAME
-    incentive as the general branch on that SAME broad base -- exactly
-    Codex's own finding: "Claude's direct test labels a
-    component='production' allocation as the post-only case." This
-    encoded the defect it should have caught: the post-only tier priced
-    broad production QPE, never a genuinely distinct, narrower
-    post-production basis.
+    """PREVIOUS WEAKNESS (Codex final P0 reverification, and again in the
+    final wiring remediation third pass): this test labeled a
+    `component="production"` allocation (the SAME broad production spend
+    the general accepted-production gate prices) as the "post-only" case
+    -- exactly Codex's own finding, TWICE: "Claude's direct test labels a
+    component='production' allocation as the post-only case" and (third
+    pass) "broad production QPE is not a valid upper-bound oracle."
 
-    FIX: RateCondition.is_component_basis on a new za-nfvf-post-qsappe-
-    basis condition -- the post-only tier now requires and prices against
-    a SEPARATE, caller-evidenced za_nfvf_post_qsappe_usd fact (Qualifying
-    South African POST-PRODUCTION Expenditure), genuinely narrower than
-    the segment's own broad production qpe_usd. This test proves: (1) the
-    post-only election ALONE, with no QSAPPE fact, no longer silently
-    prices the broad production base (it correctly rejects); (2) once a
-    genuine, narrower QSAPPE fact is evidenced, the post-only branch
-    prices 25% of THAT figure, provably DIFFERENT from (and here, smaller
-    than) the general branch's 25%-of-broad-production-QPE result; (3)
-    the ZAR25m cap still applies correctly to the general branch's
-    calculated incentive. This would FAIL against the prior defective
-    implementation, which had no separate QSAPPE fact/gate at all and
-    would have silently priced the post-only branch identically to the
-    general branch on the same broad allocation."""
+    FIX (third pass): the post-only tier's QSAPPE claim is now bounded by
+    the EXACT traced subtotal of this segment's own real AccountAllocation
+    lines whose `component` is "post" or "vfx" (RateCondition.
+    component_basis_line_components) -- never the segment's broad
+    production qpe_usd. This test proves: (1) the post-only election ALONE,
+    with no QSAPPE fact, correctly rejects; (2) a claim against an
+    allocation with ZERO classified post/VFX lines (Codex's exact
+    third-pass adverse reproducer) correctly rejects even though the
+    segment's own broad QPE would have "covered" it under the second-pass
+    bound; (3) a claim that exactly matches a REAL, traced post/vfx line
+    prices 25% of that figure; (4) duplicate line_ids among the traced
+    lines reject; (5) the ZAR25m cap still applies correctly to the
+    general branch's calculated incentive."""
     from app.calculators.allocation_pricing import price_segment
     from app.calculators.production_allocation import AccountAllocation, AssignmentKind
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
@@ -1028,16 +958,25 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
 
     large_qpe = (cap_usd / 0.25) * 2  # comfortably over the cap once rated at 25%
 
-    def probe(evidenced, amount_facts=None):
-        alloc = AccountAllocation(
+    def probe(evidenced, amount_facts=None, post_lines=()):
+        allocs = [AccountAllocation(
             account_code="2000", description="broad production spend", amount_usd=large_qpe, component="production",
             jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
             rationale="cap/post-only boundary probe", governing_decision="codex-final-p0-canonical-fx",
-        )
+            line_id="production-1",
+        )]
+        for i, (amount, comp) in enumerate(post_lines):
+            allocs.append(AccountAllocation(
+                account_code="5000", description=f"real {comp} spend", amount_usd=amount, component=comp,
+                jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+                rationale="cap/post-only boundary probe — real traced post/vfx line",
+                governing_decision="codex-final-wiring-remediation-p0-za-001",
+                line_id=f"{comp}-{i}",
+            ))
         return price_segment(
-            jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=[alloc],
-            spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
-            production_type="feature_film", gross_budget_usd=large_qpe,
+            jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=allocs,
+            spend_category_by_code={"2000": "production", "5000": "post"}, offshore_payroll_accounts=frozenset(),
+            production_type="feature_film", gross_budget_usd=large_qpe + sum(a for a, _ in post_lines),
             evidenced_requirement_facts=evidenced, amount_facts=amount_facts,
         )
 
@@ -1057,36 +996,65 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
         "it must never silently price the broad production QPE under the post-only label"
     )
 
-    # A genuinely NARROWER post-production-only spend figure (a real
-    # subset of the production's total budget) correctly prices its OWN
-    # 25%, provably distinct from (smaller than) the general branch.
+    # Codex's EXACT third-pass adverse reproducer: a claim against an
+    # allocation with ZERO classified post/VFX lines must reject, even
+    # though it is comfortably within the segment's own broad QPE (the
+    # second-pass bound this repair replaces).
+    zero_post_lines = probe(
+        frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+    )
+    assert zero_post_lines.executable is False, (
+        "a claimed QSAPPE against a segment with ZERO classified post/VFX lines must "
+        "reject -- broad production QPE is not a valid upper-bound oracle"
+    )
+    assert any("classified post/vfx" in b for b in zero_post_lines.blockers), zero_post_lines.blockers
+
+    # A genuine, REAL, traced post-production line exactly matching the
+    # claim prices its own 25%, provably distinct from (smaller than) the
+    # general branch.
     narrow_post_qsappe_usd = 400_000.0
     post_only_with_basis = probe(
         frozenset({"za_nfvf_post_production_only_confirmed"}),
         amount_facts={"za_nfvf_post_qsappe_usd": narrow_post_qsappe_usd},
+        post_lines=[(narrow_post_qsappe_usd, "post")],
     )
     assert post_only_with_basis.executable is True
     assert post_only_with_basis.incentive_floor_usd == pytest.approx(narrow_post_qsappe_usd * 0.25, abs=0.01), (
-        "the post-only branch must price 25% of the SEPARATE, narrower QSAPPE fact, "
-        "never the segment's own broad production QPE"
+        "the post-only branch must price 25% of the SEPARATE, narrower, REAL traced "
+        "post/vfx line subtotal, never the segment's own broad production QPE"
     )
     assert post_only_with_basis.incentive_floor_usd < capped.incentive_floor_usd, (
         "the post-only branch's economics on a genuinely narrower basis must be materially "
         "different from (here, far smaller than) the general branch's broad-QPE economics"
     )
 
+    # post + vfx lines combine into one traced subtotal.
+    combined = probe(
+        frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+        post_lines=[(300_000.0, "post"), (100_000.0, "vfx")],
+    )
+    assert combined.executable is True
+    assert combined.incentive_floor_usd == pytest.approx(100_000.0, abs=0.01)
+
+    # One cent above the traced subtotal rejects.
+    over_by_a_cent = probe(
+        frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.01},
+        post_lines=[(400_000.0, "post")],
+    )
+    assert over_by_a_cent.executable is False
+
     # Codex bounded remediation (P0-ZA-001, CROSSCHECK "ZA-post-conservation"):
-    # a $1 allocated segment cannot claim a $1,000,000 QSAPPE component
-    # basis -- the claimed sub-total can never exceed the segment's own
-    # real qualifying allocated spend. This is the exact adversarial case
-    # allocation_pricing.py's shared is_component_basis conservation check
-    # (also protecting us_or_opif) targets; it must REJECT, never silently
-    # price incentive=$250,000 on an unreconciled scalar.
+    # a $1 allocated segment (with zero real post/vfx lines) cannot claim
+    # a $1,000,000 QSAPPE component basis.
     def probe_one_dollar(qsappe_claimed):
         alloc = AccountAllocation(
             account_code="2000", description="tiny post spend", amount_usd=1.0, component="production",
             jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
             rationale="component-basis conservation adverse probe", governing_decision="codex-bounded-remediation-p0-za-001",
+            line_id="tiny-1",
         )
         return price_segment(
             jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=[alloc],
@@ -1098,12 +1066,36 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
 
     conservation_violation = probe_one_dollar(1_000_000.0)
     assert conservation_violation.executable is False, (
-        "a $1,000,000 claimed QSAPPE on a $1 allocated segment must reject -- the component "
-        "basis can never exceed the segment's own real qualifying allocated spend"
+        "a $1,000,000 claimed QSAPPE on a $1 allocated segment (zero real post/vfx lines) "
+        "must reject"
     )
-    assert any("qualifying allocated spend" in b for b in conservation_violation.blockers), (
+    assert any("classified post/vfx" in b for b in conservation_violation.blockers), (
         conservation_violation.blockers
     )
+
+    # Duplicate line_ids among the traced post/vfx lines must reject —
+    # the same source budget line can never be counted twice.
+    from app.calculators.production_allocation import AccountAllocation as _AA
+    dup_alloc = [
+        _AA(account_code="2000", description="production", amount_usd=large_qpe, component="production",
+            jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="dup probe", governing_decision="codex-final-wiring-remediation-p0-za-001", line_id="p-1"),
+        _AA(account_code="5000", description="post dup A", amount_usd=400_000.0, component="post",
+            jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="dup probe", governing_decision="codex-final-wiring-remediation-p0-za-001", line_id="DUP"),
+        _AA(account_code="5000", description="post dup B", amount_usd=400_000.0, component="post",
+            jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="dup probe", governing_decision="codex-final-wiring-remediation-p0-za-001", line_id="DUP"),
+    ]
+    dup_seg = price_segment(
+        jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=dup_alloc,
+        spend_category_by_code={"2000": "production", "5000": "post"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=large_qpe + 800_000.0,
+        evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+        amount_facts={"za_nfvf_post_qsappe_usd": 400_000.0},
+    )
+    assert dup_seg.executable is False, "duplicate line_id among traced post/vfx lines must reject"
+    assert any("duplicate line_id" in b for b in dup_seg.blockers), dup_seg.blockers
 
     # Adverse: negative, NaN, and +/-infinity component bases must all
     # reject before arithmetic, never silently accepted or clamped.
@@ -1134,3 +1126,29 @@ async def test_fvd_baseline_unchanged_after_full_file(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     winner = view["structures"]["allocated_structures"].get("winning_structure_id")
     assert winner is None, "F#K Valentine's Day's locked baseline (no winner) must remain unchanged"
+
+@pytest.mark.asyncio
+async def test_print_projects_fvd(db: AsyncSession):
+    from sqlalchemy import select
+    from app.models.project import Project
+    from app.services.canonical_evaluation import evaluate_project
+    from app.services.canonical_production_view import build_production_and_structures
+    result = await db.execute(select(Project).where(Project.title.in_(['Bad Hombres', 'Lips Like Sugar', 'Little Utopia', 'F#K Valentine''s Day'])))
+    projects = result.scalars().all()
+    for project in projects:
+        await evaluate_project(db, project.id)
+        view = await build_production_and_structures(db, project.id)
+        
+        top = view.get("leading_structure") or {}
+        top_name = top.get("label", "NONE")
+        
+        cond = view.get("leading_conditional_structure") or {}
+        cond_name = cond.get("label", "NONE")
+        blockers = cond.get("blocking_requirements", [])
+        
+        print(f"\nProject: {project.title}")
+        print(f"  Canonical: {top_name}")
+        print(f"  Conditional: {cond_name}")
+        if cond_name != "NONE":
+            print(f"  Blockers: {blockers}")
+        print("-" * 40)

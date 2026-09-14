@@ -193,6 +193,20 @@ class ProjectEconomicInputs:
     #: context", never as "assume USD 1.0".
     fx_context: "object | None" = None
 
+    #: Codex final wiring remediation (P0-NL-001) — the project's own
+    #: canonical company identity and award period, read directly from
+    #: Project.production_company_identifier/Project.target_shoot_year
+    #: (canonical_evaluation.evaluate_project attaches these via
+    #: dataclasses.replace, the SAME pattern fx_context above uses). None
+    #: means genuinely unknown, never inferred from title/id. A program
+    #: whose IncentiveValueCapRule declares
+    #: company_period_prior_award_fact_key requires BOTH of these to be
+    #: non-None before any company/period-scoped cap conservation can be
+    #: attempted — unknown company or period leaves that cap conditional/
+    #: non-priceable, per this task's own explicit requirement.
+    production_company_identifier: str | None = None
+    award_period_year: int | None = None
+
     @property
     def reconciliation_variance_usd(self) -> float:
         return round(self.leaf_account_sum_usd - self.gross_budget_usd, 2)
@@ -669,6 +683,12 @@ async def build_project_economic_inputs(
             for line in items
             if str(getattr(line, "spend_category", "") or "").lower().endswith("finance_costs")
         ), 2),
+        # Codex final wiring remediation (P0-NL-001) — read directly from
+        # the canonical Project row, never inferred/derived from title or
+        # id. None/None (the default for every existing project) means
+        # genuinely unknown company/period.
+        production_company_identifier=project.production_company_identifier,
+        award_period_year=project.target_shoot_year,
     ))
 
 
