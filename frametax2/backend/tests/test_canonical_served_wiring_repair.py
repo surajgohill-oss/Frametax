@@ -199,8 +199,34 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # shrink because their target/partner jurisdictions drop out of the
     # priceable-target set) -- the same accounting applies here since this
     # is the identical FVD candidate universe.
-    assert len(priced) == 160  # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1: 320 -> 311; Codex bounded remediation B1: 311 -> 165; B3: 165 -> 169 (th_film_incentive/za_nfvf_rebate); Codex final runtime remediation: 169 -> 160 (-9) -- au_location_offset/cz_film_incentive/ma_ccm_rebate/nl_nfpi/th_film_incentive/us_tx_miip/za_nfvf_rebate's genuinely-executable fact gates (native-currency/boolean) now correctly withhold pricing FVD never evidences, where the prior disclosure-only conditions had silently let these auto-price
-    assert len(unpriced) == 135  # Codex bounded remediation B3: 135 -> 137; Codex final runtime remediation: 137 -> 135 (mirrors priced count's -9; net -2 since fewer total candidates too, see test_fvd_runtime_candidate_universe_restored)
+    # Codex final-nine remediation: 160 -> 159 priced, 135 -> 133 unpriced
+    # (total 295 -> 292, -3). Directly measured by diffing FVD's real
+    # served candidate list before/after this remediation's production
+    # changes (matched by structure label, since structure_id is a fresh
+    # UUID per evaluation run): ONLY th_film_incentive moves FVD's real
+    # candidate set -- au_location_offset/cz_film_incentive/ma_ccm_rebate/
+    # nl_nfpi/us_tx_miip/za_nfvf_rebate's fact-gate corrections do not
+    # change any FVD candidate (FVD never had a candidate touching those
+    # programs' now-corrected gates in the first place). Exact accounting:
+    #   -1 priced -> unpriced flip: "Full relocation to Thailand" --
+    #     th_film_incentive previously resolved UNCONDITIONALLY (the exact
+    #     defect Codex flagged: "No preapproval/local-spend gate"), so it
+    #     auto-priced without any real fact; now it genuinely requires a
+    #     preapproval boolean + native-THB qualifying-spend fact FVD's real
+    #     canonical data does not evidence, so it correctly disclose-
+    #     unprices instead.
+    #   -3 unpriced rows removed entirely (never generated at all): "Greece
+    #     anchor -- music/post/vfx routed to Thailand (component/split,
+    #     rejected)". Thailand drops out of the priceable component-
+    #     routing-target set for the same reason (th_film_incentive can no
+    #     longer resolve on FVD's facts), so these three component
+    #     candidates are never even constructed -- the same "target
+    #     jurisdiction drops out of the priceable-target set" mechanism
+    #     already documented above for the B1 authority gate.
+    #   Net: unpriced 135 - 3 (removed, were already unpriced) + 1 (new
+    #   flip) = 133; priced 160 - 1 (flip) = 159; total 295 - 3 = 292.
+    assert len(priced) == 159
+    assert len(unpriced) == 133
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -209,8 +235,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 160  # mirrors priced count above (Codex final runtime remediation: 169 -> 160)
-    assert accounting["unpriceable_count"] == 135  # mirrors unpriced count above (Codex final runtime remediation: 137 -> 135)
+    assert accounting["review_required_count"] == 159  # mirrors priced count above (Codex final-nine remediation: 160 -> 159, th_film_incentive)
+    assert accounting["unpriceable_count"] == 133  # mirrors unpriced count above (Codex final-nine remediation: 135 -> 133, th_film_incentive)
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -232,8 +258,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 160  # mirrors priced count above (Codex final runtime remediation: 169 -> 160)
-    assert len(unpriceable_ranked) == 135  # mirrors unpriced count above (Codex final runtime remediation: 137 -> 135)
+    assert len(review_ranked) == 159  # mirrors priced count above (Codex final-nine remediation: 160 -> 159, th_film_incentive)
+    assert len(unpriceable_ranked) == 133  # mirrors unpriced count above (Codex final-nine remediation: 135 -> 133, th_film_incentive)
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -306,10 +332,21 @@ async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics
     # ITEM 4 REPAIR: follows the QPE change above -- Malta's 30% floor on
     # the $453,583 finance fee now correctly excluded from qualifying
     # spend: 1,246,446.30 - (453,583 x 0.30) = 1,110,371.40.
+    #
+    # Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
+    # certificate fact." Without a caller-evidenced Commissioner uplift-
+    # certificate (this served FVD evaluation supplies none), the 40%
+    # ceiling is no longer eligible at all -- the guaranteed 30% floor
+    # resolves directly as BOTH floor and "ceiling" (there is no
+    # disclosed higher tier to show), so is_band_ceiling/
+    # ceiling_requires_confirmation are both False here. The certified
+    # 40% ceiling behavior is proven in test_incentive_optimizer_core_
+    # closeout.py::test_malta_ceiling_requires_confirmation_and_serves_
+    # floor_by_default.
     assert mt_seg["incentive_floor_usd"] == pytest.approx(1_110_371.40, abs=0.01)
-    assert mt_seg["incentive_ceiling_usd"] == pytest.approx(1_480_495.20, abs=0.01)
-    assert mt_seg["is_band_ceiling"] is True
-    assert mt_seg["ceiling_requires_confirmation"] is True
+    assert mt_seg["incentive_ceiling_usd"] == pytest.approx(1_110_371.40, abs=0.01)
+    assert mt_seg["is_band_ceiling"] is False
+    assert mt_seg["ceiling_requires_confirmation"] is False
     mt_rank = rank_by_id[mt[0]["structure_id"]]
     assert mt_rank["is_fully_priced"] is True
     assert mt_rank["is_directly_comparable"] is False
@@ -467,7 +504,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # candidate-jurisdiction pool for bilateral-partner discovery).
     # 46 - 29 - 15 = +2. Still not the invariant this test guards: distinct
     # terminal causes.
-    assert len(unpriceable) == 135  # Codex bounded remediation B3: 135 -> 137 (th_film_incentive/za_nfvf_rebate add new terminal causes); Codex final runtime remediation: 137 -> 135 -- see test_fvd_accounting_matches_codex_diagnosis for the exact reconciliation
+    assert len(unpriceable) == 133  # Codex bounded remediation B3: 135 -> 137 (th_film_incentive/za_nfvf_rebate add new terminal causes); (a prior pass reconciled 137 back to 135); Codex final-nine remediation: 135 -> 133 -- the same th_film_incentive fix documented in test_fvd_accounting_matches_codex_diagnosis (three Thailand component-routing candidates removed entirely -- already unpriced, so -3; one "Full relocation to Thailand" candidate flips in from priced, +1; net -2) -- see that test for the exact, directly-measured reconciliation
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

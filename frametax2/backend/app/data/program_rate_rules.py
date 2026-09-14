@@ -144,6 +144,27 @@ class RateCondition:
     # keep it a disclosed-but-zero-guaranteed ceiling until then.
     gates_tier_eligibility: bool = True
 
+    # Codex final-nine remediation: a native-currency threshold evaluated
+    # DYNAMICALLY against the segment's OWN qpe_usd, converted at
+    # resolution time via the real, dated, sourced FX snapshot
+    # (production_normalization.FX_RATE_SNAPSHOTS, through
+    # apply_fx_rates.convert_usd_to_local) -- never a fixed number baked
+    # into this RateCondition at authoring time (that was the exact
+    # "permanently-fixed USD substitute" defect Codex's audit named for
+    # mt_mfc_rebate's EUR->USD57,026.20). Use this ONLY when the
+    # threshold applies to the SAME quantity qpe_usd already represents
+    # (e.g. mt_mfc_rebate's "minimum spend in Malta" IS the segment's own
+    # Malta QPE) -- never for a threshold on a genuinely DIFFERENT
+    # component the engine cannot derive from qpe_usd alone (that case is
+    # amount_fact_key instead, e.g. fr_trip's VFX-specific spend, which
+    # is a subset of total QPE, not the whole of it). Requires the
+    # currency to actually be present in FX_RATE_SNAPSHOTS -- never
+    # applied to an unsourced currency (that stays amount_fact_key,
+    # evaluated purely natively with no conversion at all, e.g.
+    # au_location_offset's AUD, ma_ccm_rebate's MAD).
+    fx_native_currency: str | None = None
+    fx_native_threshold_amount: float | None = None
+
 
 @dataclass(frozen=True)
 class SourceProvenance:
@@ -607,20 +628,32 @@ _MT_CITATION = (
     "threshold, superseding this session's earlier preservation of the "
     "PDF-extracted EUR 100,000 / S.2.3 figure. The verbatim S.2.3 quote "
     "below is left UNCHANGED (it genuinely says EUR 100,000 and altering "
-    "a verbatim quote would misrepresent the source) — only the executable "
-    "min_qpe_usd/threshold_usd/amount_fact_min threshold is set to the "
-    "Codex-controlling EUR 50,000 figure, converted via the SAME real, "
-    "sourced, dated FX snapshot every other EUR threshold in this module "
-    "uses (production_normalization.FX_RATE_SNAPSHOTS[\"2026-07-13\"]"
-    "[\"EUR\"]=0.87679) -- EUR 50,000 -> USD 57,026.20 -- never a guessed "
-    "conversion."
+    "a verbatim quote would misrepresent the source). Codex's final-nine "
+    "audit found the prior pass's EUR->USD conversion (57,026.20) was a "
+    "permanently-fixed USD substitute baked into this RateCondition at "
+    "authoring time, contrary to the controlling native-currency "
+    "requirement. The 'minimum spend in Malta' threshold applies to the "
+    "SAME quantity qpe_usd already represents (Malta QPE), so it is now "
+    "evaluated via fx_native_currency/fx_native_threshold_amount: the "
+    "segment's own qpe_usd is converted to EUR DYNAMICALLY at resolution "
+    "time via the real, dated, sourced FX snapshot (production_"
+    "normalization.FX_RATE_SNAPSHOTS[\"2026-07-13\"][\"EUR\"]=0.87679), "
+    "compared against the native EUR 50,000 minimum -- never a fixed "
+    "number baked in ahead of time, and never a new fact the real "
+    "production must separately supply (Codex's own acceptance record "
+    "expects this program to keep auto-pricing from real project data: "
+    "'Candidate prices base'). The 40% ceiling tiers additionally gate on "
+    "a caller-evidenced Commissioner uplift-certificate fact "
+    "(\"mt_mfc_uplift_certificate_confirmed\") -- absent one, the two "
+    "discretionary limb conditions remain disclosed but never auto-"
+    "priced, matching \"40% lacks certificate fact\"."
 )
 MT_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(
         program_slug="mt_mfc_rebate", tier_id="mt-general-30",
         rate=0.30, is_band_ceiling=False,
         production_types=("feature_film", "tv_series", "creative_documentary"),
-        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
+        min_qpe_usd=None,  # native EUR 50,000 gate below (Codex final-nine remediation)
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
@@ -630,7 +663,9 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                             "overall production budget must additionally exceed EUR 200,000",
                 quote="The minimum spend in Malta must be EUR 100,000 with an overall "
                       "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
-                kind="min_qpe_usd", threshold_usd=57_026.20,
+                kind="project_fact_dependent_eligibility",
+                fx_native_currency="EUR",
+                fx_native_threshold_amount=50_000.0,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -660,7 +695,7 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         program_slug="mt_mfc_rebate", tier_id="mt-general-ceiling-40",
         rate=0.40, is_band_ceiling=True,
         production_types=("feature_film", "tv_series", "creative_documentary"),
-        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
+        min_qpe_usd=None,  # native EUR 50,000 gate below (Codex final-nine remediation)
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
@@ -669,7 +704,31 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                             "(supersedes the source document's own EUR 100,000 figure)",
                 quote="The minimum spend in Malta must be EUR 100,000 with an overall "
                       "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
-                kind="min_qpe_usd", threshold_usd=57_026.20,
+                kind="project_fact_dependent_eligibility",
+                fx_native_currency="EUR",
+                fx_native_threshold_amount=50_000.0,
+            ),
+            # Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
+            # certificate fact." A genuine, caller-evidenced Commissioner
+            # uplift-certificate gate makes the 40% ceiling actually
+            # resolvable, distinct from the two limb conditions below
+            # (which remain disclosure-only -- limb (a) has no published
+            # objective points test at all, and limb (b)'s Annex 1
+            # benchmarks are evidence criteria, not a self-executing
+            # formula, per the Codex final rule resolution already cited
+            # in this record's citation).
+            RateCondition(
+                condition_id="mt-uplift-certificate",
+                description="The 40% ceiling requires the Commissioner to "
+                            "have actually certified/awarded the combined "
+                            "uplift limbs for this production — evaluated "
+                            "against a caller-evidenced certificate fact, "
+                            "never assumed",
+                quote="The Commissioner has the discretion to award an "
+                      "additional 10% (5%+5%) ... (MFC Cash Rebate "
+                      "Guidelines, Jan 2019, S.3.4)",
+                kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="mt_mfc_uplift_certificate_confirmed",
             ),
             RateCondition(
                 condition_id="mt-uplift-limb-a-malta-as-malta",
@@ -730,7 +789,7 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         program_slug="mt_mfc_rebate", tier_id="mt-animation-25",
         rate=0.25, is_band_ceiling=False,
         production_types=("animation", "digital_animated_film"),
-        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
+        min_qpe_usd=None,  # native EUR 50,000 gate below (Codex final-nine remediation)
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
@@ -739,7 +798,9 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                             "(supersedes the source document's own EUR 100,000 figure)",
                 quote="The minimum spend in Malta must be EUR 100,000 with an overall "
                       "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
-                kind="min_qpe_usd", threshold_usd=57_026.20,
+                kind="project_fact_dependent_eligibility",
+                fx_native_currency="EUR",
+                fx_native_threshold_amount=50_000.0,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -770,8 +831,34 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         program_slug="mt_mfc_rebate", tier_id="mt-animation-ceiling-40",
         rate=0.40, is_band_ceiling=True,
         production_types=("animation", "digital_animated_film"),
-        min_qpe_usd=57_026.20,  # EUR 50,000 (Codex-controlling; see module note above)
+        min_qpe_usd=None,  # native EUR 50,000 gate below (Codex final-nine remediation)
         conditions=(
+            RateCondition(
+                condition_id="mt-min-spend",
+                description="Minimum qualifying Malta expenditure (general case) — "
+                            "EUR 50,000 per Codex's controlling final-runtime ruling "
+                            "(supersedes the source document's own EUR 100,000 figure)",
+                quote="The minimum spend in Malta must be EUR 100,000 with an overall "
+                      "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
+                kind="project_fact_dependent_eligibility",
+                fx_native_currency="EUR",
+                fx_native_threshold_amount=50_000.0,
+            ),
+            # Codex final-nine remediation: same certificate gate as the
+            # general-case ceiling above.
+            RateCondition(
+                condition_id="mt-uplift-certificate",
+                description="The 40% ceiling requires the Commissioner to "
+                            "have actually certified/awarded the combined "
+                            "uplift for this production — evaluated "
+                            "against a caller-evidenced certificate fact, "
+                            "never assumed",
+                quote="The Commissioner has the discretion to award an "
+                      "additional 15% ... Maximum Rebate: 40% (MFC Cash "
+                      "Rebate Guidelines, Jan 2019, S.3.2.1)",
+                kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="mt_mfc_uplift_certificate_confirmed",
+            ),
             RateCondition(
                 condition_id="mt-uplifts-animation",
                 description="Maximum rate requires Commissioner discretion on the "
@@ -1193,38 +1280,34 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                 # of French VFX expenditure) -- never a discretionary
                 # approval call like Mauritius's "up to 40%".
                 #
-                # Codex final runtime remediation (fr_trip, P0): the prior
-                # pass correctly reclassified the kind but never gave the
-                # engine anywhere to receive an actual VFX-specific spend
-                # FACT -- threshold_usd only ever fed the generic
-                # USER_FACT_REQUIRED disclosure branch, which never gates
-                # tier selection, so no controlled input could ever prove
-                # this tier resolves. amount_fact_key/amount_fact_min make
-                # it genuinely EXECUTABLE: a caller-supplied
-                # "fr_trip_vfx_spend_usd" fact (in the production's own
-                # currency, never itself converted) is compared directly
-                # against the EUR 2,000,000 statutory threshold, itself
-                # converted via the SAME sourced, dated FX snapshot this
-                # project's other EUR conversions use
-                # (production_normalization.FX_RATE_SNAPSHOTS
-                # ["2026-07-13"]["EUR"]=0.87679) -- EUR 2,000,000 ->
-                # USD 2,281,047.91 -- never a guessed/live per-request
-                # conversion. A production that never evidences this fact
-                # stays on the 30% floor; one that does, above the
-                # threshold, resolves the 40% ceiling deterministically.
+                # Codex final runtime remediation (fr_trip, P0): "EUR2m
+                # threshold remains a USD fact/proxy" -- the prior pass
+                # made the gate genuinely executable but still compared a
+                # caller-supplied fact against a hard-coded, permanently-
+                # fixed USD conversion (2,281,047.91) baked into this
+                # RateCondition at authoring time. Fixed per the accepted
+                # remediation's own alternative ("replace with native EUR
+                # component-spend fact"): the fact and the threshold are
+                # BOTH now native EUR -- "fr_trip_vfx_spend_eur" compared
+                # directly against EUR 2,000,000, with NO conversion in
+                # either direction, ever. A production that never
+                # evidences this fact stays on the 30% floor; one that
+                # does, at or above EUR 2,000,000, resolves the 40%
+                # ceiling deterministically.
                 condition_id="fr-vfx-threshold",
                 description="40% rate requires French VFX expenditure "
                             "exceeding EUR 2,000,000 — a real, objective, "
                             "statute-confirmed spend threshold (not a "
                             "discretionary approval band like MU's 'up to "
-                            "40%'), evaluated against a caller-evidenced "
-                            "VFX-specific spend fact distinct from total QPE",
+                            "40%'), evaluated NATIVELY in EUR against a "
+                            "caller-evidenced VFX-specific spend fact "
+                            "distinct from total QPE — never converted "
+                            "to/from USD",
                 quote="40%, if the French VFX expenses are more than EUR "
                       "2M (cnc.fr, TRIP page)",
                 kind="project_fact_dependent_uplift",
-                threshold_usd=2_281_047.91,
-                amount_fact_key="fr_trip_vfx_spend_usd",
-                amount_fact_min=2_281_047.91,
+                amount_fact_key="fr_trip_vfx_spend_eur",
+                amount_fact_min=2_000_000.0,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -1233,7 +1316,8 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                  "approval — modeled as a band ceiling because the "
                  "engine's floor/guarantee is the base 30% tier absent an "
                  "evidenced VFX-spend fact; genuinely resolves 40% once "
-                 "'fr_trip_vfx_spend_usd' is evidenced above the threshold.",
+                 "'fr_trip_vfx_spend_eur' is evidenced at or above the "
+                 "native EUR 2,000,000 threshold.",
         source_ref="cnc.fr-TRIP-page",
         provenance=_FR_PROVENANCE,
     ),
@@ -1377,6 +1461,102 @@ def get_qpe_cap(program_slug: str) -> QpeCapRule | None:
     return QPE_CAP_RULES.get(program_slug)
 
 
+# ── Native-currency INCENTIVE-VALUE cap (Codex final-nine remediation) ──────
+#
+# Distinct from QpeCapRule above: QpeCapRule caps the ELIGIBLE SPEND BASE
+# before the rate is applied; IncentiveValueCapRule caps the CALCULATED
+# INCENTIVE DOLLAR VALUE itself (e.g. cz_film_incentive's CZK450m project
+# cap, za_nfvf_rebate's ZAR25m project cap) — a hard ceiling on what the
+# program can pay out, stated in the program's own native currency.
+#
+# The prior implementation asked the CALLER to supply the already-computed
+# incentive value as a fact and rejected the candidate when it exceeded the
+# cap ("a cap must be applied to the engine-calculated incentive, not a
+# caller-attested result" — Codex's exact finding). This registry instead
+# lets allocation_pricing.price_segment() apply the cap itself, AFTER it
+# has already computed the real floor/ceiling incentive in USD, by
+# converting the native cap amount to USD via the SAME real, dated, sourced
+# FX snapshot every other currency conversion in this codebase uses
+# (production_normalization.FX_RATE_SNAPSHOTS via apply_fx_rates.
+# convert_to_usd) — never a caller-supplied or guessed conversion. The
+# candidate is never rejected for exceeding the cap; the incentive is
+# reduced to the cap, exactly like a real statutory ceiling.
+@dataclass(frozen=True)
+class IncentiveValueCapRule:
+    program_slug: str
+    cap_currency: str        # ISO 4217 code, e.g. "CZK", "ZAR"
+    cap_native_amount: float
+    description: str
+    quote: str
+    source_ref: str
+
+
+INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
+    "cz_film_incentive": IncentiveValueCapRule(
+        program_slug="cz_film_incentive", cap_currency="CZK", cap_native_amount=450_000_000.0,
+        description="Maximum incentive per project: CZK 450,000,000, applied to the "
+                     "calculated incentive (not a rejection predicate on a caller-"
+                     "supplied value).",
+        quote="the maximum support per project is CZK 450 million (sfa.gov.cz "
+              "production-incentives page)",
+        source_ref="rodriqueslaw.com-czech-republic+sfa.gov.cz-official",
+    ),
+    "cz_film_incentive_animation": IncentiveValueCapRule(
+        program_slug="cz_film_incentive_animation", cap_currency="CZK", cap_native_amount=450_000_000.0,
+        description="Same CZK 450,000,000 per-project cap as the live-action record.",
+        quote="the maximum support per project is CZK 450 million (sfa.gov.cz "
+              "production-incentives page)",
+        source_ref="rodriqueslaw.com-czech-republic-animation",
+    ),
+    "za_nfvf_rebate": IncentiveValueCapRule(
+        program_slug="za_nfvf_rebate", cap_currency="ZAR", cap_native_amount=25_000_000.0,
+        description="Maximum incentive per project: ZAR 25,000,000, applied to the "
+                     "calculated incentive (not a rejection predicate on a caller-"
+                     "supplied value).",
+        quote="production cap R25m (Codex bounded remediation, accepted formulaic correction)",
+        source_ref="codex-bounded-remediation-za-nfvf-rebate-formulaic-spec",
+    ),
+    # Codex final-nine remediation (nl_nfpi, P0): "Program caps absent."
+    # This EUR 3,000,000 company cap was ALREADY an accepted, sourced,
+    # PRIMARY/CURRENT research fact (program_requirements.py's
+    # nl_film_production_incentive ProgramRequirementsProfile,
+    # additional_facts["company_cap_eur"], Netherlands Film Fund's own
+    # 2026 programme page) -- it was simply never wired into an
+    # executable cap. No new research; reconciling already-accepted data.
+    # The EUR 20,000,000 annual budget / EUR 5,000,000-per-round figures
+    # from the same source are PROGRAM-WIDE (across all applicants that
+    # round), not a per-production entitlement, so they are not modeled
+    # as this program's per-project cap -- the EUR 3,000,000 company cap
+    # is the real, binding per-production ceiling.
+    "nl_film_production_incentive": IncentiveValueCapRule(
+        program_slug="nl_film_production_incentive", cap_currency="EUR", cap_native_amount=3_000_000.0,
+        description="Maximum incentive per year per production company: EUR 3,000,000, "
+                     "applied to the calculated incentive.",
+        quote="COMPANY CAP: up to EUR 3 million per year per production company — a "
+              "real, published company-level cap. (Netherlands Film Fund, 2026 programme)",
+        source_ref="filmfonds.nl-netherlands-film-production-incentive-2026",
+    ),
+}
+
+
+def get_incentive_value_cap(program_slug: str) -> IncentiveValueCapRule | None:
+    return INCENTIVE_VALUE_CAP_RULES.get(program_slug)
+
+
+def convert_incentive_cap_to_usd(cap: IncentiveValueCapRule) -> "FXConversionResult":
+    """The one place a native incentive-value cap is converted to USD —
+    always via the real, dated, sourced FX snapshot (never a guessed or
+    caller-supplied rate). Returns the full FXConversionResult so the
+    rate/date/direction can be disclosed in the served trace."""
+    from app.calculators import apply_fx_rates
+    from app.calculators.production_normalization import FX_LIVE_SNAPSHOT_DATE, FX_RATE_SNAPSHOTS
+
+    rates = FX_RATE_SNAPSHOTS.get(FX_LIVE_SNAPSHOT_DATE, {})
+    return apply_fx_rates.convert_to_usd(
+        cap.cap_native_amount, cap.cap_currency, rates, rate_date=FX_LIVE_SNAPSHOT_DATE,
+    )
+
+
 def register_rate_rules(rules: tuple[RateRule, ...]) -> None:
     """Registration hook for executable_jurisdiction_registry.py-derived
     RateRule tuples (worldwide jurisdiction population phase) — lets a
@@ -1442,14 +1622,33 @@ RATE_FAILURE_CONDITIONS_UNMET = "STATUTORY_CONDITIONS_UNMET"
 RATE_FAILURE_AUTHORITY_EXHAUSTED = "AUTHORITY_EXHAUSTED_FAIL_CLOSED"
 
 
+def _fx_native_amount(qpe_usd: float | None, currency: str) -> "tuple[float, float, str] | None":
+    """Converts qpe_usd into `currency` via the real, dated, sourced FX
+    snapshot -- returns (native_amount, rate_used, rate_date) or None
+    when qpe_usd is unknown or the currency has no sourced rate (never a
+    guessed/fabricated conversion in that case)."""
+    if qpe_usd is None:
+        return None
+    from app.calculators import apply_fx_rates
+    from app.calculators.production_normalization import FX_LIVE_SNAPSHOT_DATE, FX_RATE_SNAPSHOTS
+
+    rates = FX_RATE_SNAPSHOTS.get(FX_LIVE_SNAPSHOT_DATE, {})
+    if currency.upper() not in rates:
+        return None
+    result = apply_fx_rates.convert_usd_to_local(qpe_usd, currency, rates, rate_date=FX_LIVE_SNAPSHOT_DATE)
+    return result.target_amount, result.rate_used, result.rate_date
+
+
 def _amount_and_boolean_conditions_met(
     rule: RateRule,
     amount_facts: dict[str, float] | None,
     evidenced_facts: frozenset[str] | None,
+    qpe_usd: float | None = None,
 ) -> bool:
     """Shared tier-eligibility gate for RateCondition.amount_fact_*/
-    required_boolean_fact_key -- used identically by resolve_program_rate()
-    and classify_rate_resolution_failure() so the two never diverge."""
+    required_boolean_fact_key/fx_native_* -- used identically by
+    resolve_program_rate() and classify_rate_resolution_failure() so the
+    two never diverge."""
     amounts = amount_facts or {}
     evidenced = evidenced_facts or frozenset()
     for cond in rule.conditions:
@@ -1468,6 +1667,10 @@ def _amount_and_boolean_conditions_met(
                     return False
         if cond.required_boolean_fact_key is not None:
             if cond.required_boolean_fact_key not in evidenced:
+                return False
+        if cond.fx_native_currency is not None and cond.fx_native_threshold_amount is not None:
+            converted = _fx_native_amount(qpe_usd, cond.fx_native_currency)
+            if converted is None or converted[0] < cond.fx_native_threshold_amount:
                 return False
     return True
 
@@ -1495,7 +1698,7 @@ def classify_rate_resolution_failure(
             continue
         if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
             continue
-        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts):
+        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd):
             continue
         return RATE_FAILURE_CONDITIONS_UNMET  # defensive: resolve_program_rate should not have returned None here
     return RATE_FAILURE_CONDITIONS_UNMET
@@ -1552,7 +1755,7 @@ def resolve_program_rate(
             continue
         if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
             continue
-        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts):
+        if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd):
             continue
         eligible.append(rule)
 
@@ -1686,6 +1889,27 @@ def resolve_program_rate(
                       else f"'{cond.required_boolean_fact_key}' not yet evidenced — "
                            "absence of a record is not confirmation."),
                 condition_state=CONDITION_STATE_EXECUTABLE if evidenced else CONDITION_STATE_USER_FACT_REQUIRED,
+            ))
+        elif cond.fx_native_currency is not None and cond.fx_native_threshold_amount is not None:
+            converted = _fx_native_amount(qpe_usd, cond.fx_native_currency)
+            if converted is None:
+                satisfied, note, state = (
+                    None,
+                    f"No sourced {cond.fx_native_currency}/USD FX rate on file, or QPE "
+                    "unknown — cannot convert to evaluate this native threshold.",
+                    CONDITION_STATE_AUTHORITY_UNRESOLVED,
+                )
+            else:
+                native_amount, rate_used, rate_date = converted
+                met = native_amount >= cond.fx_native_threshold_amount
+                satisfied, state = met, CONDITION_STATE_EXECUTABLE
+                note = (f"QPE ${qpe_usd:,.2f} = {cond.fx_native_currency} {native_amount:,.2f} "
+                        f"(rate {rate_used} {cond.fx_native_currency}/USD, {rate_date}, "
+                        f"USD->{cond.fx_native_currency}) vs native statutory minimum "
+                        f"{cond.fx_native_currency} {cond.fx_native_threshold_amount:,.2f}.")
+            evaluations.append(ConditionEvaluation(
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
+                satisfied=satisfied, note=note, condition_state=state,
             ))
         else:
             state = CONDITION_KIND_STATE.get(cond.kind, CONDITION_STATE_AUTHORITY_UNRESOLVED)

@@ -2815,24 +2815,18 @@ _ZA_NFVF_CITATION = (
     "accepted manifest for that branch, so it is disclosed here rather "
     "than fabricated."
 )
-# Codex final runtime remediation (za_nfvf_rebate, P0): shared by both
-# tiers below — the ZAR 25,000,000 project cap, evaluated natively in ZAR
-# against a caller-evidenced incentive-value fact via amount_fact_max,
-# never converted to/from USD (no sourced ZAR/USD FX rate exists in this
-# project's FX table). Absence of the fact does not retroactively block
-# an otherwise-eligible tier; a caller that DOES evidence a ZAR incentive
-# value above the cap is genuinely refused.
-_ZA_NFVF_PROJECT_CAP_CONDITION = RateCondition(
-    condition_id="za-nfvf-project-cap-zar",
-    description="ZAR 25,000,000 maximum incentive per project, evaluated "
-                "natively in ZAR against a caller-evidenced incentive-"
-                "value amount fact — never converted to/from USD",
-    quote="production cap R25m (Codex bounded remediation, accepted "
-          "formulaic correction)",
-    kind="project_fact_dependent_eligibility",
-    amount_fact_key="za_nfvf_incentive_value_zar",
-    amount_fact_max=25_000_000.0,
-)
+# Codex final-nine remediation (za_nfvf_rebate, P0): the ZAR 25,000,000
+# project cap is now a program_rate_rules.IncentiveValueCapRule, applied
+# by allocation_pricing._resolve_incentive_dollar_cap()/price_segment() to
+# the engine-CALCULATED incentive (rate x QPE), converted to USD via the
+# real, dated, sourced ZAR snapshot (production_normalization.
+# FX_RATE_SNAPSHOTS["2026-07-13"]["ZAR"]=16.3636, fetched from
+# api.frankfurter.dev/ECB reference rates) — never a caller-supplied or
+# guessed conversion, and never a rejection predicate: the incentive is
+# reduced to the cap. See program_rate_rules.INCENTIVE_VALUE_CAP_RULES
+# ["za_nfvf_rebate"]. The prior amount_fact_max condition (asking the
+# caller to supply the already-computed incentive and rejecting it over
+# cap) is removed — exactly the antipattern Codex's audit named.
 ZA_NFVF_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="ZA",
     program_slug="za_nfvf_rebate",
@@ -2841,12 +2835,11 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate",
     is_refundable=None,
     is_transferable=False,
-    min_spend_usd=None,   # ZAR not convertible — no sourced ZAR/USD FX
-                           # rate exists in production_normalization.
-                           # FX_RATE_SNAPSHOTS
-    annual_cap_usd=None,  # ZAR 25,000,000 project cap real and confirmed
-                           # but NOT converted — same undisclosed-FX-rate
-                           # discipline as za_dtic_foreign_film above
+    min_spend_usd=None,
+    annual_cap_usd=None,  # ZAR 25,000,000 project cap -- see
+                           # program_rate_rules.INCENTIVE_VALUE_CAP_RULES
+                           # ["za_nfvf_rebate"], applied to the calculated
+                           # incentive via _resolve_incentive_dollar_cap().
     requires_cultural_test=False,
     citation=_ZA_NFVF_CITATION,
     source_ref="codex-bounded-remediation-za-nfvf-rebate-formulaic-spec",
@@ -2854,25 +2847,25 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
         issuing_authority="National Film and Video Foundation (NFVF), South Africa",
         citation_detail="Foreign location production: 25% QSAPE plus "
                          "conditioned 5%; production cap ZAR 25,000,000.",
-        interpretation_note="min_spend_usd/annual_cap_usd left None — ZAR "
-                             "not convertible, no sourced ZAR/USD FX basis "
-                             "on file. The post-production-only branch "
-                             "('25% plus additions') is disclosed in the "
-                             "citation but not separately modeled — no "
-                             "specific numeric figure is given for it in "
-                             "the accepted manifest.",
+        interpretation_note="The post-production-only branch ('25% plus "
+                             "additions') is modeled as its own distinct "
+                             "tier/gate below (za-nfvf-post-only-25) at the "
+                             "SAME 25% base rate -- the accepted manifest "
+                             "gives no different numeric figure for the "
+                             "'additions', so none is fabricated; only the "
+                             "gate identity (a post-production-only "
+                             "election, distinct from the general "
+                             "accepted-production gate) is newly modeled.",
     ),
-    # Codex final runtime remediation (za_nfvf_rebate, P0): "25% floor
-    # prices broad QPE while ZAR25m cap, accepted gates, and post-only
-    # component branch are unenforced." _ZA_NFVF_PROJECT_CAP_CONDITION
-    # makes the ZAR 25,000,000 project cap genuinely EXECUTABLE (same
-    # amount_fact_max mechanism as cz_film_incentive, never converting
-    # to/from USD); za-nfvf-accepted-production-gate makes the "accepted
-    # production" gate genuinely EXECUTABLE (required_boolean_fact_key) so
-    # an unaccepted/ungated production correctly rejects rather than
-    # silently pricing broad QPE. The post-only component branch remains
-    # disclosed-only — the accepted manifest gives no specific numeric
-    # figure or gate criteria for it, so nothing is invented.
+    # Codex final-nine remediation (za_nfvf_rebate, P0): "Cap rejects on
+    # caller-entered award; post-only branch explicitly unmodeled."
+    # za-nfvf-accepted-production-gate is genuinely EXECUTABLE
+    # (required_boolean_fact_key) so an unaccepted/ungated production
+    # correctly rejects rather than silently pricing broad QPE. The ZAR
+    # cap is now applied at the engine level (see DoctrineRecord
+    # docstring above), never as a caller-supplied rejection predicate. A
+    # new za-nfvf-post-only-25 tier gives the post-production-only branch
+    # its own distinct, executable gate at the same accepted 25% rate.
     tiers=(
         DoctrineRateTier(
             tier_id="za-nfvf-base-25",
@@ -2891,17 +2884,28 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
                     kind="project_fact_dependent_eligibility",
                     required_boolean_fact_key="za_nfvf_accepted_production_confirmed",
                 ),
-                _ZA_NFVF_PROJECT_CAP_CONDITION,
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="za-nfvf-post-only-25",
+            rate=0.25,
+            is_band_ceiling=False,
+            conditions=(
                 RateCondition(
-                    condition_id="za-nfvf-post-only-branch-not-modeled",
-                    description="A separate post-production-only branch "
-                                "('25% plus additions') is accepted but not "
-                                "separately modeled — no specific numeric "
-                                "figure or gate criteria given in the "
-                                "accepted manifest for that branch",
+                    condition_id="za-nfvf-post-only-gate",
+                    description="Distinct post-production-only services "
+                                "base, gated separately from the general "
+                                "accepted-production gate above — the "
+                                "accepted manifest states 'post-only: 25% "
+                                "plus additions' with no different numeric "
+                                "figure for the 'additions', so this tier "
+                                "shares the same 25% rate under its own "
+                                "gate identity rather than fabricating a "
+                                "different number",
                     quote="post-only: 25% plus additions (Codex bounded "
                           "remediation, accepted formulaic correction)",
-                    kind="material_funding_risk_not_modeled",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="za_nfvf_post_production_only_confirmed",
                 ),
             ),
         ),
@@ -2922,7 +2926,6 @@ ZA_NFVF_DOCTRINE = register(DoctrineRecord(
                     kind="project_fact_dependent_eligibility",
                     required_boolean_fact_key="za_nfvf_accepted_production_confirmed",
                 ),
-                _ZA_NFVF_PROJECT_CAP_CONDITION,
                 RateCondition(
                     condition_id="za-nfvf-conditioned-uplift",
                     description="+5% requires meeting an unspecified "
@@ -3102,22 +3105,41 @@ MA_DOCTRINE = register(DoctrineRecord(
                 # the real, separately-confirmed 18-day gate was silently
                 # never checked at all. Split into its own condition.
                 #
-                # Codex final runtime remediation: required_boolean_
-                # fact_key makes this GENUINELY executable (a caller-
-                # evidenced "ma_ccm_18_shooting_days_confirmed" fact) —
-                # previously it was disclosure-only (kind alone), so no
-                # controlled input could ever prove 17 days genuinely
-                # rejects.
+                # Codex final-nine remediation (ma_ccm_rebate, P0): "18
+                # days is a boolean label; prior approval/fund gate
+                # absent." A boolean "confirmed" fact cannot evaluate the
+                # 17/18 boundary at all -- amount_fact_key/amount_fact_min
+                # makes this a genuine NUMERIC gate: a caller-evidenced day
+                # COUNT (ma_ccm_shooting_days_count) is compared directly
+                # against the statutory minimum of 18, so 17 genuinely
+                # rejects and 18/19/... genuinely resolve.
                 RateCondition(
                     condition_id="ma-min-shooting-days",
                     description="Minimum 18 shooting days in Morocco — a "
-                                "real, separately-confirmed threshold, "
-                                "evaluated against a caller-evidenced "
-                                "shooting-days-met fact",
+                                "real, separately-confirmed numeric "
+                                "threshold, evaluated against a caller-"
+                                "evidenced shooting-days COUNT (not a "
+                                "boolean label)",
                     quote="... and 18 shooting days required (corroborated "
                           "by 4 sources)",
                     kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="ma_ccm_18_shooting_days_confirmed",
+                    amount_fact_key="ma_ccm_shooting_days_count",
+                    amount_fact_min=18.0,
+                ),
+                # Codex final-nine remediation: "prior approval/fund gate
+                # absent" -- CCM's foreign-production incentive requires
+                # prior CCM approval and fund availability before an
+                # unapproved/unavailable-fund project can price; a genuine
+                # boolean gate distinct from the spend/days thresholds.
+                RateCondition(
+                    condition_id="ma-prior-approval-fund-availability",
+                    description="Requires CCM prior approval and confirmed "
+                                "fund availability — evaluated against a "
+                                "caller-evidenced fact, never assumed",
+                    quote="prior approval from the CCM and fund "
+                          "availability required (corroborated by 4 sources)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ma_ccm_prior_approval_and_fund_availability_confirmed",
                 ),
             ),
         ),
@@ -3616,64 +3638,151 @@ register_rate_rules(rate_rules_for(UY_DOCTRINE))
 # describes; the alias is REMOVED (see program_slug_aliases.py) so
 # th_boi_incentive correctly carries no rate data of its own.
 _TH_CITATION = (
-    "thailand-business-news.com, overgrownproductions.com: 'rebate of up "
-    "to 30% in cash,' 'must spend the equivalent of $1.4m US locally to "
-    "qualify.' Supersedes the prior 15-20% catalog figure. LITTLE UTOPIA "
-    "WORLDWIDE ACCEPTANCE: the canonical corpus "
-    "(GLOBAL_REMEDIATION_EXECUTABLE_DATA.json, th_film_incentive, "
-    "CORRECT_DATA) states base_rate=0.15 and maximum_effective_rate=0.30 "
-    "with the uplift condition 'do not sum unless expressly permitted'. "
-    "The prior flat 30% encoded the HEADLINE MAXIMUM as guaranteed - the "
-    "exact defect this project's rules forbid. Split into a guaranteed "
-    "15% floor plus a 30% band ceiling that requires confirmation, reusing "
-    "the same discretionary_band mechanism as Mauritius/Malta."
+    "Thailand Film Office (TFO), Department of Tourism -- Thailand "
+    "Incentive Measures Guidelines (2025), tfo.dot.go.th/incentive-"
+    "measures/ (already accepted, PRIMARY/CURRENT, in this project's "
+    "program_requirements.py ProgramRequirementsProfile for "
+    "th_film_incentive; reconciled into program_rate_rules_worldwide.py "
+    "here for the first time -- no new research). 'Tiered cash rebate on "
+    "qualified Thailand spend: 15% from THB 50 million; 20% for THB "
+    "100-150 million; 25% above THB 150 million; maximum 30% inclusive "
+    "of additional incentives.' 'A +5% uplift is available for promoting "
+    "Thai tourism / Soft Power / positive depiction of the country, "
+    "assessed against the criteria in Form ICM 1 -- discretionary in "
+    "character, not an automatic entitlement.' 'Productions must obtain "
+    "filming permission ... and file ICM Form 1.' Thresholds are stated "
+    "in THB; 'the sources' USD equivalents are journalistic "
+    "approximations' -- evaluated NATIVELY in THB here, never converted."
+)
+# Codex final-nine remediation (th_film_incentive, P0): "No preapproval/
+# local-spend gate; one boolean unlocks 30%." The prior model (flat 15%
+# floor + a single boolean unlocking a 30% ceiling) both fabricated an
+# unsourced USD $1.4m proxy for the THB threshold AND collapsed the real,
+# already-accepted THB-tiered structure (15%/20%/25% by spend, +5%
+# discretionary uplift) into one undifferentiated "award" boolean. Every
+# tier below shares this SAME preapproval gate ("Gate base on
+# preapproval/local spend") plus its own native-THB spend threshold
+# ("encode objective uplift branches") -- the three spend tiers are
+# genuinely OBJECTIVE (a real THB amount either clears the threshold or
+# does not), unlike the +5% Form ICM 1 assessment, which remains a
+# disclosed discretionary_band because it is genuinely not self-executing.
+_TH_PREAPPROVAL_CONDITION = RateCondition(
+    condition_id="th-preapproval-required",
+    description="Requires Thailand Film, Video and Digital Media "
+                "Committee filming permission and a filed ICM Form 1 "
+                "before the rebate is available at any tier — evaluated "
+                "against a caller-evidenced fact, never assumed",
+    quote="Productions must obtain filming permission from the Film, "
+          "Video and Digital Media Committee and file ICM Form 1 "
+          "(Thailand Film Office, Incentive Measures Guidelines 2025)",
+    kind="project_fact_dependent_eligibility",
+    required_boolean_fact_key="th_film_incentive_preapproval_confirmed",
 )
 TH_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="TH", program_slug="th_film_incentive",
     program_name="Thailand Foreign Film Incentive (Cash Rebate)", confidence_tier="PARSED",
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
-    min_spend_usd=1_400_000.0, annual_cap_usd=None, requires_cultural_test=False,
-    citation=_TH_CITATION, source_ref="thailand-business-news+overgrownproductions",
+    min_spend_usd=None, annual_cap_usd=None, requires_cultural_test=False,
+    citation=_TH_CITATION, source_ref="tfo.dot.go.th-incentive-measures-2025",
     provenance=SourceProvenance(
         issuing_authority="Thailand Film Office (TFO), Department of Tourism; "
                            "Film, Video and Digital Media Committee",
-        citation_detail="Thailand Film Office program guidance (TFO / Department "
-                         "of Tourism).",
-        interpretation_note="Recovered internally: this program already carried "
-                             "a PRIMARY-tier EvidenceRecord in "
-                             "program_requirements.py (a separate existing "
-                             "canonical provenance store) that had never been "
-                             "cross-referenced into program_rate_rules's own "
-                             "SourceProvenance. No new research performed.",
+        source_url="https://tfo.dot.go.th/incentive-measures/",
+        citation_detail="Tiered cash rebate: 15% from THB 50m, 20% for THB "
+                         "100-150m, 25% above THB 150m, +5% discretionary "
+                         "Soft Power uplift; no per-project cap; preapproval "
+                         "(ICM Form 1 + filming permission) mandatory.",
+        verified_date="2026-07-26",
+        interpretation_note="Reconciled from this project's own already-"
+                             "accepted program_requirements.py "
+                             "ProgramRequirementsProfile (PRIMARY/CURRENT) "
+                             "into the executable rate-rule layer for the "
+                             "first time -- no new research performed. THB "
+                             "thresholds evaluated natively; the source's "
+                             "own USD figures are disclosed as journalistic "
+                             "approximations, never used as a conversion.",
     ),
     tiers=(
-        DoctrineRateTier(tier_id="th-base-15", rate=0.15, is_band_ceiling=False,
-                         min_qpe_usd=1_400_000.0),
+        DoctrineRateTier(
+            tier_id="th-tier-15", rate=0.15, is_band_ceiling=False,
+            conditions=(
+                _TH_PREAPPROVAL_CONDITION,
+                RateCondition(
+                    condition_id="th-tier-15-native-spend",
+                    description="Minimum THB 50,000,000 qualified Thailand "
+                                "spend for the 15% base tier, evaluated "
+                                "natively in THB",
+                    quote="15% from THB 50 million (TFO, Incentive "
+                          "Measures Guidelines 2025)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="th_film_incentive_qualifying_spend_thb",
+                    amount_fact_min=50_000_000.0,
+                ),
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="th-tier-20", rate=0.20, is_band_ceiling=False,
+            conditions=(
+                _TH_PREAPPROVAL_CONDITION,
+                RateCondition(
+                    condition_id="th-tier-20-native-spend",
+                    description="THB 100,000,000-150,000,000 qualified "
+                                "Thailand spend band for the 20% tier, "
+                                "evaluated natively in THB",
+                    quote="20% for THB 100-150 million (TFO, Incentive "
+                          "Measures Guidelines 2025)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="th_film_incentive_qualifying_spend_thb",
+                    amount_fact_min=100_000_000.0,
+                ),
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="th-tier-25", rate=0.25, is_band_ceiling=False,
+            conditions=(
+                _TH_PREAPPROVAL_CONDITION,
+                RateCondition(
+                    condition_id="th-tier-25-native-spend",
+                    description="Above THB 150,000,000 qualified Thailand "
+                                "spend for the 25% tier, evaluated "
+                                "natively in THB",
+                    quote="25% above THB 150 million (TFO, Incentive "
+                          "Measures Guidelines 2025)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="th_film_incentive_qualifying_spend_thb",
+                    amount_fact_min=150_000_000.0,
+                ),
+            ),
+        ),
         DoctrineRateTier(
             tier_id="th-uplift-ceiling-30", rate=0.30, is_band_ceiling=True,
-            min_qpe_usd=1_400_000.0,
             conditions=(
+                _TH_PREAPPROVAL_CONDITION,
                 RateCondition(
-                    # Codex final runtime remediation (th_film_incentive,
-                    # P0): "preapproval/award/effective conditions are not
-                    # executable through optimizer inputs." The uplift is
-                    # an OBJECTIVE award/preapproval-gated criterion (BOI
-                    # uplift categories are awarded, not discretionary
-                    # "up to" language the way MU's Committee discretion
-                    # is) -- reclassified from discretionary_band
-                    # (AUTHORITY_UNRESOLVED, never gates) to a genuine
-                    # required_boolean_fact_key gate: a production that
-                    # evidences BOI preapproval/award confirmation resolves
-                    # 30%; absent it, the guaranteed floor is the base 15%.
-                    condition_id="th-uplift-not-guaranteed",
-                    description="The 30% figure is reached only via BOI "
-                                "uplift criteria that require preapproval/ "
-                                "award confirmation — evaluated against a "
-                                "caller-evidenced fact, never assumed",
-                    quote="'rebate of up to 30% in cash' (thailand-business-news.com); "
-                          "canonical base_rate 0.15, maximum_effective_rate 0.30",
+                    condition_id="th-tier-25-native-spend-for-ceiling",
+                    description="The 30% ceiling requires the same "
+                                "THB 150,000,000+ base as the 25% tier, "
+                                "plus the discretionary Soft Power uplift "
+                                "below",
+                    quote="25% above THB 150 million (TFO, Incentive "
+                          "Measures Guidelines 2025)",
                     kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="th_film_incentive_boi_uplift_award_confirmed",
+                    amount_fact_key="th_film_incentive_qualifying_spend_thb",
+                    amount_fact_min=150_000_000.0,
+                ),
+                RateCondition(
+                    condition_id="th-soft-power-uplift",
+                    description="+5% Soft Power/tourism-promotion uplift, "
+                                "assessed by the Film, Video and Digital "
+                                "Media Committee against Form ICM 1 "
+                                "criteria — genuinely discretionary, not "
+                                "self-executing, so never pre-evaluable",
+                    quote="A +5% uplift is available for promoting Thai "
+                          "tourism / Soft Power / positive depiction of "
+                          "the country, assessed against the criteria in "
+                          "Form ICM 1 (TFO, Incentive Measures Guidelines "
+                          "2025)",
+                    kind="discretionary_band",
                 ),
             ),
         ),
@@ -5963,20 +6072,65 @@ US_TX_DOCTRINE = register(DoctrineRecord(
                 # (rather than resolve_program_rate() returning None
                 # outright) so "up to 31%, pending award confirmation"
                 # remains visible; the existing floorless-ceiling
-                # mechanism still refuses to PRICE it until this condition
-                # (and the resident-threshold one below) both genuinely
-                # evaluate satisfied=True. See RateCondition docstring.
+                # mechanism still refuses to PRICE it until every condition
+                # on this tier genuinely evaluates satisfied=True. See
+                # RateCondition docstring.
+                gates_tier_eligibility=False,
+            ),
+            # Codex final-nine remediation (us_tx_miip, P0): "phased tiers
+            # and pool not executable" / "carry awarded rate/tier and
+            # resident phase as structured facts; validate against pool
+            # period." The vague "resident_threshold_met" boolean is
+            # replaced by the REAL, already-accepted, PRIMARY-sourced,
+            # NUMERIC resident requirement (program_requirements.py's
+            # us_tx_miip ProgramRequirementsProfile, additional_facts
+            # ["texas_resident_requirement"], gov.texas.gov official
+            # pages): at least 35% of paid crew AND at least 35% of paid
+            # cast must be Texas residents -- TWO independent numeric
+            # gates, not one undifferentiated flag, so a production
+            # meeting one but not the other genuinely fails to qualify.
+            RateCondition(
+                condition_id="us-tx-resident-crew-pct",
+                description="At least 35% of total paid crew must be "
+                            "Texas residents, evaluated against a caller-"
+                            "evidenced numeric percentage fact",
+                quote="at least 35% of total paid CREW must be Texas "
+                      "residents (Office of the Texas Governor — Texas "
+                      "Film Commission, TMIIIP official pages)",
+                kind="project_fact_dependent_eligibility",
+                amount_fact_key="us_tx_miip_resident_crew_pct",
+                amount_fact_min=35.0,
                 gates_tier_eligibility=False,
             ),
             RateCondition(
-                condition_id="us-tx-resident-threshold-phased",
-                description="Texas-resident crew/cast thresholds are phased "
-                            "in over time (SB22) — evaluated against a "
-                            "caller-evidenced resident-threshold-met fact",
-                quote="resident thresholds are phased (Codex bounded "
-                      "remediation, accepted formulaic correction)",
+                condition_id="us-tx-resident-cast-pct",
+                description="At least 35% of total paid cast (including "
+                            "paid extras) must be Texas residents, "
+                            "evaluated against a caller-evidenced numeric "
+                            "percentage fact",
+                quote="at least 35% of total paid CAST (including paid "
+                      "extras) must be Texas residents (Office of the "
+                      "Texas Governor — Texas Film Commission, TMIIIP "
+                      "official pages)",
                 kind="project_fact_dependent_eligibility",
-                required_boolean_fact_key="us_tx_miip_resident_threshold_met",
+                amount_fact_key="us_tx_miip_resident_cast_pct",
+                amount_fact_min=35.0,
+                gates_tier_eligibility=False,
+            ),
+            # "Validate against pool period": SB22's $300M biennial pool
+            # runs through 2035 -- an award confirmed but outside a valid
+            # biennial period is not a real, current entitlement.
+            RateCondition(
+                condition_id="us-tx-pool-period-valid",
+                description="The award must fall within a valid SB22 "
+                            "biennial appropriation period (the pool runs "
+                            "through 2035) — evaluated against a caller-"
+                            "evidenced fact, never assumed",
+                quote="SB22 appropriates $300M per biennium through 2035 "
+                      "(Codex bounded remediation, accepted formulaic "
+                      "correction)",
+                kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="us_tx_miip_pool_period_valid",
                 gates_tier_eligibility=False,
             ),
         ),
@@ -6717,40 +6871,33 @@ register_rate_rules(rate_rules_for(AT_DOCTRINE))
 # tier) for ANY production_type, misapplying 35% to live-action features.
 # Scoped correctly as a SEPARATE record with production_types=("animation",)
 # below rather than a second tier on this one.
-# Codex final runtime remediation (cz_film_incentive, P0): "CZK450m
-# per-project incentive cap is recorded only and unenforced." No sourced
-# CZK/USD FX rate exists (see comment above), so the cap is modeled as a
-# genuine, EXECUTABLE ceiling on a caller-evidenced native-CZK incentive-
-# value fact via amount_fact_max — never converted to/from USD. Absence
-# of the fact does not retroactively block an otherwise-eligible
-# production (there is nothing to disclose a violation of); a caller that
-# DOES evidence a CZK incentive value above the cap is genuinely refused.
-# Shared by both the live-action and animation records (same statutory
-# cap, same currency, same fact key).
-_CZ_PROJECT_CAP_CONDITION = RateCondition(
-    condition_id="cz-project-incentive-cap-czk",
-    description="CZK 450,000,000 maximum incentive per project, evaluated "
-                "natively in CZK against a caller-evidenced incentive-"
-                "value amount fact — never converted to/from USD (no "
-                "sourced CZK/USD FX rate exists in this project's FX table)",
-    quote="the maximum support per project is CZK 450 million "
-          "(sfa.gov.cz production-incentives page)",
-    kind="project_fact_dependent_eligibility",
-    amount_fact_key="cz_incentive_value_czk",
-    amount_fact_max=450_000_000.0,
-)
+# Codex final-nine remediation (cz_film_incentive, P0): "80% eligible-base
+# cap absent; CZK450m cap modeled as user-entered incentive rejection."
+# The prior pass's amount_fact_max condition asked the CALLER to supply
+# the already-computed incentive value and rejected the candidate when it
+# exceeded the cap -- exactly the "caller-attested result in place of
+# calculation" antipattern Codex's audit named. Fixed: CZK 450,000,000 is
+# now a program_rate_rules.IncentiveValueCapRule, applied by allocation_
+# pricing._resolve_incentive_dollar_cap()/price_segment() to the engine-
+# CALCULATED incentive itself (rate x QPE, QPE already capped at 80% of
+# total budget by QPE_CAP_RULES below), converted to USD via the real,
+# dated, sourced CZK snapshot (production_normalization.FX_RATE_SNAPSHOTS
+# ["2026-07-13"]["CZK"]=21.238, fetched from api.frankfurter.dev/ECB
+# reference rates) -- never a caller-supplied or guessed conversion, and
+# never a rejection: the incentive is reduced to the cap, exactly like a
+# real statutory ceiling. See program_rate_rules.INCENTIVE_VALUE_CAP_
+# RULES["cz_film_incentive"/"cz_film_incentive_animation"].
 
 CZ_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CZ", program_slug="cz_film_incentive",
     program_name="Czech Film Incentive",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    # CZK 450,000,000 project incentive cap (Codex bounded remediation, B3
-    # formulaic spec) is real and confirmed but NOT converted -- no sourced
-    # CZK/USD FX rate exists in production_normalization.FX_RATE_SNAPSHOTS
-    # (would require fabricating an unsourced rate). See QPE_CAP_RULES
-    # (program_rate_rules.py) for the separately-modeled, executable 80%
-    # eligible-base cap, which needs no currency conversion.
+    # CZK 450,000,000 project incentive cap -- see program_rate_rules.
+    # INCENTIVE_VALUE_CAP_RULES, applied to the calculated incentive via
+    # allocation_pricing._resolve_incentive_dollar_cap(). The separate 80%
+    # eligible-QPE-base cap (QPE_CAP_RULES, program_rate_rules.py) needs
+    # no currency conversion and applies BEFORE the rate.
     annual_cap_usd=None, requires_cultural_test=True,
     production_types=("feature_film",),
     citation="rodriqueslaw.com: 'The primary incentive rate will be 25%, "
@@ -6778,7 +6925,6 @@ CZ_DOCTRINE = register(DoctrineRecord(
     ),
     tiers=(DoctrineRateTier(
         tier_id="cz-live-action-25", rate=0.25, is_band_ceiling=False,
-        conditions=(_CZ_PROJECT_CAP_CONDITION,),
     ),),
 ))
 register_rate_rules(rate_rules_for(CZ_DOCTRINE))
@@ -6788,8 +6934,9 @@ CZ_ANIMATION_DOCTRINE = register(DoctrineRecord(
     program_name="Czech Film Incentive — Animation/Digital",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    # Same CZK 450,000,000 project cap and undisclosed-FX-rate reasoning as
-    # the live-action record above.
+    # Same CZK 450,000,000 project cap as the live-action record above --
+    # see program_rate_rules.INCENTIVE_VALUE_CAP_RULES
+    # ["cz_film_incentive_animation"], applied to the calculated incentive.
     annual_cap_usd=None, requires_cultural_test=True,
     production_types=("animation",),
     citation="rodriqueslaw.com: 'A 35% production incentive rate is also "
@@ -6810,7 +6957,6 @@ CZ_ANIMATION_DOCTRINE = register(DoctrineRecord(
                                        "that don't include live action "
                                        "(rodriqueslaw.com)",
                                  kind="production_type"),
-                                 _CZ_PROJECT_CAP_CONDITION,
                              ),),),
 ))
 register_rate_rules(rate_rules_for(CZ_ANIMATION_DOCTRINE))

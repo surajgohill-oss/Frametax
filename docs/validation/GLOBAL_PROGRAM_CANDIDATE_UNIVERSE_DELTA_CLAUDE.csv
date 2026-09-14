@@ -1,0 +1,15 @@
+project_name,candidate_label,structure_type,change,before_is_fully_priced,after_is_fully_priced,authoritative_reason
+The Little Utopia,Full relocation to Thailand,full_relocation,FLIPPED,true,false,"th_film_incentive previously resolved UNCONDITIONALLY (flat 15% floor with no real gate -- the exact defect Codex flagged: 'No preapproval/local-spend gate; one boolean unlocks 30%'). Now genuinely requires a preapproval boolean plus a native-THB qualifying-spend fact that Little Utopia's real canonical project data does not evidence, so it correctly disclose-unprices instead of auto-pricing."
+The Little Utopia,"Mauritius anchor — post routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,"Thailand drops out of the priceable component-routing-target set once th_film_incentive can no longer resolve on Little Utopia's facts, so this component candidate is never even constructed (same 'target jurisdiction drops out of the priceable-target set' mechanism already established for the B1 authority gate)."
+The Little Utopia,"Mauritius anchor — vfx routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Same mechanism as the post-routing row above.
+F#K Valentine's Day,Full relocation to Thailand,full_relocation,FLIPPED,true,false,Same th_film_incentive mechanism as Little Utopia -- FVD's real canonical data does not evidence the preapproval/native-THB facts either.
+F#K Valentine's Day,"Greece anchor — post routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Thailand drops out of the priceable component-routing-target set.
+F#K Valentine's Day,"Greece anchor — vfx routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Same mechanism.
+F#K Valentine's Day,"Greece anchor — music routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Same mechanism.
+Bad Hombres,Full relocation to Thailand,full_relocation,FLIPPED,true,false,Same th_film_incentive mechanism -- Bad Hombres' real canonical data does not evidence the preapproval/native-THB facts either.
+Bad Hombres,"New Mexico anchor — music routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Thailand drops out of the priceable component-routing-target set.
+Bad Hombres,"New Mexico anchor — post routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Same mechanism.
+Lips Like Sugar,Full relocation to Thailand,full_relocation,FLIPPED,true,false,Same th_film_incentive mechanism -- Lips Like Sugar's real canonical data does not evidence the preapproval/native-THB facts either.
+Lips Like Sugar,"California anchor — music routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Thailand drops out of the priceable component-routing-target set.
+Lips Like Sugar,"California anchor — vfx routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Same mechanism.
+Lips Like Sugar,"California anchor — post routed to Thailand (component/split, rejected)",component_relocation,REMOVED,false,n/a,Same mechanism.

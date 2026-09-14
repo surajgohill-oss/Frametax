@@ -258,7 +258,7 @@ def _segment_lines(
 def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, str | None]:
     """The binding DOLLAR cap on one production's incentive for `slug`.
 
-    Two canonical fields already exist and mean different things:
+    Three canonical sources exist and mean different things:
 
       * ProgramRequirementsProfile.per_project_cap_usd -- a hard statutory
         ceiling on what ONE production may receive. Directly binding.
@@ -267,12 +267,24 @@ def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, 
         across all productions. Not a per-project entitlement, but still a
         true upper bound: a single production cannot receive more than the
         whole year's fund.
+      * program_rate_rules.IncentiveValueCapRule (Codex final-nine
+        remediation) -- a per-project cap stated in the program's own
+        NATIVE currency (e.g. cz_film_incentive's CZK450m, za_nfvf_rebate's
+        ZAR25m), converted to USD here via the SAME real, dated, sourced
+        FX snapshot every other currency conversion in this codebase uses
+        (program_rate_rules.convert_incentive_cap_to_usd ->
+        apply_fx_rates.convert_to_usd) -- never a caller-supplied or
+        guessed rate. This is what lets a native-currency cap constrain
+        the engine-CALCULATED incentive below, rather than requiring the
+        caller to pre-compute and submit the incentive value for a
+        reject-only check.
 
     The binding cap is the smallest applicable one. Returns
     (cap_usd, cap_type, basis) or (None, None, None) when the program
     declares no dollar cap -- absence, never an invented ceiling.
     """
     from app.data.executable_jurisdiction_registry import get_doctrine
+    from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
     from app.data.program_requirements import get_program_requirements
 
     candidates: list[tuple[float, str, str]] = []
@@ -301,6 +313,16 @@ def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, 
         candidates.append((
             float(annual_doctrine), "annual_program",
             "DoctrineRecord.annual_cap_usd",
+        ))
+
+    native_cap = get_incentive_value_cap(slug)
+    if native_cap is not None:
+        conversion = convert_incentive_cap_to_usd(native_cap)
+        candidates.append((
+            round(conversion.target_amount, 2), "per_project_native",
+            f"IncentiveValueCapRule ({native_cap.cap_currency} "
+            f"{native_cap.cap_native_amount:,.0f} @ {conversion.rate_used} "
+            f"{native_cap.cap_currency}/USD, {conversion.rate_date})",
         ))
 
     if not candidates:
@@ -615,14 +637,19 @@ def price_segment(
                 ),
             )
 
+    # Codex final-nine remediation: a floorless ceiling must never price
+    # when any condition is UNRESOLVED (satisfied is None) OR genuinely
+    # FAILED (satisfied is False, e.g. an evidenced numeric fact below its
+    # statutory threshold, us_tx_miip's resident-percentage gates) --
+    # both are "not confirmed clear", never conflated with pre-satisfied.
     if (
         rr is not None
         and not rr.has_guaranteed_floor
-        and any(e.satisfied is None for e in rr.conditions_evaluated)
+        and any(e.satisfied is not True for e in rr.conditions_evaluated)
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
     ):
         unresolved_ids = ", ".join(
-            e.condition_id for e in rr.conditions_evaluated if e.satisfied is None
+            e.condition_id for e in rr.conditions_evaluated if e.satisfied is not True
         )
         return SegmentEconomics(
             jurisdiction_code=jurisdiction_code, program_slug=slug,
@@ -730,7 +757,7 @@ def price_segment(
     # disclosure instead of unconditionally serving the ceiling.
     ceiling_requires_confirmation = bool(
         rr.is_band_ceiling
-        and any(e.satisfied is None for e in rr.conditions_evaluated)
+        and any(e.satisfied is not True for e in rr.conditions_evaluated)
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
     )
 

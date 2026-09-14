@@ -55,7 +55,7 @@ def test_ac2_kazakhstan_single_uncorroborated_source_is_authority_insufficient()
 
 
 def test_ac3_thailand_prices_its_canonical_base_not_its_headline_maximum():
-    """SUPERSEDED TWICE (Codex bounded remediation):
+    """SUPERSEDED THREE TIMES (Codex bounded remediation):
     1. B1 discretionary ruling (GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_
        RULING_CODEX.csv): th_boi_incentive used to resolve at runtime (base
        15% tier, ceiling 30% tier genuinely unresolved). Codex's accepted
@@ -68,45 +68,57 @@ def test_ac3_thailand_prices_its_canonical_base_not_its_headline_maximum():
        the identity the data actually describes; th_boi_incentive now
        correctly carries NO rate data of its own (a separate, genuinely
        authority-exhausted program).
+    3. Codex final-nine remediation (th_film_incentive, P0): "No
+       preapproval/local-spend gate; one boolean unlocks 30%." The prior
+       model (flat 15% floor + one boolean unlocking a 30% ceiling)
+       fabricated an unsourced USD proxy for the THB threshold AND
+       collapsed the real, already-accepted THB-tiered structure (15%
+       from THB 50m, 20% for THB 100-150m, 25% above THB 150m, +5%
+       discretionary Soft Power uplift to 30%) into one undifferentiated
+       boolean. Every objective spend tier now requires BOTH the shared
+       preapproval gate AND its own native-THB qualifying-spend threshold
+       (program_requirements.py's already-accepted TFO Incentive Measures
+       Guidelines 2025 data); the +5% uplift remains genuinely
+       discretionary (never self-executing).
     AC-3's actual subject (a guaranteed floor vs. an unconfirmed "up to"
-    ceiling, never conflated) is intact and asserted below on
-    th_film_incentive, which is NOT B1-blocked and resolves normally; a
-    ceiling that can never even be REACHED (th_boi_incentive, fail-closed)
-    is a fortiori never treated as guaranteed."""
-    # Codex final runtime remediation (th_film_incentive, P0): "preapproval/
-    # award/effective conditions are not executable through optimizer
-    # inputs." The ceiling's discretionary_band condition (never gates,
-    # never gives a controlled input any way to prove the tier resolves)
-    # is reclassified to a genuinely EXECUTABLE required_boolean_fact_key
-    # gate. AC-3's actual subject is unaffected: without the award fact,
-    # the ceiling is not even eligible, so the guaranteed 15% base tier
-    # resolves alone -- still never conflating a guaranteed floor with an
-    # unconfirmed "up to" maximum.
+    ceiling, never conflated) is intact and asserted below: with the
+    objective 25% tier evidenced, the guaranteed floor is 25% -- the 30%
+    ceiling (gated on a genuinely discretionary Soft Power assessment)
+    is never treated as guaranteed. A ceiling that can never even be
+    REACHED (th_boi_incentive, fail-closed) is a fortiori never treated
+    as guaranteed either."""
     tiers = {r.tier_id: r for r in get_rate_rules("th_film_incentive")}
-    assert "th-base-15" in tiers and "th-uplift-ceiling-30" in tiers
-    assert tiers["th-base-15"].rate == 0.15
-    assert tiers["th-base-15"].is_band_ceiling is False
-    assert tiers["th-uplift-ceiling-30"].rate == 0.30
-    assert tiers["th-uplift-ceiling-30"].is_band_ceiling is True
-    ceiling_condition = next(
-        c for c in tiers["th-uplift-ceiling-30"].conditions if c.condition_id == "th-uplift-not-guaranteed"
+    assert {"th-tier-15", "th-tier-20", "th-tier-25", "th-uplift-ceiling-30"} <= tiers.keys()
+    assert tiers["th-tier-15"].rate == 0.15 and tiers["th-tier-15"].is_band_ceiling is False
+    assert tiers["th-tier-20"].rate == 0.20 and tiers["th-tier-20"].is_band_ceiling is False
+    assert tiers["th-tier-25"].rate == 0.25 and tiers["th-tier-25"].is_band_ceiling is False
+    assert tiers["th-uplift-ceiling-30"].rate == 0.30 and tiers["th-uplift-ceiling-30"].is_band_ceiling is True
+    uplift_condition = next(
+        c for c in tiers["th-uplift-ceiling-30"].conditions if c.condition_id == "th-soft-power-uplift"
     )
-    assert ceiling_condition.required_boolean_fact_key == "th_film_incentive_boi_uplift_award_confirmed"
+    assert uplift_condition.kind == "discretionary_band", "the +5% Soft Power uplift is genuinely discretionary, never self-executing"
 
-    res = resolve_program_rate("th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0)
+    # Without preapproval or any native-THB spend fact, nothing resolves —
+    # no guessed USD surrogate, no unconditional floor.
+    res_bare = resolve_program_rate("th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0)
+    assert res_bare is None, "without preapproval and native-THB spend facts, the program must not resolve"
+
+    # With preapproval + THB 200,000,000 (above the THB 150m tier-25
+    # threshold but the +5% uplift unevidenced), the guaranteed floor is
+    # the objective 25% tier -- the 30% ceiling (discretionary) is never
+    # conflated with it.
+    common_facts = dict(
+        evidenced_facts=frozenset({"th_film_incentive_preapproval_confirmed"}),
+        amount_facts={"th_film_incentive_qualifying_spend_thb": 200_000_000.0},
+    )
+    res = resolve_program_rate("th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0, **common_facts)
     assert res is not None
-    assert res.modeled_rate == 0.15, "without the award fact, the ceiling is not eligible — the 15% floor alone resolves"
-    assert res.floor_rate == 0.15
+    # modeled_rate discloses the "up to" 30% ceiling (disclosed, not yet
+    # confirmed, pending the discretionary Soft Power assessment) --
+    # AC-3's actual subject is that this must NEVER be conflated with the
+    # guaranteed floor_rate, which stays at the objective 25% tier.
+    assert res.floor_rate == 0.25, "the discretionary 30% ceiling must never be treated as the guaranteed floor"
     assert res.has_guaranteed_floor is True
-
-    # With the award genuinely evidenced, the 30% ceiling becomes eligible
-    # and resolves deterministically -- proving the gate is a real,
-    # two-sided threshold, not a permanent block.
-    res_awarded = resolve_program_rate(
-        "th_film_incentive", production_type="feature_film", qpe_usd=4_000_000.0,
-        evidenced_facts=frozenset({"th_film_incentive_boi_uplift_award_confirmed"}),
-    )
-    assert res_awarded.modeled_rate == 0.30
 
     # th_boi_incentive is a SEPARATE, genuinely B1 FAIL_CLOSED program with
     # no rate data of its own -- never resolves at runtime.

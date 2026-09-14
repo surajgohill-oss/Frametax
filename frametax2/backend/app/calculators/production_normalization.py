@@ -174,11 +174,23 @@ class FXRateSource(str, enum.Enum):
 #        snapshot dates as EUR/GBP — the three historical EUR/GBP values
 #        returned by that fetch matched the pre-existing table exactly,
 #        confirming the identical authoritative source path.
-FX_RATES_VERSION = "2.1.0"
+#   CZK/ZAR: https://api.frankfurter.dev (ECB reference rates), fetched
+#        for the SAME "current" snapshot date as EUR/GBP/CAD above
+#        (2026-07-13) -- Codex final-nine remediation, added because
+#        cz_film_incentive's CZK450m and za_nfvf_rebate's ZAR25m project
+#        caps must be applied to the engine-CALCULATED incentive (never a
+#        caller-attested result), which requires converting a native-
+#        currency cap into USD via a real, dated, sourced rate -- current
+#        only; no historical 1m/6m/12m CZK/ZAR snapshot was fetched (not
+#        needed by either cap, and not fabricated).
+FX_RATES_VERSION = "2.2.0"
 
 # date string ("YYYY-MM-DD") -> {currency: local units per USD}
 FX_RATE_SNAPSHOTS: dict[str, dict[str, float]] = {
-    "2026-07-13": {"MUR": 47.053589, "EUR": 0.87679, "GBP": 0.74699, "CAD": 1.4135},   # current (fetch date)
+    "2026-07-13": {  # current (fetch date)
+        "MUR": 47.053589, "EUR": 0.87679, "GBP": 0.74699, "CAD": 1.4135,
+        "CZK": 21.238, "ZAR": 16.3636,
+    },
     "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613, "CAD": 1.3988},                     # ~1 month prior
     "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309, "CAD": 1.3877},                     # ~6 months prior
     "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099, "CAD": 1.3701},                     # ~12 months prior

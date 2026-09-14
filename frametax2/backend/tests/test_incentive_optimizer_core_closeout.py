@@ -121,12 +121,35 @@ def test_mauritius_ceiling_confirmed_by_explicit_project_override():
 
 
 def test_malta_ceiling_requires_confirmation_and_serves_floor_by_default():
+    """Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
+    certificate fact." Without a caller-evidenced Commissioner uplift-
+    certificate, the 40% ceiling is no longer even ELIGIBLE (a genuine
+    required_boolean_fact_key gate, not merely disclosure-only) -- the
+    guaranteed 30% floor tier resolves directly. Once the certificate IS
+    evidenced, the ceiling becomes eligible and selected, but the two
+    underlying discretionary limb conditions (Malta-as-Malta,
+    maximisation of local resources) remain genuinely unconfirmable on
+    their own terms, so ceiling_requires_confirmation still holds and the
+    served floor still governs -- a certified ceiling is disclosed, never
+    silently guaranteed."""
     pricing = _price(_spec("P-MT", "full_relocation", ("MT",), {"MT": "mt_mfc_rebate"}))
     assert pricing.is_fully_priced
     mt = next(s for s in pricing.segments if s.jurisdiction_code == "MT")
-    assert mt.is_band_ceiling is True
-    assert mt.ceiling_requires_confirmation is True
+    assert mt.is_band_ceiling is False, "without the certificate fact, the 30% floor resolves directly"
+    assert mt.ceiling_requires_confirmation is False
     assert pricing.selected_incentive_usd == mt.incentive_floor_usd
+
+    certified_pricing = _price(
+        _spec("P-MT-CERT", "full_relocation", ("MT",), {"MT": "mt_mfc_rebate"}),
+        evidenced_requirement_facts=frozenset({"mt_mfc_uplift_certificate_confirmed"}),
+    )
+    assert certified_pricing.is_fully_priced
+    mt_certified = next(s for s in certified_pricing.segments if s.jurisdiction_code == "MT")
+    assert mt_certified.is_band_ceiling is True, "the certificate makes the 40% ceiling eligible/selected"
+    assert mt_certified.ceiling_requires_confirmation is True, (
+        "the two underlying discretionary limbs remain genuinely unconfirmable even once certified"
+    )
+    assert certified_pricing.selected_incentive_usd == mt_certified.incentive_floor_usd
 
 
 def test_greece_flat_rate_has_no_discretionary_ceiling():

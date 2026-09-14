@@ -756,9 +756,43 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # its own full_relocation/component_relocation candidates), and the
     # other programs' previously-auto-priced routes correctly withhold
     # pricing FVD has no evidenced facts for.
-    assert len(entries) == 295
-    assert len(priced) == 160
-    assert len(unpriced) == 135
+    # Codex final-nine remediation (GLOBAL_PROGRAM_FINAL_RUNTIME_REMAINING_
+    # ITEMS_CODEX.csv): 295 -> 292 (-3), 160 -> 159 (-1 priced), 135 -> 133
+    # (-2 unpriced), directly measured by diffing FVD's real served
+    # candidate list before/after this remediation's production changes
+    # (matched by structure label, since structure_id is a fresh UUID per
+    # evaluation run). Only th_film_incentive moves FVD's real candidate
+    # set here -- au_location_offset/cz_film_incentive/ma_ccm_rebate/
+    # nl_nfpi/us_tx_miip/za_nfvf_rebate's own genuinely-executable fact
+    # gates (native-currency amount thresholds / numeric percentages /
+    # IncentiveValueCapRule) do not change any FVD candidate, because FVD
+    # never had a candidate touching those specific programs' corrected
+    # gates in the first place (the PRECEDING "Codex final runtime
+    # remediation" comment block above, already committed prior to this
+    # remediation, attributed a DIFFERENT movement to a similarly-named
+    # 6-program list -- that was this project's own prior-session fix to
+    # the SAME programs, already reconciled into the 295/160/135 baseline
+    # this comment starts from; it is not reopened here). Exact accounting
+    # for th_film_incentive's fix ("No preapproval/local-spend gate; one
+    # boolean unlocks 30%" -> genuinely required preapproval + native-THB
+    # qualifying-spend facts FVD's real canonical data does not evidence):
+    #   -1 priced -> unpriced flip: "Full relocation to Thailand" (was
+    #     auto-priced unconditionally, now correctly disclose-unprices).
+    #   -3 unpriced entries removed entirely (never generated): "Greece
+    #     anchor -- music/post/vfx routed to Thailand (component/split,
+    #     rejected)" -- Thailand drops out of the priceable component-
+    #     routing-target set once th_film_incentive can no longer resolve
+    #     on FVD's facts, so these three component candidates are never
+    #     even constructed (the same "target jurisdiction drops out of the
+    #     priceable-target set" mechanism already documented above).
+    #   Net: unpriced 135 - 3 (already unpriced) + 1 (new flip) = 133;
+    #   priced 160 - 1 (flip) = 159; entries 295 - 3 = 292. See
+    #   test_canonical_served_wiring_repair.py::
+    #   test_fvd_accounting_matches_codex_diagnosis for the same,
+    #   independently-verified reconciliation.
+    assert len(entries) == 292
+    assert len(priced) == 159
+    assert len(unpriced) == 133
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):

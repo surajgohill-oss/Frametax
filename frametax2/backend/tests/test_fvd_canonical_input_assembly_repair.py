@@ -313,10 +313,18 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     for code in ("QA", "SG", "AU-QLD"):
         assert code not in entries, f"{code}'s program is B1-blocked and must not produce a priced trace"
 
+    # Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
+    # certificate fact." Without a caller-evidenced Commissioner uplift-
+    # certificate (this served FVD evaluation supplies none), the 40%
+    # ceiling is no longer eligible at all -- the guaranteed 30% floor
+    # resolves directly, so is_band_ceiling/ceiling_requires_confirmation
+    # are both False here (see test_canonical_served_wiring_repair.py's
+    # test_malta_and_mauritius_priced_but_not_comparable_with_real_
+    # economics for the matching fix and full explanation).
     mt = seg("MT")
     assert mt["qpe_usd"] == pytest.approx(3_701_238.00, abs=0.01)
-    assert mt["is_band_ceiling"] is True
-    assert mt["ceiling_requires_confirmation"] is True
+    assert mt["is_band_ceiling"] is False
+    assert mt["ceiling_requires_confirmation"] is False
 
     mu = seg("MU")
     # CBA-009 Part 19-20: $1,132,056.00 -> $769,190.00 (FVD's own $362,866.00

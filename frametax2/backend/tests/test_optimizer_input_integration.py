@@ -469,13 +469,17 @@ class TestExecutableJurisdictionKnowledge:
         # distinct rates/NPCs per jurisdiction's own real statutory rate.
         # Corrected 2026-07-26 (account-handoff session): the real MFC
         # Guidelines general-category floor is 30% (not 25%, which was
-        # actually the Animation/VFX-specific base rate); ceiling remains
-        # 40% for the general tiers (the confirmed 50% "Difficult
-        # Audiovisual Work" ceiling is deliberately not priced -- see
-        # program_rate_rules.py's note on why it can't be safely modeled
-        # as a RateRule tier).
+        # actually the Animation/VFX-specific base rate).
+        #
+        # Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
+        # certificate fact." Without a caller-evidenced Commissioner
+        # uplift-certificate fact (not supplied in this no-facts demo
+        # call), the 40% ceiling is no longer eligible at all -- both
+        # rate_floor and rate_ceiling here reflect the guaranteed 30%
+        # base; 40% only resolves once genuinely certified (see
+        # test_rate_rules_reflect_real_sourced_profile_data above).
         assert by_code["MT"]["rate_floor"] == 0.30
-        assert by_code["MT"]["rate_ceiling"] == 0.40
+        assert by_code["MT"]["rate_ceiling"] == 0.30
         assert by_code["IE"]["rate_floor"] == by_code["IE"]["rate_ceiling"] == 0.32
         assert by_code["GR"]["rate_floor"] == by_code["GR"]["rate_ceiling"] == 0.40
         npcs = {by_code[c]["floor_case"]["net_production_cost_usd"] for c in ("MT", "IE", "GR")}
@@ -547,15 +551,28 @@ class TestExecutableJurisdictionKnowledge:
 
     def test_rate_rules_reflect_real_sourced_profile_data(self):
         from app.data.program_rate_rules import resolve_program_rate
+        # Codex final-nine remediation (mt_mfc_rebate, P0): "40% lacks
+        # certificate fact." The 40% ceiling previously auto-resolved as
+        # modeled_rate regardless of any certificate (its two
+        # discretionary_band limb conditions never gated eligibility at
+        # all) -- exactly the defect Codex's audit named. A genuine
+        # required_boolean_fact_key Commissioner-certificate gate now
+        # removes the 40% tier from eligibility until evidenced, so
+        # without it modeled_rate is the guaranteed 30% floor; the
+        # confirmed 50% "Difficult Audiovisual Work" tier remains
+        # deliberately unpriced either way (see program_rate_rules.py).
         mt = resolve_program_rate("mt_mfc_rebate", production_type="feature_film", qpe_usd=4_355_327.0)
-        # Corrected 2026-07-26: 0.25 was actually the Animation/VFX-specific
-        # base rate, not the general feature-film floor (30%). ceiling
-        # stays 40% -- the confirmed 50% "Difficult Audiovisual Work" tier
-        # is deliberately not priced (requires a budget CEILING the
-        # RateRule schema can't express; see program_rate_rules.py).
         assert mt.floor_rate == 0.30
-        assert mt.modeled_rate == 0.40
-        assert mt.is_band_ceiling is True
+        assert mt.modeled_rate == 0.30
+        assert mt.is_band_ceiling is False
+
+        mt_certified = resolve_program_rate(
+            "mt_mfc_rebate", production_type="feature_film", qpe_usd=4_355_327.0,
+            evidenced_facts=frozenset({"mt_mfc_uplift_certificate_confirmed"}),
+        )
+        assert mt_certified.modeled_rate == 0.40
+        assert mt_certified.is_band_ceiling is True
+
         ie = resolve_program_rate("ie_section_481", production_type="feature_film", qpe_usd=4_355_327.0)
         assert ie.modeled_rate == 0.32
         assert ie.is_band_ceiling is False
@@ -564,18 +581,39 @@ class TestExecutableJurisdictionKnowledge:
         """MT/IE/GR min-spend thresholds are EUR in the source profile —
         converted to USD via the real sourced FX rate, not a rough guess.
 
-        Codex final runtime remediation (mt_mfc_rebate, B3): Codex's own
-        accepted manifest explicitly controls a EUR 50,000 minimum spend
-        threshold, superseding this session's earlier preservation of the
-        directly-PDF-extracted EUR 100,000 / S.2.3 figure (see
-        program_rate_rules.py's MT_RATE_RULES module comment for the full
-        conflict-resolution history). EUR 50,000 -> USD 57,026.20 via the
-        SAME real, sourced, dated FX snapshot (FX_RATE_SNAPSHOTS
-        ["2026-07-13"]["EUR"]=0.87679) this test's own docstring already
-        describes as the correct methodology."""
-        from app.data.program_rate_rules import get_rate_rules
+        Codex final-nine remediation (mt_mfc_rebate, P0): a fixed
+        min_qpe_usd=57,026.20 baked into the RateCondition at authoring
+        time was itself a "permanently-fixed USD substitute" -- the exact
+        defect Codex's audit named. The threshold is now evaluated
+        DYNAMICALLY: the segment's own qpe_usd is converted to EUR at
+        resolution time via the real, dated, sourced FX snapshot
+        (FX_RATE_SNAPSHOTS["2026-07-13"]["EUR"]=0.87679), compared
+        against the native EUR 50,000 minimum Codex's own accepted
+        manifest controls (superseding this session's earlier
+        preservation of the directly-PDF-extracted EUR 100,000 / S.2.3
+        figure — see program_rate_rules.py's MT_RATE_RULES module
+        comment for the full conflict-resolution history)."""
+        from app.data.program_rate_rules import _fx_native_amount, get_rate_rules, resolve_program_rate
+
         mt_rule = get_rate_rules("mt_mfc_rebate")[0]
-        assert mt_rule.min_qpe_usd == pytest.approx(57_026.20, abs=1.0)
+        assert mt_rule.min_qpe_usd is None, "no fixed USD substitute may be baked into the RateRule/RateCondition"
+        native_condition = next(c for c in mt_rule.conditions if c.condition_id == "mt-min-spend")
+        assert native_condition.fx_native_currency == "EUR"
+        assert native_condition.fx_native_threshold_amount == 50_000.0
+
+        # The dynamic conversion itself, using the real sourced rate.
+        native_amount, rate_used, rate_date = _fx_native_amount(57_026.20, "EUR")
+        assert rate_used == pytest.approx(0.87679, abs=1e-5)
+        assert rate_date == "2026-07-13"
+        assert native_amount == pytest.approx(50_000.0, abs=0.5), (
+            "USD 57,026.20 converts back to approximately the native EUR 50,000 threshold "
+            "via the SAME real rate, confirming the dynamic conversion is genuinely reversible"
+        )
+
+        # And the real gate: a production whose QPE converts to just under
+        # EUR 50,000 rejects; one at or above resolves.
+        assert resolve_program_rate("mt_mfc_rebate", "feature_film", 57_000.0) is None
+        assert resolve_program_rate("mt_mfc_rebate", "feature_film", 57_100.0) is not None
 
     def test_alternative_jurisdiction_carries_travel_and_fx_deltas(self):
         s = get_state()
