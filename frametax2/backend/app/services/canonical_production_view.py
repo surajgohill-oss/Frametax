@@ -583,31 +583,26 @@ def _is_conditional_eligible(entry: dict) -> bool:
     """Codex final P0 (leading conditional recommendation) — the exact
     predicate for membership in the LEADING_CONDITIONAL/UNLOCKABLE_
     ALTERNATIVE pool. True only for a candidate that is:
-      1. is_fully_priced (calculable, evidence-supported economics —
-         requirement 2) — a HARD_FAIL candidate never reaches
-         is_fully_priced=True at all (QUAL_HARD_FAIL is excluded from
-         _QUALIFICATION_ADMITS_PRICING in canonical_evaluation.py), so
-         this alone already satisfies requirement 3 (never legally
-         ineligible).
-      2. is_directly_comparable (the SAME base pool `comparable` uses —
-         requirement 1: same optimizer objective/ranking basis).
-      3. role_qualification.state is a genuine, explicit, still-
-         unresolved-but-priced state (requirement 5: blocked only by an
-         explicit user fact / qualification step / discretionary
-         approval / other unlockable requirement) -- deliberately
-         EXCLUDES a None state (no role_qualification data at all is NOT
-         "blocked by an explicit unlockable requirement"; that candidate
-         either already admits Recommended, per _qualification_admits_
-         recommended, or is excluded by is_directly_comparable already).
-    A retired, stale, or authority-vetoed program's candidate is
-    is_fully_priced=False (STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT /
-    RULE_REJECTED / etc. — see canonical_evaluation.py's B4 central
-    authority gate), so it never reaches this predicate at all
-    (requirement 4)."""
-    if not entry.get("is_fully_priced") or not entry.get("is_directly_comparable"):
+      1. is_fully_priced (calculable, evidence-supported economics)
+      2. NOT the baseline (the baseline must never be the distinct
+         leading conditional alternative, per Codex P0-SEL-ALT-001).
+      3. Either directly comparable (blocked only by a curable state),
+         or non-comparable specifically because it lacks relocation
+         facts (a valid conditional alternative).
+    """
+    if not entry.get("is_fully_priced"):
         return False
+    if entry.get("is_baseline"):
+        return False
+        
     state = (entry.get("role_qualification") or {}).get("state")
-    return state in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES
+    
+    if entry.get("is_directly_comparable"):
+        return state in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES
+    else:
+        # A non-comparable relocation candidate can still be surfaced as a conditional alternative
+        # if its qualification state is either clear (None/admits recommended) or explicitly curable.
+        return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED or state in _CONDITIONAL_ELIGIBLE_QUALIFICATION_STATES
 
 
 def _scenario_category(entry: dict, rank: int | None) -> str:
@@ -881,10 +876,18 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     def _blocking_requirements(entry: dict) -> list[str]:
         rq = entry.get("role_qualification") or {}
         reqs = list(rq.get("missing_facts") or ()) + list(rq.get("curable_requirements") or ())
-        return reqs or [
-            f"Qualification state '{rq.get('state')}' must be resolved before this "
-            "structure can become a verified recommendation."
-        ]
+        
+        # Codex P0-SEL-ALT-001: Expose the missing relocation fact for non-baseline candidates
+        if not entry.get("is_baseline") and not entry.get("is_directly_comparable"):
+            code = entry.get("primary_jurisdiction", "")
+            reqs.append(f"relocation_completeness_evidenced__{code}")
+
+        if not reqs:
+            reqs = [
+                f"Qualification state '{rq.get('state')}' must be resolved before this "
+                "structure can become a verified recommendation."
+            ]
+        return reqs
 
     def _conditional_entry(entry: dict, next_alternative: dict | None) -> dict:
         rq = entry.get("role_qualification") or {}
