@@ -1,0 +1,16 @@
+dimension,current_measured_value,source_viewport,proposed_value_range,reason,component_affected,confidence
+App shell and content width,"100vw, max-width: 1520px",shell.css,"100vw fluid, max-width: 1520px",Preserves existing enterprise layout scale without stretching,AppShell,HIGH
+Globe container dimensions,1fr (flexible remaining space),Workspace.jsx grid,"1fr, min-width: 600px",Prevents globe from crushing to unreadable sliver when Question Stack and Inspector are open,ProjectGlobe,HIGH
+Header height,60px (estimated),UNVERIFIED,60px,Preserves dense workspace vertical rhythm,ProjectHeader,MEDIUM
+Existing toggle dimensions/location,Top right or center over globe,UNVERIFIED,"Center-top, 40px height",Toggle remains distinct from navigation; preserves interaction pattern without redesign,Jurisdictions/Optimizer Overlay Toggle,MEDIUM
+"Results-card width, height and density",Flexible grid,UNVERIFIED,"Width 320px-400px, dense padding (12px)",Supports tabular numbers and multi-program stacks without scrolling,Scenario Card,HIGH
+Narrow Inspector width,290px,Workspace.jsx grid,320px,"290px truncates program names and $X,XXX,XXX.XX amounts on one line",Inspector,HIGH
+Wide analysis surface width,UNVERIFIED,UNVERIFIED,max-width: 1200px,"Provides sufficient room for 3-column analysis (Alternative, Breakdown, Rules) without blocking the map",Wide Analysis Hub,MEDIUM
+Left/center/right column widths and gaps,UNVERIFIED,UNVERIFIED,"300px / 1fr / 320px, 24px gap","Balances alternative list, wide numerical center, and readable documentation right",Local Stack Analysis Surface,MEDIUM
+Panel padding and vertical rhythm,16px (var--sp-4),tokens.css (inferred),"16px padding, 8px rhythm",Aligns with existing dense enterprise data tokens,All Panels,HIGH
+Typography hierarchy,12.5px / 13px base,shell.css,"13px base, 11px small, 15px titles","Current 12.5px is slightly too small for dense tables, bump to 13px standard",Typography,HIGH
+Monetary-value alignment,Left aligned / inline,Inspector.jsx,"Tabular-nums, Right-aligned",Comparing millions requires strict vertical right alignment,Money / Pct formatters,HIGH
+"Status chips, flags, icons",Tokens: Gold/Jade/Silver/Amber,tokens.css,Use existing tokens; add SVG flags,"Preserves semantic meaning, improves accessibility over emojis",Jurisdiction Badges,HIGH
+Route/border thickness,1px hairline,shell.css,"2px for Anchor/Selected, 1px for others",Improves legibility of Hybrid allocations and Official Co-pro connections,Globe3D Routes,HIGH
+Scroll ownership and sticky sections,UNVERIFIED,UNVERIFIED,Inspector header sticky; body scrolls,Header must remain visible when scrolling long requirements lists,Inspector / Analysis Spoke,HIGH
+"Focus, selected and hover states",UNVERIFIED,UNVERIFIED,Hover: var(--surface-2); Selected: primary border,Provides clear interactive affordances without dimming legal geometry,Interactive Elements,HIGH
