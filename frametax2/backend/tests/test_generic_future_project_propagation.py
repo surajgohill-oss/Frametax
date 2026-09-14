@@ -211,7 +211,7 @@ async def test_new_production_propagates_the_repaired_machinery_end_to_end(
             slug = segment.get("program_slug")
             if not slug or not segment.get("executable", True):
                 continue
-            cap, _kind, _basis, _fx_err = _resolve_incentive_dollar_cap(slug)
+            cap, _kind, _basis, _fx_err, _unresolved = _resolve_incentive_dollar_cap(slug)
             if cap:
                 assert (segment.get("incentive_ceiling_usd") or 0.0) <= cap + 0.01, (
                     f"{slug} exceeded its dollar cap on a new project"

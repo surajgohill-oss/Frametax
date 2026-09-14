@@ -67,3 +67,23 @@ The knowledge base is consolidated by domain, not forced into one oversized file
 | Historical decisions and deferred work | `docs/architecture/CAPABILITY_LEDGER.md` — documentary only, never runtime truth |
 
 The recurrence guard is `backend/tests/test_canonical_knowledge_consolidation.py`. Any new canonical program or recovered doctrine must resolve through the existing rate/qualification/served path, carry the best recoverable structured provenance, and remain excluded from deterministic recommendation while required eligibility facts are unresolved.
+
+### Mandatory hard timeout / anti-loop rule
+
+Every command, query, or source-retrieval step run in service of a task has a hard wall-clock ceiling, enforced by a real process alarm/watchdog (e.g. the harness's own process-level timeout, or `SIGALRM`/`subprocess` timeout) — never an output-yield or "still producing text" heuristic, which does not detect a genuinely stalled process:
+
+1. An ordinary command, query, or source retrieval: **120 seconds**.
+2. An individual test file: **300 seconds**.
+3. A focused, grouped test run (multiple related files run together): **900 seconds**.
+4. An individual real-project recomputation: **300 seconds**.
+5. A push or remote-verification step: **120 seconds**.
+
+On timeout:
+
+- Preserve all logs and all already-made file changes. Never discard work to "start clean."
+- Stop only the process this task itself owns. Never terminate an unrelated process or an unrelated database session — inspect (e.g. `ps`, `pg_stat_activity`) before acting, and act only on the row/process this task's own connection or subprocess created.
+- Clean up only this task's own database session/connection (e.g. `ROLLBACK`/close a transaction this task opened). Never touch another session's open transaction.
+- Mark the specific step `INCOMPLETE` with the elapsed time and last-observed state, and continue with every other, independent task rather than stopping the whole pass.
+- Retry at most once, and only after a documented causal correction (a specific, stated reason the retry will behave differently — a fixed query, a narrower scope, a cleared lock). A bare retry with no causal change is not permitted; a second timeout on the same step is final for that step and must be reported as `INCOMPLETE`, not silently retried again.
+
+Never run the full backend test suite as a substitute for the focused/grouped tests above unless a task explicitly requires it — a full-suite run has no place in this hard-timeout schedule and must not be started speculatively "to be safe."

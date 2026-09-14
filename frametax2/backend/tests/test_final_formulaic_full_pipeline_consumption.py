@@ -546,16 +546,31 @@ def test_nl_nfpi_company_period_cap_consumes_prior_awards_across_projects():
     no prior awards) and "Project B" (the SAME company's second
     production, evidencing Project A's own EUR2,000,000 award as its
     prior-period fact) -- the acceptance case: 'two projects for one
-    company cannot jointly exceed the company-year cap.'"""
+    company cannot jointly exceed the company-year cap.'
+
+    Codex bounded remediation (P0-NL-001): "A Netherlands prior-award
+    aggregate is usable only when bound to explicit canonical company
+    identity and award period, with an evidence state. Missing/unknown
+    aggregate must never mean zero." Project B's claim is only trusted
+    here because BOTH company_period_has_other_productions AND
+    company_period_aggregate_evidenced are explicitly evidenced -- a raw
+    amount_facts entry alone (the pre-remediation shape of this test) is
+    now correctly ignored as an unbound free scalar, which is exactly why
+    an additional adverse case below proves the unresolved-aggregate path
+    fails closed rather than silently defaulting to the full fresh cap."""
     from app.calculators.allocation_pricing import price_segment
     from app.calculators.production_allocation import AccountAllocation, AssignmentKind
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
 
     cap = get_incentive_value_cap("nl_film_production_incentive")
     cap_usd = convert_incentive_cap_to_usd(cap)[0].target_amount
-    common_facts = frozenset({"nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met"})
+    rate_facts = frozenset({"nl_nfpi_points_independence_test_passed", "nl_nfpi_format_threshold_met"})
+    company_period_facts = frozenset({
+        "nl_nfpi_company_period_has_other_productions",
+        "nl_nfpi_company_period_aggregate_evidenced",
+    })
 
-    def probe(large_qpe: float, prior_awards_eur: float | None):
+    def probe(large_qpe: float, prior_awards_eur: float | None, *, claim_other_productions: bool = True):
         alloc = AccountAllocation(
             account_code="2000", description="spend", amount_usd=large_qpe, component="production",
             jurisdiction_code="NL", assignment_kind=AssignmentKind.FIXED,
@@ -565,20 +580,22 @@ def test_nl_nfpi_company_period_cap_consumes_prior_awards_across_projects():
             {"nl_nfpi_company_period_prior_awards_eur": prior_awards_eur}
             if prior_awards_eur is not None else None
         )
+        evidenced = rate_facts | (company_period_facts if claim_other_productions else frozenset())
         return price_segment(
             jurisdiction_code="NL", program_slug="nl_film_production_incentive", allocations=[alloc],
             spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
             production_type="feature_film", gross_budget_usd=large_qpe,
-            evidenced_requirement_facts=common_facts, amount_facts=amount_facts,
+            evidenced_requirement_facts=evidenced, amount_facts=amount_facts,
         )
 
     large_qpe = (cap_usd / 0.35) * 2  # comfortably over the FULL cap even alone
 
-    # Project A: this company's first NL production this year, no prior awards on file.
-    project_a = probe(large_qpe, None)
+    # Project A: this company's first NL production this year, no prior awards claimed at all.
+    project_a = probe(large_qpe, None, claim_other_productions=False)
     assert project_a.executable is True
     assert project_a.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01), (
-        "with no prior-award aggregate on file, Project A alone is capped at the full EUR3m-equivalent"
+        "with no company-period interaction ever claimed, Project A alone is capped at the "
+        "full EUR3m-equivalent"
     )
 
     # Project B: the SAME company's second NL production, evidencing that
@@ -609,6 +626,38 @@ def test_nl_nfpi_company_period_cap_consumes_prior_awards_across_projects():
     joint_total = project_a.incentive_floor_usd  # Project A alone already hits the full cap
     assert joint_total == pytest.approx(cap_usd, abs=0.01)
     assert project_b_exhausted.incentive_floor_usd + project_a.incentive_floor_usd == pytest.approx(cap_usd, abs=0.01)
+
+    # Adverse (Codex P0-NL-001): the company IS claimed to have other
+    # productions this period, but the aggregate amount is missing --
+    # this must fail closed (non-priceable), never silently default to
+    # the full fresh cap the way absence-of-any-claim (Project A) does.
+    unresolved = probe(large_qpe, None, claim_other_productions=True)
+    assert unresolved.executable is False, (
+        "has_other_productions evidenced with no evidenced amount must fail closed, "
+        "never fall back to the full cap"
+    )
+    assert any("can never be treated as zero" in b for b in unresolved.blockers), unresolved.blockers
+
+    # Adverse: the raw amount fact is present but NOT bound by the
+    # aggregate_evidenced flag -- "a free scalar not bound to canonical
+    # company or award period" must also fail closed, exactly like the
+    # missing-amount case above.
+    alloc = AccountAllocation(
+        account_code="2000", description="spend", amount_usd=large_qpe, component="production",
+        jurisdiction_code="NL", assignment_kind=AssignmentKind.FIXED,
+        rationale="unbound scalar probe", governing_decision="codex-final-p0-canonical-fx",
+    )
+    unbound_scalar = price_segment(
+        jurisdiction_code="NL", program_slug="nl_film_production_incentive", allocations=[alloc],
+        spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=large_qpe,
+        evidenced_requirement_facts=rate_facts | {"nl_nfpi_company_period_has_other_productions"},
+        amount_facts={"nl_nfpi_company_period_prior_awards_eur": 2_000_000.0},
+    )
+    assert unbound_scalar.executable is False, (
+        "a numeric aggregate without the aggregate_evidenced flag is an unbound free scalar "
+        "-- must fail closed, never silently trusted"
+    )
 
 
 # ── 9. th_film_incentive ──────────────────────────────────────────────
@@ -886,6 +935,43 @@ async def test_us_tx_miip_award_and_resident_threshold(db: AsyncSession, clean_f
     malformed = await _structure_for(db, "us_tx_miip")
     assert malformed["is_fully_priced"] is False, "an awarded rate above the 31% statutory ceiling must reject, never clamp to 31%"
 
+    # Codex bounded remediation (P0-TX-001, CROSSCHECK "Texas-zero" /
+    # "Texas-NaN"): the awarded-rate floor is EXCLUSIVE (0 < rate), and a
+    # non-finite awarded rate must reject before any arithmetic -- an
+    # awarded rate of exactly 0.0 is not a valid award (it must never
+    # silently price at $0 while still reporting fully-priced), and a
+    # persisted NaN string must never reach the pricing kernel as a
+    # comparable float.
+    await _clear_test_facts(db)
+    await _add_facts(
+        db,
+        _boolean_fact("us_tx_miip_award_confirmed"),
+        _boolean_fact("us_tx_miip_pool_period_valid"),
+        _amount_fact("us_tx_miip_resident_crew_pct", 40.0),
+        _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", 0.0),
+    )
+    zero_award = await _structure_for(db, "us_tx_miip")
+    assert zero_award["is_fully_priced"] is False, (
+        "an awarded rate of exactly 0.0 must reject (exclusive floor), never price a $0 "
+        "'fully priced' incentive"
+    )
+
+    await _clear_test_facts(db)
+    await _add_facts(
+        db,
+        _boolean_fact("us_tx_miip_award_confirmed"),
+        _boolean_fact("us_tx_miip_pool_period_valid"),
+        _amount_fact("us_tx_miip_resident_crew_pct", 40.0),
+        _amount_fact("us_tx_miip_resident_cast_pct", 40.0),
+        _amount_fact("us_tx_miip_awarded_rate_pct", float("nan")),
+    )
+    nan_award = await _structure_for(db, "us_tx_miip")
+    assert nan_award["is_fully_priced"] is False, (
+        "a non-finite (NaN) awarded rate must reject before any comparison, never silently "
+        "price"
+    )
+
 
 # ── 12. za_nfvf_rebate ────────────────────────────────────────────────
 # Codex final-nine remediation: "Cap rejects on caller-entered award;
@@ -988,6 +1074,42 @@ def test_za_nfvf_rebate_cap_applies_to_calculated_incentive_and_post_only_branch
         "the post-only branch's economics on a genuinely narrower basis must be materially "
         "different from (here, far smaller than) the general branch's broad-QPE economics"
     )
+
+    # Codex bounded remediation (P0-ZA-001, CROSSCHECK "ZA-post-conservation"):
+    # a $1 allocated segment cannot claim a $1,000,000 QSAPPE component
+    # basis -- the claimed sub-total can never exceed the segment's own
+    # real qualifying allocated spend. This is the exact adversarial case
+    # allocation_pricing.py's shared is_component_basis conservation check
+    # (also protecting us_or_opif) targets; it must REJECT, never silently
+    # price incentive=$250,000 on an unreconciled scalar.
+    def probe_one_dollar(qsappe_claimed):
+        alloc = AccountAllocation(
+            account_code="2000", description="tiny post spend", amount_usd=1.0, component="production",
+            jurisdiction_code="ZA", assignment_kind=AssignmentKind.FIXED,
+            rationale="component-basis conservation adverse probe", governing_decision="codex-bounded-remediation-p0-za-001",
+        )
+        return price_segment(
+            jurisdiction_code="ZA", program_slug="za_nfvf_rebate", allocations=[alloc],
+            spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
+            production_type="feature_film", gross_budget_usd=1.0,
+            evidenced_requirement_facts=frozenset({"za_nfvf_post_production_only_confirmed"}),
+            amount_facts={"za_nfvf_post_qsappe_usd": qsappe_claimed},
+        )
+
+    conservation_violation = probe_one_dollar(1_000_000.0)
+    assert conservation_violation.executable is False, (
+        "a $1,000,000 claimed QSAPPE on a $1 allocated segment must reject -- the component "
+        "basis can never exceed the segment's own real qualifying allocated spend"
+    )
+    assert any("qualifying allocated spend" in b for b in conservation_violation.blockers), (
+        conservation_violation.blockers
+    )
+
+    # Adverse: negative, NaN, and +/-infinity component bases must all
+    # reject before arithmetic, never silently accepted or clamped.
+    for bad_basis in (-5.0, float("nan"), float("inf"), float("-inf")):
+        rejected = probe_one_dollar(bad_basis)
+        assert rejected.executable is False, f"component basis {bad_basis!r} must reject"
 
     neither = probe(frozenset())
     assert neither.executable is False, "neither the accepted-production nor the post-only gate is evidenced — must reject"

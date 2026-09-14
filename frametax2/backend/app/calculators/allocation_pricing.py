@@ -50,6 +50,7 @@ No LLM calls. Deterministic and testable.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field, replace as _dataclasses_replace
 
 from app.calculators import treaty_engine as te
@@ -257,7 +258,8 @@ def _segment_lines(
 
 def _resolve_incentive_dollar_cap(
     slug: str, fx_context=None, amount_facts: dict[str, float] | None = None,
-) -> tuple[float | None, str | None, str | None, "object | None"]:
+    evidenced_requirement_facts: frozenset[str] | None = None,
+) -> tuple[float | None, str | None, str | None, "object | None", str | None]:
     """The binding DOLLAR cap on one production's incentive for `slug`.
 
     Three canonical sources exist and mean different things:
@@ -282,15 +284,25 @@ def _resolve_incentive_dollar_cap(
         reject-only check.
 
     The binding cap is the smallest applicable one. Returns
-    (cap_usd, cap_type, basis, fx_error) or (None, None, None, None) when
-    the program declares no dollar cap -- absence, never an invented
-    ceiling. fx_error is a non-None apply_fx_rates.FXRateResolution ONLY
-    when a native-currency cap (IncentiveValueCapRule) exists but its FX
-    conversion could not be safely resolved (Codex final P0 canonical_fx
-    -- missing/non-positive rate or a stale_fallback context) — the
-    caller MUST treat that as fail-closed/non-priceable, never silently
-    drop the cap (which would let an over-cap incentive through
-    uncapped) and never crash.
+    (cap_usd, cap_type, basis, fx_error, aggregate_unresolved_detail) or
+    (None, None, None, None, None) when the program declares no dollar
+    cap -- absence, never an invented ceiling. fx_error is a non-None
+    apply_fx_rates.FXRateResolution ONLY when a native-currency cap
+    (IncentiveValueCapRule) exists but its FX conversion could not be
+    safely resolved (Codex final P0 canonical_fx -- missing/non-positive
+    rate or a stale_fallback context) — the caller MUST treat that as
+    fail-closed/non-priceable, never silently drop the cap (which would
+    let an over-cap incentive through uncapped) and never crash.
+
+    aggregate_unresolved_detail (Codex bounded remediation, P0-NL-001) is
+    a non-None human-readable string ONLY when a company-period cap
+    (IncentiveValueCapRule.company_period_prior_award_fact_key) has an
+    evidenced has_other_productions fact but the prior-awards aggregate
+    itself is missing, unevidenced, non-finite, or out of range -- the
+    caller MUST treat this exactly like fx_error: fail closed, disclosed,
+    non-priceable. An unresolved company-period aggregate must never be
+    silently treated as EUR0 (which would hand out the full cap on an
+    unverified claim).
     """
     from app.data.executable_jurisdiction_registry import get_doctrine
     from app.data.program_rate_rules import convert_incentive_cap_to_usd, get_incentive_value_cap
@@ -328,23 +340,57 @@ def _resolve_incentive_dollar_cap(
     if native_cap is not None:
         effective_cap = native_cap
         cap_basis_suffix = ""
-        # Codex final P0 (nl_film_production_incentive): a PER-COMPANY
-        # PER-PERIOD cap must consume prior awards already granted this
-        # SAME period to this SAME company's OTHER productions, so two
-        # projects for one company cannot jointly exceed the shared
-        # ceiling. Absence of the fact means no prior-award aggregate is
-        # on file for this company this period -- the full native cap
-        # applies to this project in isolation (disclosed, never a
-        # fabricated aggregate).
+        # Codex bounded remediation (P0-NL-001): a PER-COMPANY PER-PERIOD
+        # cap must consume prior awards already granted this SAME period
+        # to this SAME company's OTHER productions, so two projects for
+        # one company cannot jointly exceed the shared ceiling -- but a
+        # missing/unknown aggregate must NEVER be treated as zero. The
+        # has_other_productions evidence flag distinguishes "no
+        # company-period interaction was ever claimed" (absent -- full
+        # native cap applies, unchanged from every other single-
+        # production project) from "interaction IS claimed but its
+        # dollar amount is unresolved" (evidenced but no evidenced,
+        # finite, in-range amount -- fail closed, never full-cap).
         if native_cap.company_period_prior_award_fact_key is not None:
-            prior_awards = (amount_facts or {}).get(native_cap.company_period_prior_award_fact_key)
-            if prior_awards is not None and prior_awards > 0:
-                remaining = max(0.0, native_cap.cap_native_amount - prior_awards)
+            evidenced = evidenced_requirement_facts or frozenset()
+            has_other_key = native_cap.company_period_has_other_productions_fact_key
+            has_other_productions = has_other_key is not None and has_other_key in evidenced
+            if has_other_productions:
+                evidenced_key = native_cap.company_period_aggregate_evidenced_fact_key
+                aggregate_evidenced = evidenced_key is not None and evidenced_key in evidenced
+                raw_prior = (amount_facts or {}).get(native_cap.company_period_prior_award_fact_key)
+                if not aggregate_evidenced or raw_prior is None:
+                    return None, None, None, None, (
+                        f"{native_cap.program_slug}: this company has other "
+                        f"{native_cap.cap_currency}-denominated productions on file for "
+                        "this award period, but the prior-awards aggregate is missing or "
+                        "not evidenced -- an unresolved company-period consumption can "
+                        "never be treated as zero (a free scalar not bound to canonical "
+                        "company or award period). Segment is disclosed but carries no "
+                        "deterministic incentive value until the aggregate is supplied "
+                        "with explicit evidence."
+                    )
+                if (not isinstance(raw_prior, (int, float)) or isinstance(raw_prior, bool)
+                        or not math.isfinite(raw_prior)):
+                    return None, None, None, None, (
+                        f"{native_cap.program_slug}: company-period prior-awards "
+                        f"aggregate {raw_prior!r} is not a finite number -- rejected "
+                        "before it could reduce the cap."
+                    )
+                if raw_prior < 0 or raw_prior > native_cap.cap_native_amount:
+                    return None, None, None, None, (
+                        f"{native_cap.program_slug}: company-period prior-awards "
+                        f"aggregate {native_cap.cap_currency} {raw_prior:,.2f} is "
+                        f"outside [0, {native_cap.cap_currency} "
+                        f"{native_cap.cap_native_amount:,.2f}] -- rejected rather than "
+                        "clamped or silently accepted."
+                    )
+                remaining = max(0.0, native_cap.cap_native_amount - raw_prior)
                 effective_cap = _dataclasses_replace(native_cap, cap_native_amount=remaining)
                 cap_basis_suffix = (
-                    f", less {native_cap.cap_currency} {prior_awards:,.0f} already granted "
-                    f"this period to this company's other productions -> {native_cap.cap_currency} "
-                    f"{remaining:,.0f} remaining"
+                    f", less {native_cap.cap_currency} {raw_prior:,.2f} already granted "
+                    "this period to this company's other productions (evidenced) -> "
+                    f"{native_cap.cap_currency} {remaining:,.2f} remaining"
                 )
         conversion, fx_resolution = convert_incentive_cap_to_usd(effective_cap, fx_context)
         if not fx_resolution.ok:
@@ -353,7 +399,7 @@ def _resolve_incentive_dollar_cap(
             # context is flagged stale_fallback). Never silently drop
             # the cap (fail-open, letting an over-cap incentive through
             # uncapped) and never let a raised exception escape.
-            return None, None, None, fx_resolution
+            return None, None, None, fx_resolution, None
         candidates.append((
             round(conversion.target_amount, 2), "per_project_native",
             f"IncentiveValueCapRule ({native_cap.cap_currency} "
@@ -362,9 +408,9 @@ def _resolve_incentive_dollar_cap(
         ))
 
     if not candidates:
-        return None, None, None, None
+        return None, None, None, None, None
     cap_usd, cap_type, basis = min(candidates, key=lambda c: c[0])
-    return cap_usd, cap_type, basis, None
+    return cap_usd, cap_type, basis, None, None
 
 
 def price_segment(
@@ -732,17 +778,63 @@ def price_segment(
 
     if rr.qpe_basis_used is not None:
         # Component-basis program (Codex final runtime remediation,
-        # us_or_opif): the selected tier's rate is gated on a caller-
-        # supplied component amount (e.g. payroll-only spend), not this
-        # segment's total QPE. build_risk_cases() has no way to re-derive
-        # a component sub-total from `register` (which only classifies
-        # QUALIFIES/EXCLUDED for the whole segment), so the incentive is
-        # computed directly against the component basis — the same
-        # qpe_usd*rate reduction the capped-QPE branch below already
-        # relies on for an identical reason (no structuring_paths/grey
-        # areas/overrides are exposed by this caller either way).
-        floor_incentive_usd = round(rr.qpe_basis_used * rr.floor_rate, 2)
-        ceiling_incentive_usd = round(rr.qpe_basis_used * rr.modeled_rate, 2)
+        # us_or_opif; Codex adverse finding P0-ZA-001, za_nfvf_rebate):
+        # the selected tier's rate is gated on a caller-supplied
+        # component amount (e.g. payroll-only spend, or ZA's post-
+        # production-only QSAPPE), not this segment's total QPE.
+        #
+        # Codex adverse finding (P0-ZA-001): the RAW caller-supplied
+        # amount_fact was multiplied directly with NO reconciliation
+        # against this segment's own real, qualifying, allocated spend --
+        # an allocation of $1 plus a supplied za_nfvf_post_qsappe_usd of
+        # $1,000,000 priced an executable $250,000 incentive out of thin
+        # air. The required invariant ("0 <= QSAPPE <= qualifying
+        # allocated post spend <= allocated/project spend") is enforced
+        # here, generically, for EVERY component-basis program (never a
+        # program-specific special case): the component basis must be a
+        # finite, non-negative number that never EXCEEDS this segment's
+        # own real qualifying QPE (`qpe`, already derived above from the
+        # real register's QUALIFIES-state lines) -- for a component-
+        # relocation segment, `qpe` already represents exactly the real,
+        # routed, qualifying spend for that component (post/vfx/other),
+        # so bounding the caller's claimed sub-total by it is the
+        # "conservatively within the canonical qualifying allocated
+        # register" fallback the spec permits when a fully independent
+        # post-specific classified register does not yet exist. A
+        # violation fails the WHOLE segment closed -- never silently
+        # clamps the basis down and prices a smaller-but-still-invented
+        # number, which would hide the caller's bad input instead of
+        # rejecting it.
+        _basis = rr.qpe_basis_used
+        if not isinstance(_basis, (int, float)) or isinstance(_basis, bool) or not math.isfinite(_basis):
+            return SegmentEconomics(
+                jurisdiction_code=jurisdiction_code, program_slug=slug,
+                claims_incentive=True, allocated_usd=allocated,
+                account_codes=codes, executable=False,
+                qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                doctrine=doctrine.value,
+                blockers=(
+                    f"{jurisdiction_code}/{slug}: component basis {_basis!r} is not a finite "
+                    "non-negative number -- rejected before arithmetic, never used to compute economics.",
+                ),
+            )
+        if _basis < 0 or _basis > qpe:
+            return SegmentEconomics(
+                jurisdiction_code=jurisdiction_code, program_slug=slug,
+                claims_incentive=True, allocated_usd=allocated,
+                account_codes=codes, executable=False,
+                qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                doctrine=doctrine.value,
+                blockers=(
+                    f"{jurisdiction_code}/{slug}: component basis ${_basis:,.2f} is outside "
+                    f"[0, qualifying allocated spend ${qpe:,.2f}] for this segment -- a claimed "
+                    "component sub-total can never exceed (or be less than zero of) the "
+                    "segment's own real qualifying spend; rejected rather than priced on an "
+                    "unreconciled scalar.",
+                ),
+            )
+        floor_incentive_usd = round(_basis * rr.floor_rate, 2)
+        ceiling_incentive_usd = round(_basis * rr.modeled_rate, 2)
     elif qpe_cap_applied > 0:
         # A QPE cap was applied above. build_risk_cases() re-derives its
         # own QPE total directly from `register`'s QUALIFIES-state
@@ -804,7 +896,26 @@ def price_segment(
     # rate so the cap can never be mistaken for a base or a rate, and to
     # BOTH the floor and ceiling figures so a capped program cannot present
     # an uncapped upside. The pre-cap amount is preserved for audit.
-    cap_usd, cap_type, cap_basis, cap_fx_error = _resolve_incentive_dollar_cap(slug, fx_context, amount_facts)
+    cap_usd, cap_type, cap_basis, cap_fx_error, cap_unresolved_detail = _resolve_incentive_dollar_cap(
+        slug, fx_context, amount_facts, evidenced_requirement_facts,
+    )
+    if cap_unresolved_detail is not None:
+        # Codex bounded remediation (P0-NL-001): a company-period
+        # prior-awards aggregate is claimed (has_other_productions is
+        # evidenced) but could not be resolved to a trustworthy amount.
+        # Fail closed -- disclosed, non-priceable -- exactly like an
+        # unsafe FX resolution below. Never silently substitute the full
+        # native cap (that would hand out an unverified ceiling).
+        return SegmentEconomics(
+            jurisdiction_code=jurisdiction_code, program_slug=slug,
+            claims_incentive=True, allocated_usd=allocated,
+            account_codes=codes, executable=False,
+            qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+            doctrine=doctrine.value,
+            qpe_cap_applied_usd=qpe_cap_applied,
+            rate_ceiling=rr.modeled_rate, statutory_basis=rr.basis,
+            blockers=(cap_unresolved_detail,),
+        )
     if cap_fx_error is not None:
         # Codex final P0 (canonical_fx): a native-currency cap exists for
         # this program but its FX conversion could not be safely

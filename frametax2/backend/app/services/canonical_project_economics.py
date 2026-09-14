@@ -39,6 +39,7 @@ returns None with a stated reason, never a partially-guessed input set.
 from __future__ import annotations
 
 import json
+import math
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -279,7 +280,17 @@ def _amount_facts(rows: list[ProjectFact]) -> dict[str, float]:
     """Codex final runtime remediation — every fact_id whose ProjectFact
     row is `f"{FACT_AMOUNT_FACT_PREFIX}{fact_key_name}"` with a parseable
     numeric value. An unparseable value is dropped (a genuine missing
-    fact), never coerced to 0."""
+    fact), never coerced to 0.
+
+    Codex adverse finding (P0-FX-001/P0-TX-001): Python's `float()`
+    happily parses the literal strings "nan", "inf", "-inf", "Infinity"
+    into real NaN/+-infinity values — a corrupted or malicious persisted
+    string would silently become a non-finite fact that then flows into
+    real arithmetic (a native-currency threshold, an awarded rate, a
+    QSAPPE basis). `math.isfinite()` rejects all three explicitly here,
+    at the ONE place every generic amount-fact is parsed from storage —
+    a non-finite persisted value is dropped exactly like an unparseable
+    one (a genuine missing fact), never coerced to 0 or silently kept."""
     out: dict[str, float] = {}
     for row in rows:
         if not row.fact_key.startswith(FACT_AMOUNT_FACT_PREFIX):
@@ -287,9 +298,12 @@ def _amount_facts(rows: list[ProjectFact]) -> dict[str, float]:
         if row.value in (None, ""):
             continue
         try:
-            out[row.fact_key[len(FACT_AMOUNT_FACT_PREFIX):]] = float(row.value)
+            parsed = float(row.value)
         except (TypeError, ValueError):
             continue
+        if not math.isfinite(parsed):
+            continue
+        out[row.fact_key[len(FACT_AMOUNT_FACT_PREFIX):]] = parsed
     return out
 
 

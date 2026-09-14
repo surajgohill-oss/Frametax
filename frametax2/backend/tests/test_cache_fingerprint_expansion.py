@@ -54,6 +54,39 @@ def test_script_facts_changes_fingerprint():
     assert len({a, b, c}) == 3
 
 
+def test_fx_context_digest_changes_fingerprint_even_on_the_same_date():
+    """Codex bounded remediation (P0-FX-001, CROSSCHECK "FX-cache-identity"):
+    two CanonicalFXContext objects sharing the SAME snapshot_date but
+    differing in rate, source, or freshness_status are calculation-driving
+    differences -- the prior implementation hashed only snapshot_date,
+    so a same-day rate correction (or a fresh-vs-stale_fallback
+    disposition change) could silently reuse a stale cached evaluation.
+    _compute_fingerprint() must now hash a full digest of every
+    calculation-driving FX field, not the date alone."""
+    from app.calculators.apply_fx_rates import CanonicalFXContext
+
+    ctx_a = CanonicalFXContext(
+        snapshot_date="2026-07-13", rates={"EUR": 0.85}, source="source1", freshness_status="fresh",
+    )
+    ctx_b = CanonicalFXContext(
+        snapshot_date="2026-07-13", rates={"EUR": 0.95}, source="source2", freshness_status="stale_fallback",
+    )
+    fp_a = _compute_fingerprint(_inputs(fx_context=ctx_a))
+    fp_b = _compute_fingerprint(_inputs(fx_context=ctx_b))
+    assert fp_a != fp_b, (
+        "same-date FX contexts differing in rate/source/freshness must never collide -- a "
+        "cached evaluation from one must never be silently served for the other"
+    )
+
+    # Regression: an identical context (same date, rate, source, freshness)
+    # must still produce the SAME fingerprint -- the digest is deterministic,
+    # not merely "always different."
+    ctx_a_again = CanonicalFXContext(
+        snapshot_date="2026-07-13", rates={"EUR": 0.85}, source="source1", freshness_status="fresh",
+    )
+    assert _compute_fingerprint(_inputs(fx_context=ctx_a)) == _compute_fingerprint(_inputs(fx_context=ctx_a_again))
+
+
 def test_coproduction_facts_changes_fingerprint():
     a = _compute_fingerprint(_inputs(), coproduction_facts=(None, None, None))
     b = _compute_fingerprint(_inputs(), coproduction_facts=(60.0, 40.0, None))

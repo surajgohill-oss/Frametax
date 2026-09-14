@@ -780,13 +780,25 @@ def _compute_fingerprint(
         # the pre-change persisted structures forever.
         "evidenced_program_facts": sorted(inputs.evidenced_program_facts),
         "amount_facts": sorted(inputs.amount_facts.items()),
-        # Codex final P0 (canonical_fx) — a change to the project-selected
-        # FX snapshot date (e.g. a live refresh moving FX_LIVE_SNAPSHOT_
-        # DATE forward) must invalidate any stale cached evaluation row,
-        # same reasoning as evidenced_program_facts/amount_facts directly
-        # above — a native-currency threshold/cap resolved under an older
-        # snapshot must not silently keep serving the pre-refresh figures.
-        "fx_snapshot_date": inputs.fx_context.snapshot_date if inputs.fx_context is not None else None,
+        # Codex adverse finding (P0-FX-001): hashing ONLY fx_snapshot_date
+        # let two contexts sharing a date but differing in rates, source,
+        # or freshness_status (e.g. a same-day live-refresh CORRECTION, or
+        # a fresh-versus-stale_fallback flip with no date change) collide
+        # on the identical fingerprint and silently reuse a stale cached
+        # row. The full, deterministic digest below covers every
+        # calculation-driving field of the context: the complete
+        # normalized rate mapping (sorted, so key order never affects the
+        # hash), source, freshness_status, and snapshot_date. Any change
+        # to ANY of these must produce a different fingerprint.
+        "fx_context_digest": (
+            hashlib.sha256(json.dumps({
+                "snapshot_date": inputs.fx_context.snapshot_date,
+                "rates": sorted(inputs.fx_context.rates.items()),
+                "source": inputs.fx_context.source,
+                "freshness_status": inputs.fx_context.freshness_status,
+            }, sort_keys=True).encode("utf-8")).hexdigest()
+            if inputs.fx_context is not None else None
+        ),
         # Batched producer-control closeout (2026-09-03) -- a change to
         # which jurisdictions this PROJECT elects to exclude from its own
         # candidate universe must invalidate any stale cached evaluation

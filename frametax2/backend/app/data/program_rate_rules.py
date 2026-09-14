@@ -34,6 +34,7 @@ of Commerce and Industry's Film Rebate Scheme page (mcci.org).
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field, replace
 
 # B4 central authority-exhaustion gate (Codex bounded remediation). Safe at
@@ -1570,6 +1571,33 @@ class IncentiveValueCapRule:
     # purely per-project — unaffected by this mechanism.
     company_period_prior_award_fact_key: str | None = None
 
+    # Codex bounded remediation (P0-NL-001): "A Netherlands prior-award
+    # aggregate is usable only when bound to explicit canonical company
+    # identity and award period, with an evidence state. Missing/unknown
+    # aggregate must never mean zero." Two boolean facts (checked against
+    # the caller's evidenced_requirement_facts, same mechanism as Malta's
+    # superseded_by_boolean_fact_key) gate the amount fact above:
+    #
+    #   company_period_has_other_productions_fact_key -- evidenced only
+    #   when this SAME company genuinely has other productions under this
+    #   SAME program this SAME award period. Absent (the common/default
+    #   case) means no company-period interaction was ever claimed --
+    #   the full native cap applies, exactly as before this mechanism
+    #   existed. This is NOT "unknown"; it is an affirmative "does not
+    #   apply here."
+    #
+    #   company_period_aggregate_evidenced_fact_key -- required in
+    #   addition to the amount fact whenever has_other_productions IS
+    #   evidenced. A raw numeric aggregate present without this evidence
+    #   flag is "a free scalar not bound to canonical company or award
+    #   period" (Codex's exact finding) and must never be trusted. When
+    #   has_other_productions is evidenced but this flag (or the amount
+    #   fact itself) is missing, the aggregate is genuinely unresolved
+    #   and the segment must fail closed -- conditional/non-priceable --
+    #   never silently treated as a EUR0 aggregate.
+    company_period_has_other_productions_fact_key: str | None = None
+    company_period_aggregate_evidenced_fact_key: str | None = None
+
 
 INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
     "cz_film_incentive": IncentiveValueCapRule(
@@ -1624,6 +1652,8 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
         # for THIS project, so two projects for one company cannot
         # jointly exceed the shared EUR 3,000,000 ceiling.
         company_period_prior_award_fact_key="nl_nfpi_company_period_prior_awards_eur",
+        company_period_has_other_productions_fact_key="nl_nfpi_company_period_has_other_productions",
+        company_period_aggregate_evidenced_fact_key="nl_nfpi_company_period_aggregate_evidenced",
     ),
 }
 
@@ -1914,6 +1944,19 @@ def resolve_program_rate(
     _awarded_rate_condition: "ConditionEvaluation | None" = None
     if tier.awarded_rate_fact_key is not None:
         _raw_awarded = (amount_facts or {}).get(tier.awarded_rate_fact_key)
+        # Codex adverse finding (P0-TX-001): the ORIGINAL range check used
+        # plain `<`/`>` comparisons, which have two distinct defects.
+        # (1) NaN fails EVERY comparison (`NaN < min` and `NaN > max` are
+        # both False), so a NaN award silently fell through to the "in
+        # range" branch and was multiplied directly into a NaN incentive.
+        # (2) `awarded_rate_min` was compared with `<` (inclusive), so a
+        # rate of EXACTLY 0 passed -- "0 < rate <= 0.31" requires 0 itself
+        # to be REJECTED (strictly greater than zero), not merely
+        # excluded below zero. `math.isfinite()` is checked FIRST, before
+        # any range comparison; the lower bound then uses `<=` against
+        # `awarded_rate_min` (an EXCLUSIVE floor) while the upper bound
+        # keeps `>` against `awarded_rate_max` (an INCLUSIVE ceiling) —
+        # matching the exact authorized range `(min, max]`.
         if _raw_awarded is None:
             _awarded_rate_condition = ConditionEvaluation(
                 f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
@@ -1923,15 +1966,24 @@ def resolve_program_rate(
                       "production-specific awarded rate."),
                 condition_state=CONDITION_STATE_USER_FACT_REQUIRED,
             )
+        elif not isinstance(_raw_awarded, (int, float)) or isinstance(_raw_awarded, bool) or not math.isfinite(_raw_awarded):
+            _awarded_rate_condition = ConditionEvaluation(
+                f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
+                "", kind="awarded_rate_fact", satisfied=False,
+                note=(f"'{tier.awarded_rate_fact_key}' = {_raw_awarded!r} is not a finite number "
+                      "(NaN/+inf/-inf/non-numeric) — a malformed awarded rate/tier must reject, "
+                      "never be multiplied into a corrupted incentive."),
+                condition_state=CONDITION_STATE_EXECUTABLE,
+            )
         elif (
-            (tier.awarded_rate_min is not None and _raw_awarded < tier.awarded_rate_min)
+            (tier.awarded_rate_min is not None and _raw_awarded <= tier.awarded_rate_min)
             or (tier.awarded_rate_max is not None and _raw_awarded > tier.awarded_rate_max)
         ):
             _awarded_rate_condition = ConditionEvaluation(
                 f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
                 "", kind="awarded_rate_fact", satisfied=False,
                 note=(f"'{tier.awarded_rate_fact_key}' = {_raw_awarded:.4f} is outside the "
-                      f"authorized range [{tier.awarded_rate_min}, {tier.awarded_rate_max}] "
+                      f"authorized range ({tier.awarded_rate_min}, {tier.awarded_rate_max}] "
                       "— a malformed or out-of-range awarded rate/tier must reject, never "
                       "clamp to the ceiling or silently accept."),
                 condition_state=CONDITION_STATE_EXECUTABLE,
@@ -1942,7 +1994,7 @@ def resolve_program_rate(
                 f"{tier.tier_id}-awarded-rate", "Exact awarded rate/tier for this production",
                 "", kind="awarded_rate_fact", satisfied=True,
                 note=(f"'{tier.awarded_rate_fact_key}' = {_raw_awarded:.4f} is within the "
-                      f"authorized range [{tier.awarded_rate_min}, {tier.awarded_rate_max}] — "
+                      f"authorized range ({tier.awarded_rate_min}, {tier.awarded_rate_max}] — "
                       "this production's own awarded rate, not the program's authorized ceiling."),
                 condition_state=CONDITION_STATE_EXECUTABLE,
             )

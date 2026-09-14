@@ -7,8 +7,11 @@ Live fetch populates the table; calculations use snapshots.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from decimal import Decimal
+from types import MappingProxyType
+from typing import Mapping
 
 ENGINE_VERSION = "0.1.0"
 
@@ -127,18 +130,53 @@ def convert_usd_to_local(
 FX_STATUS_RESOLVED = "RESOLVED"
 FX_STATUS_MISSING = "MISSING_RATE"
 FX_STATUS_NONPOSITIVE = "NONPOSITIVE_RATE"
+FX_STATUS_NONFINITE = "NONFINITE_RATE"
 FX_STATUS_STALE_UNACCEPTED = "STALE_UNACCEPTED_SNAPSHOT"
+
+
+def _is_finite_positive(value) -> bool:
+    """True only for a real, finite, strictly-positive number. Rejects
+    None, NaN, +inf, -inf, and any non-numeric type -- the single shared
+    predicate every calculation-driving numeric input (an FX rate, an
+    awarded rate, a QSAPPE amount, a prior-award aggregate) must satisfy
+    before it may participate in arithmetic. `bool` is explicitly
+    excluded even though `isinstance(True, int)` is true in Python --
+    a boolean fact was never meant to be read as a numeric rate/amount."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    value = float(value)
+    return math.isfinite(value) and value > 0.0
+
+
+def _is_finite(value) -> bool:
+    """True only for a real, finite number (may be zero or negative) --
+    used where the domain itself decides whether zero/negative is a
+    valid or invalid value, after this shared finiteness gate."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    return math.isfinite(float(value))
 
 
 @dataclass(frozen=True)
 class CanonicalFXContext:
-    """One immutable, explicit FX snapshot selected for a single canonical
-    evaluation (or, for a caller not yet threading a project-level
-    context, for a single call) — see production_normalization.
+    """One DEEPLY immutable, explicit FX snapshot selected for a single
+    canonical evaluation (or, for a caller not yet threading a project-
+    level context, for a single call) — see production_normalization.
     build_fx_context(), the ONE place this reads the live mutable global,
-    exactly once, into this frozen value."""
+    exactly once, into this frozen value.
+
+    Codex adverse finding (P0-FX-001): a `@dataclass(frozen=True)`
+    wrapper only blocks REASSIGNING the `rates` attribute
+    (`ctx.rates = {...}` raises) — it does nothing to stop MUTATING the
+    dict `rates` already points at (`ctx.rates["EUR"] = 9.99` silently
+    succeeds against a plain `dict`). `__post_init__` below coerces
+    whatever mapping is supplied into a `types.MappingProxyType` wrapping
+    a fresh, defensively-copied `dict` — a read-only VIEW that raises
+    `TypeError` on any item assignment/deletion, and one no caller can
+    ever get a mutable handle back to (the proxy is the only thing
+    stored; the original dict is never retained)."""
     snapshot_date: str
-    rates: dict[str, float]   # currency -> local units per USD; a frozen COPY
+    rates: "Mapping[str, float]"   # currency -> local units per USD; a deeply frozen VIEW
     source: str
     #: "fresh" | "stale_fallback" | "never_refreshed" — see
     #: production_normalization.FX_FRESHNESS_STATUS. A HISTORICAL
@@ -146,6 +184,13 @@ class CanonicalFXContext:
     #: is a property of the LIVE refresh pipeline having failed, not of a
     #: deliberately-chosen historical date.
     freshness_status: str = "never_refreshed"
+
+    def __post_init__(self) -> None:
+        # object.__setattr__ is required here specifically BECAUSE the
+        # dataclass is frozen -- this is the one sanctioned place a
+        # frozen dataclass may still initialize/normalize its own
+        # fields, never a general mutation escape hatch.
+        object.__setattr__(self, "rates", MappingProxyType(dict(self.rates)))
 
 
 @dataclass(frozen=True)
@@ -198,6 +243,24 @@ def resolve_fx_rate(context: CanonicalFXContext, currency: str) -> FXRateResolut
             status=FX_STATUS_MISSING, currency=currency, rate=None,
             snapshot_date=context.snapshot_date, source=context.source,
             detail=f"No sourced FX rate for {currency} in the {context.snapshot_date} snapshot.",
+        )
+    # Codex adverse finding (P0-FX-001): the prior check was `rate <= 0`
+    # only — NaN and +infinity both fail EVERY comparison against 0
+    # (`float('nan') <= 0` is False, `float('inf') <= 0` is False), so
+    # both silently fell through to RESOLVED and were then used in real
+    # division/multiplication, producing NaN/infinite economics. Checking
+    # `math.isfinite()` FIRST, before any sign check, closes this: NaN,
+    # +inf, and -inf are all rejected as NONFINITE_RATE before a
+    # NONPOSITIVE_RATE check is even reached.
+    if not math.isfinite(rate):
+        return FXRateResolution(
+            status=FX_STATUS_NONFINITE, currency=currency, rate=rate,
+            snapshot_date=context.snapshot_date, source=context.source,
+            detail=(
+                f"Rate for {currency} on {context.snapshot_date} is not finite "
+                f"({rate}) — NaN/+inf/-inf is corrupted/invalid data, never used "
+                "to compute economics."
+            ),
         )
     if rate <= 0:
         return FXRateResolution(

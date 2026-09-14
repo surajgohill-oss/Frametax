@@ -148,6 +148,84 @@ def test_never_refreshed_context_is_accepted():
     assert result.target_amount == pytest.approx(100.0, abs=0.001)
 
 
+# ── Deep immutability and non-finite rates (Codex bounded remediation,
+# P0-FX-001, CROSSCHECK "FX-immutability" / "FX-NaN" / "FX-positive-infinity") ─
+
+def test_context_rates_mapping_rejects_item_mutation():
+    """A `@dataclass(frozen=True)` only blocks REASSIGNING the `rates`
+    attribute -- `ctx.rates["EUR"] = 9.99` against a plain dict silently
+    succeeds. `__post_init__` wraps `rates` in a `MappingProxyType` view
+    over a defensively-copied dict, so any item assignment/deletion must
+    raise `TypeError` instead of silently corrupting a shared context."""
+    from app.calculators.apply_fx_rates import CanonicalFXContext
+
+    ctx = CanonicalFXContext(snapshot_date="2026-07-13", rates={"EUR": 0.85}, source="test", freshness_status="fresh")
+    assert ctx.rates["EUR"] == 0.85
+
+    with pytest.raises(TypeError):
+        ctx.rates["EUR"] = 9.99
+    assert ctx.rates["EUR"] == 0.85, "a rejected mutation attempt must never partially apply"
+
+    with pytest.raises(TypeError):
+        del ctx.rates["EUR"]
+    assert ctx.rates["EUR"] == 0.85
+
+    # The original dict passed in must never be retained as a live handle
+    # a caller could mutate to leak into the context after the fact.
+    source_dict = {"CZK": 21.238}
+    ctx2 = CanonicalFXContext(snapshot_date="2026-07-13", rates=source_dict, source="test", freshness_status="fresh")
+    source_dict["CZK"] = 999.0
+    assert ctx2.rates["CZK"] == 21.238, "mutating the ORIGINAL dict after construction must never leak in"
+
+
+def test_resolve_fx_rate_rejects_nan():
+    from app.calculators.apply_fx_rates import CanonicalFXContext, FX_STATUS_NONFINITE, resolve_fx_rate
+
+    ctx = CanonicalFXContext(snapshot_date="2026-07-13", rates={"EUR": float("nan")}, source="test", freshness_status="fresh")
+    res = resolve_fx_rate(ctx, "EUR")
+    assert res.status == FX_STATUS_NONFINITE, (
+        "a NaN rate must resolve to a typed NONFINITE_RATE disposition -- NaN silently fails "
+        "every ordinary <, >, <=, >= comparison, so a naive `rate <= 0` guard alone would let "
+        "it through as if RESOLVED"
+    )
+    assert not res.ok
+
+
+def test_resolve_fx_rate_rejects_positive_and_negative_infinity():
+    from app.calculators.apply_fx_rates import CanonicalFXContext, FX_STATUS_NONFINITE, resolve_fx_rate
+
+    ctx_pos = CanonicalFXContext(snapshot_date="2026-07-13", rates={"EUR": float("inf")}, source="test", freshness_status="fresh")
+    res_pos = resolve_fx_rate(ctx_pos, "EUR")
+    assert res_pos.status == FX_STATUS_NONFINITE
+    assert not res_pos.ok
+
+    ctx_neg = CanonicalFXContext(snapshot_date="2026-07-13", rates={"EUR": float("-inf")}, source="test", freshness_status="fresh")
+    res_neg = resolve_fx_rate(ctx_neg, "EUR")
+    assert res_neg.status == FX_STATUS_NONFINITE
+    assert not res_neg.ok
+
+
+def test_incentive_cap_nan_rate_fails_closed_not_priceable():
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+    from app.calculators.apply_fx_rates import CanonicalFXContext
+
+    ctx_nan = CanonicalFXContext(snapshot_date="test", rates={"ZAR": float("nan")}, source="test", freshness_status="fresh")
+    alloc = AccountAllocation(
+        account_code="2000", description="spend", amount_usd=2_000_000.0, component="production",
+        jurisdiction_code="XX", assignment_kind=AssignmentKind.FIXED,
+        rationale="FX NaN-rate fail-closed probe", governing_decision="codex-bounded-remediation-p0-fx-001",
+    )
+    seg = price_segment(
+        jurisdiction_code="XX", program_slug="za_nfvf_rebate", allocations=[alloc],
+        spend_category_by_code={"2000": "production"}, offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=2_000_000.0, fx_context=ctx_nan,
+        evidenced_requirement_facts=frozenset({"za_nfvf_accepted_production_confirmed"}),
+    )
+    assert seg.executable is False, "a NaN FX rate must never silently produce a comparable/priceable cap"
+    assert seg.blockers and "NONFINITE_RATE" in seg.blockers[0]
+
+
 # ── Two dated snapshots — explicit, never a global mutation side-channel ─
 
 def test_two_dated_snapshots_produce_independently_correct_results():
