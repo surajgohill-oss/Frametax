@@ -1,0 +1,15 @@
+project,change_type,candidate_label,before_status,after_status,program_id,reason,verdict
+The Little Utopia,REMOVED,"Mauritius anchor — post routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+The Little Utopia,REMOVED,"Mauritius anchor — vfx routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+The Little Utopia,TRANSITION,"Full relocation to Thailand",PRICED,RULE_REJECTED,th_film_incentive,"preapproval/native THB facts absent",PASS
+F#K Valentine's Day,REMOVED,"Greece anchor — music routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+F#K Valentine's Day,REMOVED,"Greece anchor — post routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+F#K Valentine's Day,REMOVED,"Greece anchor — vfx routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+F#K Valentine's Day,TRANSITION,"Full relocation to Thailand",PRICED,RULE_REJECTED,th_film_incentive,"preapproval/native THB facts absent",PASS
+Bad Hombres,REMOVED,"New Mexico anchor — music routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+Bad Hombres,REMOVED,"New Mexico anchor — post routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+Bad Hombres,TRANSITION,"Full relocation to Thailand",PRICED,RULE_REJECTED,th_film_incentive,"preapproval/native THB facts absent",PASS
+Lips Like Sugar,REMOVED,"California anchor — music routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+Lips Like Sugar,REMOVED,"California anchor — post routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+Lips Like Sugar,REMOVED,"California anchor — vfx routed to Thailand (component/split rejected)",RULE_REJECTED,ABSENT,th_film_incentive,"Thailand no longer a priceable component-routing target without facts",PASS
+Lips Like Sugar,TRANSITION,"Full relocation to Thailand",PRICED,RULE_REJECTED,th_film_incentive,"preapproval/native THB facts absent",PASS

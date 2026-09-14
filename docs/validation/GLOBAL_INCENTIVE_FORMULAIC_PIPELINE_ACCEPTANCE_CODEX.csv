@@ -1,0 +1,13 @@
+canonical_program_id,canonical_discovery,project_facts,threshold_fx_rate_qpe_cap,candidate_construction,optimizer_comparison,canonical_output,verdict,blocking_finding
+ae_dpip,"Dubai and Abu Dhabi identities distinguished",None,"Dubai authority-exhausted; no accepted economic chain",Dubai unavailable,No Dubai comparison,Abu Dhabi distinct and Dubai fail-closed,FAIL,"Identity check is not a formulaic Dubai economic pipeline"
+au_location_offset,PASS,au_location_qape_aud,"AUD20m boundary; 30% QAPE",PASS,PASS,PASS,PASS,None
+cz_film_incentive,PASS,production type,"80% budget QPE cap; CZK450m native cap converted to USD",PASS,PASS,PASS,FAIL,"Cap FX has unsafe missing/zero/negative states and no project-selected snapshot"
+fr_trip,PASS,fr_trip_vfx_spend_eur,"EUR2m native VFX threshold; 30%/40%",PASS,PASS,PASS,PASS,None
+is_film_reimbursement_scheme,PASS,"spend/days/staffing facts","25%/35% conjunction",PASS,PASS,PASS,PASS,None
+ma_ccm_rebate,PASS,"MAD spend; numeric days; approval/fund","MAD10m; 18 days; 30%",PASS,PASS,PASS,PASS,None
+mt_mfc_rebate,PASS,certificate,"EUR50k via global live FX; 30%/up-to-40%",PASS,PASS,PASS,FAIL,"FX disposition/snapshot gate fails and certificate alone does not carry awarded 40% economics"
+nl_film_production_incentive,PASS,"points/independence; format","35%; EUR3m company-year cap via global live FX",PASS,PASS,PASS,FAIL,"Unsafe FX and no company-year aggregate consumption"
+th_film_incentive,PASS,"preapproval; native THB spend","15/20/25% tiers; +5% discretionary",PASS,PASS,PASS,FAIL,"Exactly THB150m receives the above-150m tier"
+us_or_opif,PASS,component amount facts,"20% payroll; 25% other; authority veto",NOT_CONSTRUCTED,NOT_COMPARED,BLOCKED,FAIL,"Required real-slug optimizer consumption does not exist"
+us_tx_miip,PASS,"award; crew/cast percentages; pool period","modeled fixed 31% ceiling",PASS,PASS,PASS,FAIL,"No awarded rate/tier fact; qualifying facts always price maximum 31%"
+za_nfvf_rebate,PASS,"accepted production or post-only boolean","25%/conditional ceiling; ZAR25m cap",PASS,PASS,PASS,FAIL,"Post-only still uses broad production allocation; unsafe cap FX"

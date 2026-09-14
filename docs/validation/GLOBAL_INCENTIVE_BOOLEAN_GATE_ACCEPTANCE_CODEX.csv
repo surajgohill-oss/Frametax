@@ -1,0 +1,9 @@
+case,input_path,measured_semantics,priceability,verdict
+true,"canonical ProjectFact value true/1/yes","fact key enters evidenced frozenset; ConditionEvaluation.satisfied=True",PRICEABLE_IF_ALL_OTHER_GATES_TRUE,PASS
+false,"canonical ProjectFact value false/0","fact key omitted; ConditionEvaluation.satisfied=None",NON_PRICEABLE,PASS
+none,"no evidenced key","ConditionEvaluation.satisfied=None",NON_PRICEABLE,PASS
+missing_fact,"no row","ConditionEvaluation.satisfied=None",NON_PRICEABLE,PASS
+malformed_fact,"value outside true/1/yes","fact key omitted; treated unknown",NON_PRICEABLE,PASS
+contradictory_facts,"same project and fact_key","database UniqueConstraint(project_id fact_key) prevents two canonical rows; direct frozenset cannot represent both true and false",NON_PRICEABLE_OR_SCHEMA_REJECT,PASS
+explicit_numeric_false,"gates_tier_eligibility=False condition evaluates satisfied=False","floorless-ceiling guard uses satisfied is not True",NON_PRICEABLE,PASS
+overall,"all cases","False and unknown cannot slip through; canonical contradiction is structurally impossible",SAFE,PASS
