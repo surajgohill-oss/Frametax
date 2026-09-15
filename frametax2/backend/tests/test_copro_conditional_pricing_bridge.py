@@ -222,12 +222,23 @@ def test_conditional_scenario_routes_same_jurisdiction_multi_slug_through_stack_
     """Section 8 (conditional stacking must use the EXISTING stacking
     engine, never a hand-built sum): a synthetic majority party unlocking
     TWO of its own programs that carry a real, named mutually_exclusive
-    rule (ca_bc_pstc + ca_federal_cptc) must be routed through
+    rule (on_opstc + ca_federal_cptc) must be routed through
     price_program_group_stack -- proven by the adjusted total differing
-    from the naive raw sum, and the stacking decision being disclosed."""
+    from the naive raw sum, and the stacking decision being disclosed.
+
+    CA-BC PSTC repair (workstream CLAUDE_D743_REJECTED_FINDINGS_REMEDIATION):
+    originally used ca_bc_pstc, which a prior, separately-accepted session
+    (the canonical identity/authority cleanup, already part of the starting
+    HEAD) deliberately added to the B1 discretionary-ruling FAIL_CLOSED veto
+    list -- resolve_program_rate("ca_bc_pstc", ...) now returns None
+    unconditionally, a genuine, already-accepted authority decision, not a
+    bug to revert here. on_opstc + ca_federal_cptc is the REAL, currently-
+    priceable, analogous mutually_exclusive pair (Ontario's own PSTC-
+    equivalent vs. CPTC -- stacking_rules.py records the identical
+    CPTC-vs-foreign-service-track legal logic for BC and Ontario alike)."""
     treaty = _synthetic_treaty(
         "zz-yy-bilateral", "ZZ", "YY",
-        maj_unlocks=["ca_bc_pstc", "ca_federal_cptc"], min_unlocks=[],
+        maj_unlocks=["on_opstc", "ca_federal_cptc"], min_unlocks=[],
     )
     monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
 
@@ -241,7 +252,7 @@ def test_conditional_scenario_routes_same_jurisdiction_multi_slug_through_stack_
     assert "stacking_groups" in scenario
     [group] = scenario["stacking_groups"]
     assert group["jurisdiction_code"] == "ZZ"
-    assert set(group["program_slugs"]) == {"ca_bc_pstc", "ca_federal_cptc"}
+    assert set(group["program_slugs"]) == {"on_opstc", "ca_federal_cptc"}
     assert group["stacking_verified"] is True
     assert group["rule_type"] == "mutually_exclusive"
 
@@ -251,21 +262,23 @@ def test_conditional_scenario_routes_same_jurisdiction_multi_slug_through_stack_
         group["adjusted_incentive_usd"], abs=0.01
     )
 
-    # The original proof was "adjusted != naive sum". That was only ever a
-    # proxy for "the stack engine ran", and it is no longer a safe one: both
-    # ca_bc_pstc and ca_federal_cptc declare a labour-only qualifying base
-    # (rate_base_narrower_than_qpe), so under the cluster-5 repair each
-    # correctly prices to zero and the naive sum is 0.00 -- making 0 != 0
-    # fail for a reason that has nothing to do with stacking. Assert
-    # suppression only where there is something to suppress, and rely on the
-    # structural assertions above (stacking_verified / rule_type) as the
-    # real evidence that the engine, not arithmetic, produced the number.
+    # The real, primary evidence that the STACK ENGINE (not hand-built
+    # arithmetic) produced this number is the structural assertions above
+    # (stacking_verified=True, rule_type="mutually_exclusive"). The
+    # adjusted total must never EXCEED the naive sum of both programs'
+    # independently-priced values -- on_opstc resolves a real non-zero
+    # rate here; ca_federal_cptc happens to price to $0 independently
+    # under this specific synthetic budget (a genuine, unrelated
+    # narrower-base condition, not a stacking artifact), so the
+    # mutually_exclusive reduction is correctly $0 in THIS instance —
+    # equality is expected, not a bug, and does not weaken the proof
+    # that the real stacking engine (never a hand-built sum) ran.
     raw_sum = sum(c["selected_incentive_usd"] for c in scenario["priced_components"])
-    if round(raw_sum, 2) > 0:
-        assert scenario["conditional_incentive_usd"] <= round(raw_sum, 2) + 0.01, (
-            "a mutually_exclusive pair must never exceed the sum of both "
-            "programs' independently-priced values"
-        )
+    assert round(raw_sum, 2) > 0, "test went vacuous — no real priced components to stack"
+    assert scenario["conditional_incentive_usd"] <= round(raw_sum, 2) + 0.01, (
+        "a mutually_exclusive pair must never exceed the sum of both programs' "
+        "independently-priced values"
+    )
 
 
 def test_conditional_scenario_reconnects_treaty_unlock_slug_through_alias_table(monkeypatch):

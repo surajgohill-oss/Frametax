@@ -1361,7 +1361,30 @@ def _treaty_requirements(
         return [], None
 
     blockers: list[str] = []
-    codes = tuple(sorted(spec.participants))
+    # Codex global optimizer audit, P0-COMB-001 remediation: a "hybrid"
+    # structure combines a real co-production leg with a routed-
+    # component leg (canonical_evaluation._price_combined_coproduction_
+    # component_candidate) — the component's target jurisdiction is
+    # WHERE spend is relocated to, never a co-production treaty party.
+    # Requiring a registered bilateral treaty for every PAIR among ALL
+    # participants (the prior, unconditional behavior) demanded a treaty
+    # between the component target and each co-production party, which
+    # can never exist for a genuine relocation and made every real hybrid
+    # structure unpriceable regardless of how real the underlying
+    # co-production treaty was. Only participants who receive their
+    # allocated spend through an explicit co-production account_splits
+    # entry are genuinely CLAIMING treaty/co-production status; a
+    # participant reachable only via component_routes is priced
+    # independently (exactly like an ordinary component_relocation
+    # target, which this same gate never applied to). Falls back to
+    # every participant, byte-identical to the prior behavior, whenever
+    # account_splits is empty (every other gated structure_type -- none
+    # of which any caller in this codebase currently constructs).
+    _treaty_participants = (
+        {j for portions in spec.account_splits.values() for j in portions} | {spec.primary_jurisdiction}
+        if spec.account_splits else set(spec.participants)
+    )
+    codes = tuple(sorted(_treaty_participants))
     treaty_slug: str | None = None
 
     pairs = [(a, b) for i, a in enumerate(codes) for b in codes[i + 1:]]

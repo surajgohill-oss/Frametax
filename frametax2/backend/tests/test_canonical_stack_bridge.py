@@ -53,14 +53,27 @@ def test_load_named_pair_rule_unknown_pair_returns_none_never_default_allowed():
 
 
 def test_price_program_pair_stack_mutually_exclusive_zeroes_lower_value():
-    a = StackCandidate("ca_federal_cptc", "CA-BC", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
-    b = StackCandidate("ca_bc_pstc", "CA-BC", 330_000.0, 0.33, 1_000_000.0, "tax_credit")
+    # CA-BC PSTC repair (workstream CLAUDE_D743_REJECTED_FINDINGS_REMEDIATION):
+    # this test originally used ca_bc_pstc, which a prior, separately-accepted
+    # session (the canonical identity/authority cleanup, already part of the
+    # starting HEAD) deliberately added to the B1 discretionary-ruling
+    # FAIL_CLOSED veto list -- resolve_program_rate("ca_bc_pstc", ...) now
+    # returns None unconditionally via economic_block_for_program's own B4
+    # gate, a genuine, already-accepted authority decision, not a bug to
+    # revert here. on_opstc + ca_federal_cptc is the REAL, currently-
+    # priceable, analogous mutually_exclusive pair (Ontario's own PSTC-
+    # equivalent vs. CPTC -- the SAME CPTC-vs-foreign-service-track legal
+    # logic stacking_rules.py records for BC, just for Ontario instead),
+    # confirmed to exercise the identical rule_type/zeroing behavior this
+    # test was written to prove.
+    a = StackCandidate("ca_federal_cptc", "CA-ON", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
+    b = StackCandidate("on_opstc", "CA-ON", 330_000.0, 0.33, 1_000_000.0, "tax_credit")
     result = price_program_pair_stack(a, b)
     assert result is not None
     assert result.rule_type == "mutually_exclusive"
-    assert result.per_program_adjusted_usd == {"ca_federal_cptc": 0.0, "ca_bc_pstc": 330_000.0}
+    assert result.per_program_adjusted_usd == {"ca_federal_cptc": 0.0, "on_opstc": 330_000.0}
     assert result.adjusted_incentive_usd == 330_000.0
-    assert result.jurisdiction_code == "CA-BC"
+    assert result.jurisdiction_code == "CA-ON"
     assert result.disclosed_limitations == []
 
 

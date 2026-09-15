@@ -144,6 +144,18 @@ class StackCandidate:
     effective_rate: float
     qualifying_spend_usd: float
     incentive_type: str          # DoctrineRecord.incentive_type
+    # Codex global optimizer audit, P1-TRACE-001 remediation: the exact
+    # set of real BudgetLine.line_id identities this program's own
+    # qualification register marked QUALIFIES. Threading true line
+    # identity through (not the account_code classification field, which
+    # a real budget may legitimately reuse across distinct lines) is what
+    # lets a caller compute an EXACT union of unique allocated spend
+    # across several stacked programs in the same jurisdiction, instead
+    # of a sum (double-counts any overlap) or a max (a lower bound that
+    # understates a genuinely disjoint or partially-overlapping base).
+    # Defaulted empty so every existing caller that has not been updated
+    # to populate it keeps working unchanged.
+    qualifying_line_ids: frozenset[str] = field(default_factory=frozenset)
 
 
 @dataclass
