@@ -1,0 +1,6 @@
+source_record_id,surviving_canonical_program_id,jurisdiction,canonical_treatment,activity_basis,discovery,candidate,optimizer_admission,pipeline_proof,audit_status,blocker
+ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate,bg_film_encouragement_act_rebate,BG,AUTOMATIC_FORMULAIC,FORMULAIC,YES,YES,YES,DB_PIPELINE_VERIFIED,EXECUTABLE,
+ca_bc_dave,ca_bc_dave,CA-BC,CONDITIONAL_FORMULAIC,FORMULAIC|COMPONENT,YES,YES,NO_UNTIL_GATES,DB_CANDIDATE_FAIL_CLOSED_VERIFIED,CONDITIONAL_COMPONENT,Qualified BC labour/activity inputs and identity binding unavailable
+my_finas_rebate,my_finas_rebate,MY,CONDITIONAL_FORMULAIC,FORMULAIC,YES,YES,YES,DB_PIPELINE_VERIFIED,EXECUTABLE,
+proposed_united_states_ohio_ohio_motion_picture_tax_credit,proposed_united_states_ohio_ohio_motion_picture_tax_credit,,CONDITIONAL_FORMULAIC,FORMULAIC,NO,NO,NO_UNTIL_GATES,MISSING,INTENDED_CONDITIONAL_NOT_EXECUTABLE,"No US-OH seed, doctrine, RateRule or discovery registration"
+us_nv_film_credit,us_nv_film_credit,US-NV,CONDITIONAL_FORMULAIC,FORMULAIC,YES,YES,YES,BASE_DB_PIPELINE_VERIFIED,EXECUTABLE_WITH_MATERIAL_BOUNDARY_GAPS,$6m project cap and narrower personnel/ratio rules not executable

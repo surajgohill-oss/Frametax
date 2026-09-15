@@ -1,0 +1,6 @@
+program_id,discovery_to_candidate,candidate_status,expected_vs_actual,persistence_reuse,ranking_safety,final_verdict,evidence
+bg_film_encouragement_act_rebate,YES,500000.00 / 1500000.00,MATCH,PASS,PASS_FOR_TESTED_BASE,MATCH,DB-backed Codex test; current doctrine/rate record
+ca_bc_dave,YES,null incentive; unpriced candidate,EXPECTED_CONDITIONAL_BLOCK,PASS_UNPRICED_RESULT_REUSED,PASS_FAIL_CLOSED,EXPECTED_CONDITIONAL_BLOCK,DB-backed Codex test
+my_finas_rebate,YES,600000.00 / 1400000.00,MATCH_BASE_ONLY,PASS,PASS_FOR_TESTED_BASE,MATCH_BASE_ONLY,DB-backed Codex test; test_codex_305_program_delta_audit.py
+proposed_united_states_ohio_ohio_motion_picture_tax_credit,NO,No US-OH jurisdiction/rate/discovery candidate,MISSING_BINDING,NOT_AVAILABLE,PASS_FAIL_CLOSED,MISSING_BINDING,DB-backed Codex test
+us_nv_film_credit,YES,300000.00 / 1700000.00,MATCH_BASE; BOUNDARY_DEFECT,PASS,PASS_FOR_TESTED_BASE,MATCH_BASE; BOUNDARY_DEFECT,DB-backed Codex test; runtime doctrine text
