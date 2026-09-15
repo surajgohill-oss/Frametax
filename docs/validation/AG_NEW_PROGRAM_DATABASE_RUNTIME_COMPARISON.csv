@@ -1,0 +1,6 @@
+canonical_program_id,phase1_db_state,phase2_runtime_state,phase5_expected_state,is_match
+IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,MISSING,MISSING,N/A,NO_DB_RECORD
+ae_ad_film_rebate,MISSING,MISSING,35% (Base),NO_DB_RECORD
+ae_dxb_dpip,MISSING,MISSING,N/A,NO_DB_RECORD
+ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,MISSING,MISSING,35%,NO_DB_RECORD
+ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,MISSING,MISSING,10%,NO_DB_RECORD
