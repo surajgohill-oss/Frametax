@@ -32,3 +32,8 @@ ae_ad_film_rebate,QPE_ABU_DHABI,35%,200000,5000000,CASH_REBATE
 ae_dxb_dpip,N/A,N/A,N/A,N/A,N/A
 ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,QPE_ALBANIA,35%,TBD,TBD,CASH_REBATE
 ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,PDV_QPE,10%,250000,UNMAPPED,CASH_REBATE
+ag-au-sa-south-australian-film-corporation-safc-production-incentive,SA_QPE,10%,250000,UNMAPPED,CASH_REBATE
+ag-au-wa-screenwest-wa-production-attraction-strategy-pas,WA_QPE,10%,3500000,UNMAPPED,CASH_REBATE
+ag-be-belgian-tax-shelter-for-audiovisual-productions,BELGIAN_QPE,UNMAPPED,UNMAPPED,UNMAPPED,TAX_SHELTER
+ag-be-vlg-vaf-flanders-audiovisual-fund-screen-flanders,FLANDERS_QPE,UNMAPPED,250000,400000,REFUNDABLE_ADVANCE
+ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate,BG_QPE,25%,100000,5000000,CASH_REBATE
