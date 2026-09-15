@@ -1,0 +1,22 @@
+{
+  "queue_count": 285,
+  "unique_ids": 285,
+  "completed_ids": 285,
+  "ag_only_count": 119,
+  "codex_only_count": 166,
+  "classification_totals": {
+    "FORMULAIC": 241,
+    "DISCRETIONARY": 44
+  },
+  "evidence_totals": 285,
+  "economically_relevant_total": 241,
+  "optimizer_matches": 241,
+  "optimizer_mismatches": 0,
+  "duplicate_ids": 0,
+  "missing_ids": 0,
+  "schema_violations": 0,
+  "placeholder_ids": 0,
+  "unsupported_economic_conclusions": 0,
+  "generic_homepage_only_positive_conclusions": 0,
+  "remaining_count": 0
+}
