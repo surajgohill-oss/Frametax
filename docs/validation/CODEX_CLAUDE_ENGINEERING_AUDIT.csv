@@ -1,0 +1,21 @@
+file,commits,classification,evidence,accepted
+docs/validation/CINEGLOBE_FINAL_THREE_PROGRAM_REMAINING_CLAUDE.csv,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Scoped repair evidence; does not alter runtime.,YES
+docs/validation/CINEGLOBE_FINAL_THREE_PROGRAM_REPAIR_CLAUDE.md,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Scoped repair evidence; does not alter runtime.,YES
+docs/validation/CINEGLOBE_FINAL_THREE_PROGRAM_TEST_MATRIX_CLAUDE.csv,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Scoped repair evidence; does not alter runtime.,YES
+docs/validation/CINEGLOBE_NETHERLANDS_LEDGER_CONSERVATION_CLAUDE.csv,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Scoped repair evidence; does not alter runtime.,YES
+docs/validation/CINEGLOBE_OREGON_BUDGET_PAYEE_CONSERVATION_CLAUDE.csv,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Scoped repair evidence; does not alter runtime.,YES
+docs/validation/CINEGLOBE_SOUTH_AFRICA_QSAPPE_CONSERVATION_CLAUDE.csv,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Scoped repair evidence; does not alter runtime.,YES
+frametax2/backend/alembic/versions/0074_award_period_and_event_identity.py,2b3af17 / 3b5c3f5,ROOT_CAUSE_REPAIR,"Adds explicit award period and stable award-event identity; nullable project column is safe, ledger NOT NULL add assumes empty preexisting table and needs deployment preflight.",YES
+frametax2/backend/app/calculators/allocation_pricing.py,2b3af17 / 3b5c3f5,ROOT_CAUSE_REPAIR,Exact canonical-line/component and per-payee basis reconciliation before pricing.,YES
+frametax2/backend/app/calculators/production_discovery.py,2b3af17 / 3b5c3f5,SPECIAL_CASE_REQUIRING_JUSTIFICATION,Oregon-scoped probe permits discovery only; downstream exact line conservation tests prove it does not set the priced basis.,YES
+frametax2/backend/app/data/program_rate_rules.py,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Supports the bounded NL/ZA/OR root-cause repair without broader architecture change.,YES
+frametax2/backend/app/data/program_rate_rules_worldwide.py,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Supports the bounded NL/ZA/OR root-cause repair without broader architecture change.,YES
+frametax2/backend/app/models/incentive_award_ledger.py,2b3af17 / 3b5c3f5,ROOT_CAUSE_REPAIR,"Durable public-writer conservation, currency/event identity, and explicit period binding.",YES
+frametax2/backend/app/models/project.py,2b3af17 / 3b5c3f5,ROOT_CAUSE_REPAIR,"Durable public-writer conservation, currency/event identity, and explicit period binding.",YES
+frametax2/backend/app/services/canonical_evaluation.py,2b3af17 / 3b5c3f5,SPECIAL_CASE_REQUIRING_JUSTIFICATION,Oregon-scoped probe permits discovery only; downstream exact line conservation tests prove it does not set the priced basis.,YES
+frametax2/backend/app/services/canonical_project_economics.py,2b3af17 / 3b5c3f5,VALID_SUPPORTING_CHANGE,Supports the bounded NL/ZA/OR root-cause repair without broader architecture change.,YES
+frametax2/backend/app/services/incentive_award_ledger_service.py,2b3af17 / 3b5c3f5,ROOT_CAUSE_REPAIR,"Durable public-writer conservation, currency/event identity, and explicit period binding.",YES
+frametax2/backend/tests/test_final_formulaic_full_pipeline_consumption.py,2b3af17 / 3b5c3f5,TEST_ORACLE_ONLY,Owning regression/hostile proof. Assertions were independently rerun; Oregon DB test is genuine.,YES
+frametax2/backend/tests/test_final_wiring_nl_company_period_conservation.py,2b3af17 / 3b5c3f5,TEST_ORACLE_ONLY,Owning regression/hostile proof. Assertions were independently rerun; Oregon DB test is genuine.,YES
+frametax2/backend/tests/test_final_wiring_oregon_conditional_formula.py,2b3af17 / 3b5c3f5,TEST_ORACLE_ONLY,Owning regression/hostile proof. Assertions were independently rerun; Oregon DB test is genuine.,YES
+frametax2/backend/tests/test_oregon_full_db_pipeline.py,2b3af17 / 3b5c3f5,TEST_ORACLE_ONLY,Owning regression/hostile proof. Assertions were independently rerun; Oregon DB test is genuine.,YES

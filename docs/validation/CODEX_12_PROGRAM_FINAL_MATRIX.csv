@@ -1,0 +1,13 @@
+row,canonical_id,jurisdiction,population_relationship,current_classification,catalogued,canonically_dispositioned,executable_rule,runtime_consumed,independent_verdict,evidence,remaining_defect
+1,ae_dpip / ae_dxb_dpip,AE-DXB,IN_305,IDENTITY_CONTROL_SUPERSEDED,YES,YES,NO,NO,PASS,Dubai remains superseded; Abu Dhabi is distinct; focused identity test passed.,NONE
+2,au_location_offset,AU,MANDATORY_OVERLAY_OUTSIDE_305,CORRECTLY_EXECUTABLE,YES,YES,YES,YES,PASS,Focused B3 discovery and pricing boundary test passed.,NONE
+3,cz_film_incentive / cz_film_incentive_animation,CZ,IN_305,CONTROLLING_ARTIFACT_CONFLICT,YES,NO,YES,YES,FAIL,"Runtime branch/cap tests pass, but final manifest requires the delta animation identity to fail closed.",Final manifest/runtime disposition conflict for cz_film_incentive_animation.
+4,fr_trip,FR,MANDATORY_OVERLAY_OUTSIDE_305,CORRECTLY_EXECUTABLE_CONDITIONAL_TIER,YES,YES,YES,YES,PASS,Focused B3 conditional VFX fact test passed.,NONE
+5,is_film_reimbursement_scheme,IS,MANDATORY_OVERLAY_OUTSIDE_305,CORRECTLY_EXECUTABLE_WITH_UNRESOLVED_ENHANCED_TIER_DISCLOSED,YES,YES,YES,YES,PASS,Focused B3 floor/enhanced-tier disclosure test passed.,NONE
+6,ma_ccm_rebate,MA,MANDATORY_OVERLAY_OUTSIDE_305,CORRECTLY_EXECUTABLE_AFTER_MANDATORY_GATES,YES,YES,YES,YES,PASS,Focused B3 spend/day gate separation test passed.,NONE
+7,mt_mfc_rebate,MT,IN_305,CONDITIONAL_AND_RUNTIME_VERIFIED,YES,YES,YES,YES,PASS,EUR threshold and 30%/40% certificate branches passed through owning tests.,NONE
+8,nl_film_production_incentive,NL,IN_305,CONDITIONAL_AND_RUNTIME_VERIFIED,YES,YES,YES,YES,PASS,"Public-writer concurrency, award-event identity, period/currency, cap and persistence tests passed.",NONE
+9,th_film_incentive,TH,MANDATORY_OVERLAY_OUTSIDE_305,CORRECTLY_EXECUTABLE_AFTER_MANDATORY_GATES,YES,YES,YES,YES,PASS,Focused independent Thailand identity/rate test passed.,NONE
+10,us_or_opif,US-OR,IN_305,CONDITIONAL_AND_RUNTIME_VERIFIED,YES,YES,YES,YES,PASS,"Real DB pipeline produced $814,000; hostile conservation, cap, persistence and reuse passed.",NONE
+11,us_tx_miip,US-TX,MANDATORY_OVERLAY_OUTSIDE_305,CORRECTLY_EXECUTABLE_CONDITIONAL_ON_EXACT_AWARD,YES,YES,YES,YES,PASS,Focused exact-award and invalid-rate cases passed.,NONE
+12,za_nfvf_rebate,ZA,MANDATORY_OVERLAY_OUTSIDE_305,CONDITIONAL_AND_RUNTIME_VERIFIED,YES,YES,YES,YES,PASS,Exact line-derived QSAPPE and mismatch/exclusion/cap tests passed.,NONE
