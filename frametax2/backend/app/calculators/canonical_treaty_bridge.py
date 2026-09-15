@@ -114,7 +114,8 @@ def evaluate_bilateral_coproduction_opportunity(
     keyword-only, backward-compatible (both default None, byte-identical
     prior behavior for every existing caller). When personnel_requirement
     is None (every real treaty today — see treaty_engine.PersonnelRequirement's
-    own docstring), the personnel gate resolves RULE_DATA_INCOMPLETE and
+    own docstring), the personnel gate resolves NOT_APPLICABLE (there is no
+    rule for it to apply, not an open data question on THIS project) and
     NEVER blocks ELIGIBLE on its own — a treaty with no researched
     personnel clause behaves exactly as it did before this parameter
     existed. When a real requirement IS supplied: QUALIFIES contributes

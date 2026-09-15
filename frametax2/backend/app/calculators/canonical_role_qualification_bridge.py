@@ -394,11 +394,22 @@ def evaluate_treaty_personnel_gate(
     `requirement` is a treaty_engine.PersonnelRequirement or None.
 
     Required logic (exact, never a universal rule):
-      - requirement is None -> QUAL_RULE_DATA_INCOMPLETE: this treaty's
-        own personnel clause has not yet been researched/encoded. Never
-        blocks the treaty on its own (the caller combines this with the
-        contribution-share/cultural gates independently) and is always
-        disclosed, never silently "no requirement."
+      - requirement is None -> QUAL_NOT_APPLICABLE: this specific treaty
+        carries no researched creative-personnel eligibility clause in
+        the registry at all -- there is no rule for this gate to apply,
+        so there is nothing "incomplete" about THIS project's facts. This
+        is deliberately distinct from QUAL_RULE_DATA_INCOMPLETE (which
+        would mean a real rule exists but this project's own facts can't
+        yet resolve it) -- returning RULE_DATA_INCOMPLETE here would
+        surface every one of the ~25-27 treaty opportunities on every
+        project as if each had its own open data question, when in fact
+        none of them do (CORRECT_COPRO_ASSUMPTION_AND_PERSONNEL_POLICY
+        Requirement 3: "a treaty with no researched personnel rule must
+        not receive RULE_DATA_INCOMPLETE merely because the optional
+        field is empty"). Never blocks the treaty on its own either way
+        (the caller combines this with the contribution-share/cultural
+        gates independently, gated on `personnel_requirement is not
+        None`) and is always disclosed, never silently "no requirement."
       - "any_one_of" roles: a SINGLE confirmed, satisfying role is
         immediate QUAL_QUALIFIES (Requirement 1 -- "a confirmed writer or
         director must receive immediate eligibility credit when that
@@ -434,11 +445,10 @@ def evaluate_treaty_personnel_gate(
     if requirement is None:
         return CanonicalQualificationResult(
             regime_id="treaty_personnel_gate", jurisdiction_code=None,
-            state=QUAL_RULE_DATA_INCOMPLETE, qualification_route="bilateral_treaty_personnel",
-            missing_facts=("This treaty's own creative-personnel eligibility clause has not yet "
-                            "been researched/encoded — real, cited data required before this gate "
-                            "can resolve either way.",),
-            available_levers=("Research and cite this treaty's own personnel-eligibility article.",),
+            state=QUAL_NOT_APPLICABLE, qualification_route="bilateral_treaty_personnel",
+            missing_facts=(),
+            available_levers=("Research and cite this treaty's own personnel-eligibility article "
+                               "if one exists, to bring a real rule into this gate.",),
             authority_basis=None, confidence_state="LOW",
         )
 

@@ -636,7 +636,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.57.0"
+ENGINE_VERSION = "canonical-1.58.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1242,6 +1242,7 @@ def _build_conditional_bilateral_scenario(
     minority_code: str,
     treaty_slug: str,
     baseline_incentive_usd: float | None,
+    personnel_attachment_facts: dict | None = None,
 ) -> dict | None:
     """Co-Pro Conditional Pricing Bridge — bridges a real, disclosed
     UNRESOLVED_FACTS treaty opportunity to real conditional economics,
@@ -1263,7 +1264,18 @@ def _build_conditional_bilateral_scenario(
     as "no opportunity"). Otherwise returns a fully-disclosed dict —
     every assumed value tagged with a real fact_classification constant,
     every canonical-data gap named explicitly, never silently priced
-    around."""
+    around.
+
+    CORRECT_COPRO_ASSUMPTION_AND_PERSONNEL_POLICY — this treaty's own
+    real personnel_requirement (treaty.personnel_requirement, read from
+    the SAME registry row already fetched below -- never a second
+    lookup) and this project's real attachment facts are now threaded
+    into the SAME evaluate_bilateral_coproduction_opportunity() call the
+    discovery loop already uses, so a treaty whose personnel clause IS
+    researched cannot be conditionally priced around a real, unresolved
+    or failed personnel question. When personnel_requirement is None
+    (every real treaty today), this is a no-op -- byte-identical to
+    calling this function without the new argument."""
     treaty = te.get_bilateral_treaty(majority_code, minority_code)
     if treaty is None:
         return None
@@ -1295,6 +1307,8 @@ def _build_conditional_bilateral_scenario(
         majority_code, minority_code,
         majority_pct=solved.majority_pct, minority_pct=solved.minority_pct,
         cultural_test_passed=(True if solved.cultural_test_required else None),
+        personnel_requirement=treaty.personnel_requirement,
+        personnel_attachment_facts=personnel_attachment_facts,
     )
     if result is None or result.resolution_state != RESOLUTION_ELIGIBLE:
         scenario["status"] = "NOT_FEASIBLE"
@@ -4616,6 +4630,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             )
             _conditional_scenario = _build_conditional_bilateral_scenario(
                 inputs, home_code, partner_code, opp.treaty_slug, _baseline_incentive,
+                personnel_attachment_facts=role_attachment_facts,
             )
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
@@ -4652,9 +4667,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # the real creative-personnel gate's own served contract:
                 # satisfied/failed requirements, missing facts, curable
                 # levers, and the next highest-value factual question.
-                # personnel_gate_state is RULE_DATA_INCOMPLETE (never
-                # blocking) for every treaty whose personnel clause has
-                # not yet been individually researched.
+                # personnel_gate_state is NOT_APPLICABLE (never blocking,
+                # and not an open data question on this project) for
+                # every treaty whose own registry entry carries no
+                # researched personnel_requirement at all.
                 "personnel_gate_state": opp.personnel_gate_state,
                 "personnel_satisfied_requirements": list(opp.personnel_satisfied_requirements),
                 "personnel_failed_requirements": list(opp.personnel_failed_requirements),
@@ -5062,6 +5078,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             )
             _conditional_scenario = _build_conditional_bilateral_scenario(
                 inputs, majority_code, minority_code, opp.treaty_slug, _baseline_incentive,
+                personnel_attachment_facts=role_attachment_facts,
             )
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
@@ -5099,9 +5116,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # the real creative-personnel gate's own served contract:
                 # satisfied/failed requirements, missing facts, curable
                 # levers, and the next highest-value factual question.
-                # personnel_gate_state is RULE_DATA_INCOMPLETE (never
-                # blocking) for every treaty whose personnel clause has
-                # not yet been individually researched.
+                # personnel_gate_state is NOT_APPLICABLE (never blocking,
+                # and not an open data question on this project) for
+                # every treaty whose own registry entry carries no
+                # researched personnel_requirement at all.
                 "personnel_gate_state": opp.personnel_gate_state,
                 "personnel_satisfied_requirements": list(opp.personnel_satisfied_requirements),
                 "personnel_failed_requirements": list(opp.personnel_failed_requirements),

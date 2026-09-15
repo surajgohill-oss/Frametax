@@ -24,6 +24,7 @@ from app.calculators import treaty_engine as te
 from app.calculators.canonical_qualification_result import (
     QUAL_CURABLE_GAP,
     QUAL_HARD_FAIL,
+    QUAL_NOT_APPLICABLE,
     QUAL_QUALIFIES,
     QUAL_RULE_DATA_INCOMPLETE,
     QUAL_USER_FACT_REQUIRED,
@@ -39,12 +40,15 @@ from app.calculators.canonical_treaty_bridge import (
     RESOLUTION_UNRESOLVED_FACTS,
     evaluate_bilateral_coproduction_opportunity,
 )
+from app.calculators.qualification_derivation import BudgetLine
 from app.db.session import engine
 from app.models.project_fact import ProjectFact
 from app.services import canonical_evaluation as ce
 from app.services.canonical_production_view import build_production_and_structures
+from app.services.canonical_project_economics import ProjectEconomicInputs
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
+BAD_HOMBRES_PROJECT_ID = "4355ae88-a636-4c18-af60-ad73b2646124"
 
 
 @pytest.fixture
@@ -68,6 +72,20 @@ def _synthetic_treaty(slug: str, a: str, b: str, personnel_requirement=None) -> 
         majority_unlocks=[], minority_unlocks=[], fund_unlocks=[], confidence_tier="PARSED",
         personnel_requirement=personnel_requirement,
     )
+
+
+def _inputs(**overrides) -> ProjectEconomicInputs:
+    base = dict(
+        project_id="claude-copro-assumption-policy-test-project",
+        project_name="Claude Assumption Policy Synthetic Test",
+        jurisdiction_code="ZZ", production_type="feature_film",
+        gross_budget_usd=2_000_000.0, leaf_account_sum_usd=2_000_000.0,
+        budget_lines=[BudgetLine("1000", "Cast", 1_000_000.0, spend_category="atl_cast")],
+        spend_category_by_code={"1000": "atl_cast"},
+        accounts_outside_jurisdiction=frozenset(), offshore_payroll_accounts=frozenset(),
+    )
+    base.update(overrides)
+    return ProjectEconomicInputs(**base)
 
 
 # ---------------------------------------------------------------------------
@@ -140,12 +158,19 @@ def test_either_fact_kind_genuinely_accepts_both():
     assert evaluate_treaty_personnel_gate(req, ("ZZ", "YY"), facts_res).state == QUAL_QUALIFIES
 
 
-def test_no_researched_requirement_is_rule_data_incomplete_never_blocking():
-    """Every real, currently-registered treaty has personnel_requirement=None
-    — this must never be silently treated as either satisfied or failed."""
+def test_no_researched_requirement_is_not_applicable_never_a_phantom_incomplete_gate():
+    """CORRECT_COPRO_ASSUMPTION_AND_PERSONNEL_POLICY Requirement 3 — every
+    real, currently-registered treaty has personnel_requirement=None; this
+    must resolve NOT_APPLICABLE (there is no rule for the gate to apply),
+    never RULE_DATA_INCOMPLETE (which would misrepresent every one of a
+    project's ~25+ treaty opportunities as if each carried its own open
+    data question about THIS project's own facts, when none of them do).
+    Never silently treated as either satisfied or failed either way, and
+    never surfaced as a missing fact this project could supply."""
     result = evaluate_treaty_personnel_gate(None, ("ZZ", "YY"), {})
-    assert result.state == QUAL_RULE_DATA_INCOMPLETE
-    assert result.missing_facts
+    assert result.state == QUAL_NOT_APPLICABLE
+    assert result.state != QUAL_RULE_DATA_INCOMPLETE
+    assert not result.missing_facts, "no requirement means no open project-fact question, not a missing fact"
 
 
 # ---------------------------------------------------------------------------
@@ -229,7 +254,7 @@ def test_backward_compatible_no_personnel_requirement_supplied_by_caller():
     try:
         opp = evaluate_bilateral_coproduction_opportunity("ZZ", "YY", majority_pct=60.0, minority_pct=40.0)
         assert opp.resolution_state == RESOLUTION_ELIGIBLE
-        assert opp.personnel_gate_state == QUAL_RULE_DATA_INCOMPLETE
+        assert opp.personnel_gate_state == QUAL_NOT_APPLICABLE
     finally:
         del te._BILATERAL[frozenset({"ZZ", "YY"})]
 
@@ -293,7 +318,17 @@ async def test_served_treaty_structure_exposes_the_personnel_gate_contract(db: A
     fingerprint, no synthetic treaty registered) could otherwise be
     reused here instead of genuinely regenerating with the treaty
     present. Current-engine-version rows are deleted first to force a
-    truly fresh evaluation regardless of test execution order."""
+    truly fresh evaluation regardless of test execution order.
+
+    CORRECT_COPRO_ASSUMPTION_AND_PERSONNEL_POLICY — the synthetic treaty
+    only ever exists in the in-memory te._BILATERAL registry, but
+    evaluate_project() persists REAL ProductionStructure/
+    StructureCalculationResult rows referencing its slug to the real DB.
+    Those rows are not covered by the te._BILATERAL cleanup below (that
+    only removes the in-memory registry entry) and would otherwise
+    permanently orphan a row naming a treaty slug that no longer exists
+    in the registry after this test ends. The finally block now deletes
+    exactly those rows by name, leaving no DB residue."""
     from sqlalchemy import delete
     from app.models.production import ProductionStructure, StructureCalculationResult
 
@@ -326,3 +361,161 @@ async def test_served_treaty_structure_exposes_the_personnel_gate_contract(db: A
         assert e["personnel_satisfied_requirements"]
     finally:
         del te._BILATERAL[frozenset({"MU", "GB"})]
+        _residue_ids = (await db.execute(
+            select(ProductionStructure.id).where(
+                ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+                ProductionStructure.name.like(f"%{treaty_slug}%"),
+            )
+        )).scalars().all()
+        if _residue_ids:
+            await db.execute(delete(StructureCalculationResult).where(
+                StructureCalculationResult.structure_id.in_(_residue_ids)
+            ))
+            await db.execute(delete(ProductionStructure).where(
+                ProductionStructure.id.in_(_residue_ids)
+            ))
+            await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# CORRECT_COPRO_ASSUMPTION_AND_PERSONNEL_POLICY — assumption defaulting +
+# personnel-gate consistency across discovery AND conditional pricing
+# ---------------------------------------------------------------------------
+
+def test_missing_contribution_shares_default_to_a_priced_modeled_assumption_not_a_permanent_block():
+    """OPTIMIZER ASSUMPTION POLICY — contribution shares within permitted
+    ranges are a producer-controlled structuring assumption, not a
+    verified fact requirement. Given NO majority_pct/minority_pct project
+    fact at all, _build_conditional_bilateral_scenario (the existing,
+    pre-existing-before-this-workstream mechanism) must still solve a
+    real, treaty-derived minimum split and reach a priced/eligible
+    conditional scenario — never leave the opportunity permanently
+    UNRESOLVED_FACTS just because no one has entered an exact split.
+    The assumed split is the treaty's OWN recorded majority_min_pct/
+    minority_min_pct thresholds — never an invented number — and is
+    disclosed as PROPOSED_CHANGE (a producer-actionable assumption), not
+    a verified fact."""
+    treaty = _synthetic_treaty("zz-yy-assumption-default-test", "ZZ", "YY")
+    te._BILATERAL[frozenset({"ZZ", "YY"})] = treaty
+    try:
+        inputs = _inputs()
+        scenario = ce._build_conditional_bilateral_scenario(
+            inputs, "ZZ", "YY", "zz-yy-assumption-default-test", baseline_incentive_usd=None,
+        )
+        assert scenario is not None
+        assert scenario["deterministically_solvable"] is True
+        assert scenario["assumption_fact_classification"] == "PROPOSED_CHANGE"
+        assert scenario["assumed_majority_contribution_pct"] == treaty.majority_min_pct
+        assert scenario["assumed_minority_contribution_pct"] == treaty.minority_min_pct
+        assert scenario["conditional_qualification_state"] == RESOLUTION_ELIGIBLE
+        assert "assumption_basis" in scenario and scenario["assumption_basis"]
+    finally:
+        del te._BILATERAL[frozenset({"ZZ", "YY"})]
+
+
+def test_personnel_requirement_is_consumed_by_conditional_pricing_not_only_discovery():
+    """A treaty's own personnel_requirement must reach BOTH the discovery
+    loop's evaluate_bilateral_coproduction_opportunity call AND the
+    conditional-pricing scenario's own call — before this fix,
+    _build_conditional_bilateral_scenario never passed
+    personnel_requirement/personnel_attachment_facts through at all, so a
+    treaty with a real researched personnel clause could have been
+    conditionally priced around a genuinely unresolved or failed
+    personnel question. A confirmed, satisfying writer must let the
+    conditional scenario reach ELIGIBLE."""
+    req = _writer_or_director_requirement(codes=("ZZ", "YY"))
+    treaty = _synthetic_treaty("zz-yy-conditional-personnel-qualify-test", "ZZ", "YY", req)
+    te._BILATERAL[frozenset({"ZZ", "YY"})] = treaty
+    try:
+        facts = {"writer": RoleAttachmentFacts(confirmed_nationality=("ZZ",), has_any_attachment=True)}
+        inputs = _inputs()
+        scenario = ce._build_conditional_bilateral_scenario(
+            inputs, "ZZ", "YY", "zz-yy-conditional-personnel-qualify-test", baseline_incentive_usd=None,
+            personnel_attachment_facts=facts,
+        )
+        assert scenario["conditional_qualification_state"] == RESOLUTION_ELIGIBLE
+    finally:
+        del te._BILATERAL[frozenset({"ZZ", "YY"})]
+
+
+def test_explicit_locked_personnel_contradiction_blocks_the_conditional_scenario():
+    """A real, explicit, LOCKED contradiction (a confirmed role whose
+    known fact fails the treaty's own mandatory personnel rule) is a
+    genuine hard blocker — the OPTIMIZER ASSUMPTION POLICY's own carve-
+    out ("an actual cultural/legal threshold that cannot be calculated").
+    Unlike a missing/unconfirmed fact (which defaults to a conditional
+    question), a confirmed WRONG fact must keep the conditional scenario
+    at NOT_FEASIBLE, not silently priced around."""
+    req = te.PersonnelRequirement(
+        eligible_roles=("director",), role_mode="all_of",
+        fact_kind="nationality", eligible_codes=("ZZ", "YY"),
+    )
+    treaty = _synthetic_treaty("zz-yy-conditional-personnel-blocked-test", "ZZ", "YY", req)
+    te._BILATERAL[frozenset({"ZZ", "YY"})] = treaty
+    try:
+        facts = {"director": RoleAttachmentFacts(confirmed_nationality=("US",), has_any_attachment=True)}
+        inputs = _inputs()
+        scenario = ce._build_conditional_bilateral_scenario(
+            inputs, "ZZ", "YY", "zz-yy-conditional-personnel-blocked-test", baseline_incentive_usd=None,
+            personnel_attachment_facts=facts,
+        )
+        assert scenario["status"] == "NOT_FEASIBLE"
+        assert scenario["conditional_qualification_state"] == RESOLUTION_INELIGIBLE
+        assert scenario["disqualification_reasons"]
+    finally:
+        del te._BILATERAL[frozenset({"ZZ", "YY"})]
+
+
+def test_coproduction_contribution_fact_change_invalidates_the_fingerprint():
+    """Requirement: 'assumption changes invalidate the fingerprint and
+    recompute.' A real, evidenced coproduction_majority_pct/minority_pct
+    fact converts a modeled assumption into a verified fact — the
+    fingerprint must be sensitive to that transition (pre-existing
+    coproduction_facts fingerprint param, proven live here rather than
+    only asserted from a source read)."""
+    inputs = _inputs(project_id=LITTLE_UTOPIA_PROJECT_ID)
+    fp_no_facts = ce._compute_fingerprint(inputs, coproduction_facts=None)
+    fp_with_facts = ce._compute_fingerprint(
+        inputs, coproduction_facts=(("uk-ie-bilateral", ("GB", "IE"), 70.0, 30.0, None),),
+    )
+    assert fp_no_facts != fp_with_facts
+
+
+async def test_missing_personnel_records_never_block_single_jurisdiction_pricing_or_copro_discovery(db: AsyncSession):
+    """REGRESSION CONTROLS — Bad Hombres has zero ProjectPerson rows on
+    file. A fresh evaluation must still (a) produce single-jurisdiction
+    priced candidates (personnel absence never suppresses ordinary
+    pricing) and (b) still discover real treaty_coproduction opportunities
+    (personnel absence never suppresses discovery either), with every
+    such opportunity's personnel_gate_state resolving NOT_APPLICABLE
+    (no real treaty has a researched personnel rule yet) rather than any
+    blocking state."""
+    from sqlalchemy import delete as sa_delete
+    from app.models.production import ProductionStructure, StructureCalculationResult
+
+    struct_ids = (await db.execute(
+        select(ProductionStructure.id).where(ProductionStructure.project_id == BAD_HOMBRES_PROJECT_ID)
+    )).scalars().all()
+    await db.execute(sa_delete(StructureCalculationResult).where(
+        StructureCalculationResult.structure_id.in_(struct_ids),
+        StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
+    ))
+    await db.commit()
+
+    result = await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
+    assert result["status"] == "EVALUATION_COMPLETE"
+
+    rows = (await db.execute(
+        select(StructureCalculationResult.calculation_trace_json)
+        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+        .where(
+            ProductionStructure.project_id == BAD_HOMBRES_PROJECT_ID,
+            StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
+        )
+    )).scalars().all()
+    assert len(rows) > 0, "single-jurisdiction candidate discovery must not be suppressed by missing personnel facts"
+
+    treaty_rows = [r for r in rows if r.get("discovery_classification") == "treaty_coproduction"]
+    assert treaty_rows, "co-production opportunity discovery must not be suppressed by missing personnel facts"
+    for r in treaty_rows:
+        assert r.get("personnel_gate_state") == QUAL_NOT_APPLICABLE
