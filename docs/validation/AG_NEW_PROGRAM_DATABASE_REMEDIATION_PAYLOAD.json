@@ -1,0 +1,632 @@
+[
+    {
+        "program_slug": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+        "expected_basis": "N/A",
+        "expected_rate": "N/A",
+        "expected_minimum_spend": "N/A"
+    },
+    {
+        "program_slug": "ae_ad_film_rebate",
+        "expected_basis": "QPE_ABU_DHABI",
+        "expected_rate": "35%",
+        "expected_minimum_spend": "200000"
+    },
+    {
+        "program_slug": "ae_dxb_dpip",
+        "expected_basis": "N/A",
+        "expected_rate": "N/A",
+        "expected_minimum_spend": "N/A"
+    },
+    {
+        "program_slug": "ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate",
+        "expected_basis": "QPE_ALBANIA",
+        "expected_rate": "35%",
+        "expected_minimum_spend": "TBD"
+    },
+    {
+        "program_slug": "ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive",
+        "expected_basis": "PDV_QPE",
+        "expected_rate": "10%",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "ag-au-sa-south-australian-film-corporation-safc-production-incentive",
+        "expected_basis": "SA_QPE",
+        "expected_rate": "10%",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "ag-au-wa-screenwest-wa-production-attraction-strategy-pas",
+        "expected_basis": "WA_QPE",
+        "expected_rate": "10%",
+        "expected_minimum_spend": "3500000"
+    },
+    {
+        "program_slug": "ag-be-belgian-tax-shelter-for-audiovisual-productions",
+        "expected_basis": "BELGIAN_QPE",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-be-vlg-vaf-flanders-audiovisual-fund-screen-flanders",
+        "expected_basis": "FLANDERS_QPE",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate",
+        "expected_basis": "BG_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "ag-cm-cameroon-centre-national-de-la-cin-matographie-cnc-cameroon",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-gb-lon-film-london-production-finance-market",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-hk-film-development-fund-fdf",
+        "expected_basis": "HK_QPE",
+        "expected_rate": "40%",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-it-tos-film-commission-toscana-film-fund",
+        "expected_basis": "TUSCANY_QPE",
+        "expected_rate": "50%",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-ke-kenya-film-commission-kfc-support",
+        "expected_basis": "KENYA_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-kw-kuwait-film-committee-support",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-me-film-centre-of-montenegro-cash-rebate",
+        "expected_basis": "MONTENEGRO_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "ag-mu-mauritius-edb-film-rebate",
+        "expected_basis": "MAURITIUS_QPE",
+        "expected_rate": "40%",
+        "expected_minimum_spend": "1000000"
+    },
+    {
+        "program_slug": "ag-om-oman-film-commission-facilitation",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-pa-panama-film-commission-facilitation",
+        "expected_basis": "PANAMA_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "ag-rw-rwanda-development-board-facilitation",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-se-ab-film-stockholm-regional-co-production-fund",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-se-sk-film-i-sk-ne-regional-co-production-fund",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-tz-tanzania-film-board-facilitation",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-us-ga-georgia-entertainment-industry-investment-act",
+        "expected_basis": "GA_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "ag-us-la-louisiana-motion-picture-production-program",
+        "expected_basis": "LA_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "300000"
+    },
+    {
+        "program_slug": "ag-us-nm-new-mexico-film-production-tax-credit",
+        "expected_basis": "NM_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "0"
+    },
+    {
+        "program_slug": "ag-us-ny-new-york-state-film-tax-credit-program",
+        "expected_basis": "NY_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "1000000"
+    },
+    {
+        "program_slug": "ag-us-or-oregon-production-investment-fund-opif",
+        "expected_basis": "OR_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "1000000"
+    },
+    {
+        "program_slug": "ag-us-pr-puerto-rico-film-industry-economic-incentives-act",
+        "expected_basis": "PR_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "50000"
+    },
+    {
+        "program_slug": "ag-us-tn-tennessee-film-entertainment-music-commission-incentives",
+        "expected_basis": "TN_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "200000"
+    },
+    {
+        "program_slug": "ag-ve-cnac-venezuela-film-production-fund-fonprocine",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ag-vn-vietnam-cinema-department-facilitation",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "al_cash_rebate",
+        "expected_basis": "AL_QPE",
+        "expected_rate": "35%",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "au_nsw_pdv_rebate",
+        "expected_basis": "NSW_PDV_QPE",
+        "expected_rate": "10%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "au_pdv_offset",
+        "expected_basis": "AU_PDV_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "au_producer_offset",
+        "expected_basis": "AU_QPE",
+        "expected_rate": "40%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "au_qld_pdv_rebate",
+        "expected_basis": "QLD_PDV_QPE",
+        "expected_rate": "10%",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "au_sa_pdv_rebate",
+        "expected_basis": "SA_PDV_QPE",
+        "expected_rate": "10%",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "ca_bc_dave",
+        "expected_basis": "BC_DAVE_QPE",
+        "expected_rate": "16%",
+        "expected_minimum_spend": "0"
+    },
+    {
+        "program_slug": "ca_bc_pstc",
+        "expected_basis": "BC_QPE",
+        "expected_rate": "36%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "ca_federal_pstc",
+        "expected_basis": "CAN_QPE",
+        "expected_rate": "16%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "ca_nl_all_spend_credit",
+        "expected_basis": "NL_QPE",
+        "expected_rate": "40%",
+        "expected_minimum_spend": "0"
+    },
+    {
+        "program_slug": "ca_qc_pstc",
+        "expected_basis": "QC_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "ch_pics_national_rebate",
+        "expected_basis": "CH_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "400000"
+    },
+    {
+        "program_slug": "cr_tax_return_incentive",
+        "expected_basis": "CR_QPE",
+        "expected_rate": "11.7%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "cz_film_incentive_animation",
+        "expected_basis": "CZ_QPE",
+        "expected_rate": "35%",
+        "expected_minimum_spend": "1000000"
+    },
+    {
+        "program_slug": "dk_production_rebate",
+        "expected_basis": "DK_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "3000000"
+    },
+    {
+        "program_slug": "eg_empc_cashback",
+        "expected_basis": "EG_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "0"
+    },
+    {
+        "program_slug": "fj_film_rebate",
+        "expected_basis": "FJ_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "250000"
+    },
+    {
+        "program_slug": "gb_iftc_enhanced_avec",
+        "expected_basis": "UK_QPE",
+        "expected_rate": "53%",
+        "expected_minimum_spend": "0"
+    },
+    {
+        "program_slug": "ge_film_rebate",
+        "expected_basis": "GE_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "gh_film_tax_incentive",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "il_foreign_production_fund",
+        "expected_basis": "IL_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "on_opstc",
+        "expected_basis": "ON_QPE",
+        "expected_rate": "21.5%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "jp_vipo_location_incentive",
+        "expected_basis": "JP_QPE",
+        "expected_rate": "50%",
+        "expected_minimum_spend": "200000000"
+    },
+    {
+        "program_slug": "kr_kofic_location_incentive",
+        "expected_basis": "KR_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "400000000"
+    },
+    {
+        "program_slug": "kz_investment_subsidy",
+        "expected_basis": "KZ_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "850000"
+    },
+    {
+        "program_slug": "lu_filmfund_tax_shelter_rebate",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "me_cash_rebate",
+        "expected_basis": "ME_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "mk_cash_rebate",
+        "expected_basis": "MK_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "mn_production_incentive",
+        "expected_basis": "MN_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "mx_federal_film_incentive_2026",
+        "expected_basis": "MX_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "40000000"
+    },
+    {
+        "program_slug": "my_finas_rebate",
+        "expected_basis": "MY_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "5000000"
+    },
+    {
+        "program_slug": "pa_film_rebate",
+        "expected_basis": "PA_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "ph_fdcp_flip",
+        "expected_basis": "PH_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "20000000"
+    },
+    {
+        "program_slug": "proposed_australia_producer_offset_separate_statutory_program",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_canada_british_columbia_film_incentive_bc_fibc",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_colombia_cina_audiovisual_investment_certificate",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_germany_german_motion_picture_fund_gmpf",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_spain_navarre_navarre_audiovisual_production_tax_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "pt_scri_pt_cash_rebate",
+        "expected_basis": "PT_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "pt_scri_pt_medium_budget",
+        "expected_basis": "PT_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "2500000"
+    },
+    {
+        "program_slug": "qa_screen_production_incentive",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "sa_film_commission_rebate",
+        "expected_basis": "SA_QPE",
+        "expected_rate": "40%",
+        "expected_minimum_spend": "750000"
+    },
+    {
+        "program_slug": "se_production_rebate",
+        "expected_basis": "SE_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "4000000"
+    },
+    {
+        "program_slug": "sg_made_with_singapore_rebate",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "si_cash_rebate",
+        "expected_basis": "SI_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "th_boi_incentive",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "th_prd_foreign_digital_content_incentive",
+        "expected_basis": "TH_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "5000000"
+    },
+    {
+        "program_slug": "tt_production_expenditure_rebate",
+        "expected_basis": "TT_QPE",
+        "expected_rate": "35%",
+        "expected_minimum_spend": "1000000"
+    },
+    {
+        "program_slug": "tw_bamid_rebate",
+        "expected_basis": "TW_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "3000000"
+    },
+    {
+        "program_slug": "ua_cash_rebate",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "ca_film_30",
+        "expected_basis": "CA_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "1000000"
+    },
+    {
+        "program_slug": "us_il_film_production_services_credit",
+        "expected_basis": "IL_QPE",
+        "expected_rate": "35%",
+        "expected_minimum_spend": "100000"
+    },
+    {
+        "program_slug": "us_nv_film_credit",
+        "expected_basis": "NV_QPE",
+        "expected_rate": "15%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "us_ny_post_production_credit",
+        "expected_basis": "NY_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "500000"
+    },
+    {
+        "program_slug": "us_tn_performance_grant",
+        "expected_basis": "TN_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "200000"
+    },
+    {
+        "program_slug": "uy_acau_cash_rebate",
+        "expected_basis": "UY_QPE",
+        "expected_rate": "20%",
+        "expected_minimum_spend": "300000"
+    },
+    {
+        "program_slug": "uy_tax_credit_2026",
+        "expected_basis": "UY_QPE",
+        "expected_rate": "30%",
+        "expected_minimum_spend": "300000"
+    },
+    {
+        "program_slug": "uz_film_rebate",
+        "expected_basis": "UZ_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "833000"
+    },
+    {
+        "program_slug": "za_dtic_foreign_film",
+        "expected_basis": "ZA_QPE",
+        "expected_rate": "25%",
+        "expected_minimum_spend": "15000000"
+    },
+    {
+        "program_slug": "proposed_united_kingdom_enhanced_avec_independent_film_tax_credit_iftc",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_kingdom_uk_global_screen_fund_international_co_production",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_missouri_motion_media_production_tax_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_montana_media_tax_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_new_jersey_garden_state_film_and_digital_media_jobs_act_film_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_new_york_empire_state_independent_film_production_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_new_york_film_tax_credit_post_production",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_ohio_ohio_motion_picture_tax_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    },
+    {
+        "program_slug": "proposed_united_states_west_virginia_west_virginia_film_production_tax_credit",
+        "expected_basis": "UNMAPPED",
+        "expected_rate": "UNMAPPED",
+        "expected_minimum_spend": "UNMAPPED"
+    }
+]
