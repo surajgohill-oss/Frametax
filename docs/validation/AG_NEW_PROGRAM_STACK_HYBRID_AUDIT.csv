@@ -67,3 +67,20 @@ au_producer_offset,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from
 au_qld_pdv_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
 au_sa_pdv_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
 ca_bc_dave,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ca_bc_pstc,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ca_federal_pstc,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ca_nl_all_spend_credit,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ca_qc_pstc,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ch_pics_national_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+cr_tax_return_incentive,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+cz_film_incentive_animation,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+dk_production_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+eg_empc_cashback,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+fj_film_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+gb_iftc_enhanced_avec,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ge_film_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+gh_film_tax_incentive,CODEX_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal legislated rebate in Ghana.
+il_foreign_production_fund,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+on_opstc,DB_RECORD_EXISTS_BUT_INCOMPLETE,"Valid program exists but is missing critical economic fields (qpe_basis, rate, threshold)."
+jp_vipo_location_incentive,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+kr_kofic_location_incentive,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.

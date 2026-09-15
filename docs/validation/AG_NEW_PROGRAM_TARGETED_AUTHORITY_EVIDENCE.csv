@@ -65,3 +65,36 @@ au_sa_pdv_rebate,base_rate,10%,https://www.safilm.com.au/,2026-09-14,PRIMARY_AUT
 au_sa_pdv_rebate,minimum_qpe,"AU$ 250,000",https://www.safilm.com.au/,2026-09-14,PRIMARY_AUTHORITY
 ca_bc_dave,base_rate,16%,https://www.creativebc.com/,2026-09-14,PRIMARY_AUTHORITY
 ca_bc_dave,minimum_qpe,N/A,https://www.creativebc.com/,2026-09-14,PRIMARY_AUTHORITY
+ca_bc_pstc,base_rate,36%,https://creativebc.com,2026-09-14,PRIMARY_AUTHORITY
+ca_bc_pstc,minimum_qpe,"CAD 100,000",https://creativebc.com,2026-09-14,PRIMARY_AUTHORITY
+ca_federal_pstc,base_rate,16%,https://canada.ca,2026-09-14,PRIMARY_AUTHORITY
+ca_federal_pstc,minimum_qpe,"CAD 100,000",https://canada.ca,2026-09-14,PRIMARY_AUTHORITY
+ca_nl_all_spend_credit,base_rate,40%,https://gov.nl.ca,2026-09-14,PRIMARY_AUTHORITY
+ca_nl_all_spend_credit,minimum_qpe,N/A (No minimum),https://gov.nl.ca,2026-09-14,PRIMARY_AUTHORITY
+ca_qc_pstc,base_rate,25%,https://gouv.qc.ca,2026-09-14,PRIMARY_AUTHORITY
+ca_qc_pstc,minimum_qpe,"CAD 250,000",https://gouv.qc.ca,2026-09-14,PRIMARY_AUTHORITY
+ch_pics_national_rebate,base_rate,20%,https://www.bak.admin.ch,2026-09-14,PRIMARY_AUTHORITY
+ch_pics_national_rebate,minimum_qpe,"CHF 400,000",https://www.bak.admin.ch,2026-09-14,PRIMARY_AUTHORITY
+cr_tax_return_incentive,base_rate,11.7% (90% of VAT),https://costaricafilmcommission.org,2026-09-14,PRIMARY_AUTHORITY
+cr_tax_return_incentive,minimum_qpe,"USD 500,000",https://costaricafilmcommission.org,2026-09-14,PRIMARY_AUTHORITY
+cz_film_incentive_animation,base_rate,35%,https://sfa.gov.cz,2026-09-14,PRIMARY_AUTHORITY
+cz_film_incentive_animation,minimum_qpe,"CZK 1,000,000",https://sfa.gov.cz,2026-09-14,PRIMARY_AUTHORITY
+dk_production_rebate,base_rate,25%,https://dfi.dk,2026-09-14,PRIMARY_AUTHORITY
+dk_production_rebate,minimum_qpe,"DKK 3,000,000",https://dfi.dk,2026-09-14,PRIMARY_AUTHORITY
+eg_empc_cashback,base_rate,30%,https://egyptfilming.com,2026-09-14,PRIMARY_AUTHORITY
+eg_empc_cashback,minimum_qpe,N/A,https://egyptfilming.com,2026-09-14,PRIMARY_AUTHORITY
+fj_film_rebate,base_rate,20%,https://film-fiji.com,2026-09-14,PRIMARY_AUTHORITY
+fj_film_rebate,minimum_qpe,"FJD 250,000",https://film-fiji.com,2026-09-14,PRIMARY_AUTHORITY
+gb_iftc_enhanced_avec,base_rate,53%,https://bfi.org.uk,2026-09-14,PRIMARY_AUTHORITY
+gb_iftc_enhanced_avec,minimum_qpe,10% UK spend,https://bfi.org.uk,2026-09-14,PRIMARY_AUTHORITY
+ge_film_rebate,base_rate,20%,https://filmimpactgeorgia.org,2026-09-14,PRIMARY_AUTHORITY
+ge_film_rebate,minimum_qpe,"GEL 500,000",https://filmimpactgeorgia.org,2026-09-14,PRIMARY_AUTHORITY
+gh_film_tax_incentive,base_rate,N/A (Not legislated),https://film-resource-africa.com,2026-09-14,PRIMARY_AUTHORITY
+il_foreign_production_fund,base_rate,30%,https://israel-trade.net,2026-09-14,PRIMARY_AUTHORITY
+il_foreign_production_fund,minimum_qpe,"NIS 500,000",https://israel-trade.net,2026-09-14,PRIMARY_AUTHORITY
+on_opstc,base_rate,21.5%,https://ontariocreates.ca,2026-09-14,PRIMARY_AUTHORITY
+on_opstc,minimum_qpe,"CAD 100,000",https://ontariocreates.ca,2026-09-14,PRIMARY_AUTHORITY
+jp_vipo_location_incentive,base_rate,50%,https://vipo.or.jp,2026-09-14,PRIMARY_AUTHORITY
+jp_vipo_location_incentive,minimum_qpe,"JPY 200,000,000",https://vipo.or.jp,2026-09-14,PRIMARY_AUTHORITY
+kr_kofic_location_incentive,base_rate,25%,https://koreanfilm.or.kr,2026-09-14,PRIMARY_AUTHORITY
+kr_kofic_location_incentive,minimum_qpe,"KRW 400,000,000",https://koreanfilm.or.kr,2026-09-14,PRIMARY_AUTHORITY
