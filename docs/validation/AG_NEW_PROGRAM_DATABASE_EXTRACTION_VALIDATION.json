@@ -1,0 +1,14 @@
+{
+  "queue_identities": 285,
+  "identities_normalized": 285,
+  "database_rows_extracted": 285,
+  "aliases_identified": 2,
+  "historical_source_only_records_identified": 103,
+  "active_executable_programs_found": 2,
+  "conditional_programs_found": 44,
+  "display_only_programs_found": 136,
+  "fail_closed_programs_found": 0,
+  "records_with_missing_stored_fields": 103,
+  "unresolved_identity_mappings": 0,
+  "duplicate_surviving_canonical_ids": 0
+}
