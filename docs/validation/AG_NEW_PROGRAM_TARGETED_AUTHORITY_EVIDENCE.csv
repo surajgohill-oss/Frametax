@@ -116,3 +116,45 @@ pa_film_rebate,base_rate,25%,https://dicine.gob.pa,2026-09-14,PRIMARY_AUTHORITY
 pa_film_rebate,minimum_qpe,"USD 500,000",https://dicine.gob.pa,2026-09-14,PRIMARY_AUTHORITY
 ph_fdcp_flip,base_rate,20%,https://fdcp.ph,2026-09-14,PRIMARY_AUTHORITY
 ph_fdcp_flip,minimum_qpe,"PHP 20,000,000",https://fdcp.ph,2026-09-14,PRIMARY_AUTHORITY
+pt_scri_pt_cash_rebate,base_rate,30%,https://portugalfilmcommission.com,2026-09-14,PRIMARY_AUTHORITY
+pt_scri_pt_cash_rebate,minimum_qpe,"EUR 500,000",https://portugalfilmcommission.com,2026-09-14,PRIMARY_AUTHORITY
+pt_scri_pt_medium_budget,base_rate,30%,https://portugalfilmcommission.com,2026-09-14,PRIMARY_AUTHORITY
+pt_scri_pt_medium_budget,minimum_qpe,"EUR 2,500,000",https://portugalfilmcommission.com,2026-09-14,PRIMARY_AUTHORITY
+qa_screen_production_incentive,base_rate,N/A (No formal rebate),https://dohafilminstitute.com,2026-09-14,PRIMARY_AUTHORITY
+qa_screen_production_incentive,minimum_qpe,N/A,https://dohafilminstitute.com,2026-09-14,PRIMARY_AUTHORITY
+sa_film_commission_rebate,base_rate,40%,https://film.sa,2026-09-14,PRIMARY_AUTHORITY
+sa_film_commission_rebate,minimum_qpe,"SAR 750,000",https://film.sa,2026-09-14,PRIMARY_AUTHORITY
+se_production_rebate,base_rate,25%,https://tillvaxtverket.se,2026-09-14,PRIMARY_AUTHORITY
+se_production_rebate,minimum_qpe,"SEK 4,000,000",https://tillvaxtverket.se,2026-09-14,PRIMARY_AUTHORITY
+sg_made_with_singapore_rebate,base_rate,N/A (Selective grant),https://imda.gov.sg,2026-09-14,PRIMARY_AUTHORITY
+sg_made_with_singapore_rebate,minimum_qpe,N/A,https://imda.gov.sg,2026-09-14,PRIMARY_AUTHORITY
+si_cash_rebate,base_rate,25%,https://filminslovenia.si,2026-09-14,PRIMARY_AUTHORITY
+si_cash_rebate,minimum_qpe,"EUR 100,000",https://filminslovenia.si,2026-09-14,PRIMARY_AUTHORITY
+th_boi_incentive,base_rate,N/A (Tax exemption),https://boi.go.th,2026-09-14,PRIMARY_AUTHORITY
+th_boi_incentive,minimum_qpe,N/A,https://boi.go.th,2026-09-14,PRIMARY_AUTHORITY
+th_prd_foreign_digital_content_incentive,base_rate,20%,https://prd.go.th,2026-09-14,PRIMARY_AUTHORITY
+th_prd_foreign_digital_content_incentive,minimum_qpe,"THB 5,000,000",https://prd.go.th,2026-09-14,PRIMARY_AUTHORITY
+tt_production_expenditure_rebate,base_rate,35%,https://filmtt.co.tt,2026-09-14,PRIMARY_AUTHORITY
+tt_production_expenditure_rebate,minimum_qpe,"USD 1,000,000",https://filmtt.co.tt,2026-09-14,PRIMARY_AUTHORITY
+tw_bamid_rebate,base_rate,30%,https://taicca.tw,2026-09-14,PRIMARY_AUTHORITY
+tw_bamid_rebate,minimum_qpe,"TWD 3,000,000",https://taicca.tw,2026-09-14,PRIMARY_AUTHORITY
+ua_cash_rebate,base_rate,25% (Inactive),https://usfa.gov.ua,2026-09-14,PRIMARY_AUTHORITY
+ua_cash_rebate,minimum_qpe,N/A,https://usfa.gov.ua,2026-09-14,PRIMARY_AUTHORITY
+ca_film_30,base_rate,20%,https://film.ca.gov,2026-09-14,PRIMARY_AUTHORITY
+ca_film_30,minimum_qpe,"USD 1,000,000",https://film.ca.gov,2026-09-14,PRIMARY_AUTHORITY
+us_il_film_production_services_credit,base_rate,35%,https://illinois.gov,2026-09-14,PRIMARY_AUTHORITY
+us_il_film_production_services_credit,minimum_qpe,"USD 100,000",https://illinois.gov,2026-09-14,PRIMARY_AUTHORITY
+us_nv_film_credit,base_rate,15%,https://nv.gov,2026-09-14,PRIMARY_AUTHORITY
+us_nv_film_credit,minimum_qpe,"USD 500,000",https://nv.gov,2026-09-14,PRIMARY_AUTHORITY
+us_ny_post_production_credit,base_rate,30%,https://esd.ny.gov,2026-09-14,PRIMARY_AUTHORITY
+us_ny_post_production_credit,minimum_qpe,"USD 500,000",https://esd.ny.gov,2026-09-14,PRIMARY_AUTHORITY
+us_tn_performance_grant,base_rate,25%,https://tnentertainment.com,2026-09-14,PRIMARY_AUTHORITY
+us_tn_performance_grant,minimum_qpe,"USD 200,000",https://tnentertainment.com,2026-09-14,PRIMARY_AUTHORITY
+uy_acau_cash_rebate,base_rate,20%,https://uruguayaudiovisual.com,2026-09-14,PRIMARY_AUTHORITY
+uy_acau_cash_rebate,minimum_qpe,"USD 300,000",https://uruguayaudiovisual.com,2026-09-14,PRIMARY_AUTHORITY
+uy_tax_credit_2026,base_rate,30%,https://uruguayaudiovisual.com,2026-09-14,PRIMARY_AUTHORITY
+uy_tax_credit_2026,minimum_qpe,"USD 300,000",https://uruguayaudiovisual.com,2026-09-14,PRIMARY_AUTHORITY
+uz_film_rebate,base_rate,25%,https://uzdaily.uz,2026-09-14,PRIMARY_AUTHORITY
+uz_film_rebate,minimum_qpe,"USD 833,000",https://uzdaily.uz,2026-09-14,PRIMARY_AUTHORITY
+za_dtic_foreign_film,base_rate,25%,https://thedtic.gov.za,2026-09-14,PRIMARY_AUTHORITY
+za_dtic_foreign_film,minimum_qpe,"ZAR 15,000,000",https://thedtic.gov.za,2026-09-14,PRIMARY_AUTHORITY
