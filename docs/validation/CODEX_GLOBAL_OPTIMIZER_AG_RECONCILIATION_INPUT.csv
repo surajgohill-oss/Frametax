@@ -1,0 +1,10 @@
+codex_finding_id,area,codex_result,ag_comparison_key,reconciliation_rule
+P0-CAND-001,Bilateral completeness,FAIL:treaty partner cap 5,home_treaty_candidate_count,AG must enumerate identities before ranking/presentation truncation
+P0-CAND-002,Multilateral completeness,FAIL:participant cap 10,multilateral_participant_count,AG must distinguish evaluated participants from displayed participants
+P0-CAND-003,Conditional preservation,FAIL:priced-leg prerequisite,conditional_only_treaty_partner,AG must show a registered attainable-fact partner remains visible without a priced ordinary leg
+P0-QUAL-001,Co-production facts,FAIL:project-global facts,treaty_fact_scope,AG must prove facts are scoped by treaty and participant identity
+P0-STACK-001,Unknown stackability,FAIL:raw sum published,unknown_stack_economics,Any AG acceptance must reject non-null combined economics when canonical relationship is unknown
+P0-COMB-001,Combined structures,FAIL:no executable combined topology,combined_structure_identity,Metadata flags do not count as an executable conserved candidate
+P1-CLASS-001,Classification,FAIL:no exclusive contract,classification_value,AG must map every row to exactly one of the nine required values
+P1-TRACE-001,QPE conservation,FAIL:claim-base sum labeled total QPE,unique_vs_claim_qpe,AG must separate unique allocated spend from reusable program claim bases
+CONTROL-4,Real projects,PASS:accepted anchor economics unchanged,four_project_baseline,Counts may differ only with fully attributed concurrent cleanup; economics must remain exact

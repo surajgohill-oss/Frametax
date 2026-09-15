@@ -1,0 +1,10 @@
+structure_class,currently_generated,priced_or_conditional,canonical_evidence,audit_result,reason
+SINGLE_JURISDICTION,YES,PRICED_OR_REJECTED,structure_type=single_country,PASS,Control path is explicit and excluded from overlay interpretation
+OFFICIAL_COPRODUCTION,YES,TOP_LEVEL_CONDITIONAL,structure_type=treaty_coproduction,FAIL,Enumeration caps and unscoped facts prevent complete/correct resolution
+HYBRID_ANCHOR_COMPONENT,YES,PRICED_OR_REJECTED,structure_type=component_relocation,FAIL,Base routing works but only one best program per side is considered
+STACKED_PROGRAMS,YES,PRICED_OR_REJECTED,structure_type=multi_program,FAIL,Ordinary named stacks work but conditional co-production path raw-sums unknown same-jurisdiction relationships
+COMBINED_COPRO_HYBRID_STACK,NO,NOT_EXECUTABLE,No emitted combined structure type,FAIL,Metadata composition is not a priced executable structure
+CONDITIONAL_USER_FACT_REQUIRED,PARTIAL,CONDITIONAL,candidate_status and qualification state,FAIL,Attainable-fact treaty routes can disappear before treaty enumeration
+RULE_DATA_INCOMPLETE,PARTIAL,UNPRICED,candidate status and warnings,FAIL,Signals exist but no exclusive classification contract
+AUTHORITY_LOCKED,PARTIAL,UNPRICED,authority status and warnings,FAIL,Signals exist but no exclusive classification contract
+REJECTED_FOR_PROJECT,YES,UNPRICED,RULE_REJECTED and rejection_reason_class,PASS,Rejected component attempts remain observable in current runtime

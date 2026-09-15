@@ -1,0 +1,5 @@
+project,project_id,engine,status,candidates,priced,rejected,treaty,component,stack,anchor_program,gross_budget_usd,incentive_usd,npc_usd,canonical_winner,conditional_leader,baseline_result
+The Little Utopia,fa5cade5-0669-4816-bfe6-72146f8d3bae,canonical-1.54.0,EVALUATION_REUSED,243,125,118,9,108,1,mu_edb_incentive,4364393.00,573059.70,3791333.30,NONE,ca_mb_film_video_credit,PASS
+F#K Valentine's Day,6c6f1c13-2d49-4bbc-bafb-2a12efa93112,canonical-1.54.0,EVALUATION_REUSED,295,160,135,10,159,1,gr_cash_rebate,4517687.00,1445659.84,3072027.16,NONE,gr_cash_rebate+ro_film_office_cash_rebate,PASS
+Bad Hombres,4355ae88-a636-4c18-af60-ad73b2646124,canonical-1.54.0,EVALUATION_REUSED,240,123,117,8,106,1,us_nm_film_credit,2482023.00,596910.25,1885112.75,us_nm_film_credit,NONE,PASS
+Lips Like Sugar,ab10b319-978e-44d3-9331-af2a5f2cccc2,canonical-1.54.0,EVALUATION_REUSED,297,176,121,9,162,1,ca_film_30,11983654.00,3459278.90,8524375.10,ca_film_30,NONE,PASS

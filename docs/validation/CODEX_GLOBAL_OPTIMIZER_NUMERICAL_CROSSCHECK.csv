@@ -1,0 +1,8 @@
+check_id,structure_or_project,independent_inputs,independent_expected,runtime_actual,result,notes
+NUM-001,Ontario OFTTC plus federal CPTC,"OFTTC 200000; CPTC base 1000000; CPTC rate 25%","200000 + (1000000-200000)*0.25 = 400000; reduction 50000","400000; reduction 50000",PASS,Literal oracle does not copy engine output
+NUM-002,Little Utopia baseline,"gross 4364393.00; incentive 573059.70",3791333.30,3791333.30,PASS,Mauritius anchor preserved
+NUM-003,FVD baseline,"gross 4517687.00; incentive 1445659.84",3072027.16,3072027.16,PASS,Greece anchor preserved
+NUM-004,Bad Hombres baseline,"gross 2482023.00; incentive 596910.25",1885112.75,1885112.75,PASS,Accepted New Mexico winner preserved
+NUM-005,Lips Like Sugar baseline,"gross 11983654.00; incentive 3459278.90",8524375.10,8524375.10,PASS,Accepted California winner preserved
+NUM-006,Unknown same-jurisdiction conditional stack,No named publishable pair/group rule,No combined incentive may be published until relationship is authorized,"Raw constituent incentives are summed and conditional NPC is gross minus that sum",FAIL,Disclosure does not make unauthorized economics valid
+NUM-007,Stack base conservation,Programs may share the same qualifying base,Unique allocated spend plus per-program claims must be separately reported,"total_qualifying_spend_usd is the arithmetic sum of per-program QPE and may count shared spend more than once",FAIL,Trace cannot distinguish shared base from distinct allocated dollars
