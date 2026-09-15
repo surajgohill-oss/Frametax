@@ -1,0 +1,8 @@
+canonical_program_id,field_investigated,discovered_value,evidence_url,evidence_date,authority_type
+IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,base_rate,"N/A (Co-production fund, not tax rebate)",https://www.programaibermedia.com/,2026-09-14,PRIMARY_AUTHORITY
+ae_ad_film_rebate,base_rate,35%,https://www.film.gov.ae,2026-09-14,PRIMARY_AUTHORITY
+ae_ad_film_rebate,minimum_qpe,"US $200,000 (feature), $50k (TV)",https://www.film.gov.ae,2026-09-14,PRIMARY_AUTHORITY
+ae_dxb_dpip,base_rate,N/A (No formal published rebate),https://www.filmdubai.gov.ae,2026-09-14,PRIMARY_AUTHORITY
+ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,base_rate,35% (Draft law),https://qkk.al,2026-09-14,PRIMARY_AUTHORITY
+ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,base_rate,10%,https://screenqueensland.com.au,2026-09-14,PRIMARY_AUTHORITY
+ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,minimum_qpe,"AU$250,000",https://screenqueensland.com.au,2026-09-14,PRIMARY_AUTHORITY
