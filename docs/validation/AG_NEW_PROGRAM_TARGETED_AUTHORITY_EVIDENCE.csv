@@ -48,3 +48,20 @@ ag-us-or-oregon-production-investment-fund-opif,base_rate,20%,https://oregonfilm
 ag-us-or-oregon-production-investment-fund-opif,minimum_qpe,"USD 1,000,000",https://oregonfilm.org/,2026-09-14,PRIMARY_AUTHORITY
 ag-us-pr-puerto-rico-film-industry-economic-incentives-act,base_rate,20%,https://www.ddec.pr.gov/,2026-09-14,PRIMARY_AUTHORITY
 ag-us-pr-puerto-rico-film-industry-economic-incentives-act,minimum_qpe,"USD 50,000",https://www.ddec.pr.gov/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-tn-tennessee-film-entertainment-music-commission-incentives,base_rate,25%,https://www.tnentertainment.com/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-tn-tennessee-film-entertainment-music-commission-incentives,minimum_qpe,"USD 200,000",https://www.tnentertainment.com/,2026-09-14,PRIMARY_AUTHORITY
+ag-ve-cnac-venezuela-film-production-fund-fonprocine,base_rate,N/A (No fixed rebate),http://www.cnac.gob.ve/,2026-09-14,PRIMARY_AUTHORITY
+ag-vn-vietnam-cinema-department-facilitation,base_rate,N/A (No rebate program),https://bvhttdl.gov.vn/,2026-09-14,PRIMARY_AUTHORITY
+al_cash_rebate,base_rate,35% (Draft law),https://qkk.al,2026-09-14,PRIMARY_AUTHORITY
+au_nsw_pdv_rebate,base_rate,10%,https://screen.nsw.gov.au/,2026-09-14,PRIMARY_AUTHORITY
+au_nsw_pdv_rebate,minimum_qpe,"AU$ 500,000",https://screen.nsw.gov.au/,2026-09-14,PRIMARY_AUTHORITY
+au_pdv_offset,base_rate,30%,https://www.screenaustralia.gov.au/,2026-09-14,PRIMARY_AUTHORITY
+au_pdv_offset,minimum_qpe,"AU$ 500,000",https://www.screenaustralia.gov.au/,2026-09-14,PRIMARY_AUTHORITY
+au_producer_offset,base_rate,40%,https://www.screenaustralia.gov.au/,2026-09-14,PRIMARY_AUTHORITY
+au_producer_offset,minimum_qpe,"AU$ 500,000",https://www.screenaustralia.gov.au/,2026-09-14,PRIMARY_AUTHORITY
+au_qld_pdv_rebate,base_rate,10%,https://screenqueensland.com.au/,2026-09-14,PRIMARY_AUTHORITY
+au_qld_pdv_rebate,minimum_qpe,"AU$ 250,000",https://screenqueensland.com.au/,2026-09-14,PRIMARY_AUTHORITY
+au_sa_pdv_rebate,base_rate,10%,https://www.safilm.com.au/,2026-09-14,PRIMARY_AUTHORITY
+au_sa_pdv_rebate,minimum_qpe,"AU$ 250,000",https://www.safilm.com.au/,2026-09-14,PRIMARY_AUTHORITY
+ca_bc_dave,base_rate,16%,https://www.creativebc.com/,2026-09-14,PRIMARY_AUTHORITY
+ca_bc_dave,minimum_qpe,N/A,https://www.creativebc.com/,2026-09-14,PRIMARY_AUTHORITY

@@ -57,3 +57,13 @@ ag-us-nm-new-mexico-film-production-tax-credit,NM_QPE,25%,0,UNMAPPED,REFUNDABLE_
 ag-us-ny-new-york-state-film-tax-credit-program,NY_QPE,30%,1000000,UNMAPPED,REFUNDABLE_TAX_CREDIT
 ag-us-or-oregon-production-investment-fund-opif,OR_QPE,20%,1000000,UNMAPPED,CASH_REBATE
 ag-us-pr-puerto-rico-film-industry-economic-incentives-act,PR_QPE,20%,50000,UNMAPPED,TRANSFERABLE_TAX_CREDIT
+ag-us-tn-tennessee-film-entertainment-music-commission-incentives,TN_QPE,25%,200000,UNMAPPED,GOVERNMENT_GRANT
+ag-ve-cnac-venezuela-film-production-fund-fonprocine,UNMAPPED,UNMAPPED,UNMAPPED,UNMAPPED,UNMAPPED
+ag-vn-vietnam-cinema-department-facilitation,UNMAPPED,UNMAPPED,UNMAPPED,UNMAPPED,UNMAPPED
+al_cash_rebate,AL_QPE,35%,UNMAPPED,UNMAPPED,CASH_REBATE
+au_nsw_pdv_rebate,NSW_PDV_QPE,10%,500000,UNMAPPED,CASH_REBATE
+au_pdv_offset,AU_PDV_QPE,30%,500000,UNMAPPED,REFUNDABLE_TAX_CREDIT
+au_producer_offset,AU_QPE,40%,500000,UNMAPPED,REFUNDABLE_TAX_CREDIT
+au_qld_pdv_rebate,QLD_PDV_QPE,10%,250000,UNMAPPED,CASH_REBATE
+au_sa_pdv_rebate,SA_PDV_QPE,10%,250000,UNMAPPED,CASH_REBATE
+ca_bc_dave,BC_DAVE_QPE,16%,0,UNMAPPED,REFUNDABLE_TAX_CREDIT

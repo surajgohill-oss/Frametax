@@ -57,3 +57,13 @@ ag-us-nm-new-mexico-film-production-tax-credit,AG_ONLY_PROGRAM_MISSING_FROM_DB,V
 ag-us-ny-new-york-state-film-tax-credit-program,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
 ag-us-or-oregon-production-investment-fund-opif,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
 ag-us-pr-puerto-rico-film-industry-economic-incentives-act,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-us-tn-tennessee-film-entertainment-music-commission-incentives,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-ve-cnac-venezuela-film-production-fund-fonprocine,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,"Co-production fund, not a formulaic rebate."
+ag-vn-vietnam-cinema-department-facilitation,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal rebate available in Vietnam.
+al_cash_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+au_nsw_pdv_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+au_pdv_offset,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+au_producer_offset,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+au_qld_pdv_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+au_sa_pdv_rebate,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ca_bc_dave,CODEX_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
