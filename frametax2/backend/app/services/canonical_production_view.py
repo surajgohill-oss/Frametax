@@ -968,20 +968,21 @@ def _ranking_entry(entry: dict) -> dict:
 
 
 async def compute_anchor_budget_contract(session: AsyncSession, project_id) -> dict:
-    """CLAUDE_FINAL_ACTIVE_OPTIMIZER_IMPLEMENTATION_AND_RUNTIME_CLOSEOUT,
-    Section A — the Anchor Budget Contract. A REFERENCE calculation, never
-    a candidate structure: re-presents this project's own real, already-
-    computed is_baseline row under an explicit anchor-reporting shape,
-    plus an honest check for a real supplied/embedded incentive line in
-    the project's own imported budget (spend_category == 'incentive' on
-    BudgetLineItem — a real, pre-existing model column that no code path
-    in this codebase previously read). No new pricing math: the
-    "independently calculated canonical anchor incentive" is the SAME
-    real baseline StructureCalculationResult row every other part of this
-    codebase already treats as canonical (candidate ranking's own
-    `_admits_recommended`/`top_pair` logic, ProjectHeader's hero figure,
-    etc.) — this function only assembles and labels those already-real
-    fields, plus the reconciliation against any supplied incentive found.
+    """CLAUDE_CORRECT_FAILED_OPTIMIZER_CLOSEOUT, Section A — the Anchor
+    Budget Contract. THIS FUNCTION IS A THIN PRESENTATION READER, NOT THE
+    SOURCE: the actual calculation (gross budget, supplied-incentive
+    query, canonical calculated incentive, variance, financing adjustment,
+    anchor NPC) is computed and PERSISTED inside the optimizer's own
+    evaluation path (`canonical_evaluation.evaluate_project()`, the
+    `anchor_contract` field on the real anchor candidate's own
+    `calculation_trace_json`, written at the same point every other real
+    field on that candidate is written). This function only reads that
+    already-computed, already-persisted field back — it recomputes
+    nothing. If a caller ever finds this field absent on a current-
+    fingerprint baseline row, that is a genuine evaluator defect (the
+    baseline candidate did not reach the PRICED branch that writes it),
+    not something this reader silently papers over by recalculating —
+    it returns status NO_ANCHOR_CONTRACT_PERSISTED instead.
 
     Returns a dict with: gross_budget_usd, supplied_incentive_usd (None if
     no such budget line exists — genuinely absent, never guessed),
@@ -1011,39 +1012,31 @@ async def compute_anchor_budget_contract(session: AsyncSession, project_id) -> d
         return {"status": "NO_BASELINE_STRUCTURE", "project_id": str(project_id)}
     scr, sname = baseline_row
     trace = scr.calculation_trace_json or {}
-
-    # Real, honest check — never assumed. Most real productions' imported
-    # budgets carry no such line at all (confirmed for all four canonical
-    # productions this workstream); when one exists, it is a real,
-    # producer-supplied figure, disclosed for reconciliation only, never
-    # substituted for the canonical calculation (per this workstream's own
-    # "never subtract both" / "canonical calculation is optimizer truth"
-    # rule).
-    supplied_row = (await session.execute(
-        select(func.sum(BudgetLineItem.amount_usd))
-        .join(BudgetDocument, BudgetLineItem.budget_document_id == BudgetDocument.id)
-        .where(BudgetDocument.project_id == project_id, BudgetLineItem.spend_category == "incentive")
-    )).scalar()
-    supplied_incentive_usd = float(supplied_row) if supplied_row is not None else None
-
-    calculated_incentive = float(scr.total_incentive_value_usd) if scr.total_incentive_value_usd is not None else None
-    variance_usd = (
-        round(calculated_incentive - supplied_incentive_usd, 2)
-        if calculated_incentive is not None and supplied_incentive_usd is not None
-        else None
-    )
+    engine_contract = trace.get("anchor_contract")
+    if engine_contract is None:
+        # Real, disclosed gap: the baseline exists but did not reach the
+        # PRICED persist branch that writes anchor_contract (e.g. a
+        # blocked/unpriced baseline). Never recomputed here — that would
+        # make this reader a second source of truth, exactly what this
+        # workstream's own correction forbids.
+        return {
+            "status": "NO_ANCHOR_CONTRACT_PERSISTED",
+            "project_id": str(project_id),
+            "anchor_candidate_status": trace.get("candidate_status"),
+            "anchor_role_qualification_state": (trace.get("role_qualification") or {}).get("state"),
+        }
 
     return {
         "status": "OK",
         "project_id": str(project_id),
         "anchor_structure_name": sname,
         "anchor_jurisdiction_code": trace.get("primary_jurisdiction"),
-        "gross_budget_usd": float(scr.total_budget_usd) if scr.total_budget_usd is not None else None,
-        "supplied_incentive_usd": supplied_incentive_usd,
-        "calculated_anchor_incentive_usd": calculated_incentive,
-        "variance_usd": variance_usd,
-        "financing_adjustment_usd": trace.get("financing_cost_usd") or 0.0,
-        "anchor_npc_usd": float(scr.true_net_cost_usd) if scr.true_net_cost_usd is not None else None,
+        "gross_budget_usd": engine_contract.get("gross_budget_usd"),
+        "supplied_incentive_usd": engine_contract.get("supplied_incentive_usd"),
+        "calculated_anchor_incentive_usd": engine_contract.get("calculated_anchor_incentive_usd"),
+        "variance_usd": engine_contract.get("variance_usd"),
+        "financing_adjustment_usd": engine_contract.get("financing_adjustment_usd"),
+        "anchor_npc_usd": engine_contract.get("anchor_npc_usd"),
         "anchor_candidate_status": trace.get("candidate_status"),
         "anchor_role_qualification_state": (trace.get("role_qualification") or {}).get("state"),
         "state_fingerprint": fingerprint,

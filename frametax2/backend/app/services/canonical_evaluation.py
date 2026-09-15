@@ -60,7 +60,7 @@ import functools
 import itertools
 import uuid
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.allocation_pricing import price_allocated_structure, rank_allocated_structures
@@ -149,6 +149,7 @@ from app.data.program_rate_rules import (
     classify_rate_resolution_failure,
     resolve_program_rate,
 )
+from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
@@ -637,7 +638,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.60.0"
+ENGINE_VERSION = "canonical-1.61.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -3023,6 +3024,27 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             amount_facts={**inputs.amount_facts, **_company_period_amounts},
         )
 
+    # CLAUDE_CORRECT_FAILED_OPTIMIZER_CLOSEOUT, Section A — the Anchor
+    # Budget Contract's own "supplied/embedded incentive" figure, read
+    # ONCE here, inside the optimizer's own evaluation path (never in the
+    # served-view layer, which only re-presents this same value going
+    # forward). A real, honest, pre-existing model column
+    # (BudgetLineItem.spend_category == 'incentive') that no code path in
+    # this codebase read before this workstream. Already part of the
+    # fingerprint implicitly: every budget line (any spend_category,
+    # including 'incentive') is already hashed in full in `payload["lines"]`
+    # inside _compute_fingerprint above, so adding, removing, or changing
+    # a supplied-incentive line already forces a fresh evaluation without
+    # any further fingerprint change needed here.
+    _anchor_supplied_incentive_row = (await session.execute(
+        select(func.sum(BudgetLineItem.amount_usd))
+        .join(BudgetDocument, BudgetLineItem.budget_document_id == BudgetDocument.id)
+        .where(BudgetDocument.project_id == project.id, BudgetLineItem.spend_category == "incentive")
+    )).scalar()
+    _anchor_supplied_incentive_usd = (
+        float(_anchor_supplied_incentive_row) if _anchor_supplied_incentive_row is not None else None
+    )
+
     # Fresh Project Source-Document Ingestion: the retroactive counterpart
     # to material_routing._route_screenplay's commit-time script analysis
     # -- a project whose screenplay Document/DocumentVersion predates that
@@ -3778,6 +3800,33 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "npc_conservative_usd": pricing.npc_verified_usd,
                 "gross_budget_usd": pricing.gross_budget_usd,
                 "segments": _segment_dicts(pricing),
+                # CLAUDE_CORRECT_FAILED_OPTIMIZER_CLOSEOUT, Section A — the
+                # Anchor Budget Contract, computed and persisted HERE,
+                # inside the optimizer's own evaluation path, at the ONE
+                # candidate this evaluation resolves as the real anchor
+                # (is_baseline True for exactly one candidate). Never
+                # recomputed by the served-view layer — canonical_
+                # production_view.compute_anchor_budget_contract() reads
+                # this field verbatim; it is not the field's source.
+                # Never subtracts both supplied and calculated incentives
+                # (supplied is disclosure-only, never netted against the
+                # calculated figure below); the canonical (calculated)
+                # incentive remains optimizer truth. None for every
+                # non-baseline candidate (this structure/pricing pass
+                # exists for every candidate, but only the real anchor
+                # carries this contract).
+                "anchor_contract": ({
+                    "gross_budget_usd": inputs.gross_budget_usd,
+                    "supplied_incentive_usd": _anchor_supplied_incentive_usd,
+                    "calculated_anchor_incentive_usd": pricing.selected_incentive_usd,
+                    "variance_usd": (
+                        round((pricing.selected_incentive_usd or 0.0) - _anchor_supplied_incentive_usd, 2)
+                        if _anchor_supplied_incentive_usd is not None and pricing.selected_incentive_usd is not None
+                        else None
+                    ),
+                    "financing_adjustment_usd": pricing.financing_cost_usd or 0.0,
+                    "anchor_npc_usd": pricing.npc_verified_usd,
+                } if is_baseline else None),
                 # Task 3 (canonical pricing path + discovery repair) — ONE
                 # canonical served NPC representation. Every dollar between
                 # (npc_verified_usd, i.e. budget - incentive) and

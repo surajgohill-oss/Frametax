@@ -452,11 +452,37 @@ async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSessi
             partner_entries = [p for p in (e.get("coproduction_partners") or []) if p.get("jurisdiction_code") == "GB"]
             if partner_entries:
                 assert partner_entries[0].get("allocated_usd", 0) > 0
+        # CLAUDE_CORRECT_FAILED_OPTIMIZER_CLOSEOUT, Section C — combined
+        # structures must also receive the same anchor net-benefit
+        # comparison and $100,000 materiality classification every other
+        # structure type receives (computed post-hoc, generically, in
+        # build_production_and_structures — never a second combined-
+        # structure-specific implementation).
+        classified = [e for e in priced_combined if e.get("hybrid_recommendation_status") is not None]
+        assert classified, "priced combined structures must receive a net-benefit/materiality classification"
+        for e in classified:
+            assert e["hybrid_recommendation_status"] in (
+                "ELIGIBLE_FOR_RECOMMENDATION", "ECONOMICALLY_NON_MATERIAL_NOT_RECOMMENDED",
+                "CONDITIONAL_MATERIAL", "CONDITIONAL_ECONOMICALLY_NON_MATERIAL",
+            )
     finally:
         del te._BILATERAL[frozenset({"MU", "GB"})]
         await db.execute(ProjectFact.__table__.delete().where(
             ProjectFact.project_id == project_id, ProjectFact.fact_key.in_((majority_key, minority_key, cultural_key)),
         ))
+        # Leave no test data behind: delete the real ProductionStructure/
+        # StructureCalculationResult rows this synthetic-treaty run
+        # created (their treaty_slug names the synthetic treaty by name,
+        # which no longer exists in the registry once this test ends).
+        _residue_ids = (await db.execute(
+            select(_PS.id).where(
+                _PS.project_id == project_id,
+                _PS.name.like(f"%{treaty_slug}%"),
+            )
+        )).scalars().all()
+        if _residue_ids:
+            await db.execute(sa_delete(_SCR).where(_SCR.structure_id.in_(_residue_ids)))
+            await db.execute(sa_delete(_PS).where(_PS.id.in_(_residue_ids)))
         await db.commit()
 
 

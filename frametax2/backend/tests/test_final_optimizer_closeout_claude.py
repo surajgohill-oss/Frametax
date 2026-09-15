@@ -86,6 +86,109 @@ async def test_little_utopia_and_fvd_anchor_reports_their_own_real_unresolved_qu
     assert fvd["anchor_role_qualification_state"] == "USER_FACT_REQUIRED"
 
 
+async def test_anchor_contract_is_persisted_by_the_optimizer_not_recomputed_by_the_view(db: AsyncSession):
+    """CLAUDE_CORRECT_FAILED_OPTIMIZER_CLOSEOUT, Section A — the anchor
+    contract must be SOURCED inside canonical_evaluation.evaluate_project()
+    (the optimizer's own evaluation path), never reconstructed by the
+    served-view layer. Proven directly against the real, persisted
+    StructureCalculationResult row: the baseline candidate's own
+    calculation_trace_json carries a real, non-None anchor_contract dict
+    with every required field, written at evaluation time -- not a
+    presentation-layer fabrication. compute_anchor_budget_contract() is
+    then proven to read this exact persisted dict verbatim (byte-identical
+    values), never recomputing any of them."""
+    from sqlalchemy import select as sa_select
+
+    from app.models.production import ProductionStructure, StructureCalculationResult
+    from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+
+    for pid in ALL_FOUR.values():
+        fp = await current_generation_fingerprint(db, pid)
+        row = (await db.execute(
+            sa_select(StructureCalculationResult.calculation_trace_json)
+            .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+            .where(
+                ProductionStructure.project_id == pid,
+                StructureCalculationResult.engine_version == ENGINE_VERSION,
+                StructureCalculationResult.input_fingerprint == fp,
+                StructureCalculationResult.calculation_trace_json["is_baseline"].astext == "true",
+            )
+        )).scalar_one_or_none()
+        assert row is not None, f"{pid}: no baseline row at the current fingerprint"
+        engine_contract = row.get("anchor_contract")
+        assert engine_contract is not None, f"{pid}: evaluate_project() did not persist an anchor_contract on its own baseline candidate"
+        for key in ("gross_budget_usd", "supplied_incentive_usd", "calculated_anchor_incentive_usd",
+                    "variance_usd", "financing_adjustment_usd", "anchor_npc_usd"):
+            assert key in engine_contract
+
+        view_contract = await compute_anchor_budget_contract(db, pid)
+        assert view_contract["status"] == "OK"
+        assert view_contract["gross_budget_usd"] == engine_contract["gross_budget_usd"]
+        assert view_contract["calculated_anchor_incentive_usd"] == engine_contract["calculated_anchor_incentive_usd"]
+        assert view_contract["anchor_npc_usd"] == engine_contract["anchor_npc_usd"]
+
+
+async def test_supplied_incentive_budget_line_changes_the_fingerprint_and_forces_fresh_anchor_recompute(db: AsyncSession):
+    """Required by this workstream: proves that changing an anchor-
+    relevant fact (a real, producer-supplied incentive budget line)
+    invalidates evaluate_project()'s own fingerprint and forces a fresh
+    evaluation that recomputes the anchor_contract -- not a stale,
+    reused row. Uses a real, temporary BudgetLineItem on Little Utopia's
+    own real, current budget document, written and deleted within this
+    test only; the project's real economics are restored exactly."""
+    import uuid
+
+    from sqlalchemy import delete as sa_delete
+    from sqlalchemy import select as sa_select
+
+    from app.models.budget import BudgetDocument, BudgetLineItem
+    from app.models.production import ProductionStructure, StructureCalculationResult
+    from app.services.canonical_evaluation import current_generation_fingerprint, evaluate_project
+
+    pid = LITTLE_UTOPIA_PROJECT_ID
+    fp_before = await current_generation_fingerprint(db, pid)
+    assert fp_before is not None
+
+    doc_id = (await db.execute(
+        sa_select(BudgetDocument.id).where(BudgetDocument.project_id == pid).limit(1)
+    )).scalar_one_or_none()
+    assert doc_id is not None, "Little Utopia must have a real budget document on file"
+
+    line_id = uuid.uuid4()
+    db.add(BudgetLineItem(
+        id=line_id, budget_document_id=doc_id, department="TEST",
+        description="Claude closeout fingerprint-sensitivity probe — deleted at test end",
+        spend_category="incentive", amount_usd=1.0, amount_normalized=1.0, currency_code="USD",
+    ))
+    await db.commit()
+    try:
+        fp_with_supplied_line = await current_generation_fingerprint(db, pid)
+        assert fp_with_supplied_line != fp_before, (
+            "adding a real supplied-incentive budget line must change the evaluation fingerprint"
+        )
+
+        result = await evaluate_project(db, pid)
+        assert result["status"] == "EVALUATION_COMPLETE"
+        assert result["state_fingerprint"] == fp_with_supplied_line
+
+        row = (await db.execute(
+            sa_select(StructureCalculationResult.calculation_trace_json)
+            .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+            .where(
+                ProductionStructure.project_id == pid,
+                StructureCalculationResult.input_fingerprint == fp_with_supplied_line,
+                StructureCalculationResult.calculation_trace_json["is_baseline"].astext == "true",
+            )
+        )).scalar_one_or_none()
+        assert row is not None
+        assert row["anchor_contract"]["supplied_incentive_usd"] == pytest.approx(1.0)
+    finally:
+        await db.execute(sa_delete(BudgetLineItem).where(BudgetLineItem.id == line_id))
+        await db.commit()
+        fp_after = await current_generation_fingerprint(db, pid)
+        assert fp_after == fp_before, "deleting the probe line must restore the original fingerprint exactly"
+
+
 # ---------------------------------------------------------------------------
 # B/E — $100,000 hybrid-recommendation materiality threshold
 # ---------------------------------------------------------------------------
