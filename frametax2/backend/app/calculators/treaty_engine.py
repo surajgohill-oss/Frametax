@@ -324,6 +324,19 @@ _IBERMEDIA_MEMBERS: frozenset[str] = frozenset({
 # Bilateral eligibility evaluation
 # ---------------------------------------------------------------------------
 
+def get_multilateral_treaty(kind: str) -> TreatyData | None:
+    """Read-only accessor for a registered multilateral framework's own
+    TreatyData row (eurimages / european_convention / ibermedia) — the
+    multilateral counterpart to get_bilateral_treaty below. Added for
+    COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION so
+    canonical_treaty_bridge.py's multilateral adapters can read the
+    framework's own real personnel_requirement (None for all three today,
+    same as every bilateral entry) the same way the bilateral path
+    already does, instead of leaving personnel_gate_state at its dataclass
+    default of None. No new doctrine, no new registry."""
+    return _MULTILATERAL.get(kind)
+
+
 def get_bilateral_treaty(country_a: str, country_b: str) -> TreatyData | None:
     """Return TreatyData for a country pair, or None if no bilateral treaty exists."""
     return _BILATERAL.get(frozenset({country_a.upper(), country_b.upper()}))

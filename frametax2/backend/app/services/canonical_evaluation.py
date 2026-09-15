@@ -104,6 +104,7 @@ from app.calculators.canonical_role_qualification_bridge import (
 from app.calculators import treaty_engine as te
 from app.calculators.canonical_treaty_bridge import (
     RESOLUTION_ELIGIBLE,
+    RESOLUTION_INELIGIBLE,
     evaluate_bilateral_coproduction_opportunity,
     evaluate_eurimages_coproduction_opportunity,
     evaluate_european_convention_coproduction_opportunity,
@@ -636,7 +637,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.58.0"
+ENGINE_VERSION = "canonical-1.59.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1234,6 +1235,77 @@ def _price_candidate(
         fx_context=inputs.fx_context,
     )
     return pricing, register, rr
+
+
+def _classify_opportunity_relevance(
+    resolution_state: str, conditional_scenario: dict | None, project_anchored: bool,
+) -> str:
+    """COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION -- classifies a
+    served treaty/co-production opportunity using the AVAILABLE /
+    COMPATIBLE / CONDITIONAL / EXECUTABLE / EXCLUDED / AUTHORITY_OR_RULE_
+    DATA_INCOMPLETE contract, purely from fields this evaluation ALREADY
+    computed (resolution_state, the conditional-pricing scenario's own
+    status, and whether this opportunity's own treaty parties include
+    this project's real home/service jurisdiction) -- no new eligibility
+    math, no invented fact, no change to resolution_state/pricing/ranking.
+    Purely a read-only, additive label surfaced alongside the existing
+    fields, so the Globe (or any other consumer) never has to re-derive
+    it from raw resolution_state/conditional_scenario shape.
+
+      EXECUTABLE  -- resolution_state is ELIGIBLE: real project facts
+                     (never an assumption) cleared every mandatory
+                     threshold. Always the strongest classification,
+                     regardless of anchoring -- real facts are real facts.
+      EXCLUDED    -- resolution_state is INELIGIBLE: a real, confirmed
+                     disqualification (a failed cultural test, a
+                     confirmed-wrong personnel fact, etc.).
+      AVAILABLE   -- the treaty/framework is real and registered, but
+                     either (a) it is not anchored at this project's own
+                     jurisdiction at all -- a globally enumerated pair
+                     between two OTHER countries, never presented as
+                     project-compatible merely because a registry entry
+                     exists -- or (b) it IS anchored here but no
+                     achievable modeled path exists yet (a real,
+                     unresolvable creative/legal fact, e.g. an
+                     unconfirmed cultural test, blocks even the
+                     conditional-assumption scenario).
+      CONDITIONAL -- anchored at this project's own jurisdiction AND the
+                     conditional-pricing scenario reached a real priced
+                     result using the treaty's own registered minimum
+                     contribution as a disclosed, producer-actionable
+                     assumption -- never presented as a verified fact or
+                     a recommendation (see _admits_recommended/top_pair,
+                     which never considers a treaty_coproduction row at
+                     all: total_incentive_value_usd/true_net_cost_usd are
+                     always None on this row; only the nested
+                     conditional_scenario carries a number).
+      AUTHORITY_OR_RULE_DATA_INCOMPLETE -- the conditional scenario itself
+                     could not resolve for a data-completeness reason (an
+                     unresolved same-jurisdiction stacking group, or no
+                     canonical rate rule for what the treaty unlocks)
+                     rather than a genuine legal/creative blocker.
+
+    Compatible/executable current-fact states never require this helper
+    to invent anything: COMPATIBLE (current project facts support the
+    pathway short of full executability) does not currently occur in
+    this codebase's real data -- every real treaty_coproduction row is
+    either a bare registry entry (no contribution-share fact at all) or
+    fully solved to ELIGIBLE via a real, evidenced contribution fact
+    (EXECUTABLE); there is no intermediate "some but not all current
+    facts satisfied" state today. Reserved in the returned vocabulary
+    for a future caller that has one."""
+    if resolution_state == RESOLUTION_ELIGIBLE:
+        return "EXECUTABLE"
+    if resolution_state == RESOLUTION_INELIGIBLE:
+        return "EXCLUDED"
+    if not project_anchored:
+        return "AVAILABLE"
+    status = (conditional_scenario or {}).get("status")
+    if status == "CONDITIONAL_PROJECT_FACT_DEPENDENT":
+        return "CONDITIONAL"
+    if status in ("RULE_DATA_INCOMPLETE", "CANONICAL_DATA_GAP"):
+        return "AUTHORITY_OR_RULE_DATA_INCOMPLETE"
+    return "AVAILABLE"
 
 
 def _build_conditional_bilateral_scenario(
@@ -4663,6 +4735,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "treaty_cultural_test_required": opp.cultural_test_required,
                 "treaty_cultural_test_resolved": opp.cultural_test_resolved,
                 "treaty_disqualification_reasons": list(opp.disqualification_reasons),
+                # COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION —
+                # home_code (this project's own current jurisdiction) IS
+                # one of this treaty's two real parties by construction of
+                # this loop (find_real_bilateral_partners(home_code, ...))
+                # -- always project_anchored=True here. opportunity_relevance
+                # is a read-only classification of the ALREADY-computed
+                # resolution_state/conditional_scenario, never a new
+                # eligibility decision (see _classify_opportunity_relevance's
+                # own docstring for the full contract).
+                "opportunity_inclusion_source": "home_anchored_bilateral_treaty_registry",
+                "project_anchored": True,
+                "opportunity_relevance": _classify_opportunity_relevance(
+                    opp.resolution_state, _conditional_scenario, True,
+                ),
                 # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING —
                 # the real creative-personnel gate's own served contract:
                 # satisfied/failed requirements, missing facts, curable
@@ -5112,10 +5198,24 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "treaty_cultural_test_required": opp.cultural_test_required,
                 "treaty_cultural_test_resolved": opp.cultural_test_resolved,
                 "treaty_disqualification_reasons": list(opp.disqualification_reasons),
-                # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING —
-                # the real creative-personnel gate's own served contract:
-                # satisfied/failed requirements, missing facts, curable
-                # levers, and the next highest-value factual question.
+                # COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION —
+                # by construction of this loop (`if home_code in
+                # (majority_code, minority_code): continue` above), home_code
+                # is NEVER one of this treaty's own real parties -- this is
+                # a genuinely, globally registered bilateral treaty between
+                # two OTHER real countries, surfaced as a combined-structure
+                # building block, never as a claim that THIS project is
+                # itself compatible with it. project_anchored is always
+                # False here; opportunity_relevance is therefore always
+                # AVAILABLE (a legally modeled capability, not yet tied to
+                # this project), never CONDITIONAL/EXECUTABLE/COMPATIBLE,
+                # regardless of whether the conditional-pricing scenario
+                # below happens to solve a modeled split.
+                "opportunity_inclusion_source": "global_bilateral_treaty_registry_enumeration",
+                "project_anchored": False,
+                "opportunity_relevance": _classify_opportunity_relevance(
+                    opp.resolution_state, _conditional_scenario, False,
+                ),
                 # personnel_gate_state is NOT_APPLICABLE (never blocking,
                 # and not an open data question on this project) for
                 # every treaty whose own registry entry carries no
@@ -5467,6 +5567,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _eurimages_opp = evaluate_eurimages_coproduction_opportunity(
             list(_eurimages_participants), country_pcts=_eurimages_country_pcts,
             cultural_test_passed=_eurimages_cultural_test_passed,
+            personnel_attachment_facts=role_attachment_facts,
         )
         structure = ProductionStructure(
             id=uuid.uuid4(),
@@ -5523,6 +5624,29 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "treaty_cultural_test_required": _eurimages_opp.cultural_test_required if _eurimages_opp else True,
                 "treaty_cultural_test_resolved": _eurimages_opp.cultural_test_resolved if _eurimages_opp else False,
                 "treaty_disqualification_reasons": list(_eurimages_opp.disqualification_reasons) if _eurimages_opp else [],
+                # COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION —
+                # home_code is always the first element of
+                # _eurimages_participants (this project's own jurisdiction
+                # IS a real Eurimages member/party here) -- project_anchored
+                # is always True for a multilateral opportunity. No
+                # conditional-pricing scenario exists for multilateral
+                # frameworks (unlike bilateral's _build_conditional_
+                # bilateral_scenario), so this resolves CONDITIONAL only if
+                # resolution_state is ELIGIBLE (-> EXECUTABLE) or INELIGIBLE
+                # (-> EXCLUDED); otherwise AVAILABLE (a real, registered
+                # multilateral pathway, not yet tied to a real per-country
+                # budget-share fact for this project).
+                "opportunity_inclusion_source": "multilateral_membership_registry",
+                "project_anchored": True,
+                "opportunity_relevance": _classify_opportunity_relevance(
+                    _eurimages_opp.resolution_state if _eurimages_opp else "UNRESOLVED_FACTS", None, True,
+                ),
+                "personnel_gate_state": _eurimages_opp.personnel_gate_state if _eurimages_opp else None,
+                "personnel_satisfied_requirements": list(_eurimages_opp.personnel_satisfied_requirements) if _eurimages_opp else [],
+                "personnel_failed_requirements": list(_eurimages_opp.personnel_failed_requirements) if _eurimages_opp else [],
+                "personnel_missing_facts": list(_eurimages_opp.personnel_missing_facts) if _eurimages_opp else [],
+                "personnel_curable_levers": list(_eurimages_opp.personnel_curable_levers) if _eurimages_opp else [],
+                "personnel_next_question": _eurimages_opp.personnel_next_question if _eurimages_opp else None,
                 "reason": (
                     f"{len(eurimages_partners)} real Eurimages member candidate(s) "
                     "discovered; real budget-share and cultural-test facts required "
@@ -5572,6 +5696,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _fw_opp = _evaluator(
             list(_fw_participants), country_pcts=_fw_country_pcts,
             cultural_test_passed=_fw_cultural_test_passed,
+            personnel_attachment_facts=role_attachment_facts,
         )
         _fw_structure = ProductionStructure(
             id=uuid.uuid4(),
@@ -5628,6 +5753,23 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "treaty_cultural_test_required": _fw_opp.cultural_test_required if _fw_opp else True,
                 "treaty_cultural_test_resolved": _fw_opp.cultural_test_resolved if _fw_opp else False,
                 "treaty_disqualification_reasons": list(_fw_opp.disqualification_reasons) if _fw_opp else [],
+                # COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION — same
+                # reasoning as the Eurimages block above: home_code is
+                # always the first element of _fw_participants, so
+                # project_anchored is always True for a multilateral
+                # opportunity; no conditional-pricing scenario exists for
+                # multilateral frameworks.
+                "opportunity_inclusion_source": "multilateral_membership_registry",
+                "project_anchored": True,
+                "opportunity_relevance": _classify_opportunity_relevance(
+                    _fw_opp.resolution_state if _fw_opp else "UNRESOLVED_FACTS", None, True,
+                ),
+                "personnel_gate_state": _fw_opp.personnel_gate_state if _fw_opp else None,
+                "personnel_satisfied_requirements": list(_fw_opp.personnel_satisfied_requirements) if _fw_opp else [],
+                "personnel_failed_requirements": list(_fw_opp.personnel_failed_requirements) if _fw_opp else [],
+                "personnel_missing_facts": list(_fw_opp.personnel_missing_facts) if _fw_opp else [],
+                "personnel_curable_levers": list(_fw_opp.personnel_curable_levers) if _fw_opp else [],
+                "personnel_next_question": _fw_opp.personnel_next_question if _fw_opp else None,
                 "reason": (
                     f"{len(_fw_partners)} real {_fw_name} party candidate(s) discovered; "
                     "real budget-share and cultural-test facts required to resolve "

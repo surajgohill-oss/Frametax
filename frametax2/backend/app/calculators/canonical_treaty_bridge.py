@@ -216,12 +216,41 @@ def evaluate_eurimages_coproduction_opportunity(
     co_producer_countries: list[str],
     country_pcts: dict[str, float] | None = None,
     cultural_test_passed: bool | None = None,
+    personnel_attachment_facts: dict | None = None,
 ) -> CoproOpportunity | None:
     """The canonical Eurimages adapter. Returns None if fewer than 2 of
-    the given countries are Eurimages members (nothing to evaluate)."""
+    the given countries are Eurimages members (nothing to evaluate).
+
+    COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION — reads the
+    framework's own real personnel_requirement (te.get_multilateral_treaty,
+    None today) through the SAME evaluate_treaty_personnel_gate() the
+    bilateral adapters use, so personnel_gate_state is a real
+    QUAL_NOT_APPLICABLE here instead of silently staying the dataclass
+    default of None. No new doctrine; additive and backward-compatible
+    (personnel_attachment_facts defaults None, same as every existing
+    caller before this parameter existed)."""
     members = [c for c in co_producer_countries if te.is_eurimages_member(c)]
     if len(members) < 2:
         return None
+
+    _treaty = te.get_multilateral_treaty("eurimages")
+    _personnel_result = evaluate_treaty_personnel_gate(
+        _treaty.personnel_requirement if _treaty else None,
+        tuple(c.upper() for c in members), personnel_attachment_facts,
+    )
+    _personnel_kwargs = dict(
+        personnel_gate_state=_personnel_result.state,
+        personnel_satisfied_requirements=_personnel_result.resolved_facts,
+        personnel_failed_requirements=_personnel_result.failed_requirements,
+        personnel_missing_facts=_personnel_result.missing_facts,
+        personnel_curable_levers=_personnel_result.curable_requirements,
+        personnel_next_question=(_personnel_result.reasoning_trace[0] if _personnel_result.reasoning_trace else None),
+    )
+    _personnel_hard_fail = _treaty is not None and _treaty.personnel_requirement is not None and _personnel_result.state == QUAL_HARD_FAIL
+    _personnel_unresolved = (
+        _treaty is not None and _treaty.personnel_requirement is not None
+        and _personnel_result.state not in (QUAL_QUALIFIES, QUAL_HARD_FAIL)
+    )
 
     if country_pcts is None:
         return CoproOpportunity(
@@ -236,12 +265,13 @@ def evaluate_eurimages_coproduction_opportunity(
                 "states each party's real budget share — eligibility cannot "
                 "be resolved from membership alone.",
             ),
+            **_personnel_kwargs,
         )
 
     result = te.evaluate_eurimages_eligibility(members, country_pcts)
     cultural_resolved = cultural_test_passed is not None
     cultural_gate_ok = cultural_test_passed is True
-    is_eligible = result.is_eligible and cultural_gate_ok
+    is_eligible = result.is_eligible and cultural_gate_ok and not _personnel_hard_fail and not _personnel_unresolved
 
     reasons = list(result.disqualification_reasons)
     if cultural_test_passed is not True and result.is_eligible:
@@ -249,6 +279,8 @@ def evaluate_eurimages_coproduction_opportunity(
             "Eurimages requires a cultural test (European cultural character); "
             + ("explicitly failed." if cultural_test_passed is False else "never assessed.")
         )
+    if _personnel_hard_fail:
+        reasons.extend(_personnel_result.failed_requirements)
 
     return CoproOpportunity(
         treaty_type="eurimages",
@@ -256,13 +288,14 @@ def evaluate_eurimages_coproduction_opportunity(
         parties=tuple(c.upper() for c in members),
         resolution_state=(
             RESOLUTION_ELIGIBLE if is_eligible
-            else (RESOLUTION_INELIGIBLE if cultural_resolved or result.disqualification_reasons
+            else (RESOLUTION_INELIGIBLE if (_personnel_hard_fail or cultural_resolved or result.disqualification_reasons) and not _personnel_unresolved
                   else RESOLUTION_UNRESOLVED_FACTS)
         ),
         cultural_test_required=True,
         cultural_test_resolved=cultural_resolved,
         unlocked_slugs=tuple(result.unlocked_fund_slugs) if is_eligible else (),
         disqualification_reasons=tuple(reasons),
+        **_personnel_kwargs,
     )
 
 
@@ -270,6 +303,7 @@ def evaluate_european_convention_coproduction_opportunity(
     co_producer_countries: list[str],
     country_pcts: dict[str, float] | None = None,
     cultural_test_passed: bool | None = None,
+    personnel_attachment_facts: dict | None = None,
 ) -> CoproOpportunity | None:
     """Final Consolidated Backend Correction + Global Structuring
     Intelligence Acceptance, Part 3/CBA-006 -- the canonical European
@@ -293,6 +327,25 @@ def evaluate_european_convention_coproduction_opportunity(
     if len(signatories) < 2:
         return None
 
+    _treaty = te.get_multilateral_treaty("european_convention")
+    _personnel_result = evaluate_treaty_personnel_gate(
+        _treaty.personnel_requirement if _treaty else None,
+        tuple(c.upper() for c in signatories), personnel_attachment_facts,
+    )
+    _personnel_kwargs = dict(
+        personnel_gate_state=_personnel_result.state,
+        personnel_satisfied_requirements=_personnel_result.resolved_facts,
+        personnel_failed_requirements=_personnel_result.failed_requirements,
+        personnel_missing_facts=_personnel_result.missing_facts,
+        personnel_curable_levers=_personnel_result.curable_requirements,
+        personnel_next_question=(_personnel_result.reasoning_trace[0] if _personnel_result.reasoning_trace else None),
+    )
+    _personnel_hard_fail = _treaty is not None and _treaty.personnel_requirement is not None and _personnel_result.state == QUAL_HARD_FAIL
+    _personnel_unresolved = (
+        _treaty is not None and _treaty.personnel_requirement is not None
+        and _personnel_result.state not in (QUAL_QUALIFIES, QUAL_HARD_FAIL)
+    )
+
     if country_pcts is None:
         return CoproOpportunity(
             treaty_type="european_convention",
@@ -306,12 +359,13 @@ def evaluate_european_convention_coproduction_opportunity(
                 "project fact states each party's real budget share — "
                 "eligibility cannot be resolved from signatory status alone.",
             ),
+            **_personnel_kwargs,
         )
 
     result = te.evaluate_european_convention_eligibility(signatories, country_pcts)
     cultural_resolved = cultural_test_passed is not None
     cultural_gate_ok = cultural_test_passed is True
-    is_eligible = result.is_eligible and cultural_gate_ok
+    is_eligible = result.is_eligible and cultural_gate_ok and not _personnel_hard_fail and not _personnel_unresolved
 
     reasons = list(result.disqualification_reasons)
     if cultural_test_passed is not True and result.is_eligible:
@@ -320,6 +374,8 @@ def evaluate_european_convention_coproduction_opportunity(
             "cultural character); "
             + ("explicitly failed." if cultural_test_passed is False else "never assessed.")
         )
+    if _personnel_hard_fail:
+        reasons.extend(_personnel_result.failed_requirements)
 
     return CoproOpportunity(
         treaty_type="european_convention",
@@ -327,13 +383,14 @@ def evaluate_european_convention_coproduction_opportunity(
         parties=tuple(c.upper() for c in signatories),
         resolution_state=(
             RESOLUTION_ELIGIBLE if is_eligible
-            else (RESOLUTION_INELIGIBLE if cultural_resolved or result.disqualification_reasons
+            else (RESOLUTION_INELIGIBLE if (_personnel_hard_fail or cultural_resolved or result.disqualification_reasons) and not _personnel_unresolved
                   else RESOLUTION_UNRESOLVED_FACTS)
         ),
         cultural_test_required=True,
         cultural_test_resolved=cultural_resolved,
         unlocked_slugs=tuple(result.unlocked_fund_slugs) if is_eligible else (),
         disqualification_reasons=tuple(reasons),
+        **_personnel_kwargs,
     )
 
 
@@ -341,6 +398,7 @@ def evaluate_ibermedia_coproduction_opportunity(
     co_producer_countries: list[str],
     country_pcts: dict[str, float] | None = None,
     cultural_test_passed: bool | None = None,
+    personnel_attachment_facts: dict | None = None,
 ) -> CoproOpportunity | None:
     """CBA-006 -- the canonical Ibermedia adapter, the SAME fail-closed
     pattern as the Eurimages/European Convention adapters (no new treaty
@@ -351,6 +409,25 @@ def evaluate_ibermedia_coproduction_opportunity(
     members = [c for c in co_producer_countries if te.is_ibermedia_member(c)]
     if len(members) < 2:
         return None
+
+    _treaty = te.get_multilateral_treaty("ibermedia")
+    _personnel_result = evaluate_treaty_personnel_gate(
+        _treaty.personnel_requirement if _treaty else None,
+        tuple(c.upper() for c in members), personnel_attachment_facts,
+    )
+    _personnel_kwargs = dict(
+        personnel_gate_state=_personnel_result.state,
+        personnel_satisfied_requirements=_personnel_result.resolved_facts,
+        personnel_failed_requirements=_personnel_result.failed_requirements,
+        personnel_missing_facts=_personnel_result.missing_facts,
+        personnel_curable_levers=_personnel_result.curable_requirements,
+        personnel_next_question=(_personnel_result.reasoning_trace[0] if _personnel_result.reasoning_trace else None),
+    )
+    _personnel_hard_fail = _treaty is not None and _treaty.personnel_requirement is not None and _personnel_result.state == QUAL_HARD_FAIL
+    _personnel_unresolved = (
+        _treaty is not None and _treaty.personnel_requirement is not None
+        and _personnel_result.state not in (QUAL_QUALIFIES, QUAL_HARD_FAIL)
+    )
 
     if country_pcts is None:
         return CoproOpportunity(
@@ -365,12 +442,13 @@ def evaluate_ibermedia_coproduction_opportunity(
                 "states each party's real budget share — eligibility cannot "
                 "be resolved from membership alone.",
             ),
+            **_personnel_kwargs,
         )
 
     result = te.evaluate_ibermedia_eligibility(members, country_pcts)
     cultural_resolved = cultural_test_passed is not None
     cultural_gate_ok = cultural_test_passed is True
-    is_eligible = result.is_eligible and cultural_gate_ok
+    is_eligible = result.is_eligible and cultural_gate_ok and not _personnel_hard_fail and not _personnel_unresolved
 
     reasons = list(result.disqualification_reasons)
     if cultural_test_passed is not True and result.is_eligible:
@@ -379,6 +457,8 @@ def evaluate_ibermedia_coproduction_opportunity(
             "identity); "
             + ("explicitly failed." if cultural_test_passed is False else "never assessed.")
         )
+    if _personnel_hard_fail:
+        reasons.extend(_personnel_result.failed_requirements)
 
     return CoproOpportunity(
         treaty_type="ibermedia",
@@ -386,13 +466,14 @@ def evaluate_ibermedia_coproduction_opportunity(
         parties=tuple(c.upper() for c in members),
         resolution_state=(
             RESOLUTION_ELIGIBLE if is_eligible
-            else (RESOLUTION_INELIGIBLE if cultural_resolved or result.disqualification_reasons
+            else (RESOLUTION_INELIGIBLE if (_personnel_hard_fail or cultural_resolved or result.disqualification_reasons) and not _personnel_unresolved
                   else RESOLUTION_UNRESOLVED_FACTS)
         ),
         cultural_test_required=True,
         cultural_test_resolved=cultural_resolved,
         unlocked_slugs=tuple(result.unlocked_fund_slugs) if is_eligible else (),
         disqualification_reasons=tuple(reasons),
+        **_personnel_kwargs,
     )
 
 

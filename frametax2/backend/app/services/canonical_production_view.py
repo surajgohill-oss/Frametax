@@ -576,6 +576,19 @@ def _empty_structure_entry(
         "personnel_missing_facts": trace.get("personnel_missing_facts") or [],
         "personnel_curable_levers": trace.get("personnel_curable_levers") or [],
         "personnel_next_question": trace.get("personnel_next_question"),
+        # COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION — surfaces
+        # exactly how this opportunity entered the candidate set and how
+        # it classifies under the AVAILABLE/COMPATIBLE/CONDITIONAL/
+        # EXECUTABLE/EXCLUDED/AUTHORITY_OR_RULE_DATA_INCOMPLETE contract
+        # (canonical_evaluation._classify_opportunity_relevance), so a
+        # consumer never has to re-derive project relevance from raw
+        # resolution_state/conditional_scenario shape, or mistake a
+        # globally-enumerated third-country treaty pair for a claim that
+        # this project is itself compatible with it. None/None for any
+        # row persisted before this field existed.
+        "opportunity_inclusion_source": trace.get("opportunity_inclusion_source"),
+        "project_anchored": trace.get("project_anchored"),
+        "opportunity_relevance": trace.get("opportunity_relevance"),
         # Co-Pro Conditional Pricing Bridge — populated only for an
         # UNRESOLVED_FACTS treaty_coproduction structure where a
         # deterministic minimum-contribution scenario could be
