@@ -16,3 +16,19 @@ ag-be-vlg-vaf-flanders-audiovisual-fund-screen-flanders,base_rate,N/A (Refundabl
 ag-be-vlg-vaf-flanders-audiovisual-fund-screen-flanders,minimum_qpe,"250,000 EUR",https://www.screenflanders.be/,2026-09-14,PRIMARY_AUTHORITY
 ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate,base_rate,25%,https://www.nfc.bg/,2026-09-14,PRIMARY_AUTHORITY
 ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate,minimum_qpe,"100,000 BGN",https://www.nfc.bg/,2026-09-14,PRIMARY_AUTHORITY
+ag-cm-cameroon-centre-national-de-la-cin-matographie-cnc-cameroon,base_rate,N/A (No rebate available),https://www.cameroon.gov,2026-09-14,PRIMARY_AUTHORITY
+ag-gb-lon-film-london-production-finance-market,base_rate,"N/A (Financing Market, not a tax rebate)",https://filmlondon.org.uk/,2026-09-14,PRIMARY_AUTHORITY
+ag-hk-film-development-fund-fdf,base_rate,40%,https://www.fdc.gov.hk/en/fpfs,2026-09-14,PRIMARY_AUTHORITY
+ag-hk-film-development-fund-fdf,minimum_qpe,N/A (No strict minimum),https://www.fdc.gov.hk/en/fpfs,2026-09-14,PRIMARY_AUTHORITY
+ag-it-tos-film-commission-toscana-film-fund,base_rate,50% (Grant),https://www.toscanafilmcommission.it,2026-09-14,PRIMARY_AUTHORITY
+ag-it-tos-film-commission-toscana-film-fund,minimum_qpe,150% of grant,https://www.toscanafilmcommission.it,2026-09-14,PRIMARY_AUTHORITY
+ag-ke-kenya-film-commission-kfc-support,base_rate,20%,https://kenyafilmcommission.go.ke,2026-09-14,PRIMARY_AUTHORITY
+ag-ke-kenya-film-commission-kfc-support,minimum_qpe,N/A,https://kenyafilmcommission.go.ke,2026-09-14,PRIMARY_AUTHORITY
+ag-kw-kuwait-film-committee-support,base_rate,N/A (No rebate program),https://kuwait.gov,2026-09-14,PRIMARY_AUTHORITY
+ag-me-film-centre-of-montenegro-cash-rebate,base_rate,25%,https://filminmontenegro.me,2026-09-14,PRIMARY_AUTHORITY
+ag-me-film-centre-of-montenegro-cash-rebate,minimum_qpe,"100,000 EUR",https://filminmontenegro.me,2026-09-14,PRIMARY_AUTHORITY
+ag-mu-mauritius-edb-film-rebate,base_rate,40%,https://www.edbmauritius.org/,2026-09-14,PRIMARY_AUTHORITY
+ag-mu-mauritius-edb-film-rebate,minimum_qpe,"USD 1,000,000",https://www.edbmauritius.org/,2026-09-14,PRIMARY_AUTHORITY
+ag-om-oman-film-commission-facilitation,base_rate,N/A (No rebate program),https://screenoman.com,2026-09-14,PRIMARY_AUTHORITY
+ag-pa-panama-film-commission-facilitation,base_rate,25%,https://filmpanama.gob.pa,2026-09-14,PRIMARY_AUTHORITY
+ag-pa-panama-film-commission-facilitation,minimum_qpe,"USD 500,000",https://filmpanama.gob.pa,2026-09-14,PRIMARY_AUTHORITY

@@ -37,3 +37,13 @@ ag-au-wa-screenwest-wa-production-attraction-strategy-pas,AG_ONLY_PROGRAM_MISSIN
 ag-be-belgian-tax-shelter-for-audiovisual-productions,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
 ag-be-vlg-vaf-flanders-audiovisual-fund-screen-flanders,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
 ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-cm-cameroon-centre-national-de-la-cin-matographie-cnc-cameroon,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No rebate available in Cameroon.
+ag-gb-lon-film-london-production-finance-market,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,"Finance market, not a tax rebate."
+ag-hk-film-development-fund-fdf,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid funding program missing from DB.
+ag-it-tos-film-commission-toscana-film-fund,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid regional fund missing from DB.
+ag-ke-kenya-film-commission-kfc-support,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid rebate missing from DB.
+ag-kw-kuwait-film-committee-support,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal rebate available in Kuwait.
+ag-me-film-centre-of-montenegro-cash-rebate,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid rebate missing from DB.
+ag-mu-mauritius-edb-film-rebate,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid rebate missing from DB.
+ag-om-oman-film-commission-facilitation,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal rebate available in Oman.
+ag-pa-panama-film-commission-facilitation,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid rebate missing from DB.
