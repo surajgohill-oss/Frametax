@@ -1,1 +1,17 @@
 canonical_program_id,eligible_basis,rate_tier,threshold,uplift,cap,fx_treatment,stack_interaction,expected_incentive,expected_candidate_status,expected_ranking_eligibility,expected_conditional_rejection_reason
+IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ae_ad_film_rebate,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ae_dxb_dpip,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-ae-dubai-film-commission-abu-dhabi-film-commission-emirates-airline,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-am-cinema-foundation-of-armenia-cash-rebate,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-at-fisa-orf-fi,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-au-nsw-create-nsw-made-in-nsw-pdv-rebate,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-au-nt-screen-territory-production-attraction-incentive-program-paip,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-au-sa-south-australian-film-corporation-safc-production-incentive,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-au-screen-australia-miff-premiere-fund-tourism-australia,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-au-wa-screenwest-wa-production-attraction-strategy-pas,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-az-cinema-agency-of-the-republic-of-azerbaijan-arka-cash-rebate,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-ba-sarajevo-canton-cash-rebate-film-fund-sarajevo,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE
+ag-be-belgian-tax-shelter-for-audiovisual-productions,100%,30%,$1M,0%,None,Native,None,$300k,PRICEABLE,ELIGIBLE,NONE

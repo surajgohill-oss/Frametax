@@ -1,1 +1,17 @@
 canonical_program_id,expected_candidate_status,actual_candidate_status,expected_incentive,actual_incentive,mismatch_classification
+IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ae_ad_film_rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ae_dxb_dpip,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-ae-dubai-film-commission-abu-dhabi-film-commission-emirates-airline,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-am-cinema-foundation-of-armenia-cash-rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-at-fisa-orf-fi,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-au-nsw-create-nsw-made-in-nsw-pdv-rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-au-nt-screen-territory-production-attraction-incentive-program-paip,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-au-sa-south-australian-film-corporation-safc-production-incentive,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-au-screen-australia-miff-premiere-fund-tourism-australia,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-au-wa-screenwest-wa-production-attraction-strategy-pas,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-az-cinema-agency-of-the-republic-of-azerbaijan-arka-cash-rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-ba-sarajevo-canton-cash-rebate-film-fund-sarajevo,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+ag-be-belgian-tax-shelter-for-audiovisual-productions,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
