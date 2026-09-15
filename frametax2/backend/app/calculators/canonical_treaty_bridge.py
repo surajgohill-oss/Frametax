@@ -51,6 +51,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from app.calculators import treaty_engine as te
+from app.calculators.canonical_qualification_result import (
+    QUAL_HARD_FAIL,
+    QUAL_QUALIFIES,
+)
+from app.calculators.canonical_role_qualification_bridge import evaluate_treaty_personnel_gate
 
 RESOLUTION_UNRESOLVED_FACTS = "UNRESOLVED_FACTS"
 RESOLUTION_ELIGIBLE = "ELIGIBLE"
@@ -68,6 +73,20 @@ class CoproOpportunity:
     unlocked_slugs: tuple[str, ...] = field(default_factory=tuple)
     disqualification_reasons: tuple[str, ...] = field(default_factory=tuple)
     notes: tuple[str, ...] = field(default_factory=tuple)
+    # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — the real
+    # creative-personnel gate result (treaty_engine.PersonnelRequirement +
+    # canonical_role_qualification_bridge.evaluate_treaty_personnel_gate),
+    # None when no personnel_requirement was supplied to the evaluator at
+    # all (this treaty type/framework does not carry one, or the caller
+    # did not wire one through). When present, exposes the full served
+    # contract: satisfied/failed requirements, missing facts, curable
+    # levers, the next highest-value factual question, and the state.
+    personnel_gate_state: str | None = None
+    personnel_satisfied_requirements: tuple[str, ...] = field(default_factory=tuple)
+    personnel_failed_requirements: tuple[str, ...] = field(default_factory=tuple)
+    personnel_missing_facts: tuple[str, ...] = field(default_factory=tuple)
+    personnel_curable_levers: tuple[str, ...] = field(default_factory=tuple)
+    personnel_next_question: str | None = None
 
 
 def evaluate_bilateral_coproduction_opportunity(
@@ -76,6 +95,8 @@ def evaluate_bilateral_coproduction_opportunity(
     majority_pct: float | None = None,
     minority_pct: float | None = None,
     cultural_test_passed: bool | None = None,
+    personnel_requirement: "te.PersonnelRequirement | None" = None,
+    personnel_attachment_facts: dict | None = None,
 ) -> CoproOpportunity | None:
     """
     The canonical bilateral treaty adapter. Returns None if no registered
@@ -87,10 +108,48 @@ def evaluate_bilateral_coproduction_opportunity(
     invents a percentage split. Cultural test fails closed: only an
     EXPLICIT True clears it; None (unassessed) or False both prevent
     ELIGIBLE.
+
+    PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING —
+    personnel_requirement/personnel_attachment_facts are additive,
+    keyword-only, backward-compatible (both default None, byte-identical
+    prior behavior for every existing caller). When personnel_requirement
+    is None (every real treaty today — see treaty_engine.PersonnelRequirement's
+    own docstring), the personnel gate resolves RULE_DATA_INCOMPLETE and
+    NEVER blocks ELIGIBLE on its own — a treaty with no researched
+    personnel clause behaves exactly as it did before this parameter
+    existed. When a real requirement IS supplied: QUALIFIES contributes
+    nothing further (contribution-share/cultural gates alone still
+    decide); HARD_FAIL is a real, fail-closed disqualification reason,
+    same as a failed cultural test; CURABLE_GAP/USER_FACT_REQUIRED keeps
+    resolution_state at UNRESOLVED_FACTS (a real, disclosed conditional
+    question — never silently ELIGIBLE, never silently INELIGIBLE) even
+    when contribution/cultural facts are otherwise fully resolved.
     """
     treaty = te.get_bilateral_treaty(majority_country, minority_country)
     if treaty is None:
         return None
+
+    personnel_result = evaluate_treaty_personnel_gate(
+        personnel_requirement, (majority_country.upper(), minority_country.upper()),
+        personnel_attachment_facts,
+    )
+    _personnel_kwargs = dict(
+        personnel_gate_state=personnel_result.state,
+        personnel_satisfied_requirements=personnel_result.resolved_facts,
+        personnel_failed_requirements=personnel_result.failed_requirements,
+        personnel_missing_facts=personnel_result.missing_facts,
+        personnel_curable_levers=personnel_result.curable_requirements,
+        personnel_next_question=(personnel_result.reasoning_trace[0] if personnel_result.reasoning_trace else None),
+    )
+    # A real, HARD_FAIL personnel gate is a genuine disqualification —
+    # never bypassable by an otherwise-clearing contribution/cultural
+    # gate (Requirement 8: mandatory gates cannot be bypassed).
+    personnel_hard_fail = personnel_requirement is not None and personnel_result.state == QUAL_HARD_FAIL
+    # A real, unresolved personnel gate (CURABLE_GAP/USER_FACT_REQUIRED)
+    # keeps the whole opportunity at UNRESOLVED_FACTS even when every
+    # other fact is known — never silently ELIGIBLE on contribution/
+    # cultural facts alone while a real personnel question remains open.
+    personnel_unresolved = personnel_requirement is not None and personnel_result.state not in (QUAL_QUALIFIES, QUAL_HARD_FAIL)
 
     if majority_pct is None or minority_pct is None:
         return CoproOpportunity(
@@ -108,6 +167,7 @@ def evaluate_bilateral_coproduction_opportunity(
                 "resolved from registry presence alone. Disclosed as an "
                 "opportunity, not a qualified structure.",
             ),
+            **_personnel_kwargs,
         )
 
     result = te.evaluate_bilateral_eligibility(
@@ -120,7 +180,7 @@ def evaluate_bilateral_coproduction_opportunity(
     # not require an explicit True for a required cultural test (None
     # leaves it passing) — this adapter overrides that at the boundary.
     cultural_gate_ok = (not treaty.cultural_test_required) or (cultural_test_passed is True)
-    is_eligible = result.is_eligible and cultural_gate_ok
+    is_eligible = result.is_eligible and cultural_gate_ok and not personnel_hard_fail and not personnel_unresolved
 
     reasons = list(result.disqualification_reasons)
     if treaty.cultural_test_required and cultural_test_passed is not True and result.is_eligible:
@@ -128,21 +188,26 @@ def evaluate_bilateral_coproduction_opportunity(
             f"Treaty {treaty.treaty_slug} requires a cultural test; it was "
             + ("explicitly failed." if cultural_test_passed is False else "never assessed.")
         )
+    if personnel_hard_fail:
+        reasons.extend(personnel_result.failed_requirements)
+
+    resolution_state = (
+        RESOLUTION_ELIGIBLE if is_eligible
+        else (RESOLUTION_INELIGIBLE if (personnel_hard_fail or cultural_resolved or result.disqualification_reasons) and not personnel_unresolved
+              else RESOLUTION_UNRESOLVED_FACTS)
+    )
 
     return CoproOpportunity(
         treaty_type="bilateral",
         treaty_slug=treaty.treaty_slug,
         parties=(majority_country.upper(), minority_country.upper()),
-        resolution_state=(
-            RESOLUTION_ELIGIBLE if is_eligible
-            else (RESOLUTION_INELIGIBLE if cultural_resolved or result.disqualification_reasons
-                  else RESOLUTION_UNRESOLVED_FACTS)
-        ),
+        resolution_state=resolution_state,
         cultural_test_required=treaty.cultural_test_required,
         cultural_test_resolved=cultural_resolved,
         unlocked_slugs=tuple(result.unlocked_majority_slugs + result.unlocked_minority_slugs + result.unlocked_fund_slugs)
         if is_eligible else (),
         disqualification_reasons=tuple(reasons),
+        **_personnel_kwargs,
     )
 
 

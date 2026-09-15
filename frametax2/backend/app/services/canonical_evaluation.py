@@ -96,6 +96,7 @@ from app.calculators.canonical_qualification_result import (
 )
 from app.calculators.canonical_role_qualification_bridge import (
     evaluate_role_qualification,
+    role_attachment_facts_from_project,
     role_known_codes_from_project,
     script_facts_from_project,
     typed_personnel_facts_from_project,
@@ -627,7 +628,15 @@ from app.services.canonical_project_economics import (
 # d743fab implementations Codex's acceptance audit rejected. Every row
 # persisted under 1.55.0 reflects the REJECTED behavior and must never be
 # served as current under the remediated engine.
-ENGINE_VERSION = "canonical-1.56.0"
+#
+# PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING: bumped again --
+# official co-production treaty eligibility now additionally consumes a
+# real, confirmed-vs-unconfirmed creative-personnel gate
+# (treaty_engine.PersonnelRequirement + canonical_role_qualification_
+# bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
+# new served fields. Every row persisted under 1.56.0 was generated
+# without this gate ever being consulted and must be treated as stale.
+ENGINE_VERSION = "canonical-1.57.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -805,6 +814,7 @@ def _compute_fingerprint(
     coproduction_facts: tuple | None = None,
     excluded_jurisdiction_codes: frozenset[str] | None = None,
     discretionary_policy_facts: dict[str, str] | None = None,
+    role_attachment_facts: dict | None = None,
 ) -> str:
     import hashlib
     import json
@@ -916,6 +926,25 @@ def _compute_fingerprint(
             (element_type, sorted(values)) for element_type, values in (script_facts or {}).items()
         ),
         "coproduction_facts": coproduction_facts,
+        # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — distinct
+        # from role_known_codes above: role_known_codes does not vary
+        # with ProjectPerson.is_confirmed at all (an attachment's
+        # confirmed status can flip without changing that set), so a
+        # producer confirming a previously-proposed attachment must be
+        # represented here explicitly or the treaty personnel gate could
+        # keep serving a stale (pre-confirmation) resolution forever.
+        "role_attachment_facts": sorted(
+            (
+                role,
+                tuple(sorted(f.confirmed_nationality)),
+                tuple(sorted(f.confirmed_residency)),
+                f.confirmed_attached_unknown_nationality,
+                f.confirmed_attached_unknown_residency,
+                f.has_unconfirmed_attachment,
+                f.has_any_attachment,
+            )
+            for role, f in (role_attachment_facts or {}).items()
+        ),
         # Registry/table knowledge versions (Codex OH-001: "It omits
         # material authority/economic-state, stacking, treaty, opportunity-
         # pattern, spend-rule, executable-registry, and consolidation
@@ -2930,6 +2959,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # Same one-query-per-project pattern; role_known_codes above is kept
     # unchanged as the legacy merged source for the 24-slug role registry.
     typed_personnel_facts = await typed_personnel_facts_from_project(session, str(project_id))
+    # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — the real,
+    # CONFIRMED-vs-unconfirmed attachment facts a treaty's own
+    # PersonnelRequirement gate reads (never role_known_codes/
+    # typed_personnel_facts above, which do not filter on
+    # ProjectPerson.is_confirmed at all — correct for the pre-existing
+    # 24-slug program registry those exist for, wrong for a NEW gate that
+    # must never credit an unconfirmed attachment as current eligibility).
+    # Same one-query-per-project pattern, fetched once and reused at
+    # every treaty-loop call site below.
+    role_attachment_facts = await role_attachment_facts_from_project(session, str(project_id))
     # Codex global optimizer audit, P0-QUAL-001: co-production facts are now
     # scoped per (treaty_slug, ordered participant identities) -- there is
     # no longer one project-global tuple to fetch here. Each treaty-
@@ -2954,6 +2993,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         coproduction_facts=all_coproduction_facts,
         excluded_jurisdiction_codes=excluded_jurisdiction_codes,
         discretionary_policy_facts=discretionary_policy_facts,
+        role_attachment_facts=role_attachment_facts,
     )
 
     existing = (await session.execute(
@@ -4525,6 +4565,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             home_code, partner_code,
             majority_pct=_bp_majority_pct, minority_pct=_bp_minority_pct,
             cultural_test_passed=_bp_cultural_test_passed,
+            # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING: this
+            # treaty's own real, cited personnel-eligibility rule (None
+            # for every treaty not yet individually researched) against
+            # this project's real, confirmed-vs-unconfirmed attachment
+            # facts -- additive, never blocks a treaty whose personnel
+            # clause has not been researched (see PersonnelRequirement's
+            # own docstring).
+            personnel_requirement=_treaty_row.personnel_requirement if _treaty_row else None,
+            personnel_attachment_facts=role_attachment_facts,
         )
         if opp is None:
             continue
@@ -4599,6 +4648,19 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "treaty_cultural_test_required": opp.cultural_test_required,
                 "treaty_cultural_test_resolved": opp.cultural_test_resolved,
                 "treaty_disqualification_reasons": list(opp.disqualification_reasons),
+                # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING —
+                # the real creative-personnel gate's own served contract:
+                # satisfied/failed requirements, missing facts, curable
+                # levers, and the next highest-value factual question.
+                # personnel_gate_state is RULE_DATA_INCOMPLETE (never
+                # blocking) for every treaty whose personnel clause has
+                # not yet been individually researched.
+                "personnel_gate_state": opp.personnel_gate_state,
+                "personnel_satisfied_requirements": list(opp.personnel_satisfied_requirements),
+                "personnel_failed_requirements": list(opp.personnel_failed_requirements),
+                "personnel_missing_facts": list(opp.personnel_missing_facts),
+                "personnel_curable_levers": list(opp.personnel_curable_levers),
+                "personnel_next_question": opp.personnel_next_question,
                 "reason": "; ".join(opp.notes) or "Real ownership/cultural facts required to resolve eligibility.",
                 "feasibility_status": FEASIBILITY_UNKNOWN,
                 "feasibility_reasons": [],
@@ -4948,10 +5010,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _nb_majority_pct, _nb_minority_pct, _nb_cultural_test_passed = await _coproduction_facts(
             session, project.id, treaty_slug, (majority_code, minority_code),
         )
+        # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING: same
+        # additive personnel gate as the home-anchored loop above.
+        _nb_treaty_row = te.get_bilateral_treaty(majority_code, minority_code)
         opp = evaluate_bilateral_coproduction_opportunity(
             majority_code, minority_code,
             majority_pct=_nb_majority_pct, minority_pct=_nb_minority_pct,
             cultural_test_passed=_nb_cultural_test_passed,
+            personnel_requirement=_nb_treaty_row.personnel_requirement if _nb_treaty_row else None,
+            personnel_attachment_facts=role_attachment_facts,
         )
         if opp is None:
             continue
@@ -5028,6 +5095,19 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "treaty_cultural_test_required": opp.cultural_test_required,
                 "treaty_cultural_test_resolved": opp.cultural_test_resolved,
                 "treaty_disqualification_reasons": list(opp.disqualification_reasons),
+                # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING —
+                # the real creative-personnel gate's own served contract:
+                # satisfied/failed requirements, missing facts, curable
+                # levers, and the next highest-value factual question.
+                # personnel_gate_state is RULE_DATA_INCOMPLETE (never
+                # blocking) for every treaty whose personnel clause has
+                # not yet been individually researched.
+                "personnel_gate_state": opp.personnel_gate_state,
+                "personnel_satisfied_requirements": list(opp.personnel_satisfied_requirements),
+                "personnel_failed_requirements": list(opp.personnel_failed_requirements),
+                "personnel_missing_facts": list(opp.personnel_missing_facts),
+                "personnel_curable_levers": list(opp.personnel_curable_levers),
+                "personnel_next_question": opp.personnel_next_question,
                 "reason": "; ".join(opp.notes) or "Real ownership/cultural facts required to resolve eligibility.",
                 "feasibility_status": FEASIBILITY_UNKNOWN,
                 "feasibility_reasons": [],
@@ -5621,6 +5701,11 @@ async def current_generation_fingerprint(session, project_id) -> str | None:
     if econ.ok:
         role_known_codes = await role_known_codes_from_project(session, str(project_id))
         script_facts = await script_facts_from_project(session, str(project_id))
+        # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING: must match
+        # evaluate_project()'s own fingerprint computation exactly, same
+        # "two views, two fingerprints" reasoning as every other fact
+        # fetched in this function.
+        role_attachment_facts = await role_attachment_facts_from_project(session, str(project_id))
         # P0-QUAL-001: must match evaluate_project()'s own fingerprint
         # computation exactly, or this read-only reconstruction can never
         # find the rows evaluate_project() persisted (the same class of
@@ -5666,6 +5751,7 @@ async def current_generation_fingerprint(session, project_id) -> str | None:
             coproduction_facts=coproduction_facts,
             excluded_jurisdiction_codes=excluded_jurisdiction_codes,
             discretionary_policy_facts=discretionary_policy_facts,
+            role_attachment_facts=role_attachment_facts,
         )
     if fingerprint is None:
         fingerprint = await current_result_fingerprint(session, project_id)

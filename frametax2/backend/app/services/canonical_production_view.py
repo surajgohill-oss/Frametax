@@ -563,6 +563,19 @@ def _empty_structure_entry(
         "treaty_cultural_test_required": trace.get("treaty_cultural_test_required"),
         "treaty_cultural_test_resolved": trace.get("treaty_cultural_test_resolved"),
         "treaty_disqualification_reasons": trace.get("treaty_disqualification_reasons") or [],
+        # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — the real
+        # creative-personnel gate's served contract (canonical_evaluation.
+        # py's home-anchored/non-home-anchored bilateral loops, treaty_
+        # engine.PersonnelRequirement + canonical_role_qualification_
+        # bridge.evaluate_treaty_personnel_gate). None/[] for any row
+        # persisted before this wiring existed, same backward-compat
+        # pattern used throughout this file.
+        "personnel_gate_state": trace.get("personnel_gate_state"),
+        "personnel_satisfied_requirements": trace.get("personnel_satisfied_requirements") or [],
+        "personnel_failed_requirements": trace.get("personnel_failed_requirements") or [],
+        "personnel_missing_facts": trace.get("personnel_missing_facts") or [],
+        "personnel_curable_levers": trace.get("personnel_curable_levers") or [],
+        "personnel_next_question": trace.get("personnel_next_question"),
         # Co-Pro Conditional Pricing Bridge — populated only for an
         # UNRESOLVED_FACTS treaty_coproduction structure where a
         # deterministic minimum-contribution scenario could be

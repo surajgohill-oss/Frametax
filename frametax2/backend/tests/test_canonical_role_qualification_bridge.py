@@ -390,8 +390,16 @@ def test_invalid_coproduction_cultural_test_text_stays_unresolved_not_false():
         async def execute(self, *_a, **_kw):
             return _FakeResult(self._rows)
 
-    session = _FakeSession([("coproduction_cultural_test_passed", "unknown")])
-    _maj, _min, cultural = asyncio.run(_coproduction_facts(session, "fake-project-id"))
+    # P0-QUAL-001 repair (CINEGLOBE_GLOBAL_OPTIMIZER_P0_REMEDIATION):
+    # _coproduction_facts is now scoped to (treaty_slug, ordered
+    # participant identities) rather than three project-global keys —
+    # the fake row's fact_key must match the exact scoped key the
+    # function now looks up.
+    from app.services.canonical_evaluation import _coproduction_fact_keys, _coproduction_fact_scope
+    scope = _coproduction_fact_scope("fake-treaty-slug", ("ZZ", "YY"))
+    _maj_key, _min_key, cultural_key = _coproduction_fact_keys(scope)
+    session = _FakeSession([(cultural_key, "unknown")])
+    _maj, _min, cultural = asyncio.run(_coproduction_facts(session, "fake-project-id", "fake-treaty-slug", ("ZZ", "YY")))
     assert cultural is None
 
 

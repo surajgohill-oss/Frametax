@@ -30,6 +30,47 @@ from dataclasses import dataclass, field
 # Data structures
 # ---------------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class PersonnelRequirement:
+    """PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — one treaty's
+    or framework's own real, cited creative-personnel eligibility rule.
+    Deliberately NOT a universal writer/director rule: `eligible_roles` +
+    `role_mode` express exactly what THIS treaty's own text requires
+    (e.g. "director OR writer" vs "director AND writer" vs a single
+    mandatory role), and `fact_kind` expresses whether the treaty's own
+    text tests nationality, residency, or accepts either — nationality
+    and residency are never merged or substituted for one another here.
+
+    `eligible_codes` is the set of party country codes whose nationality/
+    residency (per fact_kind) satisfies the gate for that role — usually
+    the treaty's own two (or N, for a framework) parties, but kept
+    explicit rather than inferred so a real treaty's own non-party-
+    personnel exception (see non_party_personnel_exception_pct below)
+    can be modeled precisely once researched.
+
+    None (the default on every real registered treaty/framework below)
+    means genuinely unresearched — this specific treaty's own personnel-
+    eligibility clause has not yet been individually confirmed against a
+    primary source. A None here must surface as an explicit, disclosed
+    "not yet encoded" conditional lever, never silently as "no personnel
+    requirement exists" and never as a fabricated generic rule borrowed
+    from another treaty."""
+    eligible_roles: tuple[str, ...]
+    role_mode: str  # "any_one_of" | "all_of"
+    fact_kind: str  # "nationality" | "residency" | "either"
+    eligible_codes: tuple[str, ...]
+    curable_if_unattached: bool = True
+    citation: str | None = None
+
+    def __post_init__(self):
+        if self.role_mode not in ("any_one_of", "all_of"):
+            raise ValueError(f"role_mode must be 'any_one_of' or 'all_of', got {self.role_mode!r}")
+        if self.fact_kind not in ("nationality", "residency", "either"):
+            raise ValueError(f"fact_kind must be 'nationality', 'residency', or 'either', got {self.fact_kind!r}")
+        if not self.eligible_roles:
+            raise ValueError("eligible_roles must be non-empty")
+
+
 @dataclass
 class TreatyData:
     treaty_slug: str
@@ -60,6 +101,11 @@ class TreatyData:
     #: an invented default percentage.
     non_party_personnel_exception_pct: float | None = None
     non_party_personnel_exception_citation: str | None = None
+    #: PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — this treaty's
+    #: own real, cited creative-personnel eligibility rule (see
+    #: PersonnelRequirement's own docstring). None (every real registered
+    #: entry below) means genuinely unresearched, never "no requirement."
+    personnel_requirement: "PersonnelRequirement | None" = None
 
 
 @dataclass

@@ -31,6 +31,8 @@ accepted doctrine sources, never a second full duplicate of any of them.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -274,6 +276,262 @@ async def typed_personnel_facts_from_project(session: AsyncSession, project_id: 
         role: {kind: tuple(sorted(vals)) for kind, vals in kinds.items()}
         for role, kinds in facts.items()
     }
+
+
+@dataclass(frozen=True)
+class RoleAttachmentFacts:
+    """PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — the real,
+    CONFIRMED-vs-unconfirmed attachment state for one role, typed
+    separately for nationality and residency, never merged. Distinct
+    from typed_personnel_facts_from_project (which does not filter on
+    ProjectPerson.is_confirmed at all -- correct for the 24-slug legacy
+    registry it exists for, per that function's own docstring, but wrong
+    for a NEW gate that must never credit an unconfirmed attachment as
+    current eligibility)."""
+    confirmed_nationality: tuple[str, ...] = ()
+    confirmed_residency: tuple[str, ...] = ()
+    #: A confirmed ProjectPerson row exists for this role, but
+    #: TalentProfile.primary_nationality (or known_residencies) is None/
+    #: empty -- a real, attached, confirmed person whose fact is simply
+    #: not on file. Distinct from "no one is attached at all."
+    confirmed_attached_unknown_nationality: bool = False
+    confirmed_attached_unknown_residency: bool = False
+    #: At least one ProjectPerson row exists for this role with
+    #: is_confirmed=False -- a real, proposed attachment that must never
+    #: be credited as current eligibility, only ever surfaced as a
+    #: conditional lever ("confirm this attachment").
+    has_unconfirmed_attachment: bool = False
+    #: No ProjectPerson row at all for this role -- an open slot.
+    has_any_attachment: bool = False
+
+
+async def role_attachment_facts_from_project(
+    session: AsyncSession, project_id: str,
+) -> dict[str, RoleAttachmentFacts]:
+    """PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — the fact
+    source for treaty/framework personnel gates (treaty_engine.
+    PersonnelRequirement, evaluate_treaty_personnel_gate below). Reads
+    the SAME real ProjectPerson/TalentProfile rows role_known_codes_
+    from_project and typed_personnel_facts_from_project already read
+    (no new person/nationality/treaty model), but additionally exposes
+    ProjectPerson.is_confirmed per row and distinguishes "no attachment"
+    from "unconfirmed attachment" from "confirmed attachment with an
+    unknown fact" -- three genuinely different conditional states this
+    module's existing two accessors collapse into one merged set."""
+    rows = (await session.execute(
+        select(
+            ProjectPerson.role, ProjectPerson.is_confirmed,
+            TalentProfile.primary_nationality, TalentProfile.known_residencies,
+        )
+        .join(TalentProfile, ProjectPerson.talent_id == TalentProfile.id)
+        .where(ProjectPerson.project_id == project_id)
+    )).all()
+
+    _ROLE_ALIASES = {
+        "director": "director", "writer": "writer", "producer": "producer",
+        "lead_cast": "lead_cast", "cast": "supporting_cast",
+        "editor": "editor", "composer": "composer",
+    }
+
+    by_role: dict[str, dict] = {}
+    for role_text, is_confirmed, nationality, known_residencies in rows:
+        role = _ROLE_ALIASES.get((role_text or "").strip().lower())
+        if role is None:
+            continue
+        bucket = by_role.setdefault(role, {
+            "confirmed_nationality": set(), "confirmed_residency": set(),
+            "confirmed_attached_unknown_nationality": False,
+            "confirmed_attached_unknown_residency": False,
+            "has_unconfirmed_attachment": False, "has_any_attachment": False,
+        })
+        bucket["has_any_attachment"] = True
+        if not is_confirmed:
+            bucket["has_unconfirmed_attachment"] = True
+            continue
+        if nationality:
+            bucket["confirmed_nationality"].add(nationality.upper())
+        else:
+            bucket["confirmed_attached_unknown_nationality"] = True
+        residencies = {
+            str((entry or {}).get("jurisdiction_code")).upper()
+            for entry in (known_residencies or [])
+            if isinstance(entry, dict) and entry.get("jurisdiction_code") and entry.get("confirmed") is not False
+        }
+        if residencies:
+            bucket["confirmed_residency"] |= residencies
+        else:
+            bucket["confirmed_attached_unknown_residency"] = True
+
+    return {
+        role: RoleAttachmentFacts(
+            confirmed_nationality=tuple(sorted(b["confirmed_nationality"])),
+            confirmed_residency=tuple(sorted(b["confirmed_residency"])),
+            confirmed_attached_unknown_nationality=b["confirmed_attached_unknown_nationality"],
+            confirmed_attached_unknown_residency=b["confirmed_attached_unknown_residency"],
+            has_unconfirmed_attachment=b["has_unconfirmed_attachment"],
+            has_any_attachment=b["has_any_attachment"],
+        )
+        for role, b in by_role.items()
+    }
+
+
+#: Roles a production can still legally cast/hire/change before filing --
+#: an open slot in one of these is a CURABLE gap, never a hard failure or
+#: a silent "missing fact." Mirrors cultural_point_tables.py's own
+#: _SINGLE_SLOT_ROLES convention (kept as a separate constant here since
+#: a treaty's curability is a treaty-specific legal question, never
+#: inferred from a different regime's own table).
+_TREATY_CURABLE_ROLES: frozenset[str] = frozenset({"director", "writer", "producer", "lead_cast"})
+
+
+def evaluate_treaty_personnel_gate(
+    requirement, party_codes: tuple[str, ...],
+    attachment_facts: dict[str, "RoleAttachmentFacts"] | None,
+) -> CanonicalQualificationResult:
+    """PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING — evaluates
+    ONE treaty's own real PersonnelRequirement (treaty_engine.py) against
+    this project's real, confirmed-vs-unconfirmed attachment facts.
+    `requirement` is a treaty_engine.PersonnelRequirement or None.
+
+    Required logic (exact, never a universal rule):
+      - requirement is None -> QUAL_RULE_DATA_INCOMPLETE: this treaty's
+        own personnel clause has not yet been researched/encoded. Never
+        blocks the treaty on its own (the caller combines this with the
+        contribution-share/cultural gates independently) and is always
+        disclosed, never silently "no requirement."
+      - "any_one_of" roles: a SINGLE confirmed, satisfying role is
+        immediate QUAL_QUALIFIES (Requirement 1 -- "a confirmed writer or
+        director must receive immediate eligibility credit when that
+        treaty/test accepts either role"), even if every OTHER eligible
+        role is unattached/unknown/unconfirmed.
+      - "all_of" roles: every eligible role must independently satisfy;
+        any one FAILED (confirmed, known, wrong code) or unresolved
+        (unattached/unconfirmed/unknown) keeps the whole gate short of
+        QUALIFIES.
+      - A confirmed, KNOWN fact that does not match eligible_codes is a
+        real FAILED requirement (QUAL_HARD_FAIL for "all_of"; for
+        "any_one_of" it only fails the WHOLE gate if every other eligible
+        role also fails/unresolves) -- fail-closed, never silently
+        skipped.
+      - Unattached (open slot) -> QUAL_CURABLE_GAP if the role is
+        castable pre-filing (_TREATY_CURABLE_ROLES), else QUAL_
+        USER_FACT_REQUIRED.
+      - Attached but UNCONFIRMED, or confirmed with an unknown fact ->
+        QUAL_USER_FACT_REQUIRED -- a real conditional question, never
+        credited as current eligibility, never silently dropped.
+      - Nationality-only requirements never accept a residency fact as a
+        substitute, and vice versa (fact_kind="either" is the ONLY case
+        that accepts both) -- enforced by only ever reading the ONE
+        typed field `requirement.fact_kind` names.
+    """
+    role_findings: list[RoleGateFinding] = []
+    resolved: list[str] = []
+    missing: list[str] = []
+    failed: list[str] = []
+    curable: list[str] = []
+    levers: list[str] = []
+
+    if requirement is None:
+        return CanonicalQualificationResult(
+            regime_id="treaty_personnel_gate", jurisdiction_code=None,
+            state=QUAL_RULE_DATA_INCOMPLETE, qualification_route="bilateral_treaty_personnel",
+            missing_facts=("This treaty's own creative-personnel eligibility clause has not yet "
+                            "been researched/encoded — real, cited data required before this gate "
+                            "can resolve either way.",),
+            available_levers=("Research and cite this treaty's own personnel-eligibility article.",),
+            authority_basis=None, confidence_state="LOW",
+        )
+
+    facts = attachment_facts or {}
+    any_satisfied = False
+    any_failed = False
+    any_unresolved = False
+    next_question: str | None = None
+
+    for role in requirement.eligible_roles:
+        role_facts = facts.get(role) or RoleAttachmentFacts()
+        known_codes = (
+            role_facts.confirmed_nationality if requirement.fact_kind == "nationality" else
+            role_facts.confirmed_residency if requirement.fact_kind == "residency" else
+            tuple(sorted(set(role_facts.confirmed_nationality) | set(role_facts.confirmed_residency)))
+        )
+        unknown_confirmed = (
+            role_facts.confirmed_attached_unknown_nationality if requirement.fact_kind == "nationality" else
+            role_facts.confirmed_attached_unknown_residency if requirement.fact_kind == "residency" else
+            role_facts.confirmed_attached_unknown_nationality and role_facts.confirmed_attached_unknown_residency
+        )
+        matched = [c for c in known_codes if c in requirement.eligible_codes]
+        if matched:
+            any_satisfied = True
+            resolved.append(f"{role} {requirement.fact_kind} {matched[0]} matches an eligible party code.")
+            role_findings.append(RoleGateFinding(
+                role=role, required_jurisdiction=None, status="satisfied",
+                known_codes=known_codes, notes=f"Confirmed {role} {requirement.fact_kind} satisfies the treaty's own rule.",
+            ))
+            continue
+        if known_codes:
+            # a real, confirmed, KNOWN fact that does not match — a genuine failure, never silently skipped
+            any_failed = True
+            failed.append(f"{role} {requirement.fact_kind} {known_codes} does not match this treaty's eligible party codes {requirement.eligible_codes}.")
+            role_findings.append(RoleGateFinding(
+                role=role, required_jurisdiction=None, status="failed",
+                known_codes=known_codes, notes="Confirmed fact known but does not satisfy the treaty's own rule.",
+            ))
+            continue
+        # unresolved: unattached, unconfirmed, or confirmed-with-unknown-fact
+        any_unresolved = True
+        if not role_facts.has_any_attachment:
+            if role in _TREATY_CURABLE_ROLES:
+                curable.append(f"{role} is not yet attached — casting a {requirement.fact_kind} role from an eligible party country is a real, legal option before filing.")
+                levers.append(f"Attach a {role} whose {requirement.fact_kind} is one of {requirement.eligible_codes}.")
+                next_question = next_question or f"Has a {role} been attached, and what is their {requirement.fact_kind}?"
+            else:
+                missing.append(f"{role} is not attached and this role is not treated as pre-filing-castable for this gate.")
+        elif role_facts.has_unconfirmed_attachment:
+            missing.append(f"{role} has a proposed (unconfirmed) attachment — not yet credited as current eligibility.")
+            levers.append(f"Confirm the proposed {role} attachment.")
+            next_question = next_question or f"Should the proposed {role} attachment be confirmed?"
+        else:
+            # Confirmed attachment, but this exact fact_kind is not on
+            # file for them (unknown_confirmed=True, OR a fact_kind
+            # mismatch such as a residency-only record evaluated against
+            # a nationality-only rule) — always a real, disclosed
+            # conditional question, never silently dropped.
+            missing.append(f"{role} is confirmed but their {requirement.fact_kind} is not on file.")
+            levers.append(f"Record the confirmed {role}'s {requirement.fact_kind}.")
+            next_question = next_question or f"What is the confirmed {role}'s {requirement.fact_kind}?"
+        role_findings.append(RoleGateFinding(
+            role=role, required_jurisdiction=None, status="indeterminate",
+            known_codes=known_codes, notes="Unresolved — unattached, unconfirmed, or fact not on file.",
+        ))
+
+    if requirement.role_mode == "any_one_of":
+        if any_satisfied:
+            state = QUAL_QUALIFIES
+        elif any_unresolved:
+            state = QUAL_CURABLE_GAP if curable and not missing else QUAL_USER_FACT_REQUIRED
+        else:
+            state = QUAL_HARD_FAIL
+    else:  # all_of
+        if any_failed:
+            state = QUAL_HARD_FAIL
+        elif any_unresolved:
+            state = QUAL_CURABLE_GAP if curable and not missing else QUAL_USER_FACT_REQUIRED
+        elif any_satisfied:
+            state = QUAL_QUALIFIES
+        else:
+            state = QUAL_RULE_DATA_INCOMPLETE
+
+    return CanonicalQualificationResult(
+        regime_id="treaty_personnel_gate", jurisdiction_code=None, state=state,
+        qualification_route="bilateral_treaty_personnel",
+        role_findings=tuple(role_findings),
+        resolved_facts=tuple(resolved), missing_facts=tuple(missing),
+        failed_requirements=tuple(failed), curable_requirements=tuple(curable),
+        available_levers=tuple(levers),
+        authority_basis=requirement.citation, confidence_state="HIGH" if requirement.citation else "LOW",
+        reasoning_trace=(next_question,) if next_question else (),
+    )
 
 
 #: Maps a cultural-point-table criterion's CATEGORY to the real,
