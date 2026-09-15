@@ -4,10 +4,10 @@
   "queue_file_sha256": "a6eb16b18d908a6ba186bacf601b1155108a2fb71340b81b7d861a4ca042c0c5",
   "total_queue_records": 285,
   "batch_size": 20,
-  "completed_count": 280,
-  "next_index": 280,
-  "last_completed_program_id": "us_ny_post_production_credit",
-  "next_program_id": "us_tn_performance_grant",
+  "completed_count": 285,
+  "next_index": 285,
+  "last_completed_program_id": "za_dtic_foreign_film",
+  "next_program_id": null,
   "completed_program_ids": [
     "COND-AR-incaa-foprocine-development-and-production-grants",
     "COND-AU-NT-territory-screen-northern-territory-production-support",
@@ -288,9 +288,14 @@
     "us_ca_film_credit",
     "us_il_film_production_services_credit",
     "us_nv_film_credit",
-    "us_ny_post_production_credit"
+    "us_ny_post_production_credit",
+    "us_tn_performance_grant",
+    "uy_acau_cash_rebate",
+    "uy_tax_credit_2026",
+    "uz_film_rebate",
+    "za_dtic_foreign_film"
   ],
   "batch_commits": [],
   "schema_version": "1.0",
-  "updated_at": "2026-09-15T00:59:31.680132Z"
+  "updated_at": "2026-09-15T00:59:33.544932Z"
 }

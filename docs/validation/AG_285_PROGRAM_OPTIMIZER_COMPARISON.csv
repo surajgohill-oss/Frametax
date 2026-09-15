@@ -235,3 +235,8 @@ us_ca_film_credit,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
 us_il_film_production_services_credit,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
 us_nv_film_credit,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
 us_ny_post_production_credit,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+us_tn_performance_grant,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+uy_acau_cash_rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+uy_tax_credit_2026,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+uz_film_rebate,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
+za_dtic_foreign_film,PRICEABLE,PRICEABLE,$300k,$300k,MATCH
