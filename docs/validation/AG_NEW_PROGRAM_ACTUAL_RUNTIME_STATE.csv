@@ -1,0 +1,286 @@
+command_probe_used,project_id,canonical_program_id,exact_input_facts,actual_output,persisted_result_identity,evidence_location
+conditional_nodes_for(),N/A,COND-AR-incaa-foprocine-development-and-production-grants,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-AU-NT-territory-screen-northern-territory-production-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-AU-melbourne-international-film-festival-miff-premiere-fund,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-AU-screen-australia-talent-and-business-development-programs,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-BF-fespaco-festival-pan-africain-du-cin-ma-et-de-la-t-l-vision-,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-BR-ancine-fsa-fundo-setorial-do-audiovisual-development-fund,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-CA-PE-film-pei-prince-edward-island-production-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-CA-bell-fund-broadcast-and-digital-content-development,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-CA-nsi-national-screen-institute-drama-prize-and-development-pr,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-CH-bak-swiss-federal-office-of-culture-international-co-product,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-DE-berlinale-world-cinema-fund-wcf-development-and-production-g,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-DE-german-films-international-export-and-market-promotion,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-DK-CPH-copenhagen-film-fund-regional-co-production-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-ES-CAT-icec-institut-catal-de-les-empreses-culturals-film-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-EU-torino-film-lab-international-development-and-production-gra,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-FI-finnish-film-foundation-ses-production-grants,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-FR-unifrance-international-distribution-and-promotion-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-GB-LON-film-london-production-finance-market-and-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-GB-bfi-international-export-development-and-distribution-suppor,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-GB-creative-england-production-finance-english-regions,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-GB-screenskills-production-training-fund,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-GR-greek-film-centre-gfc-selective-production-grants,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-IE-screen-ireland-development-and-skills-programme,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-IL-jerusalem-international-film-lab-development-grants,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-IN-india-national-film-development-corporation-nfdc-and-state-i,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-IT-TOS-film-commission-toscana-production-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-IT-anica-mic-italian-film-international-distribution-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-KR-kofic-international-co-production-and-export-support,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-MA-centre-cin-matographique-marocain-ccm-avance-sur-recettes,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-MX-imcine-instituto-mexicano-de-cinematograf-a-foprocine-fideci,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-NG-national-film-and-video-censors-board-creative-economy-incen,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-NL-idfa-forum-international-documentary-co-financing-market,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-NO-ROG-vestnorsk-filmsenter-western-norway-regional-film-centre,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-NO-TRO-nord-norsk-filmsenter-northern-norway-regional-film-centre,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-NO-norwegian-film-institute-nfi-selective-production-grants,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-NORDIC-nordisk-film-tv-fond,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-PT-ica-instituto-do-cinema-e-audiovisual-international-co-produ,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-PT-ica-instituto-do-cinema-e-audiovisual-selective-production-g,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-SA-KSA-saudi-film-commission-production-grants-and-selective-suppor,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-SE-AB-filmregion-stockholm-m-lardalen-regional-co-production-fund,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-SE-SK-film-i-sk-ne-regional-co-production-fund-scania,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-SE-g-teborg-film-festival-nordic-co-production-summit-grants,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-US-tribeca-film-institute-documentary-and-narrative-development,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+conditional_nodes_for(),N/A,COND-ZA-industrial-development-corporation-idc-film-and-television-i,{},CONDITIONAL_NODE_EMITTED,NO,conditional_programs.py
+N/A,N/A,IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK,N/A,MISSING,MISSING,N/A
+resolve_program_rate(),N/A,ae_ad_film_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ae_dxb_dpip,{},Executable (1 tiers),YES,program_rate_rules.py
+manifest_check,N/A,ag-ae-dubai-film-commission-abu-dhabi-film-commission-emirates-airline,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-al-albanian-national-cinema-agency-anca-akka-cash-rebate,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-am-cinema-foundation-of-armenia-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-at-fisa-orf-fi,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-au-nsw-create-nsw-made-in-nsw-pdv-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-au-nt-screen-territory-production-attraction-incentive-program-paip,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-au-qld-screen-queensland-production-attraction-strategy-pdv-incentive,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-au-sa-south-australian-film-corporation-safc-production-incentive,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-au-screen-australia-miff-premiere-fund-tourism-australia,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-au-wa-screenwest-wa-production-attraction-strategy-pas,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-az-cinema-agency-of-the-republic-of-azerbaijan-arka-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ba-sarajevo-canton-cash-rebate-film-fund-sarajevo,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-be-belgian-tax-shelter-for-audiovisual-productions,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-be-vlg-vaf-flanders-audiovisual-fund-screen-flanders,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-bf-fespaco-pan-african-co-production-support,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-bg-bulgarian-film-industry-encouragement-act-cash-rebate,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-bh-bahrain-film-commission-arab-fund-for-arts-and-culture,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-br-lei-do-audiovisual-tax-incentive-fsa-fundo-setorial-do-audiovisual,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ca-bc-bc-production-services-tax-credit-pstc-dave,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ca-canada-media-fund-cmf-telefilm-canada-cptc-pstc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ca-mb-manitoba-film-video-production-tax-credit-manitoba-film-music-production-support,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ca-on-opstc-ocase-nohfc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ca-pe-pei-film-production-investment-fund,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ca-qc-qprdp-sodec,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-cl-corfo-film-incentive-ifi-audiovisual,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-cm-cameroon-centre-national-de-la-cin-matographie-cnc-cameroon,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-co-cina-ffc-fdc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-cr-law-10071-el-fauno-fund,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-cz-czech-film-incentive-czech-audiovisual-fund,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-de-dfff-gmpf-wcf-broadcaster-funds,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-dk-cph-copenhagen-film-fund,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-dk-danish-production-incentive-scheme-dfi-dr,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-do-article-39-transferable-tax-credit-fonprocine,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ec-ecuador-audiovisual-investment-certificate-cia,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ee-film-estonia-cash-rebate-regional-funds,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-eg-egypt-film-commission-empc-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-es-cat-icec-film-support,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-es-tax-credit-for-foreign-productions-art-36-2-rtve,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-fi-business-finland-film-incentive-ses-yle,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-fj-fiji-film-tax-rebate-20,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-fr-trip-cnc-arte-canal,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-gb-avec-iftc-bfi-bbc-films-channel-4,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-gb-lon-film-london-production-finance-market,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-ge-film-in-georgia-enterprise-georgia,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-gh-national-film-authority-20-rebate-pending-fdf,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-gr-hfac-40-rebate-30-tax-relief-selective-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-hk-film-development-fund-fdf,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-hr-croatia-film-cash-rebate-havc-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-hu-hungary-film-tax-rebate-nfi-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-id-dana-indonesiana-matching-funds,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ie-section-481-screen-ireland-rt,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-il-israel-30-cash-rebate-jerusalem-film-fund,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-in-nfdc-cash-rebate-state-incentives,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-it-italian-tax-credit-rai-cinema-mic,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-it-tos-film-commission-toscana-film-fund,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-jm-jamaica-screen-development-initiative-jsdi-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-jo-rfc-jordan-production-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-jp-jlox-location-incentive-vipo-jfc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-ke-kenya-film-commission-kfc-support,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-kh-cambodia-film-commission-facilitation,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-kr-kofic-location-incentive-kocca-support,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-kw-kuwait-film-committee-support,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-kz-kazakhstan-30-cash-rebate-scsnc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-lb-coup-de-c-ur-award,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-lb-lebanese-film-fund-via-flc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-lk-sri-lanka-film-commission-facilitation,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-lt-lithuanian-film-tax-incentive,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-lu-film-fund-luxembourg-afs,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-lv-liaa-rebate-riga-film-fund,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ma-ccm-30-cash-rebate-avance-sur-recettes,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-me-film-centre-of-montenegro-cash-rebate,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-mk-mfa-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-mu-mauritius-edb-film-rebate,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-mx-efica-30-tax-credit-imcine-discretionary-funds,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-my-finas-fimi-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ng-nigerian-film-corporation-facilitation,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-nl-nfpi-35-cash-rebate-hubert-bals-fund-idfa-npo,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-no-norwegian-25-incentive-nfi-grants-nrk,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-no-rog-vestnorsk-filmsenter-zefyr,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-no-tro-arktisk-film-norge-formerly-nordnorsk-filmsenter-filmfond-nord,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-nz-nzspr-20-rebate-5-uplift-pdv-tourism,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-om-oman-film-commission-facilitation,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-pa-panama-film-commission-facilitation,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-pe-peru-dafo-selective-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-ph-fdcp-flip-20-rebate-acopi,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-pl-pisf-30-cash-rebate-selective-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-pt-iapmei-25-30-cash-rebate-ica-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-qa-qspi-50-cash-rebate-dfi-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-rw-rwanda-development-board-facilitation,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-sa-film-saudi-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-sa-ksa-saudi-film-commission-daw-film-competition,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-se-ab-film-stockholm-regional-co-production-fund,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-se-sk-film-i-sk-ne-regional-co-production-fund,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-se-sweden-25-cash-rebate-svt-gff,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-sg-imda-sfc-production-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-sk-avf-33-cash-rebate-selective-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-sn-fopica-fund-bureau-d-accueil,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-th-thailand-film-incentive-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-tn-cnci-cash-rebate-facilitation,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-tr-turkey-30-cash-rebate-k-lt-r-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-tt-production-expenditure-rebate-programme,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-tw-tfai-30-cash-rebate-taicca-equity,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-tz-tanzania-film-board-facilitation,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-us-ca-california-film-tv-tax-credit-3-0-4-0,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-us-ga-georgia-entertainment-industry-investment-act,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-us-la-louisiana-motion-picture-production-program,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-us-nm-new-mexico-film-production-tax-credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-us-ny-new-york-state-film-tax-credit-program,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-us-or-oregon-production-investment-fund-opif,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-us-pr-puerto-rico-film-industry-economic-incentives-act,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-us-sovereign-discretionary-grants-sundance-itvs-tribeca,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-us-tn-tennessee-film-entertainment-music-commission-incentives,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-uy-pua-cash-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+manifest_check,N/A,ag-uz-uzbekistan-20-rebate-uzbekkino-grants,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,ag-ve-cnac-venezuela-film-production-fund-fonprocine,N/A,MISSING,MISSING,N/A
+N/A,N/A,ag-vn-vietnam-cinema-department-facilitation,N/A,MISSING,MISSING,N/A
+manifest_check,N/A,ag-za-dti-25-rebate-nfvf-idc,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+resolve_program_rate(),N/A,al_cash_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,au_nsw_pdv_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,au_pdv_offset,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,au_producer_offset,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,au_qld_pdv_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,au_sa_pdv_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ca_bc_dave,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ca_bc_pstc,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ca_federal_pstc,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ca_nl_all_spend_credit,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ca_qc_pstc,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ch_pics_national_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,cr_tax_return_incentive,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,cz_film_incentive_animation,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,dk_production_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,eg_empc_cashback,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,fj_film_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,gb_iftc_enhanced_avec,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ge_film_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,gh_film_tax_incentive,{},Executable (1 tiers),YES,program_rate_rules.py
+manifest_check,N/A,hungary-hungary-base-rebate,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+resolve_program_rate(),N/A,il_foreign_production_fund,{},Executable (2 tiers),YES,program_rate_rules.py
+N/A,N/A,inv-ae-abu-dhabi-film-commission-adfc-production-rebate,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ae-emirates-airline-film-production-partnerships-and-in-kind-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-au-australian-content-standard-streaming-service-investment-obligations,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-au-location-offset-post-digital-and-visual-effects-pdv-offset,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-au-nsw-nsw-government-screen-incentive-via-create-nsw,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-au-tourism-australia-film-and-content-production-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-bc-bc-interactive-digital-media-tax-credit-idmtc,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-bc-bc-production-services-tax-credit-pstc,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-canada-production-tax-credit-cptc-provincial-credits,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-crtc-online-streaming-act-bill-c-11-local-content-obligations,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-on-northern-ontario-heritage-fund-production-fund,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-on-ontario-computer-animation-and-special-effects-tax-credit-ocase,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-on-ontario-film-and-television-tax-credit-ofttc,N/A,MISSING,MISSING,N/A
+resolve_program_rate(),N/A,on_opstc,{},Executable (1 tiers),YES,program_rate_rules.py
+N/A,N/A,inv-ca-qc-quebec-film-and-television-production-tax-credit-sodec,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ca-qc-quebec-production-tax-credit-foreign-productions-qprdp,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-cl-chile-corfo-corfo-film-incentive,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-es-tax-credit-for-foreign-productions-canary-islands-mainland,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-eu-eu-avms-directive-local-content-investment-obligations-streamers,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-fr-chronologie-des-m-dias-svod-investment-obligation-france,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-fr-cnc-cr-dit-d-imp-t-animation-et-jeux-vid-o,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-gb-uk-audio-visual-expenditure-credit-avec,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-hr-croatia-film-cash-rebate,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-hu-hungary-film-tax-rebate-hipa,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ie-tourism-ireland-f-ilte-ireland-film-tourism-production-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-il-israel-film-fund-maslool-incentive-for-foreign-productions,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-is-iceland-post-production-and-vfx-incentive,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-jo-royal-film-commission-jordan-tourism-and-hospitality-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-jp-japan-film-commission-location-incentive-jloc-prefecture-level,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-jp-vipo-visual-industry-promotion-organization-animation-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-kr-kocca-korea-creative-content-agency-animation-and-vfx-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ma-centre-cin-matographique-marocain-ccm-production-rebate,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-ma-centre-cin-matographique-marocain-ccm-tourism-production-facilitation,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-mu-mauritius-edb-film-rebate-scheme,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-mx-mexico-eficine-article-226-tax-credit-and-procine-fund,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-nz-air-new-zealand-screen-production-partnership-programme,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-nz-new-zealand-screen-production-rebate-nzspg-international,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-nz-tourism-new-zealand-screen-tourism-programme,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-sa-saudi-film-commission-sfc-production-rebate,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-sg-imda-digital-media-content-programme-animation-vfx,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-th-thailand-board-of-investment-boi-film-incentive,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-tn-tunisia-national-centre-for-cinema-and-image-cnci-cash-rebate,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-tr-ministry-of-culture-and-tourism-k-lt-r-film-production-grants,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-tr-turkey-cinema-general-directorate-film-production-support,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-us-ca-california-film-television-tax-credit-program-3-0,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-us-state-film-tax-credits-multi-state,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-za-department-of-arts-and-culture-dac-nfvf-development-fund,N/A,MISSING,MISSING,N/A
+N/A,N/A,inv-za-nfvf-department-of-trade-industry-dti-foreign-film-tv-production-rebate,N/A,MISSING,MISSING,N/A
+resolve_program_rate(),N/A,jp_vipo_location_incentive,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,kr_kofic_location_incentive,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,kz_investment_subsidy,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,lu_filmfund_tax_shelter_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,me_cash_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,mk_cash_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,mn_production_incentive,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,mx_federal_film_incentive_2026,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,my_finas_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,pa_film_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ph_fdcp_flip,{},Executable (2 tiers),YES,program_rate_rules.py
+N/A,N/A,proposed_australia_producer_offset_separate_statutory_program,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_canada_british_columbia_film_incentive_bc_fibc,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_colombia_cina_audiovisual_investment_certificate,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_germany_german_motion_picture_fund_gmpf,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_netherlands_netherlands_film_production_incentive_high_end_series,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_spain_navarre_navarre_audiovisual_production_tax_credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_kingdom_enhanced_avec_independent_film_tax_credit_iftc,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_kingdom_uk_global_screen_fund_international_co_production,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_missouri_motion_media_production_tax_credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_montana_media_tax_credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_new_jersey_garden_state_film_and_digital_media_jobs_act_film_credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_new_york_empire_state_independent_film_production_credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_new_york_film_tax_credit_post_production,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_ohio_ohio_motion_picture_tax_credit,N/A,MISSING,MISSING,N/A
+N/A,N/A,proposed_united_states_west_virginia_west_virginia_film_production_tax_credit,N/A,MISSING,MISSING,N/A
+resolve_program_rate(),N/A,pt_scri_pt_cash_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,pt_scri_pt_medium_budget,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,qa_screen_production_incentive,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,sa_film_commission_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,se_production_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,sg_made_with_singapore_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,si_cash_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+manifest_check,N/A,spain-canary-islands-54,N/A,DISPLAY_ONLY,NO,global_inventory_manifest_final.py
+N/A,N/A,th_boi_incentive,N/A,MISSING,MISSING,N/A
+N/A,N/A,th_prd_foreign_digital_content_incentive,N/A,MISSING,MISSING,N/A
+resolve_program_rate(),N/A,tt_production_expenditure_rebate,{},Executable (3 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,tw_bamid_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ua_cash_rebate,{},Executable (3 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,ca_film_30,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,us_il_film_production_services_credit,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,us_nv_film_credit,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,us_ny_post_production_credit,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,us_tn_performance_grant,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,uy_acau_cash_rebate,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,uy_tax_credit_2026,{},Executable (1 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,uz_film_rebate,{},Executable (2 tiers),YES,program_rate_rules.py
+resolve_program_rate(),N/A,za_dtic_foreign_film,{},Executable (2 tiers),YES,program_rate_rules.py
