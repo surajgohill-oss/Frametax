@@ -47,3 +47,13 @@ ag-me-film-centre-of-montenegro-cash-rebate,AG_ONLY_PROGRAM_MISSING_FROM_DB,Vali
 ag-mu-mauritius-edb-film-rebate,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid rebate missing from DB.
 ag-om-oman-film-commission-facilitation,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal rebate available in Oman.
 ag-pa-panama-film-commission-facilitation,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid rebate missing from DB.
+ag-rw-rwanda-development-board-facilitation,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal rebate available in Rwanda.
+ag-se-ab-film-stockholm-regional-co-production-fund,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,"Regional co-production fund, not a formulaic rebate."
+ag-se-sk-film-i-sk-ne-regional-co-production-fund,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,"Regional co-production fund, not a formulaic rebate."
+ag-tz-tanzania-film-board-facilitation,AG_ONLY_PROGRAM_CORRECTLY_ABSENT,No formal rebate available in Tanzania.
+ag-us-ga-georgia-entertainment-industry-investment-act,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-us-la-louisiana-motion-picture-production-program,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-us-nm-new-mexico-film-production-tax-credit,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-us-ny-new-york-state-film-tax-credit-program,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-us-or-oregon-production-investment-fund-opif,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.
+ag-us-pr-puerto-rico-film-industry-economic-incentives-act,AG_ONLY_PROGRAM_MISSING_FROM_DB,Valid program missing from DB.

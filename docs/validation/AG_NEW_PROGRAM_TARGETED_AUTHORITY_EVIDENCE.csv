@@ -32,3 +32,19 @@ ag-mu-mauritius-edb-film-rebate,minimum_qpe,"USD 1,000,000",https://www.edbmauri
 ag-om-oman-film-commission-facilitation,base_rate,N/A (No rebate program),https://screenoman.com,2026-09-14,PRIMARY_AUTHORITY
 ag-pa-panama-film-commission-facilitation,base_rate,25%,https://filmpanama.gob.pa,2026-09-14,PRIMARY_AUTHORITY
 ag-pa-panama-film-commission-facilitation,minimum_qpe,"USD 500,000",https://filmpanama.gob.pa,2026-09-14,PRIMARY_AUTHORITY
+ag-rw-rwanda-development-board-facilitation,base_rate,N/A (No standard rebate),https://rdb.rw/,2026-09-14,PRIMARY_AUTHORITY
+ag-se-ab-film-stockholm-regional-co-production-fund,base_rate,N/A (Co-production fund),https://www.filmstockholm.se/,2026-09-14,PRIMARY_AUTHORITY
+ag-se-sk-film-i-sk-ne-regional-co-production-fund,base_rate,N/A (Co-production fund),https://filmiskane.se/,2026-09-14,PRIMARY_AUTHORITY
+ag-tz-tanzania-film-board-facilitation,base_rate,N/A (No rebate program),https://www.tanzania.go.tz/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-ga-georgia-entertainment-industry-investment-act,base_rate,20%,https://www.georgia.org/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-ga-georgia-entertainment-industry-investment-act,minimum_qpe,"USD 500,000",https://www.georgia.org/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-la-louisiana-motion-picture-production-program,base_rate,25%,https://louisianaentertainment.gov/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-la-louisiana-motion-picture-production-program,minimum_qpe,"USD 300,000",https://louisianaentertainment.gov/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-nm-new-mexico-film-production-tax-credit,base_rate,25%,https://nmfilm.com/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-nm-new-mexico-film-production-tax-credit,minimum_qpe,N/A (No minimum),https://nmfilm.com/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-ny-new-york-state-film-tax-credit-program,base_rate,30%,https://esd.ny.gov/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-ny-new-york-state-film-tax-credit-program,minimum_qpe,"USD 1,000,000",https://esd.ny.gov/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-or-oregon-production-investment-fund-opif,base_rate,20%,https://oregonfilm.org/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-or-oregon-production-investment-fund-opif,minimum_qpe,"USD 1,000,000",https://oregonfilm.org/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-pr-puerto-rico-film-industry-economic-incentives-act,base_rate,20%,https://www.ddec.pr.gov/,2026-09-14,PRIMARY_AUTHORITY
+ag-us-pr-puerto-rico-film-industry-economic-incentives-act,minimum_qpe,"USD 50,000",https://www.ddec.pr.gov/,2026-09-14,PRIMARY_AUTHORITY
