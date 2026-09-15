@@ -98,3 +98,21 @@ jp_vipo_location_incentive,base_rate,50%,https://vipo.or.jp,2026-09-14,PRIMARY_A
 jp_vipo_location_incentive,minimum_qpe,"JPY 200,000,000",https://vipo.or.jp,2026-09-14,PRIMARY_AUTHORITY
 kr_kofic_location_incentive,base_rate,25%,https://koreanfilm.or.kr,2026-09-14,PRIMARY_AUTHORITY
 kr_kofic_location_incentive,minimum_qpe,"KRW 400,000,000",https://koreanfilm.or.kr,2026-09-14,PRIMARY_AUTHORITY
+kz_investment_subsidy,base_rate,30%,https://kazakhcinema.kz,2026-09-14,PRIMARY_AUTHORITY
+kz_investment_subsidy,minimum_qpe,"USD 850,000",https://kazakhcinema.kz,2026-09-14,PRIMARY_AUTHORITY
+lu_filmfund_tax_shelter_rebate,base_rate,N/A (Selective grant),https://filmfund.lu,2026-09-14,PRIMARY_AUTHORITY
+lu_filmfund_tax_shelter_rebate,minimum_qpe,N/A,https://filmfund.lu,2026-09-14,PRIMARY_AUTHORITY
+me_cash_rebate,base_rate,25%,https://filminmontenegro.me,2026-09-14,PRIMARY_AUTHORITY
+me_cash_rebate,minimum_qpe,"EUR 100,000",https://filminmontenegro.me,2026-09-14,PRIMARY_AUTHORITY
+mk_cash_rebate,base_rate,20%,https://filmagency.gov.mk,2026-09-14,PRIMARY_AUTHORITY
+mk_cash_rebate,minimum_qpe,"EUR 100,000",https://filmagency.gov.mk,2026-09-14,PRIMARY_AUTHORITY
+mn_production_incentive,base_rate,30%,https://filmmongolia.gov.mn,2026-09-14,PRIMARY_AUTHORITY
+mn_production_incentive,minimum_qpe,"USD 500,000",https://filmmongolia.gov.mn,2026-09-14,PRIMARY_AUTHORITY
+mx_federal_film_incentive_2026,base_rate,30%,https://imcine.gob.mx,2026-09-14,PRIMARY_AUTHORITY
+mx_federal_film_incentive_2026,minimum_qpe,"MXN 40,000,000",https://imcine.gob.mx,2026-09-14,PRIMARY_AUTHORITY
+my_finas_rebate,base_rate,30%,https://filminmalaysia.com,2026-09-14,PRIMARY_AUTHORITY
+my_finas_rebate,minimum_qpe,"MYR 5,000,000",https://filminmalaysia.com,2026-09-14,PRIMARY_AUTHORITY
+pa_film_rebate,base_rate,25%,https://dicine.gob.pa,2026-09-14,PRIMARY_AUTHORITY
+pa_film_rebate,minimum_qpe,"USD 500,000",https://dicine.gob.pa,2026-09-14,PRIMARY_AUTHORITY
+ph_fdcp_flip,base_rate,20%,https://fdcp.ph,2026-09-14,PRIMARY_AUTHORITY
+ph_fdcp_flip,minimum_qpe,"PHP 20,000,000",https://fdcp.ph,2026-09-14,PRIMARY_AUTHORITY
