@@ -241,7 +241,7 @@ from __future__ import annotations
 #: chain now inherits its terminal disposition instead of being resolved
 #: only one hop, which could previously let a corrupted intermediate alias
 #: reach an injected rule undetected.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.5.0"
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.6.0"  # 1.6.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- removed the us_ny_post_production_credit blanket KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED veto from _B4_RETIRED_OR_FAIL_CLOSED_IDENTITIES; real, sufficient canonical evidence exists to price it deterministically. Invalidates every cached row so this fires fresh, not reused stale-blocked pricing.
 
 from dataclasses import dataclass
 from typing import Literal
@@ -953,7 +953,24 @@ assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZE
 #: GLOBAL_PROGRAM_FORMULAIC_RATE_RULE_SPEC_CODEX.csv).
 _B4_RETIRED_OR_FAIL_CLOSED_IDENTITIES: dict[str, str] = {
     "iceland_post_production_visual_effects_and_animation_incentive": "RETIRED_SUPERSEDED_IDENTITY",
-    "us_ny_post_production_credit": "KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED",
+    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
+    # removed as a blanket exclusion. us_ny_post_production_credit has real,
+    # sufficient canonical rate/threshold/mutual-exclusivity evidence
+    # (US_NY_POST_DOCTRINE, program_rate_rules_worldwide.py) to price
+    # deterministically under the global CineGlobe assumption policy
+    # (qualifying NY facility, eligible production type, timely
+    # application/preapproval, required entity/documentation are all
+    # producer-controlled, curable administrative steps -- not grounds for
+    # fail-closed). The real, substantive same-cost non-double-dipping rule
+    # against ny_state_film is preserved structurally: the doctrine's own
+    # us-ny-post-mutual-exclusivity RateCondition drives
+    # structure_compatibility.py's exclusivity gate, AND a named
+    # mutually_exclusive stacking rule (see stacking_rules.py
+    # frozenset({"ny_state_film", "us_ny_post_production_credit"})) prevents
+    # both from being claimed together in one stack. Remaining category
+    # uncertainty (exact eligible post-production expense line-items beyond
+    # the documented VFX/animation sub-threshold) is disclosed as an
+    # estimation assumption at pricing time, not a fail-closed gate.
 }
 
 _B4_REASON: dict[str, str] = {

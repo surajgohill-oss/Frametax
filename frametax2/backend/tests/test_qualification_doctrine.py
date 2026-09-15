@@ -199,3 +199,45 @@ class TestMauritiusDoctrineAssignment:
         assert all(a.grey_reason is not None for a in greys)
         material_greys = [a for a in greys if a.amount_usd >= 1.0]
         assert material_greys == []  # 7000/7100/8300 now qualify; only $0 music/marketing remain grey
+
+
+class TestNyPostProductionCreditDoctrine:
+    """CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
+    us_ny_post_production_credit had NO PROGRAM_DOCTRINE entry, so it
+    silently fell through to CANONICAL_DEFAULT_DOCTRINE
+    (OPEN_DEFAULT_INCLUDE) -- a real scope-mismatch defect, since the
+    program's own doctrine (US_NY_POST_DOCTRINE) is expressly scoped to
+    "qualified post-production costs" only. Fixed by explicit
+    CLOSED_POSITIVE_LIST classification with post_production/sound/vfx as
+    the only qualifying categories."""
+
+    def test_us_ny_post_production_credit_is_closed_positive_list(self):
+        assert get_program_doctrine("us_ny_post_production_credit") == QualificationDoctrine.CLOSED_POSITIVE_LIST
+
+    def test_post_production_spend_qualifies_ordinary_production_spend_does_not(self):
+        lines = [
+            BudgetLine(account_code="POST-01", description="Post-production editorial",
+                       amount_usd=1_200_000.0, spend_category="post_production"),
+            BudgetLine(account_code="PRIN-01", description="Principal photography ATL/BTL",
+                       amount_usd=2_800_000.0, spend_category="production"),
+        ]
+        reg = derive_qualification_register(
+            lines, program_slug="us_ny_post_production_credit",
+            facts=ProductionFacts(jurisdiction_code="US-NY"), rate=0.35, program_territorial_text=None,
+        )
+        by_code = {a.account_code: a for a in reg}
+        assert by_code["POST-01"].state == QualificationState.QUALIFIES
+        assert by_code["PRIN-01"].state == QualificationState.EXCLUDED
+
+    def test_vfx_and_sound_also_qualify(self):
+        lines = [
+            BudgetLine(account_code="VFX-01", description="VFX finishing",
+                       amount_usd=600_000.0, spend_category="vfx"),
+            BudgetLine(account_code="SND-01", description="Sound mix",
+                       amount_usd=200_000.0, spend_category="sound"),
+        ]
+        reg = derive_qualification_register(
+            lines, program_slug="us_ny_post_production_credit",
+            facts=ProductionFacts(jurisdiction_code="US-NY"), rate=0.35, program_territorial_text=None,
+        )
+        assert all(a.state == QualificationState.QUALIFIES for a in reg)

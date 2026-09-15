@@ -46,7 +46,7 @@ from __future__ import annotations
 #: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
 #: so a QPE-category/territorial-treatment change invalidates cached
 #: served evaluations. Bump on any material change.
-PROGRAM_SPEND_RULES_VERSION = "1.0.0"
+PROGRAM_SPEND_RULES_VERSION = "1.1.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."
 
 import enum
 from dataclasses import dataclass
@@ -191,6 +191,22 @@ PROGRAM_DOCTRINE: dict[str, QualificationDoctrine] = {
     # BTL ratio), BTL and production costs qualify broadly. Named cost
     # exclusions (story/script rights) are added as explicit rows below.
     "ny_state_film": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,  # Codex B2 identity ruling: rekeyed from us_ny_film_credit
+
+    # New York Empire State Film Post-Production Credit
+    # (CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION):
+    # Tier 2 EVIDENCE_CONSTRAINED override of the OPEN_DEFAULT_INCLUDE
+    # canonical default. The program's own citation (US_NY_POST_DOCTRINE,
+    # program_rate_rules_worldwide.py) is expressly scoped to "qualified
+    # post-production costs" only -- unlike ny_state_film's broad
+    # production-cost base, this program has no plausible reading under
+    # which ordinary principal-photography/ATL/BTL production spend
+    # qualifies. Without this explicit classification, the module's own
+    # canonical default (OPEN_DEFAULT_INCLUDE) silently over-included a
+    # full production's entire budget as "post-production costs" the first
+    # time this program was unblocked and priced against a real production
+    # -- a real, disclosed scope-mismatch defect, fixed here at its root
+    # rather than papered over downstream.
+    "us_ny_post_production_credit": QualificationDoctrine.CLOSED_POSITIVE_LIST,
 
     # Georgia Film Tax Credit: Georgia DOR (dor.georgia.gov, official):
     # "costs for pre-production, production, and post-production related to
@@ -681,6 +697,38 @@ US_GA_RULES: tuple[SpendRule, ...] = (
 # consistent with how the rate-rule conditions are disclosed-but-unenforced.
 US_NY_RULES: tuple[SpendRule, ...] = ()
 
+# ── New York Empire State Film Post-Production Credit — closed positive
+#    list ────────────────────────────────────────────────────────────────
+# CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION: this
+# program's own doctrine (US_NY_POST_DOCTRINE, program_rate_rules_worldwide.py)
+# is scoped to "qualified post-production costs," with a named VFX/animation
+# sub-threshold condition inside that same post-production base. Only the
+# categories this codebase's own existing vocabulary already uses for
+# post-production work are listed as qualifying -- no new external research,
+# just correctly applying the doctrine's own already-quoted scope. Every
+# other category (ATL/BTL/travel/etc.) is EXCLUDED by CLOSED_POSITIVE_LIST's
+# own omission rule, exactly the outcome the doctrine requires.
+_US_NY_POST_NOTE = (
+    "US_NY_POST_DOCTRINE (tax.ny.gov, corroborated by secondary aggregator, "
+    "PARSED tier): the credit prices 'qualified post-production costs' only "
+    "-- 'productions seeking to contract some or all of the post-production "
+    "work to a facility in New York State.' The VFX/animation sub-threshold "
+    "condition is itself scoped inside this same post-production cost base "
+    "(lesser of $500,000 or 10% of total post-production cost), confirming "
+    "sound/VFX finishing work is within scope, not a separate base."
+)
+US_NY_POST_RULES: tuple[SpendRule, ...] = (
+    SpendRule(program_slug="us_ny_post_production_credit", spend_category="post_production",
+              qualifies=True, territorial_only=True, confidence_tier="PARSED",
+              notes=_US_NY_POST_NOTE, source_ref="US-NY-tax.ny.gov-Post-Production-Credit"),
+    SpendRule(program_slug="us_ny_post_production_credit", spend_category="sound",
+              qualifies=True, territorial_only=True, confidence_tier="PARSED",
+              notes=_US_NY_POST_NOTE, source_ref="US-NY-tax.ny.gov-Post-Production-Credit"),
+    SpendRule(program_slug="us_ny_post_production_credit", spend_category="vfx",
+              qualifies=True, territorial_only=True, confidence_tier="PARSED",
+              notes=_US_NY_POST_NOTE, source_ref="US-NY-tax.ny.gov-Post-Production-Credit"),
+)
+
 # ── Spain Art. 36.2 LIS — explicit inclusion rows for the technical/BTL and
 # supplier categories the statute names, so that under HYBRID_CONDITIONAL the
 # broad category-(2) spend qualifies while the ATL creative-personnel
@@ -732,7 +780,7 @@ ES_RULES: tuple[SpendRule, ...] = (
 # ── Registry ────────────────────────────────────────────────────────────────
 
 _ALL_RULES: dict[str, dict[str, SpendRule]] = {}
-for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *ES_RULES, *DE_DFFF_RULES):
+for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES):
     _ALL_RULES.setdefault(_rule.program_slug, {})[_rule.spend_category] = _rule
 
 

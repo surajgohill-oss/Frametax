@@ -204,21 +204,49 @@ def test_negative_6_reregistering_a_blocked_slugs_rate_rule_cannot_reactivate_it
 # for every one of the 46 B1 canonical ids, and for the pre-existing
 # authority-exhausted/retired/duplicate states it also covers. ─────────
 
-def test_all_46_b1_canonical_ids_are_blocked():
+def test_all_49_b1_canonical_ids_are_blocked():
+    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
+    # corrected stale count (46 -> 49) to match the registry's own module-
+    # level assertions (ca_bc_pstc, ca_federal_pstc, si_cash_rebate were
+    # already 3 real additions on top of the original 46 before this
+    # workstream) -- not a weakening, the registry itself already carries
+    # a stricter len()==49 assertion this test must agree with.
     from app.data.authority_coverage_registry import _B1_DISCRETIONARY_RULING
 
-    assert len(_B1_DISCRETIONARY_RULING) == 46
+    assert len(_B1_DISCRETIONARY_RULING) == 49
     for slug, expected_classification in _B1_DISCRETIONARY_RULING.items():
         block = economic_block_for_program(slug)
         assert block is not None, f"{slug} must be B4-blocked"
         assert block.classification == expected_classification
 
 
-def test_retired_and_keep_separate_identities_are_blocked():
-    for slug in (
-        "iceland_post_production_visual_effects_and_animation_incentive",
-        "us_ny_post_production_credit",
-    ):
-        block = economic_block_for_program(slug)
-        assert block is not None, f"{slug} must be B4-blocked"
-        assert resolve_program_rate(slug, production_type="feature_film", qpe_usd=5_000_000) is None
+def test_retired_identity_is_blocked():
+    slug = "iceland_post_production_visual_effects_and_animation_incentive"
+    block = economic_block_for_program(slug)
+    assert block is not None, f"{slug} must be B4-blocked"
+    assert resolve_program_rate(slug, production_type="feature_film", qpe_usd=5_000_000) is None
+
+
+def test_ny_post_production_credit_no_longer_blanket_blocked():
+    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
+    # the blanket KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED veto was removed
+    # (real, sufficient canonical rate/threshold/mutual-exclusivity
+    # evidence exists in US_NY_POST_DOCTRINE). The gate must no longer
+    # block this identity, and a real rate must resolve above its own
+    # documented $1,000,000 minimum spend.
+    slug = "us_ny_post_production_credit"
+    assert economic_block_for_program(slug) is None, f"{slug} must NOT be B4-blocked"
+    rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=1_200_000.0)
+    assert rr is not None
+    assert rr.modeled_rate == pytest.approx(0.35)
+
+
+def test_ny_post_and_ny_principal_are_named_mutually_exclusive_not_blanket_blocked():
+    # The real, substantive same-cost non-double-dipping rule survives the
+    # veto's removal: a single structure can never claim both ny_state_film
+    # and us_ny_post_production_credit for the same cost base.
+    from app.optimization.stacking_rules import _SLUG_PAIR_RULES
+
+    rule = _SLUG_PAIR_RULES.get(frozenset({"ny_state_film", "us_ny_post_production_credit"}))
+    assert rule is not None
+    assert rule["rule_type"] == "mutually_exclusive"

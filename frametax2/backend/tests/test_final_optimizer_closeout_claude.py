@@ -167,6 +167,23 @@ async def test_supplied_incentive_budget_line_changes_the_fingerprint_and_forces
             "adding a real supplied-incentive budget line must change the evaluation fingerprint"
         )
 
+        # Known test-isolation hazard (fingerprint reuse masking fresh
+        # evaluation): the probe budget line is deterministic (fixed
+        # amount, fixed spend_category), so an EARLIER run of this same
+        # test at the SAME ENGINE_VERSION can leave a real, stale
+        # StructureCalculationResult row at this exact fingerprint,
+        # causing evaluate_project() below to legitimately-but-wrongly
+        # report EVALUATION_REUSED instead of a genuinely fresh
+        # EVALUATION_COMPLETE. A correlated subquery avoids Postgres's
+        # 65535-parameter limit on this project's large structure-id list.
+        await db.execute(sa_delete(StructureCalculationResult).where(
+            StructureCalculationResult.input_fingerprint == fp_with_supplied_line,
+            StructureCalculationResult.structure_id.in_(
+                sa_select(ProductionStructure.id).where(ProductionStructure.project_id == pid).scalar_subquery()
+            ),
+        ))
+        await db.commit()
+
         result = await evaluate_project(db, pid)
         assert result["status"] == "EVALUATION_COMPLETE"
         assert result["state_fingerprint"] == fp_with_supplied_line

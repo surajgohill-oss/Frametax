@@ -19,7 +19,7 @@ from __future__ import annotations
 #: so a stacking-compatibility/reduction-rule change invalidates cached
 #: served evaluations, including combined-structure results. Bump on any
 #: material change.
-STACKING_RULES_VERSION = "1.0.0"
+STACKING_RULES_VERSION = "1.1.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
 
 from app.data.global_inventory import GlobalProgramEntry
 from app.optimization.types import StackingViolation
@@ -505,6 +505,26 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "OPSTC applies to foreign service productions using Ontario. "
             "A production cannot be both a domestic content production (OFTTC) and a foreign "
             "service production (OPSTC) simultaneously."
+        ),
+    },
+    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
+    # us_ny_post_production_credit's blanket KEEP_SEPARATE fail-closed veto
+    # was removed (authority_coverage_registry.py) so the program can price.
+    # The real, substantive constraint from US_NY_POST_DOCTRINE
+    # (tax.ny.gov: "if the film post-production credit is claimed for
+    # qualified post-production costs, no other income tax credit may be
+    # claimed for those costs") is preserved here as a named rule so a
+    # single structure can never claim both for the same cost base.
+    frozenset({"ny_state_film", "us_ny_post_production_credit"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": (
+            "New York's principal film production credit (ny_state_film) and the "
+            "Empire State Post-Production Credit (us_ny_post_production_credit) are "
+            "mutually exclusive for the same qualified costs (tax.ny.gov: 'no other "
+            "income tax credit may be claimed for those costs'). A production may "
+            "claim the principal credit for its production spend and the post credit "
+            "for a genuinely separate post-only routing, but never both against the "
+            "same cost base within one structure."
         ),
     },
     # OFTTC is government assistance reducing CPTC qualified labour (ITA §125.4)
