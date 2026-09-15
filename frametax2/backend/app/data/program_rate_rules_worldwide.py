@@ -1041,33 +1041,53 @@ CA_BC_DAVE_DOCTRINE = register(DoctrineRecord(
             rate=0.16,
             is_band_ceiling=False,
             conditions=(
+                # Codex canonical identity/authority cleanup (Phase 3, BC
+                # DAVE): the prior kind="rate_base_narrower_than_qpe"
+                # condition only ever DISCLOSED that a narrower base was
+                # required -- it never bound one, so DAVE could never
+                # actually price. Reuses the SAME generic canonical-line
+                # reconciliation mechanism already built this session for
+                # South Africa's post/VFX QSAPPE and Oregon's payroll/
+                # other split (allocation_pricing.price_segment's
+                # component_basis_spend_categories reconciliation block,
+                # which derives/validates this fact directly from this
+                # segment's own real, qualifying BC labour lines -- never
+                # a free caller scalar, never generic BC/Canadian QPE).
                 RateCondition(
                     condition_id="ca-bc-dave-labour-only-base",
-                    description="The 16% applies to qualified BC LABOUR "
-                                "expenditure, a base narrower than modeled "
-                                "QPE; no cap percentage relating labour to "
-                                "total production cost is recorded in "
-                                "existing project knowledge, so the narrower "
-                                "base cannot be applied -- the modeled "
-                                "credit therefore OVERSTATES nothing only if "
-                                "labour equals QPE, and is disclosed here "
-                                "rather than silently applied.",
+                    description="The 16% applies ONLY to qualified BC "
+                                "LABOUR expenditure -- a real, exactly-"
+                                "traced-and-reconciled basis derived from "
+                                "this segment's own labour-category "
+                                "AccountAllocation lines, never the "
+                                "segment's total QPE and never generic "
+                                "BC/Canadian labour outside a DAVE-"
+                                "eligible activity.",
                     quote="16% DAVE (animation/VFX/post) credit ... qualified "
                           "BC labour expenditure (gov.bc.ca, via this "
                           "project's own CA-BC profile)",
-                    kind="rate_base_narrower_than_qpe",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="ca_bc_dave_qualified_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
                 ),
                 RateCondition(
                     condition_id="ca-bc-dave-activity-scope",
                     description="Eligibility is limited to genuine digital "
                                 "animation, visual-effects and post-"
-                                "production activity. Whether a given "
-                                "production performs such activity in BC is "
-                                "a project fact this engine does not collect "
-                                "by default -- never auto-applied.",
+                                "production activity actually performed in "
+                                "BC -- a real project fact, never assumed. "
+                                "Absent, the segment remains CONDITIONAL_"
+                                "FACTS_REQUIRED (disclosed, discoverable, "
+                                "never silently priced).",
                     quote="DAVE (animation/VFX/post) credit (gov.bc.ca, via "
                           "this project's own CA-BC profile)",
                     kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ca_bc_dave_eligible_activity_confirmed",
                 ),
             ),
         ),

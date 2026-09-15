@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "commit": "pending (see CINEGLOBE_CANONICAL_STATE_CLEANUP_CLAUDE.md for final SHA)",
+  "backend_status_taxonomy_supported": [
+    "VERIFIED_AUTOMATIC",
+    "VERIFIED_CONDITIONAL_FACTS_REQUIRED",
+    "DISPLAY_ONLY",
+    "AUTHORITY_LOCKED",
+    "REJECTED_FOR_THIS_PRODUCTION",
+    "HISTORICAL_OR_SUPERSEDED"
+  ],
+  "backend_disclosure_fields_confirmed_present_per_excluded_or_blocked_program": {
+    "canonical_id": "program_slug on every SegmentEconomics/candidate trace row",
+    "display_name": "DoctrineRecord.program_name / authority_coverage_registry.py AuthorityCoverageRecord.program_name",
+    "jurisdiction": "jurisdiction_code on every SegmentEconomics/candidate trace row",
+    "status": "candidate_status / rejection_reason_class / discovery_classification (canonical_evaluation.py) plus the new authority_provenance_unresolved flag (allocation_pricing.SegmentEconomics, this pass)",
+    "exact_reason": "reason string (canonical_evaluation.py _capability_only_status / STATE_REASON dict in authority_coverage_registry.py)",
+    "missing_facts_or_evidence": "requirement_trace + role_qualification.missing_facts/curable_requirements/failed_requirements + (this pass) reasoning_trace entry for authority provenance gaps",
+    "surviving_alias_target": "authority_coverage_registry.py ALIAS_MAP; CANONICAL_ACTIVE_IDENTITY_CLEANUP_CLAUDE.csv (this pass, documentation snapshot)"
+  },
+  "verified_this_pass": [
+    {
+      "check": "Bulgaria provenance-unresolved candidate downgrades to QUAL_AUTHORITY_UNRESOLVED, excluding it from _QUALIFICATION_ADMITS_RECOMMENDED",
+      "method": "Code review of the worse-wins merge added at canonical_evaluation.py's PROVENANCE_DISCLOSURE_STATES branch; verified _QUALIFICATION_ADMITS_RECOMMENDED = frozenset({QUAL_QUALIFIES, QUAL_NOT_APPLICABLE}) does not include QUAL_AUTHORITY_UNRESOLVED",
+      "result": "PASS (code-level; full DB-backed candidate trace was not re-run under this pass's time budget -- see CANONICAL_CLEANUP_REMAINING_ITEMS_CLAUDE.csv)"
+    },
+    {
+      "check": "BC DAVE component pricing bound to real canonical labour lines",
+      "method": "tests/test_ca_bc_dave_component.py, 4 tests",
+      "result": "PASS (4/4)"
+    },
+    {
+      "check": "Ohio identity search: no existing executable canonical program to conflict with",
+      "method": "Direct DB query (0 US-OH jurisdiction rows) + repository grep across app/data/*.py + app/models/*.py",
+      "result": "CONFIRMED -- no change required"
+    },
+    {
+      "check": "Nevada $6,000,000 project cap",
+      "method": "tests/test_us_nv_film_credit_cap.py, 4 tests",
+      "result": "PASS (4/4)"
+    },
+    {
+      "check": "Czech: no double-counting reachable at runtime",
+      "method": "Code review of production_type mutual exclusivity between cz_film_incentive and cz_film_incentive_animation's DoctrineRecords, plus resolve_program_rate's production_type filter",
+      "result": "CONFIRMED unreachable by construction"
+    },
+    {
+      "check": "Czech: accepted animation/live-action rate and cap behavior unchanged",
+      "method": "tests/test_b3_formulaic_consumption.py::test_cz_film_incentive_production_type_branch_and_qpe_cap (pre-existing)",
+      "result": "PASS (1/1, unchanged)"
+    },
+    {
+      "check": "Four frozen project economics unchanged",
+      "method": "Direct evaluate_project/build_production_and_structures recomputation for Little Utopia, FVD, Bad Hombres, Lips Like Sugar",
+      "result": "PASS -- all four exact: $573,059.70/$3,791,333.30; $1,445,659.84/$3,072,027.16; $596,910.25/$1,885,112.75; $3,459,278.90/$8,524,375.10"
+    }
+  ],
+  "not_verified_this_pass": [
+    "Full 12-program matrix re-run (out of bounded test scope per NO-SPIN RULE)",
+    "A full DB-backed evaluate_project trace showing Bulgaria's Recommended-exclusion end to end (verified at the code/merge-logic level only, given time budget)",
+    "Nevada's $750,000 per-person limit, 60% spend ratio, and 12% nonresident-ATL base (not implemented this pass -- see CANONICAL_CLEANUP_REMAINING_ITEMS_CLAUDE.csv)",
+    "Phase 7's five bounded invariant assertions as one dedicated, exhaustive test suite (a scoped subset was implemented and run -- see tests/test_canonical_identity_authority_invariants.py)"
+  ]
+}

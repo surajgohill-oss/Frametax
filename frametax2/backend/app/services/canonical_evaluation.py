@@ -2098,6 +2098,7 @@ def _segment_dicts(pricing) -> list[dict]:
             "incentive_floor_usd": s.incentive_floor_usd,
             "incentive_ceiling_usd": s.incentive_ceiling_usd,
             "ceiling_requires_confirmation": s.ceiling_requires_confirmation,
+            "authority_provenance_unresolved": getattr(s, "authority_provenance_unresolved", False),
             "qpe_cap_applied_usd": s.qpe_cap_applied_usd,
             "blockers": list(s.blockers),
             "qualification_trace": list(s.register_trace),
@@ -2965,6 +2966,41 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 f"Authority provenance incomplete ({_authority_state}): "
                 + STATE_REASON.get(_authority_state, "")
             ]
+            # Codex canonical identity/authority cleanup: a warning STRING
+            # alone never prevented this candidate from reaching Recommended/
+            # rank-1 -- qualification_state (the field the Recommended-
+            # admission gate and _QUALIFICATION_ADMITS_RECOMMENDED actually
+            # read) was left untouched. A provenance-unresolved result must
+            # never present as fully knowledge-verified: downgrade to
+            # QUAL_AUTHORITY_UNRESOLVED via the SAME worse-wins merge every
+            # other qualification signal in this function already uses --
+            # never weakens an existing worse state (HARD_FAIL/CURABLE_GAP/
+            # etc.), never invents QUALIFIES.
+            _prov_existing_state = (_role_qualification or {}).get("state")
+            if _QUAL_STATE_SEVERITY.get(QUAL_AUTHORITY_UNRESOLVED, 1) < _QUAL_STATE_SEVERITY.get(_prov_existing_state, 2):
+                _role_qualification = dict(_role_qualification or {
+                    "regime_id": program_slug, "jurisdiction_code": code,
+                    "qualification_route": "authority_provenance_gate",
+                    "role_findings": [], "current_points": None, "required_points": None,
+                    "contribution_requirements": [], "ownership_control_requirements": [],
+                    "resolved_facts": [], "failed_requirements": [], "curable_requirements": [],
+                    "available_levers": [], "authority_basis": None, "confidence_state": "MEDIUM",
+                })
+                _role_qualification["state"] = QUAL_AUTHORITY_UNRESOLVED
+                _role_qualification["missing_facts"] = list(_role_qualification.get("missing_facts") or []) + [
+                    f"{program_slug}_primary_authority_source",
+                ]
+                _role_qualification["reasoning_trace"] = list(_role_qualification.get("reasoning_trace") or []) + [
+                    f"Authority provenance incomplete ({_authority_state}): "
+                    + STATE_REASON.get(_authority_state, "")
+                ]
+                _this_qual_state = QUAL_AUTHORITY_UNRESOLVED
+                _qual_state_by_code_program[(code, program_slug)] = _this_qual_state
+                if _QUAL_STATE_SEVERITY.get(_this_qual_state, 2) < _QUAL_STATE_SEVERITY.get(
+                    _qual_state_by_program.get(program_slug), 2
+                ):
+                    _qual_state_by_program[program_slug] = _this_qual_state
+                    _qual_detail_by_program[program_slug] = (code, _role_qualification)
         # Master reconciliation, 2026-09-02: administrative/competitive-
         # allocation risk is a DIFFERENT axis from whether a deterministic
         # rate exists. A Credit Allocation Letter, an application window, a

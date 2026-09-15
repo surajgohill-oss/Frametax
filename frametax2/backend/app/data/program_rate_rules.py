@@ -1819,6 +1819,24 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
               "program page, oregonfilm.org)",
         source_ref="oregonlegislature.gov-ors284.368+secure.sos.state.or.us-oar951-002-0010+oregonfilm.org-opif",
     ),
+    # Codex canonical identity/authority cleanup (Phase 5, Nevada):
+    # "Material accepted constraints are not executable" -- the real,
+    # already-accepted USD6,000,000 per-project cap (film.nv.gov, the
+    # SAME source this program's own doctrine record already cites) was
+    # never applied to the calculated incentive at all, letting a large
+    # enough qualifying spend price an unbounded credit. Applied here via
+    # the SAME dollar-cap mechanism every other capped program in this
+    # codebase already uses -- never a rejection predicate, the
+    # calculated incentive is reduced to the cap.
+    "us_nv_film_credit": IncentiveValueCapRule(
+        program_slug="us_nv_film_credit", cap_currency="USD", cap_native_amount=6_000_000.0,
+        description="Maximum project award: USD6,000,000 per production, applied to the "
+                     "calculated incentive.",
+        quote="$6M per-project / $10M program caps (film.nv.gov, official Nevada Film "
+              "Office incentive page -- already cited in this program's own doctrine "
+              "record's SourceProvenance.citation_detail)",
+        source_ref="film.nv.gov-official",
+    ),
 }
 
 

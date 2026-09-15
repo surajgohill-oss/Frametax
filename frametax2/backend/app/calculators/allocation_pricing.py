@@ -150,6 +150,19 @@ class SegmentEconomics:
     # producer can see exactly which gates are still open.
     requirement_trace: tuple[dict, ...] = ()
 
+    # Codex canonical identity/authority cleanup: True when this program's
+    # authority_coverage_registry state is AUTHORITY_UNRESOLVED_NON_PRICEABLE
+    # -- a real, structured PROVENANCE-axis disclosure that the retained
+    # citation names only secondary material (production-service sites,
+    # aggregators, trade summaries), not a primary/official source. This is
+    # NOT an economic block (the segment still prices deterministically,
+    # per authority_coverage_registry.py's own two-axis design) -- but it
+    # MUST be surfaced so a caller never presents an unresolved-provenance
+    # result as fully knowledge-verified or lets it reach Recommended/rank-1
+    # without a human confirming the authority. False for every other
+    # program, unchanged.
+    authority_provenance_unresolved: bool = False
+
 
 @dataclass
 class StructureRecommendation:
@@ -1326,6 +1339,9 @@ def price_segment(
              "state": e.state, "detail": e.detail}
             for e in requirements_gate.evaluations
             if e.state != "NOT_APPLICABLE"
+        ),
+        authority_provenance_unresolved=(
+            coverage is not None and coverage.state == "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
         ),
     )
 

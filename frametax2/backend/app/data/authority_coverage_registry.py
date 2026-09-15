@@ -650,6 +650,21 @@ _PROMPT16_AUTHORITY_RESIDUAL_ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ch_pics_national_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CH", "Switzerland PICS National Location Incentive"),
     ("co_film_in_colombia", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CO", "Colombia Film Commission — Film In Colombia"),
     ("cr_tax_return_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CR", "Costa Rica Tax Return Cash Incentive"),
+    # Codex canonical identity/authority cleanup (Phase 6, Czech
+    # animation): cz_film_incentive_animation prices independently
+    # (production_type="animation" only) alongside cz_film_incentive
+    # (production_type="feature_film" only) -- the two production_types
+    # are mutually exclusive PROJECT-level facts, so no single real
+    # project can ever receive BOTH as priced candidates simultaneously;
+    # "double counting" is not reachable at runtime. The genuine
+    # inconsistency Codex found is a MANIFEST/identity-lineage question
+    # (whether this counts as 1 or 2 programs in the 12-program matrix),
+    # resolved in docs/validation/CANONICAL_CZECH_TIER_RECONCILIATION_
+    # CLAUDE.csv and CANONICAL_ARTIFACT_PRECEDENCE_CLAUDE.json — cz_film_
+    # incentive_animation is the surviving program's animation/digital
+    # TIER for counting/identity purposes, never a second independent
+    # incentive slot, while its own runtime pricing behavior (accepted,
+    # tested) is preserved unchanged.
     ("cz_film_incentive_animation", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CZ", "Czech Film Incentive — Animation/Digital"),
     ("do_film_commission_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "DO", "Dominican Republic Film Commission Incentive"),
     ("eg_empc_cashback", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "EG", "Egypt EMPC (Media Production City) Cashback"),
@@ -868,12 +883,23 @@ def is_covered_unpriceable(program_slug: str) -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 from app.data.program_slug_aliases import PROGRAM_SLUG_ALIASES  # noqa: E402
 
-#: canonical_program_id -> Codex binding_decision. 46 rows.
+#: canonical_program_id -> Codex binding_decision. 47 rows (+1: ca_bc_pstc,
+#: Codex canonical identity/authority cleanup).
 _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "ae_ad_film_rebate": "FAIL_CLOSED",
     "ag-us-pr-puerto-rico-film-industry-economic-incentives-act": "FAIL_CLOSED",
     "al_cash_rebate": "FAIL_CLOSED",
     "au_nsw_pdv_rebate": "FAIL_CLOSED",
+    # Codex canonical identity/authority cleanup (Phase 1, 31-record
+    # reconciliation): ca_bc_pstc was confirmed by Codex's own audit as
+    # AUTHORITY_EXHAUSTED_FAIL_CLOSED, but this specific spelling was
+    # genuinely absent from BOTH this dict and COVERAGE_REGISTRY -- only
+    # its alias "bc_pstc" (CANONICAL_RUNTIME_SLUG_BINDINGS) pointed to it,
+    # with no veto ever actually registered under either spelling. A real
+    # gap this pass closes, matching the confirmed correct disposition.
+    "ca_bc_pstc": "FAIL_CLOSED",
+    "ca_federal_pstc": "FAIL_CLOSED",
+    "si_cash_rebate": "FAIL_CLOSED",
     "au_pdv_offset": "FAIL_CLOSED",
     "au_qld_pdv_rebate": "FAIL_CLOSED",
     "au_sa_pdv_rebate": "FAIL_CLOSED",
@@ -917,8 +943,8 @@ _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "uz_film_rebate": "FAIL_CLOSED",
     "za_dtic_foreign_film": "FAIL_CLOSED",
 }
-assert len(_B1_DISCRETIONARY_RULING) == 46
-assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 33
+assert len(_B1_DISCRETIONARY_RULING) == 49  # +3: ca_bc_pstc, ca_federal_pstc, si_cash_rebate, Codex canonical identity/authority cleanup
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 36  # +3: ca_bc_pstc, ca_federal_pstc, si_cash_rebate
 assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 13
 
 #: Retired / superseded runtime identities that must never resolve to an

@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "generated_by": "claude-canonical-state-cleanup",
+  "generated_for_commit": "3b5c3f5ea7c16358b8fe9ed64f0f5f2181d05ae5",
+  "purpose": "Establishes which artifact controls PRESENT canonical state for identity/authority/runtime questions, so historical/source IDs and superseded audits can never again be mistaken for current independent programs or current defects.",
+  "current_controlling_research_closure": {
+    "artifact": "docs/validation/CODEX_53_WARNING_CANONICAL_RECONCILIATION.csv",
+    "role": "Controls final disposition for the 31 authority-vetoed records, BC DAVE, Ohio, Nevada, and Czech identity lineage as of this pass.",
+    "read_from_branch": "codex/305-program-delta-audit-20260915 (commit 35f2553fd00ac0de868bbffa35ce255369e99ef6) -- read directly, never merged"
+  },
+  "current_implementation_manifest": {
+    "artifact": "app/data/authority_coverage_registry.py",
+    "role": "The SOLE executable source of authority_disposition/blocks_economic_candidacy for every program_slug. Any CSV/MD describing a program's authority state is a SNAPSHOT of this file at the time it was written -- this file, read live, always controls."
+  },
+  "current_canonical_identity_and_alias_source": {
+    "artifact": "app/data/authority_coverage_registry.py (ALIAS_MAP section) + app/data/program_slug_aliases.py + app/data/canonical_executable_registry.py",
+    "role": "The SOLE executable source for resolving a historical/source/proposed ID to its surviving canonical program_slug BEFORE any priceability question is asked. An ID absent from these sources but present in an audit CSV is historical documentation, never a live candidate."
+  },
+  "current_authority_source": {
+    "artifact": "app/data/authority_coverage_registry.py (COVERAGE_REGISTRY dict, built from _ROWS + _PROMPT16_AUTHORITY_RESIDUAL_ROWS)",
+    "role": "The SOLE executable source of BLOCKING_STATES vs PROVENANCE_DISCLOSURE_STATES for every program_slug. A dormant DoctrineRecord/RateRule existing in program_rate_rules_worldwide.py does NOT, by itself, grant authority -- this registry is the sole gate."
+  },
+  "current_runtime_acceptance_source": {
+    "artifact": "docs/validation/CINEGLOBE_CANONICAL_STATE_CLEANUP_CLAUDE.md + docs/validation/CANONICAL_STATE_RUNTIME_VALIDATION_CLAUDE.json (this pass)",
+    "role": "Records what was directly verified against the real executable pipeline (discovery -> price_segment -> resolve_program_rate -> optimizer) for this pass's bounded scope, superseding any prior runtime-acceptance claim for the same records."
+  },
+  "superseded_artifacts_that_cannot_define_present_state": [
+    {
+      "artifact": "docs/validation/CODEX_12_PROGRAM_FINAL_MATRIX.csv",
+      "reason": "Reported Czech as FAIL by misreading cz_film_incentive_animation's coverage state as a hard block; the actual registered state (AUTHORITY_UNRESOLVED_NON_PRICEABLE) never blocked candidacy. Superseded by CANONICAL_CZECH_TIER_RECONCILIATION_CLAUDE.csv for the Czech row specifically; not re-validated in full by this pass."
+    },
+    {
+      "artifact": "docs/validation/CANONICAL_PROGRAM_CURRENT_STATE_INDEX_CODEX.csv",
+      "reason": "A point-in-time index as of the Codex audit commit; individual rows are superseded wherever this pass's own CSVs (CANONICAL_31_AUTHORITY_STATE_RECONCILIATION_CLAUDE.csv, CANONICAL_FOUR_PROGRAM_REMEDIATION_CLAUDE.csv, CANONICAL_CZECH_TIER_RECONCILIATION_CLAUDE.csv) record a different final_state."
+    },
+    {
+      "artifact": "docs/validation/CODEX_NEW_PROGRAM_ACTIVE_OPTIMIZER_POPULATION.csv, docs/validation/CODEX_NEW_PROGRAM_RUNTIME_COMPARISON.csv, docs/validation/CODEX_CANONICALIZED_OPTIMIZER_AUDIT.md",
+      "reason": "Historical audit artifacts from the codex/305-program-delta-audit-20260915 branch, consulted as research input for this pass but not themselves executable state -- app/data/authority_coverage_registry.py always controls over any prose/CSV description of it."
+    },
+    {
+      "artifact": "any prior closeout .md/.csv describing bg_film_encouragement_act_rebate as unconditionally AUTHORITY_VERIFIED_PRICEABLE with no provenance-unresolved qualification-state disclosure",
+      "reason": "Superseded by this pass's canonical_evaluation.py qualification-downgrade fix -- see CANONICAL_FOUR_PROGRAM_REMEDIATION_CLAUDE.csv Bulgaria row."
+    }
+  ],
+  "precedence_rule": "When any two artifacts disagree about a program's CURRENT state: (1) the live executable registries (authority_coverage_registry.py, program_rate_rules_worldwide.py, program_rate_rules.py, canonical_executable_registry.py) always control over any CSV/MD description of them; (2) among CSV/MD artifacts, the one with the LATEST commit timestamp on the implementation branch (claude/audit-frametax-features-NZcX5) controls over any artifact read from a research/audit branch; (3) a research/audit branch artifact (e.g. codex/305-program-delta-audit-20260915) is read-only input, never itself controlling state, and is never merged."
+}
