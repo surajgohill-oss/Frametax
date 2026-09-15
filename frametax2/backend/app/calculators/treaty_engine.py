@@ -166,6 +166,7 @@ def _add_bilateral(
     fund_unlocks: list[str] | None = None,
     notes: str | None = None,
     tier: str = "PARSED",
+    personnel_requirement: "PersonnelRequirement | None" = None,
 ) -> None:
     _BILATERAL[frozenset({a, b})] = TreatyData(
         treaty_slug=slug,
@@ -182,14 +183,187 @@ def _add_bilateral(
         fund_unlocks=fund_unlocks or [],
         confidence_tier=tier,
         notes=notes,
+        personnel_requirement=personnel_requirement,
     )
 
 
 # UK bilateral treaties
 _add_bilateral("uk-ca-bilateral",  "GB", "CA", 30, 20, 70, False,
                ["uk_avec"], ["ca_federal_cptc", "ca_cmf"])
-_add_bilateral("uk-au-bilateral",  "GB", "AU", 20, 20, 80, False,
-               ["uk_avec"], ["au_producer_offset"])
+#: PROJECT_OVERVIEW_TO_AU_UK_COPRO_END_TO_END — the real, primary-source
+#: rule package for the Australia-UK Films Co-production Agreement, signed
+#: Canberra 12 June 1990, in force (confirmed CURRENT and active via
+#: Screen Australia's own partner-countries listing, 2026-09;
+#: screenaustralia.gov.au/co-production-program/co-production-partner-
+#: countries/ lists the UK among Australia's 12 current formal treaties;
+#: BFI's own current co-production guidance, bfi.org.uk/apply-british-
+#: certification-expenditure-credits/co-production, lists it among the
+#: UK's active bilateral treaties). Full treaty text (Articles 1-9 +
+#: Annex) fetched directly from screenaustralia.gov.au/wp-content/
+#: uploads/2025/08/Agreement-UK.pdf -- read in full, not summarized from
+#: a secondary source.
+#:
+#: Financial/creative contribution (Annex, clause 8): "each co-producer
+#: shall have a financial and creative contribution of not less than
+#: thirty per cent (30%) of the total financial and creative contribution
+#: for the co-production film" -- the prior registry entry's 20/20/80
+#: thresholds were not sourced from this clause and are corrected here to
+#: 30/30/70, the real treaty minimum for EACH side.
+#:
+#: Personnel (Annex, clause 6): "Individuals participating in the making
+#: of co-production films shall be nationals or residents of Australia,
+#: the United Kingdom, another Member State, or, where there is a third
+#: co-producer, citizens of that co-producer's country." Modeled here as
+#: writer+director (Annex clause 14(d) singles out "the writer, director
+#: and lead cast" as the major creative categories the treaty's own
+#: overriding balance aim specifically monitors) -- role_mode="all_of"
+#: (each individual is independently tested, not an either/or between the
+#: two roles) and fact_kind="either" (the clause accepts nationality OR
+#: residency). "Another Member State" (the treaty's own 1990 EEC-era
+#: definition, Article 1(4)) is deliberately NOT added to eligible_codes:
+#: this project's own real facts (GB writer, AU director) never require
+#: it, and neither Screen Australia's nor BFI's current guidance page
+#: (fetched 2026-09-15) restates or modernizes that definition for a
+#: bilateral AU-UK case with no third co-producer -- left genuinely
+#: unresolved rather than guessed. Third-country performers are permitted
+#: only "in exceptional circumstances, where script or financing
+#: dictates" and "shall be restricted" (same clause) -- never a general
+#: exception, not modeled as a gate (no current fact makes this
+#: operative for Little Utopia's confirmed GB writer/AU director, who
+#: already satisfy the primary nationality test).
+#:
+#: Third-country location / Mauritius (Annex, clause 6, second paragraph):
+#: "Where the competent authorities have approved location filming in a
+#: country other than that of the participating co-producers, citizens of
+#: that country may be employed as crowd artists, in small roles, or as
+#: additional employees whose services are necessary for the location
+#: work to be undertaken." This is the real, favorable treaty provision
+#: directly on point for Little Utopia's planned Mauritius shoot: subject
+#: to competent-authority approval (Annex clause 1/15 -- a real,
+#: conditional, unresolved approval, never assumable), Mauritius is
+#: explicitly NOT a blocker to AU-UK co-production status; it is the
+#: treaty's own contemplated third-country-location case. (Annex clause
+#: 5: the majority of production work "shall normally be carried out in
+#: the country of the co-producer which has the major financial
+#: participation," with the competent authorities holding express power
+#: to approve location filming elsewhere -- Mauritius here.)
+#:
+#: Independence (Annex clause 4(d)): "None of the co-producers shall be
+#: linked by common management, ownership or control, save to the extent
+#: that it is inherent in the making of the co-production film itself."
+#: Screen Australia's own step-by-step guidance (co-production-program/
+#: co-production-guidelines/guidelines-step-by-step/, fetched 2026-09-15)
+#: restates this operationally: "Your co-producer must be independent
+#: from you, as there can be no common management, ownership or control
+#: between co-producers," explicitly excluding a multinational's own
+#: subsidiary/parent as a qualifying "co-producer." No AU or UK
+#: co-producer/production company is currently attached to Little Utopia
+#: -- per this workstream's OPTIMIZER ASSUMPTION POLICY, this is modeled
+#: as a producer-controlled assumption (a real, independent AU company
+#: and a real, independent UK company can be obtained -- PROPOSED_CHANGE,
+#: never a verified fact), disclosed on the conditional scenario, never a
+#: hard block and never silently treated as already satisfied. No new
+#: company/entity persistence model exists in this codebase to record a
+#: real one were it later confirmed (out of scope for this workstream, a
+#: schema addition, not a UI field).
+#:
+#: Status/eligibility of each side's own co-producer (Annex clause 4(a)/
+#: (b)): the Australian co-producer must independently satisfy Australian-
+#: film status conditions; the UK co-producer must independently satisfy
+#: Schedule 1 para 4(2)(a) of the UK Films Act 1985 (as amended). Real,
+#: cited, but not independently re-verified against current UK statute
+#: text this pass (out of scope: statutory research beyond the treaty
+#: itself and the two named guidance pages).
+#:
+#: Qualifying formats (Article 1(1)(b)): "any sequence of visual images,
+#: irrespective of length or format, including animation and
+#: documentaries, produced either on film, video tape or videodisc, for
+#: distribution in theatres, on television, video-cassette, videodisc or
+#: any other form of distribution" -- broad, format-agnostic (feature,
+#: TV, animation, documentary all qualify); excludes only whatever falls
+#: outside the UK Films Act 1985's own definition of "film."
+#:
+#: Composer (Annex clause 9): specially-composed music "shall, subject to
+#: any departure...approved by the competent authorities, be composed by
+#: nationals or residents of Australia, the United Kingdom or another
+#: Member State" -- the SAME nationality-or-residency test as clause 6,
+#: for a role this codebase's PersonnelRequirement does not currently
+#: gate (no composer attached for Little Utopia; a second
+#: PersonnelRequirement instance would be needed to gate it separately
+#: and is not added here as it is not operative for this project).
+#:
+#: Production/post requirements (Annex clause 5 + 10): production work
+#: normally carried out in AU and/or UK (and/or a third co-producer's
+#: country); at least 90% of footage "shall...be specially shot for that
+#: film" (re-voicing may occur in AU/UK/another Member State/a third
+#: co-producer's country).
+#:
+#: Ownership, rights and materials (Annex clause 11): contracts between
+#: co-producers must provide each co-producer a copy of the final
+#: protection/reproduction material, ownership of that copy, and access
+#: to original production material; must set out financial liability for
+#: costs on refusal/non-compliance/exhibition withholding; must set out
+#: the division of exploitation receipts (including export markets); must
+#: specify completion dates for each side's contribution. Credit
+#: requirement (Annex clause 12): each co-production film carries either
+#: a separate "Australian-United Kingdom co-production"/"United
+#: Kingdom-Australian co-production" credit or one reflecting all
+#: participating countries.
+#:
+#: Application timing (BFI's own current guidance, bfi.org.uk/apply-
+#: british-certification-expenditure-credits/co-production, fetched
+#: 2026-09-15): "apply at least 4 weeks before principal photography/key
+#: animation starts" (BFI/UK side); Screen Australia's own step-by-step
+#: guidance: provisional approval applied for "as soon as you are able to
+#: demonstrate that you meet the requirements and, in any event, before
+#: pre-production commences," both competent authorities' applications
+#: submitted simultaneously; final approval lodged once the project is
+#: complete, again submitted concurrently to both authorities. Approval
+#: remains conditional throughout (Annex clause 1: "In the event of a
+#: disagreement between the competent authorities...the project...shall
+#: not be approved"; Annex clause 15: either competent authority may
+#: withhold approval on overall-balance grounds) -- never assumable, never
+#: a verified fact until granted.
+#:
+#: National-treatment benefit (Article 2): "A co-production film shall be
+#: entitled to the full enjoyment of all the benefits which are or may be
+#: accorded in Australia and the United Kingdom respectively to national
+#: films" -- the real basis for majority_unlocks=["uk_avec"]/
+#: minority_unlocks=["au_producer_offset"] below (both already real,
+#: canonical, priceable RateRule entries; unchanged by this workstream).
+_add_bilateral("uk-au-bilateral",  "GB", "AU", 30, 30, 70, False,
+               ["uk_avec"], ["au_producer_offset"],
+               notes=(
+                   "Films Co-production Agreement between the Government of Australia and "
+                   "the Government of the United Kingdom of Great Britain and Northern "
+                   "Ireland, signed Canberra 12 June 1990, currently in force. Source: "
+                   "screenaustralia.gov.au/wp-content/uploads/2025/08/Agreement-UK.pdf "
+                   "(full text fetched and read 2026-09-15); current active status confirmed "
+                   "via screenaustralia.gov.au/co-production-program/co-production-partner-"
+                   "countries/ and bfi.org.uk/apply-british-certification-expenditure-credits/"
+                   "co-production. Competent authorities: Screen Australia (AU); BFI "
+                   "Certification Unit (UK). Full structured rule package (formats, "
+                   "contribution minimums, personnel, third-country/Mauritius location "
+                   "provision, independence, materials/ownership, application timing) "
+                   "documented in this entry's own module-level comment immediately above "
+                   "this call, each clause individually cited."
+               ),
+               personnel_requirement=PersonnelRequirement(
+                   eligible_roles=("writer", "director"), role_mode="all_of",
+                   fact_kind="either", eligible_codes=("AU", "GB"),
+                   curable_if_unattached=True,
+                   citation=(
+                       "Films Co-production Agreement between Australia and the UK "
+                       "(signed Canberra 12 June 1990), Annex clause 6: 'Individuals "
+                       "participating in the making of co-production films shall be "
+                       "nationals or residents of Australia, the United Kingdom, another "
+                       "Member State, or, where there is a third co-producer, citizens of "
+                       "that co-producer's country.' Role scope per Annex clause 14(d) "
+                       "(writer/director/lead cast named as the major creative categories "
+                       "the treaty's own overriding balance aim monitors). Source: "
+                       "screenaustralia.gov.au/wp-content/uploads/2025/08/Agreement-UK.pdf."
+                   ),
+               ))
 _add_bilateral("uk-fr-bilateral",  "GB", "FR", 30, 20, 70, True,
                ["uk_avec"], ["fr_tax_credit_cinema", "fr_cnc_production"])
 _add_bilateral("uk-de-bilateral",  "GB", "DE", 30, 20, 70, False,

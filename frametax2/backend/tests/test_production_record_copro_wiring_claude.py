@@ -518,4 +518,14 @@ async def test_missing_personnel_records_never_block_single_jurisdiction_pricing
     treaty_rows = [r for r in rows if r.get("discovery_classification") == "treaty_coproduction"]
     assert treaty_rows, "co-production opportunity discovery must not be suppressed by missing personnel facts"
     for r in treaty_rows:
-        assert r.get("personnel_gate_state") == QUAL_NOT_APPLICABLE
+        if r.get("treaty_slug") == "uk-au-bilateral":
+            # PROJECT_OVERVIEW_TO_AU_UK_COPRO_END_TO_END gave this ONE real
+            # treaty a real, researched personnel rule (Annex clause 6 of
+            # the 1990 AU-UK treaty). Bad Hombres has zero ProjectPerson
+            # rows at all -- an unattached, curable writer/director role,
+            # never a block (CURABLE_GAP, not HARD_FAIL), and discovery of
+            # every OTHER opportunity below is still never suppressed.
+            assert r.get("personnel_gate_state") == QUAL_CURABLE_GAP
+            assert r.get("personnel_gate_state") != QUAL_HARD_FAIL
+        else:
+            assert r.get("personnel_gate_state") == QUAL_NOT_APPLICABLE

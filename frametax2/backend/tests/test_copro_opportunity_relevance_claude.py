@@ -27,6 +27,7 @@ from app.calculators import treaty_engine as te
 from app.calculators.canonical_qualification_result import (
     QUAL_NOT_APPLICABLE,
     QUAL_QUALIFIES,
+    QUAL_USER_FACT_REQUIRED,
 )
 from app.calculators.canonical_role_qualification_bridge import (
     RoleAttachmentFacts,
@@ -120,10 +121,22 @@ async def test_little_utopia_non_home_anchored_opportunities_are_never_labeled_p
     """Real, served-view proof: every one of Little Utopia's real
     treaty_coproduction opportunities whose parties do NOT include MU
     (Little Utopia's own home jurisdiction) must be served with
-    project_anchored=False and opportunity_relevance in {AVAILABLE} only
-    -- never CONDITIONAL/COMPATIBLE/EXECUTABLE, regardless of how the
-    (globally-scoped, not project-specific) conditional-pricing scenario
-    internally resolves."""
+    project_anchored=False and opportunity_relevance in {AVAILABLE} --
+    never COMPATIBLE/EXECUTABLE, regardless of how the (globally-scoped,
+    not project-specific) conditional-pricing scenario internally
+    resolves -- with exactly ONE deliberate exception:
+    PROJECT_OVERVIEW_TO_AU_UK_COPRO_END_TO_END gave uk-au-bilateral a
+    real, researched personnel_requirement (writer+director, nationality-
+    or-residency, Annex clause 6 of the real 1990 treaty), and Little
+    Utopia's own real, confirmed GB writer/AU director genuinely QUALIFY
+    under it -- a real, rule-consumed, project-specific fact, not an
+    assumption. That one opportunity correctly upgrades to CONDITIONAL
+    even though MU is not a party (see _classify_opportunity_relevance's
+    own docstring: personnel_gate_state == QUALIFIES is a real fact-based
+    credit, never presented as compatible 'merely because contribution
+    shares can be assumed' -- the assumption here is still only ever the
+    contribution split). Every OTHER non-anchored opportunity, with no
+    such real personnel credit, remains AVAILABLE, unchanged."""
     fp = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
     rows = (await db.execute(
         select(StructureCalculationResult.calculation_trace_json)
@@ -139,9 +152,13 @@ async def test_little_utopia_non_home_anchored_opportunities_are_never_labeled_p
     non_anchored = [r for r in rows if r.get("project_anchored") is False]
     assert non_anchored, "at least one of LU's real opportunities must be globally-enumerated, not MU-anchored"
     for r in non_anchored:
-        assert r.get("opportunity_relevance") == "AVAILABLE"
         parties = {p["jurisdiction_code"] for p in (r.get("coproduction_partners") or [])}
         assert "MU" not in parties
+        if r.get("treaty_slug") == "uk-au-bilateral":
+            assert r.get("opportunity_relevance") == "CONDITIONAL"
+            assert r.get("personnel_gate_state") == QUAL_QUALIFIES
+        else:
+            assert r.get("opportunity_relevance") == "AVAILABLE"
 
 
 # ---------------------------------------------------------------------------
@@ -186,16 +203,21 @@ def test_personnel_fact_reaching_the_gate_with_no_rule_is_fact_transported_not_r
         del te._BILATERAL[frozenset({"ZZ", "YY"})]
 
 
-async def test_little_utopia_gb_writer_and_au_director_are_transported_not_rule_consumed_for_every_real_treaty(db: AsyncSession):
+async def test_little_utopia_gb_writer_and_au_director_are_transported_not_rule_consumed_except_for_uk_au(db: AsyncSession):
     """Real, live proof for Little Utopia's actual Production Record: the
     confirmed GB writer / AU director facts are genuinely fetched
     (role_attachment_facts_from_project returns real, non-empty data) and
     genuinely threaded into every one of LU's 25 real treaty opportunities
-    (personnel_gate_state is computed, not skipped) — but since zero real
-    treaties carry a researched personnel_requirement, every single one
-    resolves NOT_APPLICABLE. The facts are FACT_TRANSPORTED_NOT_RULE_
-    CONSUMED for every real treaty today — this test would fail the
-    moment any real treaty gained a researched rule that ignored them."""
+    (personnel_gate_state is computed, not skipped). Before
+    PROJECT_OVERVIEW_TO_AU_UK_COPRO_END_TO_END, zero real treaties carried
+    a researched personnel_requirement, so every single one resolved
+    NOT_APPLICABLE — FACT_TRANSPORTED_NOT_RULE_CONSUMED across the board.
+    That workstream implemented the real, researched Australia-UK treaty
+    rule (Annex clause 6 of the 1990 agreement), so uk-au-bilateral is now
+    the one real, live exception: the SAME transported facts are now
+    genuinely RULE-CONSUMED there (QUALIFIES) — proving the distinction
+    live, not just asserted. Every OTHER real treaty remains
+    FACT_TRANSPORTED_NOT_RULE_CONSUMED (NOT_APPLICABLE), unchanged."""
     facts = await role_attachment_facts_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert facts.get("writer") is not None and "GB" in facts["writer"].confirmed_nationality
     assert facts.get("director") is not None and "AU" in facts["director"].confirmed_nationality
@@ -212,10 +234,15 @@ async def test_little_utopia_gb_writer_and_au_director_are_transported_not_rule_
         )
     )).scalars().all()
     assert rows
+    rule_consumed = [r for r in rows if r.get("treaty_slug") == "uk-au-bilateral"]
+    assert rule_consumed, "uk-au-bilateral must be one of Little Utopia's real opportunities"
+    assert rule_consumed[0].get("personnel_gate_state") == QUAL_QUALIFIES
     for r in rows:
+        if r.get("treaty_slug") == "uk-au-bilateral":
+            continue
         assert r.get("personnel_gate_state") == QUAL_NOT_APPLICABLE, (
             "the fact was transported (personnel_gate_state was computed, not left None) "
-            "but not rule-consumed (no real treaty has a researched rule yet)"
+            "but not rule-consumed (no researched rule exists for this OTHER treaty)"
         )
 
 
@@ -374,10 +401,14 @@ async def test_lips_like_sugar_unconfirmed_personnel_never_credited_in_the_real_
     """Real, live proof that Lips Like Sugar's real Production Record (2
     ProjectPerson rows, BOTH unconfirmed, both NULL nationality) is
     correctly reflected: role_attachment_facts_from_project reports no
-    confirmed attachment for either role, and every one of its 25 real
-    treaty opportunities resolves personnel_gate_state NOT_APPLICABLE
-    (transported, never consumed — no real rule exists, and even if one
-    did, these facts could not be credited as current eligibility)."""
+    confirmed attachment for either role. For every real treaty with NO
+    researched personnel rule, personnel_gate_state is NOT_APPLICABLE
+    (transported, never consumed). For uk-au-bilateral specifically
+    (PROJECT_OVERVIEW_TO_AU_UK_COPRO_END_TO_END's real, researched rule),
+    the unconfirmed writer/director correctly resolve USER_FACT_REQUIRED
+    — a real, disclosed conditional question, never silently credited as
+    current eligibility and never a hard failure either, exactly the
+    'unconfirmed personnel are not credited' requirement proven live."""
     project_id = "ab10b319-978e-44d3-9331-af2a5f2cccc2"
     facts = await role_attachment_facts_from_project(db, project_id)
     for role in ("writer", "director"):
@@ -399,4 +430,12 @@ async def test_lips_like_sugar_unconfirmed_personnel_never_credited_in_the_real_
     )).scalars().all()
     assert rows
     for r in rows:
-        assert r.get("personnel_gate_state") == QUAL_NOT_APPLICABLE
+        if r.get("treaty_slug") == "uk-au-bilateral":
+            assert r.get("personnel_gate_state") == QUAL_USER_FACT_REQUIRED
+            assert r.get("personnel_gate_state") != QUAL_QUALIFIES
+            assert r.get("opportunity_relevance") != "CONDITIONAL", (
+                "an unconfirmed attachment must never upgrade a non-anchored "
+                "opportunity to CONDITIONAL — only a real QUALIFIES credit may"
+            )
+        else:
+            assert r.get("personnel_gate_state") == QUAL_NOT_APPLICABLE

@@ -637,7 +637,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.59.0"
+ENGINE_VERSION = "canonical-1.60.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1239,6 +1239,7 @@ def _price_candidate(
 
 def _classify_opportunity_relevance(
     resolution_state: str, conditional_scenario: dict | None, project_anchored: bool,
+    personnel_gate_state: str | None = None,
 ) -> str:
     """COPRO_OPPORTUNITY_RELEVANCE_AND_CLOSEOUT_VALIDATION -- classifies a
     served treaty/co-production opportunity using the AVAILABLE /
@@ -1261,24 +1262,40 @@ def _classify_opportunity_relevance(
                      confirmed-wrong personnel fact, etc.).
       AVAILABLE   -- the treaty/framework is real and registered, but
                      either (a) it is not anchored at this project's own
-                     jurisdiction at all -- a globally enumerated pair
-                     between two OTHER countries, never presented as
-                     project-compatible merely because a registry entry
-                     exists -- or (b) it IS anchored here but no
+                     jurisdiction at all AND no real, rule-consumed
+                     personnel credit connects it to this project either
+                     -- a globally enumerated pair between two OTHER
+                     countries, never presented as project-compatible
+                     merely because a registry entry exists -- or (b) it
+                     IS anchored here (or personnel-qualified) but no
                      achievable modeled path exists yet (a real,
                      unresolvable creative/legal fact, e.g. an
                      unconfirmed cultural test, blocks even the
                      conditional-assumption scenario).
-      CONDITIONAL -- anchored at this project's own jurisdiction AND the
-                     conditional-pricing scenario reached a real priced
-                     result using the treaty's own registered minimum
-                     contribution as a disclosed, producer-actionable
-                     assumption -- never presented as a verified fact or
-                     a recommendation (see _admits_recommended/top_pair,
-                     which never considers a treaty_coproduction row at
-                     all: total_incentive_value_usd/true_net_cost_usd are
-                     always None on this row; only the nested
-                     conditional_scenario carries a number).
+      CONDITIONAL -- (anchored at this project's own jurisdiction, OR a
+                     real personnel_requirement genuinely QUALIFIES from
+                     this project's own confirmed creative attachments --
+                     PROJECT_OVERVIEW_TO_AU_UK_COPRO_END_TO_END: a
+                     globally-enumerated treaty is no longer forced to
+                     AVAILABLE when THIS project's own real, confirmed
+                     writer/director facts are the reason it resolves;
+                     personnel_gate_state == QUALIFIES only ever occurs
+                     from a real project fact clearing a real researched
+                     rule, never an assumption, so this is not "presented
+                     as project-compatible merely because contribution
+                     shares can be assumed" -- the assumption here is
+                     ONLY ever the contribution split, same as the
+                     anchored case, with a REAL fact-based personnel
+                     credit on top) AND the conditional-pricing scenario
+                     reached a real priced result using the treaty's own
+                     registered minimum contribution as a disclosed,
+                     producer-actionable assumption -- never presented as
+                     a verified fact or a recommendation (see
+                     _admits_recommended/top_pair, which never considers a
+                     treaty_coproduction row at all: total_incentive_
+                     value_usd/true_net_cost_usd are always None on this
+                     row; only the nested conditional_scenario carries a
+                     number).
       AUTHORITY_OR_RULE_DATA_INCOMPLETE -- the conditional scenario itself
                      could not resolve for a data-completeness reason (an
                      unresolved same-jurisdiction stacking group, or no
@@ -1298,7 +1315,8 @@ def _classify_opportunity_relevance(
         return "EXECUTABLE"
     if resolution_state == RESOLUTION_INELIGIBLE:
         return "EXCLUDED"
-    if not project_anchored:
+    personnel_qualifies = personnel_gate_state == QUAL_QUALIFIES
+    if not project_anchored and not personnel_qualifies:
         return "AVAILABLE"
     status = (conditional_scenario or {}).get("status")
     if status == "CONDITIONAL_PROJECT_FACT_DEPENDENT":
@@ -4748,6 +4766,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "project_anchored": True,
                 "opportunity_relevance": _classify_opportunity_relevance(
                     opp.resolution_state, _conditional_scenario, True,
+                    personnel_gate_state=opp.personnel_gate_state,
                 ),
                 # PRODUCTION_RECORD_TO_OFFICIAL_COPRO_OPTIMIZER_WIRING —
                 # the real creative-personnel gate's own served contract:
@@ -5215,6 +5234,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "project_anchored": False,
                 "opportunity_relevance": _classify_opportunity_relevance(
                     opp.resolution_state, _conditional_scenario, False,
+                    personnel_gate_state=opp.personnel_gate_state,
                 ),
                 # personnel_gate_state is NOT_APPLICABLE (never blocking,
                 # and not an open data question on this project) for
