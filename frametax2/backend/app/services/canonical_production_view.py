@@ -208,6 +208,92 @@ def _program_display_name(program_slug: str | None) -> str | None:
     return doctrine.program_name if doctrine else None
 
 
+#: Codex global optimizer audit, P1-CLASS-001: "Add one backend-owned,
+#: mutually exclusive classification for every emitted structure. Do not
+#: require UI inference." The nine values below are the full, closed
+#: contract (Codex's own structure matrix): every structure this backend
+#: ever emits resolves to EXACTLY one, derived here from fields this
+#: module already reads off calculation_trace_json/StructureCalculationResult
+#: for every other field on the same entry -- never a new signal, never
+#: left for a frontend consumer to infer from structure_type +
+#: relationship_types + candidate_status combinations on its own.
+CLASS_SINGLE_JURISDICTION = "SINGLE_JURISDICTION"
+CLASS_OFFICIAL_COPRODUCTION = "OFFICIAL_COPRODUCTION"
+CLASS_HYBRID_ANCHOR_COMPONENT = "HYBRID_ANCHOR_COMPONENT"
+CLASS_STACKED_PROGRAMS = "STACKED_PROGRAMS"
+CLASS_COMBINED_COPRO_HYBRID_STACK = "COMBINED_COPRO_HYBRID_STACK"
+CLASS_CONDITIONAL_USER_FACT_REQUIRED = "CONDITIONAL_USER_FACT_REQUIRED"
+CLASS_RULE_DATA_INCOMPLETE = "RULE_DATA_INCOMPLETE"
+CLASS_AUTHORITY_LOCKED = "AUTHORITY_LOCKED"
+CLASS_REJECTED_FOR_PROJECT = "REJECTED_FOR_PROJECT"
+
+STRUCTURE_CLASSIFICATIONS: tuple[str, ...] = (
+    CLASS_SINGLE_JURISDICTION,
+    CLASS_OFFICIAL_COPRODUCTION,
+    CLASS_HYBRID_ANCHOR_COMPONENT,
+    CLASS_STACKED_PROGRAMS,
+    CLASS_COMBINED_COPRO_HYBRID_STACK,
+    CLASS_CONDITIONAL_USER_FACT_REQUIRED,
+    CLASS_RULE_DATA_INCOMPLETE,
+    CLASS_AUTHORITY_LOCKED,
+    CLASS_REJECTED_FOR_PROJECT,
+)
+
+
+def _structure_classification(
+    trace: dict, structure_type: str, is_priced: bool,
+) -> str:
+    """P1-CLASS-001's derivation. Checked in the SAME fail-closed order
+    every other precedence rule in this file already follows (most severe
+    / most specific first, generic fallback last) -- unresolved/blocked
+    states always win over a structure_type-based guess, exactly the same
+    "unknown never silently becomes priced" convention P0-STACK-001 and
+    the rest of this remediation pass already establish:
+
+    1. RULE_DATA_INCOMPLETE  -- an unresolved named-rule gap (P0-STACK-001's
+       own scenario status, or a rejection explicitly classed this way).
+    2. AUTHORITY_LOCKED      -- authority coverage fails closed (never a
+       priceability question at all).
+    3. CONDITIONAL_USER_FACT_REQUIRED -- registry presence is real but a
+       real project fact (ownership share, cultural test, ...) is
+       missing; disclosed, never fabricated-eligible.
+    4. REJECTED_FOR_PROJECT  -- any other real, explicit rejection
+       (minimum spend, statutory conditions, qualification hard-fail).
+    5. Priced structures resolve by real composition, most-combined
+       first: COMBINED_COPRO_HYBRID_STACK > OFFICIAL_COPRODUCTION >
+       HYBRID_ANCHOR_COMPONENT > STACKED_PROGRAMS > SINGLE_JURISDICTION
+       (the last also covers full_relocation -- a single jurisdiction,
+       just not the production's original one).
+    """
+    candidate_status = trace.get("candidate_status")
+    rejection_reason_class = trace.get("rejection_reason_class")
+    conditional_scenario = trace.get("conditional_scenario") or {}
+
+    if (
+        candidate_status == "RULE_DATA_INCOMPLETE"
+        or rejection_reason_class == "RULE_DATA_INCOMPLETE"
+        or conditional_scenario.get("status") == "RULE_DATA_INCOMPLETE"
+    ):
+        return CLASS_RULE_DATA_INCOMPLETE
+    if candidate_status == "UNPRICEABLE_AUTHORITY_INSUFFICIENT":
+        return CLASS_AUTHORITY_LOCKED
+    if candidate_status == "CO_PRO_OPPORTUNITY" or candidate_status == "QUALIFICATION_UNRESOLVED":
+        return CLASS_CONDITIONAL_USER_FACT_REQUIRED
+    if not is_priced:
+        return CLASS_REJECTED_FOR_PROJECT
+
+    discovery_classification = trace.get("discovery_classification")
+    if discovery_classification == "combined_coproduction_component_stack":
+        return CLASS_COMBINED_COPRO_HYBRID_STACK
+    if structure_type == "treaty_coproduction":
+        return CLASS_OFFICIAL_COPRODUCTION
+    if structure_type == "component_relocation":
+        return CLASS_HYBRID_ANCHOR_COMPONENT
+    if structure_type == "multi_program":
+        return CLASS_STACKED_PROGRAMS
+    return CLASS_SINGLE_JURISDICTION
+
+
 def _empty_structure_entry(
     structure, result, jurisdiction_code_by_id: dict[str, str],
     jurisdiction_name_by_code: dict[str, str] | None = None,
@@ -415,6 +501,12 @@ def _empty_structure_entry(
         # dict directly — see _blocking_requirements' fallback below).
         "participant_qualifications": trace.get("participant_qualifications") or [],
         "is_fully_priced": is_priced,
+        # P1-CLASS-001: one backend-owned, mutually exclusive classification
+        # for every emitted structure -- see _structure_classification's
+        # own docstring for the derivation order. A frontend consumer never
+        # has to infer this from structure_type + candidate_status +
+        # relationship_types combinations on its own.
+        "classification": _structure_classification(trace, structure_type, is_priced),
         "candidate_status": trace.get("candidate_status"),
         # Codex Defect 4 — the actual terminal cause (never flattened to a
         # single generic reason) and the program identity, both already

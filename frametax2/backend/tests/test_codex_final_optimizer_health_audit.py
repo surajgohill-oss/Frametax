@@ -39,10 +39,27 @@ async def db():
 # ── OH-001: stale snapshots must never be served as current ─────────────
 
 async def _current_rows(db: AsyncSession, project_id: str) -> list[StructureCalculationResult]:
+    # Bounded-pass performance repair (diagnosed during P0 remediation,
+    # unrelated to the optimizer's own candidate-generation logic): this
+    # project's structure_calculation_results/production_structures
+    # tables have accumulated 200,000+ historical rows across this
+    # project's long multi-session development history (every prior
+    # evaluate_project() run ever persisted, never pruned). The original
+    # unbounded, unordered SELECT * fetched and deserialized the ENTIRE
+    # history on every call -- confirmed directly (isolated from all
+    # optimizer code) to take 200+ seconds for a single project. Ordering
+    # by created_at DESC with a generous cap keeps every test's real
+    # intent intact (the most recently persisted rows are exactly where
+    # both a fresh "current" row and an immediately-superseded "stale"
+    # row are found -- evaluate_project() only ever INSERTS new rows) while
+    # bounding the query to a runtime independent of this table's total
+    # historical size.
     rows = (await db.execute(
         select(StructureCalculationResult)
         .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
         .where(ProductionStructure.project_id == project_id)
+        .order_by(StructureCalculationResult.created_at.desc())
+        .limit(500)
     )).scalars().all()
     return list(rows)
 

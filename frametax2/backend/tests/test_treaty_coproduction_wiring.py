@@ -113,7 +113,25 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     # disclosure-only condition -- FVD never evidences it, so South Africa
     # no longer has an unconditional priced leg, and uk-za-bilateral/
     # ca-za-bilateral drop back out (directly measured).
-    assert len(bilateral_among_candidates) == 8
+    #
+    # Codex global optimizer audit, P0-CAND-003: 8 -> 25. "Candidate
+    # identity discovery and economic priceability are improperly
+    # coupled." This non-home-anchored loop's own `candidate_codes` base
+    # set (shared with the home-anchored bilateral loop) was
+    # `set(priced_by_code)` only -- every registered partner whose OWN
+    # ordinary program had not yet priced deterministically silently
+    # disappeared as a treaty PARTY, even though production_discovery had
+    # genuinely examined it (accepted / accepted_alternative /
+    # capability_only). canonical_evaluation.py now unions the full
+    # discovery universe (`candidates`) with `priced_by_code` for
+    # `reachable_codes`, so every registered bilateral pair among FVD's
+    # real, independently-discovered candidate jurisdictions is now
+    # evaluated and disclosed -- never priced or fabricated-eligible
+    # (asserted below: is_directly_comparable is False and
+    # npc_with_adjustments_usd is None for every one of them). 25 real
+    # registered bilateral pairs exist among FVD's candidate jurisdictions
+    # that do not require Greece to be a party (directly measured).
+    assert len(bilateral_among_candidates) == 25
     assert all(
         "ca-cn-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
     ), "CN is genuinely non-economic; its bilateral pair must not be offered"
@@ -199,37 +217,50 @@ async def test_lu_australia_uk_bilateral_opportunity_surfaces_independent_of_mau
     ELIGIBLE — this proves the STRUCTURE is considered, not that it
     qualifies.
 
-    SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
-    GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): bilateral
-    treaty-partner discovery requires each side to have a real PRICED leg
-    (candidate_codes = codes with a priced leg anywhere at/under them — see
-    test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category's
-    own Codex forensic finding B comment). AU's only priced leg for LU was
-    au_pdv_offset ($True before this ruling, confirmed via a direct
-    before/after runtime comparison); au_location_offset was ALREADY
-    RULE_REJECTED for LU independent of B1 (a genuine, pre-existing
-    statutory-condition rejection, unrelated to this remediation). Codex's
-    accepted ruling reclassifies au_pdv_offset FAIL_CLOSED, so AU now has
-    ZERO priced legs for LU and no longer qualifies as a treaty party under
-    the existing, unmodified discovery mechanism -- the GB+AU opportunity
-    correctly no longer surfaces. This is a real behavioural consequence of
-    an authorized Codex ruling, not a wiring defect, and is NOT trace-able
-    to any project-fact change (LU's own director/writer data is
-    untouched). The regression oracle below asserts the new absence
-    directly, and separately re-proves the SAME underlying discovery
-    mechanism still works correctly by using GB+CA (uk-ca-bilateral) --
-    another of LU's real, independently-discovered candidate pairs where
-    BOTH sides retain a priced leg."""
+    SUPERSEDED then RESTORED: the B1 discretionary ruling
+    (GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv)
+    reclassified au_pdv_offset FAIL_CLOSED, so AU briefly had zero PRICED
+    legs for LU. Under the discovery mechanism THEN in place --
+    candidate_codes limited to `priced_by_code` (a code counts as a real
+    treaty party only if its OWN ordinary program had already priced
+    deterministically) -- AU dropped out and the GB+AU opportunity
+    incorrectly vanished. That coupling is exactly the defect named by the
+    Codex global optimizer audit as P0-CAND-003 ("candidate identity
+    discovery and economic priceability are improperly coupled" --
+    "A registered partner with attainable missing facts must remain
+    visible as a conditional candidate even without an already-priced
+    ordinary program"). canonical_evaluation.py's `reachable_codes` now
+    unions the full discovery universe (`candidates`, from
+    production_discovery's accepted/accepted_alternatives/capability_only
+    classifications) with `priced_by_code`, so AU -- still a real,
+    examined candidate jurisdiction for LU even though au_pdv_offset itself
+    is fail-closed -- is reachable again. GB+AU correctly surfaces once
+    more, restoring this test's ORIGINAL intent (see the docstring above):
+    the structure is disclosed and considered, never fabricated-eligible
+    (treaty_resolution_state stays UNRESOLVED_FACTS, never priced, never
+    ranked) -- proven directly below, then GB+CA (uk-ca-bilateral) is
+    proven as a second, independently-discovered pair where both sides
+    also retain a priced leg."""
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     treaty = [e for e in entries if e["structure_type"] == "treaty_coproduction"]
 
     uk_au = next((e for e in treaty if e.get("treaty_slug") == "uk-au-bilateral"), None)
-    assert uk_au is None, (
-        "GB+AU must no longer surface: AU's only priced leg (au_pdv_offset) is B1 "
-        "FAIL_CLOSED and au_location_offset was already independently RULE_REJECTED"
+    assert uk_au is not None, (
+        "GB+AU must surface again as a disclosed, conditional (never priced, never "
+        "fabricated-eligible) opportunity: P0-CAND-003 decouples treaty-partner "
+        "identity discovery from ordinary-program priceability, so AU remains a "
+        "real, examined candidate for LU even though au_pdv_offset itself is "
+        "fail-closed under the B1 ruling."
     )
+    au_partner_codes = {p.get("jurisdiction_code") for p in (uk_au.get("coproduction_partners") or [])}
+    assert au_partner_codes == {"GB", "AU"}
+    assert uk_au["treaty_resolution_state"] == "UNRESOLVED_FACTS"
+    assert uk_au.get("npc_with_adjustments_usd") is None  # disclosed, never priced
+    au_ranking = view["structures"]["allocated_structures"]["ranking"]
+    uk_au_ranked = next((r for r in au_ranking if r["structure_id"] == uk_au["structure_id"]), None)
+    assert uk_au_ranked is None or uk_au_ranked["rank"] is None  # never Recommended
 
     uk_ca = next((e for e in treaty if e.get("treaty_slug") == "uk-ca-bilateral"), None)
     assert uk_ca is not None, "GB+CA bilateral co-production opportunity did not surface for LU"

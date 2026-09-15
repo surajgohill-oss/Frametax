@@ -60,7 +60,7 @@ import functools
 import itertools
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.allocation_pricing import price_allocated_structure, rank_allocated_structures
@@ -613,7 +613,13 @@ from app.services.canonical_project_economics import (
 #: bump, every current fingerprint's existing-row reuse check would keep
 #: serving the OLD row set — the new reject rows would never be created
 #: for any project already evaluated under 1.53.0.
-ENGINE_VERSION = "canonical-1.54.0"
+# Codex global optimizer audit P0 remediation (P0-CAND-001/002/003,
+# P0-QUAL-001, P0-STACK-001, P0-COMB-001, P1-CLASS-001, P1-TRACE-001):
+# bumped so every previously-cached StructureCalculationResult row (all
+# generated under the pre-remediation candidate/fact/stacking/topology
+# logic) is treated as stale and regenerated fresh on next evaluation,
+# never silently served as EVALUATION_REUSED under the corrected engine.
+ENGINE_VERSION = "canonical-1.55.0"
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1413,27 +1419,43 @@ def _build_conditional_bilateral_scenario(
     # same-jurisdiction stacking question, so they are summed directly.
     total_conditional_incentive = 0.0
     stacking_groups: list[dict] = []
+    # Codex global optimizer audit, P0-STACK-001: "When stackability is
+    # unknown, publish no combined incentive or NPC." The prior behavior
+    # fell back to a raw, unadjusted SUM whenever price_program_group_stack
+    # returned None (no named, publishable rule covers the exact same-
+    # jurisdiction program combination) -- disclosure (stacking_verified=
+    # False) is not authorization, and that raw sum was still published as
+    # conditional_incentive_usd/conditional_npc_usd, letting an economically
+    # UNKNOWN combination rank and compare exactly like a verified one.
+    # unresolved_stack_groups tracks every such group; its presence makes
+    # the WHOLE scenario's combined economics null below, never a partial
+    # guess -- the individual, already-priced legs in priced_components
+    # remain fully visible and disclosed either way.
+    unresolved_stack_groups: list[dict] = []
     for code, group in candidates_by_jurisdiction.items():
         if len(group) < 2 or not eligible_group_for_combination([c.jurisdiction_code for c in group]):
             total_conditional_incentive += sum(c.selected_incentive_usd for c in group)
             continue
         stack_result = price_program_group_stack(group)
         if stack_result is None:
-            # No named, publishable stacking rule covers this exact group
-            # -- Codex's "visibility alone is not proof of stacking" rule
-            # applies here too: fall back to the raw (unadjusted) sum,
-            # disclosed as unverified rather than silently fabricated.
-            total_conditional_incentive += sum(c.selected_incentive_usd for c in group)
-            stacking_groups.append({
+            # No named, publishable stacking rule covers this exact group.
+            # THE FIX: never sum the raw incentives into the scenario's
+            # combined total -- an unknown relationship contributes no
+            # economics at all until a named rule resolves it.
+            unresolved_group = {
                 "jurisdiction_code": code,
                 "program_slugs": [c.program_slug for c in group],
                 "stacking_verified": False,
+                "rejection_reason_class": "RULE_DATA_INCOMPLETE",
                 "note": (
                     "No named, publishable stacking rule covers this exact "
-                    "program combination -- summed as independent programs, "
-                    "not verified against a stacking-compatibility rule."
+                    "program combination -- economics are withheld (never "
+                    "summed as though independent) until a named "
+                    "stacking-compatibility rule resolves this group."
                 ),
-            })
+            }
+            stacking_groups.append(unresolved_group)
+            unresolved_stack_groups.append(unresolved_group)
             continue
         total_conditional_incentive += stack_result.adjusted_incentive_usd
         stacking_groups.append({
@@ -1460,7 +1482,26 @@ def _build_conditional_bilateral_scenario(
             "not researched this pass."
         )
 
-    if priced_components:
+    if unresolved_stack_groups:
+        # Codex P0-STACK-001: an unknown same-jurisdiction stacking
+        # relationship must publish NO combined incentive or NPC --
+        # explicit RULE_DATA_INCOMPLETE, machine-readable, never a
+        # silently-summed number that would rank/compare as if verified.
+        scenario["conditional_incentive_usd"] = None
+        scenario["conditional_npc_usd"] = None
+        scenario["fully_priced"] = False
+        scenario["status"] = "RULE_DATA_INCOMPLETE"
+        scenario["blocking_reason"] = (
+            "Unknown stacking relationship for "
+            + "; ".join(
+                f"{g['jurisdiction_code']}: {'+'.join(g['program_slugs'])}"
+                for g in unresolved_stack_groups
+            )
+            + " -- no named, publishable rule authorizes this combination, so no "
+              "combined economics can be published. This candidate remains visible "
+              "and conditional, never ranked as a priced/comparable structure."
+        )
+    elif priced_components:
         conditional_npc = round(inputs.gross_budget_usd - total_conditional_incentive, 2)
         scenario["conditional_incentive_usd"] = round(total_conditional_incentive, 2)
         scenario["conditional_npc_usd"] = conditional_npc
@@ -1556,6 +1597,133 @@ def _price_component_relocation_candidate(
         fx_context=inputs.fx_context,
     )
     return spec, allocation, pricing
+
+
+def _price_combined_coproduction_component_candidate(
+    inputs: ProjectEconomicInputs,
+    home_code: str, home_program_slug: str,
+    partner_code: str, partner_program_slug: str,
+    component_target_code: str, component_target_program_slug: str,
+    component: str, treaty_slug: str,
+):
+    """Codex global optimizer audit, P0-COMB-001: "one conserved executable
+    allocation topology capable of combining: official co-production;
+    component allocation; anchor jurisdiction; authorized local stacks on
+    allocated sides." No structure type previously combined a treaty
+    co-production leg with a routed component leg inside one conserved
+    allocation -- the treaty loops price each side's own default full
+    allocation independently (no shared account-conservation check across
+    sides), and component_relocation only ever routes between the home
+    anchor and ONE other jurisdiction, never alongside a real
+    co-production partner.
+
+    This reuses the SAME StructureSpec + derive_account_allocation +
+    price_allocated_structure kernel every other structure type is priced
+    through -- structure_type="hybrid" is a STRUCTURE_TYPES entry the
+    architecture already reserved for exactly this (see production_
+    allocation.py's own STRUCTURE_TYPES comment: "treaty co-production,
+    majority/minority, multi-party, hybrid, anchor-component are all
+    combinations...") but no caller had ever constructed one. Three
+    participants: home_code (anchor + majority co-production party),
+    partner_code (minority co-production party, its own claimed program),
+    component_target_code (a genuinely third, distinct jurisdiction the
+    routed component moves to). derive_account_allocation's existing,
+    already-tested invariants (is_complete/conserves/no duplicate account
+    codes) are the SAME structural guarantee against double allocation
+    every other structure type already relies on -- nothing new is
+    invented here, only a new PARTICIPANT COMBINATION of already-proven
+    primitives. "Authorized local stacks on allocated sides" (a second,
+    named-rule-only program in the SAME jurisdiction as one of these three
+    sides) is layered on AFTER this base pricing by the caller, via the
+    same price_program_group_stack every other stacking path already
+    uses -- this function prices the base (unstacked) topology only.
+    """
+    spec = StructureSpec(
+        structure_id=(
+            f"CANON-COMBINED-{home_code}-{partner_code}-{treaty_slug}-"
+            f"{component}-{component_target_code}-{component_target_program_slug}"
+        ),
+        structure_type="hybrid",
+        label=(
+            f"{home_code} + {partner_code} co-production ({treaty_slug}) "
+            f"+ {component} routed to {component_target_code}"
+        ),
+        primary_jurisdiction=home_code,
+        participants=(home_code, partner_code, component_target_code),
+        incentive_programs={
+            home_code: home_program_slug,
+            partner_code: partner_program_slug,
+            component_target_code: component_target_program_slug,
+        },
+        component_routes={component: component_target_code},
+        treaty_slug=treaty_slug,
+    )
+    allocation = derive_account_allocation(
+        lines=inputs.budget_lines,
+        spend_category_by_code=inputs.spend_category_by_code,
+        spec=spec,
+        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+    )
+    # Same convention as _price_component_relocation_candidate: the
+    # normalization delta is computed against the jurisdiction the money
+    # actually moves to (the component target), using the same allocation
+    # basis price_allocated_structure prices below.
+    _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
+        inputs, component_target_code, allocation.total_allocated_usd,
+    )
+    pricing = price_allocated_structure(
+        spec=spec, allocation=allocation,
+        spend_category_by_code=inputs.spend_category_by_code,
+        offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        gross_budget_usd=inputs.gross_budget_usd,
+        travel_incremental_delta_usd=_travel_delta,
+        fx_delta_usd=_fx_delta,
+        inkind_replacement_delta_usd=0.0,
+        local_cost_delta_usd=_local_cost_delta,
+        production_type=inputs.production_type,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        financing_cost_usd=inputs.financing_cost_usd or 0.0,
+        evidenced_requirement_facts=inputs.evidenced_program_facts,
+        amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
+    )
+    return spec, allocation, pricing
+
+
+def _authorized_local_stack_for_side(
+    priced_by_code: dict[str, list],
+    side_code: str, side_program_slug: str,
+):
+    """P0-COMB-001, "authorized local stacks on allocated sides": checks
+    whether `side_code` (one of the combined structure's own allocated
+    sides) has a SECOND, distinct, same-jurisdiction priced candidate
+    beyond the one already claimed by the base combined structure
+    (`side_program_slug`). Returns (stack_result, group) where
+    stack_result is price_program_group_stack's own result (None if no
+    named, publishable rule covers this exact combination -- P0-STACK-001's
+    own fail-closed rule, reused unchanged here) and `group` is the
+    candidate pair actually attempted (empty if there is no second
+    candidate to attempt at all -- distinct from "attempted and
+    unresolved"). Only a resolved NAMED rule may ever be applied to the
+    base structure's economics — an unresolved attempt is reported to the
+    caller for retention as a REJECTED candidate, never silently applied
+    and never silently dropped."""
+    same_jurisdiction = [
+        c for c in priced_by_code.get(side_code, []) if c.jurisdiction_code == side_code
+    ]
+    if len(same_jurisdiction) < 2:
+        return None, []
+    base = next((c for c in same_jurisdiction if c.program_slug == side_program_slug), None)
+    other = max(
+        (c for c in same_jurisdiction if c.program_slug != side_program_slug),
+        key=lambda c: c.selected_incentive_usd, default=None,
+    )
+    if base is None or other is None:
+        return None, []
+    group = [base, other]
+    if not eligible_group_for_combination([c.jurisdiction_code for c in group]):
+        return None, group
+    return price_program_group_stack(group), group
 
 
 def _classify_component_rejection(blockers: tuple[str, ...] | list[str]) -> tuple[str, str]:
@@ -1692,24 +1860,53 @@ def _opportunities_for_candidate(
     return opportunities
 
 
-async def _coproduction_facts(session: AsyncSession, project_id) -> tuple[float | None, float | None, bool | None]:
+def _coproduction_fact_scope(treaty_slug: str, participant_codes: tuple[str, ...]) -> str:
+    """Codex global optimizer audit, P0-QUAL-001: "Replace project-global
+    co-production facts with facts scoped to treaty slug plus ordered
+    participant identities." The scope string is the treaty_slug plus the
+    ORDERED (never sorted -- majority/minority role and participant
+    identity both matter) tuple of participant country codes actually
+    passed to the evaluator for this candidate. Facts stored under one
+    treaty_slug/participant-set scope are architecturally unreachable from
+    any other treaty or any other participant combination, even under the
+    same treaty TYPE (e.g. two different Eurimages co-producer sets)."""
+    return f"{treaty_slug}::{'-'.join(participant_codes)}"
+
+
+def _coproduction_fact_keys(scope: str) -> tuple[str, str, str]:
+    return (
+        f"coproduction_majority_pct::{scope}",
+        f"coproduction_minority_pct::{scope}",
+        f"coproduction_cultural_test_passed::{scope}",
+    )
+
+
+async def _coproduction_facts(
+    session: AsyncSession, project_id, treaty_slug: str, participant_codes: tuple[str, ...],
+) -> tuple[float | None, float | None, bool | None]:
     """Canonical Co-production Qualification Reconnection — the treaty-
     bridge disconnect Codex's audit named: canonical_evaluation never
     supplied majority_pct/minority_pct/cultural_test_passed to
     evaluate_bilateral_coproduction_opportunity() at all (always left at
     their None defaults, regardless of what facts might exist). Reads
-    the three real fact_key values from the existing generic ProjectFact
+    the real fact_key values from the existing generic ProjectFact
     model — the SAME model screen_analyzer_fact_contract.py's future
     facts are expected to land in. Absent facts stay None (never
-    invented); neither LU nor FVD has these on file, so their output is
-    unchanged, but the plumbing is now real."""
+    invented).
+
+    P0-QUAL-001 fix: facts are now scoped to (treaty_slug, ordered
+    participant identities) via _coproduction_fact_scope/_coproduction_fact_keys
+    instead of three project-global keys. A fact entered for one treaty
+    (or one participant combination under a multilateral framework) can
+    never be read back for, and therefore never resolve, a different
+    treaty or a different participant combination."""
+    majority_key, minority_key, cultural_key = _coproduction_fact_keys(
+        _coproduction_fact_scope(treaty_slug, participant_codes)
+    )
     rows = (await session.execute(
         select(ProjectFact.fact_key, ProjectFact.value).where(
             ProjectFact.project_id == project_id,
-            ProjectFact.fact_key.in_((
-                "coproduction_majority_pct", "coproduction_minority_pct",
-                "coproduction_cultural_test_passed",
-            )),
+            ProjectFact.fact_key.in_((majority_key, minority_key, cultural_key)),
         )
     )).all()
     facts = {k: v for k, v in rows}
@@ -1739,11 +1936,87 @@ async def _coproduction_facts(session: AsyncSession, project_id) -> tuple[float 
             return False
         return None
 
-    return (
-        _float("coproduction_majority_pct"),
-        _float("coproduction_minority_pct"),
-        _bool("coproduction_cultural_test_passed"),
-    )
+    return (_float(majority_key), _float(minority_key), _bool(cultural_key))
+
+
+async def _multilateral_coproduction_facts(
+    session: AsyncSession, project_id, treaty_slug: str, participant_codes: tuple[str, ...],
+) -> tuple[dict[str, float] | None, bool | None]:
+    """P0-QUAL-001, "Support participant-specific percentages ... for
+    multilateral frameworks" (Eurimages, European Convention, Ibermedia --
+    each takes N>=2 co-producers, not a fixed majority/minority pair).
+    Reads one scoped per-participant percentage fact
+    (coproduction_participant_pct::<scope>::<code>) for EACH code in
+    participant_codes, plus the shared scoped cultural-test fact. Returns
+    country_pcts=None (never a partially-filled dict) unless EVERY
+    participant has an on-file percentage -- evaluate_eurimages_
+    coproduction_opportunity and its siblings already treat
+    country_pcts=None as UNRESOLVED_FACTS, the correct fail-closed state
+    for an incomplete allocation, exactly like the bilateral case."""
+    scope = _coproduction_fact_scope(treaty_slug, participant_codes)
+    pct_keys = {code: f"coproduction_participant_pct::{scope}::{code}" for code in participant_codes}
+    cultural_key = f"coproduction_cultural_test_passed::{scope}"
+    rows = (await session.execute(
+        select(ProjectFact.fact_key, ProjectFact.value).where(
+            ProjectFact.project_id == project_id,
+            ProjectFact.fact_key.in_((*pct_keys.values(), cultural_key)),
+        )
+    )).all()
+    facts = {k: v for k, v in rows}
+
+    country_pcts: dict[str, float] | None = {}
+    for code, key in pct_keys.items():
+        raw = facts.get(key)
+        try:
+            val = float(raw) if raw not in (None, "") else None
+        except (TypeError, ValueError):
+            val = None
+        if val is None:
+            country_pcts = None
+            break
+        country_pcts[code] = val
+
+    cultural_raw = facts.get(cultural_key)
+    cultural_test_passed: bool | None
+    if cultural_raw is None or cultural_raw == "":
+        cultural_test_passed = None
+    else:
+        normalized = str(cultural_raw).strip().lower()
+        if normalized in ("true", "1", "yes"):
+            cultural_test_passed = True
+        elif normalized in ("false", "0", "no"):
+            cultural_test_passed = False
+        else:
+            cultural_test_passed = None
+
+    return (country_pcts, cultural_test_passed)
+
+
+async def _all_coproduction_facts_for_fingerprint(session: AsyncSession, project_id) -> tuple[tuple[str, str], ...]:
+    """P0-QUAL-001: the fingerprint must invalidate whenever ANY
+    treaty/participant-scoped co-production fact changes, not just one
+    hardcoded global tuple. Rather than pre-enumerate every treaty x
+    participant-set combination (which would require duplicating the full
+    candidate-discovery walk just to compute a cache key), this reads
+    every ProjectFact row whose key is one of the three co-production
+    fact prefixes, for this project, regardless of scope suffix. Any
+    edit, addition, or removal of a scoped co-production fact changes
+    this tuple and therefore the fingerprint. Over-invalidation (a
+    fingerprint change that turns out not to affect this treaty's
+    candidates) is safe; under-invalidation is the exact P0-QUAL-001
+    defect this exists to prevent."""
+    rows = (await session.execute(
+        select(ProjectFact.fact_key, ProjectFact.value).where(
+            ProjectFact.project_id == project_id,
+            or_(
+                ProjectFact.fact_key.like("coproduction_majority_pct::%"),
+                ProjectFact.fact_key.like("coproduction_minority_pct::%"),
+                ProjectFact.fact_key.like("coproduction_cultural_test_passed::%"),
+                ProjectFact.fact_key.like("coproduction_participant_pct::%"),
+            ),
+        )
+    )).all()
+    return tuple(sorted((k, "" if v is None else str(v)) for k, v in rows))
 
 
 def _role_qualification_for_candidate(
@@ -2493,9 +2766,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # Same one-query-per-project pattern; role_known_codes above is kept
     # unchanged as the legacy merged source for the 24-slug role registry.
     typed_personnel_facts = await typed_personnel_facts_from_project(session, str(project_id))
-    _copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed = await _coproduction_facts(
-        session, project.id,
-    )
+    # Codex global optimizer audit, P0-QUAL-001: co-production facts are now
+    # scoped per (treaty_slug, ordered participant identities) -- there is
+    # no longer one project-global tuple to fetch here. Each treaty-
+    # evaluation call site below fetches its own scoped facts via
+    # _coproduction_facts(session, project.id, treaty_slug, participant_codes)
+    # immediately before evaluating that candidate. For the fingerprint,
+    # _all_coproduction_facts_for_fingerprint reads every scoped
+    # co-production fact row for this project so a change to ANY treaty's
+    # facts still invalidates the cached result.
+    all_coproduction_facts = await _all_coproduction_facts_for_fingerprint(session, project.id)
     # Batched producer-control closeout (2026-09-03) — fetched once here
     # (same one-query-per-project pattern as role_known_codes/script_facts
     # above) and reused at both use sites (fingerprint below, and the
@@ -2507,7 +2787,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     discretionary_policy_facts = await _discretionary_policy_facts(session, project_id)
     fingerprint = _compute_fingerprint(
         inputs, role_known_codes=role_known_codes, script_facts=script_facts,
-        coproduction_facts=(_copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed),
+        coproduction_facts=all_coproduction_facts,
         excluded_jurisdiction_codes=excluded_jurisdiction_codes,
         discretionary_policy_facts=discretionary_policy_facts,
     )
@@ -3503,9 +3783,39 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     }
                     for slug in stack_result.program_slugs
                 ],
-                "total_qualifying_spend_usd": sum(
+                # Codex global optimizer audit, P1-TRACE-001: "Separate
+                # unique allocated production spend from reusable
+                # per-program claim bases. Never label summed overlapping
+                # claim bases as total unique QPE." Each stacked program's
+                # own per_program_qpe_usd is its REUSABLE claim base
+                # (independently resolved against the SAME underlying
+                # jurisdiction spend, often overlapping labour/production
+                # categories) -- summing them (the prior
+                # total_qualifying_spend_usd value) double-counts real
+                # dollars whenever two stacked programs' bases overlap,
+                # yet the field name implied a single, unique QPE figure.
+                # total_claim_bases_usd is that SAME sum, now honestly
+                # named as what it is (a sum of reusable, possibly-
+                # overlapping claim bases -- never presented as unique
+                # spend). total_qualifying_spend_usd keeps its ORIGINAL
+                # name (so a reader expecting "the QPE figure" is never
+                # silently handed the wrong number) but its value is now
+                # the largest single per-program claim base among the
+                # stacked programs -- the most conservative non-invented
+                # lower bound on unique allocated spend available from
+                # StackCandidate's own per-program rollups (this stacking
+                # path prices from already-rolled-up StackCandidate
+                # objects, not a line-level AllocationResult, so a true
+                # union of underlying budget lines is not reconstructable
+                # here without inventing one; max() never overstates it
+                # the way sum() did).
+                "total_claim_bases_usd": sum(
                     stack_result.per_program_qpe_usd.get(slug, 0.0)
                     for slug in stack_result.program_slugs
+                ),
+                "total_qualifying_spend_usd": max(
+                    (stack_result.per_program_qpe_usd.get(slug, 0.0) for slug in stack_result.program_slugs),
+                    default=0.0,
                 ),
                 "stacking_reduction_usd": stack_result.stacking_reduction_usd,
                 "per_program_adjusted_usd": stack_result.per_program_adjusted_usd,
@@ -3937,19 +4247,86 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # least one priced leg, union each such code's bare country prefix (so
     # Canada's federal-level treaty code "CA" is reachable because CA-ON/
     # CA-AB/CA-QC/CA-NL priced, even though "CA" itself never does).
-    reachable_codes = set(priced_by_code)
+    # Codex global optimizer audit, P0-CAND-003: "candidate identity
+    # discovery and economic priceability are improperly coupled." The
+    # prior base set (`set(priced_by_code)`) silently dropped every
+    # registered treaty partner whose own ordinary program has not YET
+    # priced deterministically (RULE_DATA_INCOMPLETE/USER_FACT_REQUIRED/
+    # capability_only/etc.) even though that partner is a real, discovered
+    # candidate this project's own production_discovery already examined
+    # -- exactly the "conditional partner disappears before treaty
+    # eligibility is asked" defect. `candidates` (built above from
+    # discovery.accepted + accepted_alternatives + capability_only) is
+    # the FULL canonical discovery universe -- every code this project
+    # genuinely examined, priced or not -- and is now the base set, so a
+    # registered partner with only attainable missing facts remains a
+    # visible conditional treaty row instead of vanishing.
+    reachable_codes = {c[0] for c in candidates} | set(priced_by_code)
     reachable_codes |= {code.split("-")[0] for code in reachable_codes}
     candidate_codes = sorted(reachable_codes)
-    # _copro_majority_pct/_copro_minority_pct/_copro_cultural_test_passed
-    # fetched once, near the top of this function (see CBA-008 note there
-    # — also part of the cache fingerprint now) and reused here.
+    # Codex global optimizer audit, P0-QUAL-001: co-production facts are
+    # now fetched per-candidate, scoped to (treaty_slug, ordered
+    # participant identities) -- never one project-global tuple reused
+    # across every treaty (see _coproduction_facts docstring).
 
-    MAX_TREATY_PARTNERS = 5
-    for partner_code in find_real_bilateral_partners(home_code, candidate_codes)[:MAX_TREATY_PARTNERS]:
+    # Codex global optimizer audit, P0-COMB-001 precomputation, hoisted
+    # OUT of the per-partner loop below (bounded-pass performance repair:
+    # an earlier revision recomputed find_real_bilateral_partners/
+    # te.get_bilateral_treaty/_coproduction_facts/evaluate_bilateral_
+    # coproduction_opportunity a SECOND time, from scratch, for the exact
+    # same partner identities the home-anchored loop immediately below
+    # already resolves -- real, avoidable duplicate work, now eliminated
+    # by computing the combined co-production + component-allocation +
+    # authorized-local-stack candidate INSIDE the same loop iteration,
+    # reusing `opp`/`partner_jur` the home-anchored loop already computed
+    # for that partner. Only the component-selection precomputation
+    # (independent of which partner is being considered) still needs to
+    # happen once, up front.
+    _combined_component = _combined_spend_amount = None
+    _combined_top_targets: list = []
+    if component_spend and home_program_slug:
+        _combined_component, _combined_spend_amount = max(
+            component_spend.items(), key=lambda kv: kv[1],
+        )
+        _combined_top_targets = sorted(
+            (
+                max(cands, key=lambda c: c.selected_incentive_usd)
+                for code, cands in priced_by_code.items() if code != home_code and cands
+            ),
+            key=lambda c: c.selected_incentive_usd, reverse=True,
+        )
+
+    # Codex global optimizer audit, P0-CAND-001: "a presentation bound
+    # has become an evaluation bound." The prior MAX_TREATY_PARTNERS=5
+    # pre-evaluation slice discarded every REAL, registered bilateral
+    # partner beyond the first five in list order (Canada alone has 13
+    # registered partners) BEFORE eligibility was ever checked -- a
+    # structurally valid 6th+ partner could never be represented at all,
+    # in any state (priced, conditional, or rejected). Every registered
+    # partner returned by find_real_bilateral_partners is now evaluated;
+    # any future display/pagination limit belongs in the SERVED VIEW
+    # layer (canonical_production_view.py), never here.
+    for partner_code in find_real_bilateral_partners(home_code, candidate_codes):
+        # P0-QUAL-001: resolve the real treaty_slug FIRST (a read-only
+        # registry lookup, te.get_bilateral_treaty -- no side effects, no
+        # pricing) so facts can be fetched scoped to THIS treaty and THIS
+        # ordered (majority=home_code, minority=partner_code) participant
+        # pair before the evaluator is ever called. If no treaty resolves
+        # here (should not happen -- find_real_bilateral_partners is
+        # itself registry-presence-only) facts stay None/None/None, which
+        # evaluate_bilateral_coproduction_opportunity already treats as
+        # UNRESOLVED_FACTS, never a crash or an invented value.
+        _treaty_row = te.get_bilateral_treaty(home_code, partner_code)
+        _bp_majority_pct = _bp_minority_pct = None
+        _bp_cultural_test_passed = None
+        if _treaty_row is not None:
+            _bp_majority_pct, _bp_minority_pct, _bp_cultural_test_passed = await _coproduction_facts(
+                session, project.id, _treaty_row.treaty_slug, (home_code, partner_code),
+            )
         opp = evaluate_bilateral_coproduction_opportunity(
             home_code, partner_code,
-            majority_pct=_copro_majority_pct, minority_pct=_copro_minority_pct,
-            cultural_test_passed=_copro_cultural_test_passed,
+            majority_pct=_bp_majority_pct, minority_pct=_bp_minority_pct,
+            cultural_test_passed=_bp_cultural_test_passed,
         )
         if opp is None:
             continue
@@ -4032,6 +4409,276 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             input_fingerprint=fingerprint,
         ))
 
+        # Codex global optimizer audit, P0-COMB-001 — the combined
+        # co-production + component-allocation + anchor + authorized-
+        # local-stack topology, computed HERE (inside the home-anchored
+        # loop, reusing `opp`/`partner_jur` this same iteration already
+        # resolved) rather than in a second separate pass over
+        # find_real_bilateral_partners -- see the precomputation comment
+        # above for why the second pass was removed. Scoped deliberately:
+        # only a partner whose treaty resolves ELIGIBLE (real ownership/
+        # cultural facts on file -- never a bare registry-presence guess)
+        # has a determinate QPE to combine component allocation and
+        # stacking against, and only the single highest-spend movable
+        # component routed to the single best remaining (genuinely
+        # third, distinct) target jurisdiction is attempted per eligible
+        # partner -- a bounded-pass search-space limit (documented
+        # honestly, not a doctrine choice), never a truncation of an
+        # already-priceable candidate. In practice this activates only
+        # for a production with genuine treaty ownership facts on file;
+        # it is additive and touches no existing candidate.
+        if (
+            _combined_component and _combined_spend_amount and _combined_spend_amount > 0
+            and opp.resolution_state == RESOLUTION_ELIGIBLE
+        ):
+            comb_opp = opp
+            partner_candidates = priced_by_code.get(partner_code, [])
+            partner_best = max(partner_candidates, key=lambda c: c.selected_incentive_usd, default=None)
+            _comb_target = next(
+                (t for t in _combined_top_targets if t.jurisdiction_code not in (home_code, partner_code)),
+                None,
+            )
+            if partner_best is not None and _comb_target is not None:
+                spec, allocation, pricing = _price_combined_coproduction_component_candidate(
+                    inputs, home_code, home_program_slug, partner_code, partner_best.program_slug,
+                    _comb_target.jurisdiction_code, _comb_target.program_slug,
+                    _combined_component, comb_opp.treaty_slug,
+                )
+                _comb_label = (
+                    f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}) + "
+                    f"{_combined_component} routed to {_comb_target.jurisdiction_code}"
+                )
+                _comb_claimed_programs = [
+                    home_program_slug, partner_best.program_slug, _comb_target.program_slug,
+                ]
+                if not pricing.is_fully_priced:
+                    _comb_rej_status, _comb_rej_class = _classify_component_rejection(pricing.blockers)
+                    _comb_rej_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=f"{_comb_label} (combined, rejected)",
+                        description=(
+                            "Combined co-production + component-allocation candidate does "
+                            f"not clear pricing: {'; '.join(pricing.blockers) or 'not fully priced.'}"
+                        ),
+                        jurisdiction_allocations=[],
+                        claimed_program_ids=_comb_claimed_programs,
+                    )
+                    session.add(_comb_rej_structure)
+                    await session.flush()
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_comb_rej_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        calculation_trace_json={
+                            "candidate_status": _comb_rej_status,
+                            "rejection_reason_class": _comb_rej_class,
+                            "discovery_classification": "combined_coproduction_component_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": comb_opp.treaty_slug,
+                            "program_slugs": _comb_claimed_programs,
+                            "reason": "; ".join(pricing.blockers) or "Not fully priced.",
+                            "is_baseline": False,
+                            "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code,
+                            "anchor_program": home_program_slug,
+                            "coproduction_partners": [
+                                {"jurisdiction_code": home_code}, {"jurisdiction_code": partner_code},
+                            ],
+                            "component_allocations": [{
+                                "component": _combined_component,
+                                "jurisdiction_code": _comb_target.jurisdiction_code,
+                                "program_slug": _comb_target.program_slug,
+                                "allocated_usd": _combined_spend_amount,
+                            }],
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                else:
+                    # P0-COMB-001, "authorized local stacks on allocated
+                    # sides": attempted on the anchor side only (the most
+                    # natural, unambiguous "allocated side" for a
+                    # bounded first pass) — apply_stack ADDS to the base
+                    # structure's own economics ONLY when
+                    # price_program_group_stack resolves a NAMED rule
+                    # (the SAME P0-STACK-001 fail-closed gate); an
+                    # attempted-but-unresolved stack is retained as its
+                    # own separate rejected candidate, never silently
+                    # applied and never silently merged into the base row.
+                    _comb_stack_result, _comb_stack_group = _authorized_local_stack_for_side(
+                        priced_by_code, home_code, home_program_slug,
+                    )
+                    _comb_selected_incentive = pricing.selected_incentive_usd
+                    _comb_npc = pricing.npc_with_adjustments_usd
+                    _comb_stacking_note = ""
+                    _comb_stack_program_slugs: list[str] = []
+                    if _comb_stack_result is not None:
+                        # base pricing already counts home_program_slug's
+                        # own (unstacked) value once inside pricing.
+                        # segments; only the INCREMENTAL value the named
+                        # stack adds on top is additive here — never
+                        # double-counted.
+                        _comb_stack_delta = round(
+                            _comb_stack_result.adjusted_incentive_usd
+                            - next(
+                                (c.selected_incentive_usd for c in _comb_stack_group
+                                 if c.program_slug == home_program_slug), 0.0,
+                            ),
+                            2,
+                        )
+                        _comb_selected_incentive = round(_comb_selected_incentive + _comb_stack_delta, 2)
+                        if _comb_npc is not None:
+                            _comb_npc = round(_comb_npc - _comb_stack_delta, 2)
+                        _comb_stacking_note = (
+                            f"Authorized local stack on the anchor side ({home_code}): "
+                            f"{'+'.join(_comb_stack_result.program_slugs)} via named rule "
+                            f"'{_comb_stack_result.rule_type}', adding ${_comb_stack_delta:,.2f}."
+                        )
+                        _comb_stack_program_slugs = list(_comb_stack_result.program_slugs)
+                    elif _comb_stack_group:
+                        # A second same-jurisdiction candidate exists but
+                        # no named, publishable rule covers this exact
+                        # combination — retained as its OWN rejected
+                        # candidate (never silently applied, never
+                        # silently dropped), while the base (unstacked)
+                        # combined structure below still stands on its
+                        # own.
+                        _comb_stack_rej_structure = ProductionStructure(
+                            id=uuid.uuid4(), project_id=project.id,
+                            name=f"{_comb_label} + unresolved local stack ({home_code}, rejected)",
+                            description=(
+                                f"{home_code} has a second same-jurisdiction candidate "
+                                f"program ({[c.program_slug for c in _comb_stack_group]}) but "
+                                "no named, publishable stacking rule covers this exact "
+                                "combination — withheld, never summed as though independent."
+                            ),
+                            jurisdiction_allocations=[],
+                            claimed_program_ids=_comb_claimed_programs + [
+                                c.program_slug for c in _comb_stack_group
+                            ],
+                        )
+                        session.add(_comb_stack_rej_structure)
+                        await session.flush()
+                        session.add(StructureCalculationResult(
+                            id=uuid.uuid4(), structure_id=_comb_stack_rej_structure.id,
+                            engine_version=ENGINE_VERSION,
+                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                            calculation_trace_json={
+                                "candidate_status": "RULE_DATA_INCOMPLETE",
+                                "rejection_reason_class": "RULE_DATA_INCOMPLETE",
+                                "discovery_classification": "combined_coproduction_component_stack",
+                                "structure_type": "hybrid",
+                                "primary_jurisdiction": home_code,
+                                "treaty_slug": comb_opp.treaty_slug,
+                                "program_slugs": _comb_claimed_programs + [
+                                    c.program_slug for c in _comb_stack_group
+                                ],
+                                "reason": (
+                                    "No named, publishable stacking rule covers "
+                                    f"{home_code}: {'+'.join(c.program_slug for c in _comb_stack_group)}."
+                                ),
+                                "is_baseline": False,
+                                "relocation_cost_normalized": False,
+                                "is_directly_comparable": False,
+                                "anchor_jurisdiction": home_code,
+                                "anchor_program": home_program_slug,
+                            },
+                            input_fingerprint=fingerprint,
+                        ))
+
+                    _comb_home_jur = jurisdiction_by_code.get(home_code)
+                    _comb_target_jur = jurisdiction_by_code.get(_comb_target.jurisdiction_code)
+                    _comb_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=_comb_label,
+                        description=(
+                            f"Official co-production between {home_code} (anchor) and "
+                            f"{partner_code} under {comb_opp.treaty_slug}, with "
+                            f"{_combined_component} work (${_combined_spend_amount:,.0f} of "
+                            f"real project budget) routed to {_comb_target.jurisdiction_code} "
+                            f"to claim {_program_display_name(_comb_target.program_slug)}."
+                            + (f" {_comb_stacking_note}" if _comb_stacking_note else "")
+                        ),
+                        jurisdiction_allocations=[
+                            j for j in (
+                                {"jurisdiction_id": str(_comb_home_jur.id), "shoot_pct": 100, "budget_pct": None}
+                                if _comb_home_jur else None,
+                                {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0, "budget_pct": None}
+                                if partner_jur else None,
+                                {"jurisdiction_id": str(_comb_target_jur.id), "shoot_pct": 0, "budget_pct": None}
+                                if _comb_target_jur else None,
+                            ) if j
+                        ],
+                        claimed_program_ids=_comb_claimed_programs + _comb_stack_program_slugs,
+                    )
+                    session.add(_comb_structure)
+                    await session.flush()
+                    _comb_conditional_program_dicts, _comb_conditional_compatibility_dict = _conditional_data(
+                        str(_comb_structure.id), home_code, tuple(_comb_claimed_programs),
+                    )
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_comb_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=_comb_selected_incentive,
+                        true_net_cost_usd=pricing.npc_verified_usd,
+                        risk_adjusted_net_cost_usd=_comb_npc,
+                        has_unverified_inputs=True,
+                        warnings=[
+                            LIMITATION_NOTE,
+                            "Combined co-production + component-allocation + authorized-stack "
+                            "candidate: a new, additive structure topology — not directly "
+                            "comparable to single-leg structures' own NPC without confirming "
+                            "the same normalization basis.",
+                        ] + ([_comb_stacking_note] if _comb_stacking_note else []),
+                        calculation_trace_json={
+                            "candidate_status": STATUS_PRICED,
+                            "discovery_classification": "combined_coproduction_component_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": comb_opp.treaty_slug,
+                            "program_slugs": _comb_claimed_programs + _comb_stack_program_slugs,
+                            "is_baseline": False,
+                            "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code,
+                            "anchor_program": home_program_slug,
+                            "coproduction_partners": [
+                                {
+                                    "jurisdiction_code": home_code,
+                                    "jurisdiction_display_name": _comb_home_jur.name if _comb_home_jur else home_code,
+                                },
+                                {
+                                    "jurisdiction_code": partner_code,
+                                    "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
+                                },
+                            ],
+                            "treaty_resolution_state": comb_opp.resolution_state,
+                            "component_allocations": [{
+                                "component": _combined_component,
+                                "jurisdiction_code": _comb_target.jurisdiction_code,
+                                "jurisdiction_display_name": (
+                                    _comb_target_jur.name if _comb_target_jur else _comb_target.jurisdiction_code
+                                ),
+                                "program_slug": _comb_target.program_slug,
+                                "allocated_usd": _combined_spend_amount,
+                            }],
+                            "stacking_note": _comb_stacking_note,
+                            "stacked_programs": _comb_stack_program_slugs,
+                            "selected_incentive_usd": _comb_selected_incentive,
+                            "npc_verified_usd": pricing.npc_verified_usd,
+                            "npc_with_adjustments_usd": _comb_npc,
+                            "gross_budget_usd": inputs.gross_budget_usd,
+                            "segments": _segment_dicts(pricing),
+                            "conditional_programs": _comb_conditional_program_dicts,
+                            "conditional_compatibility": _comb_conditional_compatibility_dict,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+
     # LU Co-Pro Opportunity Trace fix — a real, generic wiring gap: the
     # loop above only ever considers a bilateral treaty where the
     # production's own home/service jurisdiction (Mauritius for LU) is
@@ -4052,10 +4699,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     for majority_code, minority_code, treaty_slug in find_bilateral_treaty_pairs_among_candidates(candidate_codes):
         if home_code in (majority_code, minority_code):
             continue  # already covered by the home-anchored loop above
+        # P0-QUAL-001: treaty_slug is already known here (returned directly
+        # by find_bilateral_treaty_pairs_among_candidates), so facts are
+        # fetched scoped to this treaty and this ordered
+        # (majority_code, minority_code) participant pair -- no pre-lookup
+        # needed, unlike the home-anchored loop above.
+        _nb_majority_pct, _nb_minority_pct, _nb_cultural_test_passed = await _coproduction_facts(
+            session, project.id, treaty_slug, (majority_code, minority_code),
+        )
         opp = evaluate_bilateral_coproduction_opportunity(
             majority_code, minority_code,
-            majority_pct=_copro_majority_pct, minority_pct=_copro_minority_pct,
-            cultural_test_passed=_copro_cultural_test_passed,
+            majority_pct=_nb_majority_pct, minority_pct=_nb_minority_pct,
+            cultural_test_passed=_nb_cultural_test_passed,
         )
         if opp is None:
             continue
@@ -4143,16 +4798,35 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
 
     eurimages_partners = find_eurimages_partners(home_code, candidate_codes)
     if eurimages_partners:
+        # Codex global optimizer audit, P0-CAND-002: "a presentation
+        # bound has become an evaluation bound." MAX_EURIMAGES_DISPLAY
+        # now bounds ONLY the served `coproduction_partners` list
+        # (`shown`, for display/pagination) — the evaluator itself is
+        # called against the FULL, real, discovered `eurimages_partners`
+        # set below, so an 11th+ eligible member is genuinely evaluated
+        # and accounted for, never silently dropped before eligibility
+        # is even asked.
         MAX_EURIMAGES_DISPLAY = 10
-        shown = sorted(eurimages_partners)[:MAX_EURIMAGES_DISPLAY]
+        all_partners_sorted = sorted(eurimages_partners)
+        shown = all_partners_sorted[:MAX_EURIMAGES_DISPLAY]
         # Canonical Co-production Qualification Reconnection — was
         # previously hardcoded to UNRESOLVED_FACTS/cultural_test_resolved
         # =False regardless of any real fact; now genuinely computed via
         # evaluate_eurimages_coproduction_opportunity() (reused
         # unchanged). With no country_pcts fact on file (true for LU/FVD)
         # this still resolves UNRESOLVED_FACTS — same output, real path.
+        # P0-QUAL-001: "eurimages" is a fixed treaty_slug constant (no
+        # per-pair ambiguity, unlike bilateral treaties), so facts can be
+        # fetched directly scoped to (treaty_slug="eurimages",
+        # participant_codes) — the exact ordered set passed to the
+        # evaluator below.
+        _eurimages_participants = tuple([home_code] + all_partners_sorted)
+        _eurimages_country_pcts, _eurimages_cultural_test_passed = await _multilateral_coproduction_facts(
+            session, project.id, "eurimages", _eurimages_participants,
+        )
         _eurimages_opp = evaluate_eurimages_coproduction_opportunity(
-            [home_code] + shown, cultural_test_passed=_copro_cultural_test_passed,
+            list(_eurimages_participants), country_pcts=_eurimages_country_pcts,
+            cultural_test_passed=_eurimages_cultural_test_passed,
         )
         structure = ProductionStructure(
             id=uuid.uuid4(),
@@ -4239,9 +4913,26 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _fw_partners = _finder(home_code, candidate_codes)
         if not _fw_partners:
             continue
+        # Codex global optimizer audit, P0-CAND-002: same fix as
+        # Eurimages above — MAX_FRAMEWORK_DISPLAY bounds only the served
+        # `_fw_shown` display list; the evaluator is called against the
+        # FULL, real, discovered `_fw_partners` set so an 11th+ eligible
+        # party is genuinely evaluated and accounted for.
         MAX_FRAMEWORK_DISPLAY = 10
-        _fw_shown = sorted(_fw_partners)[:MAX_FRAMEWORK_DISPLAY]
-        _fw_opp = _evaluator([home_code] + _fw_shown, cultural_test_passed=_copro_cultural_test_passed)
+        _fw_all_sorted = sorted(_fw_partners)
+        _fw_shown = _fw_all_sorted[:MAX_FRAMEWORK_DISPLAY]
+        # P0-QUAL-001: _fw_slug is a fixed treaty_slug constant for both
+        # European Convention and Ibermedia (no per-pair ambiguity), so
+        # facts are fetched directly scoped to (treaty_slug, the exact
+        # ordered participant set passed to the evaluator below).
+        _fw_participants = tuple([home_code] + _fw_all_sorted)
+        _fw_country_pcts, _fw_cultural_test_passed = await _multilateral_coproduction_facts(
+            session, project.id, _fw_slug, _fw_participants,
+        )
+        _fw_opp = _evaluator(
+            list(_fw_participants), country_pcts=_fw_country_pcts,
+            cultural_test_passed=_fw_cultural_test_passed,
+        )
         _fw_structure = ProductionStructure(
             id=uuid.uuid4(),
             project_id=project.id,
@@ -4388,7 +5079,12 @@ async def current_generation_fingerprint(session, project_id) -> str | None:
     if econ.ok:
         role_known_codes = await role_known_codes_from_project(session, str(project_id))
         script_facts = await script_facts_from_project(session, str(project_id))
-        coproduction_facts = await _coproduction_facts(session, project_id)
+        # P0-QUAL-001: must match evaluate_project()'s own fingerprint
+        # computation exactly, or this read-only reconstruction can never
+        # find the rows evaluate_project() persisted (the same class of
+        # divergence this function's own docstring already documents for
+        # fx_context/company-period facts, immediately below).
+        coproduction_facts = await _all_coproduction_facts_for_fingerprint(session, project_id)
         excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project_id))
         discretionary_policy_facts = await _discretionary_policy_facts(session, project_id)
         # Codex final P0 (canonical_fx) — evaluate_project() attaches a
