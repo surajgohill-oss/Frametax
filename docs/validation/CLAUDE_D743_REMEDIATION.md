@@ -98,14 +98,66 @@ This is `tests/test_claude_global_optimizer_p0_remediation.py::test_comb_001_rea
 tears down its own throwaway `ProjectFact` rows and monkeypatched treaty entry; Little Utopia's
 real frozen baseline economics are read but never written to, and are reconfirmed exact below.
 
+### Strengthened: a second real end-to-end proof against an actual REGISTERED treaty
+
+The proof above used a synthetic `TreatyData` object for Mauritius, since Mauritius has zero
+registered bilateral treaties in canonical data. To close this gap without fabricating a treaty,
+`tests/test_claude_global_optimizer_p0_remediation.py::test_comb_001_real_served_end_to_end_combined_structure_real_registered_treaty`
+was added, classified honestly as **`TEST_RUNTIME_VERIFIED_WITH_REAL_TREATY`** (not actual FVD
+production-fact runtime — FVD's own real evaluation is unaffected and still correctly serves zero
+combined structures, confirmed unchanged below).
+
+Greece (F#K Valentine's Day's real home jurisdiction) also has zero registered bilateral treaties
+in canonical data (confirmed by the same exhaustive `treaty_engine.py` registry search) — its only
+real treaty-adjacent relationship is Eurimages/European Convention *membership*, a multilateral
+framework this bounded topology does not extend to (extending it was evaluated and explicitly
+deferred as out of this pass's bounded scope). Given that constraint, the real, already-registered,
+**unmodified** `uk-ie-bilateral` treaty (`te.get_bilateral_treaty("GB", "IE")` — GB majority unlocks
+`uk_avec`, IE minority unlocks `ie_section_481`) was used instead: both GB and IE are real,
+independently-discovered candidate jurisdictions for FVD's own real budget, reached through the
+**non-home-anchored** bilateral loop (a real registered treaty between two candidate jurisdictions
+neither of which is the production's own home). This required one small, mechanical extension —
+not a redesign — of the combined topology: the exact same `_price_combined_coproduction_component_candidate`
+/ `_apply_authorized_stacks_to_combined_sides` helpers, already proven against the home-anchored
+loop, are now ALSO called from the non-home-anchored loop, with `majority_code`/`minority_code`
+standing in for `home_code`/`partner_code`. A second small fix was needed alongside it: a bare
+federal treaty-party code (e.g. `"CA"`) can be genuinely priceable but absent from `priced_by_code`
+(only synthetically reachable via P0-CAND-003's candidate-identity prefix union, never actually
+discovery-priced) — `_best_priced_treaty_side_candidate` falls back to pricing the treaty's own
+real unlocked slug directly via `_price_candidate` when this happens, exactly the pattern
+`_build_conditional_bilateral_scenario` already established for the identical problem. (This surfaced
+during development that Canada's own real `uk-ca-bilateral` treaty could not produce a *priced*
+combined structure under FVD's current facts — `ca_federal_cptc` fails closed on a genuine,
+pre-existing narrower-base data gap and `ca_cmf` does not resolve at all — so `uk-ie-bilateral` was
+used instead, the real pair whose both sides genuinely price.)
+
+Proven directly against the real served view, with temporary scoped `ProjectFact` rows (65%/35%)
+inserted and torn down within the test only — the treaty object itself is never touched:
+
+| Requirement | Result |
+|---|---|
+| Nonzero treaty-party allocations | GB = $2,841,306.65, IE = $1,529,934.35 (both real, both nonzero) |
+| Nonzero component-target allocation | e.g. CA-MB = $146,446.00 (post) — a genuinely third, distinct jurisdiction |
+| Spend conservation | Every dollar of FVD's real $4,517,687.00 gross budget assigned exactly once |
+| Participant QPE | Each side's own real `qualifying_spend_usd`/`selected_incentive_usd`, never invented |
+| Authorized stacking on every applicable side | 3 real `RULE_DATA_INCOMPLETE` "unresolved local stack" rows retained for New Zealand component targets — proves the stack-attempt mechanism runs on the component-target side too, not the anchor alone |
+| Served classification | Every priced combined row carries `classification == COMBINED_COPRO_HYBRID_STACK` |
+| Rejection trace | 57 of 156 attempted combinations correctly rejected, each with a real `rejection_reason_class` (`RULE_DATA_INCOMPLETE` / `MINIMUM_SPEND_FAIL`) |
+
+99 of 156 attempted (component × target) combinations priced successfully under this real treaty.
+
 **Why none of the four required canonical productions serve a combined structure.** All four
 (Little Utopia, F#K Valentine's Day, Bad Hombres, Lips Like Sugar) currently have **zero**
 `combined_coproduction_component_stack`/`hybrid` structures in their real, fresh runtime — matching
 Codex's own d743fab finding exactly ("gated on already-ELIGIBLE treaty facts; the three real
 projects have none"). The topology is correctly additive and inert until a project has a real,
 evidenced treaty ownership-share fact on file; none of the four does. This is the honest, expected
-outcome, not a defect — the end-to-end proof above demonstrates the topology works correctly the
-moment such facts exist.
+outcome, not a defect — the end-to-end proofs above demonstrate the topology works correctly the
+moment such facts exist. Re-verified directly after the non-home-anchored extension above (by
+deleting each project's current-`ENGINE_VERSION` rows and forcing genuine fresh regeneration): all
+four productions still produce byte-identical results — same total structure counts, zero combined
+structures, and exact frozen/verified baseline economics — confirming `CLAUDE_FOUR_CANONICAL_PRODUCTION_RUNTIME.csv`
+remains valid and unchanged.
 
 ## P1-TRACE-001 — remediated
 
@@ -201,12 +253,34 @@ test fixtures were repointed to a real, already-registered pair. `price_program_
 fail-closed "no named rule -> None" behavior (P0-STACK-001) is unchanged and continues to prohibit
 any unauthorized/unsupported combination.
 
-**Two other, separately pre-existing `ca_bc_pstc` test failures remain, out of scope.**
-`test_canonical_economics_integrity_repair.py::test_programs_declaring_a_narrower_rate_base_do_not_price_off_all_spend`
-and `::test_narrower_base_check_scans_every_tier_not_just_the_selected_one` were not named in
-Codex's CA-BC-PSTC finding (only the two above were) and are left exactly as found — both fail
-identically on unmodified `d743fab`, for the same root cause (the B1 veto), a data/message-format
-mismatch rather than an allocation defect, and are outside this bounded workstream's assigned scope.
+### Closed: the two remaining `ca_bc_pstc` failures in `test_canonical_economics_integrity_repair.py`
+
+The prior pass left these two out of scope (not named in Codex's original CA-BC-PSTC finding).
+This pass closes them, per explicit instruction, without changing `ca_bc_pstc`'s canonical status
+or DAVE behavior:
+
+- `test_programs_declaring_a_narrower_rate_base_do_not_price_off_all_spend` — a generic test
+  iterating over every program declaring `rate_base_narrower_than_qpe` (`ca_bc_pstc`,
+  `ca_federal_cptc`, `ca_federal_pstc`). `ca_bc_pstc` and `ca_federal_pstc` are now blocked at the
+  EARLIER B4 authority gate (before the narrower-base condition is ever evaluated), so their real
+  blocker text no longer contains "narrower base". Fixed: both are special-cased to assert their
+  actual authority-fail-closed blocker text (`"statutory rate did not resolve"`) instead of the
+  generic narrower-base message every other declaring program still produces. `ca_federal_cptc`
+  (which still resolves and still produces the narrower-base message) is untouched, preserving the
+  generic behavior proof for a real, currently-working program.
+- `test_narrower_base_check_scans_every_tier_not_just_the_selected_one` — previously asserted
+  `resolve_program_rate("ca_bc_pstc", ...)` returns a tier (to prove tier-scanning inspects every
+  tier, not just the selected one). Fixed: now asserts `resolve_program_rate("ca_bc_pstc", ...) is
+  None` directly (the current, correct, already-accepted disposition) as the primary assertion. The
+  original test's real point — that `ca_bc_pstc`'s own doctrine table still correctly declares the
+  narrower-base condition on a real tier — is preserved as a direct data-level assertion against
+  `_RULES_BY_PROGRAM["ca_bc_pstc"]`, so a genuine future regression in the tier data itself would
+  still be caught, even though the authority gate makes it unreachable at runtime today.
+
+Both tests pass; `tests/test_canonical_economics_integrity_repair.py` is now **46/46 passing**, zero
+`ca_bc_pstc`-related failures remain anywhere in the focused suite. Ontario's `on_opstc` +
+`ca_federal_cptc` fixture (the CA-BC PSTC fix from the prior pass) remains the separate, real,
+currently-priceable pair used for the generic mutually-exclusive stacking proofs — untouched here.
 
 ## `ENGINE_VERSION`
 
@@ -225,14 +299,15 @@ F#K Valentine's Day, not an independent production — no project created or sub
 
 | Suite | Result |
 |---|---|
-| `tests/test_claude_global_optimizer_p0_remediation.py` (35 tests, 8 new/rewritten this pass) | 35 passed |
+| `tests/test_claude_global_optimizer_p0_remediation.py` (36 tests, incl. the real-registered-treaty proof) | 36 passed |
 | `tests/test_canonical_stack_bridge.py` + `tests/test_copro_conditional_pricing_bridge.py` (CA-BC PSTC fix) | 29 passed |
 | `tests/test_codex_final_optimizer_health_audit.py` (harness fix) | 8 passed, 1 legitimate skip |
 | Treaty/copro/stacking/identity/DAVE/NV/engine focused suite (11 files) | 213 passed |
 | Optimization contract/inventory/optimizer/page-integrity/import-order/closeout/input-integration (7 files) | 230 passed |
-| `tests/test_canonical_economics_integrity_repair.py` | 44 passed, 2 pre-existing (unrelated, out of scope) |
+| `tests/test_canonical_economics_integrity_repair.py` (both remaining `ca_bc_pstc` failures now closed) | **46 passed, 0 failed** |
 | Four frozen/canonical project controls (direct fresh recomputation) | 4/4 exact, unchanged |
 
 No test was skipped or weakened to reach these results (the one `pytest.skip` in the health-audit
 file is a pre-existing, legitimate "this program is not a candidate for current inputs" skip, not
-a weakened assertion).
+a weakened assertion). **Zero `ca_bc_pstc`-related test failures remain anywhere in this
+workstream's test scope.**
