@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import re
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.executable_jurisdiction_registry import get_doctrine
@@ -967,6 +967,90 @@ def _ranking_entry(entry: dict) -> dict:
     return base
 
 
+async def compute_anchor_budget_contract(session: AsyncSession, project_id) -> dict:
+    """CLAUDE_FINAL_ACTIVE_OPTIMIZER_IMPLEMENTATION_AND_RUNTIME_CLOSEOUT,
+    Section A — the Anchor Budget Contract. A REFERENCE calculation, never
+    a candidate structure: re-presents this project's own real, already-
+    computed is_baseline row under an explicit anchor-reporting shape,
+    plus an honest check for a real supplied/embedded incentive line in
+    the project's own imported budget (spend_category == 'incentive' on
+    BudgetLineItem — a real, pre-existing model column that no code path
+    in this codebase previously read). No new pricing math: the
+    "independently calculated canonical anchor incentive" is the SAME
+    real baseline StructureCalculationResult row every other part of this
+    codebase already treats as canonical (candidate ranking's own
+    `_admits_recommended`/`top_pair` logic, ProjectHeader's hero figure,
+    etc.) — this function only assembles and labels those already-real
+    fields, plus the reconciliation against any supplied incentive found.
+
+    Returns a dict with: gross_budget_usd, supplied_incentive_usd (None if
+    no such budget line exists — genuinely absent, never guessed),
+    calculated_anchor_incentive_usd, variance_usd (None when no supplied
+    figure exists to vary against — never a fabricated 100% variance),
+    financing_adjustment_usd, anchor_npc_usd, anchor_jurisdiction_code,
+    anchor_candidate_status, and anchor_role_qualification_state (the
+    baseline's own real cultural-test/qualification state — the exact
+    reason a project may have no verified recommendation)."""
+    from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+
+    fingerprint = await current_generation_fingerprint(session, project_id)
+    if not fingerprint:
+        return {"status": "NO_CURRENT_EVALUATION", "project_id": str(project_id)}
+
+    baseline_row = (await session.execute(
+        select(StructureCalculationResult, ProductionStructure.name)
+        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+        .where(
+            ProductionStructure.project_id == project_id,
+            StructureCalculationResult.input_fingerprint == fingerprint,
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
+            StructureCalculationResult.calculation_trace_json["is_baseline"].astext == "true",
+        )
+    )).first()
+    if baseline_row is None:
+        return {"status": "NO_BASELINE_STRUCTURE", "project_id": str(project_id)}
+    scr, sname = baseline_row
+    trace = scr.calculation_trace_json or {}
+
+    # Real, honest check — never assumed. Most real productions' imported
+    # budgets carry no such line at all (confirmed for all four canonical
+    # productions this workstream); when one exists, it is a real,
+    # producer-supplied figure, disclosed for reconciliation only, never
+    # substituted for the canonical calculation (per this workstream's own
+    # "never subtract both" / "canonical calculation is optimizer truth"
+    # rule).
+    supplied_row = (await session.execute(
+        select(func.sum(BudgetLineItem.amount_usd))
+        .join(BudgetDocument, BudgetLineItem.budget_document_id == BudgetDocument.id)
+        .where(BudgetDocument.project_id == project_id, BudgetLineItem.spend_category == "incentive")
+    )).scalar()
+    supplied_incentive_usd = float(supplied_row) if supplied_row is not None else None
+
+    calculated_incentive = float(scr.total_incentive_value_usd) if scr.total_incentive_value_usd is not None else None
+    variance_usd = (
+        round(calculated_incentive - supplied_incentive_usd, 2)
+        if calculated_incentive is not None and supplied_incentive_usd is not None
+        else None
+    )
+
+    return {
+        "status": "OK",
+        "project_id": str(project_id),
+        "anchor_structure_name": sname,
+        "anchor_jurisdiction_code": trace.get("primary_jurisdiction"),
+        "gross_budget_usd": float(scr.total_budget_usd) if scr.total_budget_usd is not None else None,
+        "supplied_incentive_usd": supplied_incentive_usd,
+        "calculated_anchor_incentive_usd": calculated_incentive,
+        "variance_usd": variance_usd,
+        "financing_adjustment_usd": trace.get("financing_cost_usd") or 0.0,
+        "anchor_npc_usd": float(scr.true_net_cost_usd) if scr.true_net_cost_usd is not None else None,
+        "anchor_candidate_status": trace.get("candidate_status"),
+        "anchor_role_qualification_state": (trace.get("role_qualification") or {}).get("state"),
+        "state_fingerprint": fingerprint,
+        "engine_version": ENGINE_VERSION,
+    }
+
+
 async def build_production_and_structures(session: AsyncSession, project_id) -> dict:
     """Generic, project_id-driven replacement for GET /cineglobe/production
     + GET /cineglobe/structures, sourced from canonical_evaluation.py's
@@ -1054,6 +1138,66 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     structure_entries = [
         _empty_structure_entry(s, r, jurisdiction_code_by_id, jurisdiction_name_by_code) for s, r in rows
     ]
+
+    # CLAUDE_FINAL_ACTIVE_OPTIMIZER_IMPLEMENTATION_AND_RUNTIME_CLOSEOUT,
+    # Section A/B/E — the Anchor Budget Contract's own required comparison:
+    # "Every alternative's net benefit must use the same anchor: anchor NPC
+    # minus alternative NPC" and the $100,000 hybrid-recommendation
+    # threshold ("Net benefit >= $100,000: eligible for recommendation.
+    # Net benefit < $100,000: retain as valid but mark
+    # ECONOMICALLY_NON_MATERIAL / NOT_RECOMMENDED. The $100,000 rule
+    # controls recommendation -- not generation or calculation.").
+    # Computed HERE, once, post-hoc over the already-priced served
+    # entries -- never inside candidate generation/pricing itself, so no
+    # existing calculation, eligibility, or ranking code is touched. The
+    # anchor is this project's own real is_baseline row's true_net_cost_
+    # usd (the SAME anchor every existing net-benefit computation in this
+    # codebase already uses for treaty conditional scenarios -- see
+    # _build_conditional_bilateral_scenario's own baseline_incentive_usd
+    # parameter); applies uniformly to every OTHER structure's own real
+    # true_net_cost_usd (component_relocation/full_relocation/hybrid) or,
+    # where the structure itself is never priced on its own row (a
+    # treaty_coproduction opportunity), its nested conditional_scenario's
+    # own conditional_npc_usd -- never a verified recommendation either
+    # way (Section D/E: conditional structures never outrank verified
+    # ones; this label is disclosure only, read by nothing that ranks).
+    HYBRID_MATERIALITY_THRESHOLD_USD = 100_000.0
+    _anchor_npc = next(
+        (float(e["npc_verified_usd"]) for e in structure_entries
+         if e.get("is_baseline") and e.get("npc_verified_usd") is not None),
+        None,
+    )
+    for _e in structure_entries:
+        if _anchor_npc is None or _e.get("is_baseline"):
+            _e["net_benefit_vs_anchor_usd"] = None
+            _e["hybrid_recommendation_status"] = "NOT_APPLICABLE"
+            continue
+        _candidate_npc = _e.get("npc_verified_usd")
+        _via_conditional = False
+        if _candidate_npc is None:
+            _cs = _e.get("conditional_scenario") or {}
+            _candidate_npc = _cs.get("conditional_npc_usd")
+            _via_conditional = _candidate_npc is not None
+        if _candidate_npc is None:
+            _e["net_benefit_vs_anchor_usd"] = None
+            _e["hybrid_recommendation_status"] = "NOT_APPLICABLE"
+            continue
+        _net_benefit = round(_anchor_npc - float(_candidate_npc), 2)
+        _e["net_benefit_vs_anchor_usd"] = _net_benefit
+        if _via_conditional:
+            # A modeled/conditional structure's net benefit is real
+            # disclosure, never a recommendation signal on its own --
+            # Section D/E's own "never auto-award / never outrank a
+            # verified candidate" rule.
+            _e["hybrid_recommendation_status"] = (
+                "CONDITIONAL_MATERIAL" if _net_benefit >= HYBRID_MATERIALITY_THRESHOLD_USD
+                else "CONDITIONAL_ECONOMICALLY_NON_MATERIAL"
+            )
+        else:
+            _e["hybrid_recommendation_status"] = (
+                "ELIGIBLE_FOR_RECOMMENDATION" if _net_benefit >= HYBRID_MATERIALITY_THRESHOLD_USD
+                else "ECONOMICALLY_NON_MATERIAL_NOT_RECOMMENDED"
+            )
 
     # Ranking (Part K — never invent regional savings): only structures
     # whose cost is actually comparable on the SAME basis participate in

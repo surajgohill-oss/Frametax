@@ -1,0 +1,5 @@
+production,total_structures,priced_count,co_pro_opportunity_count,rule_rejected_count,feasibility_review_required_count,unpriceable_authority_insufficient_count,rejection_minimum_spend_fail,rejection_statutory_conditions_unmet,rejection_null_reason_count,no_arbitrary_cap_proof
+Little Utopia,259,125,25,79,21,9,41,37,1,"125+25+79+21+9 = 259 = total_structures exactly -- every generated candidate resolves to exactly one status, none silently omitted. Candidate universe built from discovery.accepted+accepted_alternatives+capability_only unioned with priced_by_code (test_cand_001/002/003 source-inspection tests, passing, confirm no arbitrary truncation)."
+F#K Valentine's Day,312,160,27,95,21,9,56,38,1,"160+27+95+21+9 = 312 = total_structures exactly."
+Bad Hombres,257,123,25,79,21,9,40,38,1,"123+25+79+21+9 = 257 = total_structures exactly."
+Lips Like Sugar,313,176,25,82,21,9,44,37,1,"176+25+82+21+9 = 313 = total_structures exactly."
