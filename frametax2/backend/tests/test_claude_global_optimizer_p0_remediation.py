@@ -379,7 +379,27 @@ async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSessi
     is run for real and the served view is checked for a genuine hybrid /
     combined_coproduction_component_stack structure whose every claimed
     participant carries real, nonzero allocated spend -- not a helper
-    called in isolation."""
+    called in isolation.
+
+    CLAUDE_COMPLETE_OPTIMIZER_AND_FREEZE_FOUR_PROJECT_RESULTS — this test
+    was found failing in a fresh regression run ("no combined structure
+    served"), root-caused to the SAME class of test-isolation bug fixed
+    twice earlier in this branch's history (see e.g.
+    test_served_treaty_structure_exposes_the_personnel_gate_contract):
+    an EARLIER, unrelated evaluate_project() call for this same project
+    under the current ENGINE_VERSION can leave a cached row at a
+    fingerprint this test's own facts happen to reproduce, WITHOUT the
+    synthetic treaty registered, which evaluate_project() then silently
+    reuses (EVALUATION_REUSED) instead of genuinely regenerating with the
+    treaty present. Confirmed NOT an optimizer defect: run standalone
+    (fresh DB rows, no prior cached fingerprint), the exact same
+    evaluate_project()/build_production_and_structures() call path
+    correctly produces 100+ priced hybrid combined structures. Current-
+    engine-version rows are now deleted first to force a truly fresh
+    evaluation regardless of test execution order."""
+    from sqlalchemy import delete as sa_delete
+
+    from app.models.production import ProductionStructure as _PS, StructureCalculationResult as _SCR
     from app.services.canonical_production_view import build_production_and_structures
 
     project_id = "fa5cade5-0669-4816-bfe6-72146f8d3bae"  # Little Utopia — home MU, real vfx/post spend
@@ -400,6 +420,13 @@ async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSessi
                         value_type="number", source_type="user_override"))
     db.add(ProjectFact(project_id=project_id, fact_key=minority_key, value="30.0",
                         value_type="number", source_type="user_override"))
+    await db.commit()
+    struct_ids = (await db.execute(
+        select(_PS.id).where(_PS.project_id == project_id)
+    )).scalars().all()
+    await db.execute(sa_delete(_SCR).where(
+        _SCR.structure_id.in_(struct_ids), _SCR.engine_version == ce.ENGINE_VERSION,
+    ))
     await db.commit()
     te._BILATERAL[frozenset({"MU", "GB"})] = treaty
     try:
