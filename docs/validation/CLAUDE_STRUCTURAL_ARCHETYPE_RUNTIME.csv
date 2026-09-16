@@ -1,0 +1,13 @@
+archetype_id,archetype,proof_test_or_control,status
+ARCH-01,anchor principal production + foreign post,"HO-001, HO-002, test_ho007, test_spend_is_conserved_across_components",SUPPORTED
+ARCH-02,anchor principal production + foreign VFX,"HO-001, HO-002 (ocase vfx leg)",SUPPORTED
+ARCH-03,anchor principal production + foreign music post,"test_registered_control_5* (NY post), HO-009 (NY post leg)",SUPPORTED
+ARCH-04,principal A + post/VFX B,test_disjoint_countries_with_no_registered_rule_are_allowed_by_default,SUPPORTED
+ARCH-05,principal A + post B + VFX C,"HO-001, HO-002 (3-jurisdiction: principal+post+vfx)",SUPPORTED
+ARCH-06,separate service-production components,HO-006 (BC-only 2-way leg: ca_bc_pstc+ca_bc_dave),SUPPORTED
+ARCH-07,national production + regional component,"HO-006 (ca_federal_pstc+ca_bc_pstc, correctly rejected: genuine unresolved authority gap, not a generator limitation)",SUPPORTED (generator); underlying legal pair remains AUTHORITY_RESEARCH_REQUIRED (out of scope this workstream)
+ARCH-08,official bilateral co-production,"HO-003 (uk_avec+au_producer_offset as independent national programs, not via the treaty engine -- treaty-registered bilateral hybrids remain a Prompt-2 item)",PARTIALLY_SUPPORTED (generic generator handles the component composition; treaty-minimum-fallback hybrid completion is explicitly reserved for Prompt 2)
+ARCH-09,official multilateral co-production,HO-012 (uk_avec+ie_section_481+fr_trip),PARTIALLY_SUPPORTED (same treaty caveat as ARCH-08)
+ARCH-10,co-production + third-jurisdiction post/VFX/music,"HO-003, HO-013",PARTIALLY_SUPPORTED (same treaty caveat as ARCH-08)
+ARCH-11,formulaic fund overlay,HO-010 (ca_federal_cptc+on_ofttc+ca_sk_creative_saskatchewan_grant),SUPPORTED
+ARCH-12,selective upside overlay,"HO-011 (us_tn_performance_grant stays $0/$0 conditional, disclosed, does not block the structure)",SUPPORTED

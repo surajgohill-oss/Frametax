@@ -1,0 +1,7 @@
+test,scenario,result
+Same-line double claim,two components share one source line_id,REJECTED: 'budget line ... is claimed by more than one component' (test_same_cost_double_claim_is_refused_by_construction)
+NY same-line double claim,ny_state_film and us_ny_post_production_credit share one source line_id,REJECTED (test_registered_control_5c_ny_same_line_cannot_claim_both_programs)
+"NY distinct-cost, real minimum met","principal $3,000,000 (disjoint lines) + post $1,500,000 (disjoint lines, clears real $1,000,000 minimum)","PRICED, both components independently priced off their own allocation only (test_registered_control_5_ny_distinct_cost_stacking)"
+"NY distinct-cost, real minimum NOT met","principal $3,000,000 + post $400,000 (below real $1,000,000 minimum)",REJECTED: post component fails its own real threshold (test_registered_control_5b_ny_post_below_real_threshold_rejects)
+Ireland+UK distinct jurisdictional components,"ie_section_481 $3,000,000 (Irish lines) + uk_avec $3,000,000 (UK lines), no shared lines","PRICED, each program's QPE equals ONLY its own $3,000,000 allocation, never the combined $6,000,000 (test_registered_control_4_ireland_uk_uses_separate_jurisdictional_components)"
+Principal-photography spend excluded from post QPE,"NY principal component (component_type=principal_production) vs NY post component (component_type=post), separate line_ids","post component's own segment.qpe_usd equals exactly its own $1,500,000 allocation, not $4,500,000 combined (test_registered_control_5_ny_distinct_cost_stacking)"

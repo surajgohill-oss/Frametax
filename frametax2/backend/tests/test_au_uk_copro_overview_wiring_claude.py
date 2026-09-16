@@ -65,6 +65,22 @@ async def db():
         yield session
 
 
+@pytest.fixture
+async def little_utopia_evaluated(db: AsyncSession):
+    """CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION, Task 1: the two DB-
+    level tests below read a StructureCalculationResult row keyed on the
+    CURRENT ce.ENGINE_VERSION and this project's CURRENT input
+    fingerprint. Depending on some OTHER test file (elsewhere in the
+    suite, or a prior run) having already called evaluate_project() for
+    Little Utopia was a real test-isolation defect -- this file must
+    create its own required state, not assume another file's ordering.
+    This fixture evaluates Little Utopia fresh, in this file, every time
+    either dependent test runs, so the suite passes on a first clean run
+    regardless of file/test order in the overall run."""
+    await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    return LITTLE_UTOPIA_PROJECT_ID
+
+
 # ---------------------------------------------------------------------------
 # A — the real, sourced treaty registry entry
 # ---------------------------------------------------------------------------
@@ -221,7 +237,9 @@ def test_conditional_scenario_prices_uk_avec_and_au_producer_offset_at_the_treat
 # D — live-DB / served-view proof against Little Utopia's real Production Record
 # ---------------------------------------------------------------------------
 
-async def test_little_utopia_uk_au_bilateral_is_served_conditional_with_real_priced_economics(db: AsyncSession):
+async def test_little_utopia_uk_au_bilateral_is_served_conditional_with_real_priced_economics(
+    db: AsyncSession, little_utopia_evaluated: str,
+):
     """Real, live, end-to-end proof (the same live state the browser test
     read via GET /projects/{id}/state): Little Utopia's real, confirmed
     GB writer + AU director make uk-au-bilateral CONDITIONAL, not
@@ -260,7 +278,9 @@ async def test_little_utopia_uk_au_bilateral_is_served_conditional_with_real_pri
     assert cs["assumption_fact_classification"] == "PROPOSED_CHANGE"
 
 
-async def test_little_utopia_producers_do_not_block_the_uk_au_structure(db: AsyncSession):
+async def test_little_utopia_producers_do_not_block_the_uk_au_structure(
+    db: AsyncSession, little_utopia_evaluated: str,
+):
     """Real, live proof of the policy's own 'existing US producers do not
     automatically block the structure' requirement: Little Utopia's real,
     confirmed US producers (Rachel Winter, Max Botkin) coexist with a
@@ -347,3 +367,58 @@ async def test_all_four_productions_served_personnel_match_their_real_stored_pro
                 assert rf.has_unconfirmed_attachment is True, (
                     f"{name}: unconfirmed {role} must be reported as unconfirmed, never silently dropped"
                 )
+
+
+# ---------------------------------------------------------------------------
+# E — CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION, Task 1: order independence
+# ---------------------------------------------------------------------------
+
+async def test_uk_au_bilateral_row_is_self_sufficient_regardless_of_prior_evaluation_state(
+    db: AsyncSession,
+):
+    """Prevention test for the exact defect this workstream fixes: the two
+    tests above must never depend on ANY other test file having already
+    evaluated Little Utopia. Proven directly here by calling
+    evaluate_project() twice in two different surrounding call sequences
+    (interleaved with an unrelated project's own evaluation, simulating
+    a different file/test having run in between) and confirming the
+    uk-au-bilateral row's real, substantive fields are byte-identical
+    both times -- the served state depends only on this project's own
+    real inputs, never on incidental test ordering."""
+    # Sequence 1: evaluate an unrelated project first, then Little Utopia --
+    # simulates test_hybrid_anchor_relationship_types.py or
+    # test_treaty_coproduction_wiring.py running BEFORE this file.
+    await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
+    await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    fp1 = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
+    row1 = (await db.execute(
+        select(StructureCalculationResult.calculation_trace_json)
+        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+        .where(
+            ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+            StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
+            StructureCalculationResult.input_fingerprint == fp1,
+            StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == "uk-au-bilateral",
+        )
+    )).scalar_one()
+
+    # Sequence 2: evaluate Little Utopia FIRST, with nothing before it --
+    # simulates this file running alone / first, exactly as pytest would
+    # if file order were reversed.
+    await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    fp2 = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
+    row2 = (await db.execute(
+        select(StructureCalculationResult.calculation_trace_json)
+        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+        .where(
+            ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+            StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
+            StructureCalculationResult.input_fingerprint == fp2,
+            StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == "uk-au-bilateral",
+        )
+    )).scalar_one()
+
+    assert fp1 == fp2, "Little Utopia's own fingerprint must not depend on what else was evaluated first"
+    for key in ("opportunity_relevance", "personnel_gate_state", "candidate_status",
+                "is_baseline", "is_directly_comparable"):
+        assert row1[key] == row2[key], f"{key} differs between orderings: {row1[key]!r} vs {row2[key]!r}"

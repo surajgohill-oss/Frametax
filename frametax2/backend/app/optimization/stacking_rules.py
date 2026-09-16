@@ -19,7 +19,8 @@ from __future__ import annotations
 #: so a stacking-compatibility/reduction-rule change invalidates cached
 #: served evaluations, including combined-structure results. Bump on any
 #: material change.
-STACKING_RULES_VERSION = "1.2.0"  # 1.2.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT -- added on_ofttc+ocase and on_opstc+ocase spend_reduction rules (confirmed directly against ontariocreates.ca's own official OCASE page), matching CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015.
+STACKING_RULES_VERSION = "1.3.0"  # 1.3.0: CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION -- added ca_bc_pstc+ca_bc_dave (ADDITIVE, EVID-004) and ca_federal_cptc+ca_sk_creative_saskatchewan_grant (allowed, ARCH-11's own canonical example), both previously missing from the registry entirely; corrected ny_state_film+us_ny_post_production_credit from blanket mutually_exclusive to same_cost_prohibited_distinct_costs_allowed (CODEX_STACKING_REGISTRY_RECONCILIATION.csv: WRONG_DISPOSITION), consumed by the new generic structural_archetype_generator as non-blocking (distinct-cost enforced structurally) and by the older same-jurisdiction bridge as still-blocking (no distinct-cost awareness there).
+# 1.2.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT -- added on_ofttc+ocase and on_opstc+ocase spend_reduction rules (confirmed directly against ontariocreates.ca's own official OCASE page), matching CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015.
 # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
 
 from app.data.global_inventory import GlobalProgramEntry
@@ -508,6 +509,41 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "service production (OPSTC) simultaneously."
         ),
     },
+    # CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION: registered per
+    # CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-004 (AUTHORITY_SUPPORTED
+    # ADDITIVE), citing CRA Guide RC4385 (Film/Video Production Services
+    # Tax Credit Guide): "DAVE is a separate animation/VFX/post labour
+    # credit accompanying the BC production-services credit." This entry
+    # was missing from the runtime registry entirely (never a special
+    # case -- simply never transcribed), which is why an isolated
+    # ca_bc_pstc+ca_bc_dave control previously failed with
+    # UNRESOLVED_NO_AUTHORITY despite the corrected legal oracle already
+    # confirming it.
+    # CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION (Task 4, HO-010):
+    # CODEX_STRUCTURAL_COMPONENT_ARCHETYPES.csv's own ARCH-11 ("formulaic
+    # fund overlay") names this EXACT pair as its canonical example. A
+    # federal, formulaic, non-discretionary labour credit and a
+    # different province's own separate, discretionary/competitive
+    # production fund do not compete for the same election or cost base
+    # -- Saskatchewan's fund remains conditional upside (Locked
+    # Structural Policy point 9), never guaranteed, but the pairing
+    # itself is not a legal conflict.
+    frozenset({"ca_federal_cptc", "ca_sk_creative_saskatchewan_grant"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "A federal, formulaic labour credit and a separate province's own "
+            "discretionary production fund do not compete for the same election or "
+            "cost base -- the fund remains conditional upside, never guaranteed."
+        ),
+    },
+    frozenset({"ca_bc_pstc", "ca_bc_dave"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "DAVE is a separate animation/VFX/post labour credit accompanying the BC "
+            "production-services credit (CRA Guide RC4385) -- both may be claimed on "
+            "their own respective qualifying bases."
+        ),
+    },
     # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT (Phase B/D):
     # confirmed directly against Ontario Creates' own official OCASE page
     # (ontariocreates.ca/tax-incentives/ocase, fetched live): "The OCASE
@@ -535,24 +571,40 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "animation/VFX labour expenditure (ontariocreates.ca)."
         ),
     },
-    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
-    # us_ny_post_production_credit's blanket KEEP_SEPARATE fail-closed veto
-    # was removed (authority_coverage_registry.py) so the program can price.
-    # The real, substantive constraint from US_NY_POST_DOCTRINE
-    # (tax.ny.gov: "if the film post-production credit is claimed for
-    # qualified post-production costs, no other income tax credit may be
-    # claimed for those costs") is preserved here as a named rule so a
-    # single structure can never claim both for the same cost base.
+    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION /
+    # CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION (Task 5): the real,
+    # substantive constraint from US_NY_POST_DOCTRINE (tax.ny.gov: "if the
+    # film post-production credit is claimed for qualified post-production
+    # costs, no other income tax credit may be claimed for those costs")
+    # PROHIBITS claiming the SAME cost base twice -- it does NOT prohibit
+    # the two programs from ever coexisting in one structure when each
+    # claims a genuinely DISTINCT, separately-allocated cost pool.
+    # CODEX_STACKING_REGISTRY_RECONCILIATION.csv classifies the prior
+    # blanket "mutually_exclusive" disposition here WRONG_DISPOSITION,
+    # corrected to SAME_COST_PROHIBITED_DISTINCT_COSTS_ALLOWED. This new
+    # rule_type is handled DIFFERENTLY by the two stacking mechanisms that
+    # consume it: canonical_stack_bridge.py's older same-jurisdiction
+    # group-stacking bridge has no distinct-cost awareness (it prices
+    # each member off the SAME whole segment) and must keep treating this
+    # as a hard block, exactly like mutually_exclusive, to avoid a real
+    # same-cost double-count; app.calculators.structural_archetype_
+    # generator's newer, per-component generator ALREADY refuses any two
+    # components sharing a source budget-line ID before this rule is even
+    # consulted, so distinct-cost composition is safe there and this
+    # disposition is non-blocking at that layer. See
+    # test_registered_control_5_ny_distinct_cost_stacking (isolated NY
+    # budget, real >=$1,000,000 post-only pool, disjoint line_ids from
+    # the principal pool) for the runtime proof.
     frozenset({"ny_state_film", "us_ny_post_production_credit"}): {
-        "rule_type": "mutually_exclusive",
+        "rule_type": "same_cost_prohibited_distinct_costs_allowed",
         "condition_text": (
             "New York's principal film production credit (ny_state_film) and the "
-            "Empire State Post-Production Credit (us_ny_post_production_credit) are "
-            "mutually exclusive for the same qualified costs (tax.ny.gov: 'no other "
-            "income tax credit may be claimed for those costs'). A production may "
-            "claim the principal credit for its production spend and the post credit "
-            "for a genuinely separate post-only routing, but never both against the "
-            "same cost base within one structure."
+            "Empire State Post-Production Credit (us_ny_post_production_credit) may "
+            "never claim the SAME qualified costs (tax.ny.gov: 'no other income tax "
+            "credit may be claimed for those costs'), but a production may claim the "
+            "principal credit for its production spend and the post credit for a "
+            "genuinely separate, separately-allocated post-only cost pool within one "
+            "structure -- same-cost is prohibited, distinct-cost routing is allowed."
         ),
     },
     # OFTTC is government assistance reducing CPTC qualified labour (ITA §125.4)

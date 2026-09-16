@@ -1,7 +1,0 @@
-pair,expected_disposition,little_utopia,fk_valentines_day,bad_hombres,lips_like_sugar,status_this_workstream
-on_ofttc + on_opstc,MUTUALLY_EXCLUSIVE,"GENERATED, REJECTED","GENERATED, REJECTED","GENERATED, REJECTED","GENERATED, REJECTED","unchanged, already correct"
-ca_bc_pstc + ca_federal_cptc,MUTUALLY_EXCLUSIVE,not generated (CPTC fails content certification for this production),"GENERATED, REJECTED","GENERATED, REJECTED","GENERATED, REJECTED",fixed prior workstream (594c903)
-ca_federal_cptc + on_ofttc,ALLOWED_WITH_SPEND_REDUCTION,not generated (CPTC fails content certification for this production),"GENERATED, PRICED","GENERATED, PRICED","GENERATED, PRICED",fixed prior workstream (594c903)
-ca_federal_cptc + on_opstc,MUTUALLY_EXCLUSIVE,not generated (CPTC fails content certification for this production),"GENERATED, REJECTED","GENERATED, REJECTED","GENERATED, REJECTED",fixed prior workstream (594c903)
-ie_section_481 + uk_avec,"GENERIC_STRUCTURAL_ARCHITECTURE required (cross-country, not a same-jurisdiction legal pair)",not generated,not generated,not generated,not generated,NOT IMPLEMENTED -- requires a new cross-country structural archetype (Phase D) not built
-ny_state_film + us_ny_post_production_credit,SAME_COST_PROHIBITED_DISTINCT_COSTS_ALLOWED,not generated,not generated,not generated,not generated,NOT IMPLEMENTED -- current registered rule (mutually_exclusive) is safe but overbroad per 940ef8f; correcting requires a new distinct-cost structural mechanism not built this workstream
