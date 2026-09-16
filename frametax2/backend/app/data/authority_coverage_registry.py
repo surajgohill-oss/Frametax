@@ -241,7 +241,8 @@ from __future__ import annotations
 #: chain now inherits its terminal disposition instead of being resolved
 #: only one hop, which could previously let a corrupted intermediate alias
 #: reach an injected rule undetected.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.7.0"  # 1.7.0: CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT -- removed ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit from _B1_DISCRETIONARY_RULING (49 -> 45 entries); each is a real, standard, non-discretionary Canadian tax credit with a directly-sourced official rate and guaranteed non-band-ceiling floor tier, genuinely misclassified as authority-exhausted. Invalidates every cached row so this fires fresh.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.8.0"  # 1.8.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE Task 6 -- removed us_il_film_production_services_credit plus 18 further Codex-confirmed STATUTORY_FORMULAIC entries (au_nsw_pdv_rebate, si_cash_rebate, au_pdv_offset, au_qld_pdv_rebate, au_sa_pdv_rebate, fj_film_rebate, ge_film_rebate, me_cash_rebate, mk_cash_rebate, mn_production_incentive, mx_federal_film_incentive_2026, pt_scri_pt_cash_rebate, pt_scri_pt_medium_budget, tt_production_expenditure_rebate, ua_cash_rebate, uy_tax_credit_2026, uz_film_rebate, za_dtic_foreign_film) from _B1_DISCRETIONARY_RULING (45 -> 26 entries) -- each carries a real, current, non-discretionary RateRule with an official citation, genuinely misclassified as authority-exhausted, identical reasoning to the 1.7.0 Canadian removals. Every remaining row independently reconfirmed still correctly blocked via a direct economic_block_for_program() runtime check. See CLAUDE_32_PROGRAM_RUNTIME_RECONCILIATION.csv.
+# 1.7.0: CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT -- removed ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit from _B1_DISCRETIONARY_RULING (49 -> 45 entries); each is a real, standard, non-discretionary Canadian tax credit with a directly-sourced official rate and guaranteed non-band-ceiling floor tier, genuinely misclassified as authority-exhausted.
 
 from dataclasses import dataclass
 from typing import Literal
@@ -907,15 +908,48 @@ from app.data.program_slug_aliases import PROGRAM_SLUG_ALIASES  # noqa: E402
 #: 30%-floor/60%-ceiling) already prevents the uplift from being treated as
 #: guaranteed. See CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv for the full,
 #: independently-reasoned disposition of every remaining entry.
+#:
+#: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Task 6,
+#: P1-AUTH-001): a FIFTH entry, us_il_film_production_services_credit, was
+#: REMOVED this workstream for the identical reason as the four Canadian
+#: entries above -- program_rate_rules_worldwide.py's own VERIFIED,
+#: directly-fetched dceo.illinois.gov citation describes a straightforward
+#: non-band-ceiling 35% tax credit with no stated application/selection/
+#: competitive process (Illinois resident/non-resident payroll and general
+#: vendor spend), so the FAIL_CLOSED gate was a genuine misclassification
+#: leaving an already-correct, already-sourced formulaic rate permanently
+#: unpriceable rather than a defensible fail-closed.
+#: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Task 6): 18
+#: further entries REMOVED this workstream, extending the identical
+#: reasoning as the ca_bc_pstc/ca_federal_pstc/ca_qc_pstc/
+#: ca_nl_all_spend_credit/us_il_film_production_services_credit removals
+#: above. Codex's own 32-program primary-source evidence reconciliation
+#: (CODEX_32_PROGRAM_EVIDENCE_RECONCILIATION.csv) classifies each of these
+#: 18 STATUTORY_FORMULAIC -- a real, current, non-discretionary rate with
+#: a directly-sourced official citation and a real RateRule already
+#: registered in program_rate_rules_worldwide.py -- yet every one was
+#: STILL fail-closed here, permanently zeroing an already-correct,
+#: already-sourced formulaic rate: au_nsw_pdv_rebate, si_cash_rebate,
+#: au_pdv_offset, au_qld_pdv_rebate, au_sa_pdv_rebate, fj_film_rebate,
+#: ge_film_rebate, me_cash_rebate, mk_cash_rebate, mn_production_incentive,
+#: mx_federal_film_incentive_2026, pt_scri_pt_cash_rebate,
+#: pt_scri_pt_medium_budget, tt_production_expenditure_rebate,
+#: ua_cash_rebate, uy_tax_credit_2026, uz_film_rebate, za_dtic_foreign_film.
+#: Two of these (me_cash_rebate, pt_scri_pt_medium_budget) also carry a
+#: SEPARATE Codex rate/cap claim this workstream independently
+#: investigated and did NOT adopt (see CLAUDE_CODEX_FINDING_DISPOSITIONS.csv,
+#: REJECTED_WITH_EVIDENCE) -- unblocking them here is independent of, and
+#: does not imply agreement with, that separate unconfirmed rate/cap claim;
+#: their EXISTING, already-sourced rates (25% / EUR1.5m) are unchanged.
+#: Every remaining row of the 32 (UNRESOLVED/INFORMATIONAL_ONLY/
+#: DUPLICATE_ALIAS/genuinely selective-or-competitive) stays fail-closed or
+#: display-only exactly as before -- confirmed via a direct
+#: economic_block_for_program()/resolve_program_rate() runtime check, not
+#: assumed.
 _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "ae_ad_film_rebate": "FAIL_CLOSED",
     "ag-us-pr-puerto-rico-film-industry-economic-incentives-act": "FAIL_CLOSED",
     "al_cash_rebate": "FAIL_CLOSED",
-    "au_nsw_pdv_rebate": "FAIL_CLOSED",
-    "si_cash_rebate": "FAIL_CLOSED",
-    "au_pdv_offset": "FAIL_CLOSED",
-    "au_qld_pdv_rebate": "FAIL_CLOSED",
-    "au_sa_pdv_rebate": "FAIL_CLOSED",
     "be_tax_shelter": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "ca_sk_production_grant": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "ch_pics_national_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
@@ -923,39 +957,25 @@ _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "de_dfff": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "dk_production_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "eg_empc_cashback": "FAIL_CLOSED",
-    "fj_film_rebate": "FAIL_CLOSED",
-    "ge_film_rebate": "FAIL_CLOSED",
     "gh_film_tax_incentive": "FAIL_CLOSED",
     "il_foreign_production_fund": "FAIL_CLOSED",
     "in_national_film": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "lu_filmfund_tax_shelter_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "me_cash_rebate": "FAIL_CLOSED",
-    "mk_cash_rebate": "FAIL_CLOSED",
-    "mn_production_incentive": "FAIL_CLOSED",
-    "mx_federal_film_incentive_2026": "FAIL_CLOSED",
     "no_film_incentive": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "pa_film_rebate": "FAIL_CLOSED",
     "ph_fdcp_flip": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "pt_scri_pt_cash_rebate": "FAIL_CLOSED",
-    "pt_scri_pt_medium_budget": "FAIL_CLOSED",
     "qa_screen_production_incentive": "FAIL_CLOSED",
     "sa_film_commission_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "se_production_rebate": "FAIL_CLOSED",
     "sg_made_with_singapore_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "th_boi_incentive": "FAIL_CLOSED",
-    "tt_production_expenditure_rebate": "FAIL_CLOSED",
     "tw_bamid_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "ua_cash_rebate": "FAIL_CLOSED",
-    "us_il_film_production_services_credit": "FAIL_CLOSED",
     "us_tn_performance_grant": "FAIL_CLOSED",
     "us_wa_mpcp": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "uy_acau_cash_rebate": "FAIL_CLOSED",
-    "uy_tax_credit_2026": "FAIL_CLOSED",
-    "uz_film_rebate": "FAIL_CLOSED",
-    "za_dtic_foreign_film": "FAIL_CLOSED",
 }
-assert len(_B1_DISCRETIONARY_RULING) == 45  # 49 - 4 (ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit removed this workstream)
-assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 32  # 36 - 4
+assert len(_B1_DISCRETIONARY_RULING) == 26  # 49 - 4 (ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit) - 1 (us_il_film_production_services_credit) - 18 (the STATUTORY_FORMULAIC batch above), all removed this workstream (CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE Task 6)
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 13  # 36 - 4 - 1 - 18
 assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 13
 
 #: Retired / superseded runtime identities that must never resolve to an

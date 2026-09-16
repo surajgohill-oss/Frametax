@@ -499,82 +499,87 @@ def test_no_priced_segment_ever_exceeds_its_own_declared_dollar_cap():
 
 # ── CLUSTER 5 — a labour base is not all-spend ───────────────────────────
 
-def test_programs_declaring_a_narrower_rate_base_do_not_price_off_all_spend():
-    """Canada's CPTC/PSTC family applies its rate to qualified LABOUR, and
-    says so canonically via a rate condition of kind
-    rate_base_narrower_than_qpe. The narrower base cannot be derived from the
-    facts on file (BudgetLineItem.is_labor is populated on only a handful of
-    lines per budget, and residency splits are absent), so these programs must
-    fail closed rather than multiply the rate by the broad register."""
+#: The Canadian labour-only-base categories every fixed program below
+#: shares -- same set used in program_rate_rules_worldwide.py itself.
+_CA_LABOUR_CATEGORIES = (
+    "atl_writer", "atl_director", "atl_producer", "atl_cast",
+    "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+)
+
+
+def test_narrower_rate_base_programs_never_price_off_all_spend_without_real_labour_lines():
+    """CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Task 4):
+    ca_bc_pstc/ca_federal_pstc/ca_federal_cptc used to declare
+    kind='rate_base_narrower_than_qpe' -- a condition that only ever
+    DISCLOSED a narrower base was required and never bound one, so these
+    programs could never price at all (Codex's exact P1-STACK-001
+    reproduction: 'ca_bc_pstc + ca_federal_cptc' never generated because
+    neither member could individually price). They now use the SAME
+    generic component_basis_spend_categories mechanism as ca_bc_dave --
+    this proves the invariant the old kind existed to protect is STILL
+    held: a segment with NO real labour-category spend must still fail
+    closed rather than price off the broad, non-labour register."""
     from app.data.program_rate_rules import _RULES_BY_PROGRAM
 
-    declaring = sorted({
-        slug for slug, rules in _RULES_BY_PROGRAM.items()
-        for rule in rules
-        for condition in rule.conditions
-        if condition.kind == "rate_base_narrower_than_qpe"
-    })
-    assert declaring, "expected real programs declaring a narrower rate base"
-    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
-    # ca_bc_pstc and ca_federal_pstc's B1 discretionary-ruling authority veto
-    # was removed this workstream (see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv
-    # -- both are real, standard, non-discretionary Canadian tax credits,
-    # genuinely misclassified as authority-exhausted). They now correctly
-    # reach THIS narrower-rate-base gate instead, same as every other
-    # declaring program -- a more accurate fail-closed reason (the real
-    # blocker is that qualified LABOUR cannot be reliably derived from
-    # current budget-line data, not that the program's authority is
-    # unresolved), not a regression.
-    for slug in declaring:
-        seg = _probe_segment_amount(slug, 11_000_000.0)
-        assert seg.executable is False, f"{slug} priced off the broad base"
-        assert not seg.incentive_floor_usd
-        assert seg.blockers and "narrower base" in seg.blockers[0].lower()
-        # Withheld, not erased.
-        assert seg.allocated_usd == pytest.approx(11_000_000.0)
-
-
-def test_narrower_base_check_scans_every_tier_not_just_the_selected_one():
-    """ca_bc_pstc declares ca-bc-labour-only-base on its 36% BASE tier while
-    rate resolution used to select the 48% regional-ceiling tier. A check
-    that only inspected the resolved tier's evaluated conditions would miss
-    it and still price the broad base -- the qualifying base is a property
-    of the PROGRAM, not of whichever tier won selection.
-
-    CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT: the
-    B1 discretionary-ruling authority veto on ca_bc_pstc was removed this
-    workstream (real, standard, non-discretionary Canadian tax credit,
-    genuinely misclassified -- see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv).
-    resolve_program_rate now correctly SELECTS the 48% regional/distant-
-    location ceiling tier (the highest-rate eligible tier, per the
-    resolution tournament's own rate-descending selection order) -- but the
-    narrower-base condition lives on the SEPARATE 36% BASE tier, not the
-    selected one. This is exactly the scenario this test exists to prove:
-    a check inspecting only the selected tier's own evaluated conditions
-    would MISS the base tier's narrower-base declaration and still let the
-    segment price off the broad register. The real, current, correct
-    behavior is that the segment fails closed on the narrower-base guard
-    regardless of which tier resolve_program_rate selects."""
-    from app.data.program_rate_rules import _RULES_BY_PROGRAM, resolve_program_rate
-
-    rr = resolve_program_rate(
-        "ca_bc_pstc", production_type="feature_film", qpe_usd=11_000_000.0,
-    )
-    assert rr is not None, "ca_bc_pstc must now resolve a real rate (B1 veto removed)"
-    assert rr.modeled_rate == pytest.approx(0.48), (
-        "the highest-rate eligible tier (48% regional/distant-location ceiling) must be selected"
-    )
-    # Doctrine-level proof the narrower-base condition lives on the OTHER
-    # (36% base) tier, not the one resolution selected.
-    assert any(
+    fixed_programs = [
+        slug for slug in ("ca_bc_pstc", "ca_federal_pstc", "ca_federal_cptc")
+        if slug in _RULES_BY_PROGRAM
+    ]
+    assert fixed_programs, "expected the three Canadian labour-base programs to be registered"
+    assert not any(
         c.kind == "rate_base_narrower_than_qpe"
-        for rule in _RULES_BY_PROGRAM["ca_bc_pstc"] for c in rule.conditions
-    ), "precondition: at least one real tier declares the narrower-base condition"
+        for slug in fixed_programs for rule in _RULES_BY_PROGRAM[slug] for c in rule.conditions
+    ), "the disclosure-only kind must be fully replaced, not left alongside the real derivation"
+    for slug in fixed_programs:
+        # No labour-category spend at all (the probe's one line is
+        # component='production', not a labour category) -- must still
+        # fail closed, never guess a labour subtotal from the broad base.
+        seg = _probe_segment_amount(slug, 11_000_000.0)
+        assert seg.executable is False, f"{slug} priced with zero real labour lines"
+        assert not seg.incentive_floor_usd
+        assert seg.allocated_usd == pytest.approx(11_000_000.0)  # withheld, not erased
 
-    assert _probe_segment_amount("ca_bc_pstc", 11_000_000.0).executable is False, (
-        "the segment must still fail closed on the narrower-base guard, "
-        "even though resolve_program_rate selected a DIFFERENT tier"
-    )
+
+def test_narrower_rate_base_programs_price_off_the_real_traced_labour_subtotal_only():
+    """The positive half of the invariant above: given REAL traced labour-
+    category lines, these programs must price off EXACTLY that subtotal --
+    never the segment's broader total QPE -- proving the fix is a genuine
+    derivation, not merely an unblock."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    labour_usd = 400_000.0
+    other_usd = 10_600_000.0
+    allocations = [
+        AccountAllocation(
+            account_code="1000", description="Director fee", amount_usd=labour_usd,
+            component="above_the_line", jurisdiction_code="XX",
+            assignment_kind=AssignmentKind.FIXED, rationale="probe",
+            governing_decision="x", line_id="L1", spend_category="atl_director",
+        ),
+        AccountAllocation(
+            account_code="2000", description="Non-labour production spend",
+            amount_usd=other_usd, component="principal_photography",
+            jurisdiction_code="XX", assignment_kind=AssignmentKind.FIXED,
+            rationale="probe", governing_decision="x", line_id="L2",
+            spend_category="production",
+        ),
+    ]
+    for slug in ("ca_bc_pstc", "ca_federal_pstc"):
+        seg = price_segment(
+            jurisdiction_code="XX", program_slug=slug, allocations=allocations,
+            spend_category_by_code={"1000": "atl_director", "2000": "production"},
+            offshore_payroll_accounts=frozenset(), production_type="feature_film",
+            gross_budget_usd=labour_usd + other_usd,
+        )
+        assert seg.executable is True, (slug, seg.blockers)
+        # The priced incentive must derive from the $400,000 labour subtotal,
+        # never from the full $11,000,000 segment.
+        rate = 0.36 if slug == "ca_bc_pstc" else 0.16
+        assert seg.incentive_floor_usd == pytest.approx(labour_usd * rate), (
+            f"{slug} incentive must be {rate:.0%} of the real $400,000 labour "
+            f"subtotal only, got {seg.incentive_floor_usd}"
+        )
 
 
 def test_a_broad_base_program_is_unaffected_by_the_narrower_base_guard():
@@ -1213,3 +1218,69 @@ def test_price_segment_derives_whole_segment_native_currency_amount_from_real_qp
     )
     assert econ.executable is True, econ.blockers
     assert econ.qpe_usd == pytest.approx(2_000_000.0)
+
+
+def test_fr_trip_vfx_uplift_requires_the_real_traced_vfx_component_not_whole_qpe():
+    """CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Codex
+    P0-CALC-001): fr_trip's 40% VFX uplift must derive from the real
+    France-jurisdiction vfx-component allocation only. A segment with a
+    large total QPE but a small (sub-EUR2m) traced vfx component must
+    stay on the 30% floor; an independent expected-value check, not a
+    reuse of price_segment's own internal helper as the oracle."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    small_vfx_usd = 50_000.0  # well under EUR 2,000,000 at any plausible FX rate
+    rest_usd = 5_000_000.0
+    allocations = [
+        AccountAllocation(
+            account_code="1", description="vfx", amount_usd=small_vfx_usd,
+            component="vfx", jurisdiction_code="FR", assignment_kind=AssignmentKind.FIXED,
+            rationale="test", governing_decision="x", line_id="V1",
+        ),
+        AccountAllocation(
+            account_code="2", description="principal photography", amount_usd=rest_usd,
+            component="principal_photography", jurisdiction_code="FR",
+            assignment_kind=AssignmentKind.FIXED, rationale="test",
+            governing_decision="x", line_id="V2",
+        ),
+    ]
+    econ = price_segment(
+        jurisdiction_code="FR", program_slug="fr_trip", allocations=allocations,
+        spend_category_by_code={"1": "vfx", "2": "principal_photography"},
+        offshore_payroll_accounts=frozenset(), production_type="feature_film",
+    )
+    assert econ.executable is True, econ.blockers
+    expected_incentive = round((small_vfx_usd + rest_usd) * 0.30, 2)
+    assert econ.incentive_floor_usd == pytest.approx(expected_incentive), (
+        "a small traced VFX component must keep fr_trip on the 30% floor, "
+        "never the 40% VFX-ceiling tier, regardless of total segment QPE"
+    )
+
+
+def test_lv_national_film_centre_prices_the_real_primary_sourced_30_percent():
+    """CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Codex
+    P0-CALC-002): the National Film Centre of Latvia's own official rate
+    (nkc.gov.lv, CLAUDE_LATVIA_PRIMARY_SOURCE_RESOLUTION.md) is a single
+    flat 30% gated on a real USD 811,409.80 minimum -- never Codex's own
+    provisional, unsourced 20% floor, and never the prior unconditional-
+    ceiling defect (any segment, however small, resolving 30%)."""
+    from app.data.program_rate_rules import resolve_program_rate
+
+    # Comfortably above the real threshold -> must resolve exactly 30%.
+    rr_above = resolve_program_rate(
+        "lv_national_film_centre_incentive", production_type="feature_film",
+        qpe_usd=2_000_000.0,
+    )
+    assert rr_above is not None
+    assert rr_above.modeled_rate == pytest.approx(0.30)
+    assert rr_above.floor_rate == pytest.approx(0.30)
+
+    # Genuinely below the real threshold -> must NOT resolve at all (the
+    # exact defect this workstream fixed: the old unconditional ceiling
+    # would have resolved 30% here too).
+    rr_below = resolve_program_rate(
+        "lv_national_film_centre_incentive", production_type="feature_film",
+        qpe_usd=50_000.0,
+    )
+    assert rr_below is None, "a genuinely tiny segment must fail the real minimum-spend gate"

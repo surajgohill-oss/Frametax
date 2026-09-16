@@ -866,19 +866,36 @@ CA_DOCTRINE = register(DoctrineRecord(
             rate=0.16,
             is_band_ceiling=False,
             conditions=(
+                # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE
+                # (Task 4, ca_federal_pstc individual-pricing repair): the
+                # prior kind="rate_base_narrower_than_qpe" only ever
+                # DISCLOSED that a narrower base was required -- it never
+                # bound one, so this program could never price at all.
+                # Reuses the EXACT SAME generic canonical-line
+                # reconciliation mechanism already established for
+                # ca_bc_dave (this same file) -- the citation text names
+                # only "qualified Canadian labour expenditures", the same
+                # labour-category basis DAVE uses, never a residency
+                # split (no source found requiring one for this program).
                 RateCondition(
                     condition_id="ca-labour-only-base",
                     description="Rate applies to qualified CANADIAN LABOUR "
-                                "expenditure specifically, not total QPE — "
-                                "this engine has no labour/non-labour QPE "
-                                "split, so 16% against total QPE is a "
-                                "conservative, disclosed approximation "
-                                "(understates for high non-labour spend, "
-                                "never overstates)",
+                                "expenditure specifically -- a real, "
+                                "exactly-traced-and-reconciled basis "
+                                "derived from this segment's own labour-"
+                                "category AccountAllocation lines, never "
+                                "the segment's total QPE.",
                     quote="calculated as 16% of the qualified Canadian "
                           "labour expenditures for an accredited production "
                           "(northbridgeconsultants.com)",
-                    kind="rate_base_narrower_than_qpe",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="ca_federal_pstc_qualified_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
                 ),
             ),
         ),
@@ -940,15 +957,29 @@ CA_BC_DOCTRINE = register(DoctrineRecord(
             rate=0.36,
             is_band_ceiling=False,
             conditions=(
+                # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE
+                # (Task 4): same fix as ca_federal_pstc and ca_bc_dave
+                # above -- the citation names only "qualified B.C. labour
+                # expenditures", the same labour-category basis DAVE uses,
+                # never a residency split.
                 RateCondition(
                     condition_id="ca-bc-labour-only-base",
                     description="Rate applies to qualified BC LABOUR "
-                                "expenditure specifically, not total QPE — "
-                                "same disclosed conservative-approximation "
-                                "caveat as the federal PSTC",
+                                "expenditure specifically -- a real, "
+                                "exactly-traced-and-reconciled basis "
+                                "derived from this segment's own labour-"
+                                "category AccountAllocation lines, never "
+                                "the segment's total QPE.",
                     quote="Production services tax credit (36%) [on] "
                           "qualified B.C. labour expenditures (gov.bc.ca)",
-                    kind="rate_base_narrower_than_qpe",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="ca_bc_pstc_qualified_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
                 ),
             ),
         ),
@@ -5891,21 +5922,39 @@ CA_CPTC_DOCTRINE = register(DoctrineRecord(
             rate=0.25,
             is_band_ceiling=False,
             conditions=(
+                # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE
+                # (Task 4): same real labour-category derivation as
+                # ca_federal_pstc/ca_bc_pstc/ca_bc_dave above -- disclosed
+                # remaining gap: the statutory 60%-of-net-production-cost
+                # CAP on the labour base itself is not separately enforced
+                # here (no acceptance production reaches this path: the
+                # separate CAVCO content-certification condition below
+                # correctly blocks every non-certified foreign production
+                # first, so this uncapped labour subtotal is never served
+                # as a priced dollar figure for any of the 4 acceptance
+                # productions).
                 RateCondition(
                     condition_id="ca-cptc-labour-only-base",
                     description="Rate applies to qualified CANADIAN LABOUR "
-                                "expenditure specifically (capped at 60% "
-                                "of net production cost), not total QPE -- "
-                                "this engine has no labour/non-labour QPE "
-                                "split, so 25% against total QPE is a "
-                                "conservative, disclosed approximation "
-                                "(understates for high non-labour spend, "
-                                "never overstates, same convention as "
-                                "ca_federal_pstc).",
+                                "expenditure specifically -- a real, "
+                                "exactly-traced-and-reconciled basis "
+                                "derived from this segment's own labour-"
+                                "category AccountAllocation lines, never "
+                                "the segment's total QPE. The statutory "
+                                "60%-of-net-production-cost cap on this "
+                                "base is disclosed but not separately "
+                                "enforced.",
                     quote="25 per cent of the qualified labour expenditure "
                           "... capped at not more than 60% of production "
                           "costs (canada.ca)",
-                    kind="rate_base_narrower_than_qpe",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="ca_federal_cptc_qualified_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
                 ),
                 RateCondition(
                     condition_id="ca-cptc-content-certification-required",
@@ -7465,22 +7514,32 @@ AU_NSW_DOCTRINE = register(DoctrineRecord(
 register_rate_rules(rate_rules_for(AU_NSW_DOCTRINE))
 
 # ── AU-Queensland: PDV-only rebate (mirrors AU-SA/AU-NSW pattern) ─────────
-# Catalog had 15% flat -- CONFIRMED as a PDV-scoped rate (Screen
-# Queensland), matches the AU-SA/AU-NSW narrow-scope pattern. Additional
-# regional incentives exist but magnitude undisclosed.
+# CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Task 6,
+# P1-AUTH-001): Codex's finding that the stale 15% figure (mbrellafilms.com,
+# a third-party site) is superseded is independently CONFIRMED directly
+# against Screen Queensland's own official page
+# (https://screenqueensland.com.au/investment-support/incentives/post-digital-vfx/,
+# fetched live 2026-09-16): "maximum incentive rate, from 15 per cent to 10
+# per cent (effective 4/9/2026)" -- a real, dated rate reduction, not a
+# stale-source discrepancy. Real minimum spend also confirmed: "spending a
+# minimum of AU$250,000 in qualifying PDV Queensland Production
+# Expenditure" (converted to USD via the canonical FX path: AUD 250,000 /
+# 1.5219 = USD 164,268.35).
 AU_QLD_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="AU-QLD", program_slug="au_qld_pdv_rebate",
     program_name="Queensland PDV Rebate (Screen Queensland)",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
-    is_refundable=True, is_transferable=False, min_spend_usd=None,
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    is_refundable=True, is_transferable=False, min_spend_usd=164_268.35,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="mbrellafilms.com: 'Queensland offers a 15% rebate of "
-              "qualifying PDV expenditure. Additional incentives may be "
-              "available for productions that choose to film in regional "
-              "areas of Queensland.' Confirms catalog's 15% figure, "
-              "clarifies it is PDV-scoped (mirrors AU-SA/AU-NSW pattern).",
-    source_ref="mbrellafilms.com-queensland",
-    tiers=(DoctrineRateTier(tier_id="au-qld-pdv-only-15", rate=0.15, is_band_ceiling=False,
+    citation="screenqueensland.com.au (Screen Queensland, official "
+             "government page, fetched 2026-09-16): 'maximum incentive "
+             "rate, from 15 per cent to 10 per cent (effective 4/9/2026)'; "
+             "'spending a minimum of AU$250,000 in qualifying PDV "
+             "Queensland Production Expenditure (PDV QPE)'. Supersedes the "
+             "prior stale mbrellafilms.com-sourced 15% figure.",
+    source_ref="screenqueensland.com.au-pdv-2026-09-16",
+    tiers=(DoctrineRateTier(tier_id="au-qld-pdv-only-10", rate=0.10, is_band_ceiling=False,
+                             min_qpe_usd=164_268.35,
                              conditions=(
                                  RateCondition(
                                      condition_id="au-qld-pdv-scope-only",
@@ -7711,38 +7770,53 @@ EE_DOCTRINE = register(DoctrineRecord(
 register_rate_rules(rate_rules_for(EE_DOCTRINE))
 
 # ── Latvia: National Film Centre Production Incentive ─────────────────────
-# Catalog had 20%/25% band. Fresh source gives a genuinely tiered
-# structure by spend, but with two internally-inconsistent tier
-# descriptions in the same search summary (EUR200K/400K/500K thresholds
-# vs EUR43K/100K thresholds) -- both disclosed, neither silently
-# resolved; base/ceiling (20%/30%) used as the outer bounds common to both.
+# CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Codex P0-CALC-002):
+# the prior catalog entry sourced camaleonrental.com (a generic third-party
+# production-service site) and blended TWO DIFFERENT Latvian programs' rates
+# into one incorrect 20%/25%/30% "outer bounds" structure with a 30%
+# is_band_ceiling tier carrying NO evaluable condition -- so 30% was always
+# selected unconditionally. Direct primary-source research against the
+# National Film Centre of Latvia's own official page
+# (https://nkc.gov.lv/en/cash-rebates, fetched live 2026-09-16; full text in
+# CLAUDE_LATVIA_SOURCE_LOG.jsonl) confirms: (1) the National Film Centre's
+# own scheme (this program) is a SINGLE FLAT 30% rate, not tiered, with real
+# deterministic eligibility criteria; (2) the 20%/25% figures in the old
+# source actually belong to the separate Riga Film Fund of the Council of
+# Riga (a different, city-level authority with its own cultural-content
+# gate and annual budget) -- not this program. See
+# CLAUDE_LATVIA_PRIMARY_SOURCE_RESOLUTION.md for the full analysis.
 LV_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="LV", program_slug="lv_national_film_centre_incentive",
     program_name="National Film Centre of Latvia Production Incentive",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
-    is_refundable=True, is_transferable=False, min_spend_usd=None,
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    is_refundable=True, is_transferable=False, min_spend_usd=811_409.80,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="camaleonrental.com: '20% rebate for QE of EUR200K, 25% for "
-              "EUR400K, and 30% for EUR500K' AND separately '20% cash "
-              "rebate... at EUR43,000 minimum spend, and 30% cash rebate "
-              "on all qualifying expenditure at EUR100,000 minimum "
-              "spend' -- two internally-inconsistent tier-threshold "
-              "descriptions in the same source, both disclosed rather "
-              "than silently reconciled. 20%/30% used as the outer bounds "
-              "common to both descriptions.",
-    source_ref="camaleonrental.com-latvia-tier-ambiguity",
-    tiers=(DoctrineRateTier(tier_id="lv-floor-20", rate=0.20, is_band_ceiling=False,
-                             conditions=(RateCondition(
-                                 condition_id="lv-tier-threshold-ambiguity",
-                                 description="Source gives two conflicting "
-                                             "spend-threshold schedules for "
-                                             "the 20%/25%/30% tiers -- not "
-                                             "reconciled, disclosed as a "
-                                             "genuine gap",
-                                 quote="(two conflicting tier descriptions "
-                                       "in the same source, camaleonrental.com)",
-                                 kind="material_funding_risk_not_modeled"),)),
-           DoctrineRateTier(tier_id="lv-ceiling-30", rate=0.30, is_band_ceiling=True),),
+    citation="nkc.gov.lv/en/cash-rebates (National Film Centre of Latvia, "
+             "official government page, fetched 2026-09-16): 'Support "
+             "intensity: 30% of eligible costs.' Minimum spend 'at least "
+             "711,436 EUR for feature and animation films' (converted to "
+             "USD 811,409.80 at the same canonical EUR rate, 0.87679 native "
+             "EUR per USD, that this codebase's own fr_trip min_qpe_usd "
+             "was independently derived from). Deterministic eligibility: "
+             "local production company agreement; filmed fully/partially "
+             "in Latvia; uses Latvian-established service providers; VAT "
+             "contributions to the state budget at least 50% of the "
+             "co-financing; foreign producer holds at least 50% of total "
+             "filming costs; foreign funding at least equal to eligible LV "
+             "costs; filming not started before application. The 'selection "
+             "rounds' / annual co-financing pool (2026: EUR 5.07M) is a "
+             "rolling, objective-eligibility, non-discretionary admission "
+             "process -- no merit ranking and no discretion over the RATE "
+             "itself -- so it is treated as a producer-controlled "
+             "administrative/annual-allocation fact per Locked Product "
+             "Policy, never as a selective/negotiated award. Documentary "
+             "threshold (EUR 142,287) disclosed but not modeled -- no "
+             "acceptance production is a documentary.",
+    source_ref="nkc.gov.lv-cash-rebates-2026-09-16",
+    tiers=(DoctrineRateTier(
+        tier_id="lv-flat-30", rate=0.30, is_band_ceiling=False,
+        min_qpe_usd=811_409.80,
+    ),),
 ))
 register_rate_rules(rate_rules_for(LV_DOCTRINE))
 

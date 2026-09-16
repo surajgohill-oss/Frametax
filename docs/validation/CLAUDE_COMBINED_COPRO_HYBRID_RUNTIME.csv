@@ -1,0 +1,5 @@
+production,treaty,personnel_gate,contribution_facts_on_file,resolution_state_reached,combined_structure_generated,root_cause_if_not_generated
+The Little Utopia,AU-UK bilateral,QUALIFIES (real GB writer + AU director confirmed),NO (no real majority_pct/minority_pct ProjectFact on file),NOT RESOLUTION_ELIGIBLE (contribution facts absent; no treaty-minimum fallback exists),NO,"evaluate_bilateral_coproduction_opportunity requires REAL evidenced contribution-share facts; Locked Product Policy's 'missing contribution shares may use treaty-minimum modeled assumptions' allowance is not yet implemented as a fallback path. This is the confirmed, sole reason combined_coproduction_component_stack never generates for this production."
+F#K Valentine's Day,n/a (no registered bilateral treaty partner reached RESOLUTION_ELIGIBLE),n/a,NO,NOT_RESOLUTION_ELIGIBLE,NO,"same root cause as Little Utopia -- generic to every production, not specific to AU-UK"
+Bad Hombres,n/a,n/a,NO,NOT_RESOLUTION_ELIGIBLE,NO,same root cause
+Lips Like Sugar,n/a,n/a,NO,NOT_RESOLUTION_ELIGIBLE,NO,same root cause

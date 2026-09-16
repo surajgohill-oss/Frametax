@@ -1455,15 +1455,32 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                             "exceeding EUR 2,000,000 — a real, objective, "
                             "statute-confirmed spend threshold (not a "
                             "discretionary approval band like MU's 'up to "
-                            "40%'), evaluated NATIVELY in EUR against a "
-                            "caller-evidenced VFX-specific spend fact "
-                            "distinct from total QPE — never converted "
-                            "to/from USD",
+                            "40%'), evaluated NATIVELY in EUR against the "
+                            "REAL, traced French-jurisdiction VFX-component "
+                            "spend, distinct from total French QPE — never "
+                            "the whole segment.",
                 quote="40%, if the French VFX expenses are more than EUR "
                       "2M (cnc.fr, TRIP page)",
                 kind="project_fact_dependent_uplift",
                 amount_fact_key="fr_trip_vfx_spend_eur",
                 amount_fact_min=2_000_000.0,
+                # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE
+                # (Codex P0-CALC-001): this condition previously had NO
+                # component-basis dimension, so the generic amount-fact
+                # derivation (added in CLAUDE_GENERIC_AMOUNT_GATED_
+                # DISCOVERY_REPAIR) incorrectly treated it as a
+                # WHOLE_SEGMENT_QPE fact and filled it from the entire
+                # French QPE -- which is virtually always well above
+                # EUR 2,000,000, so 40% was selected for every French
+                # full relocation regardless of real VFX spend. Setting
+                # component_basis_line_components here makes this a
+                # TRACEABLE_COMPONENT_QPE fact instead: price_segment
+                # derives it ONLY from this segment's real allocations
+                # whose .component == "vfx" (production_allocation.py's
+                # own MOVABLE_COMPONENTS identity), then converts that
+                # EUR-denominated subtotal via the canonical FX path --
+                # never the whole segment, and never guessed.
+                component_basis_line_components=("vfx",),
             ),
         ),
         confidence_tier="VERIFIED",
@@ -2485,6 +2502,30 @@ def resolve_program_rate(
             qpe_basis_used = (amount_facts or {}).get(cond.amount_fact_key)
             qpe_basis_line_components = cond.component_basis_line_components
             break
+    # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (Task 4):
+    # a real, discovered second-order defect. A "ceiling-with-a-real-
+    # floor" program (e.g. ca_bc_pstc: 36% guaranteed base tier + 48%
+    # regional/distant-location discretionary ceiling tier) applies BOTH
+    # its floor and ceiling percentage to the SAME real qualifying base
+    # (BC labour expenditure) -- the base tier's own component-basis
+    # condition was never consulted when the CEILING tier is the one
+    # `tier` (selected above) resolves to, so qpe_basis_used stayed None
+    # and price_segment fell back to pricing the FLOOR rate off the
+    # segment's entire broad QPE -- a real, material overstatement (proven
+    # by test_narrower_rate_base_programs_price_off_the_real_traced_
+    # labour_subtotal_only: $3,960,000 served instead of the real
+    # $144,000). If the selected tier itself declared no component basis,
+    # fall back to checking the REAL, separate floor tier's own
+    # conditions -- the floor and ceiling of ONE program share ONE
+    # underlying qualifying base by construction (a higher percentage of
+    # the SAME base, never a different base), so this is safe generically,
+    # not a per-program special case.
+    if qpe_basis_used is None and floor_candidates and floor_candidates[0].tier_id != tier.tier_id:
+        for cond in floor_candidates[0].conditions:
+            if cond.is_component_basis and cond.amount_fact_key is not None:
+                qpe_basis_used = (amount_facts or {}).get(cond.amount_fact_key)
+                qpe_basis_line_components = cond.component_basis_line_components
+                break
 
     # Codex final wiring remediation (P0-OR-001): a MULTIPLICATIVE
     # incentive uplift, applied only once its own evidenced fact is

@@ -1,0 +1,25 @@
+production,named_pair,expected_disposition,generated,status,incentive_usd,note
+The Little Utopia,on_ofttc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+F#K Valentine's Day,on_ofttc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+Bad Hombres,on_ofttc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+Lips Like Sugar,on_ofttc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+The Little Utopia,ca_bc_pstc + ca_federal_cptc,MUTUALLY_EXCLUSIVE,NO,NOT_GENERATED,,"ca_federal_cptc fails its own separate content-certification gate (QUALIFICATION_HARD_FAIL) for this production -- real, disclosed, non-defect"
+F#K Valentine's Day,ca_bc_pstc + ca_federal_cptc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+Bad Hombres,ca_bc_pstc + ca_federal_cptc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+Lips Like Sugar,ca_bc_pstc + ca_federal_cptc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+The Little Utopia,ca_federal_cptc + on_ofttc,"SPEND_REDUCTION (allowed, generate on reduced basis)",NO,NOT_GENERATED,,"ca_federal_cptc fails its own separate content-certification gate (QUALIFICATION_HARD_FAIL) for this production -- real, disclosed, non-defect"
+F#K Valentine's Day,ca_federal_cptc + on_ofttc,"SPEND_REDUCTION (allowed, generate on reduced basis)",YES,PRICED,1473902.23,matches expected disposition
+Bad Hombres,ca_federal_cptc + on_ofttc,"SPEND_REDUCTION (allowed, generate on reduced basis)",YES,PRICED,996282.26,matches expected disposition
+Lips Like Sugar,ca_federal_cptc + on_ofttc,"SPEND_REDUCTION (allowed, generate on reduced basis)",YES,PRICED,3459278.9,matches expected disposition
+The Little Utopia,ca_federal_cptc + on_opstc,MUTUALLY_EXCLUSIVE,NO,NOT_GENERATED,,"ca_federal_cptc fails its own separate content-certification gate (QUALIFICATION_HARD_FAIL) for this production -- real, disclosed, non-defect"
+F#K Valentine's Day,ca_federal_cptc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+Bad Hombres,ca_federal_cptc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+Lips Like Sugar,ca_federal_cptc + on_opstc,MUTUALLY_EXCLUSIVE,YES,RULE_REJECTED,,matches expected disposition
+The Little Utopia,ie_section_481 + uk_avec,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,cross-country combination -- requires a new dual-relocation structure type not built this workstream
+F#K Valentine's Day,ie_section_481 + uk_avec,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,cross-country combination -- requires a new dual-relocation structure type not built this workstream
+Bad Hombres,ie_section_481 + uk_avec,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,cross-country combination -- requires a new dual-relocation structure type not built this workstream
+Lips Like Sugar,ie_section_481 + uk_avec,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,cross-country combination -- requires a new dual-relocation structure type not built this workstream
+The Little Utopia,ny_state_film + us_ny_post_production_credit,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,"genuine economic non-occurrence -- no acceptance production's real post-eligible spend clears the real USD 1,000,000 threshold"
+F#K Valentine's Day,ny_state_film + us_ny_post_production_credit,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,"genuine economic non-occurrence -- no acceptance production's real post-eligible spend clears the real USD 1,000,000 threshold"
+Bad Hombres,ny_state_film + us_ny_post_production_credit,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,"genuine economic non-occurrence -- no acceptance production's real post-eligible spend clears the real USD 1,000,000 threshold"
+Lips Like Sugar,ny_state_film + us_ny_post_production_credit,"n/a (root cause identified, not a stacking-logic defect)",NO,NOT_GENERATED,,"genuine economic non-occurrence -- no acceptance production's real post-eligible spend clears the real USD 1,000,000 threshold"

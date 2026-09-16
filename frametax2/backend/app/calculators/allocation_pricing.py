@@ -757,6 +757,29 @@ def price_segment(
                 _derived_subtotal = oregon_per_payee_capped_total(_per_line_amounts)
             else:
                 _derived_subtotal = round(sum(_qualifies_cb.get(a.line_id, 0.0) for a in _cb_lines), 2)
+            # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE
+            # (Codex P0-CALC-001): a TRACEABLE_COMPONENT_QPE amount_fact_key
+            # may name a native currency (e.g. fr_trip_vfx_spend_eur) --
+            # _derived_subtotal above is always in USD (AccountAllocation.
+            # amount_usd), so it must be converted via the SAME canonical
+            # FX path used for whole-segment native-currency facts before
+            # comparison/storage. A USD-suffixed key (or one with no
+            # recognized currency suffix, e.g. a labour/day-count basis)
+            # is unaffected -- byte-identical to before this change.
+            _derived_subtotal_currency = _infer_amount_fact_currency(_cond.amount_fact_key)
+            _derived_subtotal_fx_unresolved = False
+            if _derived_subtotal_currency is not None and _derived_subtotal_currency != "USD":
+                _converted_subtotal = _fx_native_amount(_derived_subtotal, _derived_subtotal_currency, fx_context)
+                if _converted_subtotal is not None:
+                    _derived_subtotal = round(_converted_subtotal[0], 2)
+                else:
+                    # No sourced FX rate -- never compare a raw USD figure
+                    # against a native-currency threshold as though it
+                    # were already in that currency. Fails closed exactly
+                    # like an absent fact would, never silently wrong.
+                    _derived_subtotal_fx_unresolved = True
+            if _derived_subtotal_fx_unresolved:
+                continue
             if _cond.amount_fact_key in _caller_amount_facts:
                 _caller_val = _caller_amount_facts[_cond.amount_fact_key]
                 if (not isinstance(_caller_val, (int, float)) or isinstance(_caller_val, bool)

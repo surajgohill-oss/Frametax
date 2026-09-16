@@ -1,0 +1,5 @@
+production,evaluation_status,engine_version,fingerprint,anchor_incentive_usd,anchor_npc_usd,priced_count,unpriceable_count,combined_stacks_generated,top_candidate_name,top_candidate_incentive_usd
+The Little Utopia,EVALUATION_REUSED,canonical-1.67.0,b95dbb966aa63c2826215b4708bc1c651b24cd647685efc2205030ba91a317e5,573059.7,,176,127,1,Full relocation to CA-MB,1824388.2
+F#K Valentine's Day,EVALUATION_REUSED,canonical-1.67.0,b241bb4860edb09ff00500ca0196082080d3cb7b81ee37ab5392d3e160b52e6a,1445659.84,,231,152,6,Full relocation to CA-MB,1665557.1
+Bad Hombres,EVALUATION_REUSED,canonical-1.67.0,8845e37573b28978ae19773ffb580ca878669ddd790cda523f0633f3b1d49bb0,596910.25,,180,126,6,Full relocation to CA-MB,1074438.45
+Lips Like Sugar,EVALUATION_REUSED,canonical-1.67.0,5f966734d56d368de16f455b7fb473442fcb04e0ee7e90ef5c0b2059e0391c42,3459278.9,,253,131,6,Full relocation to CA-MB,4447644.3
