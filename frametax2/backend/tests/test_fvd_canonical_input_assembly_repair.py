@@ -169,16 +169,15 @@ async def test_marine_capable_jurisdictions_unaffected_by_capability_gate(db: As
     served = {e["primary_jurisdiction"] for e in structures}
 
     # Marine-capable AND authority-clean: unchanged, still priced.
-    # CA-NL (ca_nl_all_spend_credit) is EXCLUDED here (Codex bounded
-    # remediation, B1 discretionary ruling: FAIL_CLOSED) -- asserted
-    # withheld-but-still-discovered below instead of priced.
-    for code in ("GR", "MT", "MU"):
+    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
+    # ca_nl_all_spend_credit's B1 FAIL_CLOSED veto was removed this
+    # workstream -- a real, standard, non-discretionary 40% Newfoundland &
+    # Labrador all-spend tax credit, genuinely misclassified as
+    # authority-exhausted (see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv).
+    # CA-NL now correctly joins the marine-capable, priced set alongside
+    # GR/MT/MU, not merely discovered-but-withheld.
+    for code in ("GR", "MT", "MU", "CA-NL"):
         assert code in priced, f"{code} has real marine capability and must remain priced"
-    assert "CA-NL" in served, "CA-NL must remain discovered, not capability-rejected"
-    assert "CA-NL" not in priced, (
-        "ca_nl_all_spend_credit is B1 FAIL_CLOSED (Codex bounded remediation) and must "
-        "never price deterministically"
-    )
 
     # MASTER RECONCILIATION (2026-09-02): AU-QLD, QA and SG all used to carry
     # real, unconditional guaranteed-floor rates (15%, 40%, 30% respectively)
@@ -284,21 +283,23 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     assert gr["rate_floor"] == gr["rate_ceiling"] == 0.4
     assert entries["GR"]["npc_with_adjustments_usd"] == pytest.approx(3_072_027.16, abs=0.01)
 
-    # SUPERSEDED (Codex bounded remediation, B1 discretionary ruling,
-    # GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv): CA-NL
-    # (ca_nl_all_spend_credit) used to produce a real priced trace here
-    # (flat 40% rate, gov.nl.ca directly confirmed, Final-19 committee
-    # closeout). Codex's accepted ruling reclassifies it FAIL_CLOSED -- the
-    # B4 central authority gate refuses it before any rule lookup, so it no
-    # longer appears in `entries` (which is filtered to is_fully_priced
-    # single_country/full_relocation structures) at all. The underlying
-    # rate figure (40% flat, no ceiling) remains intact on the canonical
-    # RateRule for traceability -- checked directly, not via a priced trace.
+    # RESTORED (CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_
+    # CLOSEOUT): CA-NL (ca_nl_all_spend_credit) originally produced a real
+    # priced trace here (flat 40% rate, gov.nl.ca directly confirmed,
+    # Final-19 committee closeout). A prior session's B1 discretionary
+    # ruling then wrongly reclassified it FAIL_CLOSED -- a genuine
+    # misclassification (a real, standard, non-discretionary Newfoundland &
+    # Labrador all-spend tax credit, not an authority-exhausted program),
+    # documented and fixed this workstream (see
+    # CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv). CA-NL now correctly
+    # produces a real priced trace again.
     from app.data.program_rate_rules import get_rate_rules as _get_rate_rules
     ca_nl_rule = _get_rate_rules("ca_nl_all_spend_credit")[0]
     assert ca_nl_rule.rate == pytest.approx(0.40)
     assert ca_nl_rule.is_band_ceiling is False
-    assert "CA-NL" not in entries, "ca_nl_all_spend_credit is B1 FAIL_CLOSED and must not produce a priced trace"
+    assert "CA-NL" in entries, "ca_nl_all_spend_credit's B1 veto was removed -- it must produce a priced trace"
+    ca_nl_seg = seg("CA-NL")
+    assert ca_nl_seg["rate_floor"] == ca_nl_seg["rate_ceiling"] == pytest.approx(0.40)
 
     # MASTER RECONCILIATION (2026-09-02): QA, SG and AU-QLD used to carry
     # real guaranteed-floor rates (40%, 30%, 15%) and produce a real priced

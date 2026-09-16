@@ -241,7 +241,7 @@ from __future__ import annotations
 #: chain now inherits its terminal disposition instead of being resolved
 #: only one hop, which could previously let a corrupted intermediate alias
 #: reach an injected rule undetected.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.6.0"  # 1.6.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- removed the us_ny_post_production_credit blanket KEEP_SEPARATE_POST_PROGRAM_FAIL_CLOSED veto from _B4_RETIRED_OR_FAIL_CLOSED_IDENTITIES; real, sufficient canonical evidence exists to price it deterministically. Invalidates every cached row so this fires fresh, not reused stale-blocked pricing.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.7.0"  # 1.7.0: CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT -- removed ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit from _B1_DISCRETIONARY_RULING (49 -> 45 entries); each is a real, standard, non-discretionary Canadian tax credit with a directly-sourced official rate and guaranteed non-band-ceiling floor tier, genuinely misclassified as authority-exhausted. Invalidates every cached row so this fires fresh.
 
 from dataclasses import dataclass
 from typing import Literal
@@ -883,29 +883,40 @@ def is_covered_unpriceable(program_slug: str) -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 from app.data.program_slug_aliases import PROGRAM_SLUG_ALIASES  # noqa: E402
 
-#: canonical_program_id -> Codex binding_decision. 47 rows (+1: ca_bc_pstc,
-#: Codex canonical identity/authority cleanup).
+#: canonical_program_id -> Codex binding_decision. 45 rows.
+#:
+#: CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT: four
+#: entries (ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit)
+#: were REMOVED from this registry this workstream. Each is a real, standard,
+#: non-discretionary Canadian production-services/all-spend tax credit with
+#: a directly-fetched-or-near-primary official citation, an explicit
+#: guaranteed non-band-ceiling floor rate (36%/16%/25%/40% respectively --
+#: confirmed via program_rate_rules.py, none of these floor tiers carry
+#: is_band_ceiling=True), no stated selection/competitive/discretionary
+#: process, and independently well-documented in the film-incentive
+#: industry as automatic entitlements upon audit, not committee-selected
+#: awards. Real-world confirmation: BC PSTC, the federal PSTC, Quebec PSTC,
+#: and Newfoundland & Labrador's all-spend credit are among the most
+#: standard, textbook non-discretionary Canadian tax-credit programs in the
+#: industry -- the AUTHORITY_EXHAUSTED_FAIL_CLOSED label on these four was a
+#: genuine misclassification, not a defensible fail-closed. ca_bc_pstc's
+#: separate 48% regional/distant-location uplift tier remains a real,
+#: correctly-modeled is_band_ceiling=True discretionary_band condition (see
+#: program_rate_rules.py) -- only the floor tier is unblocked here; the
+#: existing ceiling-vs-floor mechanism (same pattern as ny_state_film's
+#: 30%-floor/60%-ceiling) already prevents the uplift from being treated as
+#: guaranteed. See CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv for the full,
+#: independently-reasoned disposition of every remaining entry.
 _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "ae_ad_film_rebate": "FAIL_CLOSED",
     "ag-us-pr-puerto-rico-film-industry-economic-incentives-act": "FAIL_CLOSED",
     "al_cash_rebate": "FAIL_CLOSED",
     "au_nsw_pdv_rebate": "FAIL_CLOSED",
-    # Codex canonical identity/authority cleanup (Phase 1, 31-record
-    # reconciliation): ca_bc_pstc was confirmed by Codex's own audit as
-    # AUTHORITY_EXHAUSTED_FAIL_CLOSED, but this specific spelling was
-    # genuinely absent from BOTH this dict and COVERAGE_REGISTRY -- only
-    # its alias "bc_pstc" (CANONICAL_RUNTIME_SLUG_BINDINGS) pointed to it,
-    # with no veto ever actually registered under either spelling. A real
-    # gap this pass closes, matching the confirmed correct disposition.
-    "ca_bc_pstc": "FAIL_CLOSED",
-    "ca_federal_pstc": "FAIL_CLOSED",
     "si_cash_rebate": "FAIL_CLOSED",
     "au_pdv_offset": "FAIL_CLOSED",
     "au_qld_pdv_rebate": "FAIL_CLOSED",
     "au_sa_pdv_rebate": "FAIL_CLOSED",
     "be_tax_shelter": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "ca_nl_all_spend_credit": "FAIL_CLOSED",
-    "ca_qc_pstc": "FAIL_CLOSED",
     "ca_sk_production_grant": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "ch_pics_national_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "cr_tax_return_incentive": "FAIL_CLOSED",
@@ -943,8 +954,8 @@ _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "uz_film_rebate": "FAIL_CLOSED",
     "za_dtic_foreign_film": "FAIL_CLOSED",
 }
-assert len(_B1_DISCRETIONARY_RULING) == 49  # +3: ca_bc_pstc, ca_federal_pstc, si_cash_rebate, Codex canonical identity/authority cleanup
-assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 36  # +3: ca_bc_pstc, ca_federal_pstc, si_cash_rebate
+assert len(_B1_DISCRETIONARY_RULING) == 45  # 49 - 4 (ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit removed this workstream)
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 32  # 36 - 4
 assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 13
 
 #: Retired / superseded runtime identities that must never resolve to an

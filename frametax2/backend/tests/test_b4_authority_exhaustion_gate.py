@@ -204,20 +204,51 @@ def test_negative_6_reregistering_a_blocked_slugs_rate_rule_cannot_reactivate_it
 # for every one of the 46 B1 canonical ids, and for the pre-existing
 # authority-exhausted/retired/duplicate states it also covers. ─────────
 
-def test_all_49_b1_canonical_ids_are_blocked():
-    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:
-    # corrected stale count (46 -> 49) to match the registry's own module-
-    # level assertions (ca_bc_pstc, ca_federal_pstc, si_cash_rebate were
-    # already 3 real additions on top of the original 46 before this
-    # workstream) -- not a weakening, the registry itself already carries
-    # a stricter len()==49 assertion this test must agree with.
+def test_all_45_b1_canonical_ids_are_blocked():
+    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
+    # corrected count (49 -> 45) after removing ca_bc_pstc, ca_federal_pstc,
+    # ca_qc_pstc, ca_nl_all_spend_credit -- each a real, standard,
+    # non-discretionary Canadian tax credit genuinely misclassified as
+    # authority-exhausted (see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv).
     from app.data.authority_coverage_registry import _B1_DISCRETIONARY_RULING
 
-    assert len(_B1_DISCRETIONARY_RULING) == 49
+    assert len(_B1_DISCRETIONARY_RULING) == 45
     for slug, expected_classification in _B1_DISCRETIONARY_RULING.items():
         block = economic_block_for_program(slug)
         assert block is not None, f"{slug} must be B4-blocked"
         assert block.classification == expected_classification
+
+
+def test_four_canadian_pstc_programs_no_longer_b1_blocked():
+    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
+    # ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit each
+    # carry a directly-sourced official rate, an explicit guaranteed
+    # non-band-ceiling floor tier, and no stated selection/competitive
+    # process -- real, standard, non-discretionary Canadian tax credits.
+    expected_floor = {
+        "ca_bc_pstc": 0.36,
+        "ca_federal_pstc": 0.16,
+        "ca_qc_pstc": 0.25,
+        "ca_nl_all_spend_credit": 0.40,
+    }
+    for slug, floor in expected_floor.items():
+        assert economic_block_for_program(slug) is None, f"{slug} must NOT be B4-blocked"
+        rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=2_000_000.0)
+        assert rr is not None, f"{slug} must resolve a real rate"
+        assert rr.floor_rate == pytest.approx(floor)
+
+
+def test_ca_bc_pstc_regional_uplift_remains_a_disclosed_ceiling_not_guaranteed():
+    # The 48% regional/distant-location uplift tier is a real,
+    # correctly-modeled is_band_ceiling=True discretionary_band condition --
+    # only the 36% floor is guaranteed. Removing the B1 veto must not turn
+    # the discretionary uplift into a guaranteed rate.
+    rr = resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0)
+    assert rr is not None
+    assert rr.modeled_rate == pytest.approx(0.48)
+    assert rr.is_band_ceiling is True
+    assert rr.floor_rate == pytest.approx(0.36)
+    assert rr.has_guaranteed_floor is True
 
 
 def test_retired_identity_is_blocked():

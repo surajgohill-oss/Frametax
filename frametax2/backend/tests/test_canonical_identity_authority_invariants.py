@@ -72,10 +72,15 @@ def test_authority_vetoed_dormant_rules_cannot_create_guaranteed_candidates():
     from app.calculators.allocation_pricing import price_segment
     from app.calculators.production_allocation import AccountAllocation, AssignmentKind
 
-    thirty_one_records = (
+    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
+    # ca_bc_pstc, ca_federal_pstc, ca_nl_all_spend_credit, ca_qc_pstc removed
+    # from this list -- each is a real, standard, non-discretionary Canadian
+    # tax credit genuinely misclassified as authority-vetoed, and their B1
+    # veto was removed this workstream (see
+    # CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv). 31 - 4 = 27 remain vetoed.
+    twenty_seven_records = (
         "ae_ad_film_rebate", "al_cash_rebate", "au_nsw_pdv_rebate", "au_qld_pdv_rebate",
-        "au_sa_pdv_rebate", "ca_bc_pstc", "ca_federal_pstc", "ca_nl_all_spend_credit",
-        "ca_qc_pstc", "cr_tax_return_incentive", "eg_empc_cashback", "fj_film_rebate",
+        "au_sa_pdv_rebate", "cr_tax_return_incentive", "eg_empc_cashback", "fj_film_rebate",
         "ge_film_rebate", "gh_film_tax_incentive", "il_foreign_production_fund",
         "me_cash_rebate", "mk_cash_rebate", "mn_production_incentive",
         "mx_federal_film_incentive_2026", "pa_film_rebate", "pt_scri_pt_cash_rebate",
@@ -87,8 +92,8 @@ def test_authority_vetoed_dormant_rules_cannot_create_guaranteed_candidates():
     from app.data.authority_coverage_registry import economic_block_for_program
     from app.data.program_rate_rules import resolve_program_rate
 
-    assert len(thirty_one_records) == 31
-    for slug in thirty_one_records:
+    assert len(twenty_seven_records) == 27
+    for slug in twenty_seven_records:
         # Two independent authority-veto mechanisms exist in this
         # codebase (the B1 discretionary-ruling economic_block_for_program
         # gate, and the COVERAGE_REGISTRY/get_coverage_status gate) --
@@ -117,6 +122,23 @@ def test_authority_vetoed_dormant_rules_cannot_create_guaranteed_candidates():
                 f"{slug} is authority-vetoed (FAIL_CLOSED) but resolve_program_rate returned a "
                 f"real rate resolution -- dormant rate data must never override the block"
             )
+
+
+def test_four_canadian_pstc_programs_are_no_longer_authority_vetoed():
+    """CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
+    the inverse of the invariant above -- ca_bc_pstc, ca_federal_pstc,
+    ca_nl_all_spend_credit, ca_qc_pstc must NOT be vetoed by either
+    authority mechanism, since each is a real, standard, non-discretionary
+    Canadian tax credit whose B1 veto was removed this workstream."""
+    from app.data.authority_coverage_registry import economic_block_for_program
+
+    for slug in ("ca_bc_pstc", "ca_federal_pstc", "ca_nl_all_spend_credit", "ca_qc_pstc"):
+        block = economic_block_for_program(slug)
+        status = get_coverage_status(slug)
+        vetoed = (block is not None and block.classification == "FAIL_CLOSED") or (
+            status is not None and status.blocks_economic_candidacy
+        )
+        assert not vetoed, f"{slug} must no longer be vetoed by any authority mechanism"
 
 
 def test_satisfiable_missing_project_facts_produce_conditional_not_silent_exclusion():

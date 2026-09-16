@@ -515,29 +515,21 @@ def test_programs_declaring_a_narrower_rate_base_do_not_price_off_all_spend():
         if condition.kind == "rate_base_narrower_than_qpe"
     })
     assert declaring, "expected real programs declaring a narrower rate base"
-    # CA-BC PSTC repair (workstream CLAUDE_D743_REJECTED_FINDINGS_REMEDIATION):
-    # ca_bc_pstc (and ca_federal_pstc alongside it) are now ALSO fail-closed
-    # at a SEPARATE, EARLIER gate -- the B1 discretionary-ruling authority
-    # veto (economic_block_for_program, the very first check in
-    # resolve_program_rate, before any tier/condition logic runs at all) --
-    # a genuine, already-accepted authority decision from a prior session,
-    # already part of the starting HEAD, not a bug to revert. Their real
-    # blocker text now reflects that earlier gate and never reaches the
-    # narrower-base condition text at all; asserted directly below rather
-    # than expected to match the generic "narrower base" message every
-    # OTHER declaring program still produces.
-    _authority_gated = {"ca_bc_pstc", "ca_federal_pstc"}
+    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
+    # ca_bc_pstc and ca_federal_pstc's B1 discretionary-ruling authority veto
+    # was removed this workstream (see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv
+    # -- both are real, standard, non-discretionary Canadian tax credits,
+    # genuinely misclassified as authority-exhausted). They now correctly
+    # reach THIS narrower-rate-base gate instead, same as every other
+    # declaring program -- a more accurate fail-closed reason (the real
+    # blocker is that qualified LABOUR cannot be reliably derived from
+    # current budget-line data, not that the program's authority is
+    # unresolved), not a regression.
     for slug in declaring:
         seg = _probe_segment_amount(slug, 11_000_000.0)
         assert seg.executable is False, f"{slug} priced off the broad base"
         assert not seg.incentive_floor_usd
-        if slug in _authority_gated:
-            assert seg.blockers and "statutory rate did not resolve" in seg.blockers[0].lower(), (
-                f"{slug} must assert its current authority-fail-closed disposition, not a "
-                "narrower-base message it can no longer reach"
-            )
-        else:
-            assert seg.blockers and "narrower base" in seg.blockers[0].lower()
+        assert seg.blockers and "narrower base" in seg.blockers[0].lower()
         # Withheld, not erased.
         assert seg.allocated_usd == pytest.approx(11_000_000.0)
 
@@ -549,41 +541,40 @@ def test_narrower_base_check_scans_every_tier_not_just_the_selected_one():
     it and still price the broad base -- the qualifying base is a property
     of the PROGRAM, not of whichever tier won selection.
 
-    CA-BC PSTC repair (workstream CLAUDE_D743_REJECTED_FINDINGS_REMEDIATION):
-    ca_bc_pstc no longer selects ANY tier at all -- a prior, separately-
-    accepted session's B1 discretionary-ruling authority veto (already part
-    of the starting HEAD) now fails resolve_program_rate("ca_bc_pstc", ...)
-    closed UNCONDITIONALLY, before any tier is ever considered. This is the
-    correct, already-accepted current disposition and is asserted directly
-    below, never expected to still price. The original point of this test
-    (a narrower-base condition living on a tier OTHER than the one
-    resolution would select, so a check inspecting only the selected tier's
-    OWN evaluated conditions would miss it) is preserved as a real DATA
-    assertion against ca_bc_pstc's own doctrine table directly -- proving
-    the underlying rule data still correctly declares the condition on a
-    non-selectable tier, even though the authority gate makes it
-    unreachable at runtime today. If the authority veto is ever lifted in a
-    future, separate pass, this doctrine-level assertion is what would
-    catch a real regression in the tier-scanning logic itself."""
+    CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT: the
+    B1 discretionary-ruling authority veto on ca_bc_pstc was removed this
+    workstream (real, standard, non-discretionary Canadian tax credit,
+    genuinely misclassified -- see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv).
+    resolve_program_rate now correctly SELECTS the 48% regional/distant-
+    location ceiling tier (the highest-rate eligible tier, per the
+    resolution tournament's own rate-descending selection order) -- but the
+    narrower-base condition lives on the SEPARATE 36% BASE tier, not the
+    selected one. This is exactly the scenario this test exists to prove:
+    a check inspecting only the selected tier's own evaluated conditions
+    would MISS the base tier's narrower-base declaration and still let the
+    segment price off the broad register. The real, current, correct
+    behavior is that the segment fails closed on the narrower-base guard
+    regardless of which tier resolve_program_rate selects."""
     from app.data.program_rate_rules import _RULES_BY_PROGRAM, resolve_program_rate
 
     rr = resolve_program_rate(
         "ca_bc_pstc", production_type="feature_film", qpe_usd=11_000_000.0,
     )
-    assert rr is None, (
-        "ca_bc_pstc must assert its current authority-fail-closed disposition -- "
-        "resolve_program_rate must never resolve a tier for it"
+    assert rr is not None, "ca_bc_pstc must now resolve a real rate (B1 veto removed)"
+    assert rr.modeled_rate == pytest.approx(0.48), (
+        "the highest-rate eligible tier (48% regional/distant-location ceiling) must be selected"
     )
-    # Doctrine-level proof the narrower-base condition still lives on a real
-    # tier in ca_bc_pstc's own rule table (never lost, just unreachable
-    # today behind the earlier authority gate) -- the exact data a
-    # tier-scanning regression would need to still catch.
+    # Doctrine-level proof the narrower-base condition lives on the OTHER
+    # (36% base) tier, not the one resolution selected.
     assert any(
         c.kind == "rate_base_narrower_than_qpe"
         for rule in _RULES_BY_PROGRAM["ca_bc_pstc"] for c in rule.conditions
     ), "precondition: at least one real tier declares the narrower-base condition"
 
-    assert _probe_segment_amount("ca_bc_pstc", 11_000_000.0).executable is False
+    assert _probe_segment_amount("ca_bc_pstc", 11_000_000.0).executable is False, (
+        "the segment must still fail closed on the narrower-base guard, "
+        "even though resolve_program_rate selected a DIFFERENT tier"
+    )
 
 
 def test_a_broad_base_program_is_unaffected_by_the_narrower_base_guard():
