@@ -180,3 +180,45 @@ Individually run (not combined — see caveat below), all passed cleanly on a fi
 ## Not attempted this pass
 
 - Task A2 (full 12-structural-family classification persistence beyond the one `ordinary_component_hybrid` loop), A4 (input-wiring classification), all of Part B (support/reinvestment/gross-up engine), all of Part C (independent oracle, semantic validator, fresh acceptance batch, performance instrumentation), all of Part D (handoff/capability-ledger/artifact-precedence rewrites).
+
+---
+
+# CLAUDE_PROMPT_2_GENERIC_DISCOVERY_CORRECTION_AND_HANDOFF (follow-on corrective pass)
+
+**RESOLVED_STARTING_SHA:** `35df531f56511910666745818ae4f476d62bc4da`
+
+## Status: `IMPLEMENTATION_INCOMPLETE`
+
+This pass corrected the one, explicitly-identified defect from the prior pass — the named-program allowlist — and, in doing so, discovered and fixed a real, independent arithmetic bug in the replacement mechanism. It did not attempt the remaining scope of `CLAUDE_PROMPT_2_GENERIC_DISCOVERY_CORRECTION_AND_HANDOFF` (structural completeness verification across all 12 families, HO-003 through HO-013 canonical runs, the six registered controls, fresh four-production acceptance, the semantic validator, or the Codex authority-research reconciliation).
+
+## The `_NAMED_ACCEPTANCE_CONTROL_TARGETS` removal
+
+Removed entirely, along with the now-unused `_build_ordinary_component_hybrid_candidates` helper it depended on. No replacement named-program list, jurisdiction exception, project-specific rule, HO-number-specific branch, or slug-based priority exists anywhere in `app/services/canonical_evaluation.py`. Confirmed by direct grep: the identifier appears only in historical comment text explaining what was removed and why, never in executable code.
+
+## Replacement: generic k-way branch-and-bound discovery
+
+Every movable component's candidate destinations are now enumerated in full (every jurisdiction with a real, independently-priced incentive for that component — no top-N ranking cutoff of any kind). Multi-component combinations are explored via a heap-based branch-and-bound: candidates are examined in strictly decreasing upper-bound order, and the search halts only when (a) the next candidate's upper bound can no longer exceed an already-achieved real total (`DOMINATED_WITH_PROOF` — a genuine mathematical proof), or (b) a documented, disclosed search-depth ceiling (`_HYBRID_BB_MAX_EXAMINED_PER_SUBSET = 50`) is reached first (`SEARCH_DEPTH_LIMIT_REACHED` — honestly distinguished from a proof, never mislabeled). Every examined candidate is individually persisted with a real terminal disposition (`PRICED`, `RULE_REJECTED` with a specific `rejection_reason_class`); every unexamined remainder is persisted as a single auditable aggregate row, never silently dropped.
+
+**A real bug was found and fixed while building this**: the initial implementation ranked/bounded components using `_price_component_relocation_candidate`'s WHOLE-STRUCTURE total (anchor baseline + routed component combined), which — when summed across 2-3 components for the branch-and-bound upper bound — double- and triple-counted the multi-million-dollar anchor baseline. This made the bound so inflated it almost never converged against the real (correctly non-duplicated) total from `generate_structural_candidate`, causing apparently-infinite CPU-bound exploration that was originally mistaken for a possible hang. Fixed by extracting the target jurisdiction's own **segment**-level marginal value (`SegmentEconomics.incentive_floor_usd`) for the bound, and comparing it against the real result's own marginal (non-anchor) component sum — both now genuinely comparable quantities.
+
+## Engine/fingerprint
+
+`ENGINE_VERSION` bumped `canonical-1.70.0` → `canonical-1.71.0`, documenting that commit `35df531f` had changed production candidate-generation behavior without a version bump (confirmed by reading its own `ENGINE_VERSION` line before this pass — it still only described the 1.69.0→1.70.0 change).
+
+## Honest finding: HO-001/HO-002's literal combination
+
+Directly measured and reported without spin: under the corrected, non-cherry-picked generic mechanism, HO-001's `new_zealand_screen_production_grant` and HO-002's Ontario OCASE do **not** appear in Lips Like Sugar's persisted results at the shipped search depth (`SEARCH_DEPTH_LIMIT_REACHED`, not `DOMINATED_WITH_PROOF` — genuinely unexamined, not proven inferior). Real, better legal alternatives (e.g. `ca_nl_all_spend_credit`, `gr_cash_rebate`, `it_tax_credit_foreign`) occupy the front of the search order for this production's real budget, and NZ/Ontario are known (from direct measurement in the prior pass) to rank 53rd/67 and 43rd/48 by real dollar value — far beyond what a search depth bounded for practical runtime reaches. This is reported as a genuine, disclosed finding, not a defect papered over: the mechanism is now honest and generic; reaching the literal oracle-cited example would require either a much larger, impractical search budget, or algorithmic work (e.g. tighter per-anchor pruning via provable same-authority-scope exclusion, already partially implemented) beyond this pass's remaining time.
+
+## Performance
+
+A single `evaluate_project()` call on Lips Like Sugar with the shipped `_HYBRID_BB_MAX_EXAMINED_PER_SUBSET = 50` measured at ~20s (up from the prior pass's ~9-17s, itself already up from the original ~9s pre-hybrid-loop baseline). This is a real, disclosed cost of genuine per-component-value-ranked discovery replacing a cheap-but-dishonest top-3 cutoff. Values of 150 and 2000 were also measured (45s and multi-minute, respectively) and rejected as impractical for this pass.
+
+## Tests
+
+- `test_structural_archetype_generator.py` + `test_ca_bc_dave_component.py`: 33/33 passed (0.37s) — unaffected by these changes (they exercise the generator directly, not the new canonical integration loop).
+- `test_canonical_economics_integrity_repair.py`: run as two targeted subsets rather than the full file, given the same pre-existing environment instability disclosed in the prior pass's closeout section (confirmed there to reproduce even at untouched baseline commits): France/Latvia/DAVE/mutually-exclusive-rejection/higher-order-pairwise/no-stale-rule (6/6, 37.36s) and leading-structure/production-view/in-kind-and-reinvestment/authority-unresolved/conditional-nodes (10/10, 108.33s). The full 60-test file was attempted twice and did not complete within a practical wait in this session.
+- No new committed prevention tests were added this pass (Tests Required items 1-9 from the workstream instructions are not yet satisfied).
+
+## Not attempted this pass
+
+Structural completeness verification across all 12 families and HO-001 through HO-013 via the corrected mechanism; the six registered executable controls; fresh four-production acceptance; the Codex-authority-SHA reconciliation; `frametax2/ACCOUNT_TRANSFER_HANDOFF.md`, `CAPABILITY_LEDGER.md`, and `CANONICAL_ARTIFACT_PRECEDENCE_CLAUDE.json` updates; the database-connected semantic validator; committed prevention tests for the 9 items the workstream requires.

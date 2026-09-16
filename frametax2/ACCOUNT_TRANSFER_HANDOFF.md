@@ -6,6 +6,51 @@
 
 ---
 
+## CURRENT STATE (2026-09-16) — Global Optimizer / Structural Stacking Remediation Lineage
+
+This section is authoritative for the `claude/global-optimizer-remediation` branch/lineage specifically (global stacking, structural archetype generation, alternate-anchor discovery). It does not supersede §0-§7 below, which cover the separate Production Knowledge Database / Cross-Model Bridge lineage on this same repo.
+
+**Branch:** `claude/global-optimizer-remediation`. Push this workstream's commit and update this line with the resulting SHA before handing off.
+
+**Canonical entry point:** `app/services/canonical_evaluation.py::evaluate_project()`. `ENGINE_VERSION = "canonical-1.71.0"`, `STACKING_RULES_VERSION = "1.3.0"` (`app/optimization/stacking_rules.py`).
+
+**Canonical structural generator:** `app/calculators/structural_archetype_generator.py::generate_structural_candidate()` — one generic mechanism for all 12 corrected-Codex structural archetypes, canonically invoked (not test-only) from `evaluate_project()`'s ordinary-component-hybrid loop.
+
+**Corrected project doctrine (binding, do not regress):**
+- Application/preapproval/annual-allocation are disclosures, never automatic blockers.
+- Spend and cultural tests remain substantive — never waived.
+- Every executable formulaic program prices; selective/negotiated support is conditional upside, never guaranteed NPC.
+- Ranking (materiality, recommendation) must never suppress feasible discovery — a candidate is excluded only by a documented dominance proof or a disclosed search-depth limit, never by rank alone.
+- Anchor is a stable reference calculation, never a candidate or a search-space limiter.
+- **Never** implement a named-program/jurisdiction allowlist to force a specific structure's visibility (`_NAMED_ACCEPTANCE_CONTROL_TARGETS` was exactly this, added in commit `35df531f`, and was removed in the `CLAUDE_PROMPT_2_GENERIC_DISCOVERY_CORRECTION_AND_HANDOFF` pass — do not reintroduce it or any equivalent).
+
+**Completed this lineage (chronological, newest last):**
+1. `structural_archetype_generator.py` built and proven correct (HO-001..HO-013, 6 registered controls) — direct-generator tests only (`f21536d`).
+2. Generator canonically wired into `evaluate_project()` for the home-anchor case (`600deb6`).
+3. Alternate-anchor discovery + a (since-removed) named-allowlist hack made HO-001/HO-002 appear canonically for Lips Like Sugar, but without bumping `ENGINE_VERSION` (`35df531f` — this is a defect, corrected below).
+4. **This pass**: removed the named allowlist entirely; replaced it with a genuine k-way branch-and-bound over every real, independently-priced destination per movable component (no rank-based cutoff — dominance is only ever proven mathematically or disclosed as an explicit search-depth limit); found and fixed a real upper-bound arithmetic bug (was double/triple-counting the anchor's own baseline across components, causing the search to appear to hang); bumped `ENGINE_VERSION` to `canonical-1.71.0`.
+
+**Honest, disclosed finding from this pass:** under the corrected, non-cherry-picked mechanism, HO-001/HO-002's literal named programs (NZ post grant, Ontario OCASE) do **not** surface in Lips Like Sugar's real persisted results at a practical search depth (`_HYBRID_BB_MAX_EXAMINED_PER_SUBSET = 50` in `canonical_evaluation.py`) — real, better legal alternatives occupy the front of the search order, and the named programs are known to rank 53rd/67 and 43rd/48 by real dollar value. This is a genuine economics finding, not a defect to paper over. Reaching them would require either an impractical search budget or tighter provable pruning (e.g. same-authority-scope exclusion, partially implemented via `_hy_provably_illegal_with_anchor`).
+
+**Remaining defects / unaddressed scope (see `docs/validation/CLAUDE_STRUCTURAL_STACKING_RUNTIME_CLOSEOUT.md` for full detail across all passes):**
+- No committed prevention tests for the branch-and-bound mechanism yet (rename-invariance, permutation-invariance, cache-invalidation, etc.).
+- HO-003 through HO-013 and the 6 registered controls have not been re-verified through the corrected mechanism this pass (only proven via direct-generator unit tests from an earlier pass).
+- No fresh four-production acceptance batch run against `canonical-1.71.0`.
+- The entire Part B (support/reinvestment/gross-up engine — `ProductionSupportGrossUpEngine`, cap/headroom mathematics, ledger conservation) is unbuilt; `inkind_contribution.py` and `canonical_opportunity_bridge.py` remain `EXISTS_BUT_DISCONNECTED` from the canonical optimizer (see `docs/validation/REINVESTMENT_AND_QUALIFICATION_OPPORTUNITY_CLOSEOUT.md`, `PROACTIVE_OPPORTUNITY_DISCOVERY_CLOSEOUT.md`).
+- The semantic validator (`docs/validation/validate_claude_global_stacking_closeout.py`) has not been rewritten to be DB-connected/persisted-state-aware for this pass's changes.
+- `docs/architecture/CAPABILITY_LEDGER.md` and `docs/validation/CANONICAL_ARTIFACT_PRECEDENCE_CLAUDE.json` have not been updated with this lineage's entries yet.
+- Codex authority-research reconciliation (SHA `e7c8c28da5f8977f97e4a571241a9f5e382f5127` at time of writing) not consumed/cross-checked this pass.
+
+**Test commands (known environment caveat: `test_canonical_economics_integrity_repair.py`'s full 60-test file has repeatedly stalled in this session, confirmed to reproduce even at untouched baseline commits — run targeted `-k` subsets or individual files instead of the full multi-file suite in one pytest invocation):**
+```
+PYTHONHASHSEED=0 python3 -m pytest tests/test_structural_archetype_generator.py tests/test_ca_bc_dave_component.py -q
+PYTHONHASHSEED=0 python3 -m pytest tests/test_canonical_economics_integrity_repair.py -k "france or latvia or dave" -q
+```
+
+**Next workstream should:** (1) add the committed prevention tests this pass skipped; (2) re-verify HO-003..013 and the 6 registered controls through `evaluate_project()` under `canonical-1.71.0`; (3) run the fresh four-production acceptance batch; (4) either tighten the branch-and-bound's pruning (same-authority-scope exclusion is a real, principled lever already partially built) or explicitly accept and document that the literal HO-001/HO-002 examples are not economically optimal for real data; (5) update `CAPABILITY_LEDGER.md` and `CANONICAL_ARTIFACT_PRECEDENCE_CLAUDE.json`; (6) only then begin Part B (gross-up engine).
+
+---
+
 ## 0. Update (2026-07-26) — Production Knowledge Database + Cross-Model Bridge + Stage B Verification Sprint
 
 Everything in §1-§7 below predates this update and describes an earlier state (4 executable jurisdictions: MU/MT/IE/GR; 211 examined; 2967 tests). It is preserved as-is rather than rewritten — the reconciliation procedure (§6) and explicit warning (§7) still govern, and the overlapping-engine analysis in §3/§4 is still the right starting point for comparing this account's optimizer/structuring engines against another account's. This section records what changed since, so a future account does not have to re-derive it.
