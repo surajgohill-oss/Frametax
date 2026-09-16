@@ -1,33 +1,29 @@
 program_id,source_id,classification,fields_supported,needs_freshness_check
-ag-us-pr-puerto-rico-film-industry-economic-incentives-act,SRC_ag-us-pr-puerto-rico-film-industry-economic-incentives-act,DB_FIELD_MISSING,"Rate, Caps (if present)",YES
-al_cash_rebate,SRC_al_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-au_nsw_pdv_rebate,SRC_au_nsw_pdv_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-si_cash_rebate,SRC_si_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-au_pdv_offset,SRC_au_pdv_offset,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-au_qld_pdv_rebate,SRC_au_qld_pdv_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-au_sa_pdv_rebate,SRC_au_sa_pdv_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-ca_sk_production_grant,SRC_ca_sk_production_grant,DB_FIELD_MISSING,"Rate, Caps (if present)",YES
-cr_tax_return_incentive,SRC_cr_tax_return_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-eg_empc_cashback,SRC_eg_empc_cashback,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-fj_film_rebate,SRC_fj_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-ge_film_rebate,SRC_ge_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-gh_film_tax_incentive,SRC_gh_film_tax_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-il_foreign_production_fund,SRC_il_foreign_production_fund,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-me_cash_rebate,SRC_me_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-mk_cash_rebate,SRC_mk_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-mn_production_incentive,SRC_mn_production_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-mx_federal_film_incentive_2026,SRC_mx_federal_film_incentive_2026,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-pa_film_rebate,SRC_pa_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-pt_scri_pt_cash_rebate,SRC_pt_scri_pt_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-pt_scri_pt_medium_budget,SRC_pt_scri_pt_medium_budget,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-th_boi_incentive,SRC_th_boi_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-tt_production_expenditure_rebate,SRC_tt_production_expenditure_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-ua_cash_rebate,SRC_ua_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-us_wa_mpcp,SRC_us_wa_mpcp,DB_FIELD_MISSING,"Rate, Caps (if present)",YES
-uy_acau_cash_rebate,SRC_uy_acau_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-uy_tax_credit_2026,SRC_uy_tax_credit_2026,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-uz_film_rebate,SRC_uz_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-za_dtic_foreign_film,SRC_za_dtic_foreign_film,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-se_production_rebate,SRC_se_production_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-us_il_film_production_services_credit,SRC_us_il_film_production_services_credit,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
-us_tn_performance_grant,SRC_us_tn_performance_grant,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, Caps (if present)",YES
+al_cash_rebate,SRC_al_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+au_nsw_pdv_rebate,SRC_au_nsw_pdv_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+si_cash_rebate,SRC_si_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+au_pdv_offset,SRC_au_pdv_offset,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+au_qld_pdv_rebate,SRC_au_qld_pdv_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+au_sa_pdv_rebate,SRC_au_sa_pdv_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+cr_tax_return_incentive,SRC_cr_tax_return_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+eg_empc_cashback,SRC_eg_empc_cashback,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+fj_film_rebate,SRC_fj_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+ge_film_rebate,SRC_ge_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+gh_film_tax_incentive,SRC_gh_film_tax_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+il_foreign_production_fund,SRC_il_foreign_production_fund,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+me_cash_rebate,SRC_me_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+mk_cash_rebate,SRC_mk_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+mn_production_incentive,SRC_mn_production_incentive,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+mx_federal_film_incentive_2026,SRC_mx_federal_film_incentive_2026,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+pa_film_rebate,SRC_pa_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+pt_scri_pt_cash_rebate,SRC_pt_scri_pt_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+pt_scri_pt_medium_budget,SRC_pt_scri_pt_medium_budget,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+tt_production_expenditure_rebate,SRC_tt_production_expenditure_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+ua_cash_rebate,SRC_ua_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+uy_acau_cash_rebate,SRC_uy_acau_cash_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+uy_tax_credit_2026,SRC_uy_tax_credit_2026,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+uz_film_rebate,SRC_uz_film_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+za_dtic_foreign_film,SRC_za_dtic_foreign_film,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+se_production_rebate,SRC_se_production_rebate,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+us_il_film_production_services_credit,SRC_us_il_film_production_services_credit,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES
+us_tn_performance_grant,SRC_us_tn_performance_grant,DB_SOURCE_SUPPORTED_NEEDS_FRESHNESS_CHECK,"Rate, rules",YES

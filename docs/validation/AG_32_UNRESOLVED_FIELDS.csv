@@ -1,33 +1,27 @@
 program_id,missing_field,reason
-ag-us-pr-puerto-rico-film-industry-economic-incentives-act,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-al_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-au_nsw_pdv_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-si_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-au_pdv_offset,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-au_qld_pdv_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-au_sa_pdv_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-ca_sk_production_grant,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-cr_tax_return_incentive,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-eg_empc_cashback,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-fj_film_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-ge_film_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-gh_film_tax_incentive,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-il_foreign_production_fund,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-me_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-mk_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-mn_production_incentive,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-mx_federal_film_incentive_2026,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-pa_film_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-pt_scri_pt_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-pt_scri_pt_medium_budget,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-th_boi_incentive,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-tt_production_expenditure_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-ua_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-us_wa_mpcp,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-uy_acau_cash_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-uy_tax_credit_2026,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-uz_film_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-za_dtic_foreign_film,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-se_production_rebate,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-us_il_film_production_services_credit,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
-us_tn_performance_grant,ALL,Targeted web retrieval failed to definitively establish all rules via authenticated URL
+ag-us-pr-puerto-rico-film-industry-economic-incentives-act,all_material_facts,Targeted web retrieval failed (SSL/Timeout/403)
+au_nsw_pdv_rebate,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+au_nsw_pdv_rebate,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+si_cash_rebate,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+si_cash_rebate,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+au_pdv_offset,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+au_pdv_offset,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+au_sa_pdv_rebate,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+au_sa_pdv_rebate,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+cr_tax_return_incentive,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+cr_tax_return_incentive,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+eg_empc_cashback,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+eg_empc_cashback,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+ge_film_rebate,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+ge_film_rebate,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+gh_film_tax_incentive,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+gh_film_tax_incentive,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+me_cash_rebate,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+me_cash_rebate,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+mn_production_incentive,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+pa_film_rebate,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+us_wa_mpcp,all_material_facts,Targeted web retrieval failed (SSL/Timeout/403)
+za_dtic_foreign_film,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+za_dtic_foreign_film,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
+us_il_film_production_services_credit,min_spend_usd,Targeted web retrieval failed (SSL/Timeout/403)
+us_il_film_production_services_credit,annual_cap_usd,Targeted web retrieval failed (SSL/Timeout/403)
