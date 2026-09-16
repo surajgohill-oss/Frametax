@@ -1,0 +1,14 @@
+program_id,classification_category,determined_status,deterministic_floor,selective_competitive_portion,qualifying_base,cap,stacks_with_tax_incentives,guaranteed_npc_vs_upside
+ae_ad_film_rebate,negotiated/discretionary,formulaic but allocation-limited,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+be_tax_shelter,negotiated/discretionary,statutory/formulaic,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+qa_screen_production_incentive,negotiated/discretionary,selective,0%,100% competitive,Local QPE,Subject to annual allocation,YES (separate costs),Potential Upside
+sa_film_commission_rebate,negotiated/discretionary,formulaic but allocation-limited,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+de_dfff,formulaic funds,formulaic fund,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+dk_production_rebate,formulaic funds,statutory/formulaic,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+in_national_film,formulaic funds,formulaic fund,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+lu_filmfund_tax_shelter_rebate,formulaic funds,formulaic but allocation-limited,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+sg_made_with_singapore_rebate,formulaic funds,formulaic but allocation-limited,20%,Up to 10% uplift,Local QPE,Subject to annual allocation,YES (separate costs),Guaranteed
+no_film_incentive,selective,selective,0%,100% competitive,Local QPE,Subject to annual allocation,YES (separate costs),Potential Upside
+tw_bamid_rebate,selective,selective,0%,100% competitive,Local QPE,Subject to annual allocation,YES (separate costs),Potential Upside
+ch_pics_national_rebate,selective,selective,0%,100% competitive,Local QPE,Subject to annual allocation,YES (separate costs),Potential Upside
+ph_fdcp_flip,selective,selective,0%,100% competitive,Local QPE,Subject to annual allocation,YES (separate costs),Potential Upside
