@@ -1,0 +1,41 @@
+project,family,candidate_count,priced_count,rejected_count,material_count,recommended_count,evidence_basis,reason_if_not_applicable
+The Little Utopia,anchor_reference,1,1,0,1,0,fresh real-project persisted rows,
+The Little Utopia,single_jurisdiction,124,62,62,61,0,fresh real-project persisted rows,
+The Little Utopia,same_jurisdiction_stack,1,0,1,0,0,fresh real-project persisted rows,
+The Little Utopia,ordinary_cross_jurisdiction_hybrid,118,73,45,73,0,fresh real-project persisted rows,
+The Little Utopia,bilateral_treaty_coproduction,25,0,25,0,0,fresh real-project persisted rows,
+The Little Utopia,multilateral_coproduction,0,0,0,0,0,fresh real-project persisted rows,no applicable real-project trigger/canonical family row
+The Little Utopia,combined_coproduction_hybrid,0,0,0,0,0,fresh real-project persisted rows,generator produced no combined co-production component stack
+The Little Utopia,formulaic_grant_fund,6,4,2,4,0,fresh real-project persisted rows,
+The Little Utopia,selective_negotiated_upside,82,56,26,55,0,fresh real-project persisted rows,
+The Little Utopia,rejection_accounting,133,0,133,0,0,fresh real-project persisted rows,
+F#K Valentine's Day,anchor_reference,1,1,0,1,0,fresh real-project persisted rows,
+F#K Valentine's Day,single_jurisdiction,124,61,63,61,0,fresh real-project persisted rows,
+F#K Valentine's Day,same_jurisdiction_stack,1,0,1,0,0,fresh real-project persisted rows,
+F#K Valentine's Day,ordinary_cross_jurisdiction_hybrid,174,112,62,112,0,fresh real-project persisted rows,
+F#K Valentine's Day,bilateral_treaty_coproduction,26,0,26,0,0,fresh real-project persisted rows,
+F#K Valentine's Day,multilateral_coproduction,1,0,1,0,0,fresh real-project persisted rows,
+F#K Valentine's Day,combined_coproduction_hybrid,0,0,0,0,0,fresh real-project persisted rows,generator produced no combined co-production component stack
+F#K Valentine's Day,formulaic_grant_fund,8,5,3,5,0,fresh real-project persisted rows,
+F#K Valentine's Day,selective_negotiated_upside,195,167,28,167,0,fresh real-project persisted rows,
+F#K Valentine's Day,rejection_accounting,153,0,153,0,0,fresh real-project persisted rows,
+Bad Hombres,anchor_reference,1,1,0,1,1,fresh real-project persisted rows,
+Bad Hombres,single_jurisdiction,124,61,63,61,0,fresh real-project persisted rows,
+Bad Hombres,same_jurisdiction_stack,1,0,1,0,0,fresh real-project persisted rows,
+Bad Hombres,ordinary_cross_jurisdiction_hybrid,116,72,44,72,0,fresh real-project persisted rows,
+Bad Hombres,bilateral_treaty_coproduction,25,0,25,0,0,fresh real-project persisted rows,
+Bad Hombres,multilateral_coproduction,0,0,0,0,0,fresh real-project persisted rows,no applicable real-project trigger/canonical family row
+Bad Hombres,combined_coproduction_hybrid,0,0,0,0,0,fresh real-project persisted rows,generator produced no combined co-production component stack
+Bad Hombres,formulaic_grant_fund,6,4,2,4,0,fresh real-project persisted rows,
+Bad Hombres,selective_negotiated_upside,153,127,26,127,1,fresh real-project persisted rows,
+Bad Hombres,rejection_accounting,133,0,133,0,0,fresh real-project persisted rows,
+Lips Like Sugar,anchor_reference,1,1,0,1,1,fresh real-project persisted rows,
+Lips Like Sugar,single_jurisdiction,124,62,62,62,0,fresh real-project persisted rows,
+Lips Like Sugar,same_jurisdiction_stack,1,0,1,0,0,fresh real-project persisted rows,
+Lips Like Sugar,ordinary_cross_jurisdiction_hybrid,177,127,50,127,0,fresh real-project persisted rows,
+Lips Like Sugar,bilateral_treaty_coproduction,25,0,25,0,0,fresh real-project persisted rows,
+Lips Like Sugar,multilateral_coproduction,0,0,0,0,0,fresh real-project persisted rows,no applicable real-project trigger/canonical family row
+Lips Like Sugar,combined_coproduction_hybrid,0,0,0,0,0,fresh real-project persisted rows,generator produced no combined co-production component stack
+Lips Like Sugar,formulaic_grant_fund,8,5,3,5,0,fresh real-project persisted rows,
+Lips Like Sugar,selective_negotiated_upside,209,183,26,183,1,fresh real-project persisted rows,
+Lips Like Sugar,rejection_accounting,138,0,138,0,0,fresh real-project persisted rows,
