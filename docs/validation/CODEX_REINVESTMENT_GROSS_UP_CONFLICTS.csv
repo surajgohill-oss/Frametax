@@ -1,6 +1,6 @@
 conflict_id,record_program,conflict,evidence,disposition,implementation_consequence
-CON-001,ca_film_30,Canonical name says Program 3.0 while current official program is 4.0.,SRC-US-CA-001,SUPERSESSION_REVIEW_REQUIRED,Do not treat old 3.0 identity as current authority.
-CON-002,ca_nb_film_tax_credit,Canonical tax-credit slug conflicts with current official LIFT investment program.,SRC-NB-001,IDENTITY_UNRESOLVED,Block pricing until canonical identity is reconciled.
+CON-001,ca_film_30,Canonical name says Program 3.0 while current official program is 4.0.,SRC-US-CA-001,INACTIVE_OR_SUPERSEDED,Do not treat old 3.0 identity as current authority.
+CON-002,ca_nb_film_tax_credit,Canonical tax-credit slug conflicts with current official LIFT investment program.,SRC-CA-NB-PHASEOUT-2011;SRC-CA-NB-LIFT-2026,INACTIVE_OR_SUPERSEDED,Supersede obsolete credit identity; model LIFT as selective conditional financing.
 CON-003,GLOBAL_PROGRAM_MONETIZATION_REINVESTMENT_AG.csv,Prior AG file uses search-result URLs as purported official evidence.,repository inspection,REJECT_AS_SUBSTANTIVE_AUTHORITY,May be discovery input only.
 CON-004,production_economics.py,Legacy calculator substitutes face amount when FMV is absent.,repository code inspection,VALUATION_UNSUPPORTED,Never enable canonical gross-up without authority and valuation evidence.
 CON-005,canonical_opportunity_bridge.py,Live opportunity bridge emits zero economics and does not connect financing/NPC adjustment.,repository code inspection,UNWIRED_NOT_A_RULE_ERROR,Handoff requires a contribution ledger and one-time financing offset.
