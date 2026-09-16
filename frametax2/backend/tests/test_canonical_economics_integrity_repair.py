@@ -1040,3 +1040,73 @@ def test_npc_adds_financing_cost_on_top_of_gross():
     source = inspect.getsource(allocation_pricing.price_allocated_structure)
     assert "gross_budget_usd - selected_incentive" in source
     assert "+ financing_cost_usd" in source
+
+
+# ── CLAUDE_PRE_AG_HANDOFF_CORRECTION — producer-controlled fact auto-assumption ──
+
+def test_producer_controlled_facts_never_include_a_discretionary_or_cultural_condition():
+    """The auto-assumed set must contain only genuinely administrative
+    (application/registration/self-attested-activity/fund-currency)
+    facts -- never a fact whose own documented description names agency
+    discretion, comparative selection, or a substantive content/
+    independence test."""
+    from app.services.canonical_evaluation import _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
+
+    assert "us_or_opif_award_confirmed" not in _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS, (
+        "us_or_opif_award_confirmed names explicit 'agency comparative/discretionary approval' "
+        "in its own condition description -- must never be auto-assumed satisfied"
+    )
+    assert "nl_nfpi_points_independence_test_passed" not in _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS, (
+        "a points/independence test is a substantive content/ownership test, not an "
+        "administrative step -- must remain a real, unassumed gate"
+    )
+    assert "nl_nfpi_format_threshold_met" not in _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS, (
+        "a format threshold is a spend/QPE-style substantive test, not an administrative "
+        "step -- must remain a real, unassumed gate"
+    )
+
+
+def test_za_nfvf_rebate_prices_from_real_spend_alone_without_manual_admin_fact_injection():
+    """Real, isolated proof: za_nfvf_rebate must produce a real, disclosed
+    conditional price once real qualifying spend is supplied, without any
+    caller having to separately confirm the program's own administrative
+    (accepted-production/post-only-election) facts -- those are producer-
+    controlled and must be auto-assumed for candidate generation."""
+    from app.calculators.qualification_derivation import BudgetLine
+    from app.services.canonical_project_economics import ProjectEconomicInputs
+    from app.services.canonical_evaluation import _price_candidate
+
+    lines = [BudgetLine(account_code="ZA-01", description="Post-production Cape Town",
+                         amount_usd=800_000.0, spend_category="post_production")]
+    inputs = ProjectEconomicInputs(
+        project_id="X", project_name="X", jurisdiction_code="ZA", production_type="feature_film",
+        gross_budget_usd=800_000.0, leaf_account_sum_usd=800_000.0,
+        budget_lines=lines, spend_category_by_code={"ZA-01": "post_production"},
+        accounts_outside_jurisdiction=frozenset(), offshore_payroll_accounts=frozenset(),
+        amount_facts={"za_nfvf_post_qsappe_usd": 800_000.0},
+    )
+    pricing, register, rr = _price_candidate(inputs, "ZA", "za_nfvf_rebate")
+    assert pricing is not None
+    assert pricing.is_fully_priced is True
+    assert pricing.selected_incentive_usd == pytest.approx(200_000.0)
+
+
+def test_us_or_opif_discretionary_award_condition_stays_disclosed_not_silently_resolved():
+    """The genuinely discretionary us_or_opif_award_confirmed condition
+    must remain USER_FACT_REQUIRED (disclosed, provisional) even when
+    every other real fact/amount is supplied -- proving the auto-
+    assumption fix does not silently convert a discretionary gate into a
+    guaranteed one."""
+    from app.data.program_rate_rules import resolve_program_rate
+
+    rr = resolve_program_rate(
+        "us_or_opif", production_type="feature_film", qpe_usd=2_000_000.0,
+        evidenced_facts=frozenset({"us_or_opif_fund_amount_current_confirmed"}),
+        amount_facts={"us_or_payroll_qpe_usd": 1_500_000.0, "us_or_other_qpe_usd": 1_500_000.0},
+    )
+    assert rr is not None
+    award_condition = next(
+        c for c in rr.conditions_evaluated if c.condition_id == "us-or-award-contract-fund-confirmed"
+    )
+    assert award_condition.condition_state == "USER_FACT_REQUIRED"
+    assert award_condition.satisfied is None

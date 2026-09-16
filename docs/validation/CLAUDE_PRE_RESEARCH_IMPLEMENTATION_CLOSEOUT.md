@@ -54,3 +54,39 @@ No AU–UK/other treaty research performed. No MU/GR/US treaty sweep. No Globe w
 `READY_FOR_AG_RESEARCH` — all 659 physical records appear individually, all 126 executable labels have a deterministic disposition, no executable program remains blocked without a substantive reason or correction, every delivered CSV parses under its declared schema, and the branch is committed, pushed, and clean.
 
 This is not a claim of Codex acceptance. Codex runs only after AG research is implemented by Claude.
+
+---
+
+## Addendum — CLAUDE_PRE_AG_HANDOFF_CORRECTION (this workstream)
+
+Three specific ambiguities in the above were corrected before AG research begins, without repeating the 659-record census or re-running broad suites.
+
+### 1. The eight fact-dependent programs — one real implementation defect found and fixed
+
+Full detail: `CLAUDE_EIGHT_FACT_DEPENDENCY_RESOLUTION.csv` (18 fact-rows across the 8 programs: `au_location_offset`, `ca_bc_dave`, `cz_film_incentive_animation`, `ma_ccm_rebate`, `nl_film_production_incentive`, `th_film_incentive`, `us_or_opif`, `za_nfvf_rebate`).
+
+**Real defect found**: none of these programs' `PRODUCER_CONTROLLED_ASSUMPTION`-class boolean facts (preapproval confirmation, registration/acceptance, self-attested activity type, fund-currency confirmation) were ever supplied anywhere in the real `canonical_evaluation.py` pipeline — grepping the entire file for each fact key returned zero hits. This meant these conditions could **never** be satisfied by a real `evaluate_project()` call regardless of real qualifying spend, silently suppressing conditional pricing for otherwise-eligible candidates. This is exactly the class of defect the project's global assumption policy forbids.
+
+**Fix**: added `_PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS` (a `frozenset` of exactly 6 fact keys, each individually verified administrative-not-discretionary) to `canonical_evaluation.py`, unioned into `evidenced_facts` at all three real pricing call sites (`_price_candidate`, `_price_component_relocation_candidate`, `_price_combined_coproduction_component_candidate`). `ENGINE_VERSION` bumped `1.61.0 → 1.62.0` to invalidate stale cached rows.
+
+**Deliberately excluded** from auto-assumption (kept as real, unassumed gates): `us_or_opif_award_confirmed` (its own condition text names "agency comparative/discretionary approval" — genuinely discretionary), `nl_nfpi_points_independence_test_passed` (a substantive content/independence test), `nl_nfpi_format_threshold_met` (a spend/format test). Three focused prevention tests added and passing, plus 111 further directly-affected tests across 7 test files (`test_ca_bc_dave_component.py`, `test_final_wiring_oregon_conditional_formula.py`, `test_final_wiring_nl_company_period_conservation.py`, `test_incentive_optimizer_core_closeout.py`, `test_oregon_full_db_pipeline.py`, `test_b3_formulaic_consumption.py`, `test_copro_conditional_pricing_data_reconnection.py`, `test_national_cultural_status.py`).
+
+`cz_film_incentive_animation` and `au_location_offset`/Oregon's own already-correct QPE-probe pattern required **no code change** — genuine spend/QPE/scope conditions, correctly left as real gates.
+
+### 2. The 47 executable-gap programs — corrected terminology
+
+`MISLABELED_NON_EXECUTABLE` is no longer applied merely for appearing in `_B1_DISCRETIONARY_RULING`/`COVERAGE_REGISTRY` or lacking evidence. Of the 47:
+
+- **11 `MISLABELED_NON_EXECUTABLE` (conclusive)** — existing authoritative evidence already proves the category: `ae_ad_film_rebate`, `be_tax_shelter`, `qa_screen_production_incentive`, `sa_film_commission_rebate` (negotiated/discretionary — two are the codebase's own canonical worked examples); `ch_pics_national_rebate`, `no_film_incentive`, `tw_bamid_rebate`, `ph_fdcp_flip`, `jp_vipo_location_incentive`, `kr_kofic_location_incentive` (selective/competitive, explicit language or COVERAGE_REGISTRY's own confirmed selective state); `ae_dxb_dpip` (inactive/superseded).
+- **5 `FORMULAIC_AND_PRICEABLE`** — `de_dfff`, `dk_production_rebate`, `in_national_film`, `lu_filmfund_tax_shelter_rebate`, `sg_made_with_singapore_rebate`. These are real, named, separate funds with a determinable formula — not conclusively non-executable at all. **Disclosed gap**: full separate-from-QPE fund-pricing infrastructure was not built this pass (a distinct, larger feature; out of scope for a terminology-correction workstream) — these remain `DISPLAY_ONLY_ZERO_GUARANTEED` in runtime disposition pending that infrastructure, correctly relabeled in taxonomy only.
+- **31 `RESEARCH_PENDING_EXECUTABILITY_DETERMINATION`** — no existing authoritative evidence yet conclusively proves any of the 6 allowed non-executable categories. Handed to AG research (see below). 79 + 11 + 5 + 31 = 126 — the reconciliation is exact, with no demotion performed merely to make totals match.
+
+### 3. 31 vs. 32 — reconciled exactly
+
+The prior handoff's filter logic had a real bug: it matched B1's `corrected_disposition` column against two hardcoded strings that didn't exactly match two real rows' actual stored text (`eg_empc_cashback`'s disposition was the differently-worded `GENUINE_SCOPE_MISMATCH`; `se_production_rebate`'s was `STATUTORY_PRODUCTION_INCENTIVE (flagged, not blocked)`, not the literal `"FLAGGED -- ..."` string the filter checked for) — both were silently dropped. Separately, `kz_investment_subsidy` was added to the prior 31 but is **not** part of the canonical 32-program set the workstream defines.
+
+**Exact diff**: `expected − current = {eg_empc_cashback, se_production_rebate}` (both restored); `current − expected = {kz_investment_subsidy}` (removed — not a canonical alias of anything in the 32, simply out of scope for this specific handoff; it remains correctly disclosed as `UNPRICEABLE_AUTHORITY_INSUFFICIENT` in `CLAUDE_659_PHYSICAL_RECORD_IDENTITY_LEDGER.csv`, just not part of this particular 32-program AG queue). `eg_empc_cashback`'s reclassification from `GENUINE_SCOPE_MISMATCH` to `RESEARCH_PENDING` reflects a real reconsideration: its "anchor day" facility requirement may be a producer-controlled operational choice (shoot ≥1 day inside the EMPC facility) rather than a hard, non-curable scope mismatch — genuinely worth AG confirming rather than treating as conclusively closed. `CLAUDE_AG_32_RESEARCH_HANDOFF.csv` now contains exactly the 32 specified program IDs.
+
+### Validation
+
+All three updated/created CSVs (`CLAUDE_EIGHT_FACT_DEPENDENCY_RESOLUTION.csv`, `CLAUDE_126_EXECUTABLE_PRICING_PROOF.csv`, `CLAUDE_47_EXECUTABLE_GAP_RECONCILIATION.csv`, `CLAUDE_AG_32_RESEARCH_HANDOFF.csv`) parse cleanly under Python's `csv` module with the declared row/column counts and zero malformed rows.

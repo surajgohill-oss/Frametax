@@ -638,7 +638,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.61.0"
+ENGINE_VERSION = "canonical-1.62.0"  # 1.62.0: CLAUDE_PRE_AG_HANDOFF_CORRECTION -- _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS auto-supplied for candidate generation (au_location_offset/ca_bc_dave/ma_ccm_rebate/th_film_incentive/za_nfvf_rebate/us_or_opif's producer-controlled boolean conditions), never for cultural/spend/discretionary conditions. Invalidates every cached row so this fires fresh.
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1127,6 +1127,35 @@ def _competitive_allocation_disclosure(program_slug: str) -> str | None:
     )
 
 
+#: CLAUDE_PRE_AG_HANDOFF_CORRECTION: boolean project-fact keys that gate a
+#: RateCondition purely on a PRODUCER-CONTROLLED administrative step --
+#: preapproval/registration/self-attested activity type/fund-currency
+#: confirmation, never a cultural, spend/QPE, or genuinely discretionary
+#: test. Per the global CineGlobe assumption policy (administrative
+#: requirements must be assumed satisfied, disclosed, never suppressive),
+#: these are auto-supplied as satisfied for candidate generation so the
+#: optimizer produces a real, disclosed CONDITIONAL price instead of
+#: unconditionally rejecting a program whose real spend/cultural facts
+#: would otherwise qualify it. This must NEVER include a fact whose own
+#: documented description names a genuinely discretionary/comparative
+#: agency-selection process (e.g. us_or_opif_award_confirmed, which
+#: explicitly names "agency comparative/discretionary approval" -- that
+#: one stays a real, unassumed gate) or a substantive content/independence
+#: test (e.g. nl_nfpi_points_independence_test_passed) or a spend/format
+#: threshold (e.g. nl_nfpi_format_threshold_met) -- those three remain
+#: real gates, never auto-assumed. See
+#: docs/validation/CLAUDE_EIGHT_FACT_DEPENDENCY_RESOLUTION.csv for the
+#: full per-fact classification this set is derived from.
+_PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS: frozenset[str] = frozenset({
+    "ma_ccm_prior_approval_and_fund_availability_confirmed",
+    "th_film_incentive_preapproval_confirmed",
+    "za_nfvf_accepted_production_confirmed",
+    "za_nfvf_post_production_only_confirmed",
+    "ca_bc_dave_eligible_activity_confirmed",
+    "us_or_opif_fund_amount_current_confirmed",
+})
+
+
 def _price_candidate(
     inputs: ProjectEconomicInputs, jurisdiction_code: str, program_slug: str,
 ):
@@ -1169,9 +1198,17 @@ def _price_candidate(
     if program_slug == "us_or_opif" and qpe:
         _preflight_amount_facts.setdefault("us_or_payroll_qpe_usd", qpe)
         _preflight_amount_facts.setdefault("us_or_other_qpe_usd", qpe)
+    # CLAUDE_PRE_AG_HANDOFF_CORRECTION: union in the producer-controlled
+    # administrative facts (never cultural/spend/discretionary) so a real
+    # eligible candidate is not rejected solely because no one has
+    # persisted a project-specific ProjectFact confirming, e.g.,
+    # preapproval will be sought -- disclosed as an assumption via the
+    # normal administrative_allocation_risk/conditional trace, never
+    # silently treated as a verified fact.
+    _preflight_evidenced_facts = inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
     rr = resolve_program_rate(
         program_slug, production_type=inputs.production_type, qpe_usd=qpe,
-        evidenced_facts=inputs.evidenced_program_facts, amount_facts=_preflight_amount_facts,
+        evidenced_facts=_preflight_evidenced_facts, amount_facts=_preflight_amount_facts,
         fx_context=inputs.fx_context,
     )
     if rr is None:
@@ -1231,7 +1268,13 @@ def _price_candidate(
         # facts into resolve_program_rate() through the actual production
         # pipeline. Absent (empty) is byte-identical prior behavior for
         # every program without such a condition.
-        evidenced_requirement_facts=inputs.evidenced_program_facts,
+        # CLAUDE_PRE_AG_HANDOFF_CORRECTION: uses the same
+        # _preflight_evidenced_facts union (real evidenced facts plus the
+        # producer-controlled administrative assumption set) as the
+        # preflight resolve_program_rate call above, so the real priced
+        # segment is consistent with what the preflight already decided
+        # was eligible.
+        evidenced_requirement_facts=_preflight_evidenced_facts,
         amount_facts=inputs.amount_facts,
         fx_context=inputs.fx_context,
     )
@@ -1737,7 +1780,7 @@ def _price_component_relocation_candidate(
         # facts into resolve_program_rate() through the actual production
         # pipeline. Absent (empty) is byte-identical prior behavior for
         # every program without such a condition.
-        evidenced_requirement_facts=inputs.evidenced_program_facts,
+        evidenced_requirement_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
         amount_facts=inputs.amount_facts,
         fx_context=inputs.fx_context,
     )
@@ -1942,7 +1985,7 @@ def _price_combined_coproduction_component_candidate(
         production_type=inputs.production_type,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
         financing_cost_usd=inputs.financing_cost_usd or 0.0,
-        evidenced_requirement_facts=inputs.evidenced_program_facts,
+        evidenced_requirement_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
         amount_facts=inputs.amount_facts,
         fx_context=inputs.fx_context,
     )
