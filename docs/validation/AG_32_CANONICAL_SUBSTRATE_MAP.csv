@@ -1,0 +1,3 @@
+substrate_table_file,purpose,program_identifier_field,source_citation_field,version_freshness_field,runtime_consumer,precedence
+frametax2/backend/app/data/authority_coverage_registry.py,Track covered programs,Dictionary Key,None,VERSION,Validation Engine,High
+frametax2/backend/app/data/program_rate_rules_worldwide.py,Declare executable rates and caps,program_slug,citation,provenance,Optimization Engine,Highest
