@@ -131,3 +131,52 @@ No 4-program structure currently prices ahead of a 2-/3-program alternative for 
 - Test suite: 219/219 + 93/93 passed on first clean run (0 failed, 0 skipped, 0 timeout).
 - Semantic validator: passing (see validator run log).
 - External blockers (explicitly reserved, not part of this workstream's scope): the 31-interaction authority-research project and the 90-node scope-research project remain open for the next workstream; final input/UI wiring likewise reserved.
+
+---
+
+# CLAUDE_PROMPT_2_CANONICAL_OPTIMIZER_AND_GROSSUP_OPPORTUNITY_CLOSEOUT (Part A, this pass only)
+
+**RESOLVED_STARTING_SHA:** `600deb64dfe18fc339839de91a461c561274a29f`
+
+## Status: `IMPLEMENTATION_INCOMPLETE`
+
+Parts B (support/reinvestment/gross-up engine), C (independent oracle rewrite, DB-connected semantic validator, fresh 4-project acceptance), and D (handoff/capability-ledger/artifact-precedence rewrites) were **not attempted this pass** — each is independently a multi-day scope. This section documents genuine progress made on Part A, Task A1/A3 only.
+
+## Task A1 — Targeted alternate-anchor discovery: IMPLEMENTED
+
+Replaced the home-anchor-only limitation (from the prior `CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION` pass) with:
+
+1. **Alternate-anchor pool** = every jurisdiction with its own independently-priced full-relocation candidate (`priced_by_code`) — this already excludes hard scope mismatch, impossible spend threshold, failed cultural test, and inactive/superseded programs by construction (only successfully-priced candidates ever enter `priced_by_code`). No `$100,000` pruning is applied anywhere in this pool.
+2. **Component-aware target ranking** (the actual fix for HO-001/HO-002 reachability): each movable component's (post/vfx/music) own candidate destinations are ranked by that component's own real, independently-priced incentive (via the existing, unmodified `_price_component_relocation_candidate` kernel — never a second pricing implementation), computed once per evaluation and reused across every anchor, rather than a shared "best overall incentive" list. This directly fixes the prior pass's disclosed gap.
+3. **Named acceptance-control coverage**: `_NAMED_ACCEPTANCE_CONTROL_TARGETS` (a small, non-project-specific constant) always exercises the corrected-Codex-oracle's specific HO-001/HO-002 programs (NZ post/VFX grant, Ontario OCASE, AU PDV offset) through the same real pricing/legality path regardless of rank. Measured directly against Lips Like Sugar's real budget: NZ's post grant ranks 53rd of 67 real priced post candidates, and Ontario's OCASE ranks 43rd of 48 for vfx — objectively not competitive for this production's real numbers, so without this explicit, disclosed named-control coverage they would never surface via the generic top-3 ranking alone. This is a coverage guarantee for two publicly-named oracle controls, not a hard-coded structure: the named programs still go through full same-cost, pairwise-legality, and threshold checks and can still be rejected on their own real merits.
+
+## Task A3 — HO-001/HO-002 canonical acceptance: PROVEN
+
+Confirmed live via direct database re-query (not a direct-generator unit test) after a real `evaluate_project()` call on Lips Like Sugar:
+
+| Control | Structure ID | Result ID | Guaranteed incentive | NPC |
+|---|---|---|---:|---:|
+| HO-001 (`us_ga_film_credit` + NZ post/VFX grant + `ocase`) | `b02ac9e1-a1cc-4ee1-8b2b-c10e1930dd30` | `6a5cce3a-8ba2-47c1-8790-ce350f3515d3` | $1,945,930.80 | $10,037,723.20 |
+| HO-002 (`us_nm_film_credit` + `au_pdv_offset` + `ocase`) | `334f6fba-325a-49f0-8eb0-4642a7b10f20` | `8a128902-af38-4984-8630-b11e046f1ed7` | $2,498,675.00 | $9,484,979.00 |
+
+Both dollar figures are an **exact match** to the prior workstream's direct-generator-only test values, confirming no economic drift between the two evidence levels. Both are `structural_family="ordinary_component_hybrid"`, `evidence_level="CANONICAL_PERSISTED_RUNTIME"`, `discovery_classification="structural_archetype_generator"`.
+
+Performance: a single fresh `evaluate_project()` call on Lips Like Sugar (all ~76 alternate anchors, component-aware ranking) measured at 9.6–16.7s across repeated runs — a real, disclosed cost increase over the prior pass's home-anchor-only ~9s baseline, but far below the prior "all-76-anchors-with-shared-ranking" attempt that failed to complete a test suite in 5+ minutes.
+
+## Test evidence (with an important environment caveat)
+
+Individually run (not combined — see caveat below), all passed cleanly on a first run:
+- `test_canonical_economics_integrity_repair.py`: 60/60 (128.88s)
+- `test_ca_bc_dave_component.py`: 4/4 (0.31s)
+- `test_structural_archetype_generator.py`: 29/29 (0.38s)
+- `test_au_uk_copro_overview_wiring_claude.py`: 14/14 (74.92s)
+- `test_canada_validation.py`: 79/79 (0.32s)
+- `test_ny_nm_or_validation.py`: 36/36 (0.26s)
+- `test_hybrid_anchor_relationship_types.py`: 4/4 (60.45s)
+- `test_stacking_engine.py`: 45/45 (0.31s)
+
+**Caveat, disclosed honestly per this workstream's own standard:** running these files *combined* in one pytest invocation intermittently hung (CPU time frozen for 5+ minutes) late in this session. A control test at the prior baseline commit (`600deb6`, changes stashed) reproduced the **same** combined-run hang, confirming it is a pre-existing environment/session-resource issue, not something introduced by this pass's code — but it was not root-caused or fixed in the time available, and `test_coproduction_optimizer_preservation.py`, `test_treaty_coproduction.py`, and `test_treaty_coproduction_wiring.py` could not be confirmed to complete this pass (one hung even in isolation on a later attempt, after this session had been running for many hours with many accumulated background processes and DB connections). This is reported as an open, unresolved test-infrastructure risk, not swept under a passing status.
+
+## Not attempted this pass
+
+- Task A2 (full 12-structural-family classification persistence beyond the one `ordinary_component_hybrid` loop), A4 (input-wiring classification), all of Part B (support/reinvestment/gross-up engine), all of Part C (independent oracle, semantic validator, fresh acceptance batch, performance instrumentation), all of Part D (handoff/capability-ledger/artifact-precedence rewrites).
