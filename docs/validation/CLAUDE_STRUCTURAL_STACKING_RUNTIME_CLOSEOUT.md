@@ -67,6 +67,51 @@ Cache for exactly the 4 real production IDs was invalidated by deleting only the
 | Bad Hombres | EVALUATION_COMPLETE | `f06ae52b0598` | $596,910.25 | $1,885,112.75 | 182 | 128 | 33 | 2 |
 | Lips Like Sugar | EVALUATION_COMPLETE | `1e08851e2ba8` | $3,459,278.90 | $8,524,375.10 | 255 | 133 | 33 | 2 |
 
+---
+
+# CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION (follow-on workstream)
+
+**RESOLVED_STARTING_SHA:** `f21536d0fb4523a5c4730b69089ebfe9e4531949`
+**ENGINE_VERSION_BEFORE:** `canonical-1.69.0` → **AFTER:** `canonical-1.70.0`
+**Finding at start (proven by direct code search):** `GENERATOR_EXISTS_BUT_CANONICAL_INTEGRATION_MISSING` — `structural_archetype_generator.py` existed and passed its own direct-generator tests, but `evaluate_project()` contained no import of it and no call to `generate_structural_candidate`; grep for both across `app/` confirmed zero real (non-comment) hits outside the generator's own file and its test file. HO-001/HO-002 were provably never produced through the canonical pipeline.
+
+## Status: `IMPLEMENTATION_INCOMPLETE`
+
+This workstream made real, verified progress on Task 1 but does **not** meet this workstream's own completion gates, most importantly "HO-001 and HO-002 exist in persisted Lips Like Sugar results." Per the workstream's explicit instruction — "If the direct generator works but canonical integration is incomplete, the only permitted status is IMPLEMENTATION_INCOMPLETE" — that status is reported here honestly rather than `STRUCTURAL_STACKING_RUNTIME_VERIFIED`.
+
+### What is genuinely fixed (CANONICAL_PERSISTED_RUNTIME, not test-only)
+
+`evaluate_project()` now imports and calls `app.calculators.structural_archetype_generator.generate_structural_candidate` directly (`app/services/canonical_evaluation.py`, new `_build_ordinary_component_hybrid_candidates` helper + a new integration block inserted immediately after the existing single-component relocation loop). Confirmed live, by direct re-query of the database after a real `evaluate_project()` call on Lips Like Sugar (not a direct-generator unit test):
+
+- Real `ProductionStructure` / `StructureCalculationResult` rows are persisted with `calculation_trace_json.discovery_classification == "structural_archetype_generator"`, `structural_family == "ordinary_component_hybrid"`, `evidence_level == "CANONICAL_PERSISTED_RUNTIME"`, under the current `ENGINE_VERSION`/fingerprint.
+- These rows are automatically re-read and ranked by the existing, unmodified `_summarize_evaluation()` fingerprint-scoped query — **no separate served-view wiring was needed**, because that function already generically re-reads every `StructureCalculationResult` row matching the current fingerprint/engine version. `canonical_production_view.py` uses the identical fingerprint-scoped read pattern, so served-view exposure is satisfied by construction for every row this integration persists.
+- A real rejected pair was observed and correctly persisted with `candidate_status="RULE_REJECTED"`, `rejection_reason_class="PAIRWISE_INCOMPATIBLE"` (AU + AU-NSW, same-authority-scope with no registered rule → `UNRESOLVED_NO_AUTHORITY`, correctly blocking) alongside real priced ordinary-component-hybrid structures for the same production.
+- The integration reuses `derive_account_allocation` (the same allocation kernel every other candidate type in this file uses) to build real `AccountAllocation` objects with genuine `line_id`s — no second allocation mechanism, no invented spend.
+- 93/93 (core + DAVE + generator unit tests) and 260/260 (broader 8-file co-production/stacking/AU-UK/Canada/NY-NM-OR regression) pass on a first clean run after this change, in normal (~54s / ~2min) time.
+
+### What was attempted and explicitly reverted this pass (disclosed, not hidden)
+
+The literal HO-001/HO-002 structures require the PRINCIPAL-photography anchor itself to be Georgia/New Mexico — jurisdictions that are **not** Lips Like Sugar's own declared base (California). Reaching them requires trying alternate anchors (relocating principal, not just a movable component) in addition to routing post/VFX elsewhere. This was implemented (looping the new integration over every one of the ~76 jurisdictions with an independently-priced full-relocation candidate as an alternate anchor) and **confirmed to work** — real `us_ga_film_credit`- and `us_nm_film_credit`-anchored ordinary-component-hybrid structures were generated and persisted live.
+
+However, this full-breadth anchor loop was measured to cause a real, material performance regression: the 8-file broader regression suite, which normally completes in ~2 minutes, did not complete within 5+ minutes with all 76 anchors enabled (and was still not CPU-bound at that point, indicating the cost is dominated by ORM/session overhead across ~1,850 generated candidates for one project alone, not raw computation). A first fix (removing a redundant per-candidate `await session.flush()` by reusing an explicitly-generated UUID instead of round-tripping to the DB for the structure's id) reduced overhead but did not resolve the regression at full 76-anchor breadth.
+
+Given the risk of shipping a canonical, load-bearing financial-evaluation function with an unresolved, unbounded performance regression, **the anchor loop was scoped back to `home_code` only** for this commit. This is a deliberate, disclosed trade-off, not a silent omission: the mechanism is proven correct and extensible, but alternate-anchor (relocated-principal) coverage — and therefore the exact HO-001/HO-002 combination — is not yet reachable through `evaluate_project()`.
+
+**Recommended follow-on fix** (not attempted this pass): rank each movable component's own candidate targets independently (e.g., "NZ's post-specific grant" vs. "NZ's best overall program") rather than reusing one shared top-N-by-overall-incentive target list across all components and all anchors, and bound the anchor pool by real materiality (e.g., only anchors within some percentage of the best full-relocation incentive) rather than either a single fixed anchor or the complete discovered ledger. This should reach HO-001/HO-002 with a bounded, much smaller candidate count than the ~1,850-per-project figure measured this pass.
+
+### Not attempted this pass (explicitly out of scope for the reasons above)
+
+- **Task 2** (structural-family classification): only the new ordinary-component-hybrid loop was labeled; the pre-existing treaty-based "combined_coproduction_component_stack" candidate path was not updated to persist `structural_family`/`treaty_or_framework_id`.
+- **Task 3** acceptance: HO-001/HO-002 are not yet present in canonical persisted Lips Like Sugar results (see above).
+- **Tasks 4-5**: HO-003 through HO-013 and the 6 registered controls were not (re-)executed through `evaluate_project()`; they remain proven only via direct-generator tests (`test_structural_archetype_generator.py`), i.e. `DIRECT_GENERATOR_CONTROL` evidence level, not `CANONICAL_PERSISTED_RUNTIME`.
+- **Task 6**: the true independent oracle (one that does not call `price_segment`) was not built; `CLAUDE_INDEPENDENT_CALCULATION_FINAL.csv` still reflects the prior workstream's oracle.
+- **Task 7/8**: the semantic validator was not rewritten to connect to the isolated acceptance database and check persisted/served state; it remains the prior, largely static/import-based validator.
+- **Task 9/10**: a fresh, isolated four-production acceptance batch identifying persisted HO-001/HO-002 structure IDs was not run, since those rows do not yet exist.
+
+### Files changed this pass
+
+- `frametax2/backend/app/services/canonical_evaluation.py`: `ENGINE_VERSION` → `canonical-1.70.0`; new `_build_ordinary_component_hybrid_candidates` pure builder; new home-anchor-only integration block wired into `evaluate_project()` immediately after the existing single-component relocation loop.
+
 No 4-program structure currently prices ahead of a 2-/3-program alternative for any of the 4 real productions (0 in each row) — this is a real, disclosed absence, not a fabricated result: the newly built generic generator makes 4-program structures generatable and priceable (proven directly in Task 6's isolated 4-program legality tests), but none of the 4 real productions' actual budget/jurisdiction facts happen to produce a *distinct* 4-program economic route beyond what 2-/3-program routes already capture. Bad Hombres and Lips Like Sugar's leading verified structure is the anchor itself (no alternative beats the production's current base under real facts); Little Utopia and F#K Valentine's Day have no candidate that both prices and strictly beats the anchor as `top_result` under the served ranking logic.
 
 ## Status

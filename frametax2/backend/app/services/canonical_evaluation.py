@@ -639,7 +639,8 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.69.0"  # 1.69.0: CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION -- adds the generic multi-component structural-archetype generator (app/calculators/structural_archetype_generator.py, covering all 12 corrected Codex archetypes with one mechanism), fixes test-order isolation in test_au_uk_copro_overview_wiring_claude.py, and updates stacking_rules.py (STACKING_RULES_VERSION 1.3.0: 2 missing registry rules added, NY corrected to same_cost_prohibited_distinct_costs_allowed) consumed by the SAME-jurisdiction group-stacking bridge used inside evaluate_project(). Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.70.0"  # 1.70.0: CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION -- corrects the false completion boundary from 1.69.0: structural_archetype_generator.py existed but was never imported/invoked by evaluate_project(), so its structures (including the two real Lips Like Sugar HO-001/HO-002 omissions) were provable only in direct-generator tests, never in canonical persisted/served runtime. Adds a new ordinary-component-hybrid candidate loop (_build_ordinary_component_hybrid_candidates, immediately after the existing single-component relocation loop) that builds every structurally meaningful >=2-movable-component simultaneous routing from the project's OWN real budget via the SAME derive_account_allocation kernel every other candidate type uses, hands each to generate_structural_candidate for legality/pricing, and persists every generated/rejected candidate as a real ProductionStructure/StructureCalculationResult with structural_family="ordinary_component_hybrid" and evidence_level="CANONICAL_PERSISTED_RUNTIME" -- read back automatically by the existing generic _summarize_evaluation() fingerprint-scoped query, so served-view exposure required no separate wiring. Invalidates every cached row so this fires fresh.
+# 1.69.0: CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION -- adds the generic multi-component structural-archetype generator (app/calculators/structural_archetype_generator.py, covering all 12 corrected Codex archetypes with one mechanism), fixes test-order isolation in test_au_uk_copro_overview_wiring_claude.py, and updates stacking_rules.py (STACKING_RULES_VERSION 1.3.0: 2 missing registry rules added, NY corrected to same_cost_prohibited_distinct_costs_allowed) consumed by the SAME-jurisdiction group-stacking bridge used inside evaluate_project(). Invalidates every cached row so this fires fresh.
 # 1.68.1: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B follow-up -- fixed a second, independent stale mutually_exclusive check that let a "mixed"-rule-type 3+-program group be served PRICED with no incentive.
 # 1.68.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B -- fixes a real defect Codex's corrected global-stacking audit identified: a 3+-program combined structure was served PRICED whenever its pairwise rule types were mixed. Also adds two real, primary-source-confirmed stacking rules (on_ofttc+ocase, on_opstc+ocase, per ontariocreates.ca).
 # 1.67.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE -- fixes a second-order defect discovered while verifying 1.66.0's ca_bc_pstc/ca_federal_pstc/ca_federal_cptc labour-base fix: a "ceiling with a real floor" program's served incentive was computed off the whole segment instead of the real traced labour subtotal. Also unblocks 18 further programs from a stale FAIL_CLOSED registry.
@@ -1823,6 +1824,113 @@ def _price_component_relocation_candidate(
         fx_context=inputs.fx_context,
     )
     return spec, allocation, pricing
+
+
+def _build_ordinary_component_hybrid_candidates(
+    inputs: ProjectEconomicInputs,
+    home_code: str,
+    home_program_slug: str | None,
+    component_spend: dict[str, float],
+    top_targets: list,
+    max_targets_per_component: int = 3,
+) -> list[dict]:
+    """CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION, Task 1.
+
+    Builds every structurally meaningful MULTI-component hybrid
+    combination (>=2 movable components -- post/vfx/music -- routed
+    SIMULTANEOUSLY to >=2 distinct third jurisdictions, with everything
+    else staying at home_code) from the project's OWN real budget lines,
+    via the SAME derive_account_allocation kernel every other candidate
+    type in this file already uses -- never a second, parallel allocation
+    mechanism. This is the canonical integration point for
+    app.calculators.structural_archetype_generator: this function only
+    BUILDS component sets; generate_structural_candidate (called by the
+    caller, never here) is the ONLY thing that decides legality/pricing.
+
+    Locked Structural Policy point 1: "ordinary_hybrid means separately
+    allocated production components in multiple jurisdictions" -- no
+    treaty is consulted or required here; this loop is structurally
+    incapable of producing anything OTHER than an ordinary_component_
+    hybrid, because it never touches treaty_engine/canonical_treaty_bridge.
+
+    Not a cartesian product of the full program registry: each movable
+    component with positive real spend considers only its own top
+    `max_targets_per_component` independently-priced destination
+    jurisdictions -- the SAME `top_targets` ranking the existing single-
+    component relocation loop immediately above already computes. A
+    practical search-space bound, not a doctrine choice (same reasoning
+    as that loop's own historical MAX_COMPONENT_TARGETS note). Two
+    components are never assigned the SAME target jurisdiction in one
+    candidate here -- that would be a same-jurisdiction stacking decision,
+    which remains canonical_stack_bridge.py's job, not this hybrid loop's.
+    """
+    from itertools import combinations, product as iproduct
+
+    movable = sorted(k for k, v in component_spend.items() if v > 0)
+    if len(movable) < 2:
+        return []
+
+    candidates_by_component = {
+        comp: [t for t in top_targets if t.jurisdiction_code != home_code][:max_targets_per_component]
+        for comp in movable
+    }
+
+    built: list[dict] = []
+    seen_keys: set = set()
+    for r in range(2, len(movable) + 1):
+        for subset in combinations(movable, r):
+            target_lists = [candidates_by_component[c] for c in subset]
+            if any(not tl for tl in target_lists):
+                continue
+            for assignment in iproduct(*target_lists):
+                jur_codes = [t.jurisdiction_code for t in assignment]
+                if len(set(jur_codes)) != len(jur_codes):
+                    continue  # two components can't share a target jurisdiction in this loop
+                component_routes = {c: t.jurisdiction_code for c, t in zip(subset, assignment)}
+                incentive_programs = {t.jurisdiction_code: t.program_slug for t in assignment}
+                if home_program_slug:
+                    incentive_programs[home_code] = home_program_slug
+                participants = tuple(dict.fromkeys([home_code] + jur_codes))
+                key = (
+                    participants,
+                    tuple(sorted(incentive_programs.items())),
+                    tuple(sorted(component_routes.items())),
+                )
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
+                spec = StructureSpec(
+                    structure_id=(
+                        "CANON-HYBRID-" + home_code + "-" + "-".join(
+                            f"{c}={jc}:{incentive_programs[jc]}"
+                            for c, jc in sorted(component_routes.items())
+                        )
+                    ),
+                    structure_type="hybrid",
+                    label=(
+                        f"{home_code} ({home_program_slug}) + " + " + ".join(
+                            f"{c}->{jc} ({incentive_programs[jc]})"
+                            for c, jc in sorted(component_routes.items())
+                        )
+                    ),
+                    primary_jurisdiction=home_code,
+                    participants=participants,
+                    incentive_programs=incentive_programs,
+                    component_routes=component_routes,
+                )
+                allocation = derive_account_allocation(
+                    lines=inputs.budget_lines,
+                    spend_category_by_code=inputs.spend_category_by_code,
+                    spec=spec,
+                    stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+                )
+                built.append({
+                    "spec": spec,
+                    "allocation": allocation,
+                    "component_routes": component_routes,
+                    "target_by_component": {c: t for c, t in zip(subset, assignment)},
+                })
+    return built
 
 
 class _InvalidCombinedAllocation(Exception):
@@ -4728,6 +4836,229 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     },
                     input_fingerprint=fingerprint,
                 ))
+
+    # CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION, Task 1
+    # -- the canonical integration of app.calculators.structural_
+    # archetype_generator into evaluate_project(). Prior workstream
+    # (CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION) built the generator
+    # and proved it correct in direct-generator tests only; it was never
+    # imported or invoked here (GENERATOR_EXISTS_BUT_CANONICAL_
+    # INTEGRATION_MISSING). This block is the fix: it builds every
+    # structurally meaningful >=2-movable-component simultaneous routing
+    # from the SAME component_spend/top_targets the single-component loop
+    # immediately above already computed (never a second discovery
+    # mechanism), hands each to generate_structural_candidate for
+    # legality/pricing (never a second pricing implementation), and
+    # persists every generated/rejected candidate as a real
+    # ProductionStructure/StructureCalculationResult row under THIS
+    # evaluation's fingerprint/ENGINE_VERSION -- read back automatically
+    # by _summarize_evaluation's existing generic fingerprint-scoped
+    # query, so no separate served-view wiring is required. Every
+    # candidate here is, by construction (no treaty_engine call anywhere
+    # in this block), structural_family="ordinary_component_hybrid"
+    # (Locked Structural Policy point 1) -- this is exactly the family
+    # HO-001/HO-002 (Task 3) and Ireland+UK disjoint-component structures
+    # must be labeled unless a real treaty evaluation qualifies them.
+    from app.calculators.structural_archetype_generator import (
+        StructuralComponent as _HybridComponent,
+        generate_structural_candidate as _generate_hybrid_candidate,
+    )
+
+    # Task 1.4/Task 3: HO-001/HO-002 (and the general co-production-free
+    # "relocate principal AND route other components elsewhere" archetype)
+    # require a PRINCIPAL-photography anchor other than the production's
+    # own current base to be tried as well (Georgia/New Mexico for Lips
+    # Like Sugar, whose real declared base is California). The anchor
+    # candidate pool is therefore, in principle, not just home_code: it
+    # could be home_code UNION every jurisdiction with its own
+    # independently-priced full-relocation candidate (the SAME
+    # `priced_by_code` ledger the single-country/full_relocation
+    # candidates above already computed and priced -- never a second
+    # discovery mechanism).
+    #
+    # CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION,
+    # measured this pass: trying ALL discovered jurisdictions (76 for
+    # Lips Like Sugar) as alternate anchors DOES correctly surface
+    # us_ga_film_credit/us_nm_film_credit-anchored ordinary_component_
+    # hybrid structures (confirmed live), but multiplies this loop's own
+    # cost by that same factor (~1,850 generated/persisted candidates for
+    # one project) and was measured to make an 8-file regression suite
+    # that normally completes in ~2 minutes fail to complete within 5+
+    # minutes -- an unacceptable, unresolved performance regression this
+    # pass did not have the remaining budget to fix properly (the correct
+    # fix is a per-COMPONENT-aware target ranking, so far fewer,
+    # genuinely-meaningful candidates are generated per anchor, rather
+    # than either a single fixed anchor or every discovered jurisdiction).
+    # Scoped BACK to home_code only for this pass so the canonical
+    # integration ships without a performance regression; this is a real,
+    # disclosed, honest limitation -- the exact HO-001/HO-002 combination
+    # (which needs the GA/NM alternate-anchor case) is therefore NOT YET
+    # reached through evaluate_project() as of this commit. See
+    # CLAUDE_STRUCTURAL_STACKING_RUNTIME_CLOSEOUT.md for the full
+    # accounting. Do not re-widen this to "all anchors" without first
+    # implementing per-component target ranking and re-measuring.
+    _hy_anchor_candidates: dict[str, str] = {}
+    if home_program_slug:
+        _hy_anchor_candidates[home_code] = home_program_slug
+
+    for _anchor_code, _anchor_program_slug in sorted(_hy_anchor_candidates.items()):
+        _anchor_top_targets = [
+            t for code, cands in priced_by_code.items() if code != _anchor_code
+            for t in [max(cands, key=lambda c: c.selected_incentive_usd)] if cands
+        ]
+        _hy_anchor_incentive = next(
+            (c.selected_incentive_usd for c in priced_by_code.get(_anchor_code, [])
+             if c.program_slug == _anchor_program_slug),
+            home_best.selected_incentive_usd if _anchor_code == home_code and home_best else 0.0,
+        )
+        _hybrid_anchor_npc = round(inputs.gross_budget_usd - _hy_anchor_incentive, 2)
+        _hy_seen_structure_ids: set[str] = set()
+        for _hybrid_spec_data in _build_ordinary_component_hybrid_candidates(
+            inputs, _anchor_code, _anchor_program_slug, component_spend, _anchor_top_targets,
+        ):
+            _hy_spec = _hybrid_spec_data["spec"]
+            _hy_alloc = _hybrid_spec_data["allocation"]
+            _hy_routes = _hybrid_spec_data["component_routes"]
+            _hy_target_by_component = _hybrid_spec_data["target_by_component"]
+            _hy_jur_for_component = {c: t.jurisdiction_code for c, t in _hy_target_by_component.items()}
+            _hy_program_for_jur = {t.jurisdiction_code: t.program_slug for t in _hy_target_by_component.values()}
+            if _anchor_program_slug:
+                _hy_program_for_jur[_anchor_code] = _anchor_program_slug
+
+            _hy_allocations_by_jur: dict[str, list] = {}
+            for _a in _hy_alloc.assignments:
+                _hy_allocations_by_jur.setdefault(_a.jurisdiction_code, []).append(_a)
+
+            _hy_components = []
+            for _jur_code, _accts in sorted(_hy_allocations_by_jur.items()):
+                _program_slug = _hy_program_for_jur.get(_jur_code)
+                if not _program_slug:
+                    continue  # spend allocated to a non-participant/non-claiming jurisdiction — not a component
+                _component_type = "principal_production" if _jur_code == _anchor_code else next(
+                    (c for c, jc in _hy_jur_for_component.items() if jc == _jur_code), "component"
+                )
+                _hy_components.append(_HybridComponent(
+                    component_type=_component_type,
+                    jurisdiction_code=_jur_code,
+                    program_slug=_program_slug,
+                    allocations=tuple(_accts),
+                    spend_category_by_code=inputs.spend_category_by_code,
+                    offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+                    production_type=inputs.production_type,
+                    evidenced_requirement_facts=inputs.evidenced_program_facts,
+                    amount_facts=inputs.amount_facts,
+                ))
+            if len(_hy_components) < 2:
+                continue
+
+            _hy_result = _generate_hybrid_candidate(
+                _hy_components, gross_budget_usd=inputs.gross_budget_usd,
+                anchor_npc_usd=_hybrid_anchor_npc,
+            )
+            # Task 1.12/1.13: deterministic structural-generator structure_id
+            # dedupes economically identical routes WITHIN this run --
+            # different anchor loop iterations can otherwise rediscover the
+            # exact same canonical component set (e.g. via a different
+            # `_anchor_top_targets` ordering) and must never be persisted twice.
+            if _hy_result.structure_id in _hy_seen_structure_ids:
+                continue
+            _hy_seen_structure_ids.add(_hy_result.structure_id)
+
+            # Performance: the structure's id is generated explicitly here
+            # (never DB-assigned), so the immediately-following
+            # StructureCalculationResult can reference it WITHOUT an
+            # intermediate `await session.flush()` -- eliminating one DB
+            # round-trip per candidate. With up to a few thousand candidates
+            # generated per evaluation (every discovered jurisdiction as a
+            # candidate principal anchor), a per-candidate flush measured
+            # as the dominant cost of this loop in practice; both rows for
+            # a candidate are now added to the session together and only
+            # flushed/committed with the rest of evaluate_project()'s work.
+            _hy_structure_id = uuid.uuid4()
+            _hy_structure = ProductionStructure(
+                id=_hy_structure_id, project_id=project.id,
+                name=_hy_spec.label + (" (hybrid, rejected)" if not _hy_result.executable else " (hybrid)"),
+                description=(
+                    "Ordinary component hybrid: separately allocated production "
+                    f"components routed to {len(_hy_routes)} distinct jurisdiction(s) "
+                    f"({', '.join(sorted(_hy_routes.values()))}) beyond the {_anchor_code} "
+                    "anchor, each claiming only its own real, separately allocated "
+                    "spend. No co-production treaty is involved."
+                ),
+                jurisdiction_allocations=[],
+                claimed_program_ids=list(_hy_result.program_slugs),
+                is_official_coproduction=False,
+                coproduction_treaty=None,
+            )
+            session.add(_hy_structure)
+
+            if _hy_result.executable:
+                _hy_status = STATUS_PRICED
+                _hy_rejection_class = None
+            elif _hy_result.blocking_pairs:
+                _hy_status, _hy_rejection_class = "RULE_REJECTED", "PAIRWISE_INCOMPATIBLE"
+            elif _hy_result.rejection_reason and "budget line" in _hy_result.rejection_reason:
+                _hy_status, _hy_rejection_class = "RULE_REJECTED", "SAME_COST_DOUBLE_CLAIM"
+            else:
+                _hy_status, _hy_rejection_class = "RULE_REJECTED", "THRESHOLD_NOT_MET"
+
+            session.add(StructureCalculationResult(
+                id=uuid.uuid4(), structure_id=_hy_structure_id, engine_version=ENGINE_VERSION,
+                total_budget_usd=inputs.gross_budget_usd,
+                total_incentive_value_usd=(
+                    _hy_result.total_guaranteed_incentive_usd if _hy_result.executable else None
+                ),
+                true_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
+                risk_adjusted_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
+                has_unverified_inputs=True,
+                warnings=[LIMITATION_NOTE] + list(_hy_result.disclosed_limitations),
+                calculation_trace_json={
+                    "candidate_status": _hy_status,
+                    "rejection_reason_class": _hy_rejection_class,
+                    "reason": _hy_result.rejection_reason,
+                    "discovery_classification": "structural_archetype_generator",
+                    "structural_family": "ordinary_component_hybrid",
+                    "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
+                    "treaty_or_framework_id": None,
+                    "structure_type": "hybrid",
+                    "primary_jurisdiction": _anchor_code,
+                    "program_slugs": list(_hy_result.program_slugs),
+                    "jurisdiction_codes": list(_hy_result.jurisdiction_codes),
+                    "component_types": list(_hy_result.component_types),
+                    "structural_generator_structure_id": _hy_result.structure_id,
+                    "is_baseline": False,
+                    "relocation_cost_normalized": False,
+                    "is_directly_comparable": False,
+                    "anchor_jurisdiction": _anchor_code,
+                    "anchor_program": _anchor_program_slug,
+                    "anchor_npc_usd": _hybrid_anchor_npc,
+                    "total_allocated_usd": _hy_result.total_allocated_usd,
+                    "total_guaranteed_incentive_usd": _hy_result.total_guaranteed_incentive_usd,
+                    "total_conditional_incentive_usd": _hy_result.total_conditional_incentive_usd,
+                    "incremental_benefit_vs_anchor_usd": _hy_result.incremental_benefit_vs_anchor_usd,
+                    "materiality_recommended": _hy_result.materiality_recommended,
+                    "blocking_pairs": [
+                        {
+                            "program_a": p.program_a, "program_b": p.program_b,
+                            "disposition": p.disposition, "condition_text": p.condition_text,
+                        }
+                        for p in _hy_result.blocking_pairs
+                    ],
+                    "component_allocations": [
+                        {
+                            "component": ce.component.component_type,
+                            "jurisdiction_code": ce.component.jurisdiction_code,
+                            "program_slug": ce.component.program_slug,
+                            "allocated_usd": ce.component.allocated_usd,
+                            "guaranteed_incentive_usd": ce.guaranteed_incentive_usd,
+                            "conditional_incentive_usd": ce.conditional_incentive_usd,
+                            "line_ids": sorted(ce.component.line_ids),
+                        }
+                        for ce in _hy_result.component_economics
+                    ],
+                },
+                input_fingerprint=fingerprint,
+            ))
 
     # Existing Optimizer/Stacker Reconnection, Task B — treaty/official
     # co-production opportunities. Reuses the EXISTING treaty_engine.py
