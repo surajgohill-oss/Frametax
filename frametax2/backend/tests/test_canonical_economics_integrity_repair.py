@@ -1284,3 +1284,132 @@ def test_lv_national_film_centre_prices_the_real_primary_sourced_30_percent():
         qpe_usd=50_000.0,
     )
     assert rr_below is None, "a genuinely tiny segment must fail the real minimum-spend gate"
+
+
+# ── CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B ─────
+# A generic, group-size-independent pairwise-legality invariant for
+# 3+-program combined structures: every unordered member pair must
+# resolve through the canonical compatibility system, and a single
+# incompatible pair invalidates the WHOLE structure -- never a partial
+# per-pair adjustment. Reproduces and fixes the exact defect Codex's
+# corrected stacking audit identified: ca_federal_cptc+on_ofttc+on_opstc
+# was served PRICED because the group's rule_type collapsed to "mixed"
+# (spend_reduction + mutually_exclusive + mutually_exclusive), which
+# bypassed the prior `rule_type == "mutually_exclusive"` check entirely.
+
+def _stack_cand(slug, code, val=100_000.0):
+    from app.calculators.canonical_stack_bridge import StackCandidate
+    return StackCandidate(
+        program_slug=slug, jurisdiction_code=code, selected_incentive_usd=val,
+        effective_rate=0.3, qualifying_spend_usd=val / 0.3, incentive_type="tax_credit",
+    )
+
+
+def test_cptc_ofttc_opstc_triple_is_rejected_not_priced():
+    """The exact reproduction of Codex's corrected-audit finding: a
+    3-program group mixing rule types (one spend_reduction pair, two
+    mutually_exclusive pairs) must be rejected as a whole, not served
+    PRICED because its collapsed rule_type is 'mixed'."""
+    from app.calculators.canonical_stack_bridge import price_program_group_stack
+
+    group = [_stack_cand("ca_federal_cptc", "CA"), _stack_cand("on_ofttc", "CA-ON"),
+             _stack_cand("on_opstc", "CA-ON")]
+    result = price_program_group_stack(group)
+    assert result is not None, "the group must still be generated (disclosed), not silently omitted"
+    assert result.contains_blocking_incompatibility is True
+    assert len(result.blocking_pairs) == 2  # cptc-opstc AND ofttc-opstc
+    blocking_ids = {frozenset((p["program_a_id"], p["program_b_id"])) for p in result.blocking_pairs}
+    assert frozenset(("ca_federal_cptc", "on_opstc")) in blocking_ids
+    assert frozenset(("on_ofttc", "on_opstc")) in blocking_ids
+
+
+def test_ofttc_ocase_and_opstc_ocase_can_price_real_confirmed_pairs():
+    """Real, primary-source-confirmed pairs (ontariocreates.ca: OCASE
+    'may be claimed... in addition to' OFTTC or OPSTC) must price as
+    2-program spend_reduction combinations -- proving the OCASE rules
+    added this workstream are live and correctly registered. (The
+    3-program ca_federal_cptc+on_ofttc+ocase combination named in this
+    workstream's own instructions is NOT implemented: Ontario Creates'
+    official page names only OFTTC/OPSTC as OCASE's stacking partners,
+    never CPTC, so ca_federal_cptc+ocase remains a genuine, undecided
+    authority gap -- not fabricated here. See
+    CLAUDE_CORRECTED_CODEX_RECONCILIATION.csv.)"""
+    from app.calculators.canonical_stack_bridge import price_program_group_stack
+
+    ocase = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    for base in ("on_ofttc", "on_opstc"):
+        group = [_stack_cand(base, "CA-ON"), _stack_cand(ocase, "CA-ON")]
+        result = price_program_group_stack(group)
+        assert result is not None, f"{base}+ocase must be a registered, generated pair"
+        assert result.contains_blocking_incompatibility is False
+        assert result.rule_type == "spend_reduction"
+
+
+def test_four_member_structure_rejected_when_any_pair_is_prohibited():
+    """A four-member structure must be rejected as a whole if ANY of its
+    six unordered member pairs is prohibited/mutually_exclusive -- proven
+    with a real 4-member group (adding on_ofttc+ocase, a real confirmed
+    additive pair, alongside the known-bad cptc+ofttc+opstc trio)."""
+    from app.calculators.canonical_stack_bridge import price_program_group_stack
+
+    ocase = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    group = [
+        _stack_cand("ca_federal_cptc", "CA"), _stack_cand("on_ofttc", "CA-ON"),
+        _stack_cand("on_opstc", "CA-ON"), _stack_cand(ocase, "CA-ON"),
+    ]
+    result = price_program_group_stack(group)
+    # ca_federal_cptc+ocase has no registered rule at all, so this exact
+    # 4-member group is not even fully_covered -- confirms it is REFUSED
+    # (never partially trusted), which is itself a correct outcome for a
+    # group containing a genuinely unresolved pair.
+    assert result is None, (
+        "a group with an unresolved (ca_federal_cptc+ocase) AND a prohibited "
+        "(on_ofttc+on_opstc) pair must never be treated as priceable"
+    )
+
+
+def test_higher_order_pairwise_legality_is_order_independent():
+    """price_program_group_stack(perm) must be identical for every
+    permutation of the same candidate set -- the blocking-incompatibility
+    determination must not depend on input order."""
+    import itertools
+    from app.calculators.canonical_stack_bridge import price_program_group_stack
+
+    group = [_stack_cand("ca_federal_cptc", "CA"), _stack_cand("on_ofttc", "CA-ON"),
+             _stack_cand("on_opstc", "CA-ON")]
+    results = [price_program_group_stack(list(perm)) for perm in itertools.permutations(group)]
+    assert all(r.contains_blocking_incompatibility is True for r in results)
+    assert all(r.program_slugs == results[0].program_slugs for r in results), (
+        "canonical ordering must make every permutation byte-identical"
+    )
+
+
+def test_no_stale_rule_type_mutually_exclusive_check_survives_in_canonical_evaluation():
+    """CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B
+    follow-up: the first fix pass missed a SECOND, independent stale
+    comparison (the combined-structure candidate_status computation)
+    that re-implemented the identical defect the first fix replaced --
+    only caught by running the real four-production batch, which showed
+    a self-contradictory served state (candidate_status PRICED with
+    total_incentive_value_usd None). Static guard: canonical_evaluation.py
+    must never compare a stack result's collapsed group-level rule type
+    directly against the hard-incompatibility literal -- every such
+    decision must go through _combination_is_invalid / contains_blocking_
+    incompatibility, computed from every individual pairwise sub-rule."""
+    import inspect
+    from app.services import canonical_evaluation as ce_module
+
+    _needle = "rule_type == " + repr("mutually_exclusive")
+    source_lines = inspect.getsource(ce_module).splitlines()
+    offending = [
+        ln for ln in source_lines
+        if _needle in ln and not ln.strip().startswith("#") and '"""' not in ln
+    ]
+    assert not offending, (
+        "found a direct stack_result.rule_type comparison against the hard-"
+        "incompatibility literal in canonical_evaluation.py -- this is the exact "
+        "stale pattern that let a 'mixed'-rule-type 3+-program group (e.g. "
+        "cptc+ofttc+opstc) be served PRICED despite containing a real hard "
+        "incompatibility. Use _combination_is_invalid instead. Offending line(s): "
+        + repr(offending)
+    )

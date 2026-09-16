@@ -1,0 +1,11 @@
+program_id,area_changed_this_workstream,before,after,authority_basis,status
+"ca_federal_cptc + on_ofttc + on_opstc (structure, not a program)","higher-order pairwise legality gate (canonical_stack_bridge.py, canonical_evaluation.py)",served PRICED (group rule_type collapsed to 'mixed'),served REJECTED with 2 named blocking pairs,"CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-008 (cptc-opstc), EVID-013 (ofttc-opstc)",FIXED
+on_ofttc + ontario_computer_animation_and_special_effects_tax_credit_ocase (pair rule),new stacking rule added (app/optimization/stacking_rules.py),no registered rule (pair never combinable),"spend_reduction, additive","ontariocreates.ca official OCASE page, fetched live 2026-09-16",ADDED
+on_opstc + ontario_computer_animation_and_special_effects_tax_credit_ocase (pair rule),new stacking rule added,no registered rule,"spend_reduction, additive","ontariocreates.ca official OCASE page, fetched live 2026-09-16",ADDED
+au_qld_pdv_rebate,no change this workstream,10% (fixed prior workstream),10% (unchanged),"screenqueensland.com.au (re-confirmed valid, not re-fetched this workstream per Phase H instruction to preserve unless contradicted)",PRESERVED
+us_il_film_production_services_credit,no change this workstream,"35%, unblocked (fixed prior workstream)","35%, unblocked (unchanged)",dceo.illinois.gov (preserved),PRESERVED
+me_cash_rebate,no change this workstream,"25%, unblocked from FAIL_CLOSED (fixed prior workstream)",25% (unchanged) -- Codex's 30%+5% claim remains rejected with evidence,Film Centre of Montenegro / filminmontenegro.me (preserved),PRESERVED
+pt_scri_pt_medium_budget,no change this workstream,"EUR 1.5 million cap (government gazette, preserved prior workstream)",EUR 1.5 million cap (unchanged) -- Codex's EUR 1m claim remains rejected with evidence,Portaria 265-A/2026 (preserved),PRESERVED
+fr_trip,no change this workstream,VFX-component-traced 30/40% gate (fixed prior workstream),unchanged,cnc.fr (preserved),PRESERVED
+lv_national_film_centre_incentive,no change this workstream,"30% flat, real min-spend gate (fixed prior workstream)",unchanged,nkc.gov.lv (preserved),PRESERVED
+ca_bc_pstc / ca_federal_pstc / ca_federal_cptc,no change this workstream,"real labour-only-base derivation, floor/ceiling shared-basis fix (fixed prior workstream)",unchanged,gov.bc.ca / canada.ca (preserved),PRESERVED

@@ -177,6 +177,24 @@ class MultiProgramStackResult:
     violations: list[dict] = field(default_factory=list)
     conditionals: list[dict] = field(default_factory=list)
     disclosed_limitations: list[str] = field(default_factory=list)
+    # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B: a
+    # generic, group-size-independent pairwise-legality gate. The prior
+    # `rule_type == "mutually_exclusive"` check (canonical_evaluation.py)
+    # only caught this when EVERY pairwise sub-rule in the group shared
+    # the identical rule_type -- _rule_type_for_group collapses to
+    # "mixed" for any group mixing types (e.g. ca_federal_cptc+on_ofttc+
+    # on_opstc: spend_reduction + mutually_exclusive + mutually_exclusive
+    # -> "mixed"), silently letting a group containing a real hard
+    # incompatibility (on_ofttc+on_opstc, a real production-type
+    # election conflict) be served as PRICED. This field is computed
+    # directly from every pairwise sub-rule in the group (never from the
+    # collapsed group-level rule_type), so it is correct regardless of
+    # how many OTHER pairs in the group are compatible.
+    contains_blocking_incompatibility: bool = False
+    #: The exact failing pair(s), so a rejection is precise and machine-
+    #: readable rather than a bare boolean -- "do not silently omit the
+    #: structure" (Phase B) requires naming WHICH pair is invalid.
+    blocking_pairs: list[dict] = field(default_factory=list)
 
 
 def _slug_and_alias_candidates(slug: str) -> tuple[str, ...]:
@@ -331,6 +349,25 @@ def _build_group_result(
     adj_result = apply_stacking_adjustments(incentive_results, rules)
     legal = evaluate_legal_stacking(claimed_program_ids=slugs, stacking_rules=rules)
 
+    # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B:
+    # scan every INDIVIDUAL pairwise rule in this group -- never the
+    # collapsed group-level rule_type -- for a real hard incompatibility.
+    # mutually_exclusive is the only hard-block type that can appear here
+    # (load_named_rules_for_group already filtered `rules` down to
+    # _PUBLISHABLE_RULE_TYPES = {allowed, mutually_exclusive,
+    # spend_reduction} -- "prohibited"/"conditional" pairs never reach
+    # this function at all, correctly making the WHOLE group ungenerated
+    # via fully_covered=False upstream).
+    _blocking_rules = [r for r in rules if r["rule_type"] == "mutually_exclusive"]
+    contains_blocking_incompatibility = bool(_blocking_rules)
+    blocking_pairs = [
+        {
+            "program_a_id": r["program_a_id"], "program_b_id": r["program_b_id"],
+            "rule_type": r["rule_type"], "condition_text": r.get("condition_text"),
+        }
+        for r in _blocking_rules
+    ]
+
     disclosed_limitations: list[str] = []
     for rule in rules:
         if rule["rule_type"] != "spend_reduction":
@@ -405,6 +442,8 @@ def _build_group_result(
             for c in legal.conditionals
         ],
         disclosed_limitations=disclosed_limitations,
+        contains_blocking_incompatibility=contains_blocking_incompatibility,
+        blocking_pairs=blocking_pairs,
     )
 
 

@@ -1,0 +1,6 @@
+disposition,node_count,status,note
+POSITIVE_STRUCTURAL_SCOPE_CONFIRMED,0 of 90 classified,NOT_IMPLEMENTED,"Phase G2 (90 scope-unresolved executable nodes) was not implemented this workstream. No per-node classification list was extracted from the corrected Codex artifacts within the time available, and none is fabricated here."
+NO_DIRECT_STACKING_RELATIONSHIP,0 of 90 classified,NOT_IMPLEMENTED,same
+SAME_ECONOMIC_IDENTITY,0 of 90 classified,NOT_IMPLEMENTED,same
+TREATY_RELATIONSHIP_REQUIRED,0 of 90 classified,NOT_IMPLEMENTED,same
+AUTHORITY_RESEARCH_REQUIRED,"90 of 90 (by default, pending classification)",NOT_IMPLEMENTED,"All 90 nodes remain unclassified pending a dedicated future pass; this is a disclosed gap, not a silent omission."

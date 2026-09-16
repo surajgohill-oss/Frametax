@@ -19,7 +19,8 @@ from __future__ import annotations
 #: so a stacking-compatibility/reduction-rule change invalidates cached
 #: served evaluations, including combined-structure results. Bump on any
 #: material change.
-STACKING_RULES_VERSION = "1.1.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
+STACKING_RULES_VERSION = "1.2.0"  # 1.2.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT -- added on_ofttc+ocase and on_opstc+ocase spend_reduction rules (confirmed directly against ontariocreates.ca's own official OCASE page), matching CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015.
+# 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
 
 from app.data.global_inventory import GlobalProgramEntry
 from app.optimization.types import StackingViolation
@@ -505,6 +506,33 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "OPSTC applies to foreign service productions using Ontario. "
             "A production cannot be both a domestic content production (OFTTC) and a foreign "
             "service production (OPSTC) simultaneously."
+        ),
+    },
+    # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT (Phase B/D):
+    # confirmed directly against Ontario Creates' own official OCASE page
+    # (ontariocreates.ca/tax-incentives/ocase, fetched live): "The OCASE
+    # Tax Credit may be claimed on eligible expenditures in addition to
+    # the Ontario Film and Television Tax Credit (OFTTC) or the Ontario
+    # Production Services Tax Credit (OPSTC)." Matches
+    # CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015
+    # (ALLOWED_WITH_SPEND_REDUCTION for both pairs). The federal CPTC's
+    # own combination with OCASE is NOT confirmed by this same official
+    # page (which names only OFTTC/OPSTC) and is left unresolved rather
+    # than inferred — see CLAUDE_CORRECTED_CODEX_RECONCILIATION.csv.
+    frozenset({"on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "OCASE (Ontario Computer Animation and Special Effects Tax Credit) may be "
+            "claimed in addition to OFTTC on the same production's eligible computer "
+            "animation/VFX labour expenditure (ontariocreates.ca)."
+        ),
+    },
+    frozenset({"on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "OCASE (Ontario Computer Animation and Special Effects Tax Credit) may be "
+            "claimed in addition to OPSTC on the same production's eligible computer "
+            "animation/VFX labour expenditure (ontariocreates.ca)."
         ),
     },
     # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION:

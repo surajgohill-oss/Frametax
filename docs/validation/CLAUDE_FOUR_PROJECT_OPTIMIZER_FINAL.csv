@@ -1,0 +1,5 @@
+production,evaluation_status,engine_version,fingerprint,anchor_incentive_usd,priced_count,unpriceable_count,combined_stacks_count,cptc_ofttc_opstc_status,ofttc_opstc_ocase_status
+The Little Utopia,EVALUATION_COMPLETE,canonical-1.68.1,3dd6f62cf2b9a9e8bde68a8e85e8a90677bdef44de51c1a551cfde940a7e82a1,573059.70,178,128,4,"N/A (CPTC fails content certification for this production, structure not generated)",RULE_REJECTED
+F#K Valentine's Day,EVALUATION_COMPLETE,canonical-1.68.1,742bb058c22367a6ac72b85bcb369251ee047a7e528996a8d7a45f532bcec7de,1445659.84,232,154,9,RULE_REJECTED,RULE_REJECTED
+Bad Hombres,EVALUATION_COMPLETE,canonical-1.68.1,a11df122bcc7daef1095efcd4b37f9f432e46f09ba32b620a321beac1d414c44,596910.25,181,128,9,RULE_REJECTED,RULE_REJECTED
+Lips Like Sugar,EVALUATION_COMPLETE,canonical-1.68.1,43a353ff27810d90679a9cc9e7e99c089106a78d8aae60cf5c93b8a2c0d03dbf,3459278.90,254,133,9,RULE_REJECTED,RULE_REJECTED

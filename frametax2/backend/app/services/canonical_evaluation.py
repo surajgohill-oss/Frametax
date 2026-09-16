@@ -639,7 +639,9 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.67.0"  # 1.67.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE -- fixes a second-order defect discovered while verifying 1.66.0's ca_bc_pstc/ca_federal_pstc/ca_federal_cptc labour-base fix: when a "ceiling with a real floor" program (base tier real+guaranteed, separate discretionary ceiling tier) resolves to its CEILING tier, resolve_program_rate never consulted the SEPARATE floor tier's own component-basis condition, so the served GUARANTEED floor incentive was computed off the segment's entire broad QPE instead of the real traced labour subtotal -- a real, material overstatement (proven: $3,960,000 served instead of the real $144,000). resolve_program_rate now falls back to the floor tier's own conditions when the selected/ceiling tier declares no basis of its own (floor and ceiling of one program share one qualifying base by construction). Also unblocks 18 further programs from authority_coverage_registry.py's B1_DISCRETIONARY_RULING FAIL_CLOSED set (see AUTHORITY_COVERAGE_REGISTRY_VERSION 1.8.0) whose already-correct, already-sourced formulaic RateRules were permanently zeroed by a genuine misclassification. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.68.1"  # 1.68.1: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B follow-up -- the 1.68.0 fix missed a SECOND, independent `stack_result.rule_type == "mutually_exclusive"` check (the combined-structure candidate_status computation) that re-implemented the identical stale test, so a 3+-program group with a "mixed" collapsed rule_type was STILL served candidate_status=PRICED even though total_incentive_value_usd was already correctly None from the first fix -- a self-contradictory served state (PRICED with no incentive), caught only by running the real four-production batch (ca_federal_cptc+on_ofttc+on_opstc and on_ofttc+on_opstc+ocase, all 4 productions), not by the unit tests alone. Both checks now use the SAME _combination_is_invalid variable. Invalidates every cached row so this fires fresh.
+# 1.68.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B -- fixes a real defect Codex's corrected global-stacking audit identified: a 3+-program combined structure was served PRICED whenever its pairwise rule types were mixed. Also adds two real, primary-source-confirmed stacking rules (on_ofttc+ocase, on_opstc+ocase, per ontariocreates.ca).
+# 1.67.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE -- fixes a second-order defect discovered while verifying 1.66.0's ca_bc_pstc/ca_federal_pstc/ca_federal_cptc labour-base fix: a "ceiling with a real floor" program's served incentive was computed off the whole segment instead of the real traced labour subtotal. Also unblocks 18 further programs from a stale FAIL_CLOSED registry.
 # 1.66.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE -- real labour-only-base derivation for ca_bc_pstc/ca_federal_pstc/ca_federal_cptc (previously kind="rate_base_narrower_than_qpe", which only disclosed a narrower base was required but never bound one, so these three programs could never price at all), reusing the same component_basis_spend_categories mechanism already established for ca_bc_dave.
 # 1.65.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE (France/Latvia P0 fixes) -- corrects Codex P0-CALC-001 (fr_trip's VFX-spend fact was synthesized from whole French QPE instead of the real traced VFX-component subtotal) and P0-CALC-002 (Latvia's 30% ceiling had no evaluable condition; replaced with the National Film Centre of Latvia's real, primary-sourced single flat 30% rate gated on a real converted minimum-spend threshold). See CLAUDE_18_CALCULATION_RECONCILIATION.csv and CLAUDE_LATVIA_PRIMARY_SOURCE_RESOLUTION.md.
 # 1.64.0: CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR -- generic repair of the discovery-to-pricing pipeline for formulaically executable programs whose amount_fact_key (spend/labor/shooting-day/tier amount) cannot be known before a candidate has allocated real spend. Replaced the us_or_opif-only discovery/preflight probe special case with program_rate_rules.build_discovery_amount_probe(), applied to EVERY program's amount_fact_key conditions (au_location_offset, ca_bc_dave, ma_ccm_rebate, th_film_incentive, and any other program in this same defect class), and extended allocation_pricing.price_segment's existing component-basis amount-fact derivation to also derive whole-segment (non-component-basis) currency-suffixed amount facts from the segment's own real qpe via the canonical FX path. Invalidates every cached row so this fires fresh.
@@ -1657,6 +1659,28 @@ def _build_conditional_bilateral_scenario(
             }
             stacking_groups.append(unresolved_group)
             unresolved_stack_groups.append(unresolved_group)
+            continue
+        # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B:
+        # the SAME generic pairwise-legality gate as the main candidate
+        # loop -- a group containing a real hard incompatibility (e.g.
+        # on_ofttc+on_opstc inside a larger mixed-rule-type group) must
+        # never contribute economics to this scenario's combined total,
+        # exactly like it must never be served as PRICED there.
+        if stack_result.contains_blocking_incompatibility:
+            _blocked_group = {
+                "jurisdiction_code": code,
+                "program_slugs": stack_result.program_slugs,
+                "stacking_verified": False,
+                "rejection_reason_class": "MUTUALLY_EXCLUSIVE_MEMBER_PAIR",
+                "blocking_pairs": stack_result.blocking_pairs,
+                "note": (
+                    "This combination contains at least one mutually-exclusive "
+                    "member pair -- economics are withheld (never summed) even "
+                    "though other pairs within the group are compatible."
+                ),
+            }
+            stacking_groups.append(_blocked_group)
+            unresolved_stack_groups.append(_blocked_group)
             continue
         total_conditional_incentive += stack_result.adjusted_incentive_usd
         stacking_groups.append({
@@ -4148,7 +4172,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # structure, so it carries NO economics at all -- not an incentive,
         # not an NPC. Leaving those populated made it look priced to the
         # summarizer and it kept appearing in `ranked`.
-        _combination_is_invalid = stack_result.rule_type == "mutually_exclusive"
+        #
+        # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B:
+        # the prior `stack_result.rule_type == "mutually_exclusive"` check
+        # only caught this when the group's rule_type COLLAPSED to exactly
+        # "mutually_exclusive" -- a 3+-program group mixing rule types
+        # (e.g. ca_federal_cptc+on_ofttc+on_opstc: spend_reduction +
+        # mutually_exclusive + mutually_exclusive) reports rule_type=
+        # "mixed" and was wrongly served PRICED despite containing a real
+        # hard incompatibility (on_ofttc+on_opstc). contains_blocking_
+        # incompatibility is computed from EVERY individual pairwise
+        # sub-rule in the group, independent of group size or how many
+        # other pairs are compatible -- see canonical_stack_bridge.py's
+        # _build_group_result.
+        _combination_is_invalid = stack_result.contains_blocking_incompatibility
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd,
@@ -4169,10 +4206,21 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # (the architecture's existing terminal-state pattern) rather
                 # than deleted, so the producer can see the pair was
                 # considered and why it cannot be combined.
+                # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT,
+                # Phase B: this is a SEPARATE computation from
+                # _combination_is_invalid above and was missed in the first
+                # pass of this fix -- it independently re-implemented the
+                # exact same stale `rule_type == "mutually_exclusive"` check,
+                # so a 3+-program group with a "mixed" collapsed rule_type
+                # was still reported candidate_status=PRICED (with
+                # total_incentive_value_usd correctly None from the OTHER,
+                # already-fixed check) -- a real, self-contradictory served
+                # state (PRICED with no incentive) caught only by running
+                # the real four-production batch, not by the unit tests
+                # alone. Must use the SAME _combination_is_invalid this
+                # whole block already computes.
                 "candidate_status": (
-                    STATUS_RULE_REJECTED
-                    if stack_result.rule_type == "mutually_exclusive"
-                    else STATUS_PRICED
+                    STATUS_RULE_REJECTED if _combination_is_invalid else STATUS_PRICED
                 ),
                 # Section 5 -- same generic structured field as the other
                 # two STATUS_PRICED-producing paths.
@@ -4213,12 +4261,22 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 ),
                 "relocation_completeness_jurisdiction": code,
                 "stacking_rule_type": stack_result.rule_type,
+                "blocking_pairs": stack_result.blocking_pairs,
                 # A rejected combination must explain itself -- never an
-                # unexplained drop into the unpriceable bucket.
+                # unexplained drop into the unpriceable bucket. Phase B:
+                # names the EXACT failing pair(s), not just the whole
+                # group's program list -- a 3+-program group may have
+                # several compatible pairs and only one (or a few)
+                # genuinely incompatible pair forcing the rejection.
                 "reason": (
-                    f"{code}: {' + '.join(stack_result.program_slugs)} are MUTUALLY "
-                    "EXCLUSIVE under their own stacking rule"
-                    + (f" ({stack_result.condition_text})" if stack_result.condition_text else "")
+                    f"{code}: {' + '.join(stack_result.program_slugs)} cannot be "
+                    "combined as a single structure because "
+                    + "; ".join(
+                        f"{bp['program_a_id']} + {bp['program_b_id']} are MUTUALLY "
+                        "EXCLUSIVE under their own stacking rule"
+                        + (f" ({bp['condition_text']})" if bp.get("condition_text") else "")
+                        for bp in stack_result.blocking_pairs
+                    )
                     + ". The combination is disclosed for completeness but cannot be "
                       "claimed together, so it carries no incentive or NPC."
                 ) if _combination_is_invalid else None,

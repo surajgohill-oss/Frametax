@@ -1,0 +1,5 @@
+production,treaty,personnel_gate,contribution_facts_on_file,treaty_minimum_fallback_implemented,combined_structure_generated,status
+The Little Utopia,AU-UK bilateral,QUALIFIES (real GB writer + AU director confirmed),NO,NOT IMPLEMENTED this workstream,NO,VALID_REMAINING_DEFECT -- Phase E (treaty-minimum modeled fallback) not implemented; root cause unchanged from the prior workstream's diagnosis (evaluate_bilateral_coproduction_opportunity requires real evidenced majority_pct/minority_pct with no fallback)
+F#K Valentine's Day,n/a,n/a,NO,NOT IMPLEMENTED,NO,same root cause
+Bad Hombres,n/a,n/a,NO,NOT IMPLEMENTED,NO,same root cause
+Lips Like Sugar,n/a,n/a,NO,NOT IMPLEMENTED,NO,same root cause
