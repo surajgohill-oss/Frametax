@@ -638,7 +638,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.62.0"  # 1.62.0: CLAUDE_PRE_AG_HANDOFF_CORRECTION -- _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS auto-supplied for candidate generation (au_location_offset/ca_bc_dave/ma_ccm_rebate/th_film_incentive/za_nfvf_rebate/us_or_opif's producer-controlled boolean conditions), never for cultural/spend/discretionary conditions. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.63.0"  # 1.63.0: CLAUDE_SPEND_THRESHOLD_AND_ANCHOR_CLOSEOUT -- extended the 1.62.0 producer-controlled-fact union to BOTH discover_executable_jurisdictions() call sites (feasibility_discovery and discovery), which previously used the raw, un-unioned evidenced_program_facts. A program gated only on a producer-controlled boolean (e.g. za_nfvf_rebate, ca_bc_dave) was being rejected at the discovery/acceptance stage -- before ever reaching the 1.62.0-fixed pricing functions -- so the prior fix never took effect for it. Invalidates every cached row so this fires fresh.
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -3242,7 +3242,19 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # native AUD threshold) is classified "rejected" HERE, before
         # ever reaching the pricing pass, and the fact never has any
         # effect on the served structure's classification/blocker text.
-        evidenced_facts=inputs.evidenced_program_facts,
+        # CLAUDE_SPEND_THRESHOLD_AND_ANCHOR_CLOSEOUT: unioned with the same
+        # producer-controlled administrative assumption set used by the real
+        # pricing calls below (_price_candidate et al.) -- without this, a
+        # program whose ONLY resolvable tier is gated on a producer-
+        # controlled boolean fact (e.g. za_nfvf_rebate's accepted-production
+        # confirmation, ca_bc_dave's eligible-activity confirmation) is
+        # wrongly classified "capability_only"/rejected at DISCOVERY, before
+        # the real per-component pricing pass (which already correctly
+        # assumes these facts) ever gets a chance to test the real routed
+        # spend. This never changes a genuine spend/cultural/discretionary
+        # gate -- only the 6 verified-administrative keys in
+        # _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS.
+        evidenced_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
         amount_facts=inputs.amount_facts,
     )
     # Canonical program identity, not jurisdiction_code, is the uniqueness
@@ -3263,7 +3275,19 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         production_type=inputs.production_type,
         qpe_usd=inputs.gross_budget_usd,
         home_code=inputs.jurisdiction_code,
-        evidenced_facts=inputs.evidenced_program_facts,
+        # CLAUDE_SPEND_THRESHOLD_AND_ANCHOR_CLOSEOUT: unioned with the same
+        # producer-controlled administrative assumption set used by the real
+        # pricing calls below (_price_candidate et al.) -- without this, a
+        # program whose ONLY resolvable tier is gated on a producer-
+        # controlled boolean fact (e.g. za_nfvf_rebate's accepted-production
+        # confirmation, ca_bc_dave's eligible-activity confirmation) is
+        # wrongly classified "capability_only"/rejected at DISCOVERY, before
+        # the real per-component pricing pass (which already correctly
+        # assumes these facts) ever gets a chance to test the real routed
+        # spend. This never changes a genuine spend/cultural/discretionary
+        # gate -- only the 6 verified-administrative keys in
+        # _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS.
+        evidenced_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
         amount_facts=inputs.amount_facts,
     )
     #: REJECTION TRACE IDENTITY. A jurisdiction can examine SEVERAL programs

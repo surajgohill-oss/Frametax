@@ -1110,3 +1110,28 @@ def test_us_or_opif_discretionary_award_condition_stays_disclosed_not_silently_r
     )
     assert award_condition.condition_state == "USER_FACT_REQUIRED"
     assert award_condition.satisfied is None
+
+
+def test_discovery_stage_also_assumes_producer_controlled_facts_not_just_pricing():
+    """CLAUDE_SPEND_THRESHOLD_AND_ANCHOR_CLOSEOUT: discover_executable_
+    jurisdictions() must resolve a program gated only on a producer-
+    controlled administrative fact -- not reject it at the discovery/
+    acceptance stage before the real per-component pricing pass (which
+    already assumes these facts) ever gets a chance to test the real
+    routed spend. za_nfvf_rebate is the real, minimal reproduction: its
+    ONLY resolve_program_rate gate is the accepted-production
+    confirmation (a producer-controlled administrative fact)."""
+    from app.data.program_rate_rules import resolve_program_rate
+    from app.services.canonical_evaluation import _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
+
+    # Simulates discover_executable_jurisdictions()'s own resolve_program_rate
+    # call shape: a project-level qpe_usd probe, no per-program amount facts.
+    rr = resolve_program_rate(
+        "za_nfvf_rebate", production_type="feature_film", qpe_usd=4_364_393.0,
+        evidenced_facts=_PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS, amount_facts={},
+    )
+    assert rr is not None, (
+        "za_nfvf_rebate must resolve at the discovery stage once the producer-controlled "
+        "accepted-production fact is assumed -- it has no other resolve_program_rate gate"
+    )
+    assert rr.floor_rate == pytest.approx(0.25)
