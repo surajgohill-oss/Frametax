@@ -76,6 +76,7 @@ def discover_executable_jurisdictions(
     home_code: str,
     evidenced_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
+    fx_context: "object | None" = None,
 ) -> DiscoveryResult:
     """Production-first discovery. Examine every implemented jurisdiction and,
     for each, first ask 'can this PRODUCTION be made here?' (capability match)
@@ -95,7 +96,9 @@ def discover_executable_jurisdictions(
         blocks_economic_candidacy,
         coverage_state,
     )
-    from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
+    from app.data.program_rate_rules import (
+        build_discovery_amount_probe, get_rate_rules, resolve_program_rate,
+    )
     from app.data.executable_jurisdiction_registry import all_doctrine_records
     from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
@@ -183,32 +186,33 @@ def discover_executable_jurisdictions(
             resolves = False
             priceable = False
             if not coverage_blocked and slug is not None and has_doctrine and has_rate:
-                # Codex final Oregon full-pipeline completion (P0-OR-001,
-                # sixth pass): this is a CAPABILITY probe, run before any
-                # real AccountAllocation/qualification-register exists for
-                # this candidate — a composite program's exact,
-                # canonical-line-derived component facts (see
-                # allocation_pricing.price_segment's reconciliation block)
-                # are therefore never yet available here. Without a probe
-                # value, us_or_opif's real composite branch
-                # (_resolve_us_or_opif_composite) correctly returns None
-                # (no fact = no claim), which would wrongly mark a real,
-                # eligible Oregon production as incapable before pricing
-                # ever gets a chance to derive the real basis from its
-                # actual budget. Using the segment's own qpe_usd as a
-                # PROBE-ONLY value for both composite facts is safe here:
+                # CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: this is a
+                # CAPABILITY probe, run before any real AccountAllocation/
+                # qualification-register exists for this candidate — every
+                # program whose amount_fact_key-gated conditions (a
+                # composite QPE-style basis, a native-currency threshold,
+                # a component subtotal) can only be known EXACTLY after a
+                # real candidate allocation is therefore never available
+                # here. Without a probe value, resolve_program_rate
+                # correctly returns None (no fact = no claim), which would
+                # wrongly mark a real, eligible production as incapable
+                # before pricing ever gets a chance to derive the real
+                # basis from its actual budget. build_discovery_amount_probe
+                # generically seeds a GENEROUS, discovery-only value for
+                # EVERY such program (not just us_or_opif) from qpe_usd —
                 # it only ever affects this capability signal (whether
-                # price_segment is even attempted later), never an actual
-                # priced dollar figure -- price_segment's own strict,
-                # exact-match canonical-line reconciliation remains the
-                # sole authority for the real number.
-                _probe_facts = dict(amount_facts or {})
-                if slug == "us_or_opif" and qpe_usd:
-                    _probe_facts.setdefault("us_or_payroll_qpe_usd", qpe_usd)
-                    _probe_facts.setdefault("us_or_other_qpe_usd", qpe_usd)
+                # real candidate construction/pricing is even attempted),
+                # never an actual priced dollar figure — price_segment's
+                # own strict, exact-match canonical-line reconciliation
+                # (or a real caller-supplied ProjectFact) remains the sole
+                # authority for the real number.
+                _probe_facts = build_discovery_amount_probe(
+                    slug, qpe_usd, amount_facts, fx_context,
+                )
                 rr = resolve_program_rate(
                     slug, production_type=production_type, qpe_usd=qpe_usd,
                     evidenced_facts=evidenced_facts, amount_facts=_probe_facts,
+                    fx_context=fx_context,
                 )
                 resolves = rr is not None
                 priceable = resolves

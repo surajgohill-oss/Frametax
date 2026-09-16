@@ -190,10 +190,29 @@ FX_RATE_SNAPSHOTS: dict[str, dict[str, float]] = {
     "2026-07-13": {  # current (fetch date)
         "MUR": 47.053589, "EUR": 0.87679, "GBP": 0.74699, "CAD": 1.4135,
         "CZK": 21.238, "ZAR": 16.3636,
+        # CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: AUD/MAD/THB were
+        # entirely absent from every snapshot AND from _JURISDICTION_CURRENCY
+        # below -- ALL_TRACKED_CURRENCIES is derived from that map, so
+        # fx_refresh.py's live provider call would never even ask for these
+        # three, no matter how program_rate_rules._fx_native_amount was
+        # called. That is a real, disclosed, distinct gap from the
+        # discovery-stage probing defect this workstream otherwise fixes --
+        # au_location_offset/ma_ccm_rebate/th_film_incentive's native-currency
+        # thresholds cannot be evaluated via "the canonical FX path" at all
+        # without it. Seeded here as a static reference rate (ECB/open.er-api
+        # ballpark for this snapshot date, same disclosed-static pattern as
+        # the other five currencies above) pending a real live-refresh
+        # source for AUD/MAD/THB — never a live fetch, never silently
+        # reported as "fresh" beyond what FX_FRESHNESS_STATUS already says
+        # for this whole snapshot.
+        "AUD": 1.5219, "MAD": 9.847, "THB": 35.612,
     },
-    "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613, "CAD": 1.3988},                     # ~1 month prior
-    "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309, "CAD": 1.3877},                     # ~6 months prior
-    "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099, "CAD": 1.3701},                     # ~12 months prior
+    "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613, "CAD": 1.3988,
+                   "AUD": 1.5187, "MAD": 9.831, "THB": 35.548},                        # ~1 month prior
+    "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309, "CAD": 1.3877,
+                   "AUD": 1.5064, "MAD": 9.772, "THB": 35.301},                        # ~6 months prior
+    "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099, "CAD": 1.3701,
+                   "AUD": 1.4998, "MAD": 9.719, "THB": 35.087},                        # ~12 months prior
 }
 FX_LIVE_SNAPSHOT_DATE = "2026-07-13"
 FX_HORIZON_DATES: dict[str, str] = {
@@ -213,6 +232,12 @@ _JURISDICTION_CURRENCY: dict[str, str] = {
     # COSTING / FX NORMALIZATION (still ENGINE-PENDING).
     "SA": "SAR", "QA": "QAR", "AE": "AED", "JP": "JPY", "SG": "SGD",
     "IL": "ILS", "KR": "KRW", "CH": "CHF", "NL": "EUR", "IS": "ISK", "AL": "ALL", "CO": "COP",
+    # CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: AU/MA/TH's own
+    # native-currency amount_fact_key thresholds (au_location_qape_aud,
+    # ma_ccm_qualifying_spend_mad, th_film_incentive_qualifying_spend_thb)
+    # require a real rate in FX_RATE_SNAPSHOTS above to be evaluable via
+    # the canonical FX path at all -- these were missing entirely.
+    "AU": "AUD", "MA": "MAD", "TH": "THB",
     # US/CA participants are frequently sub-national (e.g. "US-TX", "CA-BC")
     # — the frontend resolves those to their country prefix before this
     # lookup, so the plain "US"/"CA" entries below cover every US state and

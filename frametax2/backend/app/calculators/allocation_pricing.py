@@ -73,7 +73,13 @@ from app.calculators.qualification_model import (
 )
 from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate
 from app.data.authority_coverage_registry import get_coverage_status
-from app.data.program_rate_rules import get_qpe_cap, get_rate_rules, resolve_program_rate
+from app.data.program_rate_rules import (
+    _fx_native_amount,
+    _infer_amount_fact_currency,
+    get_qpe_cap,
+    get_rate_rules,
+    resolve_program_rate,
+)
 from app.data.program_slug_aliases import canonical_slug
 from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
@@ -695,6 +701,34 @@ def price_segment(
                         and (a.spend_category or "") in _cond.component_basis_spend_categories
                     ]
             else:
+                # CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: this
+                # condition has no explicit component-basis dimension, so
+                # its natural basis is THIS segment's own real, already-
+                # qualified QPE total (the same `qpe` this function
+                # already derived, above, from the segment's own real
+                # register/allocations) -- never a fabricated figure,
+                # since it's the exact same total price_segment itself
+                # is about to price. Currency-suffixed keys (au_location_
+                # qape_aud, ma_ccm_qualifying_spend_mad, th_film_incentive_
+                # qualifying_spend_thb, ...) are converted via the
+                # canonical FX path; a key with no recognizable currency
+                # suffix (e.g. ma_ccm_shooting_days_count, a real day
+                # count, never derivable from a dollar figure) is left to
+                # a real caller-supplied ProjectFact -- absence there
+                # correctly fails the condition rather than guessing a
+                # count. A caller-supplied value always wins (never
+                # overridden here, unlike the exact-match component-basis
+                # branch above, since there is no single traceable-line
+                # ground truth to reconcile against for a whole-segment
+                # total).
+                if _cond.amount_fact_key not in _derived_amount_facts:
+                    _currency = _infer_amount_fact_currency(_cond.amount_fact_key)
+                    if _currency == "USD":
+                        _derived_amount_facts[_cond.amount_fact_key] = qpe
+                    elif _currency is not None and qpe:
+                        _converted = _fx_native_amount(qpe, _currency, fx_context)
+                        if _converted is not None:
+                            _derived_amount_facts[_cond.amount_fact_key] = _converted[0]
                 continue
             if not _cb_lines or any(not a.line_id for a in _cb_lines):
                 continue  # no real traced lines, or an untraceable one -- let the

@@ -90,3 +90,7 @@ The prior handoff's filter logic had a real bug: it matched B1's `corrected_disp
 ### Validation
 
 All three updated/created CSVs (`CLAUDE_EIGHT_FACT_DEPENDENCY_RESOLUTION.csv`, `CLAUDE_126_EXECUTABLE_PRICING_PROOF.csv`, `CLAUDE_47_EXECUTABLE_GAP_RECONCILIATION.csv`, `CLAUDE_AG_32_RESEARCH_HANDOFF.csv`) parse cleanly under Python's `csv` module with the declared row/column counts and zero malformed rows.
+
+## CORRECTION ADDENDUM (2026-09-15, CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR)
+
+This closeout's original methodology for verifying the 8 fact-dependent programs (`au_location_offset`, `ca_bc_dave`, `ma_ccm_rebate`, `th_film_incentive`, and four others) relied on manually supplying `evidenced_facts`/`amount_facts` directly to an isolated `resolve_program_rate()` call, not a genuine run of the served `discover_executable_jurisdictions()`/`_price_candidate()` pipeline. A real pipeline run at the time would have rejected all four of the amount-gated programs before pricing ever ran, because their `amount_fact_key` values were never populated anywhere in the real discovery/preflight path. This was a real, since-fixed implementation defect, not merely a documentation gap — see `CLAUDE_AMOUNT_GATED_DISCOVERY_REPAIR.csv`, `CLAUDE_AMOUNT_GATED_RUNTIME_PROOF.csv`, and `CLAUDE_AMOUNT_DISCOVERY_REPAIR_CLOSEOUT.md` for the fix and genuine, fresh, real-pipeline proof against all 4 acceptance productions.

@@ -1135,3 +1135,81 @@ def test_discovery_stage_also_assumes_producer_controlled_facts_not_just_pricing
         "accepted-production fact is assumed -- it has no other resolve_program_rate gate"
     )
     assert rr.floor_rate == pytest.approx(0.25)
+
+
+def test_generic_discovery_probe_resolves_all_four_amount_gated_programs():
+    """CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: discovery must not
+    reject au_location_offset/ca_bc_dave/ma_ccm_rebate/th_film_incentive
+    merely because their amount_fact_key has not yet been computed from a
+    real candidate allocation -- build_discovery_amount_probe() must
+    generically seed all four (and any other program in this same defect
+    class, e.g. fr_trip) from qpe_usd, converted via the canonical FX
+    path where the key names a native currency, WITHOUT a per-program
+    special case (the old us_or_opif-only branch this replaces)."""
+    from app.data.program_rate_rules import build_discovery_amount_probe, resolve_program_rate
+    from app.services.canonical_evaluation import _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
+
+    qpe = 20_000_000.0  # comfortably above every one of the four native thresholds once converted
+    for slug in ("au_location_offset", "ca_bc_dave", "ma_ccm_rebate", "th_film_incentive"):
+        probe = build_discovery_amount_probe(slug, qpe)
+        rr = resolve_program_rate(
+            slug, production_type="feature_film", qpe_usd=qpe,
+            evidenced_facts=_PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS, amount_facts=probe,
+        )
+        assert rr is not None, f"{slug} must resolve at discovery once generically probed from qpe_usd"
+
+
+def test_generic_discovery_probe_never_fabricates_a_real_priced_amount():
+    """The discovery-stage probe is generous BY DESIGN (structural
+    relevance only) -- it must never leak into the real, allocation-
+    derived amount a candidate is actually priced against. Proven here by
+    showing a real candidate with genuinely insufficient real spend still
+    correctly fails to price even though it WOULD have resolved at the
+    generous discovery-probe stage."""
+    from app.data.program_rate_rules import build_discovery_amount_probe, resolve_program_rate
+
+    # A tiny real qpe (the segment's own real allocated amount) must still
+    # correctly fail au_location_offset's real AUD 20,000,000 minimum --
+    # even though a discovery-stage probe from a much larger PROJECT
+    # budget would have resolved it.
+    real_component_qpe = 9_068.0
+    probe = build_discovery_amount_probe("au_location_offset", real_component_qpe)
+    rr = resolve_program_rate(
+        "au_location_offset", production_type="feature_film", qpe_usd=real_component_qpe,
+        amount_facts=probe,
+    )
+    assert rr is None, (
+        "a genuinely tiny real allocated amount must still fail au_location_offset's real "
+        "AUD threshold -- the generic probe must never fabricate a false-positive amount"
+    )
+
+
+def test_price_segment_derives_whole_segment_native_currency_amount_from_real_qpe():
+    """allocation_pricing.price_segment must derive a non-component-basis,
+    currency-suffixed amount_fact_key (th_film_incentive_qualifying_
+    spend_thb) from THIS segment's own real qpe via the canonical FX
+    path -- never require the caller to have separately supplied it, and
+    never guess it independently of the segment's own real allocated
+    amount."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    # $2,000,000 USD >> THB 50,000,000 (~USD 1.4M) -- should clear the
+    # lowest th_film_incentive tier once derived from this segment's own
+    # real allocated amount, with no amount_facts supplied by the caller.
+    allocations = [
+        AccountAllocation(
+            account_code="2000", description="PRINCIPAL PHOTOGRAPHY", amount_usd=2_000_000.0,
+            component="principal_photography", jurisdiction_code="TH",
+            assignment_kind=AssignmentKind.FIXED, rationale="test", line_id="L1",
+            governing_decision=None,
+        )
+    ]
+    econ = price_segment(
+        jurisdiction_code="TH", program_slug="th_film_incentive", allocations=allocations,
+        spend_category_by_code={"2000": "principal_photography"},
+        offshore_payroll_accounts=frozenset(), production_type="feature_film",
+        evidenced_requirement_facts=frozenset({"th_film_incentive_preapproval_confirmed"}),
+    )
+    assert econ.executable is True, econ.blockers
+    assert econ.qpe_usd == pytest.approx(2_000_000.0)

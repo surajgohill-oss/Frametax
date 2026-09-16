@@ -2018,6 +2018,101 @@ def _amount_and_boolean_conditions_met(
     return True
 
 
+#: CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: currency inferred from an
+#: amount_fact_key's suffix, used ONLY to decide how a generic probe/
+#: derivation value should be converted -- never changes what a real,
+#: caller- or allocation-derived fact means.
+_AMOUNT_FACT_CURRENCY_SUFFIXES: dict[str, str] = {
+    "_usd": "USD", "_aud": "AUD", "_mad": "MAD", "_thb": "THB",
+    "_cad": "CAD", "_eur": "EUR", "_gbp": "GBP", "_nzd": "NZD",
+    "_zar": "ZAR", "_mur": "MUR",
+}
+
+
+def _infer_amount_fact_currency(amount_fact_key: str) -> str | None:
+    """Best-effort currency inferred from an amount_fact_key's naming
+    convention (e.g. 'au_location_qape_aud' -> 'AUD'). None when no
+    recognized currency suffix is present -- e.g. a shooting-day count
+    like 'ma_ccm_shooting_days_count', which is never a money amount and
+    is intentionally left un-inferred here."""
+    for suffix, currency in _AMOUNT_FACT_CURRENCY_SUFFIXES.items():
+        if amount_fact_key.endswith(suffix):
+            return currency
+    return None
+
+
+#: A day-count/labor-hours-style amount_fact_key (no recognizable
+#: currency suffix) cannot be derived from a dollar figure at all. This
+#: is a deliberately generous, discovery-stage-ONLY placeholder so such a
+#: program is not rejected merely because its real count has not yet
+#: been evidenced -- the REAL count (a caller-supplied ProjectFact, e.g.
+#: a real shooting schedule) is what price_segment/resolve_program_rate
+#: test for real pricing; this constant is never threaded into a priced
+#: result.
+_GENERIC_DISCOVERY_NONMONETARY_PROBE = 1_000_000.0
+
+
+def build_discovery_amount_probe(
+    slug: str,
+    qpe_usd: float | None,
+    amount_facts: dict[str, float] | None = None,
+    fx_context: "CanonicalFXContext | None" = None,
+) -> dict[str, float]:
+    """GENERIC discovery-stage amount-fact probe
+    (CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR). Replaces the old
+    us_or_opif-only special case that used to live in
+    production_discovery.py / canonical_evaluation.py._price_candidate.
+
+    Discovery (and _price_candidate's early preflight gate) must decide
+    whether a (jurisdiction, program) pair is STRUCTURALLY relevant
+    before any real candidate has allocated spend -- but many programs'
+    RateCondition.amount_fact_key values (au_location_qape_aud,
+    ca_bc_dave_qualified_labour_usd, ma_ccm_qualifying_spend_mad,
+    th_film_incentive_qualifying_spend_thb, ...) can only be known
+    EXACTLY after a real candidate allocation exists. Rejecting the
+    candidate here -- before it is ever constructed -- means the real,
+    tight, allocation-derived check (price_segment's own component-basis
+    derivation, or resolve_program_rate's real amount_facts check) never
+    gets a chance to run at all.
+
+    For every amount_fact_key referenced by `slug`'s own rate rules that
+    is not already supplied by the caller, this seeds a GENEROUS,
+    discovery-only probe value from qpe_usd (the full budget available
+    at this stage -- always >= any real per-component subtotal a later
+    candidate could allocate, so this can only ever ADMIT a program to
+    real candidate construction, never fabricate its final priced
+    amount). Currency-suffixed keys are converted via the canonical FX
+    path (_fx_native_amount); a key with no recognizable currency suffix
+    (a day-count-style fact) gets the generic non-monetary placeholder --
+    never a fabricated real value, since it is never threaded into the
+    actual priced structure (price_segment recomputes/tests every real
+    amount fact independently, from the real allocation or a real
+    caller-supplied ProjectFact). A condition with an amount_fact_max
+    is skipped: a generous probe could spuriously violate a cap this
+    function has no way to know the real basis for, so that condition
+    is left to fail exactly as it would have before this change."""
+    probe = dict(amount_facts or {})
+    if qpe_usd is None:
+        return probe
+    for rule in get_rate_rules(slug):
+        for cond in rule.conditions:
+            key = cond.amount_fact_key
+            if key is None or key in probe:
+                continue
+            if cond.amount_fact_max is not None:
+                continue
+            currency = _infer_amount_fact_currency(key)
+            if currency == "USD":
+                probe[key] = qpe_usd
+            elif currency is not None:
+                converted = _fx_native_amount(qpe_usd, currency, fx_context)
+                if converted is not None:
+                    probe[key] = converted[0]
+            else:
+                probe[key] = _GENERIC_DISCOVERY_NONMONETARY_PROBE
+    return probe
+
+
 def classify_rate_resolution_failure(
     program_slug: str, production_type: str, qpe_usd: float | None,
     *,

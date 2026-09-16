@@ -146,6 +146,7 @@ from app.data.program_rate_rules import (
     RATE_FAILURE_AUTHORITY_EXHAUSTED,
     RATE_FAILURE_NO_RULES,
     RateResolution,
+    build_discovery_amount_probe,
     classify_rate_resolution_failure,
     resolve_program_rate,
 )
@@ -638,7 +639,8 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.63.0"  # 1.63.0: CLAUDE_SPEND_THRESHOLD_AND_ANCHOR_CLOSEOUT -- extended the 1.62.0 producer-controlled-fact union to BOTH discover_executable_jurisdictions() call sites (feasibility_discovery and discovery), which previously used the raw, un-unioned evidenced_program_facts. A program gated only on a producer-controlled boolean (e.g. za_nfvf_rebate, ca_bc_dave) was being rejected at the discovery/acceptance stage -- before ever reaching the 1.62.0-fixed pricing functions -- so the prior fix never took effect for it. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.64.0"  # 1.64.0: CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR -- generic repair of the discovery-to-pricing pipeline for formulaically executable programs whose amount_fact_key (spend/labor/shooting-day/tier amount) cannot be known before a candidate has allocated real spend. Replaced the us_or_opif-only discovery/preflight probe special case with program_rate_rules.build_discovery_amount_probe(), applied to EVERY program's amount_fact_key conditions (au_location_offset, ca_bc_dave, ma_ccm_rebate, th_film_incentive, and any other program in this same defect class), and extended allocation_pricing.price_segment's existing component-basis amount-fact derivation to also derive whole-segment (non-component-basis) currency-suffixed amount facts from the segment's own real qpe via the canonical FX path. Invalidates every cached row so this fires fresh.
+# 1.63.0: CLAUDE_SPEND_THRESHOLD_AND_ANCHOR_CLOSEOUT -- extended the 1.62.0 producer-controlled-fact union to BOTH discover_executable_jurisdictions() call sites (feasibility_discovery and discovery), which previously used the raw, un-unioned evidenced_program_facts. A program gated only on a producer-controlled boolean (e.g. za_nfvf_rebate, ca_bc_dave) was being rejected at the discovery/acceptance stage -- before ever reaching the 1.62.0-fixed pricing functions -- so the prior fix never took effect for it. Invalidates every cached row so this fires fresh.
 
 #: STALE as of item D (Codex forensic finding D): travel/FX/local-cost (MFNI)
 #: normalization ARE now applied generically -- see
@@ -1194,10 +1196,18 @@ def _price_candidate(
     # an actual priced dollar figure -- price_segment's own strict,
     # exact-match reconciliation (never this probe) remains the sole
     # authority for the real composite basis and the real number.
-    _preflight_amount_facts = dict(inputs.amount_facts or {})
-    if program_slug == "us_or_opif" and qpe:
-        _preflight_amount_facts.setdefault("us_or_payroll_qpe_usd", qpe)
-        _preflight_amount_facts.setdefault("us_or_other_qpe_usd", qpe)
+    # CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: generic replacement for
+    # the old us_or_opif-only special case. `qpe` above is already this
+    # SAME production's own real, allocated/qualifying total for this
+    # exact jurisdiction/program pair (from register_probe, derived from
+    # inputs.budget_lines) — a genuine candidate-derived amount, not a
+    # guess — so seeding every one of this program's amount_fact_key
+    # conditions from it (currency-converted via the canonical FX path
+    # where the key names a native currency) is safe for every
+    # amount-gated program, not just Oregon's two composite facts.
+    _preflight_amount_facts = build_discovery_amount_probe(
+        program_slug, qpe, inputs.amount_facts, inputs.fx_context,
+    )
     # CLAUDE_PRE_AG_HANDOFF_CORRECTION: union in the producer-controlled
     # administrative facts (never cultural/spend/discretionary) so a real
     # eligible candidate is not rejected solely because no one has
@@ -3256,6 +3266,13 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS.
         evidenced_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
         amount_facts=inputs.amount_facts,
+        # CLAUDE_GENERIC_AMOUNT_GATED_DISCOVERY_REPAIR: threads the same
+        # canonical FX context used everywhere else in this evaluation
+        # into discover_executable_jurisdictions()'s generic
+        # build_discovery_amount_probe() call, so a native-currency
+        # amount_fact_key (AUD/MAD/THB/...) is converted with the real,
+        # single-call, already-built context rather than a fresh one.
+        fx_context=inputs.fx_context,
     )
     # Canonical program identity, not jurisdiction_code, is the uniqueness
     # key here too — feasibility disclosure is keyed by (code, program_slug)
@@ -3289,6 +3306,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS.
         evidenced_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
         amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
     )
     #: REJECTION TRACE IDENTITY. A jurisdiction can examine SEVERAL programs
     #: (CA-ON alone has three). Keying a rejection lookup by jurisdiction
