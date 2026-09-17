@@ -6,6 +6,7 @@ allowlist, no arbitrary top-N discovery pruning, and a proof-based
 (pigeonhole exchange argument) branch-and-bound that widens on failure
 rather than admitting an unproven search-depth cutoff.
 """
+import json
 import re
 from pathlib import Path
 
@@ -781,7 +782,7 @@ async def _add_gb_director_writer_personnel(db, project_id):
 
 
 @pytest.mark.asyncio
-async def test_ho003_all_treaty_valid_partner_programs_are_enumerated_not_ranked_away(db: AsyncSession):
+async def test_ho003_literal_required_target_reaches_exact_priced_match(db: AsyncSession):
     """HO-003: the binding doctrine ("ranking must never suppress feasible
     discovery") was violated by the old _best_priced_treaty_side_candidate(),
     which picked only the partner's single overall-best-priced program --
@@ -790,11 +791,12 @@ async def test_ho003_all_treaty_valid_partner_programs_are_enumerated_not_ranked
     the fixture. AUDIT_CONTROL_HO_003 (home=GB, real GB-AU 70/30
     coproduction_majority_pct/minority_pct facts under the real, registered
     uk-au-bilateral treaty, real director+writer GB-nationality personnel
-    satisfying the treaty's personnel_requirement): the new
-    _all_priced_treaty_side_candidates() must surface au_producer_offset
-    as one of the independently-priced AU-side candidates actually
-    examined, not silently dropped in favor of a different AU program's
-    own higher price."""
+    satisfying the treaty's personnel_requirement) must reach the EXACT
+    literal required_program_set from the 19-control ledger -- {uk_avec,
+    au_producer_offset, new_zealand_screen_production_grant_-international_
+    post_vfx} -- as a real PRICED row, not merely "au_producer_offset
+    appears somewhere". Hand-verified: $1,939,600.00 total incentive /
+    $5,560,400.00 true net cost on a $7.5M budget."""
     project = await _build_audit_control_project(
         db, "AUDIT_CONTROL_HO_003", "GB",
         [
@@ -814,7 +816,7 @@ async def test_ho003_all_treaty_valid_partner_programs_are_enumerated_not_ranked
                 """
                 SELECT scr.calculation_trace_json->>'candidate_status' AS status,
                        scr.calculation_trace_json->'program_slugs' AS program_slugs,
-                       scr.total_incentive_value_usd
+                       scr.total_incentive_value_usd, scr.true_net_cost_usd
                 FROM production_structures ps
                 JOIN structure_calculation_results scr ON scr.structure_id = ps.id
                 WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
@@ -826,17 +828,17 @@ async def test_ho003_all_treaty_valid_partner_programs_are_enumerated_not_ranked
     ).mappings().all()
     assert rows, "no combined_coproduction_component_stack rows were persisted at all"
 
-    au_producer_offset_rows = [
-        r for r in rows
-        if r["status"] == "PRICED" and "au_producer_offset" in (r["program_slugs"] or [])
-    ]
-    assert au_producer_offset_rows, (
-        f"au_producer_offset never appears as a PRICED AU-side candidate among {len(rows)} "
-        "combined_coproduction_component_stack rows -- ranking suppressed a genuine, "
-        "treaty-valid, priceable partner program instead of persisting it alongside the others"
+    target = frozenset({"uk_avec", "au_producer_offset", NZ_POST_VFX_SLUG})
+    exact = [r for r in rows if frozenset(r["program_slugs"] or []) == target]
+    assert exact, (
+        f"HO-003's exact literal target {sorted(target)} was not found among {len(rows)} "
+        "combined_coproduction_component_stack rows -- au_producer_offset must reach a real "
+        "PRICED row for the literal required_program_set, not just appear in some other combo"
     )
-    for r in au_producer_offset_rows:
-        assert float(r["total_incentive_value_usd"]) > 0
+    match = exact[0]
+    assert match["status"] == "PRICED", match
+    assert float(match["total_incentive_value_usd"]) == pytest.approx(1_939_600.00, abs=0.01)
+    assert float(match["true_net_cost_usd"]) == pytest.approx(5_560_400.00, abs=0.01)
 
 
 @pytest.mark.asyncio
@@ -900,20 +902,23 @@ async def test_ho007_uk_fr_bilateral_never_unlocks_fr_trip_and_persists_a_real_r
 
 
 @pytest.mark.asyncio
-async def test_ho012_eurimages_multilateral_subset_prices_the_literal_three_party_target(db: AsyncSession):
-    """HO-012: no bilateral IE-FR treaty is registered, but Eurimages is a
-    real, separately-registered multilateral fund route (treaty_slug
-    'eurimages-multilateral', fund_unlocks=['eu_eurimages'],
-    min_coproducer_countries=3) under which each co-producer independently
-    accesses its OWN national incentive on its own real evidenced spend
-    share -- so fr_trip IS a valid target here even though it is never a
-    uk-fr-bilateral unlock (HO-007). AUDIT_CONTROL_HO_012 (home=IE, real
-    IE=34/FR=33/GB=33 coproduction_participant_pct::eurimages::{code}
-    facts plus a real cultural_test_passed::eurimages fact -- the
-    simpler, treaty-scoped subset key _real_multilateral_subset_
-    participants() reads, never requiring a fact for Eurimages' full
-    ~37-country membership) must reach a real PRICED row for the exact
-    literal target {fr_trip, uk_avec, ie_section_481}."""
+async def test_ho012_eurimages_membership_alone_never_prices_without_primary_authority(db: AsyncSession):
+    """HO-012 correction: the prior pass priced a Eurimages co-production
+    by treating fund membership as "national treatment" authority (each
+    co-producer independently accesses its OWN national incentive).
+    Direct verification found this unsupported by primary authority --
+    treaty_engine.py's own eurimages-multilateral TreatyData carries
+    EMPTY majority_unlocks/minority_unlocks (only fund_unlocks=
+    ['eu_eurimages'] is populated); the only textual support is an
+    uncited free-text 'notes' field (confidence_tier='PARSED', no
+    citation field). AUDIT_CONTROL_HO_012 (home=IE, real IE=34/FR=33/
+    GB=33 coproduction_participant_pct::eurimages::{code} facts plus a
+    real cultural_test_passed::eurimages fact -- structurally eligible)
+    must now persist an explicit RULE_REJECTED for the subset -- never a
+    PRICED row for fr_trip/uk_avec/ie_section_481 -- since no primary
+    authority proves the national-treatment mechanic. Structural
+    eligibility discovery (participant count, per-party minimum
+    contribution share, cultural test) remains real and disclosed."""
     project = await _build_audit_control_project(
         db, "AUDIT_CONTROL_HO_012", "IE",
         [("2000 ATL DIRECTOR FEE", 9_000_000.0, "atl_director")],
@@ -938,15 +943,16 @@ async def test_ho012_eurimages_multilateral_subset_prices_the_literal_three_part
 
     result = await ce.evaluate_project(db, project.id)
     fingerprint = result["state_fingerprint"]
-    target = frozenset({"fr_trip", "uk_avec", "ie_section_481"})
 
     rows = (
         await db.execute(
             text(
                 """
                 SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->>'rejection_reason_class' AS rrc,
+                       scr.calculation_trace_json->>'reason' AS reason,
                        scr.calculation_trace_json->'program_slugs' AS program_slugs,
-                       scr.total_incentive_value_usd, scr.true_net_cost_usd
+                       scr.total_incentive_value_usd
                 FROM production_structures ps
                 JOIN structure_calculation_results scr ON scr.structure_id = ps.id
                 WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
@@ -956,15 +962,52 @@ async def test_ho012_eurimages_multilateral_subset_prices_the_literal_three_part
             {"pid": str(project.id), "fp": fingerprint},
         )
     ).mappings().all()
-    exact = [r for r in rows if frozenset(r["program_slugs"] or []) == target]
-    assert exact, (
-        f"HO-012's exact {sorted(target)} target was not found among {len(rows)} "
-        "combined_multilateral_coproduction_stack rows"
+    assert rows, "no combined_multilateral_coproduction_stack rows were persisted at all"
+
+    priced = [r for r in rows if r["status"] == "PRICED"]
+    assert not priced, (
+        f"a PRICED Eurimages multilateral row was persisted despite no primary authority "
+        f"establishing national-treatment access: {priced}"
     )
-    match = exact[0]
-    assert match["status"] == "PRICED", match
-    assert float(match["total_incentive_value_usd"]) > 0
-    assert float(match["true_net_cost_usd"]) < 9_000_000.0
+
+    rejected = [
+        r for r in rows
+        if r["status"] == "RULE_REJECTED"
+        and r["rrc"] == "MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED"
+        and set(r["program_slugs"] or []) == {"IE", "FR", "GB"}
+    ]
+    assert rejected, (
+        f"no explicit RULE_REJECTED/MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED row for the "
+        f"structurally-eligible {{IE, FR, GB}} subset was found among {len(rows)} rows"
+    )
+    assert "majority_unlocks" in rejected[0]["reason"] or "EMPTY" in rejected[0]["reason"]
+
+
+async def test_ho013_no_arbitrary_target_bound_remains_and_search_uses_component_specific_candidates():
+    """Correction pass: the prior pass's _MULTI_COMPONENT_TARGET_BOUND=200
+    flat cutoff sliced the SAME global, component-AGNOSTIC
+    _combined_top_targets list for every routed component -- an arbitrary
+    cutoff that could silently exclude a genuinely component-specific
+    real candidate ranked below 200 in the GLOBAL ranking even though it
+    ranks near the top of its OWN component's real candidate list. Must
+    be gone entirely, replaced by _hy_component_all_targets (the same
+    real, per-component-priced candidate list the ordinary_component_
+    hybrid mechanism already builds) and a genuine pigeonhole proof-based
+    widening search."""
+    # Checked against the comment-stripped source: the OLD ENGINE_VERSION
+    # changelog entry for the prior pass is historical record (this file's
+    # own established convention keeps every old version's own comment
+    # below the current one) and legitimately still NAMES the removed
+    # bound when describing what that pass did -- only ACTUAL CODE
+    # reintroducing the cutoff would be a regression.
+    src_code_only = _SRC_CODE_ONLY
+    assert "_MULTI_COMPONENT_TARGET_BOUND" not in src_code_only, (
+        "the arbitrary top-N target bound was reintroduced into HO-013's multi-component search"
+    )
+    assert "_hy_component_all_targets.get(_mc_comp_a" in src_code_only
+    assert "_hy_component_all_targets.get(_mc_comp_b" in src_code_only
+    assert "_mc_window = 2" in src_code_only
+    assert "_mc_window = min(_mc_window * 2" in src_code_only
 
 
 @pytest.mark.asyncio
@@ -979,7 +1022,17 @@ async def test_ho013_two_movable_components_route_simultaneously_no_double_count
     PRICED combined_coproduction_multi_component_stack row routing BOTH
     components to two DIFFERENT target jurisdictions at once, with the
     two components' account_splits provably disjoint (no line_id counted
-    under both routed components)."""
+    under both routed components). Also verifies the literal required
+    control's own two components (NZ's post/vfx-specific grant, OCASE)
+    are each real, independently-priced, non-suppressed candidates
+    somewhere in this project's discovery output -- proving the doctrine
+    ("ranking must never suppress feasible discovery") is honored even
+    though, matching HO-001's own already-established precedent, a real
+    Canadian-dominance pattern outranks them for this fixture's spend
+    profile (a genuine economic finding, never a code gap). The full
+    search must also stay well within a bounded runtime now that it uses
+    real, small, component-specific candidate lists instead of an
+    arbitrary global top-200 slice."""
     project = await _build_audit_control_project(
         db, "AUDIT_CONTROL_HO_013", "GB",
         [
@@ -991,8 +1044,34 @@ async def test_ho013_two_movable_components_route_simultaneously_no_double_count
     await _add_treaty_contribution_facts(db, project.id, "uk-au-bilateral", "GB", "AU", 70, 30)
     await _add_gb_director_writer_personnel(db, project.id)
 
+    import time as _time
+    _t0 = _time.time()
     result = await ce.evaluate_project(db, project.id)
+    _elapsed = _time.time() - _t0
+    assert _elapsed < 60.0, f"HO-013 evaluation took {_elapsed:.1f}s -- expected well under 60s with component-specific candidate lists"
     fingerprint = result["state_fingerprint"]
+
+    # The literal required control's own components must be real,
+    # independently-priced, examined candidates for THIS project --
+    # never silently absent -- even though (as with HO-001) they do not
+    # necessarily win the final dominance comparison.
+    for slug in (NZ_POST_VFX_SLUG, OCASE_SLUG):
+        priced_elsewhere = (
+            await db.execute(
+                text(
+                    """
+                    SELECT 1 FROM production_structures ps
+                    JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                    WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                      AND scr.calculation_trace_json->'program_slugs' @> :slugjson
+                      AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
+                    LIMIT 1
+                    """
+                ),
+                {"pid": str(project.id), "fp": fingerprint, "slugjson": json.dumps([slug])},
+            )
+        ).first()
+        assert priced_elsewhere, f"{slug} never appears as a real PRICED candidate for this project"
 
     rows = (
         await db.execute(
@@ -1033,7 +1112,7 @@ async def test_ho013_two_movable_components_route_simultaneously_no_double_count
 
 
 @pytest.mark.asyncio
-async def test_ho010_creative_saskatchewan_node_identity_is_reconciled(db: AsyncSession):
+async def test_ho010_creative_saskatchewan_node_identity_is_reconciled_but_full_control_is_component_blocked(db: AsyncSession):
     """HO-010: conditional_programs.py's Creative Saskatchewan catalog node
     (node_id COND-CA-SK-creative-saskatchewan-film-and-tv-production-grant)
     previously carried no link to the priceable program_slug rate
@@ -1046,7 +1125,24 @@ async def test_ho010_creative_saskatchewan_node_identity_is_reconciled(db: Async
     saskatchewan_grant, and its conditional_programs disclosure must
     contain the Creative Saskatchewan node carrying canonical_program_
     slug == 'ca_sk_creative_saskatchewan_grant' -- never a fabricated
-    fund_overlay component, but a real, reconstructable identity link."""
+    fund_overlay component, but a real, reconstructable identity link.
+
+    Structural-optimizer wiring correction: the standalone reconciliation
+    above is only ONE of the control's THREE required programs
+    (ca_federal_cptc|ca_sk_creative_saskatchewan_grant|on_ofttc). Both
+    authority registries independently confirm ca_sk_creative_
+    saskatchewan_grant (alias ca_sk_production_grant) is a real, confirmed
+    DISPLAY_ONLY_ZERO_GUARANTEED discretionary award -- it never enters
+    priced_by_code (no RateRule resolves a guaranteed value for a
+    zero-guaranteed discretionary program), so it can never structurally
+    combine with ca_federal_cptc/on_ofttc into ONE same-jurisdiction
+    group-stack, hybrid, or any other combined PRICED/RULE_REJECTED
+    structure -- the group-stack/hybrid mechanisms require every
+    candidate to have a real priced_by_code entry. This test asserts that
+    NO structure ever falsely claims all three programs together (never
+    fabricated), confirming the honest "component-blocked, not
+    canonically executed" characterization rather than a false full-
+    control verification."""
     project = await _build_audit_control_project(
         db, "AUDIT_CONTROL_HO_010", "CA-SK",
         [("2000 ATL DIRECTOR FEE", 3_000_000.0, "atl_director")],
@@ -1084,23 +1180,80 @@ async def test_ho010_creative_saskatchewan_node_identity_is_reconciled(db: Async
         f"'ca_sk_creative_saskatchewan_grant' among {len(conditional_programs)} disclosed nodes"
     )
 
+    # Confirm both registries agree it is a real, confirmed zero-guaranteed
+    # discretionary award (never priceable), which is WHY the full 3-
+    # program control can never be canonically executed as one structure.
+    from app.data.authority_coverage_registry import economic_block_for_program
+    block = economic_block_for_program("ca_sk_creative_saskatchewan_grant")
+    assert block is not None and block.classification == "DISPLAY_ONLY_ZERO_GUARANTEED", block
+
+    # Never fabricated: no structure may claim all three required
+    # programs together as a single combined disposition.
+    full_combo_rows = (
+        await db.execute(
+            text(
+                """
+                SELECT 1 FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->'program_slugs' @> '["ca_federal_cptc", "on_ofttc", "ca_sk_creative_saskatchewan_grant"]'::jsonb
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).first()
+    assert full_combo_rows is None, (
+        "a structure falsely claims all three required HO-010 programs together -- this "
+        "must never happen given ca_sk_creative_saskatchewan_grant's confirmed zero-"
+        "guaranteed, never-priceable disposition"
+    )
+
+
+def test_ho011_no_consumer_side_registry_disagreement_workaround_remains():
+    """Structural-optimizer wiring correction: the prior pass's fix for
+    HO-011 was a CONSUMER-SIDE workaround in _capability_only_status()
+    that special-cased us_tn_performance_grant by checking the older
+    _B1_DISCRETIONARY_RULING registry when the newer COVERAGE_REGISTRY
+    disagreed. Per explicit instruction to reconcile the conflicting
+    registries AT THEIR SOURCE and retain ONE canonical determination,
+    that workaround is removed entirely -- _capability_only_status() must
+    be back to its original, simpler form with no program-specific
+    special case, and the disagreement itself must be resolved in
+    authority_coverage_registry.py (removing the stale _B1_
+    DISCRETIONARY_RULING entry, not adding a second one)."""
+    src = _SRC
+    assert "two registries disagree" not in src
+    assert "_older_block = _economic_block_for_program" not in src
+
 
 @pytest.mark.asyncio
-async def test_ho011_tennessee_performance_grant_authority_disagreement_disclosed(db: AsyncSession):
-    """HO-011: no conditional-catalog entry exists for us_tn_performance_
-    grant at all (a more severe gap than HO-010's mismatched identity).
-    Separately, this pass found that _capability_only_status() has TWO
-    real, disagreeing authority-block registries for this program: the
-    newer authority_coverage_registry.coverage_state() reads
-    PRICEABLE_VALIDATED, but resolve_program_rate() empirically still
-    honors the OLDER, separate _B1_DISCRETIONARY_RULING/economic_block_
-    for_program() block, which fails closed. AUDIT_CONTROL_HO_011
-    (home=US-TN, $3M atl_director) must persist an explicit
-    UNPRICEABLE_AUTHORITY_INSUFFICIENT/FAIL_CLOSED row for
-    us_tn_performance_grant whose reason text discloses the registry
-    disagreement -- never a silently-omitted row and never a
-    misleadingly-optimistic PRICEABLE_VALIDATED status the engine cannot
-    actually honor."""
+async def test_ho011_tennessee_performance_grant_prices_correctly_after_source_fix(db: AsyncSession):
+    """HO-011 root cause, found via direct primary-source verification:
+    program_rate_rules_worldwide.py's US_TN_DOCTRINE carries a real,
+    VERIFIED-tier RateRule with an official tn.gov citation ("projects
+    with budgets over $200,000 will be eligible to receive grants equal
+    to 25 percent of their qualified Tennessee expenditures") -- a
+    single, unconditional, non-band-ceiling flat-25%-of-QPE tier,
+    structurally identical in kind to 18 other programs this same file's
+    own AUTHORITY_COVERAGE_REGISTRY_VERSION 1.8.0 changelog already
+    documents removing from _B1_DISCRETIONARY_RULING as "genuinely
+    misclassified as authority-exhausted". us_tn_performance_grant was
+    evidently missed by that pass. Removed from _B1_DISCRETIONARY_RULING
+    this pass (AUTHORITY_COVERAGE_REGISTRY_VERSION 1.9.0), which is what
+    actually caused the two-registry disagreement the prior pass's
+    consumer-side workaround was only papering over. AUDIT_CONTROL_HO_011
+    (home=US-TN, $3M atl_director, well above the real $200,000 minimum)
+    must now reach a real PRICED row for us_tn_performance_grant at
+    exactly 25% of qualifying spend -- never a rejection, and never
+    silently omitted."""
+    from app.data.authority_coverage_registry import coverage_state, economic_block_for_program
+
+    assert economic_block_for_program("us_tn_performance_grant") is None, (
+        "us_tn_performance_grant is still blocked by the older _B1_DISCRETIONARY_RULING "
+        "registry -- the source-level reconciliation did not take effect"
+    )
+    assert coverage_state("us_tn_performance_grant") == "PRICEABLE_VALIDATED"
+
     project = await _build_audit_control_project(
         db, "AUDIT_CONTROL_HO_011", "US-TN",
         [("2000 ATL DIRECTOR FEE", 3_000_000.0, "atl_director")],
@@ -1113,8 +1266,7 @@ async def test_ho011_tennessee_performance_grant_authority_disagreement_disclose
             text(
                 """
                 SELECT scr.calculation_trace_json->>'candidate_status' AS status,
-                       scr.calculation_trace_json->>'rejection_reason_class' AS rejection_reason_class,
-                       scr.calculation_trace_json->>'reason' AS reason
+                       scr.total_incentive_value_usd
                 FROM production_structures ps
                 JOIN structure_calculation_results scr ON scr.structure_id = ps.id
                 WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
@@ -1126,9 +1278,67 @@ async def test_ho011_tennessee_performance_grant_authority_disagreement_disclose
     ).mappings().all()
     assert rows, "no persisted row for us_tn_performance_grant was found -- silently omitted"
     match = rows[0]
-    assert match["status"] == "UNPRICEABLE_AUTHORITY_INSUFFICIENT", match
-    assert match["rejection_reason_class"] == "FAIL_CLOSED", match
-    assert "PRICEABLE_VALIDATED" in (match["reason"] or ""), (
-        "the persisted reason does not disclose the two-registry disagreement finding: "
-        f"{match['reason']!r}"
+    assert match["status"] == "PRICED", match
+    assert float(match["total_incentive_value_usd"]) == pytest.approx(750_000.00, abs=0.01)
+
+
+@pytest.mark.asyncio
+async def test_ho011_tennessee_participates_in_full_discovery_not_only_standalone(db: AsyncSession):
+    """Structural-optimizer wiring correction, item 4: the complete
+    requested control (new_zealand_screen_production_grant_-
+    international_post_vfx|us_ga_film_credit|us_tn_performance_grant) --
+    not merely a standalone Tennessee disclosure -- must engage the real
+    discovery pipeline. AUDIT_CONTROL_HO_011_FULL mirrors HO-001's own
+    real fixture exactly (home=US-GA, $11,332,424 atl_director + $611,230
+    post_production + $40,000 vfx) so the SAME proof-based pigeonhole
+    mechanism that already governs HO-001/002/008/009 examines
+    us_tn_performance_grant as a real per-component candidate alongside
+    NZ's post/vfx grant and Georgia's own credit. Now that the stale
+    source-level block is removed, Tennessee must appear as a real,
+    independently-priced candidate in MORE than just the standalone
+    capability_only row -- e.g. as a component_relocation PRICED
+    candidate or a real DOMINATED_WITH_PROOF incumbent -- proving the
+    full pipeline, not a special case, now reaches it."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_011_FULL", "US-GA",
+        [
+            ("2000 ATL DIRECTOR FEE", 11_332_424.0, "atl_director"),
+            ("8000 POST PRODUCTION", 611_230.0, "post_production"),
+            ("8100 VFX", 40_000.0, "vfx"),
+        ],
+    )
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->>'discovery_classification' AS cls,
+                       scr.calculation_trace_json->'program_slugs' AS program_slugs,
+                       scr.calculation_trace_json->>'program_slug' AS program_slug
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND (
+                    scr.calculation_trace_json->>'program_slug' = 'us_tn_performance_grant'
+                    OR scr.calculation_trace_json->'program_slugs' @> '"us_tn_performance_grant"'::jsonb
+                  )
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    assert rows, "us_tn_performance_grant never appears anywhere in the full discovery output"
+
+    non_standalone_priced = [
+        r for r in rows
+        if r["status"] == "PRICED" and r["cls"] != "incentive_ready"
+    ]
+    assert non_standalone_priced, (
+        f"us_tn_performance_grant only ever appears as a standalone capability_only/"
+        f"incentive_ready disclosure among {len(rows)} rows -- the full discovery pipeline "
+        "(component_relocation, structural_archetype_generator, etc.) must also reach it "
+        "now that the stale source-level block is removed"
     )

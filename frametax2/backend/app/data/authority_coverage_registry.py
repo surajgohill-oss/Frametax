@@ -241,7 +241,7 @@ from __future__ import annotations
 #: chain now inherits its terminal disposition instead of being resolved
 #: only one hop, which could previously let a corrupted intermediate alias
 #: reach an injected rule undetected.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.8.0"  # 1.8.0: CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE Task 6 -- removed us_il_film_production_services_credit plus 18 further Codex-confirmed STATUTORY_FORMULAIC entries (au_nsw_pdv_rebate, si_cash_rebate, au_pdv_offset, au_qld_pdv_rebate, au_sa_pdv_rebate, fj_film_rebate, ge_film_rebate, me_cash_rebate, mk_cash_rebate, mn_production_incentive, mx_federal_film_incentive_2026, pt_scri_pt_cash_rebate, pt_scri_pt_medium_budget, tt_production_expenditure_rebate, ua_cash_rebate, uy_tax_credit_2026, uz_film_rebate, za_dtic_foreign_film) from _B1_DISCRETIONARY_RULING (45 -> 26 entries) -- each carries a real, current, non-discretionary RateRule with an official citation, genuinely misclassified as authority-exhausted, identical reasoning to the 1.7.0 Canadian removals. Every remaining row independently reconfirmed still correctly blocked via a direct economic_block_for_program() runtime check. See CLAUDE_32_PROGRAM_RUNTIME_RECONCILIATION.csv.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.9.0"  # 1.9.0: HO-011 source-level reconciliation (structural-optimizer wiring correction) -- removed us_tn_performance_grant from _B1_DISCRETIONARY_RULING (26 -> 25 entries), applying the EXACT same Task 6 STATUTORY_FORMULAIC criterion above to a program that pass evidently missed. program_rate_rules_worldwide.py's US_TN_DOCTRINE (confidence_tier=VERIFIED, citation="tn.gov (Tennessee state government, official, fetched directly): 'projects with budgets over $200,000 will be eligible to receive grants equal to 25 percent of their qualified Tennessee expenditures,' effective 2012-07-01", verified_date=2026-08-17) carries a single, unconditional, non-band-ceiling flat-25%-of-QPE tier (min_qpe_usd=200_000.0, annual_cap_usd=None, zero RateConditions attached) -- structurally identical in kind to the 18 programs already removed above, not merely similar. This directly caused the two-registry disagreement this control's own consumer-side workaround (canonical_evaluation.py's _capability_only_status()) was papering over: coverage_state() (COVERAGE_REGISTRY, the newer "sole gate") had no entry at all for this program (defaulting to PRICEABLE_VALIDATED by absence), while economic_block_for_program() (this file's OLDER _B1_DISCRETIONARY_RULING) still returned a stale FAIL_CLOSED block that resolve_program_rate() empirically honored -- fixing the SOURCE (this removal) makes both registries agree the program is priceable, so the downstream workaround is removed in the same pass rather than left as permanent dead complexity citing a disagreement that no longer exists.
 # 1.7.0: CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT -- removed ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit from _B1_DISCRETIONARY_RULING (49 -> 45 entries); each is a real, standard, non-discretionary Canadian tax credit with a directly-sourced official rate and guaranteed non-band-ceiling floor tier, genuinely misclassified as authority-exhausted.
 
 from dataclasses import dataclass
@@ -970,12 +970,17 @@ _B1_DISCRETIONARY_RULING: dict[str, str] = {
     "sg_made_with_singapore_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "th_boi_incentive": "FAIL_CLOSED",
     "tw_bamid_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "us_tn_performance_grant": "FAIL_CLOSED",
+    # us_tn_performance_grant REMOVED (HO-011 source-level reconciliation,
+    # AUTHORITY_COVERAGE_REGISTRY_VERSION 1.9.0): a real, current,
+    # non-discretionary RateRule with an official tn.gov citation exists
+    # (US_TN_DOCTRINE, program_rate_rules_worldwide.py) -- genuinely
+    # misclassified as authority-exhausted, identical reasoning to the
+    # 18 STATUTORY_FORMULAIC removals above.
     "us_wa_mpcp": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "uy_acau_cash_rebate": "FAIL_CLOSED",
 }
-assert len(_B1_DISCRETIONARY_RULING) == 26  # 49 - 4 (ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit) - 1 (us_il_film_production_services_credit) - 18 (the STATUTORY_FORMULAIC batch above), all removed this workstream (CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE Task 6)
-assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 13  # 36 - 4 - 1 - 18
+assert len(_B1_DISCRETIONARY_RULING) == 25  # 26 - 1 (us_tn_performance_grant, HO-011 source-level reconciliation, AUTHORITY_COVERAGE_REGISTRY_VERSION 1.9.0)
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 12  # 13 - 1
 assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 13
 
 #: Retired / superseded runtime identities that must never resolve to an

@@ -50,17 +50,37 @@ VALID_STATUSES = {
     # the validator immediately rather than passing silently.
     # RULE_REJECTED_VERIFIED: a real, reconstructable RULE_REJECTED
     # disposition reached via evaluate_project(), used where the
-    # control's own original required_program_set named a program a real
-    # registry cannot unlock and the control was corrected to the real
-    # unlocks rather than forced (HO-007).
+    # control's own original required_program_set named a program/
+    # mechanic a real registry or primary authority does not support,
+    # and the control persists an explicit rejection rather than being
+    # forced (HO-007, HO-012).
     "RULE_REJECTED_VERIFIED",
-    # AUTHORITY_INSUFFICIENT_VERIFIED: a real, reconstructable "genuinely
-    # not priceable" disposition (FEASIBILITY_REVIEW_REQUIRED or
-    # UNPRICEABLE_AUTHORITY_INSUFFICIENT candidate_status) reached via
-    # evaluate_project(), citing real, evidenced authority findings --
-    # never a fabricated component, never a silent omission (HO-010,
-    # HO-011).
-    "AUTHORITY_INSUFFICIENT_VERIFIED",
+    # Structural-optimizer wiring correction pass (canonical-1.81.0):
+    # AUTHORITY_INSUFFICIENT_VERIFIED is RETIRED (not merely unused) --
+    # it described HO-010/HO-011 as "genuinely not priceable", which
+    # turned out to be inaccurate for both: HO-011's block was a stale
+    # registry bug (the program prices normally once fixed at the
+    # source; now DOMINATED_WITH_PROOF_VERIFIED like HO-001/002/008/009)
+    # and HO-010's Saskatchewan program is a real, CONFIRMED zero-
+    # guaranteed discretionary award, not an authority gap (now
+    # COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED below). Removed
+    # entirely so a future regression reintroducing this status fails
+    # the validator rather than passing silently under a retired,
+    # inaccurate label.
+    #
+    # COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED: a control whose
+    # required_program_set names N>=2 programs together, where at least
+    # one program is REAL and CONFIRMED (by real authority, not a data
+    # gap) to never enter the priceable candidate universe (e.g. a
+    # genuinely zero-guaranteed discretionary award with no
+    # StructuralComponent routing mechanism) -- so the FULL combined
+    # control can never be canonically executed as one PRICED/
+    # RULE_REJECTED structure, even though any standalone component of
+    # it may have its own real, correct, separately-verified disposition.
+    # An honest label distinct from both "verified" (would overclaim
+    # the full control) and "deferred"/"partial" (would understate that
+    # the blocking reason IS real, confirmed, and disclosed) (HO-010).
+    "COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED",
 }
 
 
@@ -269,7 +289,7 @@ def main() -> int:
     unresolved = [r["control_id"] for r in rows if r["status"] not in
                   ("NATURAL_EXACT_MATCH", "EXPECTED_RULE_REJECTION_EXACT_MATCH", "DOMINATED_WITH_PROOF_VERIFIED",
                    "PRICED_VERIFIED", "MULTI_PRINCIPAL_PAIR_VERIFIED", "RULE_REJECTED_VERIFIED",
-                   "AUTHORITY_INSUFFICIENT_VERIFIED")]
+                   "COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED")]
     if unresolved:
         print(f"\nNOTE: {len(unresolved)} control(s) remain incomplete/deferred, carried forward "
               f"as implementation gaps (this is expected, not a failure): {unresolved}")
