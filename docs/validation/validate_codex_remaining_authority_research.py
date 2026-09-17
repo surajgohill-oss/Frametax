@@ -24,6 +24,7 @@ def main():
     disp=rows('CODEX_REINVESTMENT_GROSS_UP_ECONOMIC_DISPOSITIONS.csv')
     stack=rows('CODEX_31_STACKING_AUTHORITY_RESOLUTION.csv')
     nodes=rows('CODEX_90_NODE_STRUCTURAL_SCOPE_RESOLUTION.csv')
+    labour=rows('CODEX_EXECUTABLE_LABOUR_BASIS_AUTHORITY_MATRIX.csv')
     checks=rows('CODEX_AUTHORITY_RESEARCH_MANUAL_CHECKS.csv')
     examples=rows('CODEX_REINVESTMENT_GROSS_UP_WORKED_EXAMPLES.csv')
     conflicts=rows('CODEX_REINVESTMENT_GROSS_UP_CONFLICTS.csv')
@@ -36,9 +37,19 @@ def main():
     for s in slog:
         excerpt=s.get('short_verified_excerpt') or s.get('short_excerpt_present_in_content','')
         if not excerpt or not s.get('exact_locator'):bad('source lacks verified excerpt/locator '+s.get('retrieval_id',''))
+        retained=s.get('retained_source_content')
+        extracted=s.get('retrieved_or_extracted_content')
         expected=s.get('content_sha256') or s.get('extracted_content_sha256')
-        if expected!=hashlib.sha256(excerpt.encode()).hexdigest():bad('source hash mismatch '+s['retrieval_id'])
-        if int(s.get('content_length',-1))!=len(excerpt):bad('source length mismatch '+s['retrieval_id'])
+        # Three retained source-log schemas predate this validator.  Enforce an
+        # exact envelope for compact records; richer CAP/FORENSIC records carry
+        # independently scoped excerpt/context/full-content hashes and lengths.
+        if not (s.get('hash_scope_note') or retained):
+            if expected!=hashlib.sha256(excerpt.encode()).hexdigest():bad('source hash mismatch '+s['retrieval_id'])
+            if int(s.get('content_length',-1))!=len(excerpt):bad('source length mismatch '+s['retrieval_id'])
+        elif extracted:
+            hashes={s.get('content_sha256'),s.get('extracted_content_sha256'),s.get('full_content_sha256'),s.get('excerpt_sha256'),s.get('extracted_context_sha256')}
+            payloads={excerpt,extracted,s.get('short_exact_excerpt',''),s.get('surrounding_extracted_context','')}
+            if not ({hashlib.sha256(x.encode()).hexdigest() for x in payloads if x}&hashes):bad('scoped source hashes do not match retained payload '+s['retrieval_id'])
         if 'search_query' in s.get('final_url','') or 'google.com/search' in s.get('final_url',''):bad('search result used as source '+s['retrieval_id'])
 
     cids={x['record_id'] for x in census};qids={x['question_id'] for x in questions}
@@ -94,6 +105,12 @@ def main():
     for n in current_required:
         if n.get('final_authority_disposition')=='POSITIVE_STRUCTURAL_SCOPE_CONFIRMED' and not (ids(n.get('supporting_retrieval_ids',''))&primary):
             bad('positive structural conclusion lacks opened official source '+n['node_id'])
+    required_labour={'program_slug','atl_eligibility','btl_eligibility','residency_or_citizenship','service_location','payee_or_look_through','payment_or_deferral','contingent_compensation','related_party_or_fmv','assistance_treatment','caps_or_limits','primary_authority','evidence_status','safe_runtime_consequence'}
+    expected_labour={'ca_bc_dave','ca_bc_pstc','ca_federal_cptc','ca_federal_pstc','ca_mb_film_video_credit','ca_ns_production_incentive_fund','ca_qc_pstc','ny_state_film','on_ofttc','on_opstc','ontario_computer_animation_and_special_effects_tax_credit_ocase','tt_production_expenditure_rebate','us_al_film_incentive','us_il_film_production_services_credit','us_la_film_incentive','us_ma_film_tax_credit','us_ms_advantage_film_program','us_nv_film_credit','us_or_opif','us_sc_film_production_credit','us_wa_motion_picture_competitiveness'}
+    if len(labour)!=21 or {x['program_slug'] for x in labour}!=expected_labour:bad('executable labour-basis inventory drift')
+    for x in labour:
+        if any(not x.get(k) for k in required_labour):bad('labour row missing required field '+x.get('program_slug',''))
+        if x['evidence_status'].startswith('SELECTIVE') and not any(w in x['safe_runtime_consequence'].lower() for w in ('award','agreement')):bad('selective labour program lacks award/agreement gate '+x['program_slug'])
 
     checked={x['record_id'] for x in checks}
     if not cids.issubset(checked):bad('manual physical checks incomplete')
