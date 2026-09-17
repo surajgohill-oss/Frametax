@@ -63,7 +63,7 @@ import uuid
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.calculators.allocation_pricing import price_allocated_structure, rank_allocated_structures
+from app.calculators.allocation_pricing import price_allocated_structure, price_segment, rank_allocated_structures
 from app.calculators.canonical_stack_bridge import (
     StackCandidate,
     eligible_group_for_combination,
@@ -640,7 +640,9 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.77.0"  # 1.77.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, REG-5 same-jurisdiction component-exclusion fix -- the ordinary_component_hybrid loop's movable-component target filter unconditionally excluded the anchor's own jurisdiction (t.jurisdiction_code != _anchor_code), which was right for a same-cost/same-program conflict but wrong for a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit): generate_structural_candidate's own same-cost-by-shared-line_id refusal already makes double-claiming impossible, so this rule type is explicitly non-blocking at that layer (structural_archetype_generator.py's own check_all_pairs). Confirmed via direct instrumentation that us_ny_post_production_credit already appears as a real, independently-priced "post" target in _hy_component_all_targets -- only the anchor-jurisdiction filter was removing it when the anchor was ALSO US-NY. New _hy_same_jurisdiction_distinct_cost_allowed() carves out exactly this one registered rule type; also corrected the prior 1.76.0 fix's own same-jurisdiction group-stack rejection label, which had been calling this exact rule type "UNRESOLVED_NO_AUTHORITY" (implying no rule exists) when a real, cited rule DOES exist -- the true reason is that the OLDER same-jurisdiction bridge has no distinct-cost awareness (a pre-existing, documented, intentionally-unchanged limitation), now labeled RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE and never conflated with a genuine authority gap. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.79.0"  # 1.79.0: eight-control closeout, multi-principal pairwise co-production (REG-4; HO-003/007/013's own pairwise treaty leg) -- confirmed via direct code reading (never assumed) that every EXISTING combined-co-production pricing path in this file (_price_combined_coproduction_component_candidate, both the home-anchored and non-home-anchored loops) unconditionally required a THIRD movable-component target alongside the two treaty parties, so a pure 2-program co-production (a jurisdiction's own national program + its real treaty partner's own national program, no third program) could never be reached even when a real, registered bilateral treaty and real, evidenced majority_pct/minority_pct contribution facts existed for the pair. New _price_combined_coproduction_pair_candidate() is the direct sibling of the existing 3-way function with the routed component omitted: it applies the SAME real, evidenced (never invented) treaty contribution facts as an explicit spec.account_splits entry across every non-memo account (derive_account_allocation's own highest-precedence rule), reusing price_allocated_structure unchanged. Wired into the SAME home-anchored bilateral loop, immediately after the existing 3-way block, gated only on RESOLUTION_ELIGIBLE (never on whether the production happens to have movable post/vfx/music spend to route). This closes the real gap for GB-AU (uk-au-bilateral, unlocks uk_avec/au_producer_offset) and GB-IE (uk-ie-bilateral, unlocks uk_avec/ie_section_481) -- both real, already-registered treaties this codebase's own treaty_engine.py data already carried, confirmed via direct query, never newly researched. Two simultaneous principal_production legs is exactly the shape structural_archetype_generator.py's own generate_structural_candidate already accepted (confirmed by HO-003's own pre-existing direct-generator test); this fix is the missing REAL-runtime allocation source for that shape. Does NOT (this pass) layer authorized-local-stack composition onto either side of the pure-pair candidate, a disclosed scope reduction from the 3-way block's own richer treatment. HO-012 (three SIMULTANEOUS principal legs, fr_trip+ie_section_481+uk_avec) remains a genuine, confirmed gap: IE-FR has no registered bilateral treaty in treaty_engine.py (confirmed via direct query), so no pairwise or transitive treaty basis exists to combine all three without inventing a split -- carried forward, not forced. Invalidates every cached row so this fires fresh.
+# 1.78.0: eight-control closeout, REG-5 cost-pool-aware same-jurisdiction pricing -- the location_groups same-jurisdiction group-stack bridge could never price a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit) because price_program_group_stack's StackCandidate objects are each priced against the WHOLE budget, so naively combining two would double-count the same dollars -- exactly what the rule prohibits. New _try_cost_pool_aware_same_jurisdiction_stack() prices each program against its own REAL, disjoint cost pool instead: it identifies whichever program carries a genuine CLOSED_POSITIVE_LIST of eligible spend categories (never guessed from doctrine alone), partitions the anchor's real per-line AccountAllocation rows into two disjoint pools by each row's own real spend_category (a strict partition of one real tuple, so a line_id can never appear in both pools -- the same same-cost-refusal-by-construction principle structural_archetype_generator.py already uses for movable components), and prices each pool independently via the existing price_segment() partial-register kernel -- never a new pricing path. Only persists PRICED when BOTH pools independently clear their own program's real threshold/rate resolution; otherwise persists a specific, reconstructable RULE_REJECTED (COST_POOL_EMPTY or COST_POOL_MEMBER_UNPRICEABLE), never a fabricated partial result. REG-5 is the only control this pass targets in canonical_evaluation.py itself; multi-principal composition (HO-003/007/012/013, REG-4) and grant/selective-component wiring (HO-010/011) are addressed separately -- see CAPABILITY_LEDGER.md and the 19-control reconciliation CSV for their own disposition. Invalidates every cached row so this fires fresh.
+# 1.77.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, REG-5 same-jurisdiction component-exclusion fix -- the ordinary_component_hybrid loop's movable-component target filter unconditionally excluded the anchor's own jurisdiction (t.jurisdiction_code != _anchor_code), which was right for a same-cost/same-program conflict but wrong for a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit): generate_structural_candidate's own same-cost-by-shared-line_id refusal already makes double-claiming impossible, so this rule type is explicitly non-blocking at that layer (structural_archetype_generator.py's own check_all_pairs). Confirmed via direct instrumentation that us_ny_post_production_credit already appears as a real, independently-priced "post" target in _hy_component_all_targets -- only the anchor-jurisdiction filter was removing it when the anchor was ALSO US-NY. New _hy_same_jurisdiction_distinct_cost_allowed() carves out exactly this one registered rule type; also corrected the prior 1.76.0 fix's own same-jurisdiction group-stack rejection label, which had been calling this exact rule type "UNRESOLVED_NO_AUTHORITY" (implying no rule exists) when a real, cited rule DOES exist -- the true reason is that the OLDER same-jurisdiction bridge has no distinct-cost awareness (a pre-existing, documented, intentionally-unchanged limitation), now labeled RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE and never conflated with a genuine authority gap. Invalidates every cached row so this fires fresh.
 # 1.76.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, same-jurisdiction group-stack silent-omission fix -- found via direct instrumentation (not assumed): price_program_group_stack's own docstring already promised "the rejection is preserved by canonical_evaluation.py exactly like every other None return here," but the consuming location_groups loop silently dropped a None result with zero persisted row of any kind whenever a group had a genuinely unresolved pairwise authority gap (confirmed live on a real CPTC+OFTTC+OCASE combo: the combo WAS attempted, price_program_group_stack correctly returned None for the cptc+ocase UNRESOLVED_NO_AUTHORITY gap, and nothing was ever persisted). New _diagnose_group_stack_none() re-derives the exact real reason (economic block, ineligible jurisdiction group, duplicate program, or -- the confirmed common case -- unresolved pairwise authority) in the SAME order price_program_group_stack itself checks, and persists an explicit RULE_REJECTED row naming the real reason, never a fabricated rate and never a silent drop. Invalidates every cached row so this fires fresh.
 # 1.75.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, canonical Canadian labour fact model -- replaces treating ATL_DIRECTOR/ATL_WRITER/ATL_PRODUCER/ATL_CAST as CPTC/PSTC-qualifying by spend_category alone (the confirmed defect). New app/calculators/canadian_labour_basis.py derives ca_federal_cptc/ca_federal_pstc qualified-labour amount facts from real, evidenced line-level facts (role, canadian_status, service_location, payee_type, payment_status, look_through_wages_usd, psc_profit_element_eligible, assistance_usd -- ProjectFact rows keyed "line_fact:{line_id}:{field}", no schema migration), applying CPTC's lesser-of-eligible-labour-or-60%-of-net-production-cost cap, PSTC's distinct resident-at-payment/services-in-Canada test, deferred/contingent exclusion, and payee-type look-through, citing the three primary sources fetched this workstream at every substantive rule. A line with no evidenced facts fails closed (excluded, never guessed) rather than qualifying by category. Wired into build_project_economic_inputs() as an additive fill-in (never overrides an explicit caller-supplied amount_fact; emits nothing when a project has zero evidenced Canadian labour lines, so every existing project's behavior is byte-for-byte unchanged). 16 hand-calculated unit tests (tests/test_canadian_labour_basis.py). Scope: Canadian federal CPTC/PSTC only, per explicit instruction not to extend to other programs this pass. Invalidates every cached row so this fires fresh.
 # 1.74.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, labour-basis primary-source pass -- added the missing ca_federal_pstc+ca_federal_cptc mutually_exclusive stacking rule (STACKING_RULES_VERSION 1.3.0 -> 1.4.0), confirmed via direct primary-source research (canada.ca CAVCO CPTC/PSTC application guidelines, quoted directly) rather than extrapolation. This was a real, confirmed gap: every OTHER PSTC-equivalent program (ca_bc_pstc, on_opstc) already had this rule against CPTC; the federal pair itself did not. Full statutory research findings (60%-of-net-production-cost cap mechanics, deferral/contingent-remuneration exclusion, loan-out/look-through payee rules, assistance treatment) are recorded in the handoff for the next pass -- NOT implemented as a full per-line canonical fact model this pass; that remains a separate, larger, unbuilt capability (see handoff). Invalidates every cached row so this fires fresh.
@@ -2027,6 +2029,105 @@ def _price_combined_coproduction_component_candidate(
     # basis price_allocated_structure prices below.
     _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
         inputs, component_target_code, allocation.total_allocated_usd,
+    )
+    pricing = price_allocated_structure(
+        spec=spec, allocation=allocation,
+        spend_category_by_code=inputs.spend_category_by_code,
+        offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        gross_budget_usd=inputs.gross_budget_usd,
+        travel_incremental_delta_usd=_travel_delta,
+        fx_delta_usd=_fx_delta,
+        inkind_replacement_delta_usd=0.0,
+        local_cost_delta_usd=_local_cost_delta,
+        production_type=inputs.production_type,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        financing_cost_usd=inputs.financing_cost_usd or 0.0,
+        evidenced_requirement_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
+        amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
+    )
+    return spec, allocation, pricing
+
+
+def _price_combined_coproduction_pair_candidate(
+    inputs: ProjectEconomicInputs,
+    home_code: str, home_program_slug: str,
+    partner_code: str, partner_program_slug: str,
+    treaty_slug: str,
+    majority_pct: float, minority_pct: float,
+):
+    """Eight-control closeout, multi-principal composition (REG-4;
+    HO-003/007/013's own pairwise treaty leg, independent of whichever
+    third movable component they also name). A PURE two-party official
+    co-production -- home_code + partner_code, EACH claiming its own real
+    national principal-production program on its own real, treaty-
+    evidenced contribution share -- with no third movable component
+    required at all. This is the sibling of
+    _price_combined_coproduction_component_candidate with the routed
+    component omitted entirely: every non-memo account (not just the
+    ones a routed component doesn't claim) is split home_code/
+    partner_code by the SAME real, evidenced majority_pct/minority_pct
+    contribution facts _price_combined_coproduction_component_candidate
+    already uses -- never invented here, only reused, and never
+    guessed when no real fact is on file (see the same _InvalidCombinedAllocation
+    guard below). Two SIMULTANEOUS principal_production legs is exactly
+    the shape structural_archetype_generator.py's own generate_
+    structural_candidate already accepts (confirmed via HO-003's own
+    direct-generator test); this function is the missing REAL-runtime
+    allocation source for that shape, using the existing treaty bridge's
+    own already-evidenced contribution facts -- never a guessed split.
+
+    Raises _InvalidCombinedAllocation on the same conditions as the
+    three-way sibling: missing/non-positive contribution facts, or a
+    zero-dollar allocation for either participant."""
+    if majority_pct is None or minority_pct is None or majority_pct <= 0 or minority_pct <= 0:
+        raise _InvalidCombinedAllocation(
+            f"{partner_code} claims a co-production share under {treaty_slug} but no "
+            "positive, evidenced majority_pct/minority_pct contribution fact is on file "
+            f"(majority_pct={majority_pct}, minority_pct={minority_pct}) -- a claimed "
+            "participant may never receive an invented or zero allocation."
+        )
+    majority_frac = majority_pct / 100.0
+    minority_frac = minority_pct / 100.0
+    _split_total = round(majority_frac + minority_frac, 6)
+    if _split_total <= 0:
+        raise _InvalidCombinedAllocation(
+            f"{home_code}/{partner_code} contribution shares under {treaty_slug} sum to "
+            f"{_split_total} -- cannot derive a valid non-zero split."
+        )
+    majority_frac, minority_frac = majority_frac / _split_total, minority_frac / _split_total
+
+    account_splits: dict[str, dict[str, float]] = {
+        line.account_code: {home_code: majority_frac, partner_code: minority_frac}
+        for line in inputs.budget_lines if not line.is_memo
+    }
+
+    spec = StructureSpec(
+        structure_id=f"CANON-COMBINED-PAIR-{home_code}-{partner_code}-{treaty_slug}",
+        structure_type="hybrid",
+        label=f"{home_code} + {partner_code} co-production ({treaty_slug})",
+        primary_jurisdiction=home_code,
+        participants=(home_code, partner_code),
+        incentive_programs={home_code: home_program_slug, partner_code: partner_program_slug},
+        account_splits=account_splits,
+        treaty_slug=treaty_slug,
+    )
+    allocation = derive_account_allocation(
+        lines=inputs.budget_lines,
+        spend_category_by_code=inputs.spend_category_by_code,
+        spec=spec,
+        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+    )
+    _by_jur = allocation.allocated_by_jurisdiction()
+    _zero_participants = [p for p in spec.participants if not _by_jur.get(p)]
+    if _zero_participants:
+        raise _InvalidCombinedAllocation(
+            f"Participant(s) {_zero_participants} would receive zero allocated dollars "
+            f"in this {home_code}+{partner_code} combined structure -- a claimed "
+            "participant may never receive a zero allocation."
+        )
+    _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
+        inputs, partner_code, allocation.total_allocated_usd,
     )
     pricing = price_allocated_structure(
         spec=spec, allocation=allocation,
@@ -4123,6 +4224,159 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             "reason not captured by the specific checks above -- disclosed rather than dropped."
         )
 
+    def _try_cost_pool_aware_same_jurisdiction_stack(
+        combo: list,
+    ) -> tuple[dict | None, str | None, str | None]:
+        """REG-5 cost-pool-aware pricing. Returns (payload, reason_class,
+        reason). payload is non-None only on a genuine success.
+
+        For a same-jurisdiction pair carrying a registered
+        same_cost_prohibited_distinct_costs_allowed rule (a jurisdiction's
+        own broad principal-production credit plus a separate credit
+        scoped to one closed list of eligible spend categories, e.g. a
+        post-production-only credit) -- a pair the OLDER
+        price_program_group_stack bridge can never price (see the
+        RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE branch above:
+        that bridge has no distinct-cost awareness) -- prices each
+        program against its own REAL, DISJOINT cost pool instead of the
+        whole budget for both, so the same dollar can never be counted
+        under both programs:
+
+          1. identify which of the two programs carries a genuine, real
+             CLOSED_POSITIVE_LIST of eligible spend categories (never
+             guessed from doctrine alone -- if neither/both programs
+             carry one, this mechanism does not apply and (None, None,
+             None) is returned, falling through to the existing, honest
+             RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE rejection
+             just as before this fix);
+          2. derive the anchor's REAL account allocation for this
+             jurisdiction via derive_account_allocation() -- the exact
+             same call every full_relocation/single_country candidate in
+             this file already uses, no second allocation mechanism;
+          3. partition those REAL AccountAllocation rows into two
+             disjoint pools by each row's own real spend_category -- a
+             strict partition of the SAME tuple, so a source line_id can
+             never appear in both pools (same-cost-refusal by
+             construction, the identical principle
+             structural_archetype_generator.py already uses for movable
+             components);
+          4. price each pool independently via price_segment() -- the
+             same partial-register pricing kernel movable-component
+             routing already reuses for a spend subset, never a new
+             pricing path;
+          5. only return a priced payload when BOTH pools independently
+             clear their own program's real threshold/rate resolution --
+             if either pool does not price, a specific, reconstructable
+             rejection reason is returned instead of a fabricated
+             partial result.
+
+        Bounded to exactly 2 programs, both in the same jurisdiction --
+        generalizing to 3+ simultaneous distinct-cost pools is not
+        attempted (no registered rule authorizes it and no known control
+        needs it)."""
+        if len(combo) != 2:
+            return None, None, None
+        cand_a, cand_b = combo
+        if cand_a.jurisdiction_code != cand_b.jurisdiction_code:
+            return None, None, None
+        rule = load_named_pair_rule(cand_a.program_slug, cand_b.program_slug)
+        if rule is None or rule["rule_type"] != "same_cost_prohibited_distinct_costs_allowed":
+            return None, None, None
+
+        from app.data.program_spend_rules import (
+            QualificationDoctrine, get_program_rules, resolve_program_doctrine,
+        )
+        split = None
+        for closed_slug, remainder_slug in (
+            (cand_a.program_slug, cand_b.program_slug),
+            (cand_b.program_slug, cand_a.program_slug),
+        ):
+            if resolve_program_doctrine(closed_slug).doctrine != QualificationDoctrine.CLOSED_POSITIVE_LIST:
+                continue
+            categories = tuple(sorted(
+                cat for cat, r in get_program_rules(closed_slug).items() if r.qualifies is True
+            ))
+            if categories:
+                split = (closed_slug, remainder_slug, categories)
+                break
+        if split is None:
+            # Neither program carries a genuine closed positive list to
+            # ground a real split -- never guess one from overlapping
+            # open-inclusion doctrine. Falls through to the existing
+            # RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE rejection.
+            return None, None, None
+        closed_slug, remainder_slug, closed_categories = split
+        code = cand_a.jurisdiction_code
+
+        spec = StructureSpec(
+            structure_id=f"CANON-{code}-cost-pool-{closed_slug}-{remainder_slug}",
+            structure_type="single_country" if code == inputs.jurisdiction_code else "full_relocation",
+            label=f"{code} distinct-cost-pool stack ({closed_slug} + {remainder_slug})",
+            primary_jurisdiction=code, participants=(code,),
+            incentive_programs={code: closed_slug},
+        )
+        allocation = derive_account_allocation(
+            lines=inputs.budget_lines, spend_category_by_code=inputs.spend_category_by_code,
+            spec=spec, stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+        )
+        assignments = [asg for asg in allocation.assignments if asg.jurisdiction_code == code]
+        pool_closed = [
+            asg for asg in assignments
+            if (asg.spend_category or inputs.spend_category_by_code.get(asg.account_code)) in closed_categories
+        ]
+        _closed_ids = {id(asg) for asg in pool_closed}
+        pool_remainder = [asg for asg in assignments if id(asg) not in _closed_ids]
+
+        if not pool_closed:
+            return None, "COST_POOL_EMPTY", (
+                f"{closed_slug}: no real budget line in this production's {code} allocation "
+                f"falls into {closed_slug}'s own closed eligible-category list "
+                f"{list(closed_categories)} -- no genuine distinct cost pool exists to price "
+                f"separately from {remainder_slug}, so this combination is not formed rather "
+                "than invented."
+            )
+
+        common_kwargs = dict(
+            spend_category_by_code=inputs.spend_category_by_code,
+            offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+            production_type=inputs.production_type,
+            gross_budget_usd=inputs.gross_budget_usd,
+            amount_facts=inputs.amount_facts,
+            evidenced_requirement_facts=(
+                inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
+            ),
+            fx_context=inputs.fx_context,
+        )
+        seg_closed = price_segment(code, closed_slug, pool_closed, **common_kwargs)
+        seg_remainder = price_segment(code, remainder_slug, pool_remainder, **common_kwargs)
+
+        if not seg_closed.executable:
+            return None, "COST_POOL_MEMBER_UNPRICEABLE", (
+                f"{closed_slug}: its own real {code} cost pool "
+                f"(${sum(asg.amount_usd for asg in pool_closed):,.2f} across categories "
+                f"{list(closed_categories)}) did not price on its own -- "
+                + ("; ".join(seg_closed.blockers) or "no executable rate resolved for this pool alone.")
+            )
+        if not seg_remainder.executable:
+            return None, "COST_POOL_MEMBER_UNPRICEABLE", (
+                f"{remainder_slug}: its own real {code} remainder cost pool "
+                f"(${sum(asg.amount_usd for asg in pool_remainder):,.2f}, every account NOT in "
+                f"{closed_slug}'s closed category list) did not price on its own -- "
+                + ("; ".join(seg_remainder.blockers) or "no executable rate resolved for this pool alone.")
+            )
+
+        total_incentive = round(seg_closed.incentive_floor_usd + seg_remainder.incentive_floor_usd, 2)
+        payload = {
+            "closed_slug": closed_slug, "remainder_slug": remainder_slug,
+            "closed_categories": list(closed_categories),
+            "seg_closed": seg_closed, "seg_remainder": seg_remainder,
+            "pool_closed_line_ids": sorted({asg.line_id for asg in pool_closed}),
+            "pool_remainder_line_ids": sorted({asg.line_id for asg in pool_remainder}),
+            "total_incentive_usd": total_incentive,
+            "jurisdiction_code": code,
+        }
+        return payload, "PRICED", "cost-pool-aware distinct pricing succeeded"
+
     seen_combos: set[frozenset] = set()
     location_groups: list[list[StackCandidate]] = []
     for country, stack_candidates in priced_by_country.items():
@@ -4150,7 +4404,73 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 stack_result = price_program_group_stack(list(combo))
                 if stack_result is not None:
                     stack_results.append(stack_result)
-                else:
+                    continue
+
+                # REG-5 cost-pool-aware pricing (canonical-1.78.0): tried
+                # BEFORE falling back to the generic RULE_REJECTED
+                # diagnosis below, but only for a combo this mechanism
+                # actually applies to (exactly 2 same-jurisdiction
+                # programs under a registered same_cost_prohibited_
+                # distinct_costs_allowed rule with a real closed-list
+                # split available) -- every other combo shape returns
+                # (None, None, None) immediately and falls through
+                # unchanged to the pre-existing diagnostic below.
+                _cp_payload, _cp_reason_class, _cp_reason = (
+                    _try_cost_pool_aware_same_jurisdiction_stack(list(combo))
+                )
+                if _cp_payload is not None:
+                    _cp_structure_id = uuid.uuid4()
+                    session.add(ProductionStructure(
+                        id=_cp_structure_id, project_id=project.id,
+                        name=(
+                            f"{_cp_payload['closed_slug']}+{_cp_payload['remainder_slug']} "
+                            f"({_cp_payload['jurisdiction_code']} distinct-cost-pool stack)"
+                        ),
+                        description=(
+                            f"Same-jurisdiction distinct-cost-pool stack: {_cp_payload['closed_slug']} "
+                            f"priced only against its own real {_cp_payload['closed_categories']} "
+                            f"spend; {_cp_payload['remainder_slug']} priced only against the "
+                            "remaining real spend. The two pools partition the same real budget "
+                            "by disjoint source BudgetLine ids -- no dollar counted twice."
+                        ),
+                        jurisdiction_allocations=[], claimed_program_ids=sorted(combo_key),
+                        is_official_coproduction=False, coproduction_treaty=None,
+                    ))
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_cp_structure_id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=_cp_payload["total_incentive_usd"],
+                        true_net_cost_usd=round(
+                            inputs.gross_budget_usd - _cp_payload["total_incentive_usd"], 2,
+                        ),
+                        risk_adjusted_net_cost_usd=round(
+                            inputs.gross_budget_usd - _cp_payload["total_incentive_usd"], 2,
+                        ),
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        calculation_trace_json={
+                            "candidate_status": "PRICED",
+                            "discovery_classification": "same_jurisdiction_distinct_cost_pool_stack",
+                            "structural_family": "same_jurisdiction_distinct_cost_pool_stack",
+                            "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
+                            "program_slugs": sorted(combo_key),
+                            "jurisdiction_codes": sorted({c.jurisdiction_code for c in combo}),
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "cost_pool_closed_program": _cp_payload["closed_slug"],
+                            "cost_pool_remainder_program": _cp_payload["remainder_slug"],
+                            "cost_pool_closed_categories": _cp_payload["closed_categories"],
+                            "cost_pool_closed_line_ids": _cp_payload["pool_closed_line_ids"],
+                            "cost_pool_remainder_line_ids": _cp_payload["pool_remainder_line_ids"],
+                            "cost_pool_closed_qpe_usd": _cp_payload["seg_closed"].qpe_usd,
+                            "cost_pool_remainder_qpe_usd": _cp_payload["seg_remainder"].qpe_usd,
+                            "cost_pool_closed_incentive_usd": _cp_payload["seg_closed"].incentive_floor_usd,
+                            "cost_pool_remainder_incentive_usd": _cp_payload["seg_remainder"].incentive_floor_usd,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                    continue
+
+                if _cp_payload is None:
                     # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION:
                     # confirmed real defect, found via direct instrumentation
                     # (not assumed) -- price_program_group_stack's own
@@ -4170,7 +4490,17 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     # Diagnoses and persists the SAME class of explicit,
                     # reconstructable rejection here -- never silently
                     # dropped, never a fabricated rate.
-                    _none_reason_class, _none_reason = _diagnose_group_stack_none(list(combo))
+                    #
+                    # REG-5 addendum: if the cost-pool-aware attempt above
+                    # WAS applicable but failed on its own real facts
+                    # (COST_POOL_EMPTY / COST_POOL_MEMBER_UNPRICEABLE),
+                    # that specific, reconstructable reason is used
+                    # in place of the generic diagnostic -- never
+                    # overwritten by a less precise catch-all reason.
+                    if _cp_reason_class is not None:
+                        _none_reason_class, _none_reason = _cp_reason_class, _cp_reason
+                    else:
+                        _none_reason_class, _none_reason = _diagnose_group_stack_none(list(combo))
                     _rej_structure_id = uuid.uuid4()
                     session.add(ProductionStructure(
                         id=_rej_structure_id, project_id=project.id,
@@ -6009,6 +6339,188 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             "segments": _segment_dicts(pricing),
                             "conditional_programs": _comb_conditional_program_dicts,
                             "conditional_compatibility": _comb_conditional_compatibility_dict,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+
+        # Eight-control closeout, multi-principal composition (REG-4;
+        # HO-003/007/013's own pairwise leg). A PURE two-party
+        # co-production -- home_code + partner_code ONLY, no third
+        # movable component -- is a genuinely distinct real candidate
+        # from the combined_coproduction_component_stack block above
+        # (which requires _combined_components to be non-empty and
+        # always claims a third program). Gated only on
+        # RESOLUTION_ELIGIBLE + a real, positive, evidenced contribution
+        # fact pair -- never on whether the production happens to have
+        # movable post/vfx/music spend. Two simultaneous
+        # principal_production legs is exactly the shape
+        # structural_archetype_generator.py's own generate_
+        # structural_candidate already accepts (HO-003's own
+        # direct-generator test) -- this is the missing REAL-runtime
+        # allocation source for that shape, reusing the SAME real,
+        # evidenced majority_pct/minority_pct treaty facts the three-way
+        # block above already fetched for this exact iteration, never a
+        # second, divergent fact read. Does not (this pass) layer
+        # authorized-local-stack composition onto either side -- a real,
+        # disclosed scope reduction from the three-way block's own
+        # richer treatment, not a silent omission.
+        if opp.resolution_state == RESOLUTION_ELIGIBLE:
+            _pair_claimed_programs = [home_program_slug, partner_code]
+            try:
+                _pair_partner_best = _best_priced_treaty_side_candidate(
+                    inputs, partner_code, priced_by_code,
+                    tuple(_treaty_row.minority_unlocks) if _treaty_row else (),
+                )
+                if _pair_partner_best is None:
+                    raise _InvalidCombinedAllocation(
+                        f"{partner_code} has no independently-priceable program available "
+                        f"under {opp.treaty_slug}'s minority_unlocks -- a claimed participant "
+                        "must have a real, priceable program, never an assumed one."
+                    )
+                _pair_claimed_programs = [home_program_slug, _pair_partner_best.program_slug]
+                _pair_spec, _pair_allocation, _pair_pricing = _price_combined_coproduction_pair_candidate(
+                    inputs, home_code, home_program_slug, partner_code, _pair_partner_best.program_slug,
+                    opp.treaty_slug, _bp_majority_pct, _bp_minority_pct,
+                )
+            except _InvalidCombinedAllocation as _pair_invalid:
+                _pair_invalid_structure = ProductionStructure(
+                    id=uuid.uuid4(), project_id=project.id,
+                    name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug}, pair, rejected)",
+                    description=f"Combined pair candidate rejected: {_pair_invalid.reason}",
+                    jurisdiction_allocations=[], claimed_program_ids=_pair_claimed_programs,
+                )
+                session.add(_pair_invalid_structure)
+                await session.flush()
+                session.add(StructureCalculationResult(
+                    id=uuid.uuid4(), structure_id=_pair_invalid_structure.id, engine_version=ENGINE_VERSION,
+                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    calculation_trace_json={
+                        "candidate_status": "RULE_REJECTED",
+                        "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
+                        "discovery_classification": "combined_coproduction_pair_stack",
+                        "structural_family": "combined_coproduction_pair_stack",
+                        "structure_type": "hybrid",
+                        "primary_jurisdiction": home_code,
+                        "treaty_slug": opp.treaty_slug,
+                        "program_slugs": _pair_claimed_programs,
+                        "reason": _pair_invalid.reason,
+                        "is_baseline": False, "relocation_cost_normalized": False,
+                        "is_directly_comparable": False,
+                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                    },
+                    input_fingerprint=fingerprint,
+                ))
+            else:
+                if not _pair_pricing.is_fully_priced:
+                    _pair_rej_status, _pair_rej_class = _classify_component_rejection(_pair_pricing.blockers)
+                    _pair_rej_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug}, pair, rejected)",
+                        description=(
+                            "Pure two-party co-production candidate does not clear pricing: "
+                            f"{'; '.join(_pair_pricing.blockers) or 'not fully priced.'}"
+                        ),
+                        jurisdiction_allocations=[], claimed_program_ids=_pair_claimed_programs,
+                    )
+                    session.add(_pair_rej_structure)
+                    await session.flush()
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_pair_rej_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        calculation_trace_json={
+                            "candidate_status": _pair_rej_status,
+                            "rejection_reason_class": _pair_rej_class,
+                            "discovery_classification": "combined_coproduction_pair_stack",
+                            "structural_family": "combined_coproduction_pair_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": opp.treaty_slug,
+                            "program_slugs": _pair_claimed_programs,
+                            "reason": "; ".join(_pair_pricing.blockers) or "Not fully priced.",
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                else:
+                    _pair_home_jur = jurisdiction_by_code.get(home_code)
+                    _pair_by_jur = _pair_allocation.allocated_by_jurisdiction()
+                    _pair_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug})",
+                        description=(
+                            f"Official co-production between {home_code} (anchor) and {partner_code} "
+                            f"under {opp.treaty_slug}, allocated by each party's real evidenced "
+                            "contribution share (no third movable component routed)."
+                        ),
+                        jurisdiction_allocations=[
+                            j for j in (
+                                {"jurisdiction_id": str(_pair_home_jur.id), "shoot_pct": 100,
+                                 "budget_pct": round(100 * _pair_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                if _pair_home_jur else None,
+                                {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
+                                 "budget_pct": round(100 * _pair_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                if partner_jur else None,
+                            ) if j
+                        ],
+                        claimed_program_ids=_pair_claimed_programs,
+                    )
+                    session.add(_pair_structure)
+                    await session.flush()
+                    _pair_conditional_program_dicts, _pair_conditional_compatibility_dict = _conditional_data(
+                        str(_pair_structure.id), home_code, tuple(_pair_claimed_programs),
+                    )
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_pair_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=_pair_pricing.selected_incentive_usd,
+                        true_net_cost_usd=_pair_pricing.npc_verified_usd,
+                        risk_adjusted_net_cost_usd=_pair_pricing.npc_with_adjustments_usd,
+                        has_unverified_inputs=True,
+                        warnings=[
+                            LIMITATION_NOTE,
+                            "Pure two-party official co-production candidate: a new, additive "
+                            "structure topology (no third movable component routed, no "
+                            "same-jurisdiction local stacking layered on either side this pass) "
+                            "-- not directly comparable to single-leg or three-way combined "
+                            "structures' own NPC without confirming the same normalization basis.",
+                        ],
+                        calculation_trace_json={
+                            "candidate_status": STATUS_PRICED,
+                            "discovery_classification": "combined_coproduction_pair_stack",
+                            "structural_family": "combined_coproduction_pair_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": opp.treaty_slug,
+                            "program_slugs": _pair_claimed_programs,
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                            "coproduction_partners": [
+                                {
+                                    "jurisdiction_code": home_code,
+                                    "jurisdiction_display_name": _pair_home_jur.name if _pair_home_jur else home_code,
+                                    "allocated_usd": _pair_by_jur.get(home_code, 0.0),
+                                },
+                                {
+                                    "jurisdiction_code": partner_code,
+                                    "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
+                                    "allocated_usd": _pair_by_jur.get(partner_code, 0.0),
+                                },
+                            ],
+                            "treaty_resolution_state": opp.resolution_state,
+                            "selected_incentive_usd": _pair_pricing.selected_incentive_usd,
+                            "npc_verified_usd": _pair_pricing.npc_verified_usd,
+                            "npc_with_adjustments_usd": _pair_pricing.npc_with_adjustments_usd,
+                            "gross_budget_usd": inputs.gross_budget_usd,
+                            "segments": _segment_dicts(_pair_pricing),
+                            "conditional_programs": _pair_conditional_program_dicts,
+                            "conditional_compatibility": _pair_conditional_compatibility_dict,
                         },
                         input_fingerprint=fingerprint,
                     ))

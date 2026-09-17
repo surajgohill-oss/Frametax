@@ -31,6 +31,17 @@ VALID_STATUSES = {
     "NATURAL_EXACT_MATCH", "EXPECTED_RULE_REJECTION_EXACT_MATCH",
     "DOMINATED_WITH_PROOF_VERIFIED", "MULTI_PRINCIPAL_DEFERRED",
     "GRANT_COMPONENT_UNWIRED_DEFERRED", "UNRESOLVED_GAP",
+    # Eight-control closeout (canonical-1.78.0/1.79.0): REG-5's genuine
+    # cost-pool-aware PRICED disposition, REG-4's genuine pure-pairwise
+    # co-production PRICED disposition, and HO-003/HO-007's real but
+    # incomplete finding (the underlying mechanism is confirmed to price
+    # with zero new code once real facts are supplied, but this control's
+    # own literal named program combination is not yet exactly
+    # reproduced) -- each a distinct, honest disposition, never collapsed
+    # into an existing status that would either overstate or understate
+    # what was actually verified.
+    "PRICED_VERIFIED", "MULTI_PRINCIPAL_PAIR_VERIFIED",
+    "MULTI_PRINCIPAL_PARTIALLY_RESOLVED",
 }
 
 
@@ -237,7 +248,8 @@ def main() -> int:
         print(f"  {k}: {v}")
     print(f"  TOTAL: {sum(counts.values())}")
     unresolved = [r["control_id"] for r in rows if r["status"] not in
-                  ("NATURAL_EXACT_MATCH", "EXPECTED_RULE_REJECTION_EXACT_MATCH", "DOMINATED_WITH_PROOF_VERIFIED")]
+                  ("NATURAL_EXACT_MATCH", "EXPECTED_RULE_REJECTION_EXACT_MATCH", "DOMINATED_WITH_PROOF_VERIFIED",
+                   "PRICED_VERIFIED", "MULTI_PRINCIPAL_PAIR_VERIFIED")]
     if unresolved:
         print(f"\nNOTE: {len(unresolved)} control(s) remain incomplete/deferred, carried forward "
               f"as implementation gaps (this is expected, not a failure): {unresolved}")

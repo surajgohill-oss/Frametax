@@ -3700,3 +3700,25 @@ Full backend suite: **4,572 passed, 0 failed, 1 skipped** (9 further failures in
 **19-control ledger**: 11 of 19 now canonically verified (was 7); only REG-5 remains a genuine unresolved gap; 7 remain correctly deferred to two named follow-on workstreams (unchanged, out of this pass's scope).
 
 **Final status returned**: `IMPLEMENTATION_INCOMPLETE` (4 of 5 targeted controls resolved; REG-5 diagnosed, not forced).
+
+---
+
+## CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_EIGHT_CONTROL_CLOSEOUT (2026-09-17)
+
+**Lineage**: same as above, resumed from `ddfceb3e`. Scope: REG-5's own carried-forward cost-pool re-pricing; multi-principal composition (HO-003/007/012/013, REG-4); grant/selective-component wiring (HO-010/011).
+
+**REG-5: RESOLVED (`canonical-1.78.0`)**. New `_try_cost_pool_aware_same_jurisdiction_stack()`: identifies whichever program in a `same_cost_prohibited_distinct_costs_allowed` pair carries a real `CLOSED_POSITIVE_LIST` doctrine, partitions the anchor's real per-line allocation into two disjoint pools by real `spend_category` (never guessed), prices each independently via the existing `price_segment()` kernel. Verified: `AUDIT_CONTROL_REG_5` reaches exact `PRICED` `{ny_state_film, us_ny_post_production_credit}`, $1,425,000.00 total incentive, hand-verified against the real unmodified `RateRule`s.
+
+**REG-4: RESOLVED (`canonical-1.79.0`)**. Direct code reading found every existing combined-co-production pricing path required a third movable-component target even for a pure 2-party treaty co-production. New `_price_combined_coproduction_pair_candidate()`, the 3-way function's sibling with the component omitted, reusing the same real, evidenced treaty contribution facts. Verified: `AUDIT_CONTROL_REG_4` reaches exact `PRICED` `{ie_section_481, uk_avec}`, $1,136,000.00 total incentive, hand-verified including UK AVEC's real 80%-of-allocated-budget QPE cap.
+
+**HO-003/HO-007: new `MULTI_PRINCIPAL_PARTIALLY_RESOLVED` status** -- an honest middle ground between "verified" and "deferred." HO-003's real fixture (real GB-AU contribution facts + real personnel facts satisfying the treaty's own personnel gate) proved the pre-existing 3-way mechanism prices with zero new code, but the literal `au_producer_offset` partner program did not surface (the partner's own overall-best-priced program is selected instead, a real, pre-existing, unmodified behavior). HO-007 turned out to be a real data mismatch, not a code gap: the real `uk-fr-bilateral` treaty's own registered unlocks are `fr_tax_credit_cinema`/`fr_cnc_production`, never `fr_trip` (which this codebase associates only with `ca-fr-bilateral`/`fr-de-bilateral`).
+
+**HO-012/HO-013: confirmed genuine architectural blockers, not forced.** HO-012 has no registered IE-FR treaty at all (`te.get_bilateral_treaty('IE','FR')` returns `None`). HO-013 needs two movable components routed simultaneously onto one combined structure; both the 3-way and new pair mechanisms route at most one.
+
+**HO-010/HO-011: refined, not resolved.** Confirmed `app.calculators.conditional_programs.conditional_nodes_for()` already surfaces a real CA-SK grant disclosure under a mismatched node identity, and surfaces nothing at all for US-TN. Real, precise finding; no working mechanism change this pass.
+
+**Regression**: `test_generic_structural_discovery_final_correction.py` 16/16 (6 new hand-calculated tests). Broader suite (10 files spanning treaty co-production, NY/Canada validation, stacking): 305/305. Fresh four-production batch: all anchors byte-identical, all `PRICED`/`DOMINATED_WITH_PROOF` counts unchanged (neither new mechanism fires for any real production, since none carries the real triggering facts on file). Shared `frametax2` database row count confirmed unchanged (533,788) before and after.
+
+**19-control ledger**: 13 of 19 now canonically verified (was 11) -- `PRICED_VERIFIED` +1 (REG-5), `MULTI_PRINCIPAL_PAIR_VERIFIED` +1 (REG-4). Remaining 6: `MULTI_PRINCIPAL_PARTIALLY_RESOLVED` 2 (HO-003, HO-007), `MULTI_PRINCIPAL_DEFERRED` 2 (HO-012, HO-013), `GRANT_COMPONENT_UNWIRED_DEFERRED` 2 (HO-010, HO-011). Total exactly 19, validator-enforced (3 new statuses added to `VALID_STATUSES`).
+
+**Final status returned**: `IMPLEMENTATION_INCOMPLETE` (2 of the 3 assigned pieces of work fully resolved via `evaluate_project()`; multi-principal composition partially resolved with real, specific findings on every remaining control; nothing forced, nothing silently omitted).
