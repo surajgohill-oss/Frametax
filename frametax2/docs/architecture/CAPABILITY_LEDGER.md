@@ -3680,3 +3680,23 @@ Full backend suite: **4,572 passed, 0 failed, 1 skipped** (9 further failures in
 **Known, disclosed gaps carried forward, not closed this pass**: the 5 unresolved controls above; the 5 multi-principal-deferred + 2 grant-unwired-deferred controls (explicitly routed to the next two workstreams, see handoff); the Part B gross-up/reinvestment engine; Codex authority-research reconciliation.
 
 **Final status returned**: `IMPLEMENTATION_INCOMPLETE` (by design — this pass's own instructions required carrying forward every confirmed unsupported canonical family as an explicit gap rather than claiming optimizer completion while any remain; 12 of 19 controls are not yet canonically closed).
+
+---
+
+## CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, five-control closeout (2026-09-17)
+
+**Lineage**: same as above. Scoped to exactly five named controls: HO-004, HO-005, HO-006, HO-009, REG-5.
+
+**Confirmed code defect, found via direct instrumentation and fixed**: `price_program_group_stack`'s own docstring promised its `None` return for a genuinely unresolved-authority group would be "preserved by canonical_evaluation.py exactly like every other None return here" -- it was not. The consuming `location_groups` loop silently dropped it with zero persisted row. Fixed with `_diagnose_group_stack_none()`, resolving HO-004/HO-005/HO-006 to exactly their originally-documented expected disposition (`RULE_REJECTED`/`UNRESOLVED_NO_AUTHORITY`). A mislabeling introduced in the FIRST version of this fix (calling a real, registered `same_cost_prohibited_distinct_costs_allowed` rule "no authority") was caught and corrected in the same pass, before being trusted, via direct verification against `load_named_pair_rule`.
+
+**HO-009**: confirmed resolved on a fresh fixture after the fixes above (genuine `DOMINATED_WITH_PROOF`, window=2). Not independently re-instrumented to confirm the prior pass's exact zero-row cause.
+
+**REG-5**: diagnosed but deliberately not resolved. A fix was made and kept (`_hy_same_jurisdiction_distinct_cost_allowed`, real, tested, zero anchor impact) but does not reach this specific control's single-movable-component shape. The mechanism that DOES attempt REG-5's exact pair (`price_program_group_stack`) cannot price it correctly without a genuine cost-pool-aware re-pricing extension -- attempting that hastily was judged too risky for a real financial calculator and left for dedicated follow-on work.
+
+**Self-correction**: found and fixed a staleness bug in the workstream's own semantic validator (hardcoded `engine_version` string would have made its DB checks pass vacuously after this pass's version bumps). Fixed to read the engine version live, with an explicit non-vacuous-check guard.
+
+**Regression**: 223/223. Fresh four-production batch: anchors unchanged across all four real productions; `RULE_REJECTED` counts increased (previously-hidden rejections now correctly surfaced) with zero change to `PRICED`/`DOMINATED_WITH_PROOF` counts.
+
+**19-control ledger**: 11 of 19 now canonically verified (was 7); only REG-5 remains a genuine unresolved gap; 7 remain correctly deferred to two named follow-on workstreams (unchanged, out of this pass's scope).
+
+**Final status returned**: `IMPLEMENTATION_INCOMPLETE` (4 of 5 targeted controls resolved; REG-5 diagnosed, not forced).

@@ -351,3 +351,39 @@ By design, not oversight: this pass's own instructions required carrying forward
 ## Not attempted this pass
 
 Part B (support/reinvestment/gross-up engine); `CANONICAL_MULTI_PRINCIPAL_COPRODUCTION_COMPOSITION` itself (deliberately deferred as its own workstream, not started here); Codex authority-research reconciliation; root-causing HO-009's silent-omission finding; resolving HO-004/005/006's federal-labour-amount reconciliation; resolving REG-5's same-jurisdiction-component gap.
+
+---
+
+# CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION (five-control closeout pass)
+
+**RESOLVED_STARTING_SHA:** `8ce66a4bb6bfbfaede047d13cc07f0b99a322a26`
+
+Closed exactly the five controls this pass's own instructions named: HO-004, HO-005, HO-006, HO-009, REG-5. Preserved the canonical Canadian labour correction (`canadian_labour_basis.py`) unchanged. No new research, schemas, programs, rates, or synthetic categories introduced.
+
+## HO-004/HO-005/HO-006: RESOLVED (`canonical-1.76.0`)
+
+Root-caused via direct instrumentation (temporary debug prints on `location_groups`/`seen_combos`, removed after diagnosis, never left in committed code): the exact 3-way combo (e.g. `ca_federal_cptc`+`on_ofttc`+`ocase`) WAS attempted every run. `price_program_group_stack` correctly returned `None` (a genuine `UNRESOLVED_NO_AUTHORITY` gap between `ca_federal_cptc` and `ocase`), but the consuming loop silently dropped every `None` -- contradicting `price_program_group_stack`'s own docstring, which already promised "the rejection is preserved by canonical_evaluation.py exactly like every other None return here." Fixed with `_diagnose_group_stack_none()`, which re-derives the real reason in the exact order `price_program_group_stack` itself checks (economic block, ineligible jurisdiction group, duplicate program, unresolved pairwise authority) and persists an explicit `RULE_REJECTED` row. All three controls now resolve to precisely their originally-documented expected disposition.
+
+**Mislabeling caught and fixed in the same pass**: the initial version of this diagnostic called a REAL, registered `same_cost_prohibited_distinct_costs_allowed` rule "UNRESOLVED_NO_AUTHORITY" -- confirmed wrong by directly querying `load_named_pair_rule` for NY's pair and finding a real, cited rule. Corrected to a distinct `RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE` label that never conflates "no rule exists" with "a rule exists but this mechanism can't apply it."
+
+## HO-009: RESOLVED, no code change needed
+
+A fresh `AUDIT_CONTROL_HO_009` fixture (anchor=NZ), rebuilt and evaluated after the fixes above, reaches a genuine, fully reconstructable `DOMINATED_WITH_PROOF` (window=2, dominated_count=131, incumbent=`ca_mb_film_video_credit`+`ca_nl_all_spend_credit` -- the same Canadian-dominance pattern independently confirmed for HO-001/002/008) and a real `PRICED` 3-way combo. The prior pass's zero-row finding did not reproduce on a clean fixture under current code. Not independently re-instrumented to pin the exact prior cause; reported honestly as resolved-with-real-evidence rather than root-caused-from-first-principles.
+
+## REG-5: partially diagnosed, deliberately NOT resolved
+
+Confirmed the registered `same_cost_prohibited_distinct_costs_allowed` rule exists for `ny_state_film`+`us_ny_post_production_credit` -- not an authority gap. Fixed the `ordinary_component_hybrid` loop's anchor-jurisdiction exclusion filter to allow this exact rule type (new `_hy_same_jurisdiction_distinct_cost_allowed()`, `canonical-1.77.0`) -- real, tested (221/221 regression, zero anchor changes across all four real productions), but inapplicable to REG-5 itself: the hybrid loop only runs for `_r >= 2` simultaneous movable components, and REG-5 is a single-movable-component case by nature. The same-jurisdiction group-stack mechanism DOES attempt this exact pair but cannot price it correctly without inventing risk: its `StackCandidate` objects are each priced against the WHOLE budget (a full-relocation assumption), so combining two such candidates for a "distinct cost pool" rule would double-count the same dollars -- precisely what the rule exists to prohibit. A correct fix needs `price_program_group_stack` (or an equivalent path) to re-price each program against its own real, non-overlapping cost subset, which is a genuine, separate piece of engineering, not a quick change. Deliberately not attempted rather than risk producing an incorrect, possibly-inflated dollar figure in a real financial calculator.
+
+## Regression evidence this pass
+
+`test_generic_structural_discovery_final_correction.py`: 10/10 (2 new tests: silent-omission-never-recurs on a real production, distinct-cost-rule-never-mislabeled). Full suite (`test_structural_archetype_generator.py` + `test_ca_bc_dave_component.py` + `test_stacking_engine.py` + `test_canadian_labour_basis.py` + `test_hybrid_anchor_relationship_types.py` + `test_ny_nm_or_validation.py` + `test_canada_validation.py`): 223/223. Fresh four-production batch: anchors byte-identical across all four real productions to every prior pass; `RULE_REJECTED` counts increased (Little Utopia 534->556, F#K Valentine's Day 5954->6002, Bad Hombres 80->128, Lips Like Sugar 85->133) with zero change to `PRICED`/`DOMINATED_WITH_PROOF` counts -- confirming the silent-omission fix surfaces previously-hidden rejections on real production data too, without introducing any new (and therefore unverified) economic candidate.
+
+**Semantic validator self-correction**: found and fixed a real staleness bug in the validator itself -- its DB-backed checks hardcoded `engine_version = 'canonical-1.73.0'`, which after this pass's version bumps would have passed vacuously (zero matching rows, not zero violations) rather than actually checking anything. Fixed to read `ENGINE_VERSION` live from the engine module, and added an explicit non-vacuous-check guard that fails loudly if zero rows exist under the current version.
+
+## 19-control ledger, updated
+
+`docs/validation/CLAUDE_GENERIC_DISCOVERY_19_CONTROL_RECONCILIATION.csv`: 11 canonically verified (was 7) -- `DOMINATED_WITH_PROOF_VERIFIED` 3->4, `EXPECTED_RULE_REJECTION_EXACT_MATCH` 3->6, `UNRESOLVED_GAP` 5->1 (only REG-5 remains). `MULTI_PRINCIPAL_DEFERRED` (5) and `GRANT_COMPONENT_UNWIRED_DEFERRED` (2) unchanged -- correctly out of this pass's scope. Total still exactly 19, all statuses mutually exclusive, validator-enforced.
+
+## Status: `IMPLEMENTATION_INCOMPLETE`
+
+4 of 5 targeted controls resolved (HO-004, HO-005, HO-006, HO-009); REG-5 diagnosed but not resolved, deliberately, to avoid a rushed change to shared financial pricing logic. 8 of 19 controls remain open (7 architecturally deferred to two named workstreams, 1 unresolved with a precisely scoped next step).

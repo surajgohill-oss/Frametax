@@ -136,6 +136,15 @@ async def _run_db_checks() -> list[str]:
     if db_name != APPROVED_DB and not db_name.startswith("frametax2_claude_generic_discovery_audit_"):
         return [f"REFUSING DB CHECKS: resolved database {db_name!r} is not the approved isolated audit database"]
 
+    # Read the CURRENT engine version live rather than hardcoding a
+    # string -- a hardcoded version silently passes vacuously (zero
+    # matching rows, not zero violations) every time ENGINE_VERSION is
+    # bumped without this file being updated in lockstep. Confirmed this
+    # exact staleness bug happened once already this workstream.
+    sys.path.insert(0, str(BACKEND))
+    from app.services import canonical_evaluation as ce
+    current_engine_version = ce.ENGINE_VERSION
+
     async with engine.connect() as conn:
         # 1. Every DOMINATED_WITH_PROOF row has non-null proof fields.
         rows = (await conn.execute(text(
@@ -143,10 +152,10 @@ async def _run_db_checks() -> list[str]:
             SELECT scr.id, scr.calculation_trace_json
             FROM structure_calculation_results scr
             WHERE scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF'
-              AND scr.engine_version = 'canonical-1.73.0'
+              AND scr.engine_version = :ev
             LIMIT 2000
             """
-        ))).fetchall()
+        ), {"ev": current_engine_version})).fetchall()
         for result_id, trace in rows:
             for field in ("proof_window_size", "dominated_combination_count", "best_real_total_found_usd"):
                 if trace.get(field) is None:
@@ -161,11 +170,11 @@ async def _run_db_checks() -> list[str]:
             """
             SELECT scr.id FROM structure_calculation_results scr
             WHERE scr.calculation_trace_json->>'candidate_status' = 'PRICED'
-              AND scr.engine_version = 'canonical-1.73.0'
+              AND scr.engine_version = :ev
               AND (scr.total_incentive_value_usd IS NULL)
             LIMIT 20
             """
-        ))).fetchall()
+        ), {"ev": current_engine_version})).fetchall()
         if rows:
             errors.append(f"{len(rows)} PRICED result(s) have a NULL total_incentive_value_usd, e.g. {rows[0][0]}")
 
@@ -174,13 +183,28 @@ async def _run_db_checks() -> list[str]:
             """
             SELECT scr.id FROM structure_calculation_results scr
             WHERE scr.calculation_trace_json->>'candidate_status' = 'RULE_REJECTED'
-              AND scr.engine_version = 'canonical-1.73.0'
+              AND scr.engine_version = :ev
               AND scr.total_incentive_value_usd IS NOT NULL
             LIMIT 20
             """
-        ))).fetchall()
+        ), {"ev": current_engine_version})).fetchall()
         if rows:
             errors.append(f"{len(rows)} RULE_REJECTED result(s) carry a non-null priced value, e.g. {rows[0][0]}")
+
+        # 4. Sanity: at least SOME rows exist under the current engine
+        # version -- an empty result set for ALL three checks above could
+        # otherwise mean "everything is fine" or "this version has never
+        # been evaluated in this database," which are very different
+        # things. Never let a vacuous pass look identical to a real one.
+        total_current_version_rows = (await conn.execute(text(
+            "SELECT COUNT(*) FROM structure_calculation_results WHERE engine_version = :ev"
+        ), {"ev": current_engine_version})).scalar()
+        if not total_current_version_rows:
+            errors.append(
+                f"VACUOUS CHECK: zero rows exist under the current engine_version {current_engine_version!r} "
+                "in this database -- the checks above passed only because there was nothing to check, not "
+                "because real evidence was verified. Run evaluate_project() on at least one project first."
+            )
 
     return errors
 

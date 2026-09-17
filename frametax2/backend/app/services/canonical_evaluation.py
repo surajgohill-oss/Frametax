@@ -640,7 +640,9 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.75.0"  # 1.75.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, canonical Canadian labour fact model -- replaces treating ATL_DIRECTOR/ATL_WRITER/ATL_PRODUCER/ATL_CAST as CPTC/PSTC-qualifying by spend_category alone (the confirmed defect). New app/calculators/canadian_labour_basis.py derives ca_federal_cptc/ca_federal_pstc qualified-labour amount facts from real, evidenced line-level facts (role, canadian_status, service_location, payee_type, payment_status, look_through_wages_usd, psc_profit_element_eligible, assistance_usd -- ProjectFact rows keyed "line_fact:{line_id}:{field}", no schema migration), applying CPTC's lesser-of-eligible-labour-or-60%-of-net-production-cost cap, PSTC's distinct resident-at-payment/services-in-Canada test, deferred/contingent exclusion, and payee-type look-through, citing the three primary sources fetched this workstream at every substantive rule. A line with no evidenced facts fails closed (excluded, never guessed) rather than qualifying by category. Wired into build_project_economic_inputs() as an additive fill-in (never overrides an explicit caller-supplied amount_fact; emits nothing when a project has zero evidenced Canadian labour lines, so every existing project's behavior is byte-for-byte unchanged). 16 hand-calculated unit tests (tests/test_canadian_labour_basis.py). Scope: Canadian federal CPTC/PSTC only, per explicit instruction not to extend to other programs this pass. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.77.0"  # 1.77.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, REG-5 same-jurisdiction component-exclusion fix -- the ordinary_component_hybrid loop's movable-component target filter unconditionally excluded the anchor's own jurisdiction (t.jurisdiction_code != _anchor_code), which was right for a same-cost/same-program conflict but wrong for a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit): generate_structural_candidate's own same-cost-by-shared-line_id refusal already makes double-claiming impossible, so this rule type is explicitly non-blocking at that layer (structural_archetype_generator.py's own check_all_pairs). Confirmed via direct instrumentation that us_ny_post_production_credit already appears as a real, independently-priced "post" target in _hy_component_all_targets -- only the anchor-jurisdiction filter was removing it when the anchor was ALSO US-NY. New _hy_same_jurisdiction_distinct_cost_allowed() carves out exactly this one registered rule type; also corrected the prior 1.76.0 fix's own same-jurisdiction group-stack rejection label, which had been calling this exact rule type "UNRESOLVED_NO_AUTHORITY" (implying no rule exists) when a real, cited rule DOES exist -- the true reason is that the OLDER same-jurisdiction bridge has no distinct-cost awareness (a pre-existing, documented, intentionally-unchanged limitation), now labeled RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE and never conflated with a genuine authority gap. Invalidates every cached row so this fires fresh.
+# 1.76.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, same-jurisdiction group-stack silent-omission fix -- found via direct instrumentation (not assumed): price_program_group_stack's own docstring already promised "the rejection is preserved by canonical_evaluation.py exactly like every other None return here," but the consuming location_groups loop silently dropped a None result with zero persisted row of any kind whenever a group had a genuinely unresolved pairwise authority gap (confirmed live on a real CPTC+OFTTC+OCASE combo: the combo WAS attempted, price_program_group_stack correctly returned None for the cptc+ocase UNRESOLVED_NO_AUTHORITY gap, and nothing was ever persisted). New _diagnose_group_stack_none() re-derives the exact real reason (economic block, ineligible jurisdiction group, duplicate program, or -- the confirmed common case -- unresolved pairwise authority) in the SAME order price_program_group_stack itself checks, and persists an explicit RULE_REJECTED row naming the real reason, never a fabricated rate and never a silent drop. Invalidates every cached row so this fires fresh.
+# 1.75.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, canonical Canadian labour fact model -- replaces treating ATL_DIRECTOR/ATL_WRITER/ATL_PRODUCER/ATL_CAST as CPTC/PSTC-qualifying by spend_category alone (the confirmed defect). New app/calculators/canadian_labour_basis.py derives ca_federal_cptc/ca_federal_pstc qualified-labour amount facts from real, evidenced line-level facts (role, canadian_status, service_location, payee_type, payment_status, look_through_wages_usd, psc_profit_element_eligible, assistance_usd -- ProjectFact rows keyed "line_fact:{line_id}:{field}", no schema migration), applying CPTC's lesser-of-eligible-labour-or-60%-of-net-production-cost cap, PSTC's distinct resident-at-payment/services-in-Canada test, deferred/contingent exclusion, and payee-type look-through, citing the three primary sources fetched this workstream at every substantive rule. A line with no evidenced facts fails closed (excluded, never guessed) rather than qualifying by category. Wired into build_project_economic_inputs() as an additive fill-in (never overrides an explicit caller-supplied amount_fact; emits nothing when a project has zero evidenced Canadian labour lines, so every existing project's behavior is byte-for-byte unchanged). 16 hand-calculated unit tests (tests/test_canadian_labour_basis.py). Scope: Canadian federal CPTC/PSTC only, per explicit instruction not to extend to other programs this pass. Invalidates every cached row so this fires fresh.
 # 1.74.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, labour-basis primary-source pass -- added the missing ca_federal_pstc+ca_federal_cptc mutually_exclusive stacking rule (STACKING_RULES_VERSION 1.3.0 -> 1.4.0), confirmed via direct primary-source research (canada.ca CAVCO CPTC/PSTC application guidelines, quoted directly) rather than extrapolation. This was a real, confirmed gap: every OTHER PSTC-equivalent program (ca_bc_pstc, on_opstc) already had this rule against CPTC; the federal pair itself did not. Full statutory research findings (60%-of-net-production-cost cap mechanics, deferral/contingent-remuneration exclusion, loan-out/look-through payee rules, assistance treatment) are recorded in the handoff for the next pass -- NOT implemented as a full per-line canonical fact model this pass; that remains a separate, larger, unbuilt capability (see handoff). Invalidates every cached row so this fires fresh.
 # 1.73.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- DOMINATED_WITH_PROOF rows previously stored only an aggregate count/window-size, not the actual reconstruction data (which real jurisdiction/program candidates were examined, or which specific priced structure the proof is measured against) -- a genuine gap between "a proof was computed" and "a reviewer can independently verify it without re-running this exact code." Adds component_target_windows (the exact real (jurisdiction_code, program_slug, marginal_value_usd) candidates considered per component), incumbent_structure_id/incumbent_jurisdiction_codes/incumbent_program_slugs (the specific PRICED structure the incumbent bound is measured against), proof_type, ordering_key, and duplicated engine_version/input_fingerprint into the trace for self-contained auditability. Also fixed a real test bug (not a production bug): test_duplicate_economic_routes_persist_once and the two other DB-backed tests were scoped only by engine_version, which conflated legitimate cross-fingerprint historical churn with genuine within-run duplication -- now scoped to the current input_fingerprint, matching how _summarize_evaluation() actually reads served state. Invalidates every cached row so this fires fresh.
 # 1.72.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_CORRECTION -- replaces the prior pass's disclosed-but-incomplete SEARCH_DEPTH_LIMIT_REACHED escape hatch with a genuinely COMPLETE, proof-based mechanism: for an r-component subset, a pigeonhole exchange argument proves no candidate ranked below its own component's top-r can ever be part of the true optimum (at most r-1 OTHER components can occupy a jurisdiction, so at least one of any component's own top-r choices is always free). The search starts at this proven-sufficient window and WIDENS (never truncates) on failure until a real, executable combination is found or every candidate has been exhausted, so the disposition for every unexamined remainder is always a genuine DOMINATED_WITH_PROOF -- never an admitted search-budget cutoff. Invalidates every cached row so this fires fresh.
@@ -4048,6 +4050,79 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     #: every combination up to this size.
     MAX_STACK_GROUP_SIZE = 4
 
+    def _diagnose_group_stack_none(candidates: list) -> tuple[str, str]:
+        """Re-derives WHY price_program_group_stack(candidates) returned
+        None, in the SAME order that function itself checks (never a
+        second, divergent set of conditions) -- so the persisted
+        rejection reason is always genuinely traceable to the real
+        blocking condition, never a generic catch-all."""
+        if any(_economic_block_for_program(c.program_slug) is not None for c in candidates):
+            blocked = [c.program_slug for c in candidates if _economic_block_for_program(c.program_slug) is not None]
+            return "AUTHORITY_BLOCKED", (
+                f"{'/'.join(sorted(blocked))}: at least one program in this group carries an "
+                "accepted authority-exhausted/discretionary-display-only/retired/duplicate "
+                "identity block -- no automatic stack may include it."
+            )
+        codes = [c.jurisdiction_code for c in candidates]
+        if not eligible_group_for_combination(codes):
+            return "INELIGIBLE_JURISDICTION_GROUP", (
+                f"jurisdictions {sorted(set(codes))} are not eligible to combine (same exact "
+                "jurisdiction, or one federal + at most one specific province/state, never two "
+                "different provinces/states)."
+            )
+        slugs = [c.program_slug for c in candidates]
+        if len(set(slugs)) != len(slugs):
+            return "DUPLICATE_PROGRAM_IN_GROUP", f"program {slugs!r} appears more than once in this group."
+        unresolved_pairs = []
+        distinct_cost_pairs = []
+        for _a, _b in itertools.combinations(sorted(slugs), 2):
+            _rule = load_named_pair_rule(_a, _b)
+            if _rule is not None and _rule["rule_type"] == "same_cost_prohibited_distinct_costs_allowed":
+                # A real, registered rule DOES exist here -- this is NOT
+                # an authority gap. price_program_group_stack's own
+                # load_named_rules_for_group only recognizes "allowed",
+                # "mutually_exclusive", "spend_reduction" as publishable;
+                # this rule type is handled correctly (as non-blocking,
+                # by the same-cost-refusal-by-shared-line_id mechanism)
+                # by generate_structural_candidate's check_all_pairs for
+                # the ordinary_component_hybrid family, but the OLDER
+                # same-jurisdiction group-stack bridge genuinely has no
+                # distinct-cost awareness (a pre-existing, documented,
+                # intentionally-unchanged limitation -- see
+                # CANONICAL_ARTIFACT_PRECEDENCE_CLAUDE.json). Mislabeling
+                # this as "no authority" would misrepresent a real,
+                # cited rule as an absence of one.
+                distinct_cost_pairs.append((_a, _b, _rule["condition_text"]))
+                continue
+            if _rule is None or _rule["rule_type"] not in ("allowed", "mutually_exclusive", "spend_reduction"):
+                unresolved_pairs.append((_a, _b))
+        if distinct_cost_pairs and not unresolved_pairs:
+            pair_text = "; ".join(f"{a}+{b}" for a, b, _ in distinct_cost_pairs)
+            citation = distinct_cost_pairs[0][2]
+            return "RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE", (
+                f"{pair_text}: a real, registered same_cost_prohibited_distinct_costs_allowed "
+                f"rule exists ({citation}), but this same-jurisdiction group-stack mechanism "
+                "(unlike the ordinary_component_hybrid generator's own check_all_pairs) has no "
+                "distinct-cost awareness and cannot yet price this combination through this "
+                "path -- a real, disclosed mechanism gap, never a fabricated authority gap. "
+                "This exact program combination may still be reachable via the "
+                "ordinary_component_hybrid discovery path if the target's own jurisdiction is "
+                "eligible as a routed movable component."
+            )
+        if unresolved_pairs:
+            pair_text = "; ".join(f"{a}+{b}" for a, b in unresolved_pairs)
+            return "UNRESOLVED_NO_AUTHORITY", (
+                f"{pair_text}: no registered rule of a publishable type exists for this "
+                "pairwise combination within the same jurisdiction/authority family -- a "
+                "genuine, disclosed authority gap (never guessed), matching the same "
+                "UNRESOLVED_NO_AUTHORITY disposition check_all_pairs already applies for the "
+                "ordinary_component_hybrid family."
+            )
+        return "UNRESOLVED_GROUP_STACK", (
+            f"{'/'.join(sorted(slugs))}: price_program_group_stack returned no result for a "
+            "reason not captured by the specific checks above -- disclosed rather than dropped."
+        )
+
     seen_combos: set[frozenset] = set()
     location_groups: list[list[StackCandidate]] = []
     for country, stack_candidates in priced_by_country.items():
@@ -4075,6 +4150,60 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 stack_result = price_program_group_stack(list(combo))
                 if stack_result is not None:
                     stack_results.append(stack_result)
+                else:
+                    # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION:
+                    # confirmed real defect, found via direct instrumentation
+                    # (not assumed) -- price_program_group_stack's own
+                    # docstring already promises "the rejection is preserved
+                    # by canonical_evaluation.py exactly like every other
+                    # None return here," but nothing downstream ever did
+                    # that: a None result was silently dropped, with zero
+                    # persisted row of any kind. The most common real cause
+                    # (confirmed via instrumentation on a real CPTC+OFTTC+
+                    # OCASE combo) is a genuinely unresolved pairwise
+                    # authority gap (load_named_rules_for_group's
+                    # fully_covered=False) -- exactly the same kind of
+                    # disclosed, non-fabricated rejection
+                    # generate_structural_candidate's own check_all_pairs
+                    # already persists for the ordinary_component_hybrid
+                    # family (e.g. "cptc+ocase UNRESOLVED_NO_AUTHORITY").
+                    # Diagnoses and persists the SAME class of explicit,
+                    # reconstructable rejection here -- never silently
+                    # dropped, never a fabricated rate.
+                    _none_reason_class, _none_reason = _diagnose_group_stack_none(list(combo))
+                    _rej_structure_id = uuid.uuid4()
+                    session.add(ProductionStructure(
+                        id=_rej_structure_id, project_id=project.id,
+                        name=(
+                            f"{'/'.join(sorted(combo_key))} "
+                            f"({combo[0].jurisdiction_code} same-jurisdiction group, rejected)"
+                        ),
+                        description=(
+                            "Same-jurisdiction multi-program group stack examined and rejected -- "
+                            f"{_none_reason}"
+                        ),
+                        jurisdiction_allocations=[], claimed_program_ids=sorted(combo_key),
+                        is_official_coproduction=False, coproduction_treaty=None,
+                    ))
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_rej_structure_id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        calculation_trace_json={
+                            "candidate_status": "RULE_REJECTED",
+                            "rejection_reason_class": _none_reason_class,
+                            "reason": _none_reason,
+                            "discovery_classification": "same_jurisdiction_group_stack",
+                            "structural_family": "same_jurisdiction_group_stack",
+                            "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
+                            "program_slugs": sorted(combo_key),
+                            "jurisdiction_codes": sorted({c.jurisdiction_code for c in combo}),
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
 
     # Codex global optimizer audit, P1-TRACE-001 remediation: "compute
     # exact unique qualifying spend from line-level allocation
@@ -4912,7 +5041,34 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             if not _hy_same_authority_scope(_anchor_code, target_code):
                 return False
             rule = load_named_pair_rule(_anchor_program_slug, target_program_slug) if _anchor_program_slug else None
-            return rule is None or rule["rule_type"] not in ("allowed", "spend_reduction")
+            return rule is None or rule["rule_type"] not in (
+                "allowed", "spend_reduction", "same_cost_prohibited_distinct_costs_allowed",
+            )
+
+        # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION (REG-5 fix):
+        # a movable component's target list unconditionally excluded the
+        # anchor's OWN jurisdiction (t.jurisdiction_code != _anchor_code),
+        # on the reasoning that routing a component "back" to the anchor's
+        # jurisdiction is meaningless. That reasoning is right for a
+        # SAME-cost/same-program situation, but wrong for a registered
+        # same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's
+        # ny_state_film principal credit + us_ny_post_production_credit
+        # post credit): generate_structural_candidate's own same-cost
+        # refusal (by shared line_id) already makes double-claiming the
+        # SAME dollars structurally impossible, so this rule type is
+        # explicitly non-blocking at the generic-generator layer (see
+        # structural_archetype_generator.py's own check_all_pairs
+        # handling of this exact rule type) -- excluding it here was a
+        # genuine gap, not a safety measure. Confirmed via direct
+        # instrumentation: us_ny_post_production_credit DOES appear as a
+        # real, independently-priced "post" target for US-NY in
+        # _hy_component_all_targets; only this anchor-jurisdiction filter
+        # was removing it when the anchor was ALSO US-NY.
+        def _hy_same_jurisdiction_distinct_cost_allowed(target_program_slug: str, target_code: str) -> bool:
+            if target_code != _anchor_code or not _anchor_program_slug:
+                return False
+            rule = load_named_pair_rule(_anchor_program_slug, target_program_slug)
+            return rule is not None and rule["rule_type"] == "same_cost_prohibited_distinct_costs_allowed"
 
         _hy_movable = sorted(k for k, v in component_spend.items() if v > 0)
         for _r in range(2, len(_hy_movable) + 1):
@@ -4920,7 +5076,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 _full_lists = [
                     [
                         t for t in _hy_component_all_targets.get(c, [])
-                        if t.jurisdiction_code != _anchor_code
+                        if (
+                            t.jurisdiction_code != _anchor_code
+                            or _hy_same_jurisdiction_distinct_cost_allowed(t.program_slug, t.jurisdiction_code)
+                        )
                         and not _hy_provably_illegal_with_anchor(t.program_slug, t.jurisdiction_code)
                     ]
                     for c in _subset

@@ -342,3 +342,65 @@ async def test_ho001_and_ho002_remain_computable_via_the_generic_generator_with_
     assert ho002.executable, f"HO-002 failed to compute via the generic generator: {ho002.rejection_reason}"
     assert ho002.total_guaranteed_incentive_usd > 0
     assert ho002.jurisdiction_codes == ("US-NM", "AU", "CA-ON")
+
+
+@pytest.mark.asyncio
+async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(db: AsyncSession):
+    """Regression guard for a real, confirmed defect found via direct
+    instrumentation this pass: price_program_group_stack's own docstring
+    already promised its rejection is preserved by canonical_evaluation.py
+    "exactly like every other None return here," but the consuming
+    location_groups loop silently dropped a None result -- zero persisted
+    row of any kind -- whenever a same-jurisdiction group had a genuinely
+    unresolved pairwise authority gap. This test proves the fix on a real
+    production: F#K Valentine's Day's home jurisdiction is Ontario/Canada,
+    so its own ca_federal_cptc/on_ofttc/on_opstc/ocase group must now
+    carry an explicit, reconstructable RULE_REJECTED disposition for the
+    cptc+ocase pair (a genuine, disclosed authority gap -- CAVCO's own
+    official OFTTC/OPSTC page names only those two as OCASE's partners),
+    never silent omission."""
+    FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
+    result = await ce.evaluate_project(db, FVD_PROJECT_ID)
+    fingerprint = result["state_fingerprint"]
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status',
+                       scr.calculation_trace_json->>'rejection_reason_class'
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.engine_version = :ev AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->'program_slugs' @> '["ca_federal_cptc"]'::jsonb
+                  AND scr.calculation_trace_json->'program_slugs' @>
+                      '["ontario_computer_animation_and_special_effects_tax_credit_ocase"]'::jsonb
+                """
+            ),
+            {"pid": FVD_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": fingerprint},
+        )
+    ).fetchall()
+    assert rows, (
+        "no persisted row at all for the ca_federal_cptc+ocase same-jurisdiction combination -- "
+        "the exact silent-omission defect this test guards against has recurred"
+    )
+    for status, reason_class in rows:
+        assert status == "RULE_REJECTED"
+        assert reason_class in ("UNRESOLVED_NO_AUTHORITY", "RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE")
+
+
+@pytest.mark.asyncio
+async def test_same_jurisdiction_distinct_cost_rule_is_never_mislabeled_as_no_authority(db: AsyncSession):
+    """A registered same_cost_prohibited_distinct_costs_allowed rule is a
+    REAL rule, not an authority gap -- labeling it UNRESOLVED_NO_AUTHORITY
+    would misrepresent a cited rule as an absence of one. This is checked
+    directly against the registry (DB-free, but grouped with the other
+    same-jurisdiction group-stack tests here) rather than requiring a
+    specific real production to carry this exact pair today."""
+    from app.calculators.canonical_stack_bridge import load_named_pair_rule
+    rule = load_named_pair_rule("ny_state_film", "us_ny_post_production_credit")
+    assert rule is not None and rule["rule_type"] == "same_cost_prohibited_distinct_costs_allowed"
+    # The diagnostic helper must exist and correctly classify this rule
+    # type as something other than a genuine authority gap.
+    src = _SRC
+    assert "RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE" in src
+    assert "_hy_same_jurisdiction_distinct_cost_allowed" in src
