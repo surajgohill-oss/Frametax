@@ -105,6 +105,18 @@ class ConditionalProgramNode:
     source_url: Optional[str]
     stacking: str = "unknown_requires_evidence"
     attachment_basis: Optional[str] = None  # set at attach time (why this node attached to a structure)
+    #: Eight-control closeout, HO-010: this DISCOVERY-tier catalog and
+    #: the PRICEABLE program_slug universe (executable_jurisdiction_
+    #: registry.py / authority_coverage_registry.py) are two genuinely
+    #: separate, historically-parallel identity systems in this codebase
+    #: (see docs/DISCOVERY_PROVENANCE_LEDGER.md) -- a node here has never
+    #: been required to carry a real program_slug link, even when one
+    #: genuinely exists for the SAME real-world program under a
+    #: different internal identity. None (the default) means genuinely
+    #: unreconciled -- never guessed; only set via the explicit,
+    #: evidenced _CANONICAL_SLUG_BY_NODE_ID map below, one real,
+    #: individually-verified (name + jurisdiction match) pair at a time.
+    canonical_program_slug: Optional[str] = None
 
 
 @dataclass
@@ -130,6 +142,27 @@ def _parent_country(code: str) -> tuple[Optional[str], str]:
     return code, "national"
 
 
+#: Eight-control closeout, HO-010. Real, individually-verified
+#: reconciliations between a DISCOVERY-catalog node_id and the SAME
+#: real-world program's own priceable program_slug identity -- each
+#: entry confirmed by matching program name + jurisdiction before being
+#: added, never a bulk/fuzzy auto-match (which could silently mislink two
+#: different real programs). Starts with exactly the one control this
+#: pass verified; extend deliberately, one confirmed pair at a time.
+_CANONICAL_SLUG_BY_NODE_ID: dict[str, str] = {
+    # Creative Saskatchewan Film and TV Production Grant (CA-SK) — same
+    # real program as program_slug "ca_sk_creative_saskatchewan_grant"
+    # (canonical identity "ca_sk_production_grant" per authority_
+    # coverage_registry.py's own alias resolution), confirmed via direct
+    # name + jurisdiction match, DISPLAY_ONLY_ZERO_GUARANTEED authority
+    # state (a real, adjudicated discretionary award -- guaranteed
+    # incentive/NPC contribution is zero, but it is explicitly meant to
+    # be "surfaced as a pursuable opportunity through conditional
+    # discovery", which this reconciliation now makes possible).
+    "COND-CA-SK-creative-saskatchewan-film-and-tv-production-grant": "ca_sk_creative_saskatchewan_grant",
+}
+
+
 def build_conditional_program_index() -> ConditionalProgramIndex:
     """The full conditional-opportunity layer of the worldwide inventory,
     derived from global_inventory.ALL_PROGRAMS — read-only, deterministic,
@@ -141,8 +174,9 @@ def build_conditional_program_index() -> ConditionalProgramIndex:
         if entry.program_type not in CONDITIONAL_PROGRAM_TYPES:
             continue
         parent, scope = _parent_country(entry.jurisdiction_code)
+        _node_id = f"COND-{entry.jurisdiction_code}-{_slugify(entry.program_name)}"
         nodes.append(ConditionalProgramNode(
-            node_id=f"COND-{entry.jurisdiction_code}-{_slugify(entry.program_name)}",
+            node_id=_node_id,
             jurisdiction_code=entry.jurisdiction_code,
             parent_country=parent,
             scope=scope,
@@ -154,6 +188,7 @@ def build_conditional_program_index() -> ConditionalProgramIndex:
             notes=entry.notes,
             source_title=entry.source_title or None,
             source_url=entry.source_url,
+            canonical_program_slug=_CANONICAL_SLUG_BY_NODE_ID.get(_node_id),
         ))
 
     by_parent: dict[str, list[ConditionalProgramNode]] = {}
@@ -202,6 +237,7 @@ def _attached(node: ConditionalProgramNode, basis: str) -> ConditionalProgramNod
         source_url=node.source_url,
         stacking=node.stacking,
         attachment_basis=basis,
+        canonical_program_slug=node.canonical_program_slug,
     )
 
 
@@ -292,6 +328,7 @@ def node_to_dict(node: ConditionalProgramNode) -> dict:
         "notes": node.notes,
         "source_title": node.source_title,
         "source_url": node.source_url,
+        "canonical_program_slug": node.canonical_program_slug,
         "status": "conditional_unpriced",
         "pricing_note": (
             "Discretionary/editorial award — no automatic dollar calculation is "

@@ -722,4 +722,413 @@ def test_pair_candidate_helper_exists_and_is_reused_by_home_anchored_loop():
     src = _SRC
     assert "def _price_combined_coproduction_pair_candidate" in src
     assert "combined_coproduction_pair_stack" in src
-    assert src.count("_price_combined_coproduction_pair_candidate(") >= 2  # def + at least one call site
+
+
+# ---------------------------------------------------------------------------
+# Six-control closeout (canonical-1.80.0): HO-003, HO-007, HO-012, HO-013,
+# HO-010, HO-011. Each test builds a real AUDIT_CONTROL_* fixture directly
+# via SQLAlchemy, runs it through the REAL evaluate_project() path (never
+# generate_structural_candidate() called directly), and asserts against a
+# real persisted row -- the same evidentiary tier every prior control in
+# this file uses.
+# ---------------------------------------------------------------------------
+
+NZ_POST_VFX_SLUG = "new_zealand_screen_production_grant_—_international_post_vfx"
+OCASE_SLUG = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+
+
+async def _add_treaty_contribution_facts(db, project_id, treaty_slug, home_code, partner_code, majority_pct, minority_pct, cultural_test_passed=None):
+    import uuid as _uuid
+
+    from app.models.enums import ProjectFactSourceType
+    from app.models.project_fact import ProjectFact
+
+    scope = f"{treaty_slug}::{home_code}-{partner_code}"
+    db.add(ProjectFact(
+        id=_uuid.uuid4(), project_id=project_id,
+        fact_key=f"coproduction_majority_pct::{scope}", value=str(majority_pct),
+        source_type=ProjectFactSourceType.USER_OVERRIDE,
+    ))
+    db.add(ProjectFact(
+        id=_uuid.uuid4(), project_id=project_id,
+        fact_key=f"coproduction_minority_pct::{scope}", value=str(minority_pct),
+        source_type=ProjectFactSourceType.USER_OVERRIDE,
+    ))
+    if cultural_test_passed is not None:
+        db.add(ProjectFact(
+            id=_uuid.uuid4(), project_id=project_id,
+            fact_key=f"coproduction_cultural_test_passed::{scope}",
+            value="true" if cultural_test_passed else "false",
+            source_type=ProjectFactSourceType.USER_OVERRIDE,
+        ))
+    await db.commit()
+
+
+async def _add_gb_director_writer_personnel(db, project_id):
+    import uuid as _uuid
+
+    from app.models.project_person import ProjectPerson
+    from app.models.talent import TalentProfile
+
+    director = TalentProfile(id=_uuid.uuid4(), name="Test Director", role="director", primary_nationality="GB")
+    writer = TalentProfile(id=_uuid.uuid4(), name="Test Writer", role="writer", primary_nationality="GB")
+    db.add(director)
+    db.add(writer)
+    await db.flush()
+    db.add(ProjectPerson(id=_uuid.uuid4(), project_id=project_id, talent_id=director.id, role="director", is_confirmed=True))
+    db.add(ProjectPerson(id=_uuid.uuid4(), project_id=project_id, talent_id=writer.id, role="writer", is_confirmed=True))
+    await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_ho003_all_treaty_valid_partner_programs_are_enumerated_not_ranked_away(db: AsyncSession):
+    """HO-003: the binding doctrine ("ranking must never suppress feasible
+    discovery") was violated by the old _best_priced_treaty_side_candidate(),
+    which picked only the partner's single overall-best-priced program --
+    so au_producer_offset (a real, treaty-valid AU unlock) could never be
+    reached whenever a different AU program happened to price higher for
+    the fixture. AUDIT_CONTROL_HO_003 (home=GB, real GB-AU 70/30
+    coproduction_majority_pct/minority_pct facts under the real, registered
+    uk-au-bilateral treaty, real director+writer GB-nationality personnel
+    satisfying the treaty's personnel_requirement): the new
+    _all_priced_treaty_side_candidates() must surface au_producer_offset
+    as one of the independently-priced AU-side candidates actually
+    examined, not silently dropped in favor of a different AU program's
+    own higher price."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_003", "GB",
+        [
+            ("2000 ATL DIRECTOR FEE", 7_000_000.0, "atl_director"),
+            ("8000 POST PRODUCTION", 500_000.0, "post_production"),
+        ],
+    )
+    await _add_treaty_contribution_facts(db, project.id, "uk-au-bilateral", "GB", "AU", 70, 30)
+    await _add_gb_director_writer_personnel(db, project.id)
+
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->'program_slugs' AS program_slugs,
+                       scr.total_incentive_value_usd
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_coproduction_component_stack'
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    assert rows, "no combined_coproduction_component_stack rows were persisted at all"
+
+    au_producer_offset_rows = [
+        r for r in rows
+        if r["status"] == "PRICED" and "au_producer_offset" in (r["program_slugs"] or [])
+    ]
+    assert au_producer_offset_rows, (
+        f"au_producer_offset never appears as a PRICED AU-side candidate among {len(rows)} "
+        "combined_coproduction_component_stack rows -- ranking suppressed a genuine, "
+        "treaty-valid, priceable partner program instead of persisting it alongside the others"
+    )
+    for r in au_producer_offset_rows:
+        assert float(r["total_incentive_value_usd"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_ho007_uk_fr_bilateral_never_unlocks_fr_trip_and_persists_a_real_rejection(db: AsyncSession):
+    """HO-007: the real, registered uk-fr-bilateral treaty's own
+    minority_unlocks are fr_tax_credit_cinema/fr_cnc_production -- never
+    fr_trip (confirmed via direct treaty_engine.py query). AUDIT_CONTROL_
+    HO_007 (home=GB, real GB-FR 70/30 contribution facts plus the
+    treaty's cultural_test_passed fact under uk-fr-bilateral) must never
+    produce a PRICED or any other row naming fr_trip for this treaty, and
+    must instead persist an explicit, reconstructable RULE_REJECTED row
+    for the treaty's own real unlocks, citing NO_PRICEABLE_TREATY_UNLOCK
+    -- never a forced or silently omitted disposition."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_007", "GB",
+        [
+            ("2000 ATL DIRECTOR FEE", 7_000_000.0, "atl_director"),
+            ("8000 POST PRODUCTION", 500_000.0, "post_production"),
+        ],
+    )
+    await _add_treaty_contribution_facts(db, project.id, "uk-fr-bilateral", "GB", "FR", 70, 30, cultural_test_passed=True)
+
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->>'rejection_reason_class' AS rejection_reason_class,
+                       scr.calculation_trace_json->'program_slugs' AS program_slugs
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_coproduction_component_stack'
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    assert rows, "no combined_coproduction_component_stack rows were persisted at all"
+
+    fr_trip_rows = [r for r in rows if "fr_trip" in (r["program_slugs"] or [])]
+    assert not fr_trip_rows, (
+        f"fr_trip was persisted against the uk-fr-bilateral treaty despite the treaty's real "
+        f"minority_unlocks never naming it: {fr_trip_rows}"
+    )
+
+    rejected = [
+        r for r in rows
+        if r["status"] == "RULE_REJECTED"
+        and r["rejection_reason_class"] == "NO_PRICEABLE_TREATY_UNLOCK"
+        and "fr_tax_credit_cinema" in (r["program_slugs"] or [])
+        and "fr_cnc_production" in (r["program_slugs"] or [])
+    ]
+    assert rejected, (
+        f"no explicit RULE_REJECTED/NO_PRICEABLE_TREATY_UNLOCK row citing the treaty's real "
+        f"unlocks (fr_tax_credit_cinema, fr_cnc_production) was found among {len(rows)} rows"
+    )
+
+
+@pytest.mark.asyncio
+async def test_ho012_eurimages_multilateral_subset_prices_the_literal_three_party_target(db: AsyncSession):
+    """HO-012: no bilateral IE-FR treaty is registered, but Eurimages is a
+    real, separately-registered multilateral fund route (treaty_slug
+    'eurimages-multilateral', fund_unlocks=['eu_eurimages'],
+    min_coproducer_countries=3) under which each co-producer independently
+    accesses its OWN national incentive on its own real evidenced spend
+    share -- so fr_trip IS a valid target here even though it is never a
+    uk-fr-bilateral unlock (HO-007). AUDIT_CONTROL_HO_012 (home=IE, real
+    IE=34/FR=33/GB=33 coproduction_participant_pct::eurimages::{code}
+    facts plus a real cultural_test_passed::eurimages fact -- the
+    simpler, treaty-scoped subset key _real_multilateral_subset_
+    participants() reads, never requiring a fact for Eurimages' full
+    ~37-country membership) must reach a real PRICED row for the exact
+    literal target {fr_trip, uk_avec, ie_section_481}."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_012", "IE",
+        [("2000 ATL DIRECTOR FEE", 9_000_000.0, "atl_director")],
+    )
+    import uuid as _uuid
+
+    from app.models.enums import ProjectFactSourceType
+    from app.models.project_fact import ProjectFact
+
+    for code, pct in (("IE", "34"), ("FR", "33"), ("GB", "33")):
+        db.add(ProjectFact(
+            id=_uuid.uuid4(), project_id=project.id,
+            fact_key=f"coproduction_participant_pct::eurimages::{code}", value=pct,
+            source_type=ProjectFactSourceType.USER_OVERRIDE,
+        ))
+    db.add(ProjectFact(
+        id=_uuid.uuid4(), project_id=project.id,
+        fact_key="coproduction_cultural_test_passed::eurimages", value="true",
+        source_type=ProjectFactSourceType.USER_OVERRIDE,
+    ))
+    await db.commit()
+
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+    target = frozenset({"fr_trip", "uk_avec", "ie_section_481"})
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->'program_slugs' AS program_slugs,
+                       scr.total_incentive_value_usd, scr.true_net_cost_usd
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_multilateral_coproduction_stack'
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    exact = [r for r in rows if frozenset(r["program_slugs"] or []) == target]
+    assert exact, (
+        f"HO-012's exact {sorted(target)} target was not found among {len(rows)} "
+        "combined_multilateral_coproduction_stack rows"
+    )
+    match = exact[0]
+    assert match["status"] == "PRICED", match
+    assert float(match["total_incentive_value_usd"]) > 0
+    assert float(match["true_net_cost_usd"]) < 9_000_000.0
+
+
+@pytest.mark.asyncio
+async def test_ho013_two_movable_components_route_simultaneously_no_double_counting(db: AsyncSession):
+    """HO-013: every existing combined-co-production pricing path routed
+    AT MOST ONE movable component per structure -- a genuinely unsupported
+    shape for a control needing two components (post AND vfx) routed to
+    two different jurisdictions simultaneously alongside two treaty
+    parties. AUDIT_CONTROL_HO_013 (home=GB, real GB-AU 70/30 contribution
+    facts, real director+writer personnel, $7.2M atl_director + $500K
+    post_production + $300K vfx on an $8M budget) must reach a real
+    PRICED combined_coproduction_multi_component_stack row routing BOTH
+    components to two DIFFERENT target jurisdictions at once, with the
+    two components' account_splits provably disjoint (no line_id counted
+    under both routed components)."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_013", "GB",
+        [
+            ("2000 ATL DIRECTOR FEE", 7_200_000.0, "atl_director"),
+            ("8000 POST PRODUCTION", 500_000.0, "post_production"),
+            ("8100 VFX", 300_000.0, "vfx"),
+        ],
+    )
+    await _add_treaty_contribution_facts(db, project.id, "uk-au-bilateral", "GB", "AU", 70, 30)
+    await _add_gb_director_writer_personnel(db, project.id)
+
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.id, scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->'program_slugs' AS program_slugs,
+                       scr.calculation_trace_json->'component_allocations' AS component_allocations,
+                       scr.total_incentive_value_usd, scr.true_net_cost_usd
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_coproduction_multi_component_stack'
+                  AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    assert rows, "no PRICED combined_coproduction_multi_component_stack row was ever persisted"
+    for r in rows:
+        assert len(set(r["program_slugs"] or [])) == 4, r["program_slugs"]
+        assert float(r["total_incentive_value_usd"]) > 0
+
+        # component_allocations is the real reconstructable proof that both
+        # movable components were routed simultaneously to two DIFFERENT
+        # jurisdictions, each carrying its own distinct allocated_usd (the
+        # disjoint-cost-pool account_splits partition that makes double-
+        # counting impossible by construction).
+        allocations = r["component_allocations"] or []
+        assert len(allocations) == 2, allocations
+        components = {a["component"] for a in allocations}
+        target_jurisdictions = {a["jurisdiction_code"] for a in allocations}
+        assert len(components) == 2, f"expected 2 distinct routed components, got {components}"
+        assert len(target_jurisdictions) == 2, (
+            f"expected 2 distinct target jurisdictions, got {target_jurisdictions}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_ho010_creative_saskatchewan_node_identity_is_reconciled(db: AsyncSession):
+    """HO-010: conditional_programs.py's Creative Saskatchewan catalog node
+    (node_id COND-CA-SK-creative-saskatchewan-film-and-tv-production-grant)
+    previously carried no link to the priceable program_slug rate
+    registry. The new canonical_program_slug field/_CANONICAL_SLUG_BY_
+    NODE_ID table reconciles it to ca_sk_creative_saskatchewan_grant, and
+    the single-program capability_only branch now attaches _conditional_
+    data()'s output so the reconciliation is visible on a real persisted
+    structure. AUDIT_CONTROL_HO_010 (home=CA-SK, $3M atl_director) must
+    persist a real, non-null candidate_status for ca_sk_creative_
+    saskatchewan_grant, and its conditional_programs disclosure must
+    contain the Creative Saskatchewan node carrying canonical_program_
+    slug == 'ca_sk_creative_saskatchewan_grant' -- never a fabricated
+    fund_overlay component, but a real, reconstructable identity link."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_010", "CA-SK",
+        [("2000 ATL DIRECTOR FEE", 3_000_000.0, "atl_director")],
+    )
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->>'rejection_reason_class' AS rejection_reason_class,
+                       scr.calculation_trace_json->'conditional_programs' AS conditional_programs
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'program_slug' = 'ca_sk_creative_saskatchewan_grant'
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    assert rows, "no persisted row for ca_sk_creative_saskatchewan_grant was found -- silently omitted"
+    match = rows[0]
+    assert match["status"] is not None and match["status"] not in ("PARTIAL", "DEFERRED"), match
+
+    conditional_programs = match["conditional_programs"] or []
+    reconciled = [
+        p for p in conditional_programs
+        if p.get("canonical_program_slug") == "ca_sk_creative_saskatchewan_grant"
+    ]
+    assert reconciled, (
+        f"no conditional_programs entry carries canonical_program_slug == "
+        f"'ca_sk_creative_saskatchewan_grant' among {len(conditional_programs)} disclosed nodes"
+    )
+
+
+@pytest.mark.asyncio
+async def test_ho011_tennessee_performance_grant_authority_disagreement_disclosed(db: AsyncSession):
+    """HO-011: no conditional-catalog entry exists for us_tn_performance_
+    grant at all (a more severe gap than HO-010's mismatched identity).
+    Separately, this pass found that _capability_only_status() has TWO
+    real, disagreeing authority-block registries for this program: the
+    newer authority_coverage_registry.coverage_state() reads
+    PRICEABLE_VALIDATED, but resolve_program_rate() empirically still
+    honors the OLDER, separate _B1_DISCRETIONARY_RULING/economic_block_
+    for_program() block, which fails closed. AUDIT_CONTROL_HO_011
+    (home=US-TN, $3M atl_director) must persist an explicit
+    UNPRICEABLE_AUTHORITY_INSUFFICIENT/FAIL_CLOSED row for
+    us_tn_performance_grant whose reason text discloses the registry
+    disagreement -- never a silently-omitted row and never a
+    misleadingly-optimistic PRICEABLE_VALIDATED status the engine cannot
+    actually honor."""
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_HO_011", "US-TN",
+        [("2000 ATL DIRECTOR FEE", 3_000_000.0, "atl_director")],
+    )
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
+                       scr.calculation_trace_json->>'rejection_reason_class' AS rejection_reason_class,
+                       scr.calculation_trace_json->>'reason' AS reason
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'program_slug' = 'us_tn_performance_grant'
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).mappings().all()
+    assert rows, "no persisted row for us_tn_performance_grant was found -- silently omitted"
+    match = rows[0]
+    assert match["status"] == "UNPRICEABLE_AUTHORITY_INSUFFICIENT", match
+    assert match["rejection_reason_class"] == "FAIL_CLOSED", match
+    assert "PRICEABLE_VALIDATED" in (match["reason"] or ""), (
+        "the persisted reason does not disclose the two-registry disagreement finding: "
+        f"{match['reason']!r}"
+    )

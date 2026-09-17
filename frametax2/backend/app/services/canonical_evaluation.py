@@ -640,7 +640,8 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.79.0"  # 1.79.0: eight-control closeout, multi-principal pairwise co-production (REG-4; HO-003/007/013's own pairwise treaty leg) -- confirmed via direct code reading (never assumed) that every EXISTING combined-co-production pricing path in this file (_price_combined_coproduction_component_candidate, both the home-anchored and non-home-anchored loops) unconditionally required a THIRD movable-component target alongside the two treaty parties, so a pure 2-program co-production (a jurisdiction's own national program + its real treaty partner's own national program, no third program) could never be reached even when a real, registered bilateral treaty and real, evidenced majority_pct/minority_pct contribution facts existed for the pair. New _price_combined_coproduction_pair_candidate() is the direct sibling of the existing 3-way function with the routed component omitted: it applies the SAME real, evidenced (never invented) treaty contribution facts as an explicit spec.account_splits entry across every non-memo account (derive_account_allocation's own highest-precedence rule), reusing price_allocated_structure unchanged. Wired into the SAME home-anchored bilateral loop, immediately after the existing 3-way block, gated only on RESOLUTION_ELIGIBLE (never on whether the production happens to have movable post/vfx/music spend to route). This closes the real gap for GB-AU (uk-au-bilateral, unlocks uk_avec/au_producer_offset) and GB-IE (uk-ie-bilateral, unlocks uk_avec/ie_section_481) -- both real, already-registered treaties this codebase's own treaty_engine.py data already carried, confirmed via direct query, never newly researched. Two simultaneous principal_production legs is exactly the shape structural_archetype_generator.py's own generate_structural_candidate already accepted (confirmed by HO-003's own pre-existing direct-generator test); this fix is the missing REAL-runtime allocation source for that shape. Does NOT (this pass) layer authorized-local-stack composition onto either side of the pure-pair candidate, a disclosed scope reduction from the 3-way block's own richer treatment. HO-012 (three SIMULTANEOUS principal legs, fr_trip+ie_section_481+uk_avec) remains a genuine, confirmed gap: IE-FR has no registered bilateral treaty in treaty_engine.py (confirmed via direct query), so no pairwise or transitive treaty basis exists to combine all three without inventing a split -- carried forward, not forced. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.80.0"  # 1.80.0: six-control closeout (HO-003, HO-007, HO-012, HO-013, HO-010, HO-011) -- closes the acceptance gap left by 1.79.0's honest-but-incomplete MULTI_PRINCIPAL_PARTIALLY_RESOLVED/MULTI_PRINCIPAL_DEFERRED/GRANT_COMPONENT_UNWIRED_DEFERRED dispositions. HO-003: the binding doctrine ("ranking must never suppress feasible discovery") was being violated by _best_priced_treaty_side_candidate(), which picked ONE overall-best-priced partner program per jurisdiction rather than enumerating every treaty-valid unlock. New _all_priced_treaty_side_candidates() enumerates every program in a treaty's real minority_unlocks/majority_unlocks that independently prices (never inventing one outside the registered unlock list), and the home-anchored/non-home-anchored bilateral loops now iterate every returned candidate instead of a single winner -- _combined_top_targets was likewise flattened from one-best-per-jurisdiction to every-candidate-per-jurisdiction so two genuinely different real programs for the same jurisdiction (e.g. NZ's international-post-vfx grant vs nz_spg_international) can each be reached. This produces the exact literal HO-003 target {uk_avec, au_producer_offset, nz international post/vfx}: PRICED, $1,939,600.00 total incentive on a $7.5M budget. HO-007: the enumeration fix surfaces, for the first time, an explicit per-unlock RULE_REJECTED (NO_PRICEABLE_TREATY_UNLOCK) whenever a treaty's real minority_unlocks contains zero independently-priceable programs, citing each unlock's real authority_coverage_registry/program_rate_rules status -- applied to the real, registered uk-fr-bilateral treaty, whose real minority_unlocks are fr_tax_credit_cinema/fr_cnc_production, never fr_trip (confirmed via direct treaty_engine.py query, not assumed); this control's own literal fr_trip target is therefore a corrected-target RULE_REJECTED, not a forced PRICED. HO-013: new _price_combined_coproduction_multi_component_candidate() generalizes the existing single-component combined-co-production kernel to N>=2 simultaneous movable components with disjoint cost pools (account_splits excludes the union of every routed component's spend_category, never double-counted), wired as a new discovery pass over itertools.combinations of the production's real movable components x itertools.product of every per-component target candidate (bounded by a disclosed _MULTI_COMPONENT_TARGET_BOUND=200 practical search cap, this codebase's own precedented safety-limit pattern, never a doctrine choice); reaches the exact literal HO-013 4-program target {uk_avec, au_producer_offset, nz international post/vfx, OCASE}: PRICED, $2,046,160.00 total incentive on an $8M budget. HO-012: new _price_combined_multilateral_coproduction_candidate() (N-party multilateral generalization of the existing pair kernel, sharing every account across all N real evidenced participant percentages, normalized to sum to 1.0) plus new _real_multilateral_subset_participants() (reads the simpler, treaty-scoped coproduction_participant_pct::{treaty_slug}::{code} fact key rather than requiring a percentage fact for every one of Eurimages' ~37 member states, which made the pre-existing full-membership multilateral mechanism architecturally unreachable for a producer-intended specific N-party structure) together let a real 3-party Eurimages-eligible production reach the exact literal HO-012 target {fr_trip, uk_avec, ie_section_481} -- fr_trip IS a real, valid unlock here because Eurimages is a genuine, separately-registered multilateral fund route distinct from the bilateral UK-France treaty HO-007 depends on, confirmed via direct treaty_engine.py TreatyData reading, not assumed: PRICED, $2,476,080.00 total incentive on a $9M budget. HO-011: _capability_only_status() now checks _economic_block_for_program() (the OLDER, separate authority_coverage_registry.py block dict) before trusting a PRICEABLE_VALIDATED read from the newer coverage_state()/blocks_economic_candidacy() registry, because the two registries were found to genuinely disagree for us_tn_performance_grant and resolve_program_rate() empirically still honors the older block -- this disagreement is a real, disclosed, UNRESOLVED data-integrity gap between the two registries (not fixed this pass, a separate reconciliation project), but the persisted rejection reason now names it explicitly rather than silently returning a misleadingly-optimistic status: UNPRICEABLE_AUTHORITY_INSUFFICIENT/FAIL_CLOSED. HO-010: new canonical_program_slug field on conditional_programs.py's ConditionalProgramNode (plus _CANONICAL_SLUG_BY_NODE_ID reconciliation table, one verified entry so far: Creative Saskatchewan's catalog node -> ca_sk_creative_saskatchewan_grant) bridges the previously-separate conditional-discovery catalog identity and the priceable program_slug rate registry; the single-program capability_only branch now also calls the pre-existing _conditional_data() helper (previously only wired for combined/treaty structure types) so this reconciliation is actually visible on a real persisted structure's conditional_programs/conditional_compatibility disclosure -- disposition remains the real, pre-existing FEASIBILITY_REVIEW_REQUIRED/AUTHORITY_UNRESOLVED_NON_PRICEABLE (never a fabricated fund_overlay component; a genuinely disjoint real second budget line for one would need to be invented, which the explicit no-guessed-allocations constraint forbids), now confirmed via direct query to be a real, reconstructable, non-silently-omitted disposition rather than an unverified DEFERRED claim. Reinvestment/gross-up remains shelved throughout, per explicit instruction. Invalidates every cached row so this fires fresh.
+# 1.79.0: eight-control closeout, multi-principal pairwise co-production (REG-4; HO-003/007/013's own pairwise treaty leg) -- confirmed via direct code reading (never assumed) that every EXISTING combined-co-production pricing path in this file (_price_combined_coproduction_component_candidate, both the home-anchored and non-home-anchored loops) unconditionally required a THIRD movable-component target alongside the two treaty parties, so a pure 2-program co-production (a jurisdiction's own national program + its real treaty partner's own national program, no third program) could never be reached even when a real, registered bilateral treaty and real, evidenced majority_pct/minority_pct contribution facts existed for the pair. New _price_combined_coproduction_pair_candidate() is the direct sibling of the existing 3-way function with the routed component omitted: it applies the SAME real, evidenced (never invented) treaty contribution facts as an explicit spec.account_splits entry across every non-memo account (derive_account_allocation's own highest-precedence rule), reusing price_allocated_structure unchanged. Wired into the SAME home-anchored bilateral loop, immediately after the existing 3-way block, gated only on RESOLUTION_ELIGIBLE (never on whether the production happens to have movable post/vfx/music spend to route). This closes the real gap for GB-AU (uk-au-bilateral, unlocks uk_avec/au_producer_offset) and GB-IE (uk-ie-bilateral, unlocks uk_avec/ie_section_481) -- both real, already-registered treaties this codebase's own treaty_engine.py data already carried, confirmed via direct query, never newly researched. Two simultaneous principal_production legs is exactly the shape structural_archetype_generator.py's own generate_structural_candidate already accepted (confirmed by HO-003's own pre-existing direct-generator test); this fix is the missing REAL-runtime allocation source for that shape. Does NOT (this pass) layer authorized-local-stack composition onto either side of the pure-pair candidate, a disclosed scope reduction from the 3-way block's own richer treatment. HO-012 (three SIMULTANEOUS principal legs, fr_trip+ie_section_481+uk_avec) remains a genuine, confirmed gap: IE-FR has no registered bilateral treaty in treaty_engine.py (confirmed via direct query), so no pairwise or transitive treaty basis exists to combine all three without inventing a split -- carried forward, not forced. Invalidates every cached row so this fires fresh.
 # 1.78.0: eight-control closeout, REG-5 cost-pool-aware same-jurisdiction pricing -- the location_groups same-jurisdiction group-stack bridge could never price a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit) because price_program_group_stack's StackCandidate objects are each priced against the WHOLE budget, so naively combining two would double-count the same dollars -- exactly what the rule prohibits. New _try_cost_pool_aware_same_jurisdiction_stack() prices each program against its own REAL, disjoint cost pool instead: it identifies whichever program carries a genuine CLOSED_POSITIVE_LIST of eligible spend categories (never guessed from doctrine alone), partitions the anchor's real per-line AccountAllocation rows into two disjoint pools by each row's own real spend_category (a strict partition of one real tuple, so a line_id can never appear in both pools -- the same same-cost-refusal-by-construction principle structural_archetype_generator.py already uses for movable components), and prices each pool independently via the existing price_segment() partial-register kernel -- never a new pricing path. Only persists PRICED when BOTH pools independently clear their own program's real threshold/rate resolution; otherwise persists a specific, reconstructable RULE_REJECTED (COST_POOL_EMPTY or COST_POOL_MEMBER_UNPRICEABLE), never a fabricated partial result. REG-5 is the only control this pass targets in canonical_evaluation.py itself; multi-principal composition (HO-003/007/012/013, REG-4) and grant/selective-component wiring (HO-010/011) are addressed separately -- see CAPABILITY_LEDGER.md and the 19-control reconciliation CSV for their own disposition. Invalidates every cached row so this fires fresh.
 # 1.77.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, REG-5 same-jurisdiction component-exclusion fix -- the ordinary_component_hybrid loop's movable-component target filter unconditionally excluded the anchor's own jurisdiction (t.jurisdiction_code != _anchor_code), which was right for a same-cost/same-program conflict but wrong for a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit): generate_structural_candidate's own same-cost-by-shared-line_id refusal already makes double-claiming impossible, so this rule type is explicitly non-blocking at that layer (structural_archetype_generator.py's own check_all_pairs). Confirmed via direct instrumentation that us_ny_post_production_credit already appears as a real, independently-priced "post" target in _hy_component_all_targets -- only the anchor-jurisdiction filter was removing it when the anchor was ALSO US-NY. New _hy_same_jurisdiction_distinct_cost_allowed() carves out exactly this one registered rule type; also corrected the prior 1.76.0 fix's own same-jurisdiction group-stack rejection label, which had been calling this exact rule type "UNRESOLVED_NO_AUTHORITY" (implying no rule exists) when a real, cited rule DOES exist -- the true reason is that the OLDER same-jurisdiction bridge has no distinct-cost awareness (a pre-existing, documented, intentionally-unchanged limitation), now labeled RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE and never conflated with a genuine authority gap. Invalidates every cached row so this fires fresh.
 # 1.76.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, same-jurisdiction group-stack silent-omission fix -- found via direct instrumentation (not assumed): price_program_group_stack's own docstring already promised "the rejection is preserved by canonical_evaluation.py exactly like every other None return here," but the consuming location_groups loop silently dropped a None result with zero persisted row of any kind whenever a group had a genuinely unresolved pairwise authority gap (confirmed live on a real CPTC+OFTTC+OCASE combo: the combo WAS attempted, price_program_group_stack correctly returned None for the cptc+ocase UNRESOLVED_NO_AUTHORITY gap, and nothing was ever persisted). New _diagnose_group_stack_none() re-derives the exact real reason (economic block, ineligible jurisdiction group, duplicate program, or -- the confirmed common case -- unresolved pairwise authority) in the SAME order price_program_group_stack itself checks, and persists an explicit RULE_REJECTED row naming the real reason, never a fabricated rate and never a silent drop. Invalidates every cached row so this fires fresh.
@@ -1902,6 +1903,67 @@ def _best_priced_treaty_side_candidate(
     return best_candidate
 
 
+def _all_priced_treaty_side_candidates(
+    inputs: ProjectEconomicInputs, code: str, priced_by_code: dict[str, list],
+    treaty_unlocks: tuple[str, ...],
+):
+    """Eight-control closeout, HO-003 discovery-suppression fix: the
+    Locked Structural Policy's own "ranking must never suppress feasible
+    discovery" doctrine (already enforced for the movable-component
+    target side of a combined co-production candidate -- "never just the
+    highest") extends here to the treaty PARTNER side. The prior
+    `_best_priced_treaty_side_candidate` (still used by callers that
+    genuinely need exactly one, e.g. authorized-local-stack lookups)
+    collapsed to a SINGLE candidate two different ways: (1) when
+    `priced_by_code[code]` was non-empty it took that jurisdiction's own
+    OVERALL best-priced program regardless of whether it was even one of
+    this treaty's real unlocks (confirmed live: AU's au_pdv_offset
+    out-priced au_producer_offset for a real fixture and silently won,
+    even though au_producer_offset -- not au_pdv_offset -- is
+    uk-au-bilateral's own real, registered minority_unlocks entry); (2)
+    the max()-over-treaty_unlocks fallback path also kept only the single
+    best.
+
+    This function instead enumerates and returns EVERY program in
+    `treaty_unlocks` that independently prices for this jurisdiction --
+    filtered to the treaty's own real, registered unlocks (never a
+    program merely priceable for unrelated reasons), preferring an
+    already-discovered `priced_by_code` entry when one exists (reuses
+    real, already-computed pricing) and falling back to pricing the slug
+    directly (same `_price_candidate` every other path uses) otherwise --
+    the same bare-federal-code gap `_best_priced_treaty_side_candidate`'s
+    own docstring already documents. Never invents a program outside
+    `treaty_unlocks`; returns `[]` (never `None`, never a fabricated
+    single candidate) when nothing in `treaty_unlocks` prices at all.
+    Callers try and persist a real terminal disposition for EVERY
+    returned candidate -- ranking/selection happens only AFTER
+    persistence, in the served view, never before."""
+    existing_by_slug = {c.program_slug: c for c in priced_by_code.get(code, [])}
+    results: list = []
+    for slug in treaty_unlocks:
+        if slug in existing_by_slug:
+            results.append(existing_by_slug[slug])
+            continue
+        pricing, register, rr = _price_candidate(inputs, code, slug)
+        if pricing is None or rr is None:
+            continue
+        incentive = pricing.selected_incentive_usd or 0.0
+        qualifying_spend = round(sum(
+            a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+        ), 2)
+        doctrine_record = _get_doctrine(slug)
+        results.append(StackCandidate(
+            program_slug=slug, jurisdiction_code=code,
+            selected_incentive_usd=incentive, effective_rate=rr.modeled_rate,
+            qualifying_spend_usd=qualifying_spend,
+            incentive_type=doctrine_record.incentive_type if doctrine_record else "",
+            qualifying_line_ids=frozenset(
+                a.line_id for a in register if a.state == QualificationState.QUALIFIES
+            ),
+        ))
+    return results
+
+
 def _price_combined_coproduction_component_candidate(
     inputs: ProjectEconomicInputs,
     home_code: str, home_program_slug: str,
@@ -2049,6 +2111,143 @@ def _price_combined_coproduction_component_candidate(
     return spec, allocation, pricing
 
 
+def _price_combined_coproduction_multi_component_candidate(
+    inputs: ProjectEconomicInputs,
+    home_code: str, home_program_slug: str,
+    partner_code: str, partner_program_slug: str,
+    component_targets: list,  # list[tuple[component, target_code, target_program_slug]], N >= 2
+    treaty_slug: str,
+    majority_pct: float, minority_pct: float,
+):
+    """Eight-control closeout, HO-013: the direct N-component
+    generalization of _price_combined_coproduction_component_candidate
+    (which only ever routes ONE movable component). StructureSpec.
+    component_routes is already a dict[str, str] -- derive_account_
+    allocation already supports routing an ARBITRARY NUMBER of distinct
+    component types to distinct target jurisdictions simultaneously; the
+    single-component limit was entirely in the CALLER's own loop
+    structure (one _combined_component tried at a time), never in the
+    underlying allocation kernel. No new allocation model.
+
+    No double-counting is structurally possible: each routed component
+    (e.g. "post" vs "vfx") is, by construction, a DISJOINT category-based
+    subset of the real budget lines (component_for() maps each real
+    spend_category to exactly one component label) -- the same
+    same-cost-refusal-by-construction principle every other mechanism in
+    this file already relies on, now simply applied to 2+ components in
+    one structure instead of 1. account_splits excludes the union of
+    every routed component's own accounts (never just one), so the
+    treaty partner's split share is computed over the correct remaining
+    base regardless of how many components are routed away.
+
+    Raises _InvalidCombinedAllocation on the same conditions as the
+    2-way/3-way siblings: missing/non-positive contribution facts, a
+    duplicate component or duplicate target jurisdiction across the
+    requested component_targets (never silently collapsed), or any
+    participant receiving zero allocated dollars."""
+    if len(component_targets) < 2:
+        raise _InvalidCombinedAllocation(
+            "_price_combined_coproduction_multi_component_candidate requires >= 2 "
+            "simultaneously-routed components -- use the single-component sibling for one."
+        )
+    _components = [c for c, _code, _slug in component_targets]
+    if len(set(_components)) != len(_components):
+        raise _InvalidCombinedAllocation(
+            f"Duplicate component in {component_targets!r} -- each routed component must be distinct."
+        )
+    _target_codes = [code for _c, code, _slug in component_targets]
+    if len(set(_target_codes)) != len(_target_codes):
+        raise _InvalidCombinedAllocation(
+            f"Duplicate target jurisdiction in {component_targets!r} -- each routed component's "
+            "target must be a distinct jurisdiction."
+        )
+    if majority_pct is None or minority_pct is None or majority_pct <= 0 or minority_pct <= 0:
+        raise _InvalidCombinedAllocation(
+            f"{partner_code} claims a co-production share under {treaty_slug} but no "
+            "positive, evidenced majority_pct/minority_pct contribution fact is on file "
+            f"(majority_pct={majority_pct}, minority_pct={minority_pct}) -- a claimed "
+            "participant may never receive an invented or zero allocation."
+        )
+    majority_frac = majority_pct / 100.0
+    minority_frac = minority_pct / 100.0
+    _split_total = round(majority_frac + minority_frac, 6)
+    if _split_total <= 0:
+        raise _InvalidCombinedAllocation(
+            f"{home_code}/{partner_code} contribution shares under {treaty_slug} sum to "
+            f"{_split_total} -- cannot derive a valid non-zero split."
+        )
+    majority_frac, minority_frac = majority_frac / _split_total, minority_frac / _split_total
+
+    account_splits: dict[str, dict[str, float]] = {}
+    for line in inputs.budget_lines:
+        if line.is_memo or line.account_code in account_splits:
+            continue
+        category = line.spend_category or inputs.spend_category_by_code.get(line.account_code)
+        if component_for(category) in _components:
+            continue  # every routed component's own accounts move as a whole -- see docstring
+        account_splits[line.account_code] = {home_code: majority_frac, partner_code: minority_frac}
+
+    spec = StructureSpec(
+        structure_id=(
+            f"CANON-COMBINED-MULTI-{home_code}-{partner_code}-{treaty_slug}-"
+            + "-".join(f"{c}-{code}-{slug}" for c, code, slug in component_targets)
+        ),
+        structure_type="hybrid",
+        label=(
+            f"{home_code} + {partner_code} co-production ({treaty_slug}) + "
+            + ", ".join(f"{c} routed to {code}" for c, code, _slug in component_targets)
+        ),
+        primary_jurisdiction=home_code,
+        participants=(home_code, partner_code, *_target_codes),
+        incentive_programs={
+            home_code: home_program_slug,
+            partner_code: partner_program_slug,
+            **{code: slug for _c, code, slug in component_targets},
+        },
+        component_routes={c: code for c, code, _slug in component_targets},
+        account_splits=account_splits,
+        treaty_slug=treaty_slug,
+    )
+    allocation = derive_account_allocation(
+        lines=inputs.budget_lines,
+        spend_category_by_code=inputs.spend_category_by_code,
+        spec=spec,
+        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+    )
+    _by_jur = allocation.allocated_by_jurisdiction()
+    _zero_participants = [p for p in spec.participants if not _by_jur.get(p)]
+    if _zero_participants:
+        raise _InvalidCombinedAllocation(
+            f"Participant(s) {_zero_participants} would receive zero allocated dollars in this "
+            f"{home_code}+{partner_code}+{'+'.join(_target_codes)} combined structure -- a "
+            "claimed participant may never receive a zero allocation."
+        )
+    # Normalizes against the FIRST routed component's own target -- an
+    # arbitrary but deterministic, disclosed choice for N>1 simultaneous
+    # relocation targets, exactly the same secondary-correction status
+    # documented on the N-way multilateral sibling above.
+    _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
+        inputs, _target_codes[0], allocation.total_allocated_usd,
+    )
+    pricing = price_allocated_structure(
+        spec=spec, allocation=allocation,
+        spend_category_by_code=inputs.spend_category_by_code,
+        offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        gross_budget_usd=inputs.gross_budget_usd,
+        travel_incremental_delta_usd=_travel_delta,
+        fx_delta_usd=_fx_delta,
+        inkind_replacement_delta_usd=0.0,
+        local_cost_delta_usd=_local_cost_delta,
+        production_type=inputs.production_type,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        financing_cost_usd=inputs.financing_cost_usd or 0.0,
+        evidenced_requirement_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
+        amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
+    )
+    return spec, allocation, pricing
+
+
 def _price_combined_coproduction_pair_candidate(
     inputs: ProjectEconomicInputs,
     home_code: str, home_program_slug: str,
@@ -2128,6 +2327,106 @@ def _price_combined_coproduction_pair_candidate(
         )
     _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
         inputs, partner_code, allocation.total_allocated_usd,
+    )
+    pricing = price_allocated_structure(
+        spec=spec, allocation=allocation,
+        spend_category_by_code=inputs.spend_category_by_code,
+        offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        gross_budget_usd=inputs.gross_budget_usd,
+        travel_incremental_delta_usd=_travel_delta,
+        fx_delta_usd=_fx_delta,
+        inkind_replacement_delta_usd=0.0,
+        local_cost_delta_usd=_local_cost_delta,
+        production_type=inputs.production_type,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        financing_cost_usd=inputs.financing_cost_usd or 0.0,
+        evidenced_requirement_facts=(inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS),
+        amount_facts=inputs.amount_facts,
+        fx_context=inputs.fx_context,
+    )
+    return spec, allocation, pricing
+
+
+def _price_combined_multilateral_coproduction_candidate(
+    inputs: ProjectEconomicInputs,
+    participants: list,  # list[tuple[country_code, program_slug]], N >= 3
+    treaty_slug: str,
+    country_pcts: dict,  # {country_code: real evidenced pct}
+):
+    """Eight-control closeout, HO-012: a genuine N-way (N>=3) multilateral
+    co-production (Eurimages/European Convention) -- each real member
+    country claims its OWN real, independently-priceable national
+    program on its own real, evidenced contribution share. The direct
+    N-way generalization of _price_combined_coproduction_pair_candidate:
+    the SAME real, evidenced (never invented) country_pcts this file's
+    own evaluate_eurimages_coproduction_opportunity() already reads
+    become an explicit spec.account_splits entry (derive_account_
+    allocation's own highest-precedence rule) across every non-memo
+    account, reusing price_allocated_structure unchanged. No new
+    allocation model, no per-pair special case -- account_splits already
+    accepts an arbitrary {jurisdiction: fraction} mapping of any size.
+
+    Raises _InvalidCombinedAllocation when any participant's contribution
+    fact is missing/non-positive, or when the resulting allocation gives
+    any participant zero allocated dollars -- identical guardrails to the
+    2-way sibling, generalized to N parties."""
+    if len(participants) < 2:
+        raise _InvalidCombinedAllocation("A multilateral co-production requires at least 2 real parties.")
+    for code, _slug in participants:
+        pct = country_pcts.get(code)
+        if pct is None or pct <= 0:
+            raise _InvalidCombinedAllocation(
+                f"{code} claims a multilateral co-production share under {treaty_slug} but no "
+                f"positive, evidenced contribution-share fact is on file (pct={pct}) -- a claimed "
+                "participant may never receive an invented or zero allocation."
+            )
+    total_pct = sum(country_pcts[code] for code, _ in participants)
+    if total_pct <= 0:
+        raise _InvalidCombinedAllocation(
+            f"Combined multilateral contribution shares under {treaty_slug} sum to {total_pct} "
+            "-- cannot derive a valid non-zero split."
+        )
+    # Preserves the real ratio between every party's own evidenced share;
+    # only rescaled if the real shares do not already sum to exactly 100
+    # (the same normalization the 2-way sibling already applies).
+    fracs = {code: country_pcts[code] / total_pct for code, _ in participants}
+
+    account_splits: dict[str, dict[str, float]] = {
+        line.account_code: dict(fracs)
+        for line in inputs.budget_lines if not line.is_memo
+    }
+
+    participant_codes = tuple(code for code, _ in participants)
+    spec = StructureSpec(
+        structure_id=f"CANON-COMBINED-MULTI-{'-'.join(participant_codes)}-{treaty_slug}",
+        structure_type="hybrid",
+        label=f"{'+'.join(participant_codes)} multilateral co-production ({treaty_slug})",
+        primary_jurisdiction=participant_codes[0],
+        participants=participant_codes,
+        incentive_programs=dict(participants),
+        account_splits=account_splits,
+        treaty_slug=treaty_slug,
+    )
+    allocation = derive_account_allocation(
+        lines=inputs.budget_lines, spend_category_by_code=inputs.spend_category_by_code,
+        spec=spec, stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+    )
+    _by_jur = allocation.allocated_by_jurisdiction()
+    _zero_participants = [p for p in participant_codes if not _by_jur.get(p)]
+    if _zero_participants:
+        raise _InvalidCombinedAllocation(
+            f"Participant(s) {_zero_participants} would receive zero allocated dollars in this "
+            f"{'+'.join(participant_codes)} multilateral structure -- a claimed participant may "
+            "never receive a zero allocation."
+        )
+    # Normalizes against the LAST participant (an arbitrary but
+    # deterministic, disclosed choice -- for N>2 real parties there is no
+    # single canonical "new location" the way the 2-way sibling's partner_
+    # code is; the normalization delta itself is a small, secondary
+    # correction, never the primary economics, exactly as documented on
+    # price_segment's own gross_budget_usd/travel parameters).
+    _travel_delta, _fx_delta, _local_cost_delta = _relocation_normalization(
+        inputs, participant_codes[-1], allocation.total_allocated_usd,
     )
     pricing = price_allocated_structure(
         spec=spec, allocation=allocation,
@@ -2489,6 +2788,76 @@ async def _multilateral_coproduction_facts(
     return (country_pcts, cultural_test_passed)
 
 
+async def _real_multilateral_subset_participants(
+    session: AsyncSession, project_id, treaty_slug: str, is_member_fn,
+) -> tuple[dict, bool | None]:
+    """Eight-control closeout, HO-012: the EXISTING _multilateral_
+    coproduction_facts() (above) requires a real, on-file percentage for
+    EVERY member of the production's FULL discovered candidate set
+    (find_eurimages_partners' own return, e.g. 36+ real member
+    jurisdictions for a typical production) before it will ever resolve
+    country_pcts -- a genuine, pre-existing design choice appropriate for
+    "does this production's SHOOT-LOCATION-DISCOVERED candidate universe
+    already, collectively, form a co-production," but which makes a
+    producer-INTENDED, specific-N-party structure (e.g. exactly Ireland +
+    France + the UK) practically unreachable, since it would require
+    facts for every OTHER discovered Eurimages member too.
+
+    This is the deliberate, narrower sibling: reads whichever REAL,
+    positive, evidenced coproduction_participant_pct::<treaty_slug>::
+    <code> facts are actually on file for this project (a simpler key,
+    scoped to the treaty only -- no pre-known participant tuple required,
+    since the fact set ITSELF defines who the producer has asserted as a
+    co-producer), filters to real treaty members only (never invents
+    membership), and returns exactly that asserted subset. Requires >= 2
+    qualifying members (fewer is not a co-production) and the treaty's
+    own real cultural-test fact (coproduction_cultural_test_passed::
+    <treaty_slug>, single value for the whole treaty, not per-participant-
+    set) -- same real fail-closed contract as the sibling function:
+    country_pcts stays {} (never partially trusted with a single
+    unsupported party) unless at least 2 real members qualify."""
+    prefix = f"coproduction_participant_pct::{treaty_slug}::"
+    cultural_key = f"coproduction_cultural_test_passed::{treaty_slug}"
+    rows = (await session.execute(
+        select(ProjectFact.fact_key, ProjectFact.value).where(
+            ProjectFact.project_id == project_id,
+            or_(
+                ProjectFact.fact_key.like(f"{prefix}%"),
+                ProjectFact.fact_key == cultural_key,
+            ),
+        )
+    )).all()
+    facts = {k: v for k, v in rows}
+
+    country_pcts: dict = {}
+    for key, raw in facts.items():
+        if not key.startswith(prefix):
+            continue
+        code = key[len(prefix):].upper()
+        if not code or not is_member_fn(code):
+            continue  # never invents membership for a code that isn't a real, registered member
+        try:
+            val = float(raw) if raw not in (None, "") else None
+        except (TypeError, ValueError):
+            val = None
+        if val is not None and val > 0:
+            country_pcts[code] = val
+
+    if len(country_pcts) < 2:
+        country_pcts = {}
+
+    cultural_raw = facts.get(cultural_key)
+    cultural_test_passed: bool | None = None
+    if cultural_raw not in (None, ""):
+        normalized = str(cultural_raw).strip().lower()
+        if normalized in ("true", "1", "yes"):
+            cultural_test_passed = True
+        elif normalized in ("false", "0", "no"):
+            cultural_test_passed = False
+
+    return (country_pcts, cultural_test_passed)
+
+
 async def _all_coproduction_facts_for_fingerprint(session: AsyncSession, project_id) -> tuple[tuple[str, str], ...]:
     """P0-QUAL-001: the fingerprint must invalidate whenever ANY
     treaty/participant-scoped co-production fact changes, not just one
@@ -2752,6 +3121,36 @@ def _capability_only_status(examination) -> tuple[str, str, str]:
             f"{examination.reason} (authority_coverage_registry: {state})",
         )
     if examination.has_doctrine and examination.has_rate_rules and not examination.resolves_for_production:
+        # Eight-control closeout, HO-011: confirmed via direct
+        # instrumentation that this codebase carries TWO parallel
+        # authority-block mechanisms for the SAME program identity --
+        # authority_coverage_registry.py's own documented "sole"
+        # COVERAGE_REGISTRY (coverage_state/blocks_economic_candidacy,
+        # what this branch's own `state` check above already reads) and a
+        # SEPARATE, older _B1_DISCRETIONARY_RULING dict
+        # (economic_block_for_program) -- for us_tn_performance_grant the
+        # two genuinely disagree: coverage_state returns
+        # PRICEABLE_VALIDATED (this branch), but economic_block_for_
+        # program still returns a real, registered FAIL_CLOSED block, and
+        # resolve_program_rate() (consulted upstream, inside production_
+        # discovery.py) evidently still honors the OLDER block, which is
+        # why a real RateRule with zero conditions and a cleared QPE
+        # minimum still fails to resolve. Reconciling which of the two
+        # registries is authoritative is a genuine, separate data-
+        # integrity project, not attempted here -- but the DISCLOSED
+        # reason must cite the REAL, specific cause when one is known,
+        # never the generic "statutory conditions unmet" catch-all this
+        # branch used to return unconditionally for every such case.
+        _older_block = _economic_block_for_program(examination.program_slug)
+        if _older_block is not None:
+            return (
+                STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT, _older_block.classification,
+                f"{_older_block.reason} (Note: this program's newer authority_coverage_registry "
+                f"entry independently reads PRICEABLE_VALIDATED -- the two registries disagree; "
+                "this disclosure follows the block that is actually, empirically still in "
+                "effect for rate resolution, confirmed via a real evaluate_project() run, not "
+                "the newer registry's own optimistic classification.)"
+            )
         # Real statutory rate rules exist for this program; they simply do
         # not resolve for this production's type/QPE (a genuine threshold/
         # rule rejection — e.g. a minimum-QPE gate) — never the same as
@@ -3483,6 +3882,40 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     for examination in discovery.examinations:
         if examination.classification == "capability_only" and examination.program_slug:
             candidates.append((examination.jurisdiction_code, examination.program_slug, "capability_only"))
+    # Eight-control closeout, HO-011: confirmed via direct instrumentation
+    # a real, adjudicated authority-blocked program (economic_block_for_
+    # program(slug) is not None -- FAIL_CLOSED/DISPLAY_ONLY_ZERO_
+    # GUARANTEED/etc, the SAME real registry every other check in this
+    # file already consults) was silently dropped entirely -- never
+    # reaching even a persisted RULE_REJECTED row -- whenever production_
+    # discovery.py's own capability-first classification landed on
+    # "rejected" rather than "capability_only" (its "no structured
+    # capability profile and no priceable incentive model" branch, which
+    # this file's own candidate-building loop above never consumed at
+    # all). The single-program pricing loop immediately below ALREADY
+    # persists a real, precise STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT/
+    # AUTHORITY_EXHAUSTED_FAIL_CLOSED row for any candidate it receives
+    # that carries a real economic block (confirmed by direct code
+    # reading) -- the defect was purely that such a candidate never
+    # reached that loop for a jurisdiction with no structured capability
+    # profile on file. Every already-blocked program is added here
+    # exactly once (never duplicating an incentive_ready/capability_only
+    # entry the loops above already added), regardless of production_
+    # discovery.py's own capability classification -- a REAL,
+    # already-adjudicated authority block is never silently omitted, the
+    # same "never silently omitted" doctrine already applied to REG-5/
+    # HO-007/HO-012 above.
+    _already_candidate_pairs = {(c, s) for c, s, _cls in candidates}
+    for examination in discovery.examinations:
+        if not examination.program_slug:
+            continue
+        pair = (examination.jurisdiction_code, examination.program_slug)
+        if pair in _already_candidate_pairs:
+            continue
+        if _economic_block_for_program(examination.program_slug) is None:
+            continue
+        candidates.append((examination.jurisdiction_code, examination.program_slug, "authority_blocked"))
+        _already_candidate_pairs.add(pair)
 
     # Batched producer-control closeout (2026-09-03) -- generic PROJECT-
     # LEVEL candidate-jurisdiction inclusion/exclusion election. A pure
@@ -3661,6 +4094,19 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 (code, program_slug), examination_by_code.get(code)
             )
             candidate_status, rejection_reason_class, reason = _capability_only_status(examination)
+            # Eight-control closeout, HO-010: the same conditional-program
+            # disclosure every combined/treaty structure already carries
+            # (_conditional_data(), unchanged) was never attached to a
+            # bare single-program candidate row -- so a real, now-
+            # reconciled conditional catalog node (e.g. Creative
+            # Saskatchewan, canonical_program_slug="ca_sk_creative_
+            # saskatchewan_grant") never appeared on the one structure
+            # most directly about that exact jurisdiction/program. Purely
+            # additive: identical helper, identical shape every other
+            # structure type already serves.
+            _cap_only_conditional_programs, _cap_only_conditional_compat = _conditional_data(
+                str(structure.id), code, (program_slug,) if program_slug else (),
+            )
             session.add(StructureCalculationResult(
                 id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
@@ -3683,6 +4129,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "is_directly_comparable": code == inputs.jurisdiction_code,
                     "feasibility_status": feasibility_status,
                     "feasibility_reasons": feasibility_reasons,
+                    "conditional_programs": _cap_only_conditional_programs,
+                    "conditional_compatibility": _cap_only_conditional_compat,
                 },
                 input_fingerprint=fingerprint,
             ))
@@ -5863,6 +6311,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # _combined_top_targets (unchanged -- it already covered every real
     # candidate jurisdiction) is walked in full per component below,
     # never truncated to its first match.
+    #
+    # Eight-control closeout, HO-003 discovery-suppression fix (part 2):
+    # per-jurisdiction it was still collapsed to `max(cands, ...)` -- one
+    # candidate PER JURISDICTION, silently discarding every other real,
+    # independently-priced program that jurisdiction also has (confirmed
+    # live: NZ's own PDV/post-vfx-specific grant,
+    # new_zealand_screen_production_grant_-international_post_vfx, was
+    # suppressed in favor of NZ's differently-cited general international
+    # grant, nz_spg_international -- genuinely different real programs,
+    # not aliases, confirmed via their own separate RateRule citations).
+    # Every real, independently-priced program at every non-home
+    # jurisdiction is now included -- the same Locked Structural Policy
+    # doctrine (never just the highest) already applied to the component
+    # and treaty-partner dimensions.
     _combined_components: list[tuple[str, float]] = []
     _combined_top_targets: list = []
     if component_spend and home_program_slug:
@@ -5872,8 +6334,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         )
         _combined_top_targets = sorted(
             (
-                max(cands, key=lambda c: c.selected_incentive_usd)
-                for code, cands in priced_by_code.items() if code != home_code and cands
+                cand
+                for code, cands in priced_by_code.items() if code != home_code
+                for cand in cands
             ),
             key=lambda c: c.selected_incentive_usd, reverse=True,
         )
@@ -6059,289 +6522,571 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # facts on file; it is additive and touches no existing candidate.
         if opp.resolution_state == RESOLUTION_ELIGIBLE and _combined_components:
             comb_opp = opp
-            # Codex D743 real-treaty-proof remediation: falls back to
-            # directly pricing the treaty's own unlocked slug when
-            # partner_code has no pre-existing priced_by_code entry (a
-            # bare federal code only synthetically reachable via
-            # P0-CAND-003's prefix union) -- see
-            # _best_priced_treaty_side_candidate's own docstring.
-            partner_best = _best_priced_treaty_side_candidate(
+            # Eight-control closeout, HO-003 discovery-suppression fix:
+            # Locked Structural Policy point 2 (ranking must never
+            # suppress feasible discovery) applies to the treaty PARTNER
+            # side exactly as it already does to the movable-component
+            # target side two lines below ("never just the highest").
+            # _all_priced_treaty_side_candidates enumerates EVERY real,
+            # treaty-valid, independently-priceable partner program (not
+            # just the jurisdiction's own overall-best-priced program,
+            # which may not even be one of this treaty's real unlocks) --
+            # each is tried and persisted with its own real terminal
+            # disposition below, never silently narrowed to one winner
+            # before persistence.
+            _comb_partner_candidates = _all_priced_treaty_side_candidates(
                 inputs, partner_code, priced_by_code,
                 tuple(_treaty_row.minority_unlocks) if _treaty_row else (),
             )
-            for _combined_component, _combined_spend_amount in _combined_components:
-                for _comb_target in _combined_top_targets:
-                    if _comb_target.jurisdiction_code in (home_code, partner_code):
-                        continue  # the component target must be a THIRD, distinct side
-                    if partner_best is None:
-                        continue
-                    _comb_label = (
-                        f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}) + "
-                        f"{_combined_component} routed to {_comb_target.jurisdiction_code}"
-                    )
-                    _comb_claimed_programs = [
-                        home_program_slug, partner_best.program_slug, _comb_target.program_slug,
-                    ]
-                    try:
-                        spec, allocation, pricing = _price_combined_coproduction_component_candidate(
-                            inputs, home_code, home_program_slug, partner_code, partner_best.program_slug,
-                            _comb_target.jurisdiction_code, _comb_target.program_slug,
-                            _combined_component, comb_opp.treaty_slug,
-                            _bp_majority_pct, _bp_minority_pct,
+            if not _comb_partner_candidates:
+                # HO-007 closeout: a real, registered treaty whose OWN
+                # named unlocks are all currently unpriceable in this
+                # codebase (zero rate rules, or an explicit authority-
+                # coverage block) must never be silently skipped -- the
+                # prior code simply never entered this loop body at all
+                # when the single "best" candidate was None, persisting
+                # nothing. Persists one explicit, reconstructable
+                # RULE_REJECTED row naming every attempted unlock and its
+                # real reason (never a generic catch-all).
+                from app.data.authority_coverage_registry import get_coverage_status
+                from app.data.program_rate_rules import get_rate_rules
+                _comb_unlock_reasons = []
+                for _comb_unlock_slug in (tuple(_treaty_row.minority_unlocks) if _treaty_row else ()):
+                    _comb_unlock_cov = get_coverage_status(_comb_unlock_slug)
+                    if _comb_unlock_cov is not None and _comb_unlock_cov.blocks_economic_candidacy:
+                        _comb_unlock_reasons.append(
+                            f"{_comb_unlock_slug}: {_comb_unlock_cov.state} -- {_comb_unlock_cov.reason}"
                         )
-                    except _InvalidCombinedAllocation as _comb_invalid:
-                        _comb_invalid_structure = ProductionStructure(
-                            id=uuid.uuid4(), project_id=project.id,
-                            name=f"{_comb_label} (combined, rejected)",
-                            description=f"Combined candidate rejected: {_comb_invalid.reason}",
-                            jurisdiction_allocations=[],
-                            claimed_program_ids=_comb_claimed_programs,
+                    elif not get_rate_rules(_comb_unlock_slug):
+                        _comb_unlock_reasons.append(
+                            f"{_comb_unlock_slug}: no statutory RateRule recorded in this codebase "
+                            "(a genuine, disclosed data gap, not a code defect)."
                         )
-                        session.add(_comb_invalid_structure)
-                        await session.flush()
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_comb_invalid_structure.id, engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            calculation_trace_json={
-                                "candidate_status": "RULE_REJECTED",
-                                "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
-                                "discovery_classification": "combined_coproduction_component_stack",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": home_code,
-                                "treaty_slug": comb_opp.treaty_slug,
-                                "program_slugs": _comb_claimed_programs,
-                                "reason": _comb_invalid.reason,
-                                "is_baseline": False,
-                                "relocation_cost_normalized": False,
-                                "is_directly_comparable": False,
-                                "anchor_jurisdiction": home_code,
-                                "anchor_program": home_program_slug,
-                                "coproduction_partners": [
-                                    {"jurisdiction_code": home_code}, {"jurisdiction_code": partner_code},
-                                ],
-                                "component_allocations": [{
-                                    "component": _combined_component,
-                                    "jurisdiction_code": _comb_target.jurisdiction_code,
-                                    "program_slug": _comb_target.program_slug,
-                                    "allocated_usd": _combined_spend_amount,
-                                }],
-                            },
-                            input_fingerprint=fingerprint,
-                        ))
-                        continue
+                    else:
+                        _comb_unlock_reasons.append(
+                            f"{_comb_unlock_slug}: has a real RateRule but did not independently "
+                            "price for this production's real facts."
+                        )
+                _comb_no_partner_structure = ProductionStructure(
+                    id=uuid.uuid4(), project_id=project.id,
+                    name=f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}, no priceable partner program)",
+                    description=(
+                        f"{opp.treaty_slug}'s own real, registered minority_unlocks "
+                        f"({list(_treaty_row.minority_unlocks) if _treaty_row else []}) contain no "
+                        "program independently priceable in this codebase today -- " + " ".join(_comb_unlock_reasons)
+                    ),
+                    jurisdiction_allocations=[],
+                    claimed_program_ids=[home_program_slug] + (list(_treaty_row.minority_unlocks) if _treaty_row else []),
+                )
+                session.add(_comb_no_partner_structure)
+                await session.flush()
+                session.add(StructureCalculationResult(
+                    id=uuid.uuid4(), structure_id=_comb_no_partner_structure.id, engine_version=ENGINE_VERSION,
+                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    calculation_trace_json={
+                        "candidate_status": "RULE_REJECTED",
+                        "rejection_reason_class": "NO_PRICEABLE_TREATY_UNLOCK",
+                        "discovery_classification": "combined_coproduction_component_stack",
+                        "structural_family": "combined_coproduction_component_stack",
+                        "structure_type": "hybrid",
+                        "primary_jurisdiction": home_code,
+                        "treaty_slug": comb_opp.treaty_slug,
+                        "program_slugs": [home_program_slug] + (list(_treaty_row.minority_unlocks) if _treaty_row else []),
+                        "reason": " ".join(_comb_unlock_reasons),
+                        "is_baseline": False, "relocation_cost_normalized": False,
+                        "is_directly_comparable": False,
+                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                    },
+                    input_fingerprint=fingerprint,
+                ))
+            for partner_best in _comb_partner_candidates:
+                for _combined_component, _combined_spend_amount in _combined_components:
+                    for _comb_target in _combined_top_targets:
+                        if _comb_target.jurisdiction_code in (home_code, partner_code):
+                            continue  # the component target must be a THIRD, distinct side
+                        if partner_best is None:
+                            continue
+                        _comb_label = (
+                            f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}) + "
+                            f"{_combined_component} routed to {_comb_target.jurisdiction_code}"
+                        )
+                        _comb_claimed_programs = [
+                            home_program_slug, partner_best.program_slug, _comb_target.program_slug,
+                        ]
+                        try:
+                            spec, allocation, pricing = _price_combined_coproduction_component_candidate(
+                                inputs, home_code, home_program_slug, partner_code, partner_best.program_slug,
+                                _comb_target.jurisdiction_code, _comb_target.program_slug,
+                                _combined_component, comb_opp.treaty_slug,
+                                _bp_majority_pct, _bp_minority_pct,
+                            )
+                        except _InvalidCombinedAllocation as _comb_invalid:
+                            _comb_invalid_structure = ProductionStructure(
+                                id=uuid.uuid4(), project_id=project.id,
+                                name=f"{_comb_label} (combined, rejected)",
+                                description=f"Combined candidate rejected: {_comb_invalid.reason}",
+                                jurisdiction_allocations=[],
+                                claimed_program_ids=_comb_claimed_programs,
+                            )
+                            session.add(_comb_invalid_structure)
+                            await session.flush()
+                            session.add(StructureCalculationResult(
+                                id=uuid.uuid4(), structure_id=_comb_invalid_structure.id, engine_version=ENGINE_VERSION,
+                                total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                calculation_trace_json={
+                                    "candidate_status": "RULE_REJECTED",
+                                    "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
+                                    "discovery_classification": "combined_coproduction_component_stack",
+                                    "structure_type": "hybrid",
+                                    "primary_jurisdiction": home_code,
+                                    "treaty_slug": comb_opp.treaty_slug,
+                                    "program_slugs": _comb_claimed_programs,
+                                    "reason": _comb_invalid.reason,
+                                    "is_baseline": False,
+                                    "relocation_cost_normalized": False,
+                                    "is_directly_comparable": False,
+                                    "anchor_jurisdiction": home_code,
+                                    "anchor_program": home_program_slug,
+                                    "coproduction_partners": [
+                                        {"jurisdiction_code": home_code}, {"jurisdiction_code": partner_code},
+                                    ],
+                                    "component_allocations": [{
+                                        "component": _combined_component,
+                                        "jurisdiction_code": _comb_target.jurisdiction_code,
+                                        "program_slug": _comb_target.program_slug,
+                                        "allocated_usd": _combined_spend_amount,
+                                    }],
+                                },
+                                input_fingerprint=fingerprint,
+                            ))
+                            continue
 
-                    if not pricing.is_fully_priced:
-                        _comb_rej_status, _comb_rej_class = _classify_component_rejection(pricing.blockers)
-                        _comb_rej_structure = ProductionStructure(
-                            id=uuid.uuid4(), project_id=project.id,
-                            name=f"{_comb_label} (combined, rejected)",
-                            description=(
-                                "Combined co-production + component-allocation candidate does "
-                                f"not clear pricing: {'; '.join(pricing.blockers) or 'not fully priced.'}"
-                            ),
-                            jurisdiction_allocations=[],
-                            claimed_program_ids=_comb_claimed_programs,
-                        )
-                        session.add(_comb_rej_structure)
-                        await session.flush()
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_comb_rej_structure.id, engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            calculation_trace_json={
-                                "candidate_status": _comb_rej_status,
-                                "rejection_reason_class": _comb_rej_class,
-                                "discovery_classification": "combined_coproduction_component_stack",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": home_code,
-                                "treaty_slug": comb_opp.treaty_slug,
-                                "program_slugs": _comb_claimed_programs,
-                                "reason": "; ".join(pricing.blockers) or "Not fully priced.",
-                                "is_baseline": False,
-                                "relocation_cost_normalized": False,
-                                "is_directly_comparable": False,
-                                "anchor_jurisdiction": home_code,
-                                "anchor_program": home_program_slug,
-                                "coproduction_partners": [
-                                    {"jurisdiction_code": home_code}, {"jurisdiction_code": partner_code},
-                                ],
-                                "component_allocations": [{
-                                    "component": _combined_component,
-                                    "jurisdiction_code": _comb_target.jurisdiction_code,
-                                    "program_slug": _comb_target.program_slug,
-                                    "allocated_usd": _combined_spend_amount,
-                                }],
-                            },
-                            input_fingerprint=fingerprint,
-                        ))
-                        continue
+                        if not pricing.is_fully_priced:
+                            _comb_rej_status, _comb_rej_class = _classify_component_rejection(pricing.blockers)
+                            _comb_rej_structure = ProductionStructure(
+                                id=uuid.uuid4(), project_id=project.id,
+                                name=f"{_comb_label} (combined, rejected)",
+                                description=(
+                                    "Combined co-production + component-allocation candidate does "
+                                    f"not clear pricing: {'; '.join(pricing.blockers) or 'not fully priced.'}"
+                                ),
+                                jurisdiction_allocations=[],
+                                claimed_program_ids=_comb_claimed_programs,
+                            )
+                            session.add(_comb_rej_structure)
+                            await session.flush()
+                            session.add(StructureCalculationResult(
+                                id=uuid.uuid4(), structure_id=_comb_rej_structure.id, engine_version=ENGINE_VERSION,
+                                total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                calculation_trace_json={
+                                    "candidate_status": _comb_rej_status,
+                                    "rejection_reason_class": _comb_rej_class,
+                                    "discovery_classification": "combined_coproduction_component_stack",
+                                    "structure_type": "hybrid",
+                                    "primary_jurisdiction": home_code,
+                                    "treaty_slug": comb_opp.treaty_slug,
+                                    "program_slugs": _comb_claimed_programs,
+                                    "reason": "; ".join(pricing.blockers) or "Not fully priced.",
+                                    "is_baseline": False,
+                                    "relocation_cost_normalized": False,
+                                    "is_directly_comparable": False,
+                                    "anchor_jurisdiction": home_code,
+                                    "anchor_program": home_program_slug,
+                                    "coproduction_partners": [
+                                        {"jurisdiction_code": home_code}, {"jurisdiction_code": partner_code},
+                                    ],
+                                    "component_allocations": [{
+                                        "component": _combined_component,
+                                        "jurisdiction_code": _comb_target.jurisdiction_code,
+                                        "program_slug": _comb_target.program_slug,
+                                        "allocated_usd": _combined_spend_amount,
+                                    }],
+                                },
+                                input_fingerprint=fingerprint,
+                            ))
+                            continue
 
-                    # P0-COMB-001 remediation: authorized local stacks
-                    # attempted on every allocated side (anchor, treaty
-                    # partner, component target), never the anchor alone.
-                    _comb_sides = [
-                        (home_code, home_program_slug),
-                        (partner_code, partner_best.program_slug),
-                        (_comb_target.jurisdiction_code, _comb_target.program_slug),
-                    ]
-                    _comb_stack_delta, _comb_stack_notes, _comb_stack_program_slugs, _comb_unresolved = (
-                        _apply_authorized_stacks_to_combined_sides(priced_by_code, _comb_sides)
-                    )
-                    _comb_selected_incentive = round(pricing.selected_incentive_usd + _comb_stack_delta, 2)
-                    _comb_npc = pricing.npc_with_adjustments_usd
-                    if _comb_npc is not None:
-                        _comb_npc = round(_comb_npc - _comb_stack_delta, 2)
-                    _comb_stacking_note = " ".join(_comb_stack_notes)
-
-                    for _unresolved_side, _unresolved_group in _comb_unresolved:
-                        # A second same-jurisdiction candidate exists on
-                        # this side but no named, publishable rule covers
-                        # this exact combination — retained as its OWN
-                        # rejected candidate (never silently applied,
-                        # never silently dropped), while the base
-                        # (unstacked, or stacked on its OTHER sides)
-                        # combined structure below still stands on its own.
-                        _comb_stack_rej_structure = ProductionStructure(
-                            id=uuid.uuid4(), project_id=project.id,
-                            name=f"{_comb_label} + unresolved local stack ({_unresolved_side}, rejected)",
-                            description=(
-                                f"{_unresolved_side} has a second same-jurisdiction candidate "
-                                f"program ({[c.program_slug for c in _unresolved_group]}) but "
-                                "no named, publishable stacking rule covers this exact "
-                                "combination — withheld, never summed as though independent."
-                            ),
-                            jurisdiction_allocations=[],
-                            claimed_program_ids=_comb_claimed_programs + [
-                                c.program_slug for c in _unresolved_group
-                            ],
+                        # P0-COMB-001 remediation: authorized local stacks
+                        # attempted on every allocated side (anchor, treaty
+                        # partner, component target), never the anchor alone.
+                        _comb_sides = [
+                            (home_code, home_program_slug),
+                            (partner_code, partner_best.program_slug),
+                            (_comb_target.jurisdiction_code, _comb_target.program_slug),
+                        ]
+                        _comb_stack_delta, _comb_stack_notes, _comb_stack_program_slugs, _comb_unresolved = (
+                            _apply_authorized_stacks_to_combined_sides(priced_by_code, _comb_sides)
                         )
-                        session.add(_comb_stack_rej_structure)
-                        await session.flush()
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_comb_stack_rej_structure.id,
-                            engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            calculation_trace_json={
-                                "candidate_status": "RULE_DATA_INCOMPLETE",
-                                "rejection_reason_class": "RULE_DATA_INCOMPLETE",
-                                "discovery_classification": "combined_coproduction_component_stack",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": home_code,
-                                "treaty_slug": comb_opp.treaty_slug,
-                                "program_slugs": _comb_claimed_programs + [
+                        _comb_selected_incentive = round(pricing.selected_incentive_usd + _comb_stack_delta, 2)
+                        _comb_npc = pricing.npc_with_adjustments_usd
+                        if _comb_npc is not None:
+                            _comb_npc = round(_comb_npc - _comb_stack_delta, 2)
+                        _comb_stacking_note = " ".join(_comb_stack_notes)
+
+                        for _unresolved_side, _unresolved_group in _comb_unresolved:
+                            # A second same-jurisdiction candidate exists on
+                            # this side but no named, publishable rule covers
+                            # this exact combination — retained as its OWN
+                            # rejected candidate (never silently applied,
+                            # never silently dropped), while the base
+                            # (unstacked, or stacked on its OTHER sides)
+                            # combined structure below still stands on its own.
+                            _comb_stack_rej_structure = ProductionStructure(
+                                id=uuid.uuid4(), project_id=project.id,
+                                name=f"{_comb_label} + unresolved local stack ({_unresolved_side}, rejected)",
+                                description=(
+                                    f"{_unresolved_side} has a second same-jurisdiction candidate "
+                                    f"program ({[c.program_slug for c in _unresolved_group]}) but "
+                                    "no named, publishable stacking rule covers this exact "
+                                    "combination — withheld, never summed as though independent."
+                                ),
+                                jurisdiction_allocations=[],
+                                claimed_program_ids=_comb_claimed_programs + [
                                     c.program_slug for c in _unresolved_group
                                 ],
-                                "reason": (
-                                    "No named, publishable stacking rule covers "
-                                    f"{_unresolved_side}: {'+'.join(c.program_slug for c in _unresolved_group)}."
-                                ),
+                            )
+                            session.add(_comb_stack_rej_structure)
+                            await session.flush()
+                            session.add(StructureCalculationResult(
+                                id=uuid.uuid4(), structure_id=_comb_stack_rej_structure.id,
+                                engine_version=ENGINE_VERSION,
+                                total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                calculation_trace_json={
+                                    "candidate_status": "RULE_DATA_INCOMPLETE",
+                                    "rejection_reason_class": "RULE_DATA_INCOMPLETE",
+                                    "discovery_classification": "combined_coproduction_component_stack",
+                                    "structure_type": "hybrid",
+                                    "primary_jurisdiction": home_code,
+                                    "treaty_slug": comb_opp.treaty_slug,
+                                    "program_slugs": _comb_claimed_programs + [
+                                        c.program_slug for c in _unresolved_group
+                                    ],
+                                    "reason": (
+                                        "No named, publishable stacking rule covers "
+                                        f"{_unresolved_side}: {'+'.join(c.program_slug for c in _unresolved_group)}."
+                                    ),
+                                    "is_baseline": False,
+                                    "relocation_cost_normalized": False,
+                                    "is_directly_comparable": False,
+                                    "anchor_jurisdiction": home_code,
+                                    "anchor_program": home_program_slug,
+                                },
+                                input_fingerprint=fingerprint,
+                            ))
+
+                        _comb_home_jur = jurisdiction_by_code.get(home_code)
+                        _comb_target_jur = jurisdiction_by_code.get(_comb_target.jurisdiction_code)
+                        _comb_by_jur = allocation.allocated_by_jurisdiction()
+                        _comb_structure = ProductionStructure(
+                            id=uuid.uuid4(), project_id=project.id,
+                            name=_comb_label,
+                            description=(
+                                f"Official co-production between {home_code} (anchor) and "
+                                f"{partner_code} under {comb_opp.treaty_slug}, allocated by each "
+                                f"party's real evidenced contribution share, with {_combined_component} "
+                                f"work (${_combined_spend_amount:,.0f} of real project budget) routed "
+                                f"to {_comb_target.jurisdiction_code} to claim "
+                                f"{_program_display_name(_comb_target.program_slug)}."
+                                + (f" {_comb_stacking_note}" if _comb_stacking_note else "")
+                            ),
+                            jurisdiction_allocations=[
+                                j for j in (
+                                    {"jurisdiction_id": str(_comb_home_jur.id), "shoot_pct": 100,
+                                     "budget_pct": round(100 * _comb_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                    if _comb_home_jur else None,
+                                    {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
+                                     "budget_pct": round(100 * _comb_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                    if partner_jur else None,
+                                    {"jurisdiction_id": str(_comb_target_jur.id), "shoot_pct": 0,
+                                     "budget_pct": round(100 * _comb_by_jur.get(_comb_target.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                    if _comb_target_jur else None,
+                                ) if j
+                            ],
+                            claimed_program_ids=_comb_claimed_programs + _comb_stack_program_slugs,
+                        )
+                        session.add(_comb_structure)
+                        await session.flush()
+                        _comb_conditional_program_dicts, _comb_conditional_compatibility_dict = _conditional_data(
+                            str(_comb_structure.id), home_code, tuple(_comb_claimed_programs),
+                        )
+                        session.add(StructureCalculationResult(
+                            id=uuid.uuid4(), structure_id=_comb_structure.id, engine_version=ENGINE_VERSION,
+                            total_budget_usd=inputs.gross_budget_usd,
+                            total_incentive_value_usd=_comb_selected_incentive,
+                            true_net_cost_usd=pricing.npc_verified_usd,
+                            risk_adjusted_net_cost_usd=_comb_npc,
+                            has_unverified_inputs=True,
+                            warnings=[
+                                LIMITATION_NOTE,
+                                "Combined co-production + component-allocation + authorized-stack "
+                                "candidate: a new, additive structure topology — not directly "
+                                "comparable to single-leg structures' own NPC without confirming "
+                                "the same normalization basis.",
+                            ] + _comb_stack_notes,
+                            calculation_trace_json={
+                                "candidate_status": STATUS_PRICED,
+                                "discovery_classification": "combined_coproduction_component_stack",
+                                "structure_type": "hybrid",
+                                "primary_jurisdiction": home_code,
+                                "treaty_slug": comb_opp.treaty_slug,
+                                "program_slugs": _comb_claimed_programs + _comb_stack_program_slugs,
                                 "is_baseline": False,
                                 "relocation_cost_normalized": False,
                                 "is_directly_comparable": False,
                                 "anchor_jurisdiction": home_code,
                                 "anchor_program": home_program_slug,
+                                "coproduction_partners": [
+                                    {
+                                        "jurisdiction_code": home_code,
+                                        "jurisdiction_display_name": _comb_home_jur.name if _comb_home_jur else home_code,
+                                        "allocated_usd": _comb_by_jur.get(home_code, 0.0),
+                                    },
+                                    {
+                                        "jurisdiction_code": partner_code,
+                                        "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
+                                        "allocated_usd": _comb_by_jur.get(partner_code, 0.0),
+                                    },
+                                ],
+                                "treaty_resolution_state": comb_opp.resolution_state,
+                                "component_allocations": [{
+                                    "component": _combined_component,
+                                    "jurisdiction_code": _comb_target.jurisdiction_code,
+                                    "jurisdiction_display_name": _comb_target_jur.name if _comb_target_jur else _comb_target.jurisdiction_code,
+                                    "program_slug": _comb_target.program_slug,
+                                    "allocated_usd": _comb_by_jur.get(_comb_target.jurisdiction_code, 0.0),
+                                }],
+                                "stacking_note": _comb_stacking_note,
+                                "stacked_programs": _comb_stack_program_slugs,
+                                "selected_incentive_usd": _comb_selected_incentive,
+                                "npc_verified_usd": pricing.npc_verified_usd,
+                                "npc_with_adjustments_usd": _comb_npc,
+                                "gross_budget_usd": inputs.gross_budget_usd,
+                                "segments": _segment_dicts(pricing),
+                                "conditional_programs": _comb_conditional_program_dicts,
+                                "conditional_compatibility": _comb_conditional_compatibility_dict,
                             },
                             input_fingerprint=fingerprint,
                         ))
 
-                    _comb_home_jur = jurisdiction_by_code.get(home_code)
-                    _comb_target_jur = jurisdiction_by_code.get(_comb_target.jurisdiction_code)
-                    _comb_by_jur = allocation.allocated_by_jurisdiction()
-                    _comb_structure = ProductionStructure(
-                        id=uuid.uuid4(), project_id=project.id,
-                        name=_comb_label,
-                        description=(
-                            f"Official co-production between {home_code} (anchor) and "
-                            f"{partner_code} under {comb_opp.treaty_slug}, allocated by each "
-                            f"party's real evidenced contribution share, with {_combined_component} "
-                            f"work (${_combined_spend_amount:,.0f} of real project budget) routed "
-                            f"to {_comb_target.jurisdiction_code} to claim "
-                            f"{_program_display_name(_comb_target.program_slug)}."
-                            + (f" {_comb_stacking_note}" if _comb_stacking_note else "")
-                        ),
-                        jurisdiction_allocations=[
-                            j for j in (
-                                {"jurisdiction_id": str(_comb_home_jur.id), "shoot_pct": 100,
-                                 "budget_pct": round(100 * _comb_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if _comb_home_jur else None,
-                                {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
-                                 "budget_pct": round(100 * _comb_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if partner_jur else None,
-                                {"jurisdiction_id": str(_comb_target_jur.id), "shoot_pct": 0,
-                                 "budget_pct": round(100 * _comb_by_jur.get(_comb_target.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if _comb_target_jur else None,
-                            ) if j
-                        ],
-                        claimed_program_ids=_comb_claimed_programs + _comb_stack_program_slugs,
-                    )
-                    session.add(_comb_structure)
-                    await session.flush()
-                    _comb_conditional_program_dicts, _comb_conditional_compatibility_dict = _conditional_data(
-                        str(_comb_structure.id), home_code, tuple(_comb_claimed_programs),
-                    )
-                    session.add(StructureCalculationResult(
-                        id=uuid.uuid4(), structure_id=_comb_structure.id, engine_version=ENGINE_VERSION,
-                        total_budget_usd=inputs.gross_budget_usd,
-                        total_incentive_value_usd=_comb_selected_incentive,
-                        true_net_cost_usd=pricing.npc_verified_usd,
-                        risk_adjusted_net_cost_usd=_comb_npc,
-                        has_unverified_inputs=True,
-                        warnings=[
-                            LIMITATION_NOTE,
-                            "Combined co-production + component-allocation + authorized-stack "
-                            "candidate: a new, additive structure topology — not directly "
-                            "comparable to single-leg structures' own NPC without confirming "
-                            "the same normalization basis.",
-                        ] + _comb_stack_notes,
-                        calculation_trace_json={
-                            "candidate_status": STATUS_PRICED,
-                            "discovery_classification": "combined_coproduction_component_stack",
-                            "structure_type": "hybrid",
-                            "primary_jurisdiction": home_code,
-                            "treaty_slug": comb_opp.treaty_slug,
-                            "program_slugs": _comb_claimed_programs + _comb_stack_program_slugs,
-                            "is_baseline": False,
-                            "relocation_cost_normalized": False,
-                            "is_directly_comparable": False,
-                            "anchor_jurisdiction": home_code,
-                            "anchor_program": home_program_slug,
-                            "coproduction_partners": [
-                                {
-                                    "jurisdiction_code": home_code,
-                                    "jurisdiction_display_name": _comb_home_jur.name if _comb_home_jur else home_code,
-                                    "allocated_usd": _comb_by_jur.get(home_code, 0.0),
+                # Eight-control closeout, HO-013: 2+ SIMULTANEOUS movable
+                # components routed to distinct targets in one combined
+                # structure -- the single-component loop directly above
+                # tries exactly one component at a time (a real, disclosed
+                # scope limit of the pre-existing mechanism, not a
+                # doctrine choice). _price_combined_coproduction_multi_
+                # component_candidate (above) already supports an
+                # arbitrary number of simultaneously-routed components;
+                # this loop is the discovery side. Every 2-combination of
+                # the production's real movable components is tried, each
+                # against the cross-product of its own real, independently
+                # -priced targets. A full, unbounded cross-product across
+                # every real target (now exhaustive per HO-003's own fix
+                # above) is combinatorially impractical -- _MULTI_
+                # COMPONENT_TARGET_BOUND is a disclosed, practical search
+                # bound on this NEW dimension specifically (mirroring this
+                # file's own precedented MAX_STACK_GROUP_SIZE/
+                # MAX_EURIMAGES_DISPLAY pattern: "a safety limit, not a
+                # doctrine choice"), applied to each component's own
+                # target list which is ALREADY sorted by real, independent
+                # incentive value -- never a fixed top-N *replacing* full
+                # discovery elsewhere, only bounding this specific N-way
+                # cross-product extension.
+                _MULTI_COMPONENT_TARGET_BOUND = 200
+                if len(_combined_components) >= 2:
+                    for _mc_comp_a, _mc_comp_b in itertools.combinations(
+                        sorted(c for c, _amt in _combined_components), 2,
+                    ):
+                        _mc_targets_a = [
+                            t for t in _combined_top_targets
+                            if t.jurisdiction_code not in (home_code, partner_code)
+                        ][:_MULTI_COMPONENT_TARGET_BOUND]
+                        _mc_targets_b = _mc_targets_a
+                        for _mc_target_a, _mc_target_b in itertools.product(_mc_targets_a, _mc_targets_b):
+                            if _mc_target_a.jurisdiction_code == _mc_target_b.jurisdiction_code:
+                                continue  # each component's target must be a distinct jurisdiction
+                            _mc_component_targets = [
+                                (_mc_comp_a, _mc_target_a.jurisdiction_code, _mc_target_a.program_slug),
+                                (_mc_comp_b, _mc_target_b.jurisdiction_code, _mc_target_b.program_slug),
+                            ]
+                            _mc_claimed_programs = [
+                                home_program_slug, partner_best.program_slug,
+                                _mc_target_a.program_slug, _mc_target_b.program_slug,
+                            ]
+                            _mc_label = (
+                                f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}) + "
+                                f"{_mc_comp_a} routed to {_mc_target_a.jurisdiction_code} + "
+                                f"{_mc_comp_b} routed to {_mc_target_b.jurisdiction_code}"
+                            )
+                            try:
+                                _mc_spec, _mc_allocation, _mc_pricing = _price_combined_coproduction_multi_component_candidate(
+                                    inputs, home_code, home_program_slug, partner_code, partner_best.program_slug,
+                                    _mc_component_targets, comb_opp.treaty_slug,
+                                    _bp_majority_pct, _bp_minority_pct,
+                                )
+                            except _InvalidCombinedAllocation as _mc_invalid:
+                                _mc_invalid_structure = ProductionStructure(
+                                    id=uuid.uuid4(), project_id=project.id,
+                                    name=f"{_mc_label} (multi-component, rejected)",
+                                    description=f"Combined multi-component candidate rejected: {_mc_invalid.reason}",
+                                    jurisdiction_allocations=[], claimed_program_ids=_mc_claimed_programs,
+                                )
+                                session.add(_mc_invalid_structure)
+                                await session.flush()
+                                session.add(StructureCalculationResult(
+                                    id=uuid.uuid4(), structure_id=_mc_invalid_structure.id, engine_version=ENGINE_VERSION,
+                                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    calculation_trace_json={
+                                        "candidate_status": "RULE_REJECTED",
+                                        "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
+                                        "discovery_classification": "combined_coproduction_multi_component_stack",
+                                        "structural_family": "combined_coproduction_multi_component_stack",
+                                        "structure_type": "hybrid",
+                                        "primary_jurisdiction": home_code,
+                                        "treaty_slug": comb_opp.treaty_slug,
+                                        "program_slugs": _mc_claimed_programs,
+                                        "reason": _mc_invalid.reason,
+                                        "is_baseline": False, "relocation_cost_normalized": False,
+                                        "is_directly_comparable": False,
+                                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                                    },
+                                    input_fingerprint=fingerprint,
+                                ))
+                                continue
+                            if not _mc_pricing.is_fully_priced:
+                                _mc_rej_status, _mc_rej_class = _classify_component_rejection(_mc_pricing.blockers)
+                                _mc_rej_structure = ProductionStructure(
+                                    id=uuid.uuid4(), project_id=project.id,
+                                    name=f"{_mc_label} (multi-component, rejected)",
+                                    description=(
+                                        "Combined multi-component candidate does not clear pricing: "
+                                        f"{'; '.join(_mc_pricing.blockers) or 'not fully priced.'}"
+                                    ),
+                                    jurisdiction_allocations=[], claimed_program_ids=_mc_claimed_programs,
+                                )
+                                session.add(_mc_rej_structure)
+                                await session.flush()
+                                session.add(StructureCalculationResult(
+                                    id=uuid.uuid4(), structure_id=_mc_rej_structure.id, engine_version=ENGINE_VERSION,
+                                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    calculation_trace_json={
+                                        "candidate_status": _mc_rej_status,
+                                        "rejection_reason_class": _mc_rej_class,
+                                        "discovery_classification": "combined_coproduction_multi_component_stack",
+                                        "structural_family": "combined_coproduction_multi_component_stack",
+                                        "structure_type": "hybrid",
+                                        "primary_jurisdiction": home_code,
+                                        "treaty_slug": comb_opp.treaty_slug,
+                                        "program_slugs": _mc_claimed_programs,
+                                        "reason": "; ".join(_mc_pricing.blockers) or "Not fully priced.",
+                                        "is_baseline": False, "relocation_cost_normalized": False,
+                                        "is_directly_comparable": False,
+                                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                                    },
+                                    input_fingerprint=fingerprint,
+                                ))
+                                continue
+                            _mc_by_jur = _mc_allocation.allocated_by_jurisdiction()
+                            _mc_home_jur = jurisdiction_by_code.get(home_code)
+                            _mc_target_a_jur = jurisdiction_by_code.get(_mc_target_a.jurisdiction_code)
+                            _mc_target_b_jur = jurisdiction_by_code.get(_mc_target_b.jurisdiction_code)
+                            _mc_structure = ProductionStructure(
+                                id=uuid.uuid4(), project_id=project.id,
+                                name=_mc_label,
+                                description=(
+                                    f"Official co-production between {home_code} (anchor) and {partner_code} "
+                                    f"under {comb_opp.treaty_slug}, with {_mc_comp_a} routed to "
+                                    f"{_mc_target_a.jurisdiction_code} and {_mc_comp_b} routed to "
+                                    f"{_mc_target_b.jurisdiction_code} -- two simultaneous movable "
+                                    "components with disjoint real cost pools, no dollar counted twice."
+                                ),
+                                jurisdiction_allocations=[
+                                    j for j in (
+                                        {"jurisdiction_id": str(_mc_home_jur.id), "shoot_pct": 100,
+                                         "budget_pct": round(100 * _mc_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if _mc_home_jur else None,
+                                        {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
+                                         "budget_pct": round(100 * _mc_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if partner_jur else None,
+                                        {"jurisdiction_id": str(_mc_target_a_jur.id), "shoot_pct": 0,
+                                         "budget_pct": round(100 * _mc_by_jur.get(_mc_target_a.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if _mc_target_a_jur else None,
+                                        {"jurisdiction_id": str(_mc_target_b_jur.id), "shoot_pct": 0,
+                                         "budget_pct": round(100 * _mc_by_jur.get(_mc_target_b.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if _mc_target_b_jur else None,
+                                    ) if j
+                                ],
+                                claimed_program_ids=_mc_claimed_programs,
+                            )
+                            session.add(_mc_structure)
+                            await session.flush()
+                            _mc_conditional_program_dicts, _mc_conditional_compatibility_dict = _conditional_data(
+                                str(_mc_structure.id), home_code, tuple(_mc_claimed_programs),
+                            )
+                            session.add(StructureCalculationResult(
+                                id=uuid.uuid4(), structure_id=_mc_structure.id, engine_version=ENGINE_VERSION,
+                                total_budget_usd=inputs.gross_budget_usd,
+                                total_incentive_value_usd=_mc_pricing.selected_incentive_usd,
+                                true_net_cost_usd=_mc_pricing.npc_verified_usd,
+                                risk_adjusted_net_cost_usd=_mc_pricing.npc_with_adjustments_usd,
+                                has_unverified_inputs=True,
+                                warnings=[
+                                    LIMITATION_NOTE,
+                                    "Combined co-production + TWO simultaneous movable-component "
+                                    "candidate: a new, additive structure topology -- not directly "
+                                    "comparable to single-component combined structures' own NPC "
+                                    "without confirming the same normalization basis.",
+                                ],
+                                calculation_trace_json={
+                                    "candidate_status": STATUS_PRICED,
+                                    "discovery_classification": "combined_coproduction_multi_component_stack",
+                                    "structural_family": "combined_coproduction_multi_component_stack",
+                                    "structure_type": "hybrid",
+                                    "primary_jurisdiction": home_code,
+                                    "treaty_slug": comb_opp.treaty_slug,
+                                    "program_slugs": _mc_claimed_programs,
+                                    "is_baseline": False, "relocation_cost_normalized": False,
+                                    "is_directly_comparable": False,
+                                    "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                                    "coproduction_partners": [
+                                        {"jurisdiction_code": home_code, "allocated_usd": _mc_by_jur.get(home_code, 0.0)},
+                                        {"jurisdiction_code": partner_code, "allocated_usd": _mc_by_jur.get(partner_code, 0.0)},
+                                    ],
+                                    "component_allocations": [
+                                        {
+                                            "component": _mc_comp_a,
+                                            "jurisdiction_code": _mc_target_a.jurisdiction_code,
+                                            "program_slug": _mc_target_a.program_slug,
+                                            "allocated_usd": _mc_by_jur.get(_mc_target_a.jurisdiction_code, 0.0),
+                                        },
+                                        {
+                                            "component": _mc_comp_b,
+                                            "jurisdiction_code": _mc_target_b.jurisdiction_code,
+                                            "program_slug": _mc_target_b.program_slug,
+                                            "allocated_usd": _mc_by_jur.get(_mc_target_b.jurisdiction_code, 0.0),
+                                        },
+                                    ],
+                                    "selected_incentive_usd": _mc_pricing.selected_incentive_usd,
+                                    "npc_verified_usd": _mc_pricing.npc_verified_usd,
+                                    "npc_with_adjustments_usd": _mc_pricing.npc_with_adjustments_usd,
+                                    "gross_budget_usd": inputs.gross_budget_usd,
+                                    "segments": _segment_dicts(_mc_pricing),
+                                    "conditional_programs": _mc_conditional_program_dicts,
+                                    "conditional_compatibility": _mc_conditional_compatibility_dict,
                                 },
-                                {
-                                    "jurisdiction_code": partner_code,
-                                    "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
-                                    "allocated_usd": _comb_by_jur.get(partner_code, 0.0),
-                                },
-                            ],
-                            "treaty_resolution_state": comb_opp.resolution_state,
-                            "component_allocations": [{
-                                "component": _combined_component,
-                                "jurisdiction_code": _comb_target.jurisdiction_code,
-                                "jurisdiction_display_name": _comb_target_jur.name if _comb_target_jur else _comb_target.jurisdiction_code,
-                                "program_slug": _comb_target.program_slug,
-                                "allocated_usd": _comb_by_jur.get(_comb_target.jurisdiction_code, 0.0),
-                            }],
-                            "stacking_note": _comb_stacking_note,
-                            "stacked_programs": _comb_stack_program_slugs,
-                            "selected_incentive_usd": _comb_selected_incentive,
-                            "npc_verified_usd": pricing.npc_verified_usd,
-                            "npc_with_adjustments_usd": _comb_npc,
-                            "gross_budget_usd": inputs.gross_budget_usd,
-                            "segments": _segment_dicts(pricing),
-                            "conditional_programs": _comb_conditional_program_dicts,
-                            "conditional_compatibility": _comb_conditional_compatibility_dict,
-                        },
-                        input_fingerprint=fingerprint,
-                    ))
+                                input_fingerprint=fingerprint,
+                            ))
 
         # Eight-control closeout, multi-principal composition (REG-4;
         # HO-003/007/013's own pairwise leg). A PURE two-party
@@ -6365,28 +7110,27 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # disclosed scope reduction from the three-way block's own
         # richer treatment, not a silent omission.
         if opp.resolution_state == RESOLUTION_ELIGIBLE:
-            _pair_claimed_programs = [home_program_slug, partner_code]
-            try:
-                _pair_partner_best = _best_priced_treaty_side_candidate(
-                    inputs, partner_code, priced_by_code,
-                    tuple(_treaty_row.minority_unlocks) if _treaty_row else (),
-                )
-                if _pair_partner_best is None:
-                    raise _InvalidCombinedAllocation(
-                        f"{partner_code} has no independently-priceable program available "
-                        f"under {opp.treaty_slug}'s minority_unlocks -- a claimed participant "
-                        "must have a real, priceable program, never an assumed one."
-                    )
-                _pair_claimed_programs = [home_program_slug, _pair_partner_best.program_slug]
-                _pair_spec, _pair_allocation, _pair_pricing = _price_combined_coproduction_pair_candidate(
-                    inputs, home_code, home_program_slug, partner_code, _pair_partner_best.program_slug,
-                    opp.treaty_slug, _bp_majority_pct, _bp_minority_pct,
-                )
-            except _InvalidCombinedAllocation as _pair_invalid:
+            # Eight-control closeout, HO-003/REG-4 discovery-
+            # suppression fix: same Locked Structural Policy doctrine
+            # as the three-way block above -- every treaty-valid,
+            # independently-priceable partner program is tried and
+            # persisted, never narrowed to a single "best" one before
+            # persistence.
+            _pair_candidates = _all_priced_treaty_side_candidates(
+                inputs, partner_code, priced_by_code,
+                tuple(_treaty_row.minority_unlocks) if _treaty_row else (),
+            )
+            if not _pair_candidates:
+                _pair_claimed_programs = [home_program_slug, partner_code]
                 _pair_invalid_structure = ProductionStructure(
                     id=uuid.uuid4(), project_id=project.id,
                     name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug}, pair, rejected)",
-                    description=f"Combined pair candidate rejected: {_pair_invalid.reason}",
+                    description=(
+                        f"Combined pair candidate rejected: {partner_code} has no "
+                        f"independently-priceable program available under {opp.treaty_slug}'s "
+                        "minority_unlocks -- a claimed participant must have a real, priceable "
+                        "program, never an assumed one."
+                    ),
                     jurisdiction_allocations=[], claimed_program_ids=_pair_claimed_programs,
                 )
                 session.add(_pair_invalid_structure)
@@ -6405,42 +7149,48 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         "primary_jurisdiction": home_code,
                         "treaty_slug": opp.treaty_slug,
                         "program_slugs": _pair_claimed_programs,
-                        "reason": _pair_invalid.reason,
+                        "reason": (
+                            f"{partner_code} has no independently-priceable program available "
+                            f"under {opp.treaty_slug}'s minority_unlocks -- a claimed participant "
+                            "must have a real, priceable program, never an assumed one."
+                        ),
                         "is_baseline": False, "relocation_cost_normalized": False,
                         "is_directly_comparable": False,
                         "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
                     },
                     input_fingerprint=fingerprint,
                 ))
-            else:
-                if not _pair_pricing.is_fully_priced:
-                    _pair_rej_status, _pair_rej_class = _classify_component_rejection(_pair_pricing.blockers)
-                    _pair_rej_structure = ProductionStructure(
+            for _pair_partner_best in _pair_candidates:
+                _pair_claimed_programs = [home_program_slug, _pair_partner_best.program_slug]
+                try:
+                    _pair_spec, _pair_allocation, _pair_pricing = _price_combined_coproduction_pair_candidate(
+                        inputs, home_code, home_program_slug, partner_code, _pair_partner_best.program_slug,
+                        opp.treaty_slug, _bp_majority_pct, _bp_minority_pct,
+                    )
+                except _InvalidCombinedAllocation as _pair_invalid:
+                    _pair_invalid_structure = ProductionStructure(
                         id=uuid.uuid4(), project_id=project.id,
                         name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug}, pair, rejected)",
-                        description=(
-                            "Pure two-party co-production candidate does not clear pricing: "
-                            f"{'; '.join(_pair_pricing.blockers) or 'not fully priced.'}"
-                        ),
+                        description=f"Combined pair candidate rejected: {_pair_invalid.reason}",
                         jurisdiction_allocations=[], claimed_program_ids=_pair_claimed_programs,
                     )
-                    session.add(_pair_rej_structure)
+                    session.add(_pair_invalid_structure)
                     await session.flush()
                     session.add(StructureCalculationResult(
-                        id=uuid.uuid4(), structure_id=_pair_rej_structure.id, engine_version=ENGINE_VERSION,
+                        id=uuid.uuid4(), structure_id=_pair_invalid_structure.id, engine_version=ENGINE_VERSION,
                         total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                         true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
                         calculation_trace_json={
-                            "candidate_status": _pair_rej_status,
-                            "rejection_reason_class": _pair_rej_class,
+                            "candidate_status": "RULE_REJECTED",
+                            "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
                             "discovery_classification": "combined_coproduction_pair_stack",
                             "structural_family": "combined_coproduction_pair_stack",
                             "structure_type": "hybrid",
                             "primary_jurisdiction": home_code,
                             "treaty_slug": opp.treaty_slug,
                             "program_slugs": _pair_claimed_programs,
-                            "reason": "; ".join(_pair_pricing.blockers) or "Not fully priced.",
+                            "reason": _pair_invalid.reason,
                             "is_baseline": False, "relocation_cost_normalized": False,
                             "is_directly_comparable": False,
                             "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
@@ -6448,82 +7198,117 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         input_fingerprint=fingerprint,
                     ))
                 else:
-                    _pair_home_jur = jurisdiction_by_code.get(home_code)
-                    _pair_by_jur = _pair_allocation.allocated_by_jurisdiction()
-                    _pair_structure = ProductionStructure(
-                        id=uuid.uuid4(), project_id=project.id,
-                        name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug})",
-                        description=(
-                            f"Official co-production between {home_code} (anchor) and {partner_code} "
-                            f"under {opp.treaty_slug}, allocated by each party's real evidenced "
-                            "contribution share (no third movable component routed)."
-                        ),
-                        jurisdiction_allocations=[
-                            j for j in (
-                                {"jurisdiction_id": str(_pair_home_jur.id), "shoot_pct": 100,
-                                 "budget_pct": round(100 * _pair_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if _pair_home_jur else None,
-                                {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
-                                 "budget_pct": round(100 * _pair_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if partner_jur else None,
-                            ) if j
-                        ],
-                        claimed_program_ids=_pair_claimed_programs,
-                    )
-                    session.add(_pair_structure)
-                    await session.flush()
-                    _pair_conditional_program_dicts, _pair_conditional_compatibility_dict = _conditional_data(
-                        str(_pair_structure.id), home_code, tuple(_pair_claimed_programs),
-                    )
-                    session.add(StructureCalculationResult(
-                        id=uuid.uuid4(), structure_id=_pair_structure.id, engine_version=ENGINE_VERSION,
-                        total_budget_usd=inputs.gross_budget_usd,
-                        total_incentive_value_usd=_pair_pricing.selected_incentive_usd,
-                        true_net_cost_usd=_pair_pricing.npc_verified_usd,
-                        risk_adjusted_net_cost_usd=_pair_pricing.npc_with_adjustments_usd,
-                        has_unverified_inputs=True,
-                        warnings=[
-                            LIMITATION_NOTE,
-                            "Pure two-party official co-production candidate: a new, additive "
-                            "structure topology (no third movable component routed, no "
-                            "same-jurisdiction local stacking layered on either side this pass) "
-                            "-- not directly comparable to single-leg or three-way combined "
-                            "structures' own NPC without confirming the same normalization basis.",
-                        ],
-                        calculation_trace_json={
-                            "candidate_status": STATUS_PRICED,
-                            "discovery_classification": "combined_coproduction_pair_stack",
-                            "structural_family": "combined_coproduction_pair_stack",
-                            "structure_type": "hybrid",
-                            "primary_jurisdiction": home_code,
-                            "treaty_slug": opp.treaty_slug,
-                            "program_slugs": _pair_claimed_programs,
-                            "is_baseline": False, "relocation_cost_normalized": False,
-                            "is_directly_comparable": False,
-                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
-                            "coproduction_partners": [
-                                {
-                                    "jurisdiction_code": home_code,
-                                    "jurisdiction_display_name": _pair_home_jur.name if _pair_home_jur else home_code,
-                                    "allocated_usd": _pair_by_jur.get(home_code, 0.0),
-                                },
-                                {
-                                    "jurisdiction_code": partner_code,
-                                    "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
-                                    "allocated_usd": _pair_by_jur.get(partner_code, 0.0),
-                                },
+                    if not _pair_pricing.is_fully_priced:
+                        _pair_rej_status, _pair_rej_class = _classify_component_rejection(_pair_pricing.blockers)
+                        _pair_rej_structure = ProductionStructure(
+                            id=uuid.uuid4(), project_id=project.id,
+                            name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug}, pair, rejected)",
+                            description=(
+                                "Pure two-party co-production candidate does not clear pricing: "
+                                f"{'; '.join(_pair_pricing.blockers) or 'not fully priced.'}"
+                            ),
+                            jurisdiction_allocations=[], claimed_program_ids=_pair_claimed_programs,
+                        )
+                        session.add(_pair_rej_structure)
+                        await session.flush()
+                        session.add(StructureCalculationResult(
+                            id=uuid.uuid4(), structure_id=_pair_rej_structure.id, engine_version=ENGINE_VERSION,
+                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                            calculation_trace_json={
+                                "candidate_status": _pair_rej_status,
+                                "rejection_reason_class": _pair_rej_class,
+                                "discovery_classification": "combined_coproduction_pair_stack",
+                                "structural_family": "combined_coproduction_pair_stack",
+                                "structure_type": "hybrid",
+                                "primary_jurisdiction": home_code,
+                                "treaty_slug": opp.treaty_slug,
+                                "program_slugs": _pair_claimed_programs,
+                                "reason": "; ".join(_pair_pricing.blockers) or "Not fully priced.",
+                                "is_baseline": False, "relocation_cost_normalized": False,
+                                "is_directly_comparable": False,
+                                "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                            },
+                            input_fingerprint=fingerprint,
+                        ))
+                    else:
+                        _pair_home_jur = jurisdiction_by_code.get(home_code)
+                        _pair_by_jur = _pair_allocation.allocated_by_jurisdiction()
+                        _pair_structure = ProductionStructure(
+                            id=uuid.uuid4(), project_id=project.id,
+                            name=f"{home_code} + {partner_code} co-production ({opp.treaty_slug})",
+                            description=(
+                                f"Official co-production between {home_code} (anchor) and {partner_code} "
+                                f"under {opp.treaty_slug}, allocated by each party's real evidenced "
+                                "contribution share (no third movable component routed)."
+                            ),
+                            jurisdiction_allocations=[
+                                j for j in (
+                                    {"jurisdiction_id": str(_pair_home_jur.id), "shoot_pct": 100,
+                                     "budget_pct": round(100 * _pair_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                    if _pair_home_jur else None,
+                                    {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
+                                     "budget_pct": round(100 * _pair_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                    if partner_jur else None,
+                                ) if j
                             ],
-                            "treaty_resolution_state": opp.resolution_state,
-                            "selected_incentive_usd": _pair_pricing.selected_incentive_usd,
-                            "npc_verified_usd": _pair_pricing.npc_verified_usd,
-                            "npc_with_adjustments_usd": _pair_pricing.npc_with_adjustments_usd,
-                            "gross_budget_usd": inputs.gross_budget_usd,
-                            "segments": _segment_dicts(_pair_pricing),
-                            "conditional_programs": _pair_conditional_program_dicts,
-                            "conditional_compatibility": _pair_conditional_compatibility_dict,
-                        },
-                        input_fingerprint=fingerprint,
-                    ))
+                            claimed_program_ids=_pair_claimed_programs,
+                        )
+                        session.add(_pair_structure)
+                        await session.flush()
+                        _pair_conditional_program_dicts, _pair_conditional_compatibility_dict = _conditional_data(
+                            str(_pair_structure.id), home_code, tuple(_pair_claimed_programs),
+                        )
+                        session.add(StructureCalculationResult(
+                            id=uuid.uuid4(), structure_id=_pair_structure.id, engine_version=ENGINE_VERSION,
+                            total_budget_usd=inputs.gross_budget_usd,
+                            total_incentive_value_usd=_pair_pricing.selected_incentive_usd,
+                            true_net_cost_usd=_pair_pricing.npc_verified_usd,
+                            risk_adjusted_net_cost_usd=_pair_pricing.npc_with_adjustments_usd,
+                            has_unverified_inputs=True,
+                            warnings=[
+                                LIMITATION_NOTE,
+                                "Pure two-party official co-production candidate: a new, additive "
+                                "structure topology (no third movable component routed, no "
+                                "same-jurisdiction local stacking layered on either side this pass) "
+                                "-- not directly comparable to single-leg or three-way combined "
+                                "structures' own NPC without confirming the same normalization basis.",
+                            ],
+                            calculation_trace_json={
+                                "candidate_status": STATUS_PRICED,
+                                "discovery_classification": "combined_coproduction_pair_stack",
+                                "structural_family": "combined_coproduction_pair_stack",
+                                "structure_type": "hybrid",
+                                "primary_jurisdiction": home_code,
+                                "treaty_slug": opp.treaty_slug,
+                                "program_slugs": _pair_claimed_programs,
+                                "is_baseline": False, "relocation_cost_normalized": False,
+                                "is_directly_comparable": False,
+                                "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                                "coproduction_partners": [
+                                    {
+                                        "jurisdiction_code": home_code,
+                                        "jurisdiction_display_name": _pair_home_jur.name if _pair_home_jur else home_code,
+                                        "allocated_usd": _pair_by_jur.get(home_code, 0.0),
+                                    },
+                                    {
+                                        "jurisdiction_code": partner_code,
+                                        "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
+                                        "allocated_usd": _pair_by_jur.get(partner_code, 0.0),
+                                    },
+                                ],
+                                "treaty_resolution_state": opp.resolution_state,
+                                "selected_incentive_usd": _pair_pricing.selected_incentive_usd,
+                                "npc_verified_usd": _pair_pricing.npc_verified_usd,
+                                "npc_with_adjustments_usd": _pair_pricing.npc_with_adjustments_usd,
+                                "gross_budget_usd": inputs.gross_budget_usd,
+                                "segments": _segment_dicts(_pair_pricing),
+                                "conditional_programs": _pair_conditional_program_dicts,
+                                "conditional_compatibility": _pair_conditional_compatibility_dict,
+                            },
+                            input_fingerprint=fingerprint,
+                        ))
 
     # LU Co-Pro Opportunity Trace fix — a real, generic wiring gap: the
     # loop above only ever considers a bilateral treaty where the
@@ -6702,281 +7487,285 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             _nb_treaty_row = te.get_bilateral_treaty(majority_code, minority_code)
             _nb_majority_unlocks = tuple(_nb_treaty_row.majority_unlocks) if _nb_treaty_row else ()
             _nb_minority_unlocks = tuple(_nb_treaty_row.minority_unlocks) if _nb_treaty_row else ()
-            _nb_majority_best = _best_priced_treaty_side_candidate(
-                inputs, majority_code, priced_by_code, _nb_majority_unlocks,
-            )
-            _nb_minority_best = _best_priced_treaty_side_candidate(
-                inputs, minority_code, priced_by_code, _nb_minority_unlocks,
-            )
             _nb_targets = [
                 t for t in _combined_top_targets
                 if t.jurisdiction_code not in (majority_code, minority_code)
             ]
-            for _nb_component, _nb_spend_amount in _combined_components:
-                for _nb_target in _nb_targets:
-                    if _nb_majority_best is None or _nb_minority_best is None:
-                        continue
-                    _nb_label = (
-                        f"{majority_code} + {minority_code} co-production ({_nb_comb_opp.treaty_slug}) + "
-                        f"{_nb_component} routed to {_nb_target.jurisdiction_code}"
-                    )
-                    _nb_claimed_programs = [
-                        _nb_majority_best.program_slug, _nb_minority_best.program_slug, _nb_target.program_slug,
-                    ]
-                    try:
-                        _nb_spec, _nb_allocation, _nb_pricing = _price_combined_coproduction_component_candidate(
-                            inputs, majority_code, _nb_majority_best.program_slug,
-                            minority_code, _nb_minority_best.program_slug,
-                            _nb_target.jurisdiction_code, _nb_target.program_slug,
-                            _nb_component, _nb_comb_opp.treaty_slug,
-                            _nb_majority_pct, _nb_minority_pct,
-                        )
-                    except _InvalidCombinedAllocation as _nb_invalid:
-                        _nb_invalid_structure = ProductionStructure(
-                            id=uuid.uuid4(), project_id=project.id,
-                            name=f"{_nb_label} (combined, rejected)",
-                            description=f"Combined candidate rejected: {_nb_invalid.reason}",
-                            jurisdiction_allocations=[],
-                            claimed_program_ids=_nb_claimed_programs,
-                        )
-                        session.add(_nb_invalid_structure)
-                        await session.flush()
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_nb_invalid_structure.id, engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            calculation_trace_json={
-                                "candidate_status": "RULE_REJECTED",
-                                "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
-                                "discovery_classification": "combined_coproduction_component_stack",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": home_code,
-                                "treaty_slug": _nb_comb_opp.treaty_slug,
-                                "program_slugs": _nb_claimed_programs,
-                                "reason": _nb_invalid.reason,
-                                "is_baseline": False,
-                                "relocation_cost_normalized": False,
-                                "is_directly_comparable": False,
-                                "anchor_jurisdiction": majority_code,
-                                "anchor_program": _nb_majority_best.program_slug,
-                                "coproduction_partners": [
-                                    {"jurisdiction_code": majority_code}, {"jurisdiction_code": minority_code},
-                                ],
-                                "component_allocations": [{
-                                    "component": _nb_component,
-                                    "jurisdiction_code": _nb_target.jurisdiction_code,
-                                    "program_slug": _nb_target.program_slug,
-                                    "allocated_usd": _nb_spend_amount,
-                                }],
-                            },
-                            input_fingerprint=fingerprint,
-                        ))
-                        continue
+            # Eight-control closeout, HO-003 discovery-suppression
+            # fix, mirrored here for the non-home-anchored path (same
+            # Locked Structural Policy doctrine -- never just the
+            # highest-priced side).
+            for _nb_majority_best in _all_priced_treaty_side_candidates(
+                inputs, majority_code, priced_by_code, _nb_majority_unlocks,
+            ):
+                for _nb_minority_best in _all_priced_treaty_side_candidates(
+                    inputs, minority_code, priced_by_code, _nb_minority_unlocks,
+                ):
+                    for _nb_component, _nb_spend_amount in _combined_components:
+                        for _nb_target in _nb_targets:
+                            if _nb_majority_best is None or _nb_minority_best is None:
+                                continue
+                            _nb_label = (
+                                f"{majority_code} + {minority_code} co-production ({_nb_comb_opp.treaty_slug}) + "
+                                f"{_nb_component} routed to {_nb_target.jurisdiction_code}"
+                            )
+                            _nb_claimed_programs = [
+                                _nb_majority_best.program_slug, _nb_minority_best.program_slug, _nb_target.program_slug,
+                            ]
+                            try:
+                                _nb_spec, _nb_allocation, _nb_pricing = _price_combined_coproduction_component_candidate(
+                                    inputs, majority_code, _nb_majority_best.program_slug,
+                                    minority_code, _nb_minority_best.program_slug,
+                                    _nb_target.jurisdiction_code, _nb_target.program_slug,
+                                    _nb_component, _nb_comb_opp.treaty_slug,
+                                    _nb_majority_pct, _nb_minority_pct,
+                                )
+                            except _InvalidCombinedAllocation as _nb_invalid:
+                                _nb_invalid_structure = ProductionStructure(
+                                    id=uuid.uuid4(), project_id=project.id,
+                                    name=f"{_nb_label} (combined, rejected)",
+                                    description=f"Combined candidate rejected: {_nb_invalid.reason}",
+                                    jurisdiction_allocations=[],
+                                    claimed_program_ids=_nb_claimed_programs,
+                                )
+                                session.add(_nb_invalid_structure)
+                                await session.flush()
+                                session.add(StructureCalculationResult(
+                                    id=uuid.uuid4(), structure_id=_nb_invalid_structure.id, engine_version=ENGINE_VERSION,
+                                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    calculation_trace_json={
+                                        "candidate_status": "RULE_REJECTED",
+                                        "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
+                                        "discovery_classification": "combined_coproduction_component_stack",
+                                        "structure_type": "hybrid",
+                                        "primary_jurisdiction": home_code,
+                                        "treaty_slug": _nb_comb_opp.treaty_slug,
+                                        "program_slugs": _nb_claimed_programs,
+                                        "reason": _nb_invalid.reason,
+                                        "is_baseline": False,
+                                        "relocation_cost_normalized": False,
+                                        "is_directly_comparable": False,
+                                        "anchor_jurisdiction": majority_code,
+                                        "anchor_program": _nb_majority_best.program_slug,
+                                        "coproduction_partners": [
+                                            {"jurisdiction_code": majority_code}, {"jurisdiction_code": minority_code},
+                                        ],
+                                        "component_allocations": [{
+                                            "component": _nb_component,
+                                            "jurisdiction_code": _nb_target.jurisdiction_code,
+                                            "program_slug": _nb_target.program_slug,
+                                            "allocated_usd": _nb_spend_amount,
+                                        }],
+                                    },
+                                    input_fingerprint=fingerprint,
+                                ))
+                                continue
 
-                    if not _nb_pricing.is_fully_priced:
-                        _nb_rej_status, _nb_rej_class = _classify_component_rejection(_nb_pricing.blockers)
-                        _nb_rej_structure = ProductionStructure(
-                            id=uuid.uuid4(), project_id=project.id,
-                            name=f"{_nb_label} (combined, rejected)",
-                            description=(
-                                "Combined co-production + component-allocation candidate does "
-                                f"not clear pricing: {'; '.join(_nb_pricing.blockers) or 'not fully priced.'}"
-                            ),
-                            jurisdiction_allocations=[],
-                            claimed_program_ids=_nb_claimed_programs,
-                        )
-                        session.add(_nb_rej_structure)
-                        await session.flush()
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_nb_rej_structure.id, engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            calculation_trace_json={
-                                "candidate_status": _nb_rej_status,
-                                "rejection_reason_class": _nb_rej_class,
-                                "discovery_classification": "combined_coproduction_component_stack",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": home_code,
-                                "treaty_slug": _nb_comb_opp.treaty_slug,
-                                "program_slugs": _nb_claimed_programs,
-                                "reason": "; ".join(_nb_pricing.blockers) or "Not fully priced.",
-                                "is_baseline": False,
-                                "relocation_cost_normalized": False,
-                                "is_directly_comparable": False,
-                                "anchor_jurisdiction": majority_code,
-                                "anchor_program": _nb_majority_best.program_slug,
-                                "coproduction_partners": [
-                                    {"jurisdiction_code": majority_code}, {"jurisdiction_code": minority_code},
-                                ],
-                                "component_allocations": [{
-                                    "component": _nb_component,
-                                    "jurisdiction_code": _nb_target.jurisdiction_code,
-                                    "program_slug": _nb_target.program_slug,
-                                    "allocated_usd": _nb_spend_amount,
-                                }],
-                            },
-                            input_fingerprint=fingerprint,
-                        ))
-                        continue
+                            if not _nb_pricing.is_fully_priced:
+                                _nb_rej_status, _nb_rej_class = _classify_component_rejection(_nb_pricing.blockers)
+                                _nb_rej_structure = ProductionStructure(
+                                    id=uuid.uuid4(), project_id=project.id,
+                                    name=f"{_nb_label} (combined, rejected)",
+                                    description=(
+                                        "Combined co-production + component-allocation candidate does "
+                                        f"not clear pricing: {'; '.join(_nb_pricing.blockers) or 'not fully priced.'}"
+                                    ),
+                                    jurisdiction_allocations=[],
+                                    claimed_program_ids=_nb_claimed_programs,
+                                )
+                                session.add(_nb_rej_structure)
+                                await session.flush()
+                                session.add(StructureCalculationResult(
+                                    id=uuid.uuid4(), structure_id=_nb_rej_structure.id, engine_version=ENGINE_VERSION,
+                                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    calculation_trace_json={
+                                        "candidate_status": _nb_rej_status,
+                                        "rejection_reason_class": _nb_rej_class,
+                                        "discovery_classification": "combined_coproduction_component_stack",
+                                        "structure_type": "hybrid",
+                                        "primary_jurisdiction": home_code,
+                                        "treaty_slug": _nb_comb_opp.treaty_slug,
+                                        "program_slugs": _nb_claimed_programs,
+                                        "reason": "; ".join(_nb_pricing.blockers) or "Not fully priced.",
+                                        "is_baseline": False,
+                                        "relocation_cost_normalized": False,
+                                        "is_directly_comparable": False,
+                                        "anchor_jurisdiction": majority_code,
+                                        "anchor_program": _nb_majority_best.program_slug,
+                                        "coproduction_partners": [
+                                            {"jurisdiction_code": majority_code}, {"jurisdiction_code": minority_code},
+                                        ],
+                                        "component_allocations": [{
+                                            "component": _nb_component,
+                                            "jurisdiction_code": _nb_target.jurisdiction_code,
+                                            "program_slug": _nb_target.program_slug,
+                                            "allocated_usd": _nb_spend_amount,
+                                        }],
+                                    },
+                                    input_fingerprint=fingerprint,
+                                ))
+                                continue
 
-                    _nb_sides = [
-                        (majority_code, _nb_majority_best.program_slug),
-                        (minority_code, _nb_minority_best.program_slug),
-                        (_nb_target.jurisdiction_code, _nb_target.program_slug),
-                    ]
-                    _nb_stack_delta, _nb_stack_notes, _nb_stack_program_slugs, _nb_unresolved = (
-                        _apply_authorized_stacks_to_combined_sides(priced_by_code, _nb_sides)
-                    )
-                    _nb_selected_incentive = round(_nb_pricing.selected_incentive_usd + _nb_stack_delta, 2)
-                    _nb_npc = _nb_pricing.npc_with_adjustments_usd
-                    if _nb_npc is not None:
-                        _nb_npc = round(_nb_npc - _nb_stack_delta, 2)
-                    _nb_stacking_note = " ".join(_nb_stack_notes)
+                            _nb_sides = [
+                                (majority_code, _nb_majority_best.program_slug),
+                                (minority_code, _nb_minority_best.program_slug),
+                                (_nb_target.jurisdiction_code, _nb_target.program_slug),
+                            ]
+                            _nb_stack_delta, _nb_stack_notes, _nb_stack_program_slugs, _nb_unresolved = (
+                                _apply_authorized_stacks_to_combined_sides(priced_by_code, _nb_sides)
+                            )
+                            _nb_selected_incentive = round(_nb_pricing.selected_incentive_usd + _nb_stack_delta, 2)
+                            _nb_npc = _nb_pricing.npc_with_adjustments_usd
+                            if _nb_npc is not None:
+                                _nb_npc = round(_nb_npc - _nb_stack_delta, 2)
+                            _nb_stacking_note = " ".join(_nb_stack_notes)
 
-                    for _nb_unresolved_side, _nb_unresolved_group in _nb_unresolved:
-                        _nb_stack_rej_structure = ProductionStructure(
-                            id=uuid.uuid4(), project_id=project.id,
-                            name=f"{_nb_label} + unresolved local stack ({_nb_unresolved_side}, rejected)",
-                            description=(
-                                f"{_nb_unresolved_side} has a second same-jurisdiction candidate "
-                                f"program ({[c.program_slug for c in _nb_unresolved_group]}) but "
-                                "no named, publishable stacking rule covers this exact "
-                                "combination — withheld, never summed as though independent."
-                            ),
-                            jurisdiction_allocations=[],
-                            claimed_program_ids=_nb_claimed_programs + [
-                                c.program_slug for c in _nb_unresolved_group
-                            ],
-                        )
-                        session.add(_nb_stack_rej_structure)
-                        await session.flush()
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_nb_stack_rej_structure.id,
-                            engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            calculation_trace_json={
-                                "candidate_status": "RULE_DATA_INCOMPLETE",
-                                "rejection_reason_class": "RULE_DATA_INCOMPLETE",
-                                "discovery_classification": "combined_coproduction_component_stack",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": home_code,
-                                "treaty_slug": _nb_comb_opp.treaty_slug,
-                                "program_slugs": _nb_claimed_programs + [
-                                    c.program_slug for c in _nb_unresolved_group
-                                ],
-                                "reason": (
-                                    "No named, publishable stacking rule covers "
-                                    f"{_nb_unresolved_side}: "
-                                    f"{'+'.join(c.program_slug for c in _nb_unresolved_group)}."
+                            for _nb_unresolved_side, _nb_unresolved_group in _nb_unresolved:
+                                _nb_stack_rej_structure = ProductionStructure(
+                                    id=uuid.uuid4(), project_id=project.id,
+                                    name=f"{_nb_label} + unresolved local stack ({_nb_unresolved_side}, rejected)",
+                                    description=(
+                                        f"{_nb_unresolved_side} has a second same-jurisdiction candidate "
+                                        f"program ({[c.program_slug for c in _nb_unresolved_group]}) but "
+                                        "no named, publishable stacking rule covers this exact "
+                                        "combination — withheld, never summed as though independent."
+                                    ),
+                                    jurisdiction_allocations=[],
+                                    claimed_program_ids=_nb_claimed_programs + [
+                                        c.program_slug for c in _nb_unresolved_group
+                                    ],
+                                )
+                                session.add(_nb_stack_rej_structure)
+                                await session.flush()
+                                session.add(StructureCalculationResult(
+                                    id=uuid.uuid4(), structure_id=_nb_stack_rej_structure.id,
+                                    engine_version=ENGINE_VERSION,
+                                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    calculation_trace_json={
+                                        "candidate_status": "RULE_DATA_INCOMPLETE",
+                                        "rejection_reason_class": "RULE_DATA_INCOMPLETE",
+                                        "discovery_classification": "combined_coproduction_component_stack",
+                                        "structure_type": "hybrid",
+                                        "primary_jurisdiction": home_code,
+                                        "treaty_slug": _nb_comb_opp.treaty_slug,
+                                        "program_slugs": _nb_claimed_programs + [
+                                            c.program_slug for c in _nb_unresolved_group
+                                        ],
+                                        "reason": (
+                                            "No named, publishable stacking rule covers "
+                                            f"{_nb_unresolved_side}: "
+                                            f"{'+'.join(c.program_slug for c in _nb_unresolved_group)}."
+                                        ),
+                                        "is_baseline": False,
+                                        "relocation_cost_normalized": False,
+                                        "is_directly_comparable": False,
+                                        "anchor_jurisdiction": majority_code,
+                                        "anchor_program": _nb_majority_best.program_slug,
+                                    },
+                                    input_fingerprint=fingerprint,
+                                ))
+
+                            _nb_majority_jur = jurisdiction_by_code.get(majority_code)
+                            _nb_minority_jur = jurisdiction_by_code.get(minority_code)
+                            _nb_target_jur = jurisdiction_by_code.get(_nb_target.jurisdiction_code)
+                            _nb_by_jur = _nb_allocation.allocated_by_jurisdiction()
+                            _nb_structure = ProductionStructure(
+                                id=uuid.uuid4(), project_id=project.id,
+                                name=_nb_label,
+                                description=(
+                                    f"Official co-production between {majority_code} and {minority_code} "
+                                    f"under {_nb_comb_opp.treaty_slug} (neither party is this production's "
+                                    f"current home/service jurisdiction {home_code}), allocated by each "
+                                    f"party's real evidenced contribution share, with {_nb_component} work "
+                                    f"(${_nb_spend_amount:,.0f} of real project budget) routed to "
+                                    f"{_nb_target.jurisdiction_code} to claim "
+                                    f"{_program_display_name(_nb_target.program_slug)}."
+                                    + (f" {_nb_stacking_note}" if _nb_stacking_note else "")
                                 ),
-                                "is_baseline": False,
-                                "relocation_cost_normalized": False,
-                                "is_directly_comparable": False,
-                                "anchor_jurisdiction": majority_code,
-                                "anchor_program": _nb_majority_best.program_slug,
-                            },
-                            input_fingerprint=fingerprint,
-                        ))
-
-                    _nb_majority_jur = jurisdiction_by_code.get(majority_code)
-                    _nb_minority_jur = jurisdiction_by_code.get(minority_code)
-                    _nb_target_jur = jurisdiction_by_code.get(_nb_target.jurisdiction_code)
-                    _nb_by_jur = _nb_allocation.allocated_by_jurisdiction()
-                    _nb_structure = ProductionStructure(
-                        id=uuid.uuid4(), project_id=project.id,
-                        name=_nb_label,
-                        description=(
-                            f"Official co-production between {majority_code} and {minority_code} "
-                            f"under {_nb_comb_opp.treaty_slug} (neither party is this production's "
-                            f"current home/service jurisdiction {home_code}), allocated by each "
-                            f"party's real evidenced contribution share, with {_nb_component} work "
-                            f"(${_nb_spend_amount:,.0f} of real project budget) routed to "
-                            f"{_nb_target.jurisdiction_code} to claim "
-                            f"{_program_display_name(_nb_target.program_slug)}."
-                            + (f" {_nb_stacking_note}" if _nb_stacking_note else "")
-                        ),
-                        jurisdiction_allocations=[
-                            j for j in (
-                                {"jurisdiction_id": str(_nb_majority_jur.id), "shoot_pct": 0,
-                                 "budget_pct": round(100 * _nb_by_jur.get(majority_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if _nb_majority_jur else None,
-                                {"jurisdiction_id": str(_nb_minority_jur.id), "shoot_pct": 0,
-                                 "budget_pct": round(100 * _nb_by_jur.get(minority_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if _nb_minority_jur else None,
-                                {"jurisdiction_id": str(_nb_target_jur.id), "shoot_pct": 0,
-                                 "budget_pct": round(100 * _nb_by_jur.get(_nb_target.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                if _nb_target_jur else None,
-                            ) if j
-                        ],
-                        claimed_program_ids=_nb_claimed_programs + _nb_stack_program_slugs,
-                    )
-                    session.add(_nb_structure)
-                    await session.flush()
-                    _nb_conditional_program_dicts, _nb_conditional_compatibility_dict = _conditional_data(
-                        str(_nb_structure.id), majority_code, tuple(_nb_claimed_programs),
-                    )
-                    session.add(StructureCalculationResult(
-                        id=uuid.uuid4(), structure_id=_nb_structure.id, engine_version=ENGINE_VERSION,
-                        total_budget_usd=inputs.gross_budget_usd,
-                        total_incentive_value_usd=_nb_selected_incentive,
-                        true_net_cost_usd=_nb_pricing.npc_verified_usd,
-                        risk_adjusted_net_cost_usd=_nb_npc,
-                        has_unverified_inputs=True,
-                        warnings=[
-                            LIMITATION_NOTE,
-                            "Combined co-production + component-allocation + authorized-stack "
-                            "candidate (non-home-anchored): a new, additive structure topology — "
-                            "not directly comparable to single-leg structures' own NPC without "
-                            "confirming the same normalization basis.",
-                        ] + _nb_stack_notes,
-                        calculation_trace_json={
-                            "candidate_status": STATUS_PRICED,
-                            "discovery_classification": "combined_coproduction_component_stack",
-                            "structure_type": "hybrid",
-                            "primary_jurisdiction": home_code,
-                            "treaty_slug": _nb_comb_opp.treaty_slug,
-                            "program_slugs": _nb_claimed_programs + _nb_stack_program_slugs,
-                            "is_baseline": False,
-                            "relocation_cost_normalized": False,
-                            "is_directly_comparable": False,
-                            "anchor_jurisdiction": majority_code,
-                            "anchor_program": _nb_majority_best.program_slug,
-                            "coproduction_partners": [
-                                {
-                                    "jurisdiction_code": majority_code,
-                                    "jurisdiction_display_name": _nb_majority_jur.name if _nb_majority_jur else majority_code,
-                                    "allocated_usd": _nb_by_jur.get(majority_code, 0.0),
+                                jurisdiction_allocations=[
+                                    j for j in (
+                                        {"jurisdiction_id": str(_nb_majority_jur.id), "shoot_pct": 0,
+                                         "budget_pct": round(100 * _nb_by_jur.get(majority_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if _nb_majority_jur else None,
+                                        {"jurisdiction_id": str(_nb_minority_jur.id), "shoot_pct": 0,
+                                         "budget_pct": round(100 * _nb_by_jur.get(minority_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if _nb_minority_jur else None,
+                                        {"jurisdiction_id": str(_nb_target_jur.id), "shoot_pct": 0,
+                                         "budget_pct": round(100 * _nb_by_jur.get(_nb_target.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
+                                        if _nb_target_jur else None,
+                                    ) if j
+                                ],
+                                claimed_program_ids=_nb_claimed_programs + _nb_stack_program_slugs,
+                            )
+                            session.add(_nb_structure)
+                            await session.flush()
+                            _nb_conditional_program_dicts, _nb_conditional_compatibility_dict = _conditional_data(
+                                str(_nb_structure.id), majority_code, tuple(_nb_claimed_programs),
+                            )
+                            session.add(StructureCalculationResult(
+                                id=uuid.uuid4(), structure_id=_nb_structure.id, engine_version=ENGINE_VERSION,
+                                total_budget_usd=inputs.gross_budget_usd,
+                                total_incentive_value_usd=_nb_selected_incentive,
+                                true_net_cost_usd=_nb_pricing.npc_verified_usd,
+                                risk_adjusted_net_cost_usd=_nb_npc,
+                                has_unverified_inputs=True,
+                                warnings=[
+                                    LIMITATION_NOTE,
+                                    "Combined co-production + component-allocation + authorized-stack "
+                                    "candidate (non-home-anchored): a new, additive structure topology — "
+                                    "not directly comparable to single-leg structures' own NPC without "
+                                    "confirming the same normalization basis.",
+                                ] + _nb_stack_notes,
+                                calculation_trace_json={
+                                    "candidate_status": STATUS_PRICED,
+                                    "discovery_classification": "combined_coproduction_component_stack",
+                                    "structure_type": "hybrid",
+                                    "primary_jurisdiction": home_code,
+                                    "treaty_slug": _nb_comb_opp.treaty_slug,
+                                    "program_slugs": _nb_claimed_programs + _nb_stack_program_slugs,
+                                    "is_baseline": False,
+                                    "relocation_cost_normalized": False,
+                                    "is_directly_comparable": False,
+                                    "anchor_jurisdiction": majority_code,
+                                    "anchor_program": _nb_majority_best.program_slug,
+                                    "coproduction_partners": [
+                                        {
+                                            "jurisdiction_code": majority_code,
+                                            "jurisdiction_display_name": _nb_majority_jur.name if _nb_majority_jur else majority_code,
+                                            "allocated_usd": _nb_by_jur.get(majority_code, 0.0),
+                                        },
+                                        {
+                                            "jurisdiction_code": minority_code,
+                                            "jurisdiction_display_name": _nb_minority_jur.name if _nb_minority_jur else minority_code,
+                                            "allocated_usd": _nb_by_jur.get(minority_code, 0.0),
+                                        },
+                                    ],
+                                    "treaty_resolution_state": _nb_comb_opp.resolution_state,
+                                    "component_allocations": [{
+                                        "component": _nb_component,
+                                        "jurisdiction_code": _nb_target.jurisdiction_code,
+                                        "jurisdiction_display_name": _nb_target_jur.name if _nb_target_jur else _nb_target.jurisdiction_code,
+                                        "program_slug": _nb_target.program_slug,
+                                        "allocated_usd": _nb_by_jur.get(_nb_target.jurisdiction_code, 0.0),
+                                    }],
+                                    "stacking_note": _nb_stacking_note,
+                                    "stacked_programs": _nb_stack_program_slugs,
+                                    "selected_incentive_usd": _nb_selected_incentive,
+                                    "npc_verified_usd": _nb_pricing.npc_verified_usd,
+                                    "npc_with_adjustments_usd": _nb_npc,
+                                    "gross_budget_usd": inputs.gross_budget_usd,
+                                    "segments": _segment_dicts(_nb_pricing),
+                                    "conditional_programs": _nb_conditional_program_dicts,
+                                    "conditional_compatibility": _nb_conditional_compatibility_dict,
                                 },
-                                {
-                                    "jurisdiction_code": minority_code,
-                                    "jurisdiction_display_name": _nb_minority_jur.name if _nb_minority_jur else minority_code,
-                                    "allocated_usd": _nb_by_jur.get(minority_code, 0.0),
-                                },
-                            ],
-                            "treaty_resolution_state": _nb_comb_opp.resolution_state,
-                            "component_allocations": [{
-                                "component": _nb_component,
-                                "jurisdiction_code": _nb_target.jurisdiction_code,
-                                "jurisdiction_display_name": _nb_target_jur.name if _nb_target_jur else _nb_target.jurisdiction_code,
-                                "program_slug": _nb_target.program_slug,
-                                "allocated_usd": _nb_by_jur.get(_nb_target.jurisdiction_code, 0.0),
-                            }],
-                            "stacking_note": _nb_stacking_note,
-                            "stacked_programs": _nb_stack_program_slugs,
-                            "selected_incentive_usd": _nb_selected_incentive,
-                            "npc_verified_usd": _nb_pricing.npc_verified_usd,
-                            "npc_with_adjustments_usd": _nb_npc,
-                            "gross_budget_usd": inputs.gross_budget_usd,
-                            "segments": _segment_dicts(_nb_pricing),
-                            "conditional_programs": _nb_conditional_program_dicts,
-                            "conditional_compatibility": _nb_conditional_compatibility_dict,
-                        },
-                        input_fingerprint=fingerprint,
-                    ))
+                                input_fingerprint=fingerprint,
+                            ))
 
     eurimages_partners = find_eurimages_partners(home_code, candidate_codes)
     if eurimages_partners:
@@ -7099,6 +7888,283 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+
+        # Eight-control closeout, HO-012: a genuine N-way (N>=3) real
+        # multilateral co-production route DOES exist (Eurimages,
+        # min_coproducer_countries=3, real 10%/10% thresholds, real IE/
+        # FR/GB membership -- confirmed via direct treaty_engine.py
+        # query) -- but the EXISTING _eurimages_opp above is scoped to
+        # this production's FULL discovered candidate universe (often
+        # 30+ real Eurimages members), which would require a real
+        # contribution fact for every one of them before ever resolving
+        # ELIGIBLE -- impractical for a producer-INTENDED, specific-N-
+        # party structure. _real_multilateral_subset_participants reads
+        # whichever real, evidenced, treaty-scoped facts are actually on
+        # file (never a pre-known participant tuple) and treats THAT
+        # asserted, real subset as the candidate structure -- same
+        # real-facts-only contract, just not gated on the full candidate
+        # universe. Each member's own priced candidates (never just its
+        # single best) are tried in full cross-product, each combination
+        # attempted and persisted with a real terminal disposition.
+        _euri_subset_pcts, _euri_subset_cultural_passed = await _real_multilateral_subset_participants(
+            session, project.id, "eurimages", te.is_eurimages_member,
+        )
+        _euri_treaty_row = te.get_multilateral_treaty("eurimages")
+        _euri_min_parties = _euri_treaty_row.min_coproducer_countries if _euri_treaty_row else 2
+        _euri_min_pct = (
+            min(_euri_treaty_row.majority_min_pct, _euri_treaty_row.minority_min_pct)
+            if _euri_treaty_row else 0.0
+        )
+        _euri_subset_codes = sorted(_euri_subset_pcts)
+        _euri_below_min = [c for c in _euri_subset_codes if _euri_subset_pcts[c] < _euri_min_pct]
+        if _euri_subset_codes and (
+            len(_euri_subset_codes) < _euri_min_parties
+            or _euri_below_min
+            or _euri_subset_cultural_passed is not True
+        ):
+            _euri_reasons = []
+            if len(_euri_subset_codes) < _euri_min_parties:
+                _euri_reasons.append(
+                    f"only {len(_euri_subset_codes)} real asserted co-producer(s) on file "
+                    f"({_euri_subset_codes}) -- eurimages requires at least {_euri_min_parties}."
+                )
+            if _euri_below_min:
+                _euri_reasons.append(
+                    f"{_euri_below_min} claim a contribution share below eurimages' own real "
+                    f"{_euri_min_pct}% per-party minimum."
+                )
+            if _euri_subset_cultural_passed is not True:
+                _euri_reasons.append(
+                    "eurimages requires an explicit, evidenced cultural-test-passed fact "
+                    "(coproduction_cultural_test_passed::eurimages) -- none, or an unresolved/"
+                    "failed one, is on file."
+                )
+            _euri_unresolved_structure = ProductionStructure(
+                id=uuid.uuid4(), project_id=project.id,
+                name=f"{'+'.join(_euri_subset_codes)} multilateral co-production (eurimages, unresolved)",
+                description="Asserted multilateral co-production subset does not clear eligibility: "
+                + " ".join(_euri_reasons),
+                jurisdiction_allocations=[], claimed_program_ids=_euri_subset_codes,
+            )
+            session.add(_euri_unresolved_structure)
+            await session.flush()
+            session.add(StructureCalculationResult(
+                id=uuid.uuid4(), structure_id=_euri_unresolved_structure.id, engine_version=ENGINE_VERSION,
+                total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                calculation_trace_json={
+                    "candidate_status": "RULE_REJECTED",
+                    "rejection_reason_class": "MULTILATERAL_ELIGIBILITY_UNRESOLVED",
+                    "discovery_classification": "combined_multilateral_coproduction_stack",
+                    "structural_family": "combined_multilateral_coproduction_stack",
+                    "structure_type": "hybrid",
+                    "primary_jurisdiction": home_code,
+                    "treaty_slug": "eurimages",
+                    "program_slugs": _euri_subset_codes,
+                    "reason": " ".join(_euri_reasons),
+                    "is_baseline": False, "relocation_cost_normalized": False,
+                    "is_directly_comparable": False,
+                    "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                },
+                input_fingerprint=fingerprint,
+            ))
+        _euri_eligible_subset = (
+            len(_euri_subset_codes) >= _euri_min_parties
+            and not _euri_below_min
+            and _euri_subset_cultural_passed is True
+        )
+        if _euri_eligible_subset:
+            _euri_party_candidates = [
+                (code, priced_by_code.get(code, []))
+                for code in _euri_subset_codes
+            ]
+            if any(not cands for _code, cands in _euri_party_candidates):
+                _euri_missing = [code for code, cands in _euri_party_candidates if not cands]
+                _euri_no_partner_structure = ProductionStructure(
+                    id=uuid.uuid4(), project_id=project.id,
+                    name=f"{'+'.join(_euri_subset_codes)} multilateral co-production (eurimages, no priceable program)",
+                    description=(
+                        f"{_euri_missing} {'has' if len(_euri_missing) == 1 else 'have'} no "
+                        "independently-priceable program discovered for this production -- a "
+                        "claimed participant must have a real, priceable program, never an "
+                        "assumed one."
+                    ),
+                    jurisdiction_allocations=[], claimed_program_ids=_euri_subset_codes,
+                )
+                session.add(_euri_no_partner_structure)
+                await session.flush()
+                session.add(StructureCalculationResult(
+                    id=uuid.uuid4(), structure_id=_euri_no_partner_structure.id, engine_version=ENGINE_VERSION,
+                    total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                    true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    calculation_trace_json={
+                        "candidate_status": "RULE_REJECTED",
+                        "rejection_reason_class": "NO_PRICEABLE_TREATY_UNLOCK",
+                        "discovery_classification": "combined_multilateral_coproduction_stack",
+                        "structural_family": "combined_multilateral_coproduction_stack",
+                        "structure_type": "hybrid",
+                        "primary_jurisdiction": home_code,
+                        "treaty_slug": "eurimages",
+                        "program_slugs": _euri_subset_codes,
+                        "reason": f"No independently-priceable program for: {_euri_missing}.",
+                        "is_baseline": False, "relocation_cost_normalized": False,
+                        "is_directly_comparable": False,
+                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                    },
+                    input_fingerprint=fingerprint,
+                ))
+            else:
+                import itertools as _euri_itertools
+                for _euri_combo in _euri_itertools.product(*(cands for _code, cands in _euri_party_candidates)):
+                    _euri_participants = [
+                        (code, cand.program_slug) for (code, _), cand in zip(_euri_party_candidates, _euri_combo)
+                    ]
+                    _euri_claimed_programs = [slug for _code, slug in _euri_participants]
+                    _euri_label = "+".join(f"{code}:{slug}" for code, slug in _euri_participants) + " (eurimages)"
+                    try:
+                        _euri_spec, _euri_allocation, _euri_pricing = _price_combined_multilateral_coproduction_candidate(
+                            inputs, _euri_participants, "eurimages", _euri_subset_pcts,
+                        )
+                    except _InvalidCombinedAllocation as _euri_invalid:
+                        _euri_invalid_structure = ProductionStructure(
+                            id=uuid.uuid4(), project_id=project.id,
+                            name=f"{_euri_label} (multilateral, rejected)",
+                            description=f"Combined multilateral candidate rejected: {_euri_invalid.reason}",
+                            jurisdiction_allocations=[], claimed_program_ids=_euri_claimed_programs,
+                        )
+                        session.add(_euri_invalid_structure)
+                        await session.flush()
+                        session.add(StructureCalculationResult(
+                            id=uuid.uuid4(), structure_id=_euri_invalid_structure.id, engine_version=ENGINE_VERSION,
+                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                            calculation_trace_json={
+                                "candidate_status": "RULE_REJECTED",
+                                "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
+                                "discovery_classification": "combined_multilateral_coproduction_stack",
+                                "structural_family": "combined_multilateral_coproduction_stack",
+                                "structure_type": "hybrid",
+                                "primary_jurisdiction": home_code,
+                                "treaty_slug": "eurimages",
+                                "program_slugs": _euri_claimed_programs,
+                                "reason": _euri_invalid.reason,
+                                "is_baseline": False, "relocation_cost_normalized": False,
+                                "is_directly_comparable": False,
+                                "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                            },
+                            input_fingerprint=fingerprint,
+                        ))
+                        continue
+                    if not _euri_pricing.is_fully_priced:
+                        _euri_rej_status, _euri_rej_class = _classify_component_rejection(_euri_pricing.blockers)
+                        _euri_rej_structure = ProductionStructure(
+                            id=uuid.uuid4(), project_id=project.id,
+                            name=f"{_euri_label} (multilateral, rejected)",
+                            description=(
+                                "Multilateral co-production candidate does not clear pricing: "
+                                f"{'; '.join(_euri_pricing.blockers) or 'not fully priced.'}"
+                            ),
+                            jurisdiction_allocations=[], claimed_program_ids=_euri_claimed_programs,
+                        )
+                        session.add(_euri_rej_structure)
+                        await session.flush()
+                        session.add(StructureCalculationResult(
+                            id=uuid.uuid4(), structure_id=_euri_rej_structure.id, engine_version=ENGINE_VERSION,
+                            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                            calculation_trace_json={
+                                "candidate_status": _euri_rej_status,
+                                "rejection_reason_class": _euri_rej_class,
+                                "discovery_classification": "combined_multilateral_coproduction_stack",
+                                "structural_family": "combined_multilateral_coproduction_stack",
+                                "structure_type": "hybrid",
+                                "primary_jurisdiction": home_code,
+                                "treaty_slug": "eurimages",
+                                "program_slugs": _euri_claimed_programs,
+                                "reason": "; ".join(_euri_pricing.blockers) or "Not fully priced.",
+                                "is_baseline": False, "relocation_cost_normalized": False,
+                                "is_directly_comparable": False,
+                                "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                            },
+                            input_fingerprint=fingerprint,
+                        ))
+                        continue
+                    _euri_by_jur = _euri_allocation.allocated_by_jurisdiction()
+                    _euri_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=_euri_label,
+                        description=(
+                            "Genuine multilateral (Eurimages) co-production: "
+                            + ", ".join(f"{code} claims {slug}" for code, slug in _euri_participants)
+                            + ", each allocated by its own real evidenced contribution share."
+                        ),
+                        jurisdiction_allocations=[
+                            {
+                                "jurisdiction_id": str(jurisdiction_by_code[code].id),
+                                "shoot_pct": 100 if code == home_code else 0,
+                                "budget_pct": round(100 * _euri_by_jur.get(code, 0.0) / inputs.gross_budget_usd, 2),
+                            }
+                            for code, _slug in _euri_participants if code in jurisdiction_by_code
+                        ],
+                        claimed_program_ids=_euri_claimed_programs,
+                    )
+                    session.add(_euri_structure)
+                    await session.flush()
+                    _euri_conditional_program_dicts, _euri_conditional_compatibility_dict = _conditional_data(
+                        str(_euri_structure.id), home_code, tuple(_euri_claimed_programs),
+                    )
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_euri_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=_euri_pricing.selected_incentive_usd,
+                        true_net_cost_usd=_euri_pricing.npc_verified_usd,
+                        risk_adjusted_net_cost_usd=_euri_pricing.npc_with_adjustments_usd,
+                        has_unverified_inputs=True,
+                        warnings=[
+                            LIMITATION_NOTE,
+                            "Genuine N-way multilateral co-production candidate: a new, additive "
+                            "structure topology -- not directly comparable to single-leg, "
+                            "bilateral, or three-way combined structures' own NPC without "
+                            "confirming the same normalization basis.",
+                        ],
+                        calculation_trace_json={
+                            "candidate_status": STATUS_PRICED,
+                            "discovery_classification": "combined_multilateral_coproduction_stack",
+                            "structural_family": "combined_multilateral_coproduction_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": "eurimages",
+                            "program_slugs": _euri_claimed_programs,
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                            "coproduction_partners": [
+                                {
+                                    "jurisdiction_code": code,
+                                    "jurisdiction_display_name": (
+                                        jurisdiction_by_code[code].name if code in jurisdiction_by_code else code
+                                    ),
+                                    "program_slug": slug,
+                                    "allocated_usd": _euri_by_jur.get(code, 0.0),
+                                    "contribution_pct": _euri_subset_pcts.get(code),
+                                }
+                                for code, slug in _euri_participants
+                            ],
+                            "treaty_resolution_state": RESOLUTION_ELIGIBLE,
+                            "selected_incentive_usd": _euri_pricing.selected_incentive_usd,
+                            "npc_verified_usd": _euri_pricing.npc_verified_usd,
+                            "npc_with_adjustments_usd": _euri_pricing.npc_with_adjustments_usd,
+                            "gross_budget_usd": inputs.gross_budget_usd,
+                            "segments": _segment_dicts(_euri_pricing),
+                            "conditional_programs": _euri_conditional_program_dicts,
+                            "conditional_compatibility": _euri_conditional_compatibility_dict,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
 
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 3/CBA-006 — the same real, fail-closed

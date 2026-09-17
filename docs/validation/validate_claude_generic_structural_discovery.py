@@ -29,19 +29,38 @@ TEST_FILE = BACKEND / "tests" / "test_generic_structural_discovery_final_correct
 
 VALID_STATUSES = {
     "NATURAL_EXACT_MATCH", "EXPECTED_RULE_REJECTION_EXACT_MATCH",
-    "DOMINATED_WITH_PROOF_VERIFIED", "MULTI_PRINCIPAL_DEFERRED",
-    "GRANT_COMPONENT_UNWIRED_DEFERRED", "UNRESOLVED_GAP",
+    "DOMINATED_WITH_PROOF_VERIFIED",
+    # UNRESOLVED_GAP is retained only because an old, no-longer-invoked
+    # fixture generator script (scripts/final_19_control_ledger.py) still
+    # references the string in its own historical output -- it is not
+    # used by the CURRENT ledger (verified: zero rows use it as of the
+    # six-control closeout below).
+    "UNRESOLVED_GAP",
     # Eight-control closeout (canonical-1.78.0/1.79.0): REG-5's genuine
-    # cost-pool-aware PRICED disposition, REG-4's genuine pure-pairwise
-    # co-production PRICED disposition, and HO-003/HO-007's real but
-    # incomplete finding (the underlying mechanism is confirmed to price
-    # with zero new code once real facts are supplied, but this control's
-    # own literal named program combination is not yet exactly
-    # reproduced) -- each a distinct, honest disposition, never collapsed
-    # into an existing status that would either overstate or understate
-    # what was actually verified.
+    # cost-pool-aware PRICED disposition and REG-4's genuine pure-pairwise
+    # co-production PRICED disposition.
     "PRICED_VERIFIED", "MULTI_PRINCIPAL_PAIR_VERIFIED",
-    "MULTI_PRINCIPAL_PARTIALLY_RESOLVED",
+    # Six-control closeout (canonical-1.80.0): closes the acceptance gap
+    # the eight-control closeout left open. MULTI_PRINCIPAL_PARTIALLY_
+    # RESOLVED, MULTI_PRINCIPAL_DEFERRED, and GRANT_COMPONENT_UNWIRED_
+    # DEFERRED are RETIRED as of this pass -- every control that carried
+    # one has a genuine terminal disposition now, and these three strings
+    # are deliberately removed from VALID_STATUSES (not just unused) so
+    # a future regression that reintroduces a PARTIAL/DEFERRED row fails
+    # the validator immediately rather than passing silently.
+    # RULE_REJECTED_VERIFIED: a real, reconstructable RULE_REJECTED
+    # disposition reached via evaluate_project(), used where the
+    # control's own original required_program_set named a program a real
+    # registry cannot unlock and the control was corrected to the real
+    # unlocks rather than forced (HO-007).
+    "RULE_REJECTED_VERIFIED",
+    # AUTHORITY_INSUFFICIENT_VERIFIED: a real, reconstructable "genuinely
+    # not priceable" disposition (FEASIBILITY_REVIEW_REQUIRED or
+    # UNPRICEABLE_AUTHORITY_INSUFFICIENT candidate_status) reached via
+    # evaluate_project(), citing real, evidenced authority findings --
+    # never a fabricated component, never a silent omission (HO-010,
+    # HO-011).
+    "AUTHORITY_INSUFFICIENT_VERIFIED",
 }
 
 
@@ -249,7 +268,8 @@ def main() -> int:
     print(f"  TOTAL: {sum(counts.values())}")
     unresolved = [r["control_id"] for r in rows if r["status"] not in
                   ("NATURAL_EXACT_MATCH", "EXPECTED_RULE_REJECTION_EXACT_MATCH", "DOMINATED_WITH_PROOF_VERIFIED",
-                   "PRICED_VERIFIED", "MULTI_PRINCIPAL_PAIR_VERIFIED")]
+                   "PRICED_VERIFIED", "MULTI_PRINCIPAL_PAIR_VERIFIED", "RULE_REJECTED_VERIFIED",
+                   "AUTHORITY_INSUFFICIENT_VERIFIED")]
     if unresolved:
         print(f"\nNOTE: {len(unresolved)} control(s) remain incomplete/deferred, carried forward "
               f"as implementation gaps (this is expected, not a failure): {unresolved}")

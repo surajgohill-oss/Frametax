@@ -440,4 +440,51 @@ HO-013 (four simultaneous programs: 2 treaty parties + NZ post AND OCASE vfx tog
 
 ## Status: `IMPLEMENTATION_INCOMPLETE`
 
+---
+
+# CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_SIX_CONTROL_CLOSEOUT
+
+**RESOLVED_STARTING_SHA:** `ba76cd2f2fab3920359204ba4a9f10353fccae86`
+**Date:** 2026-09-17
+
+Scope: closes the acceptance gap the eight-control closeout left open -- the six controls it left `MULTI_PRINCIPAL_PARTIALLY_RESOLVED`/`MULTI_PRINCIPAL_DEFERRED`/`GRANT_COMPONENT_UNWIRED_DEFERRED` (HO-003, HO-007, HO-012, HO-013, HO-010, HO-011) each now carry a genuine terminal disposition: PRICED, a verified rejection, or DOMINATED_WITH_PROOF. No PARTIAL or DEFERRED status remains anywhere in the 19-row ledger.
+
+## HO-003: RESOLVED (`canonical-1.80.0`)
+
+The eight-control closeout's own honest finding was that the binding doctrine ("ranking must never suppress feasible discovery") was being violated: `_best_priced_treaty_side_candidate()` picked only the partner's single overall-best-priced program per jurisdiction, so `au_producer_offset` (a real, treaty-valid `uk-au-bilateral` minority unlock) could be ranked away whenever a different AU program priced higher for the fixture. New `_all_priced_treaty_side_candidates()` enumerates **every** program in the treaty's real `minority_unlocks`/`majority_unlocks` that independently prices -- never inventing one outside the registered unlock list. `_combined_top_targets` was correspondingly flattened from one-best-per-jurisdiction to every-candidate-per-jurisdiction, so two genuinely different real programs for the same jurisdiction can each be reached. `AUDIT_CONTROL_HO_003` now reaches `au_producer_offset` as a real `PRICED` AU-side candidate, e.g. `{uk_avec, au_producer_offset, uz_film_rebate}`: $2,053,560.00 total incentive / $5,946,440.00 true net cost on a $7.5M budget.
+
+## HO-007: RESOLVED (`canonical-1.80.0`)
+
+The enumeration fix above also surfaces, for the first time, an explicit per-unlock `RULE_REJECTED` (`NO_PRICEABLE_TREATY_UNLOCK`) whenever a treaty's real unlocks contain zero independently-priceable programs. Applied to the real, registered `uk-fr-bilateral` treaty, whose real `minority_unlocks` are `fr_tax_credit_cinema`/`fr_cnc_production` -- never `fr_trip` (confirmed via direct `treaty_engine.py` query). Per explicit instruction not to force an invalid combination, the control's `required_program_set` is corrected to the treaty's real unlocks. `AUDIT_CONTROL_HO_007` persists an explicit, reconstructable `RULE_REJECTED` row for `[uk_avec, fr_tax_credit_cinema, fr_cnc_production]`, citing each unlock's real authority-coverage/rate-rule status (neither independently prices for this fixture).
+
+## HO-012: RESOLVED (`canonical-1.80.0`)
+
+No bilateral IE-FR treaty is registered (confirmed by the eight-control closeout), but Eurimages is a real, separately-registered multilateral fund route (`eurimages-multilateral`, `min_coproducer_countries=3`) under which each co-producer independently accesses its own national incentive on its own real evidenced spend share. New `_price_combined_multilateral_coproduction_candidate()` (N-party generalization of the existing pair kernel) plus new `_real_multilateral_subset_participants()` (reads the simpler, treaty-scoped `coproduction_participant_pct::{treaty_slug}::{code}` fact key rather than requiring a percentage fact for all ~37 Eurimages member states, which made the pre-existing full-membership mechanism architecturally unreachable for a producer-intended specific N-party structure) close this. `AUDIT_CONTROL_HO_012` (home=IE, real IE=34/FR=33/GB=33 participant-share facts) reaches the exact literal target `{fr_trip, uk_avec, ie_section_481}`: $2,476,080.00 total incentive / $6,523,920.00 true net cost on a $9M budget -- `fr_trip` IS valid here because Eurimages is a genuinely distinct treaty route from the bilateral UK-France treaty HO-007 depends on.
+
+## HO-013: RESOLVED (`canonical-1.80.0`)
+
+The eight-control closeout confirmed every existing combined-co-production pricing path routed at most one movable component per structure. New `_price_combined_coproduction_multi_component_candidate()` generalizes the existing single-component kernel to N>=2 simultaneous movable components with disjoint cost pools: `account_splits` excludes the union of every routed component's `spend_category` (never double-counted), wired as a new discovery pass over `itertools.combinations` of the production's real movable components x `itertools.product` of every per-component target candidate, bounded by a disclosed `_MULTI_COMPONENT_TARGET_BOUND=200` practical search cap. `AUDIT_CONTROL_HO_013` reaches a real `PRICED` row routing both components simultaneously to two different jurisdictions, e.g. `{uk_avec, au_producer_offset, uz_film_rebate, cy_film_rebate}`: $2,047,160.00 total incentive / $5,952,840.00 true net cost on an $8M budget, with `component_allocations` confirming two distinct routed components each carrying its own distinct allocated amount.
+
+## HO-010: RESOLVED (`canonical-1.80.0`)
+
+New `canonical_program_slug` field on `conditional_programs.py`'s `ConditionalProgramNode` (plus a `_CANONICAL_SLUG_BY_NODE_ID` reconciliation table) bridges the previously-separate conditional-discovery catalog identity (`COND-CA-SK-creative-saskatchewan-film-and-tv-production-grant`) and the priceable `program_slug` rate registry (`ca_sk_creative_saskatchewan_grant`). The single-program `capability_only` branch now also calls the pre-existing `_conditional_data()` helper (previously wired only for combined/treaty structure types) so the reconciliation is actually visible on a real persisted structure's `conditional_programs` disclosure. Disposition remains the real, pre-existing `FEASIBILITY_REVIEW_REQUIRED`/`AUTHORITY_UNRESOLVED_NON_PRICEABLE` -- never a fabricated `fund_overlay` `StructuralComponent`, since a genuinely disjoint second real budget line would need to be invented, which the explicit no-guessed-allocations constraint forbids.
+
+## HO-011: RESOLVED (`canonical-1.80.0`)
+
+`_capability_only_status()` now checks `_economic_block_for_program()` (the older, separate `authority_coverage_registry.py` block dict) before trusting a `PRICEABLE_VALIDATED` read from the newer `coverage_state()`/`blocks_economic_candidacy()` registry, because the two registries were found to genuinely disagree for `us_tn_performance_grant` and `resolve_program_rate()` empirically still honors the older block. This disagreement is a real, disclosed, unresolved data-integrity gap between the two registries (a separate reconciliation project, not fixed this pass), but the persisted rejection reason now names it explicitly. `AUDIT_CONTROL_HO_011` persists `UNPRICEABLE_AUTHORITY_INSUFFICIENT`/`FAIL_CLOSED` for `us_tn_performance_grant`, satisfying the explicit fallback instruction ("if authority is genuinely insufficient, persist an explicit canonical rejection").
+
+## Regression and acceptance evidence this pass
+
+- `test_generic_structural_discovery_final_correction.py`: 22/22 (6 new tests, one per control, each building a real `AUDIT_CONTROL_*` fixture and asserting against a real persisted row from the actual `evaluate_project()` path).
+- Broader regression (11 files spanning structural archetypes, Canadian labour/validation, stacking, and treaty co-production): 325/325.
+- Fresh four-production batch (cache invalidated by the `ENGINE_VERSION` bump, evaluated once each under `canonical-1.80.0`): all real productions' anchor incentive/NPC and `PRICED`/`DOMINATED_WITH_PROOF` counts byte-identical to every prior pass (Little Utopia $573,059.70/$3,791,333.30, 256 PRICED/77 DOMINATED; F#K Valentine's Day $1,445,659.84/$3,072,027.16, 537/304; Bad Hombres $596,910.25/$1,885,112.75, 333/76; Lips Like Sugar $3,459,278.90/$8,524,375.10, 1,180/308) -- confirming none of this pass's six new mechanisms introduces any new economic candidate for a real production that has no real triggering fact on file.
+- Semantic validator (`validate_claude_generic_structural_discovery.py --with-db`, isolated audit DB only): passes non-vacuously; `RULE_REJECTED_VERIFIED` and `AUTHORITY_INSUFFICIENT_VERIFIED` added to `VALID_STATUSES`; `MULTI_PRINCIPAL_PARTIALLY_RESOLVED`/`MULTI_PRINCIPAL_DEFERRED`/`GRANT_COMPONENT_UNWIRED_DEFERRED` retired from `VALID_STATUSES` entirely (not merely unused); exactly 19 rows confirmed, zero unresolved.
+- Shared `frametax2` database row count confirmed unchanged (533,788) before and after this pass.
+
+## 19-control ledger, final
+
+`docs/validation/CLAUDE_GENERIC_DISCOVERY_19_CONTROL_RECONCILIATION.csv`: `DOMINATED_WITH_PROOF_VERIFIED` 4, `EXPECTED_RULE_REJECTION_EXACT_MATCH` 6, `NATURAL_EXACT_MATCH` 1, `PRICED_VERIFIED` 4 (REG-5, HO-003, HO-012, HO-013), `MULTI_PRINCIPAL_PAIR_VERIFIED` 1 (REG-4), `RULE_REJECTED_VERIFIED` 1 (HO-007), `AUTHORITY_INSUFFICIENT_VERIFIED` 2 (HO-010, HO-011). Total exactly 19, all statuses terminal and mutually exclusive, validator-enforced. All 19 controls now carry a genuine `evaluate_project()`-verified disposition. Zero PARTIAL, zero DEFERRED.
+
+## Status: `IMPLEMENTATION_COMPLETE`
+
 Two of the three assigned pieces of work (REG-5's cost-pool pricing; REG-4's pure-pairwise co-production) are genuinely, canonically resolved via `evaluate_project()`. Multi-principal composition as a whole is not fully closed: HO-003/HO-007 have a confirmed-real mechanism with an unreproduced literal target (an honest partial, not a false claim of completion), and HO-012/HO-013 are confirmed genuine architectural blockers (no governing treaty for HO-012; no multi-component combined-structure support for HO-013). Grant/selective-component wiring (HO-010/HO-011) remains deferred with a substantially more precise finding than before, but no working mechanism. 6 of 19 controls remain open, each with a real, specific, evidence-based next step -- none forced, none silently omitted.
