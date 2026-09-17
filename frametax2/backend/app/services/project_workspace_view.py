@@ -81,74 +81,25 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     # off ANY current-engine result row for this project instead — every
     # row from one evaluation run shares one fingerprint by construction.
     engine_version = ENGINE_VERSION
-    # Producer Display Names + Budget Rail User Assumptions closeout —
-    # correctness fix, not a doctrine change (same fix, same reasoning,
-    # as canonical_production_view.py's identical query): rows are never
-    # deleted when a new evaluation runs, so once a producer changes a
-    # fingerprint-participating assumption (contingency_expected_
-    # utilization_pct, financing_cost_usd, ...) and later reverts it,
-    # MULTIPLE real fingerprints legitimately coexist for this project —
-    # an unordered `.limit(1)` could pick a stale one. The only correct
-    # source for "this project's current fingerprint" is the SAME
-    # computation evaluate_project() uses — recomputed here READ-ONLY
-    # (no script analysis / artwork extraction / new rows) so this stays
-    # a cheap read, never a second evaluation entry point.
-    from app.services.canonical_evaluation import (
-        _compute_fingerprint, _coproduction_facts, _excluded_jurisdiction_codes,
-        _discretionary_policy_facts,
-    )
-    from app.services.canonical_project_economics import build_project_economic_inputs
-    from app.calculators.canonical_role_qualification_bridge import (
-        role_known_codes_from_project, script_facts_from_project,
-    )
-    fingerprint = None
-    # READ PURITY: this is a GET/read builder. read_only=True keeps
-    # fingerprint reconstruction side-effect free (no budget routing, no
-    # home-jurisdiction persistence, no ProjectFact write, no commit).
-    econ = await build_project_economic_inputs(session, project.id, read_only=True)
-    if econ.ok:
-        role_known_codes = await role_known_codes_from_project(session, str(project.id))
-        script_facts = await script_facts_from_project(session, str(project.id))
-        coproduction_facts = await _coproduction_facts(session, project.id)
-        # Batched producer-control closeout (2026-09-03) — same fix,
-        # same reasoning, as canonical_production_view.py's identical
-        # call: must reuse the exact same fingerprint inputs
-        # evaluate_project() itself uses, including
-        # excluded_jurisdiction_codes, or this read-only reconstruction
-        # silently diverges from what was actually persisted the moment
-        # a project has any jurisdiction exclusion on file.
-        excluded_jurisdiction_codes = frozenset(await _excluded_jurisdiction_codes(session, project.id))
-        # Item B (Final non-Globe closeout, 2026-09-04) — same THIRD
-        # fingerprint call site this whole module's header comment warns
-        # about keeping in sync; must carry the identical
-        # discretionary_policy_facts evaluate_project() itself uses.
-        discretionary_policy_facts = await _discretionary_policy_facts(session, project.id)
-        # Codex final P0 (canonical_fx) — same fix as canonical_evaluation.
-        # current_generation_fingerprint(): evaluate_project() attaches a
-        # freshly-built fx_context to `inputs` before computing its
-        # fingerprint (fx_snapshot_date is now part of the payload), so
-        # this THIRD read-only reconstruction must attach the identical
-        # context or it silently diverges.
-        import dataclasses
-        from app.calculators.production_normalization import build_fx_context
-        econ_inputs = dataclasses.replace(econ.inputs, fx_context=build_fx_context())
-        fingerprint = _compute_fingerprint(
-            econ_inputs, role_known_codes=role_known_codes, script_facts=script_facts,
-            coproduction_facts=coproduction_facts,
-            excluded_jurisdiction_codes=excluded_jurisdiction_codes,
-            discretionary_policy_facts=discretionary_policy_facts,
-        )
-    if fingerprint is None:
-        fingerprint = (await session.execute(
-            select(StructureCalculationResult.input_fingerprint)
-            .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-            .where(
-                ProductionStructure.project_id == project.id,
-                StructureCalculationResult.engine_version == engine_version,
-            )
-            .order_by(StructureCalculationResult.created_at.desc())
-            .limit(1)
-        )).scalar_one_or_none()
+    # Backend-wiring self-audit fix (2026-09-17): this module's own
+    # comment history ("the THIRD fingerprint call site this whole
+    # module's header comment warns about keeping in sync") predicted
+    # exactly the failure that was found live: canonical_evaluation.py's
+    # own _coproduction_facts() signature was changed (P0-QUAL-001) to
+    # require (treaty_slug, participant_codes) -- a per-candidate scope,
+    # not a project-global read -- and this hand-rolled reimplementation
+    # was never updated to match, so GET /workspace crashed with a
+    # TypeError for any project carrying co-production facts on file.
+    # canonical_evaluation.py already exports current_generation_
+    # fingerprint(session, project_id), explicitly documented as "THE
+    # single canonical generation identity... so no second freshness
+    # architecture is ever invented" -- this hand-rolled block was
+    # exactly the second (and, by the time of this fix, broken)
+    # architecture that doctrine warns against, also missing the role_
+    # attachment_facts/company-period-prior-award-facts inputs the
+    # canonical function already carries. Replaced with a direct call.
+    from app.services.canonical_evaluation import current_generation_fingerprint
+    fingerprint = await current_generation_fingerprint(session, project.id)
 
     if fingerprint:
         rows = (await session.execute(

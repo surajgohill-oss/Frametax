@@ -1342,3 +1342,84 @@ async def test_ho011_tennessee_participates_in_full_discovery_not_only_standalon
         "(component_relocation, structural_archetype_generator, etc.) must also reach it "
         "now that the stale source-level block is removed"
     )
+
+
+# ---------------------------------------------------------------------------
+# Backend-wiring self-audit (2026-09-17): a real project driven through the
+# normal API/ingestion path (POST /api/v1/projects -> upload/import a real
+# budget CSV -> real classification -> evaluate) surfaced a genuine crash in
+# the SERVED GET /workspace endpoint for any project carrying real
+# co-production ProjectFacts: project_workspace_view.py's own hand-rolled
+# fingerprint reconstruction called canonical_evaluation._coproduction_facts()
+# with its OLD, pre-P0-QUAL-001 two-argument signature -- that function has
+# required (treaty_slug, participant_codes) for a long time (it is scoped
+# per-candidate, not project-global), so the call raised TypeError. No
+# existing test ever exercised build_project_workspace_view() against a
+# project with real coproduction_*_pct ProjectFacts on file, so this was
+# never caught. Fixed by replacing the entire hand-rolled block with a call
+# to canonical_evaluation.current_generation_fingerprint() -- already
+# documented as "THE single canonical generation identity... so no second
+# freshness architecture is ever invented" -- which this module's own prior
+# comment history had already predicted would eventually drift out of sync.
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_workspace_view_survives_real_coproduction_facts_without_stale_signature_crash(db: AsyncSession):
+    """GET /workspace (project_workspace_view.build_project_workspace_view)
+    must not crash for a project carrying real co-production contribution
+    facts -- confirmed live via a genuine TypeError before this fix."""
+    from app.services.project_workspace_view import build_project_workspace_view
+
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_WORKSPACE_COPRO", "GB",
+        [
+            ("2000 ATL DIRECTOR FEE", 7_200_000.0, "atl_director"),
+            ("8000 POST PRODUCTION", 500_000.0, "post_production"),
+            ("8100 VFX", 300_000.0, "vfx"),
+        ],
+    )
+    await _add_treaty_contribution_facts(db, project.id, "uk-au-bilateral", "GB", "AU", 70, 30)
+    await _add_gb_director_writer_personnel(db, project.id)
+
+    result = await ce.evaluate_project(db, project.id)
+    fingerprint = result["state_fingerprint"]
+
+    view = await build_project_workspace_view(db, project.id)
+    assert view["status"] == "OK", view
+    assert view["evaluation"]["status"] == "EVALUATION_COMPLETE"
+
+    # The view's own reconstructed fingerprint must match what evaluate_
+    # project() itself just persisted -- a silent mismatch (not a crash)
+    # would be an equally real, if less visible, defect (serving a
+    # different generation than the one just computed).
+    served_row_ids = {
+        row["structure_id"]
+        for row in (view["evaluation"]["comparable"] + view["evaluation"]["review_required"] + view["evaluation"]["unpriceable"])
+    }
+    db_rows = (
+        await db.execute(
+            text(
+                """
+                SELECT ps.id FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
+                """
+            ),
+            {"pid": str(project.id), "fp": fingerprint},
+        )
+    ).scalars().all()
+    db_row_ids = {str(x) for x in db_rows}
+    assert served_row_ids <= db_row_ids, (
+        "the served workspace view includes a structure_id not persisted under the "
+        "fingerprint evaluate_project() just computed -- fingerprint reconstruction diverged"
+    )
+
+
+def test_project_workspace_view_reuses_the_canonical_fingerprint_function():
+    """The fix must eliminate the duplicated, drift-prone hand-rolled
+    fingerprint reconstruction entirely -- not just patch the one broken
+    call -- by calling canonical_evaluation.current_generation_fingerprint()
+    directly, matching this codebase's own explicit single-source-of-truth
+    doctrine for generation identity."""
+    src = (Path(ce.__file__).parent / "project_workspace_view.py").read_text()
+    assert "current_generation_fingerprint" in src
+    assert "_coproduction_facts(session, project.id)" not in src
