@@ -642,6 +642,21 @@ async def build_project_economic_inputs(
         select(ProjectFact).where(ProjectFact.project_id == project_id)
     )).scalars().all()
 
+    # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION, labour-basis
+    # pass: derive CPTC/PSTC qualified-labour amount facts from real,
+    # evidenced line-level facts (canadian_labour_basis.py) rather than
+    # letting ATL_DIRECTOR/ATL_WRITER/ATL_PRODUCER/ATL_CAST spend qualify
+    # by spend_category alone -- the confirmed defect this pass fixes.
+    # An explicit caller-supplied amount_fact (e.g. a project-level
+    # override) always wins; this only FILLS IN keys not already present.
+    from app.calculators.canadian_labour_basis import derive_canadian_labour_basis, to_amount_facts
+    _base_amount_facts = _amount_facts(fact_rows)
+    _cdn_labour_result = derive_canadian_labour_basis(
+        lines=lines, fact_rows=fact_rows, gross_budget_usd=float(doc.total_budget_raw),
+    )
+    for _k, _v in to_amount_facts(_cdn_labour_result).items():
+        _base_amount_facts.setdefault(_k, _v)
+
     from app.models.production_requirement import ProductionRequirement
     requirements_on_file = (await session.execute(
         select(ProductionRequirement.id).where(ProductionRequirement.project_id == project_id)
@@ -674,7 +689,7 @@ async def build_project_economic_inputs(
         ),
         financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
         evidenced_program_facts=_evidenced_program_facts(fact_rows),
-        amount_facts=_amount_facts(fact_rows),
+        amount_facts=_base_amount_facts,
         # Financing ALREADY inside the source gross budget. Derived from the
         # normalized lines' own canonical category, so it follows the source
         # document rather than a per-production assumption.

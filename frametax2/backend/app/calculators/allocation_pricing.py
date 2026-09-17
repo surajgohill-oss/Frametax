@@ -755,6 +755,26 @@ def price_segment(
                 from app.data.program_rate_rules import oregon_per_payee_capped_total
                 _per_line_amounts = [_qualifies_cb.get(a.line_id, 0.0) for a in _cb_lines]
                 _derived_subtotal = oregon_per_payee_capped_total(_per_line_amounts)
+            elif _cond.amount_fact_key in (
+                "ca_federal_cptc_qualified_labour_usd", "ca_federal_pstc_qualified_labour_usd",
+            ) and _cond.amount_fact_key in _caller_amount_facts:
+                # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION,
+                # canonical Canadian labour fact model: same precedented
+                # pattern as the us_or_payroll_qpe_usd case immediately
+                # above, applied at THIS earlier reconciliation point too
+                # (price_segment's own pre-rate-resolution check -- a
+                # separate code path from allocation_pricing's later
+                # component-basis check, which received the identical fix
+                # for the identical reason). canadian_labour_basis.
+                # derive_canadian_labour_basis()'s caller-supplied value is
+                # already the final, statutorily-capped (CPTC's lesser-of-
+                # eligible-or-60%-of-net-production-cost, per [CPTC-GUIDE]/
+                # [T1131]) or residency/service-location-gated (PSTC, per
+                # [PSTC-GUIDE]) qualified-labour figure -- re-deriving a
+                # raw per-line sum here and demanding an exact match would
+                # defeat that upstream cap/exclusion logic, exactly the
+                # false-mismatch risk the Oregon case documents.
+                _derived_subtotal = round(_caller_amount_facts[_cond.amount_fact_key], 2)
             else:
                 _derived_subtotal = round(sum(_qualifies_cb.get(a.line_id, 0.0) for a in _cb_lines), 2)
             # CLAUDE_GLOBAL_OPTIMIZER_REMEDIATION_FROM_CODEX_ORACLE
@@ -1183,6 +1203,30 @@ def price_segment(
                 _traced_subtotal = oregon_per_payee_capped_total(
                     [_qualifies_by_line_id.get(_a.line_id, 0.0) for _a in _traced_lines],
                 )
+            elif (
+                ("ca_federal_cptc_qualified_labour_usd" in (amount_facts or {}) and slug == "ca_federal_cptc")
+                or ("ca_federal_pstc_qualified_labour_usd" in (amount_facts or {}) and slug == "ca_federal_pstc")
+            ):
+                # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION,
+                # canonical Canadian labour fact model: same precedented
+                # pattern as the us_or_payroll_qpe_usd case above. The
+                # caller-supplied amount_fact here is NOT a raw category
+                # subtotal awaiting confirmation -- it is
+                # canadian_labour_basis.derive_canadian_labour_basis()'s
+                # own already-capped, already-look-through-adjusted,
+                # already-deferral/contingent-excluded qualified-labour
+                # figure (the lesser of evidenced eligible labour and
+                # CPTC's 60%-of-net-production-cost cap, per [CPTC-GUIDE]/
+                # [T1131]; PSTC's distinct residency/service-location-
+                # gated figure, uncapped, per [PSTC-GUIDE]). Re-deriving a
+                # RAW per-line sum here and demanding an exact match to it
+                # would defeat the cap/look-through/exclusion logic that
+                # already ran upstream -- exactly the false-mismatch risk
+                # the Oregon case above already documents for the same
+                # reason. Trust the upstream derivation as the traced
+                # subtotal; this branch performs no re-derivation.
+                _key = f"{slug}_qualified_labour_usd"
+                _traced_subtotal = round((amount_facts or {})[_key], 2)
             else:
                 _traced_subtotal = round(
                     sum(_qualifies_by_line_id.get(_a.line_id, 0.0) for _a in _traced_lines), 2,
