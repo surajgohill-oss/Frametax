@@ -42,5 +42,46 @@
       "reason": "Superseded by this pass's canonical_evaluation.py qualification-downgrade fix -- see CANONICAL_FOUR_PROGRAM_REMEDIATION_CLAUDE.csv Bulgaria row."
     }
   ],
-  "precedence_rule": "When any two artifacts disagree about a program's CURRENT state: (1) the live executable registries (authority_coverage_registry.py, program_rate_rules_worldwide.py, program_rate_rules.py, canonical_executable_registry.py) always control over any CSV/MD description of them; (2) among CSV/MD artifacts, the one with the LATEST commit timestamp on the implementation branch (claude/audit-frametax-features-NZcX5) controls over any artifact read from a research/audit branch; (3) a research/audit branch artifact (e.g. codex/305-program-delta-audit-20260915) is read-only input, never itself controlling state, and is never merged."
+  "precedence_rule": "When any two artifacts disagree about a program's CURRENT state: (1) the live executable registries (authority_coverage_registry.py, program_rate_rules_worldwide.py, program_rate_rules.py, canonical_executable_registry.py) always control over any CSV/MD description of them; (2) among CSV/MD artifacts, the one with the LATEST commit timestamp on the implementation branch (claude/audit-frametax-features-NZcX5) controls over any artifact read from a research/audit branch; (3) a research/audit branch artifact (e.g. codex/305-program-delta-audit-20260915) is read-only input, never itself controlling state, and is never merged.",
+  "global_optimizer_structural_discovery_lineage": {
+    "note": "A SEPARATE lineage (branch claude/global-optimizer-remediation) from the authority-coverage lineage this file otherwise documents. Recorded here per this lineage's own explicit instruction not to create a competing artifact-precedence file.",
+    "current_controlling_closeout": {
+      "artifact": "docs/validation/CLAUDE_STRUCTURAL_STACKING_RUNTIME_CLOSEOUT.md",
+      "role": "Append-only, chronological closeout for every workstream in this lineage. The LAST section (newest at the bottom) is always current; earlier sections are historical record of what that pass actually did, not a competing 'final' claim."
+    },
+    "current_engine_source": {
+      "artifact": "frametax2/backend/app/services/canonical_evaluation.py (ENGINE_VERSION constant, read live)",
+      "role": "The sole source of truth for which discovery/pricing logic actually ran for a given persisted row (StructureCalculationResult.engine_version). A closeout's PROSE claiming a mechanism works is evidence to verify against this file's live behavior, never truth to repeat -- e.g. the canonical-1.71.0 closeout claimed a complete branch-and-bound; live instrumentation in the canonical-1.72.0 pass found a real indentation bug that had silently neutered it."
+    },
+    "superseded_artifacts": [
+      {
+        "artifact": "_NAMED_ACCEPTANCE_CONTROL_TARGETS (a former constant in canonical_evaluation.py, commit 35df531f, removed by canonical-1.71.0)",
+        "reason": "A named-program/jurisdiction allowlist that made two specific oracle examples appear without proving generic discovery. Removed; must never be reintroduced under any name."
+      },
+      {
+        "artifact": "_HYBRID_BB_MAX_EXAMINED_PER_SUBSET / the SEARCH_DEPTH_LIMIT_REACHED disposition (canonical-1.71.0)",
+        "reason": "A fixed, disclosed search-depth cap -- honest but not complete. Superseded by canonical-1.72.0's proof-based (pigeonhole exchange argument) window, which widens on failure until a real result is found or the space is exhausted, so every unexamined remainder is always DOMINATED_WITH_PROOF, never an admitted budget cutoff."
+      },
+      {
+        "artifact": "DOMINATED_WITH_PROOF rows persisted under canonical-1.72.0 (aggregate count/window-size only, no component_target_windows/incumbent_structure_id)",
+        "reason": "Superseded by canonical-1.73.0's reconstruction-data fix: a proof a reviewer cannot independently verify without re-running the exact code is not fully reconstructable. 1.73.0 rows carry the exact real candidates examined per component and the specific incumbent structure the bound is measured against."
+      },
+      {
+        "artifact": "The prior pass's own capability-ledger claim of '7/7 passing' for tests/test_generic_structural_discovery_final_correction.py",
+        "reason": "False when written -- the file contained 3 real test functions. Superseded by the canonical-1.73.0 pass, which corrected the claim and brought the file to 8 real, pytest-collected, passing tests before recording any count."
+      }
+    ],
+    "current_control_reconciliation": {
+      "artifact": "docs/validation/CLAUDE_GENERIC_DISCOVERY_19_CONTROL_RECONCILIATION.csv",
+      "role": "The SOLE authoritative per-control status for all 13 HO controls + 6 registered controls in this lineage, as of canonical-1.73.0. A direct-generator unit test proves the generic mechanism CAN compute a structure's economics; it is never itself canonical-runtime acceptance evidence -- only a row in this CSV, backed by a real evaluate_project() call (natural match on a real production, or an AUDIT_CONTROL_* fixture confined to frametax2_claude_generic_discovery_audit_20260917), controls."
+    },
+    "current_semantic_validator": {
+      "artifact": "docs/validation/validate_claude_generic_structural_discovery.py",
+      "role": "DB-connected validator for this lineage (supersedes relying solely on docs/validation/validate_claude_global_stacking_closeout.py, which is schema/import-check only and predates this lineage's DOMINATED_WITH_PROOF reconstruction-data requirements). Refuses to run its DB-backed checks against any database other than the isolated audit database."
+    },
+    "isolated_audit_database": {
+      "artifact": "frametax2_claude_generic_discovery_audit_20260917 (local Postgres, pg_dump/pg_restore snapshot of the shared frametax2 database)",
+      "role": "The ONLY database this lineage's DB-backed tests, audit fixtures, and semantic validator may target. The shared frametax2 database is read-only context for this lineage from this pass forward -- never a target for AUDIT_CONTROL_* fixtures or test writes."
+    }
+  }
 }
