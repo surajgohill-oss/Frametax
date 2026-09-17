@@ -15,7 +15,7 @@ Status: `GROSS_UP_FORENSIC_RESEARCH_COMPLETE_WITH_DOCUMENTED_AUTHORITY_GAPS`
 
 Current Revenue guidance confirms that eligible producer-related fees are paid fees for real producer services included in total cost, substantiated as related-party transactions, wholly/exclusively/necessarily incurred, and priced at arm’s length. The stated parameters are 15% of final global budget when eligible expenditure exceeds 80% of global budget and 10% when it is below 80%; Revenue also says these are not absolute maxima and higher amounts require substantiation. Deferred fees qualify only if paid no later than four months after completion. Compensation dependent on film receipts, earnings or profits is excluded. Credit notes, bank statements, invoices, coded ledgers and film-group transaction records are required; unincurred or inflated recharges do not qualify.
 
-The complete “paid fee then recontributed as equity” chain is **not authority-confirmed**. Neither receivable capitalization nor circular/temporary payment was established as payment. Loan-funded payment does not erase the debt. Therefore Ireland is a paid-by-deadline opportunity for a genuine fee, but the proposed gross-up/reinvestment chain remains ruling-required.
+The former blanket treatment of every “paid fee then recontributed as equity” chain as authority-silent is superseded by the transaction-specific reconciliation in `CODEX_REINVESTMENT_IN_KIND_OPPORTUNITY_LEDGER.csv`. An unrelated vendor's genuine arm's-length fee followed by a genuinely independent at-risk investment is supported as two separate transactions; the investment is financing, never QPE. A related-party or contractually linked chain remains ruling/counsel-required. Recycling the same fee proceeds as required non-S481 financing, inflated fees, receivable capitalization and circular/temporary payment do not become eligible merely through timing. Loan-funded payment does not erase the debt.
 
 ## Classification of opportunities
 
@@ -23,7 +23,7 @@ The complete “paid fee then recontributed as equity” chain is **not authorit
 - **Paid-by-deadline:** Ireland deferred fees paid no later than four months after completion. This corrects the prior statement that only Canada had a reviewed express deadline.
 - **Industry-practice-only:** the official 2019 government audit documents Revenue’s producer-fee review and disallowance of claimed-but-unpaid expenditure; it does not authorize reinvestment.
 - **Excluded:** Ireland compensation dependent on receipts/earnings/profits; unincurred/inflated recharges; cost erased by credit/forgiveness to the extent no longer actually incurred.
-- **Agency-ruling-required:** paid-then-reinvested equity, receivable contribution/capitalization, in-kind FMV without express authority, circular/temporary payment, and the complete loan-funded gross-up chain.
+- **Transaction-specific:** unrelated and genuinely independent paid-then-invested flows are separate eligible-cost and financing events; related-party or linked reinvestment, receivable contribution/capitalization, in-kind FMV without express authority, non-required-financing circular variants, and the complete loan-funded gross-up chain remain ruling/counsel-required. Same-dollar recycling as required non-S481 financing is prohibited on the stated facts.
 
 ## Four-project economics
 
@@ -32,8 +32,8 @@ Changing-denominator producer-fee ceilings use `x = max(0, (p × B − C) / (1 �
 ## Exact remaining research gaps
 
 1. Program-specific transaction rules remain unresolved wherever the 658-row crosswalk says `UNRESOLVED_FROM_CURRENT_AUTHORITY_RECORD` or `AUTHORITY_SILENT_RULING_REQUIRED`.
-2. No public complete Ireland transaction example was found proving fee payment followed by equity recontribution while preserving QPE.
-3. Ireland receivable capitalization, non-cash settlement, circular payment, and full loan-funded chain require a written ruling.
+2. No public complete Ireland example resolves a related-party or contractually linked fee-payment/equity-reinvestment chain; that narrower chain requires ruling/counsel.
+3. Ireland receivable capitalization, non-cash settlement, circular payment outside the expressly prohibited required-financing case, and the full loan-funded chain require a written ruling.
 4. The Ireland 80% boundary text says “in excess of” and “less than”; treatment at exactly 80% is unresolved in the retrieved passage.
 5. Project-specific eligible-spend ratios, genuine incremental services, payments, tax reporting, assistance adjustments and audit evidence are not present for the four budgets.
 

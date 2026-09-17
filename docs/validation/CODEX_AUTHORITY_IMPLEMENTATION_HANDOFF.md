@@ -50,9 +50,11 @@ Implementation must consume `CODEX_CAP_HEADROOM_CATEGORY_RULES.csv` only as ceil
 
 Status: `RESEARCH_COMPLETE_WITH_DOCUMENTED_AUTHORITY_GAPS_NOT_IMPLEMENTATION_PERMISSION`
 
-The 658-identity transaction crosswalk is `CODEX_GROSS_UP_AUTHORITY_CROSSWALK.csv`. Ireland Section 481 corrects the earlier Canada-only deadline statement: current Revenue guidance permits deferred fees only when paid no later than four months after completion and describes 15%/10% producer-fee parameters, real-service, actual-cost, related-party, arm’s-length and records requirements. It does **not** confirm the complete paid-then-reinvested, receivable-capitalization, circular-payment or loan-funded gross-up chain.
+The 658-identity transaction crosswalk is `CODEX_GROSS_UP_AUTHORITY_CROSSWALK.csv`. Ireland Section 481 corrects the earlier Canada-only deadline statement: current Revenue guidance permits deferred fees only when paid no later than four months after completion and describes 15%/10% producer-fee parameters, real-service, actual-cost, related-party, arm’s-length and records requirements. The later transaction-specific reconciliation supersedes the blanket conclusion for every paid-then-reinvested flow: an unrelated vendor's arm's-length paid fee and genuinely independent later at-risk investment are separate cost and financing events; related-party or contractually linked reinvestment remains ruling/counsel-required; same-dollar recycling as required non-S481 financing is prohibited on the stated facts. Receivable capitalization, in-kind FMV, other circular variants and the full loan-funded chain remain unresolved without ruling/counsel.
 
 Implementation remains fail-closed: use fixed-point arithmetic only to disclose theoretical ceiling headroom; never label it QPE or NPC benefit; require real project facts and, for the unresolved complete chain, a written ruling. Preserve every payable, loan and equity flow exactly once.
+
+The controlling product handoff for these opportunity paths is `CODEX_REINVESTMENT_IN_KIND_UI_HANDOFF.md`, with candidate-level treatment in `CODEX_REINVESTMENT_IN_KIND_OPPORTUNITY_LEDGER.csv`. It preserves visibility while defaulting manual, conditional and ruling-required amounts to zero and keeps QPE, financing and replacement-cost benefit separate.
 
 ## 2026-09-17 final labour / stacking / structural authority consolidation
 

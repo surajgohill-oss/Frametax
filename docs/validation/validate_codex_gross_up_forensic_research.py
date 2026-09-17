@@ -105,8 +105,55 @@ require(len(ie_rules) == 2, f"expected two mutually exclusive Ireland producer-f
 require({r.get("cap_percentage") for r in ie_rules} == {"10", "15"}, "Ireland cap parameter set must be 10 and 15")
 for row in ie_rules:
     require(row.get("cap_type") == "PERCENT_OF_FINAL_GLOBAL_BUDGET_FIXED_POINT", "Ireland rule must identify changing denominator")
-    require("AUTHORITY_SILENT" in row.get("reinvestment_treatment", ""), "Ireland cap permission incorrectly treated as reinvestment permission")
+    require("TIERED_UNRELATED_INDEPENDENT_SUPPORTED" in row.get("reinvestment_treatment", ""), "Ireland transaction-specific reinvestment treatment missing")
+    require("RELATED_OR_LINKED_RULING_REQUIRED" in row.get("reinvestment_treatment", ""), "Ireland related/linked ruling gate missing")
     require("SEPARATE" in row.get("paid_then_reinvested_treatment", ""), "Ireland payment/equity flows are not separated")
+
+opportunities = load_csv("CODEX_REINVESTMENT_IN_KIND_OPPORTUNITY_LEDGER.csv")
+allowed_opportunity_classes = {
+    "SUPPORTED_OPPORTUNITY", "CONDITIONAL_OPPORTUNITY", "RULING_OR_COUNSEL_REQUIRED",
+    "MANUAL_ONLY", "PROHIBITED",
+}
+expected_opportunity_counts = {
+    "SUPPORTED_OPPORTUNITY": 2,
+    "CONDITIONAL_OPPORTUNITY": 21,
+    "RULING_OR_COUNSEL_REQUIRED": 8,
+    "MANUAL_ONLY": 12,
+    "PROHIBITED": 3,
+}
+required_opportunity_fields = [
+    "candidate_id", "program_slug", "jurisdiction", "opportunity_mechanism",
+    "eligible_category_or_cap", "unused_headroom_basis", "payment_or_deferment_deadline",
+    "arm_length_and_related_party_requirements", "in_kind_or_fmv_treatment",
+    "later_investment_effect_on_original_expense", "required_evidence_and_project_facts",
+    "authority_citations", "classification", "ui_treatment",
+    "canonical_calculation_treatment", "remaining_agency_ruling_question",
+]
+require(len(opportunities) == 46, f"opportunity ledger must contain 46 rows, got {len(opportunities)}")
+require(len({r.get("candidate_id") for r in opportunities}) == len(opportunities), "opportunity candidate IDs are not unique")
+require(Counter(r.get("classification") for r in opportunities) == Counter(expected_opportunity_counts), "opportunity classification counts changed")
+for row in opportunities:
+    cid = row.get("candidate_id", "<missing>")
+    require(row.get("classification") in allowed_opportunity_classes, f"{cid}: invalid opportunity classification")
+    for field in required_opportunity_fields:
+        require(bool(row.get(field, "").strip()), f"{cid}: blank required opportunity field {field}")
+    if row.get("classification") in {"CONDITIONAL_OPPORTUNITY", "RULING_OR_COUNSEL_REQUIRED", "MANUAL_ONLY"}:
+        require("$0" in row.get("ui_treatment", ""), f"{cid}: manual/conditional/ruling UI does not default to $0")
+        require(any(term in row.get("canonical_calculation_treatment", "").lower() for term in ("zero", "not", "never", "exclude", "no ", "only", "actual")),
+                f"{cid}: non-guaranteed amount may enter canonical economics")
+    if row.get("classification") == "RULING_OR_COUNSEL_REQUIRED":
+        require(len(row.get("remaining_agency_ruling_question", "")) >= 40, f"{cid}: ruling question is not specific")
+    if row.get("classification") == "PROHIBITED":
+        require(any(term in row.get("canonical_calculation_treatment", "").lower() for term in ("zero", "exclude", "never")),
+                f"{cid}: prohibited treatment is not zero/excluded")
+
+handoff = (HERE / "CODEX_REINVESTMENT_IN_KIND_UI_HANDOFF.md").read_text(encoding="utf-8")
+require("46 mutually exclusive candidate records" in handoff, "opportunity handoff omits exact ledger count")
+require("manual_opportunity_amount` defaults to `$0" in handoff, "opportunity handoff omits zero default")
+require("eligible_qpe`" in handoff and "financing_contribution`" in handoff and "npc_replacement_cost_benefit`" in handoff,
+        "opportunity handoff does not separate QPE, financing and replacement-cost benefit")
+require("No fixed-point or credit-on-credit calculation is authorized" in handoff, "opportunity handoff omits recursion control")
+require("old blanket `AUTHORITY_SILENT_RULING_REQUIRED` treatment" in handoff, "Ireland tiered correction missing from handoff")
 
 matrix = load_csv("CODEX_GROSS_UP_FOUR_PROJECT_FORENSIC_MATRIX.csv")
 projects = {row.get("project_name") for row in matrix}
@@ -147,7 +194,7 @@ closeout = (HERE / "CODEX_GROSS_UP_FORENSIC_RESEARCH_CLOSEOUT.md").read_text(enc
 require("658 / 658" in closeout, "closeout does not state complete 658 crosswalk")
 require("Recognized incremental QPE is not established" in closeout, "closeout obscures recognized QPE status")
 require("Permanent NPC benefit is `UNKNOWN_NOT_AUTHORIZED`" in closeout, "closeout obscures permanent NPC benefit status")
-require("paid-then-reinvested" in closeout.lower(), "closeout omits paid/reinvested ruling gap")
+require("reinvest" in closeout.lower(), "closeout omits paid/reinvested ruling gap")
 
 precedence = json.loads((HERE / "CANONICAL_ARTIFACT_PRECEDENCE_CLAUDE.json").read_text(encoding="utf-8"))
 entry = precedence.get("current_gross_up_forensic_research", {})
