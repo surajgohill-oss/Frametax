@@ -42,5 +42,15 @@
       "reason": "Superseded by this pass's canonical_evaluation.py qualification-downgrade fix -- see CANONICAL_FOUR_PROGRAM_REMEDIATION_CLAUDE.csv Bulgaria row."
     }
   ],
-  "precedence_rule": "When any two artifacts disagree about a program's CURRENT state: (1) the live executable registries (authority_coverage_registry.py, program_rate_rules_worldwide.py, program_rate_rules.py, canonical_executable_registry.py) always control over any CSV/MD description of them; (2) among CSV/MD artifacts, the one with the LATEST commit timestamp on the implementation branch (claude/audit-frametax-features-NZcX5) controls over any artifact read from a research/audit branch; (3) a research/audit branch artifact (e.g. codex/305-program-delta-audit-20260915) is read-only input, never itself controlling state, and is never merged."
+  "precedence_rule": "When any two artifacts disagree about a program's CURRENT state: (1) the live executable registries (authority_coverage_registry.py, program_rate_rules_worldwide.py, program_rate_rules.py, canonical_executable_registry.py) always control over any CSV/MD description of them; (2) among CSV/MD artifacts, the one with the LATEST commit timestamp on the implementation branch (claude/audit-frametax-features-NZcX5) controls over any artifact read from a research/audit branch; (3) a research/audit branch artifact (e.g. codex/305-program-delta-audit-20260915) is read-only input, never itself controlling state, and is never merged.",
+  "current_gross_up_forensic_research": {
+    "artifacts": [
+      "docs/validation/CODEX_GROSS_UP_AUTHORITY_CROSSWALK.csv",
+      "docs/validation/CODEX_GROSS_UP_TRANSACTION_ARCHETYPES.csv",
+      "docs/validation/CODEX_GROSS_UP_FOUR_PROJECT_FORENSIC_MATRIX.csv",
+      "docs/validation/CODEX_GROSS_UP_FORENSIC_RESEARCH_CLOSEOUT.md"
+    ],
+    "role": "Latest research-only transaction treatment and documented authority gaps for the 658 unique economic identities; supersedes earlier research statements only within cap-headroom/deferment/reinvestment methodology.",
+    "runtime_effect": "NONE. Live executable registries remain controlling. This entry does not authorize automatic gross-up or alter optimizer behavior."
+  }
 }

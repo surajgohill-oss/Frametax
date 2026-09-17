@@ -1,0 +1,143 @@
+evidence_id,jurisdiction,program_id,evidence_type,authority_level,source_title,source_url,effective_date_or_version,exact_locator,verified_excerpt,finding,authority_or_practice_only,complete_transaction_example,source_opened_and_read,retained_source_hash
+FORENSIC-IE-001,IE,ie_section_481,CURRENT_TAX_AUTHORITY_MANUAL,PRIMARY_OFFICIAL_GUIDANCE,Revenue Tax and Duty Manual Part 15-02-04 Film Relief,https://www.revenue.ie/en/tax-professionals/tdm/income-tax-capital-gains-tax-corporation-tax/part-15/15-02-04.pdf,Current PDF retrieved 2026-09-17,"3.3.1-3.3.4, especially 3.3.2 Producer Fees","Eligible producer-related fees are fees paid for producer services carried out by the
+producer company and included as the total cost of production incurred by the qualifying
+company. These fees will be categorised in the budget as including “Producer”, “Co-
+Producer”, “Executive Producer” fees and “Production/Overhead” corporate fees.
+Revenue will accept as reasonable and as forming part of the “eligible expenditure”, such
+expenditure where producer-related fees relate to services that:
+       a) are typical or representative of what a producer operating in the relevant market
+          segment would normally be expected to do (please see 6.10 for further details);
+       b) are performed wholly, exclusively and necessarily for the purposes of the film
+          production; and
+       c) fall within certain parameters as follows:
+
+
+
+
+                                                                                               16
+Tax and Duty Manual                                                              Part 15-02-04
+
+
+              i.that the eligible producer-related fees do not exceed 15% of the global
+                budget where the eligible expenditure is in excess of 80% of the global
+                budget; or
+             ii.that the eligible producer-related fees do not exceed 10% of the global
+                budget where the eligible expenditure is less than 80% of the global budget.
+Where production companies have in-house expertise in other production areas, for
+example, Director, Legal Counsel, Head of Production, Writer, Script Editor, other Editorial,
+the production company is permitted to charge the costs of the services of these individuals
+to the budget at cost-recovery rates only.
+It should also be noted that the percentages indicated above are not intended to operate as
+a minimum-level fee rate for production services. Equally, the percentages may be higher
+where it can be substantiated. Regard should be had to the arm’s length principle in
+determining what the market rate would be. The arm’s length principle operates to
+attribute a price to a transaction at a level where it would be reasonable to consider that
+the transaction would have been entered into by independent parties.","Real producer services, paid fee, related-party substantiation, 15%/10% parameters, and arm’s-length pricing.",AUTHORITY,NO,YES,a7ca3810b697600e70169b32463297aa2fffc200f6799b0864cb9f6ec7c57665
+FORENSIC-IE-002,IE,ie_section_481,CURRENT_TAX_AUTHORITY_MANUAL,PRIMARY_OFFICIAL_GUIDANCE,Revenue Tax and Duty Manual Part 15-02-04 Film Relief,https://www.revenue.ie/en/tax-professionals/tdm/income-tax-capital-gains-tax-corporation-tax/part-15/15-02-04.pdf,Current PDF retrieved 2026-09-17,6.1 Qualifying expenditure,"amounts that are paid out of, are dependent on, or arise from rights in the receipts,
+       earnings or profits of the film;
+      fees or other payments deferred unless the payment of such sums is made no later
+       than four months after completion;
+   ",Backend/contingent compensation excluded; deferred fees qualify only if paid no later than four months after completion.,AUTHORITY,NO,YES,a7ca3810b697600e70169b32463297aa2fffc200f6799b0864cb9f6ec7c57665
+FORENSIC-IE-003,IE,ie_section_481,CURRENT_TAX_AUTHORITY_MANUAL,PRIMARY_OFFICIAL_GUIDANCE,Revenue Tax and Duty Manual Part 15-02-04 Film Relief,https://www.revenue.ie/en/tax-professionals/tdm/income-tax-capital-gains-tax-corporation-tax/part-15/15-02-04.pdf,Current PDF retrieved 2026-09-17,5.9 Books and records,"The records which must be kept include, but are not limited to, the following:
+      books of first entry,
+      trial balances,
+      all linking documents to the financial statements (i.e. petty cash documents, receipts
+       etc),
+      invoices,
+      credit notes,
+      bank statements,
+      all ledgers coded as per the original budget.
+Records which show the qualifying expenditure, the total cost of production and the eligible
+expenditure must also be kept. Details of any transaction with a member of the film group
+must also be retained.","Contracts/accounting must be traceable through invoices, credit notes, bank statements, coded ledgers, and film-group transaction records.",AUTHORITY,NO,YES,a7ca3810b697600e70169b32463297aa2fffc200f6799b0864cb9f6ec7c57665
+FORENSIC-IE-004,IE,ie_section_481,CURRENT_TAX_AUTHORITY_MANUAL,PRIMARY_OFFICIAL_GUIDANCE,Revenue Tax and Duty Manual Part 15-02-04 Film Relief,https://www.revenue.ie/en/tax-professionals/tdm/income-tax-capital-gains-tax-corporation-tax/part-15/15-02-04.pdf,Current PDF retrieved 2026-09-17,3.3.4 Costs that will not qualify; 5.7 withdrawal/reduction,"Amounts that are re-charged to the qualifying company, but were not costs actually
+             incurred by the producer company. These cannot qualify under the “wholly,
+             exclusively and necessarily” rule as no costs were actually incurred. However, where
+             the amount to be re-charged relates to use of an asset, for example, a set and that
+             set is owned by the producer company and used in the production, then that cost
+             may qualify for the tax credit as capital expenditure, as described under 3.12;
+            Amounts re-charged to the qualifying company that are in excess of the cost actually
+             incurred by the producer company. A producer company may not claim relief on any
+             amount recharged to the qualifying company in excess of the cost it actually
+             incurred. Such inflated costs would not qualify under the “wholly, exclusively and
+             necessarily” rule.
+
+
+Example 7 – leasing space
+If the qualifying company leases space from the producer company, the first question must
+be: how much is the space costing the producer company? The cost charged to the
+qualifying company should not generate an un-earned profit in the producer company.
+Therefore, if the producer company is leasing the space from a third party, a portion of the
+cost of that lease (allocated on floor space) may be an appropriate amount to charge.
+
+
+
+
+7   i.e. that the parties are non-related, independent entities dealing with each other at arm’s length.
+
+
+
+
+                                                                                                                      18
+Tax and Duty Manual                                                               Part 15-02-04
+
+
+
+
+Example 8 – employee costs
+A producer company has a number of full-time crew on its payroll, whose services are
+provided to each of its qualifying companies as required. In calculating the amount that can
+be charged for their services, regard should be had to both the salary of each crew member,
+but also the costs associated with having full-time employees (e.g. HR costs, hiring costs,
+training costs etc.). The value at which the crew are recharged should take account of the
+ongoing costs of employment.",No QPE for unincurred or inflated related-party recharges; reductions require correction of the claim.,AUTHORITY,NO,YES,a7ca3810b697600e70169b32463297aa2fffc200f6799b0864cb9f6ec7c57665
+FORENSIC-IE-005,IE,ie_section_481,GOVERNMENT_AUDIT_OF_ADMINISTRATION,OFFICIAL_HISTORICAL_PRACTICE_EVIDENCE,"Comptroller and Auditor General 2018 Annual Report, Chapter 18 Tax Relief on Film Production",https://www.audit.gov.ie/en/find-report/publications/2019/2018-annual-report-chapter-18-tax-relief-on-film-production.pdf,Published 2019; reviews 2015-2019 administration,paragraphs 18.37-18.41,"Revenue’s review of the compliance report and auditor’s report may involve a request
+       for additional back up for line items from production companies such as a producer fee
+       calculation, legal fees breakdown, studio overheads and marketing expenses.
+
+18.38 Based on Revenue’s review of the compliance report, and if all the conditions have
+      been successfully met by the production company, the final payment is released.
+
+18.39 Revenue also checks the credits listed at the end of the audio-visual project to ensure
+      they include the statement
+
+                             Produced with the support of incentives for the Irish
+                             film industry provided by the Government of Ireland
+
+       and, if applicable,
+
+                                        Filmed on location in Ireland.
+
+       These credits must be located in a prominent position in the closing credits immediately
+       after the cast and crew credits.
+
+18.40 Of the 15 audio-visual projects reviewed for this examination, 12 of the projects had
+      been completed.
+
+           In all 12 completed projects, Revenue records indicate that the audio-visual project
+            had been reviewed for evidence of the required on-screen credits.
+
+           In nine projects, Revenue’s review of the compliance reports and approvals to pay
+            were on file. These reviews resulted in a reduction of €24,896, or 0.35%, in film
+            relief credit. This was recovered by reducing the final instalment of the relief.
+
+                 In eight cases, the production companies had not paid any tax in the prior
+                  period but, as film relief is a payable credit, payments of just under €7 million
+                  were issued by Revenue for the full amount of the relief.
+
+                 In the remaining case, the production company claimed film relief of €77,933
+                  and had paid just under €1,500 in corporation tax in the prior period.
+
+           In the other three completed cases, there were compliance reports on file but
+            Revenue had not completed a review of expenditure at the time of this examination
+            and the final payment had not been released.
+                                       305     Tax relief on film production
+
+
+
+
+                                       18.41 Revenue commenced monitoring ineligible expenditure claimed for, but not paid, in
+                                             January 2018. By the end of May 2019, 75 compliance reports had been reviewed with
+                                             combined eligible expenditure (gross) totalling €218 million, of which €2 million was
+                                             deemed ineligible. This reduced the related film relief by €0.6 million.",Revenue requested producer-fee support and disallowed expenditure claimed but not paid. This corroborates administrative practice but is not a current rule for reinvestment.,PRACTICE_ONLY,NO,YES,5f5373dd1dbca27ac62d877c7325edf1fa3905f6f8494ea63faeb197990041c6
+FORENSIC-SEARCH-001,IE,ie_section_481,DOCUMENTED_NEGATIVE_SEARCH_RESULT,NO_POSITIVE_AUTHORITY,"Transaction-term search across Revenue manual, official government audit, existing source log and settled research",,Search completed 2026-09-17,paid then equity; receivable contribution; circular payment; fee reinvestment; credit note; bank evidence,"No public primary authority or complete anonymized transaction example was located that authorizes a paid producer fee to be recontributed as equity while preserving the fee in qualifying expenditure, treats receivable capitalization as payment, or approves circular/temporary payment.","Silence is a documented gap, not permission.",NO_AUTHORITY_FOUND,NO,YES_SEARCH_LOGGED,7f045b27fc5f9813e8d490870d98f27190d69baa026ff227073108672d6dc41e

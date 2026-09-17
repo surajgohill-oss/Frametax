@@ -1,6 +1,6 @@
 # Codex All-Program Cap-Headroom / Deferment / Reinvestment Research Closeout
 
-Status: `RESEARCH_INCOMPLETE`
+Status: `SUPERSEDED_BY_GROSS_UP_FORENSIC_RESEARCH_COMPLETE_WITH_DOCUMENTED_AUTHORITY_GAPS`
 
 ## Frozen lineage
 
@@ -35,6 +35,10 @@ The four canonical active budgets were read without evaluation or mutation. The 
 
 `allowed_cap_c` is only a ceiling. `cap_headroom_c = max(0, allowed_cap_c - existing_eligible_cost_c)` is not recognized QPE. A later implementation must separately carry contractual increment, cash paid, deferred payable, contingent obligation, reinvested cash, recognized incremental QPE, incremental incentive, assistance, recoupment, interim financing and final economic NPC. Paid-and-reinvested amounts are two cash flows counted once; deferred liabilities are never free support; recursive credit-on-credit calculations remain prohibited without explicit authority.
 
-## Completion blocker
+## Completion status
 
-The exact unresolved identities and fields are in `CODEX_CAP_HEADROOM_AGENCY_RULING_QUESTIONS.csv`. Because those authority questions remain open, the completion token is not earned.
+The original cap-only review did not earn completion because its transaction-method research was incomplete. The 2026-09-17 forensic pass now provides the full 658-identity transaction crosswalk and an exact unresolved-question ledger. Those remaining authority gaps block positive optimizer permission, but do not block the research completion token expressly allowed for a complete crosswalk with documented gaps.
+
+## 2026-09-17 methodology correction
+
+The prior Canada-only paid-deadline statement is superseded by current Ireland Section 481 evidence. Ireland deferred fees may qualify when actually paid within four months after completion, subject to all other rules. The producer-fee 10%/15% parameters are now modeled with fixed-point arithmetic as theoretical ceilings only. The 658-program transaction crosswalk is complete with documented authority gaps; no paid-and-reinvested or circular gross-up permission is inferred. See `CODEX_GROSS_UP_FORENSIC_RESEARCH_CLOSEOUT.md`.

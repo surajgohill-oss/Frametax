@@ -44,4 +44,12 @@ Status: `RESEARCH_INCOMPLETE_FAIL_CLOSED`
 
 The all-program reconciliation now covers 659 physical canonical records / 658 unique economic identities. It confirms 17 programs with at least one official cap rule, but does not authorize any automatic fee gross-up. All unresolved identities remain zero-valued and are enumerated in `CODEX_CAP_HEADROOM_AGENCY_RULING_QUESTIONS.csv`.
 
-Implementation must consume `CODEX_CAP_HEADROOM_CATEGORY_RULES.csv` only as ceilings and gates. It must not set recognized incremental QPE equal to headroom. Canada CPTC is the only reviewed path with an explicit paid-by-deadline rule; even there, deferrals are deducted and the cost must be reasonable, attributable and actually paid. Actual-payment programs remain cash-paid-only. Paid-and-reinvested flows must be represented separately and counted once. No recursive credit-on-credit behavior is authorized.
+Implementation must consume `CODEX_CAP_HEADROOM_CATEGORY_RULES.csv` only as ceilings and gates. It must not set recognized incremental QPE equal to headroom. Canada CPTC and Ireland Section 481 are reviewed paths with express paid-by-deadline rules; their distinct deadlines and all other conditions remain program-specific. Actual-payment programs remain cash-paid-only. Paid-and-reinvested flows must be represented separately and counted once. No recursive credit-on-credit behavior is authorized.
+
+## 2026-09-17 forensic gross-up transaction addendum
+
+Status: `RESEARCH_COMPLETE_WITH_DOCUMENTED_AUTHORITY_GAPS_NOT_IMPLEMENTATION_PERMISSION`
+
+The 658-identity transaction crosswalk is `CODEX_GROSS_UP_AUTHORITY_CROSSWALK.csv`. Ireland Section 481 corrects the earlier Canada-only deadline statement: current Revenue guidance permits deferred fees only when paid no later than four months after completion and describes 15%/10% producer-fee parameters, real-service, actual-cost, related-party, arm’s-length and records requirements. It does **not** confirm the complete paid-then-reinvested, receivable-capitalization, circular-payment or loan-funded gross-up chain.
+
+Implementation remains fail-closed: use fixed-point arithmetic only to disclose theoretical ceiling headroom; never label it QPE or NPC benefit; require real project facts and, for the unresolved complete chain, a written ruling. Preserve every payable, loan and equity flow exactly once.
