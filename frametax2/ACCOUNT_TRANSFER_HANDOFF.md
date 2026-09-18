@@ -191,7 +191,7 @@ Everything in §1-§7 below predates this update and describes an earlier state 
 
 | Item | Value |
 |---|---|
-| Repo root | `/Users/Suraj/cineglobe-frametax/frametax2` |
+| Repo root | `/Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2` |
 | Branch | `claude/audit-frametax-features-NZcX5` |
 | Local HEAD | see git log (Phase 7 production-first discovery closeout, this session) |
 | Remote HEAD | matches local (`git ls-remote` via SSH) |
@@ -343,7 +343,7 @@ Verification-only pass. No CineGlobe functionality was implemented or modified i
 **Repository**
 | | |
 |---|---|
-| Path | `/Users/Suraj/cineglobe-frametax` |
+| Path | `/Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2` |
 | Branch | `claude/audit-frametax-features-NZcX5` |
 | HEAD | matches `origin/claude/audit-frametax-features-NZcX5` exactly (confirmed via `git log origin/... -1 --format=%H` == `git rev-parse HEAD`) |
 | Working tree | clean, no uncommitted files |
@@ -381,10 +381,12 @@ Verification-only pass. No CineGlobe functionality was implemented or modified i
 - Figma has no active Dev Mode bridge; irrelevant unless a future task specifically needs Figma-sourced design specs.
 - Perplexity is not installed; `WebSearch` (Claude's built-in tool) and direct `WebFetch`/`curl` cover this project's research needs, as demonstrated throughout the Stage A/B database population work.
 
-**Recommended first command for the next account**
-```bash
-cd /Users/Suraj/cineglobe-frametax/frametax2/backend && .venv/bin/python3 -m pytest -q
-```
-This confirms the environment is still in the state this document describes before starting new work. If it passes cleanly (3896/1/0), proceed directly to Globe implementation without further environment setup.
+**Permanent test execution rules (doc-only correction, 2026-09-18 — applies to every future session, not just this one):**
+- Never run overlapping pytest processes. Before starting a new test run, confirm no other pytest invocation from this session (or a concurrent one) is still active against the same database.
+- During development, run focused tests scoped to the file(s)/behavior actually changed. Reserve one consolidated regression batch for final acceptance, not for every intermediate edit.
+- Reuse already-passing evidence gathered at the same commit SHA — do not re-run a suite that already produced a clean, current result unless the code under test changed since.
+- For known heavy suites, run sequentially (no parallel workers, e.g. no `-n auto`) with `-vv` and a 12-minute wall-clock limit per invocation.
+- Silence below the known runtime threshold for a given suite is not a hang — do not kill or restart a run just because it hasn't printed yet if it's still within its established normal duration.
+- On a genuine timeout, identify the exact last active test from the run's own output and re-run only that one test for root cause. Never restart the entire suite automatically.
 
 **Globe implementation readiness: YES.** Repository, runtime, and every connector actually required for CineGlobe development (GitHub, Git, filesystem, Browser MCP, Playwright MCP) are confirmed working. Google Drive is connected and can retrieve the original script source material if needed. Figma and Perplexity are not required by this project and their absence/inactivity does not block Globe work.
