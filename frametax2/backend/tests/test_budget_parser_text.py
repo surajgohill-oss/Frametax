@@ -39,6 +39,31 @@ class TestParseAmountFromLine:
     def test_decimal(self):
         assert _parse_amount_from_line("Equipment 45,000.00") == 45_000.0
 
+    # -----------------------------------------------------------------
+    # Ingestion acceptance closeout (2026-09-17): reproduced live via a
+    # real API round trip (create project -> discover -> commit -> real
+    # PDF/TXT budget) -- a genuine film-budget-style line with a leading
+    # account-code number ("1000 PRODUCER FEE : $120,000") parsed as
+    # $1,000 (the account code), not $120,000 (the real, currency-marked
+    # figure), because the old regex had no currency-symbol requirement
+    # and re.search returns the FIRST numeric token regardless of what it
+    # represents. Confirmed as a genuine parsing defect, not a fixture
+    # artifact: three such lines summed to $6,000 instead of the real
+    # $200,000 declared total, a variance so large the new
+    # BUDGET_MATERIALLY_INCOMPLETE gate (canonical_project_economics.py)
+    # would correctly refuse to evaluate the resulting project.
+    # -----------------------------------------------------------------
+    def test_leading_account_code_number_never_shadows_the_real_dollar_amount(self):
+        assert _parse_amount_from_line("1000 PRODUCER FEE : $120,000") == 120_000.0
+        assert _parse_amount_from_line("2000 CAMERA PACKAGE : $60,000") == 60_000.0
+        assert _parse_amount_from_line("3000 LOCATION FEES : $20,000") == 20_000.0
+
+    def test_bare_number_with_no_currency_symbol_still_parses_as_before(self):
+        """No $ sign anywhere in the line -- the currency-preferring match
+        must fall back to the original bare-number behavior, never return
+        None just because there's no symbol to prefer."""
+        assert _parse_amount_from_line("Contingency Reserve 301131.00") == 301_131.0
+
     def test_k_suffix(self):
         assert _parse_amount_from_line("Locations 120K") == 120_000
 

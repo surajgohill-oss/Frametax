@@ -34,6 +34,7 @@ class ProductionStructureRead(TimestampedSchema):
 class StructureCalculationResultRead(TimestampedSchema):
     structure_id: uuid.UUID
     engine_version: str
+    structure_type: str | None
     total_budget_usd: float | None
     rebase_btl_usd: float | None
     fixed_atl_usd: float | None

@@ -347,6 +347,105 @@ async def test_project_record_falls_back_to_budget_document_total_when_unset(
     assert project.total_budget_usd is None  # read-only fallback — column itself untouched
 
 
+async def test_unroutable_budget_commit_reports_explicit_status_not_routed(
+    db: AsyncSession, project: Project, tmp_path
+):
+    """Ingestion acceptance closeout (2026-09-17): reproduced live -- a
+    corrupt/unparseable PDF committed as a project's budget document
+    previously reported material_routing="budget_routed" (a hardcoded
+    literal in route_committed_material, regardless of what _route_budget
+    actually did), even though NO BudgetDocument was ever created. A
+    caller reading the real POST /candidates/{id}/commit response had no
+    way to tell a genuine routing from a silent no-op. The status must
+    now say what actually happened."""
+    _write(tmp_path, "Budget.pdf", b"not a real pdf, corrupt bytes")
+    await discover(DiscoverRequest(source_type="local", source_pointer=str(tmp_path), project_id=str(project.id)), db)
+    candidate = (await db.execute(
+        select(IngestionCandidate).where(IngestionCandidate.proposed_project_id == project.id)
+    )).scalar_one()
+    assert candidate.proposed_category == "budget"
+
+    result = await commit_candidate(str(candidate.id), db)
+    assert result["material_routing"] == "budget_extraction_failed"
+
+    budget_doc = (await db.execute(
+        select(BudgetDocument).where(BudgetDocument.project_id == project.id)
+    )).scalars().first()
+    assert budget_doc is None, "a failed extraction must never create a BudgetDocument row"
+
+
+async def test_discovery_rediscovers_a_path_whose_committed_candidate_project_was_deleted(
+    db: AsyncSession, tmp_path
+):
+    """Ingestion acceptance closeout (2026-09-17): reproduced live against
+    the isolated audit database -- 1,172 of 1,539 real IngestionCandidate
+    rows were exactly this: a committed candidate whose project was later
+    deleted (proposed_project_id nulled by the FK's own ondelete=SET NULL),
+    permanently blocking rediscovery of its source_pointer for a
+    genuinely different, later file at the same OS path (a real risk for
+    any recycled temp/scratch path, not just pytest's own tmp_path
+    numbering). Confirmed root cause: proposed_project_id alone can never
+    distinguish "genuinely never assigned" from "was assigned, project
+    deleted afterward" once the FK nulls it -- status=COMMITTED with
+    proposed_project_id=NULL is the only signal that combination is
+    possible without a project deletion, since _commit_candidate_impl
+    requires a non-NULL proposed_project_id to ever reach COMMITTED."""
+    org = Organization(name="Rediscovery Test Org", slug=f"rediscovery-test-{uuid.uuid4().hex[:8]}")
+    db.add(org)
+    await db.flush()
+    p = Project(id=uuid.uuid4(), organization_id=org.id, title=f"Rediscovery Test Project {uuid.uuid4().hex[:8]}")
+    db.add(p)
+    await db.commit()
+    await db.refresh(p)
+
+    _write(tmp_path, "Budget.csv", _BUDGET_CSV.encode())
+    await discover(DiscoverRequest(source_type="local", source_pointer=str(tmp_path), project_id=str(p.id)), db)
+    candidate = (await db.execute(
+        select(IngestionCandidate).where(IngestionCandidate.proposed_project_id == p.id)
+    )).scalar_one()
+    await commit_candidate(str(candidate.id), db)
+
+    # Delete the project -- the FK's ondelete=SET NULL nulls proposed_
+    # project_id on the now-orphaned candidate, exactly reproducing the
+    # real historical state found in the isolated audit database. The DB
+    # applies this at the row level, invisible to this session's own
+    # identity map until expired -- expire_all() forces a real re-read
+    # rather than the (now-stale) cached candidate.proposed_project_id.
+    await db.execute(sa_delete(Project).where(Project.id == p.id))
+    await db.commit()
+
+    orphaned = (await db.execute(
+        select(IngestionCandidate).where(IngestionCandidate.id == candidate.id)
+    )).scalar_one()
+    await db.refresh(orphaned)
+    assert orphaned.status == "committed"
+    assert orphaned.proposed_project_id is None
+
+    # A second, unrelated project reuses the exact same source_pointer
+    # (the real-world case: a recycled temp path, or a producer re-saving
+    # a file at the same real location) -- discovery must stage it fresh,
+    # never silently skip it as "already discovered."
+    org2 = Organization(name="Rediscovery Test Org 2", slug=f"rediscovery-test-2-{uuid.uuid4().hex[:8]}")
+    db.add(org2)
+    await db.flush()
+    p2 = Project(id=uuid.uuid4(), organization_id=org2.id, title=f"Rediscovery Test Project 2 {uuid.uuid4().hex[:8]}")
+    db.add(p2)
+    await db.commit()
+    await db.refresh(p2)
+    try:
+        result = await discover(
+            DiscoverRequest(source_type="local", source_pointer=str(tmp_path), project_id=str(p2.id)), db
+        )
+        assert result["discovered"] == 1, (
+            "a path whose only prior candidate is a proven-dead orphan (committed, "
+            "project deleted) must be rediscoverable, not permanently blocked"
+        )
+    finally:
+        await db.execute(sa_delete(Project).where(Project.id == p2.id))
+        await db.execute(sa_delete(Organization).where(Organization.id.in_((org.id, org2.id))))
+        await db.commit()
+
+
 async def test_material_routing_module_contains_no_project_specific_code():
     """Regression guard for the exact anti-pattern this phase's own audit
     found and forbade: a per-project runner function (run_fvd_optimizer.py,

@@ -120,8 +120,46 @@ async def discover(body: DiscoverRequest, db: AsyncSession = Depends(get_db)) ->
         if checksum:
             existing_checksums[(project_id, checksum)] = version_id
 
+    # Backend closeout (2026-09-17): a bare global source_pointer identity
+    # was treated as permanent -- once staged, a path could NEVER be
+    # rediscovered, even if its earlier candidate's assigned project was
+    # later deleted. Reproduced live: temp-source-pointer paths (the OS's
+    # own scratch/temp directory naming, e.g. pytest's tmp_path, and
+    # equally any real Downloads/scratch-folder path a producer might
+    # reuse) get recycled -- 1,172 of 1,539 real candidate rows in the
+    # isolated audit database are exactly this: orphaned, permanently
+    # blocking rediscovery of their path for a genuinely different, later
+    # file that happens to land at the same location.
+    #
+    # Root cause, confirmed by direct query (not assumed): proposed_
+    # project_id is `ForeignKey("projects.id", ondelete="SET NULL")`, so a
+    # deleted project's committed candidates already show
+    # proposed_project_id=NULL by the time this reads them -- indistinguishable
+    # by that column alone from a candidate that was genuinely never
+    # associated with any project. The unambiguous signal is status
+    # combined with the null: _commit_candidate_impl() requires a non-NULL
+    # proposed_project_id to ever reach status=COMMITTED in the first
+    # place (raises 400 otherwise) -- so status=COMMITTED with
+    # proposed_project_id now NULL is only possible if the project (or,
+    # for a still-live project whose Document/DocumentVersion cascade was
+    # separately removed, committed_document_version_id) was deleted
+    # afterward. That combination, and only that combination, is excluded
+    # here -- a genuinely still-open PENDING/IGNORED candidate (whatever
+    # its project association) keeps blocking rediscovery exactly as
+    # before; this narrows the exclusion to proven-dead rows, it does not
+    # remove the "discovery never re-stages a live path" design.
     already_staged = {
-        row[0] for row in (await db.execute(select(IngestionCandidate.source_pointer))).all()
+        row[0]
+        for row in (
+            await db.execute(
+                select(IngestionCandidate.source_pointer).where(
+                    ~(
+                        (IngestionCandidate.status == IngestionCandidateStatus.COMMITTED.value)
+                        & IngestionCandidate.proposed_project_id.is_(None)
+                    )
+                )
+            )
+        ).all()
     }
 
     created: list[IngestionCandidate] = []

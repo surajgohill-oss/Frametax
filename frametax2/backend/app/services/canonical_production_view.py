@@ -309,13 +309,19 @@ def _empty_structure_entry(
         # (no allocation is built for an authority-insufficient jurisdiction)
         # — same gap and same display-only fix as project_workspace_view.py.
         code = structure.name.removeprefix("Full relocation to ").strip() or None
-    # structure_type: rows generated before the 1.1.0 enrichment don't carry
-    # this in trace_json — derive the same value generically from is_baseline
-    # (present on every engine_version since Phase 2) rather than requiring
-    # every already-evaluated project to be re-evaluated first. Display-only,
-    # same fact the label itself already encodes ("X — production's current
-    # base" vs "Full relocation to X").
-    structure_type = trace.get("structure_type") or (
+    # Ingestion acceptance closeout, structure_type persistence (2026-09-17):
+    # prefer the real, persisted StructureCalculationResult.structure_type
+    # column (backfilled via migration 0075 for every pre-existing row, and
+    # written by evaluate_project() at the same construction site as the
+    # trace's own value on every row since) — never a second, independently
+    # re-derived value. Falls back to the trace_json field, then the
+    # is_baseline-derived guess, ONLY for the small number of historical
+    # rows from engine versions that predate both migration 0075's backfill
+    # source data and the trace_json "structure_type" key ever existing
+    # (confirmed live: exactly the retired canonical-1.0.0/0.1.0/demo-
+    # runtime rows, never the current engine_version) — same graceful-
+    # degradation precedent as selected_incentive_usd immediately below.
+    structure_type = result.structure_type or trace.get("structure_type") or (
         "single_country" if trace.get("is_baseline") else "full_relocation"
     )
     # selected_incentive_usd: prefer the persisted StructureCalculationResult

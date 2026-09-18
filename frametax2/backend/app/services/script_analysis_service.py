@@ -140,7 +140,19 @@ async def resolve_active_screenplay(
                 raw_text = extracted.raw_text
             except Exception as e:
                 print(f"Failed to extract text from {local_path}: {e}")
-        elif suffix in [".txt", ".fdx", ".csv"]:
+        elif suffix == ".fdx":
+            # Ingestion acceptance closeout (2026-09-17): genuine Final
+            # Draft XML parsing -- see fdx_extractor.py's own docstring
+            # for the confirmed-live defect this replaces (raw XML markup
+            # was previously handed straight to the plain-text structural
+            # parser, which can never match a scene heading wrapped in
+            # <Paragraph Type="Scene Heading"><Text>...).
+            try:
+                from app.ingestion.fdx_extractor import extract_text_from_fdx
+                raw_text = extract_text_from_fdx(local_path.read_text(errors="replace"))
+            except Exception as e:
+                print(f"Failed to read text from {local_path}: {e}")
+        elif suffix in [".txt", ".csv"]:
             try:
                 raw_text = local_path.read_text(errors="replace")
             except Exception as e:

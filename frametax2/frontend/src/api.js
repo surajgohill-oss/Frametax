@@ -116,9 +116,18 @@ export const postContingencyReset = () =>
 // (little_utopia_state.py) is a static in-memory demo disconnected from
 // that table, so an uploaded file will not appear anywhere in this
 // workspace yet — the upload itself is real, not simulated.
-export async function uploadDocument(file) {
+//
+// Backend-wiring closeout (2026-09-17): POST /api/v1/documents/upload
+// requires `project_id` as a mandatory form field (app/api/v1/documents.py
+// upload_document()) — this function never sent it, so every real call
+// would have failed with HTTP 422 Unprocessable Entity regardless of the
+// disabled-button gate above it. Fixed the wiring itself, not the UI gate
+// (still intentionally disabled — see UPLOAD_BLOCKED_REASON, unrelated to
+// this fix and unchanged here).
+export async function uploadDocument(file, projectId) {
   const form = new FormData();
   form.append("file", file);
+  form.append("project_id", projectId);
   const res = await fetch(`${DOCUMENTS_BASE}/upload`, { method: "POST", body: form });
   if (!res.ok) {
     const body = await res.text();

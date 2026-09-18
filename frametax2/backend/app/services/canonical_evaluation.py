@@ -4083,6 +4083,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                structure_type="single_country" if code == inputs.jurisdiction_code else "full_relocation",
                 calculation_trace_json={
                     "candidate_status": candidate_status,
                     "rejection_reason_class": rejection_reason_class,
@@ -4161,6 +4162,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                structure_type="single_country" if code == inputs.jurisdiction_code else "full_relocation",
                 calculation_trace_json={
                     "candidate_status": candidate_status,
                     "rejection_reason_class": rejection_reason_class,
@@ -4324,6 +4326,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "ranking. The figures below are POTENTIAL economics only, disclosed as an "
                     "opportunity — they are not a priced, comparable, or rankable result."
                 )],
+                structure_type="single_country" if code == inputs.jurisdiction_code else "full_relocation",
                 calculation_trace_json={
                     "candidate_status": _blocked_candidate_status,
                     "discovery_classification": classification,
@@ -4385,6 +4388,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             true_net_cost_usd=pricing.npc_verified_usd,
             risk_adjusted_net_cost_usd=pricing.npc_with_adjustments_usd,
             has_unverified_inputs=territorial_state_unknown, warnings=warnings,
+            structure_type=pricing.structure_type,
             calculation_trace_json={
                 "candidate_status": STATUS_PRICED,
                 # Canonical optimizer/Globe wiring remediation (2026-09-04),
@@ -4866,6 +4870,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             inputs.gross_budget_usd - _cp_payload["total_incentive_usd"], 2,
                         ),
                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="same_jurisdiction_distinct_cost_pool_stack",
                         calculation_trace_json={
                             "candidate_status": "PRICED",
                             "discovery_classification": "same_jurisdiction_distinct_cost_pool_stack",
@@ -4939,6 +4944,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         total_budget_usd=inputs.gross_budget_usd,
                         total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="same_jurisdiction_group_stack",
                         calculation_trace_json={
                             "candidate_status": "RULE_REJECTED",
                             "rejection_reason_class": _none_reason_class,
@@ -5090,6 +5096,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             risk_adjusted_net_cost_usd=None if _combination_is_invalid else npc,
             has_unverified_inputs=territorial_state_unknown or bool(stack_result.disclosed_limitations),
             warnings=warnings,
+            structure_type="multi_program",
             calculation_trace_json={
                 # CLUSTER 8. A MUTUALLY EXCLUSIVE combination is not a valid
                 # priced structure. The stacking engine already zeroes the
@@ -5374,6 +5381,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                         true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="component_relocation",
                         calculation_trace_json={
                             "candidate_status": _rej_status,
                             "rejection_reason_class": _rej_class,
@@ -5546,6 +5554,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     risk_adjusted_net_cost_usd=npc,
                     has_unverified_inputs=True,
                     warnings=_component_warnings,
+                    structure_type="component_relocation",
                     calculation_trace_json={
                         "candidate_status": STATUS_PRICED,
                         # Section 5 -- same generic structured field as
@@ -6017,6 +6026,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                         risk_adjusted_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
                                         has_unverified_inputs=True,
                                         warnings=[LIMITATION_NOTE] + list(_hy_result.disclosed_limitations),
+                                        structure_type="hybrid",
                                         calculation_trace_json={
                                             "candidate_status": _hy_status,
                                             "rejection_reason_class": _hy_rejection_class,
@@ -6154,6 +6164,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             total_budget_usd=inputs.gross_budget_usd,
                             total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                             has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                            structure_type="hybrid",
                             calculation_trace_json={
                                 "candidate_status": "DOMINATED_WITH_PROOF",
                                 "discovery_classification": "structural_archetype_generator",
@@ -6408,6 +6419,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "economics. Registry presence is real and disclosed; it is never "
                 "reported as resolved eligibility.",
             ],
+            structure_type="treaty_coproduction",
             calculation_trace_json={
                 "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
                 "discovery_classification": "treaty_coproduction",
@@ -6556,6 +6568,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    structure_type="hybrid",
                     calculation_trace_json={
                         "candidate_status": "RULE_REJECTED",
                         "rejection_reason_class": "NO_PRICEABLE_TREATY_UNLOCK",
@@ -6608,6 +6621,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                structure_type="hybrid",
                                 calculation_trace_json={
                                     "candidate_status": "RULE_REJECTED",
                                     "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
@@ -6655,6 +6669,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                structure_type="hybrid",
                                 calculation_trace_json={
                                     "candidate_status": _comb_rej_status,
                                     "rejection_reason_class": _comb_rej_class,
@@ -6730,6 +6745,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                structure_type="hybrid",
                                 calculation_trace_json={
                                     "candidate_status": "RULE_DATA_INCOMPLETE",
                                     "rejection_reason_class": "RULE_DATA_INCOMPLETE",
@@ -6802,6 +6818,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 "comparable to single-leg structures' own NPC without confirming "
                                 "the same normalization basis.",
                             ] + _comb_stack_notes,
+                            structure_type="hybrid",
                             calculation_trace_json={
                                 "candidate_status": STATUS_PRICED,
                                 "discovery_classification": "combined_coproduction_component_stack",
@@ -6960,6 +6977,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                         total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                         true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                        structure_type="hybrid",
                                         calculation_trace_json={
                                             "candidate_status": "RULE_REJECTED",
                                             "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
@@ -6995,6 +7013,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                         total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                         true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                        structure_type="hybrid",
                                         calculation_trace_json={
                                             "candidate_status": _mc_rej_status,
                                             "rejection_reason_class": _mc_rej_class,
@@ -7063,6 +7082,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                         "comparable to single-component combined structures' own NPC "
                                         "without confirming the same normalization basis.",
                                     ],
+                                    structure_type="hybrid",
                                     calculation_trace_json={
                                         "candidate_status": STATUS_PRICED,
                                         "discovery_classification": "combined_coproduction_multi_component_stack",
@@ -7166,6 +7186,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     total_budget_usd=inputs.gross_budget_usd,
                                     total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    structure_type="hybrid",
                                     calculation_trace_json={
                                         "candidate_status": "DOMINATED_WITH_PROOF",
                                         "discovery_classification": "combined_coproduction_multi_component_stack",
@@ -7275,6 +7296,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    structure_type="hybrid",
                     calculation_trace_json={
                         "candidate_status": "RULE_REJECTED",
                         "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
@@ -7316,6 +7338,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                         true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                         has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="hybrid",
                         calculation_trace_json={
                             "candidate_status": "RULE_REJECTED",
                             "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
@@ -7351,6 +7374,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                             true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                             has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                            structure_type="hybrid",
                             calculation_trace_json={
                                 "candidate_status": _pair_rej_status,
                                 "rejection_reason_class": _pair_rej_class,
@@ -7410,6 +7434,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 "-- not directly comparable to single-leg or three-way combined "
                                 "structures' own NPC without confirming the same normalization basis.",
                             ],
+                            structure_type="hybrid",
                             calculation_trace_json={
                                 "candidate_status": STATUS_PRICED,
                                 "discovery_classification": "combined_coproduction_pair_stack",
@@ -7540,6 +7565,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "on file; not priced as qualified economics. Registry presence is real "
                 "and disclosed; it is never reported as resolved eligibility.",
             ],
+            structure_type="treaty_coproduction",
             calculation_trace_json={
                 "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
                 "discovery_classification": "treaty_coproduction",
@@ -7670,6 +7696,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    structure_type="hybrid",
                                     calculation_trace_json={
                                         "candidate_status": "RULE_REJECTED",
                                         "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
@@ -7717,6 +7744,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    structure_type="hybrid",
                                     calculation_trace_json={
                                         "candidate_status": _nb_rej_status,
                                         "rejection_reason_class": _nb_rej_class,
@@ -7782,6 +7810,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                                    structure_type="hybrid",
                                     calculation_trace_json={
                                         "candidate_status": "RULE_DATA_INCOMPLETE",
                                         "rejection_reason_class": "RULE_DATA_INCOMPLETE",
@@ -7857,6 +7886,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     "not directly comparable to single-leg structures' own NPC without "
                                     "confirming the same normalization basis.",
                                 ] + _nb_stack_notes,
+                                structure_type="hybrid",
                                 calculation_trace_json={
                                     "candidate_status": STATUS_PRICED,
                                     "discovery_classification": "combined_coproduction_component_stack",
@@ -7966,6 +7996,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "budget-share and cultural-test facts are not yet on file; not priced "
                 "as qualified economics.",
             ],
+            structure_type="treaty_coproduction",
             calculation_trace_json={
                 "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
                 "discovery_classification": "treaty_coproduction",
@@ -8088,6 +8119,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                structure_type="hybrid",
                 calculation_trace_json={
                     "candidate_status": "RULE_REJECTED",
                     "rejection_reason_class": "MULTILATERAL_ELIGIBILITY_UNRESOLVED",
@@ -8134,6 +8166,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    structure_type="hybrid",
                     calculation_trace_json={
                         "candidate_status": "RULE_REJECTED",
                         "rejection_reason_class": "NO_PRICEABLE_TREATY_UNLOCK",
@@ -8209,6 +8242,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                     true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                     has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    structure_type="hybrid",
                     calculation_trace_json={
                         "candidate_status": "RULE_REJECTED",
                         "rejection_reason_class": "MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED",
@@ -8307,6 +8341,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "budget-share and cultural-test facts are not yet on file; not priced "
                 "as qualified economics.",
             ],
+            structure_type="treaty_coproduction",
             calculation_trace_json={
                 "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
                 "discovery_classification": "treaty_coproduction",

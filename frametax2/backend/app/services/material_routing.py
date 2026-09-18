@@ -74,7 +74,7 @@ def _read_source_text(local_path: Path) -> str | None:
 
 async def _route_budget(
     session: AsyncSession, *, project: Project, version: DocumentVersion, local_path: Path,
-) -> None:
+) -> str:
     """Parse a committed budget DocumentVersion with the existing
     deterministic budget_parser (the same parse -> classify_parsed_items
     pipeline `POST /projects/{id}/budgets/import` already uses), project
@@ -96,12 +96,25 @@ async def _route_budget(
     the same DocumentVersion). If the reparse yields nothing (a
     transient extraction failure, an unreadable file), the existing,
     still-valid parsed data is left completely untouched — a failed
-    reanalysis must never replace good prior output with an empty state."""
+    reanalysis must never replace good prior output with an empty state.
+
+    Ingestion acceptance closeout (2026-09-17): now returns a real status
+    string instead of an implicit None on every early return. Reproduced
+    live: `route_committed_material`'s caller (POST /candidates/{id}/
+    commit, the real committed API response) previously reported
+    "budget_routed" UNCONDITIONALLY whenever the category was "budget" --
+    even on an extraction failure/unreadable source/no-extractable-content
+    path where this function silently did nothing at all. That is exactly
+    the "silent partial success" this closeout's own scope forbids: a
+    caller reading the commit response had no way to distinguish a genuine
+    routing from a silent no-op. Every return path below now names what
+    actually happened.
+    """
     existing = (await session.execute(
         select(BudgetDocument).where(BudgetDocument.document_version_id == version.id)
     )).scalars().first()
     if existing is not None and existing.parser_version == BUDGET_PARSER_VERSION:
-        return  # already routed under the CURRENT parser — genuinely idempotent
+        return "already_current"  # already routed under the CURRENT parser — genuinely idempotent
 
     suffix = local_path.suffix.lower()
     if suffix == ".csv":
@@ -126,7 +139,7 @@ async def _route_budget(
         try:
             extracted = extract_text_from_pdf(local_path, max_pages=300)
         except Exception:  # noqa: BLE001 — extraction failure must not crash commit
-            return
+            return "extraction_failed"
         result = parse_budget_from_text(
             extracted.raw_text, filename=version.original_filename or local_path.name,
             pages=extracted.pages,
@@ -134,7 +147,7 @@ async def _route_budget(
     else:
         text = _read_source_text(local_path)
         if text is None:
-            return  # unsupported/unreadable source — leave unrouted, never guessed
+            return "unsupported_format"  # unsupported/unreadable source — leave unrouted, never guessed
         result = parse_budget_from_text(text, filename=version.original_filename or local_path.name)
 
     if not result.line_items and result.total_budget_raw is None:
@@ -142,7 +155,7 @@ async def _route_budget(
         # routing: leave genuinely unrouted (existing prior behavior).
         # Stale-reparse attempt: the existing, still-valid BudgetDocument
         # is left completely untouched — never replaced with emptiness.
-        return
+        return "no_extractable_content"
 
     classified = classify_parsed_items(result)
 
@@ -203,6 +216,7 @@ async def _route_budget(
         project.total_budget_usd = classified.total_budget_raw
 
     await session.flush()
+    return "routed"
 
 
 async def _route_screenplay(
@@ -408,8 +422,17 @@ async def route_committed_material(
         return "source_file_missing"
 
     if category == "budget":
-        await _route_budget(session, project=project, version=version, local_path=local_path)
-        return "budget_routed"
+        # Ingestion acceptance closeout (2026-09-17): status now reflects
+        # what _route_budget() actually did -- "budget_routed" only on a
+        # genuine successful parse; "budget_extraction_failed"/
+        # "budget_unsupported_format"/"budget_no_extractable_content"/
+        # "budget_already_current" otherwise. Previously this always
+        # returned the literal "budget_routed" regardless of outcome,
+        # reported all the way through the real POST /candidates/{id}/
+        # commit response -- a confirmed-live silent-success defect for
+        # any unparseable committed budget file.
+        status = await _route_budget(session, project=project, version=version, local_path=local_path)
+        return f"budget_{status}"
     if category == "screenplay":
         await _route_screenplay(session, project=project, version=version, local_path=local_path)
         return "screenplay_routed"

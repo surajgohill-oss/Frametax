@@ -731,13 +731,32 @@ def parse_budget_from_text(
     )
 
 
+_AMOUNT_WITH_SYMBOL_RE = re.compile(r"[\$£€]\s*([\d,]{1,15}(?:\.\d{0,2})?)\s*([KkMm]?)\b")
+_AMOUNT_BARE_RE = re.compile(r"[\$£€]?\s*([\d,]{1,15}(?:\.\d{0,2})?)\s*([KkMm]?)\b")
+
+
 def _parse_amount_from_line(line: str) -> float | None:
-    """Return the first parseable monetary amount found anywhere in the line."""
-    # Match amounts like $1,250,000 or 1,250,000.00 or 1.25M
-    m = re.search(
-        r"[\$£€]?\s*([\d,]{1,15}(?:\.\d{0,2})?)\s*([KkMm]?)\b",
-        line,
-    )
+    """Return the first parseable monetary amount found anywhere in the line.
+
+    Ingestion acceptance closeout (2026-09-17): reproduced live via a real
+    API round trip -- a genuine film-budget-style line like
+    "1000 PRODUCER FEE : $120,000" was parsed as $1,000 (the leading
+    account-code number), not $120,000 (the line's own real, currency-
+    marked figure), because the old regex had no currency-symbol
+    requirement and `re.search` returns the FIRST numeric token in the
+    line regardless of what it actually represents. A bare leading digit
+    sequence in a budget line is very often an account code (this same
+    convention is why _ACCT_CODE_BARE_RE exists for the specialized film-
+    budget parser), never the amount, whenever a real currency-marked
+    figure exists later in the same line. Fixed by preferring a
+    currency-symbol-prefixed match; only falling back to a bare number
+    (unchanged prior behavior) when the line has no currency symbol at
+    all -- so a line with no account-code prefix and no $ sign (e.g. a
+    plain "50000") still parses exactly as before.
+    """
+    m = _AMOUNT_WITH_SYMBOL_RE.search(line)
+    if m is None:
+        m = _AMOUNT_BARE_RE.search(line)
     if not m:
         return None
     raw = m.group(1).replace(",", "")

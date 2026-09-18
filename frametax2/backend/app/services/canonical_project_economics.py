@@ -458,8 +458,22 @@ async def _resolve_home_jurisdiction(
         from app.ingestion.pdf_extractor import extract_text_from_pdf
 
         settings = get_settings()
+        # Ingestion acceptance closeout (2026-09-17): a BudgetDocument with
+        # no storage_path (a real, documented case -- e.g. a legacy row
+        # created before commit-time routing existed and never backfilled,
+        # see test_project_record_falls_back_to_budget_document_total_
+        # when_unset's own docstring) previously resolved local_path to
+        # `Path(LOCAL_STORAGE_PATH) / ""`, i.e. the bare storage ROOT
+        # DIRECTORY -- `.exists()` is True for a directory, so the crash
+        # guard never caught it, and extract_text_from_pdf() then crashed
+        # (pymupdf.FileDataError) trying to open a directory as a PDF.
+        # Reproduced live via get_project_record() for exactly this
+        # fixture shape. `.is_file()` is the correct check -- a storage
+        # path that is unset, or points at something that isn't a real
+        # file, correctly falls through to `resolved is None` (jurisdiction
+        # stays unconfirmed) rather than crashing the whole read.
         local_path = Path(settings.LOCAL_STORAGE_PATH) / (budget_doc.storage_path or "")
-        if budget_doc.file_type == "pdf" and local_path.exists():
+        if budget_doc.file_type == "pdf" and budget_doc.storage_path and local_path.is_file():
             raw_text = extract_text_from_pdf(local_path).raw_text
             code = _infer_jurisdiction_code_from_currency(raw_text)
             if code:

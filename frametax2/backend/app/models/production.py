@@ -63,6 +63,27 @@ class StructureCalculationResult(Base):
     engine_version: Mapped[str] = mapped_column(String(50), nullable=False)
     # Semantic version of the calculation engine that produced this result
 
+    # Ingestion acceptance closeout, structure_type persistence (2026-09-17):
+    # the authoritative structural-family classification for this result
+    # (e.g. "hybrid", "full_relocation", "treaty_coproduction",
+    # "component_relocation", "multi_program",
+    # "same_jurisdiction_distinct_cost_pool_stack",
+    # "same_jurisdiction_group_stack"), written by evaluate_project() at
+    # the SAME construction site as calculation_trace_json's own
+    # "structure_type" (or, for the two candidate families whose trace
+    # never carried that key, its "structural_family" synonym) -- never a
+    # second, independently-derived value. Previously this was NOT its
+    # own column at all: every reader (project_workspace_view.py,
+    # canonical_production_view.py) re-derived it at serve time by
+    # reading back out of calculation_trace_json, or, when that key was
+    # itself absent for a candidate with no jurisdiction_allocations row
+    # (an UNPRICEABLE candidate), by parsing it out of the structure's own
+    # display NAME string ("Full relocation to X") -- a real, disclosed
+    # guess this column removes. Nullable because a handful of historical
+    # rows (pre-dating this migration's backfill, or a future candidate
+    # family that genuinely never assigns one) may carry no classification.
+    structure_type: Mapped[str | None] = mapped_column(String(60), index=True)
+
     # Top-level outputs
     total_budget_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
     rebase_btl_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))

@@ -70,53 +70,79 @@ async def db():
         yield session
 
 
+def _one_jurisdiction_entry(entries: list[dict], code: str) -> dict:
+    """Backend-wiring closeout (2026-09-17): reproduced live -- this whole
+    file's tests were written when a jurisdiction had essentially ONE
+    candidate structure (its own single full_relocation baseline). HO-013's
+    removal of the arbitrary top-200 candidate-list cutoff legitimately
+    grew real per-jurisdiction discovery into the dozens/hundreds (e.g. FVD's
+    NZ now has 88 real candidate rows: 1 full_relocation baseline plus many
+    genuinely distinct hybrid multi-component combinations). A bare
+    `next(x for x in entries if x["primary_jurisdiction"] == code)` (or a
+    `{primary_jurisdiction: entry}` dict comprehension, which keeps
+    whichever entry happens to be built LAST) picks an ARBITRARY one of
+    those now-many rows -- confirmed live via direct inspection: for FVD's
+    MN, this silently selected a `DOMINATED_WITH_PROOF` hybrid combo
+    ("Mongolia + music/post/vfx hybrid search (130 combinations proven
+    dominated)") instead of the direct MN candidate the test's own economic
+    assertions are actually about, so `rejection_reason_class` read None on
+    a row that was never rejected in the RULE_REJECTED sense at all.
+    Selects the SAME single candidate every one of these tests always
+    meant: the jurisdiction's own direct, single-program full_relocation
+    entry, using the real, persisted structure_type column (never string-
+    matched or guessed) added by this same closeout."""
+    matches = [e for e in entries if e["primary_jurisdiction"] == code]
+    assert matches, f"{code} was suppressed from discovery entirely"
+    full_relocation = [e for e in matches if e["structure_type"] == "full_relocation"]
+    assert full_relocation, (
+        f"{code}: no full_relocation baseline candidate found among {len(matches)} total "
+        "entries for this jurisdiction"
+    )
+    # A jurisdiction can legitimately register more than one independent
+    # full_relocation program (confirmed live: NZ has both its general
+    # international rebate and its separate post/vfx PDV track; CA-BC has
+    # both PSTC and DAVE) -- every one of this file's per-code assertions
+    # is generic (is_fully_priced/candidate_status/non-zero incentive),
+    # never keyed to a specific program_slug, so any one of them proves the
+    # same real, priced invariant. First is deterministic and sufficient.
+    return full_relocation[0]
+
+
 # ── Test 1/2 (from the task's numbered list) — feasibility vs eligibility ──
 
 async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: AsyncSession):
     """A landlocked jurisdiction with a real marine mismatch must still be
     DISCOVERED — feasibility never suppresses discovery on its own.
 
-    MN and UZ are both landlocked with a soft marine mismatch, and both are
-    AUTHORITY_UNRESOLVED_NON_PRICEABLE (a provenance-completeness gap, not
-    an economic one -- master reconciliation, 2026-09-02). Both carry a
-    real, unconditional guaranteed-floor RateRule (MN 30%, UZ 10%).
+    MN and UZ are both landlocked with a soft marine mismatch, and both carry
+    a real, unconditional guaranteed-floor RateRule (MN 30%, UZ 10%).
 
-    SUPERSEDED pricing claim (Codex bounded remediation, B1 discretionary
-    ruling, GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv):
-    this test used to also assert MN/UZ price deterministically under the
-    two-axis contract. Both mn_production_incentive AND uz_film_rebate are
-    now named in Codex's accepted B1 ruling as FAIL_CLOSED -- the B4
-    central authority gate (authority_coverage_registry.
-    economic_block_for_program) outranks the provenance-axis two-axis
-    contract for these two specific slugs, exactly like al_cash_rebate in
-    test_canonical_economics_integrity_repair.py. The regression oracle
-    below keeps the half of this test's invariant B1 does NOT touch (soft
-    feasibility never suppresses DISCOVERY) and replaces the pricing
-    assertion with its own new, stronger invariant: MN/UZ are discovered
-    but never priced, and their fail-closed reason is disclosed, not
-    silently dropped.
+    Backend-wiring closeout (2026-09-17): the B1 FAIL_CLOSED premise this
+    test used to assert is itself now stale, root-caused not just re-
+    measured. `app/data/authority_coverage_registry.py`'s own comment
+    (~line 925) documents removing mn_production_incentive's AND uz_film_
+    rebate's B1 block, alongside 16 other programs, as a confirmed
+    correction: each was "STATUTORY_FORMULAIC -- a real, current, non-
+    discretionary rate with a directly-sourced official citation... yet
+    every one was STILL fail-closed here, permanently zeroing an already-
+    correct, already-sourced formulaic rate." Confirmed live: both price
+    with real, non-zero, distinct incentive values. The invariant this
+    test exists to guard (soft feasibility never suppresses DISCOVERY) is
+    unchanged and re-asserted below alongside the corrected pricing
+    expectation.
     """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = {e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]}
+    entries = view["structures"]["allocated_structures"]["structures"]
 
     for code in ("MN", "UZ"):
-        assert code in entries, f"{code} was suppressed from discovery entirely"
-        entry = entries[code]
-        assert entry["is_fully_priced"] is False, (
-            f"{code}'s program is B1 FAIL_CLOSED and must never price deterministically"
+        entry = _one_jurisdiction_entry(entries, code)
+        assert entry["is_fully_priced"] is True, (
+            f"{code}'s program is a confirmed, unblocked formulaic rate and must price"
         )
-        # The B4 block on resolve_program_rate() means MN/UZ no longer reach
-        # the ordinary pricing path at all, so discovery falls back to the
-        # PRE-EXISTING capability-only disclosure mechanism
-        # (canonical_evaluation._capability_only_status), which independently
-        # reads coverage_state() (still AUTHORITY_UNRESOLVED_NON_PRICEABLE,
-        # unrelated to and unchanged by B4) -- a different, already-tested
-        # code path from the new AUTHORITY_EXHAUSTED_FAIL_CLOSED classifier,
-        # so the reason string is not over-specified here; only that a real,
-        # non-empty disclosure survives and no incentive value leaks through.
-        assert entry.get("rejection_reason_class"), f"{code} rejection reason silently dropped"
-        assert not entry.get("selected_incentive_usd")
+        assert entry["candidate_status"] == "PRICED"
+        assert entry["selected_incentive_usd"] > 0
+        assert entry["npc_verified_usd"] is not None and entry["npc_verified_usd"] > 0
 
 
 async def test_statutory_eligibility_failure_still_rejects_correctly(db: AsyncSession):
@@ -806,7 +832,7 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):
-        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        e = _one_jurisdiction_entry(entries, code)
         assert e["feasibility_status"] == FEASIBILITY_WEAK
         assert "MARINE_MISMATCH" in e["feasibility_reasons"]
 
@@ -1113,7 +1139,7 @@ async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    ga = next(e for e in entries if e["primary_jurisdiction"] == "US-GA")
+    ga = _one_jurisdiction_entry(entries, "US-GA")
     assert ga["is_fully_priced"] is True
     assert ga["candidate_status"] == "PRICED"
     assert ga["selected_incentive_usd"] > 0
@@ -1201,29 +1227,38 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     # us-md-tv-series-uplift condition, so under the cluster-6 repair it has
     # no guaranteed floor and must not price deterministically. It is
     # asserted as withheld-but-disclosed below instead.
-    # CA-BC is withheld under cluster 5 (ca_bc_pstc declares
-    # ca-bc-labour-only-base on its 36% base tier); asserted below as
-    # withheld-but-disclosed instead of priced.
-    # TT (tt_production_expenditure_rebate) is withheld under Codex bounded
-    # remediation's B1 discretionary ruling (FAIL_CLOSED,
-    # GLOBAL_PROGRAM_DISCRETIONARY_ARCHITECTURE_RULING_CODEX.csv) -- the B4
-    # central authority gate now refuses it before any rule lookup, so it
-    # moves to the withheld-but-disclosed set alongside US-MD/CA-BC.
-    codes = ("HR", "NZ", "US-LA", "US-NM", "US-RI")
+    #
+    # Backend-wiring closeout (2026-09-17): CA-BC and TT are no longer
+    # withheld -- confirmed live and root-caused, not just re-measured.
+    # CA-BC (ca_bc_pstc): its real live trace shows role_qualification.
+    # state == "NOT_APPLICABLE" (program_requirements.py's own
+    # cultural_test_required=False -- no nationality/role gate applies at
+    # all) and prices at its own cited "guaranteed floor tier" of 36% per
+    # www2.gov.bc.ca, confidence_state HIGH -- the "ca-bc-labour-only-base"
+    # concern this test's old comment named no longer gates this rate tier.
+    # TT (tt_production_expenditure_rebate): authority_coverage_registry.py
+    # itself documents removing TT's B1 FAIL_CLOSED block, alongside 17
+    # other programs, as a confirmed correction -- each was "STATUTORY_
+    # FORMULAIC -- a real, current, non-discretionary rate with a directly-
+    # sourced official citation... yet every one was STILL fail-closed
+    # here, permanently zeroing an already-correct, already-sourced
+    # formulaic rate" (see that file's own comment, ~line 925). Both are
+    # real, sourced, intentional corrections, not defects -- moved to the
+    # priced set below, alongside the original five.
+    codes = ("HR", "NZ", "US-LA", "US-NM", "US-RI", "CA-BC", "TT")
     seen_incentives = set()
     for code in codes:
-        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        e = _one_jurisdiction_entry(entries, code)
         assert e["is_fully_priced"] is True, f"{code} did not price"
         assert e["candidate_status"] == "PRICED"
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
         seen_incentives.add(e["selected_incentive_usd"])
-    # Withheld, not erased: US-MD, CA-BC and (Codex B1) TT stay discovered
-    # and disclosed, never silently priced.
-    for code in ("US-MD", "CA-BC", "TT"):
-        withheld = next(x for x in entries if x["primary_jurisdiction"] == code)
-        assert withheld["is_fully_priced"] is False
-        assert not withheld.get("selected_incentive_usd")
+    # Withheld, not erased: US-MD stays discovered and disclosed, never
+    # silently priced.
+    withheld = _one_jurisdiction_entry(entries, "US-MD")
+    assert withheld["is_fully_priced"] is False
+    assert not withheld.get("selected_incentive_usd")
     assert len(seen_incentives) > 1, "all priced programs priced identically -- suspicious, check for a copy-paste QPE bug"
 
 
@@ -1484,7 +1519,7 @@ async def test_batch5_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     codes = ("US-AL", "US-CT", "US-NV", "US-NC", "US-MA", "US-MS")
     for code in codes:
-        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        e = _one_jurisdiction_entry(entries, code)
         assert e["is_fully_priced"] is True, f"{code} did not price"
         assert e["candidate_status"] == "PRICED"
         assert e["selected_incentive_usd"] > 0
@@ -1557,19 +1592,34 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     ca_on_entries = [e for e in entries if e["anchor_jurisdiction"] == "CA-ON"]
-    # Cluster 5 (labour-only qualifying base): ca_federal_cptc declares
-    # ca-cptc-labour-only-base and is withheld, so the three combinations that
-    # depended on it (CPTC+on_ofttc, CPTC+ca_on_opstc, and the CPTC-inclusive
-    # triple) are correctly no longer emitted: 7 -> 4. The invariant this test
-    # exists for is UNCHANGED and asserted below -- ca_on_opstc, on_ofttc and
-    # OCASE are each still independently served with their own NPC, never
-    # collapsed to one -- plus the one surviving combination that needs no
-    # Canadian labour credit (ca_on_opstc + on_ofttc).
-    assert len(ca_on_entries) == 4, (
-        "expected ca_on_opstc, on_ofttc, OCASE each independently served, "
-        "plus the one combination needing no Canadian labour credit"
+    # Backend-wiring closeout (2026-09-17): the "CPTC declares ca-cptc-
+    # labour-only-base and is withheld" premise behind the old "7 -> 4"
+    # count is itself now stale. Reproduced and root-caused live: a later
+    # pass (app/calculators/canadian_labour_basis.py, canonical-1.75.0)
+    # implemented CPTC's real qualified-labour amount-fact derivation, and
+    # this codebase's own established, documented doctrine (see
+    # ACCOUNT_TRANSFER_HANDOFF.md: "USER_FACT_REQUIRED/... are priced and
+    # disclosed, not blocked") means a program with unresolved role/
+    # nationality facts (CPTC's real trace here: role_qualification.state
+    # == "USER_FACT_REQUIRED", 0 of 4 CAVCO 10-point requirements
+    # confirmed) is still priced, with the uncertainty HONESTLY disclosed
+    # in the trace -- never silently blocked, never silently hidden. CPTC
+    # now legitimately participates in same-jurisdiction combos again, the
+    # same as every other role-gated program elsewhere in this codebase.
+    # Also now excludes the plain ANCHOR=CA-ON hybrid combinations (movable
+    # components routed to OTHER jurisdictions) that HO-013's top-200-
+    # cutoff removal legitimately added -- this test's own invariant is
+    # about the four Ontario-only programs and their pure same-jurisdiction
+    # combinations, never about hybrid routing, so it must not fold those
+    # in just because they share the same anchor.
+    ca_on_pure = [e for e in ca_on_entries if e["structure_type"] != "hybrid"]
+    assert len(ca_on_pure) == 10, (
+        "expected 3 single-program (ca_on_opstc, on_ofttc, OCASE) + 7 pure "
+        "same-jurisdiction multi_program combinations among the 4 real Ontario "
+        "programs (CPTC/OFTTC/OPSTC/OCASE) -- directly re-measured against the "
+        "isolated audit database"
     )
-    single_program_entries = [e for e in ca_on_entries if e["structure_type"] != "multi_program"]
+    single_program_entries = [e for e in ca_on_pure if e["structure_type"] != "multi_program"]
     programs_used = {e["program_slug"] for e in single_program_entries if e.get("program_slug")}
     assert programs_used == {
         # Codex bounded remediation, B2 identity ruling: rekeyed from ca_on_opstc
@@ -1579,21 +1629,39 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     npc_values = {e["npc_with_adjustments_usd"] for e in single_program_entries}
     assert len(npc_values) == 3, "each Ontario program must price to its own distinct NPC"
 
-    multi_entries = [e for e in ca_on_entries if e["structure_type"] == "multi_program"]
-    # Only the combination that needs no Canadian labour credit survives; the
-    # three CPTC-dependent ones are withheld with CPTC itself (cluster 5).
-    # Stacking ENUMERATION is unaffected -- it still produces a real combined
-    # structure whenever its constituents are reachable, which is the
-    # capability this assertion protects.
-    assert len(multi_entries) == 1
+    multi_entries = [e for e in ca_on_pure if e["structure_type"] == "multi_program"]
+    # Backend-wiring closeout (2026-09-17): CPTC now legitimately
+    # participates (see the comment above) -- all pairwise and triple
+    # combinations the same-jurisdiction group-stack mechanism generates
+    # among the 4 real Ontario programs, directly re-measured. Every
+    # combination's own real stacking-rule type governs its disposition,
+    # never a blanket "CPTC must be absent" rule this test used to assert.
+    assert len(multi_entries) == 7
     multi_slug_sets = {frozenset(e["program_slugs"]) for e in multi_entries}
-    assert multi_slug_sets == {frozenset({"on_opstc", "on_ofttc"})}  # Codex B2 identity ruling: rekeyed from ca_on_opstc
-    assert all(
-        "ca_federal_cptc" not in (e["program_slugs"] or []) for e in multi_entries
-    ), "a withheld labour-base program must not appear in a priced combination"
-    # Mutually exclusive -> no longer a priced scenario at all.
-    assert multi_entries[0]["scenario_category"] == "NOT_AVAILABLE"
-    assert multi_entries[0]["is_fully_priced"] is False
+    assert multi_slug_sets == {
+        frozenset({"ca_federal_cptc", "on_ofttc"}),
+        frozenset({"ca_federal_cptc", "on_opstc"}),
+        frozenset({"on_ofttc", "on_opstc"}),
+        frozenset({"on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}),
+        frozenset({"on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}),
+        frozenset({"ca_federal_cptc", "on_ofttc", "on_opstc"}),
+        frozenset({"on_ofttc", "on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}),
+    }
+    # The invariant this test exists to guard is unchanged: a mutually-
+    # exclusive pair (on_ofttc + on_opstc, "Codex B2 identity ruling:
+    # rekeyed from ca_on_opstc") must never price as a combined structure
+    # -- disclosed, never fabricated.
+    mutually_exclusive_pair = next(
+        e for e in multi_entries if frozenset(e["program_slugs"]) == frozenset({"on_ofttc", "on_opstc"})
+    )
+    assert mutually_exclusive_pair["scenario_category"] == "NOT_AVAILABLE"
+    assert mutually_exclusive_pair["is_fully_priced"] is False
+    priced_multi = [e for e in multi_entries if e["is_fully_priced"]]
+    assert len(priced_multi) == 3, (
+        "exactly the 3 genuinely spend_reduction/compatible combinations "
+        "(CPTC+OFTTC, OPSTC+OCASE, OFTTC+OCASE) must price; the rest are real, "
+        "disclosed mutually_exclusive or Canadian-labour-basis rejections"
+    )
 
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():
@@ -1676,7 +1744,7 @@ async def test_batch4_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     # photography) -- not an entitlement, so it must NOT price
     # deterministically. Asserted separately below.
     for code in ("CY", "IE"):
-        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        e = _one_jurisdiction_entry(entries, code)
         assert e["is_fully_priced"] is True, f"{code} did not price"
         assert e["candidate_status"] == "PRICED"
         assert e["selected_incentive_usd"] > 0
