@@ -41,6 +41,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.ingestion.budget_parser import (
     BUDGET_PARSER_VERSION, classify_parsed_items, parse_budget_csv, parse_budget_from_text,
+    parse_budget_xlsx,
 )
 from app.ingestion.pdf_extractor import extract_text_from_pdf
 from app.models.budget import BudgetDocument, BudgetLineItem
@@ -105,6 +106,16 @@ async def _route_budget(
     suffix = local_path.suffix.lower()
     if suffix == ".csv":
         result = parse_budget_csv(local_path.read_bytes(), filename=version.original_filename or local_path.name)
+    elif suffix == ".xlsx":
+        # Backend-wiring self-audit (2026-09-17): previously had NO branch
+        # here at all -- an XLSX budget committed through the real
+        # ingestion path (POST /candidates/{id}/commit) fell into the
+        # generic `else` below, _read_source_text() returned None for a
+        # suffix it doesn't recognize, and _route_budget returned
+        # immediately with the project left permanently unrouted (never
+        # even attempted, let alone mis-parsed). Genuine spreadsheet
+        # parsing now runs the same as the CSV/PDF branches.
+        result = parse_budget_xlsx(local_path.read_bytes(), filename=version.original_filename or local_path.name)
     elif suffix == ".pdf":
         # Real per-page boundaries matter here (parse_budget_from_text's
         # own docstring: without them, a multi-page film budget degrades

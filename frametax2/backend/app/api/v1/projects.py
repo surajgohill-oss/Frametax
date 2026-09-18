@@ -96,16 +96,40 @@ async def list_projects(
     )).all()
     has_artwork = {pid for (pid,) in artwork_rows}
 
-    # The same canonical served-state signal get_project_record already
-    # computes per-project (structure_count > 0) — bulk-queried here so
-    # the Library grid, not just the Project Record, can route on real
-    # served state rather than the narrower leading_structure_id.
-    structure_rows = (await db.execute(
-        select(ProductionStructure.project_id).where(
-            ProductionStructure.project_id.in_(project_ids)
-        ).distinct()
+    # Backend-wiring self-audit (2026-09-17): this previously flagged a
+    # project "served" the moment ANY ProductionStructure row existed for
+    # it, with no engine_version/input_fingerprint check at all —
+    # ProductionStructure doesn't even carry engine_version, so a project
+    # whose only rows are a retired engine's or a superseded fingerprint's
+    # still rendered is_served_production=True on the Library grid.
+    # Confirmed live against the shared DB: 4 real named productions sit
+    # on canonical-1.72.0 (9 minor versions behind current), and would
+    # have shown as "served" despite no row at the current engine/
+    # fingerprint existing. Scoped to CURRENT engine_version AND each
+    # project's own freshly-recomputed input_fingerprint — the same
+    # canonical_evaluation.current_generation_fingerprint() every other
+    # current-evaluation reader (build_project_workspace_view,
+    # canonical_production_view) already keys off, so "served" here means
+    # exactly what it means everywhere else in this codebase.
+    from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+
+    current_engine_rows = (await db.execute(
+        select(ProductionStructure.project_id, StructureCalculationResult.input_fingerprint)
+        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+        .where(
+            ProductionStructure.project_id.in_(project_ids),
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
+        )
     )).all()
-    served_project_ids = {pid for (pid,) in structure_rows}
+    current_engine_fingerprints_by_project: dict[uuid.UUID, set[str]] = {}
+    for pid, fp in current_engine_rows:
+        current_engine_fingerprints_by_project.setdefault(pid, set()).add(fp)
+
+    served_project_ids: set[uuid.UUID] = set()
+    for pid, persisted_fingerprints in current_engine_fingerprints_by_project.items():
+        fingerprint = await current_generation_fingerprint(db, pid)
+        if fingerprint is not None and fingerprint in persisted_fingerprints:
+            served_project_ids.add(pid)
 
     cards: list[ProjectCard] = []
     for p in projects:
@@ -381,38 +405,60 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
         )
     )).scalars().all()
 
+    # Backend-wiring self-audit (2026-09-17): previously, `leading_result`
+    # was simply "the newest StructureCalculationResult row for whatever
+    # structure leading_structure_id currently names" — no engine_version/
+    # input_fingerprint check against the CURRENT generation. If a
+    # project's facts changed since its last evaluation (no re-run
+    # triggered yet), this would keep silently serving the PRIOR
+    # generation's NPC/warnings/limitation_note as if current, while
+    # build_project_workspace_view (which does key off
+    # current_generation_fingerprint) would correctly show no current
+    # candidates for the same project. Fixed to use the SAME single
+    # canonical generation identity every other current-evaluation reader
+    # already uses, so "leading" here never means "stale."
+    from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+
+    current_fingerprint = await current_generation_fingerprint(db, project.id)
+
     leading_structure = None
     leading_result = None
-    if project.leading_structure_id:
-        leading_structure = (await db.execute(
-            select(ProductionStructure).where(ProductionStructure.id == project.leading_structure_id)
-        )).scalar_one_or_none()
-        if leading_structure is not None:
-            leading_result = (await db.execute(
-                select(StructureCalculationResult)
-                .where(StructureCalculationResult.structure_id == leading_structure.id)
-                .order_by(StructureCalculationResult.created_at.desc())
-            )).scalars().first()
+    if project.leading_structure_id and current_fingerprint is not None:
+        candidate_result = (await db.execute(
+            select(StructureCalculationResult)
+            .where(
+                StructureCalculationResult.structure_id == project.leading_structure_id,
+                StructureCalculationResult.engine_version == ENGINE_VERSION,
+                StructureCalculationResult.input_fingerprint == current_fingerprint,
+            )
+            .order_by(StructureCalculationResult.created_at.desc())
+        )).scalars().first()
+        if candidate_result is not None:
+            leading_result = candidate_result
+            leading_structure = (await db.execute(
+                select(ProductionStructure).where(ProductionStructure.id == project.leading_structure_id)
+            )).scalar_one_or_none()
 
     # Structures sharing the CURRENT evaluation's own input_fingerprint —
     # never a raw count of every ProductionStructure row ever created for
     # the project. A superseded run (a stale legacy-engine result, or an
     # earlier budget version) leaves its rows in place for provenance but
     # must not inflate what the UI reports as "generated" for the
-    # currently-displayed evaluation.
-    if leading_result is not None and leading_result.input_fingerprint:
+    # currently-displayed evaluation. Always scoped this way now — never
+    # falls back to an unscoped raw count, which was the same staleness
+    # gap as leading_result above whenever leading_structure_id was unset.
+    if current_fingerprint is not None:
         structure_count = (await db.execute(
-            select(func.count()).select_from(StructureCalculationResult).where(
-                StructureCalculationResult.input_fingerprint == leading_result.input_fingerprint,
-                # A fingerprint alone doesn't distinguish engine versions —
-                # see project_workspace_view.py's identical filter for why.
-                StructureCalculationResult.engine_version == leading_result.engine_version,
+            select(func.count()).select_from(StructureCalculationResult)
+            .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+            .where(
+                ProductionStructure.project_id == project.id,
+                StructureCalculationResult.input_fingerprint == current_fingerprint,
+                StructureCalculationResult.engine_version == ENGINE_VERSION,
             )
         )).scalar_one()
     else:
-        structure_count = (await db.execute(
-            select(func.count()).select_from(ProductionStructure).where(ProductionStructure.project_id == project.id)
-        )).scalar_one()
+        structure_count = 0
 
     activity = (await db.execute(
         select(ProjectActivity).where(ProjectActivity.project_id == project.id)

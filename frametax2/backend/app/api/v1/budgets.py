@@ -29,7 +29,7 @@ async def import_budget(
     """
     from pathlib import Path
     from app.core.config import get_settings
-    from app.ingestion.budget_parser import classify_parsed_items, parse_budget_csv
+    from app.ingestion.budget_parser import classify_parsed_items, parse_budget_csv, parse_budget_xlsx
     from app.models.enums import ATLBTLCategory, CompensationType, SpendCategory
 
     # Verify project exists
@@ -61,9 +61,16 @@ async def import_budget(
             detail="Only CSV and XLSX files can be imported as structured budgets",
         )
 
-    # Parse and classify
+    # Parse and classify. Backend-wiring self-audit (2026-09-17): XLSX is a
+    # ZIP/binary spreadsheet payload, never text -- it must never be handed
+    # to parse_budget_csv's utf-8-sig decode + csv.DictReader path (that
+    # silently produced garbage/empty output, not an error). Genuine
+    # spreadsheet parsing via parse_budget_xlsx() below.
     raw_content = local_path.read_bytes()
-    parse_result = parse_budget_csv(raw_content, filename=doc.filename, currency_code=doc.currency_code)
+    if suffix == ".xlsx":
+        parse_result = parse_budget_xlsx(raw_content, filename=doc.filename, currency_code=doc.currency_code)
+    else:
+        parse_result = parse_budget_csv(raw_content, filename=doc.filename, currency_code=doc.currency_code)
     classified = classify_parsed_items(parse_result)
 
     doc.total_budget_raw = classified.total_budget_raw

@@ -1423,3 +1423,109 @@ def test_project_workspace_view_reuses_the_canonical_fingerprint_function():
     src = (Path(ce.__file__).parent / "project_workspace_view.py").read_text()
     assert "current_generation_fingerprint" in src
     assert "_coproduction_facts(session, project.id)" not in src
+
+
+# ---------------------------------------------------------------------------
+# CODEX BACKEND AUDIT REMEDIATION, Section A (2026-09-17) -- ingestion
+# integrity: reproduced live via app.ingestion.budget_parser.
+# parse_budget_from_text a real gap Codex's own synthetic-PDF finding
+# named ("$150,000 declared, only $50,000 persisted"): a narrative /
+# non-account-coded budget PDF (no leading numeric account code on each
+# line, so _is_film_budget_format() never dispatches to the specialized
+# Movie Magic parser) silently drops any line whose dollar amount is not
+# immediately adjacent to its description, while still correctly
+# capturing the document's own declared grand total from a "TOTAL
+# BUDGET" sentinel line -- with ZERO warning (parse_warnings stays
+# empty; only a fully-empty result ever warned before this fix). This is
+# a genuine PARSER/format-acceptance defect, not a fixture artifact: the
+# four locked real-corpus productions all reconcile to within $2 (see
+# CANONICAL_BUDGET_PARSER_REMEDIATION_CLAUDE.md Section 10), so a
+# two-thirds-of-budget gap is never source-document noise. Fixed not by
+# attempting perfect narrative-PDF extraction (out of scope -- this
+# module never estimates), but by making canonical_project_economics.
+# build_project_economic_inputs() fail closed with a new
+# BUDGET_MATERIALLY_INCOMPLETE blocker whenever the persisted line-item
+# sum diverges from the document's own declared total by more than the
+# greater of $1,000 or 2% of that declared total -- never evaluating a
+# silently partial budget.
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_materially_incomplete_budget_extraction_blocks_evaluation(db: AsyncSession):
+    """Reproduces Codex's synthetic-PDF finding directly against the real
+    parser, then confirms the persisted-vs-declared gap it produces is
+    caught by build_project_economic_inputs() as an explicit blocker
+    rather than silently priced."""
+    from app.ingestion.budget_parser import classify_parsed_items, parse_budget_from_text
+    from app.services.canonical_project_economics import build_project_economic_inputs
+
+    synthetic_pdf_text = (
+        "INDIE FEATURE FILM BUDGET\n\n"
+        "ABOVE THE LINE\n"
+        "Producer Fee ................................. $50,000\n\n"
+        "BELOW THE LINE\n"
+        "Camera & Grip Package Rental (2 wks @ $25,000/wk)\n"
+        "Location Fees, Permits & Site Insurance\n"
+        "Catering / Craft Service for the crew\n\n"
+        "TOTAL BUDGET: $150,000\n"
+    )
+    parsed = classify_parsed_items(parse_budget_from_text(synthetic_pdf_text, filename="synthetic.pdf"))
+    assert parsed.total_budget_raw == 150_000.0
+    persisted_sum = sum(i.amount_usd for i in parsed.line_items if i.amount_usd is not None)
+    assert persisted_sum < 100_000.0, (
+        "fixture no longer reproduces the real extraction gap -- adjust the synthetic text"
+    )
+    assert parsed.parse_warnings == [], (
+        "this reproduces the exact silent-drop condition: no warning is emitted even though "
+        "real declared spend was never captured as a line item"
+    )
+
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_BUDGET_VARIANCE", "GB",
+        [(item.description, item.amount_usd, "miscellaneous") for item in parsed.line_items],
+    )
+    # _build_audit_control_project sets total_budget_raw = the line-item sum
+    # by construction; overwrite it to the document's REAL declared total,
+    # exactly like a real routed PDF (declared total from its own sentinel
+    # line, independent of whatever the heuristic line parser captured).
+    from sqlalchemy import select as _select
+
+    from app.models.budget import BudgetDocument
+    doc = (await db.execute(
+        _select(BudgetDocument).where(BudgetDocument.project_id == project.id)
+    )).scalars().first()
+    doc.total_budget_raw = parsed.total_budget_raw
+    await db.commit()
+
+    result = await build_project_economic_inputs(db, project.id)
+    assert not result.ok
+    assert any("BUDGET_MATERIALLY_INCOMPLETE" in b for b in result.blockers), result.blockers
+
+    evaluation = await ce.evaluate_project(db, project.id)
+    assert evaluation["status"] == "BLOCKED_INCOMPLETE_INPUTS"
+    assert any("BUDGET_MATERIALLY_INCOMPLETE" in b for b in evaluation["blockers"])
+
+
+@pytest.mark.asyncio
+async def test_small_source_document_rounding_variance_never_blocks(db: AsyncSession):
+    """Negative control: a Little-Utopia-scale rounding variance ($2 out of
+    $4.36M, the real, already-accepted, disclosed source-document
+    discrepancy) must never trip the new materiality gate -- only a
+    genuinely material extraction gap should."""
+    from app.services.canonical_project_economics import build_project_economic_inputs
+
+    project = await _build_audit_control_project(
+        db, "AUDIT_CONTROL_BUDGET_ROUNDING", "GB",
+        [("2000 ATL DIRECTOR FEE", 4_364_395.0, "atl_director")],
+    )
+    from sqlalchemy import select as _select
+
+    from app.models.budget import BudgetDocument
+    doc = (await db.execute(
+        _select(BudgetDocument).where(BudgetDocument.project_id == project.id)
+    )).scalars().first()
+    doc.total_budget_raw = 4_364_393.0  # the real Little Utopia $2 excess
+    await db.commit()
+
+    result = await build_project_economic_inputs(db, project.id)
+    assert result.ok, result.blockers
+    assert result.inputs.reconciliation_variance_usd == 2.00

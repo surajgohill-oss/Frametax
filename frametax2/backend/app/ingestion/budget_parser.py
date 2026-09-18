@@ -188,6 +188,141 @@ def parse_budget_csv(
     )
 
 
+def parse_budget_xlsx(
+    content: bytes,
+    filename: str = "budget.xlsx",
+    currency_code: str = "USD",
+    description_col: str = "description",
+    amount_col: str = "amount",
+    department_col: str | None = "department",
+) -> BudgetParseResult:
+    """
+    Parse an XLSX budget file — genuine spreadsheet parsing via openpyxl,
+    never a binary-as-text decode through the CSV path.
+
+    Backend-wiring self-audit (2026-09-17): before this function existed,
+    every XLSX upload (routed through POST /projects/{id}/budgets/import,
+    which explicitly claims to accept ".csv"/".xlsx") was handed straight
+    to parse_budget_csv() -- `.decode("utf-8-sig", errors="replace")`
+    against an XLSX file's real content is a ZIP/binary payload, not text;
+    `errors="replace"` swallows the resulting decode failures into garbage
+    U+FFFD-laden "text" that csv.DictReader then silently misreads as
+    zero or nonsense columns, rather than raising anything a caller could
+    detect. This mirrors parse_budget_csv's own header-matching and
+    row-shape contract exactly (same column-name parameters, same
+    ParsedLineItem/BudgetParseResult shape) so callers do not need to
+    branch on which parser ran, only on which one is genuinely correct
+    for the file's real format.
+    """
+    import openpyxl
+
+    try:
+        workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True, read_only=True)
+    except Exception as exc:  # noqa: BLE001 — a corrupt/non-XLSX upload must be reported, never crash the request
+        return BudgetParseResult(
+            filename=filename,
+            currency_code=currency_code,
+            total_budget_raw=None,
+            origin_note=None,
+            line_items=[],
+            parse_warnings=[f"Could not read XLSX workbook: {exc}"],
+        )
+
+    sheet = workbook.active
+    rows_iter = sheet.iter_rows(values_only=True)
+    try:
+        header_row = next(rows_iter)
+    except StopIteration:
+        return BudgetParseResult(
+            filename=filename,
+            currency_code=currency_code,
+            total_budget_raw=None,
+            origin_note=None,
+            line_items=[],
+            parse_warnings=["XLSX worksheet is empty"],
+        )
+
+    header = [str(h).strip().lower() if h is not None else "" for h in header_row]
+
+    def find_col(name: str) -> int | None:
+        target = name.lower()
+        for idx, h in enumerate(header):
+            if h == target:
+                return idx
+        return None
+
+    desc_idx = find_col(description_col)
+    amt_idx = find_col(amount_col)
+    dept_idx = find_col(department_col) if department_col else None
+
+    items: list[ParsedLineItem] = []
+    warnings: list[str] = []
+
+    if desc_idx is None or amt_idx is None:
+        warnings.append(f"Could not find required columns '{description_col}'/'{amount_col}'")
+        return BudgetParseResult(
+            filename=filename,
+            currency_code=currency_code,
+            total_budget_raw=None,
+            origin_note=None,
+            line_items=[],
+            parse_warnings=warnings,
+        )
+
+    def _cell_str(row: tuple, idx: int | None) -> str:
+        if idx is None or idx >= len(row) or row[idx] is None:
+            return ""
+        return str(row[idx]).strip()
+
+    total = 0.0
+    for row_num, row in enumerate(rows_iter, start=2):
+        desc = _cell_str(row, desc_idx)
+        dept = _cell_str(row, dept_idx) if dept_idx is not None else None
+
+        if not desc:
+            continue
+
+        # A numeric cell (openpyxl's native type for an actual number) is
+        # the exact, unambiguous amount — never re-stringified and
+        # re-parsed through the text heuristic, which exists only for a
+        # cell that legitimately holds a formatted string like "$1,250,000".
+        raw_amount = row[amt_idx] if amt_idx < len(row) else None
+        if isinstance(raw_amount, (int, float)):
+            amount = float(raw_amount)
+            amount_raw_str = str(raw_amount)
+        else:
+            amount_raw_str = _cell_str(row, amt_idx)
+            amount = _parse_amount(amount_raw_str)
+
+        if amount is not None:
+            total += amount
+
+        items.append(ParsedLineItem(
+            description=desc,
+            department=dept or None,
+            amount_raw=amount_raw_str,
+            amount_usd=amount,
+            currency_code=currency_code,
+            source_row=row_num,
+            source_page=None,
+        ))
+
+    workbook.close()
+
+    if not items:
+        warnings.append("No line items could be parsed from the XLSX worksheet")
+
+    return BudgetParseResult(
+        filename=filename,
+        currency_code=currency_code,
+        total_budget_raw=total if items else None,
+        origin_note=None,
+        line_items=items,
+        parse_warnings=warnings,
+        line_count=len(items),
+    )
+
+
 # ─── Film budget account-number format ────────────────────────────────────────
 # Movie Magic / EP-style budgets use one of two account-code conventions:
 #   "XX-00" hyphenated (e.g. "10-00")   — _ACCT_CODE_HYPHEN_RE

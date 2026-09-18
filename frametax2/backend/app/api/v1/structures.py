@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -296,9 +296,29 @@ async def calculate_structure_impl(
 @router.get("/results", response_model=list[StructureCalculationResultRead])
 async def list_structure_results(
     project_id: str,
+    historical: bool = Query(
+        False,
+        description=(
+            "False (default): only the current engine version's current-generation "
+            "results — the same scope build_project_workspace_view() serves. True: "
+            "every historical row ever persisted for this project, across every past "
+            "engine version and superseded fingerprint."
+        ),
+    ),
     db: AsyncSession = Depends(get_db),
 ) -> list[StructureCalculationResult]:
-    """List all calculation results for structures in this project."""
+    """List calculation results for structures in this project.
+
+    Backend-wiring self-audit (2026-09-17): previously returned EVERY
+    historical row for the project with no engine_version/input_fingerprint
+    filter at all — a project re-evaluated many times (or carrying legacy-
+    engine rows) returned its FULL cross-generation history by default,
+    unlike every other served-state reader in this codebase (project_
+    workspace_view.build_project_workspace_view, canonical_production_view),
+    which are correctly scoped to the current generation. Default now
+    matches that scope exactly; `historical=true` opts into the full
+    unscoped history explicitly, rather than that being the only mode.
+    """
     structs_result = await db.execute(
         select(ProductionStructure.id).where(ProductionStructure.project_id == project_id)
     )
@@ -307,9 +327,20 @@ async def list_structure_results(
     if not struct_ids:
         return []
 
-    results = await db.execute(
-        select(StructureCalculationResult).where(
-            StructureCalculationResult.structure_id.in_(struct_ids)
-        ).order_by(StructureCalculationResult.created_at.desc())
+    stmt = select(StructureCalculationResult).where(
+        StructureCalculationResult.structure_id.in_(struct_ids)
     )
+
+    if not historical:
+        from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+
+        current_fingerprint = await current_generation_fingerprint(db, project_id)
+        if current_fingerprint is None:
+            return []
+        stmt = stmt.where(
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
+            StructureCalculationResult.input_fingerprint == current_fingerprint,
+        )
+
+    results = await db.execute(stmt.order_by(StructureCalculationResult.created_at.desc()))
     return list(results.scalars().all())

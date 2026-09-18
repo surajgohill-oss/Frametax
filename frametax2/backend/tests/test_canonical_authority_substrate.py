@@ -790,9 +790,19 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     #   test_canonical_served_wiring_repair.py::
     #   test_fvd_accounting_matches_codex_diagnosis for the same,
     #   independently-verified reconciliation.
-    assert len(entries) == 292
-    assert len(priced) == 159
-    assert len(unpriced) == 133
+    #
+    # Backend-wiring self-audit, structural-optimizer wiring correction
+    # (2026-09-17, canonical-1.81.0): 292/159/133 are now STALE — see the
+    # matching, fully-attributed comment in test_canonical_served_wiring_
+    # repair.py::test_fvd_accounting_matches_codex_diagnosis for the exact
+    # mechanism (HO-013's removal of the arbitrary top-200 candidate-list
+    # cutoff, a real and intended discovery-completeness increase, not a
+    # regression). Directly re-measured against the same isolated audit
+    # database, same project, same current engine version: 6,983 total /
+    # 542 priced / 6,441 unpriced.
+    assert len(entries) == 6983
+    assert len(priced) == 542
+    assert len(unpriced) == 6441
     assert len(priced) + len(unpriced) == len(entries)
 
     for code in ("MN", "UZ", "AT"):

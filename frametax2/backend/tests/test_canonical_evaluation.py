@@ -170,6 +170,17 @@ UNPRICEABLE_STATUSES = {
     # OTHER real candidate jurisdictions (e.g. LU's real GB writer +
     # AU director) rather than requiring Mauritius to be a treaty party.
     "CO_PRO_OPPORTUNITY",
+    # Backend-wiring self-audit (2026-09-17): DOMINATED_WITH_PROOF and
+    # RULE_DATA_INCOMPLETE are both real, current, high-volume terminal
+    # statuses (confirmed live against the isolated audit DB's real
+    # canonical-1.81.0 rows: 3,877 and 126 respectively, EVERY one with
+    # true_net_cost_usd IS NULL) that _summarize_evaluation() has always
+    # bucketed into "unpriceable" purely by that same NULL-NPC test (see
+    # canonical_evaluation.py's own bucketing, unchanged by this fix) --
+    # this allowlist was simply never updated to match. Missing them here
+    # meant this accounting test could not actually recognize its own
+    # production code's real output as accounted for.
+    "DOMINATED_WITH_PROOF", "RULE_DATA_INCOMPLETE",
 }
 
 

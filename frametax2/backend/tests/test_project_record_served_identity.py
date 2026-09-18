@@ -24,6 +24,7 @@ from app.models.organization import Organization
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
 from app.api.v1.projects import get_project_record, list_projects
+from app.services.canonical_evaluation import ENGINE_VERSION
 
 
 @pytest.fixture
@@ -61,12 +62,23 @@ async def test_never_evaluated_project_is_not_served(db: AsyncSession, project: 
 async def test_evaluated_non_lu_project_becomes_served_generically(db: AsyncSession, project: Project):
     """The exact defect: a real, non-Little-Utopia project that HAS
     produced real ProductionStructure/StructureCalculationResult rows
-    must be reported as served -- never gated on the project's title."""
+    must be reported as served -- never gated on the project's title.
+
+    Backend-wiring self-audit (2026-09-17): "served" is now correctly
+    scoped to the CURRENT engine version and a real input_fingerprint
+    (never any row that merely exists) -- see app/api/v1/projects.py's
+    is_served_production/structure_count fix. This fixture's own
+    StructureCalculationResult must therefore carry the CURRENT
+    ENGINE_VERSION and a real (even if fixture-arbitrary) fingerprint --
+    the fake "test-engine-1.0.0" this fixture previously used would now
+    correctly be excluded as non-current, which is the fix working as
+    intended, not a reason to weaken the new scoping."""
     structure = ProductionStructure(id=uuid.uuid4(), project_id=project.id, name="Test structure")
     db.add(structure)
     await db.flush()
     result = StructureCalculationResult(
-        id=uuid.uuid4(), structure_id=structure.id, engine_version="test-engine-1.0.0",
+        id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+        input_fingerprint="served-identity-test-fingerprint",
     )
     db.add(result)
     await db.commit()
@@ -92,7 +104,8 @@ async def test_library_grid_card_carries_the_same_served_signal_as_the_record(db
     db.add(structure)
     await db.flush()
     result = StructureCalculationResult(
-        id=uuid.uuid4(), structure_id=structure.id, engine_version="test-engine-1.0.0",
+        id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+        input_fingerprint="served-identity-test-fingerprint",
     )
     db.add(result)
     await db.commit()

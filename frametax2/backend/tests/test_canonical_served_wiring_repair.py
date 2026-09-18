@@ -225,8 +225,26 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     #     already documented above for the B1 authority gate.
     #   Net: unpriced 135 - 3 (removed, were already unpriced) + 1 (new
     #   flip) = 133; priced 160 - 1 (flip) = 159; total 295 - 3 = 292.
-    assert len(priced) == 159
-    assert len(unpriced) == 133
+    #
+    # Backend-wiring self-audit, structural-optimizer wiring correction
+    # (2026-09-17, canonical-1.81.0): 159/133 (292 total) is now STALE —
+    # HO-013's fix removed the arbitrary global `_MULTI_COMPONENT_TARGET_
+    # BOUND=200` candidate-list cutoff (one component-agnostic list sliced
+    # for every component) and replaced it with component-specific
+    # candidate lists plus a genuine pigeonhole-proof widening search that
+    # examines the full candidate universe rather than an admitted slice.
+    # This is a real, disclosed, intended INCREASE in genuine discovery
+    # completeness, not a regression or a fixture drift — the fix's whole
+    # point was that ranking must never suppress feasible discovery via an
+    # unproven cutoff. Directly measured against the real FVD candidate
+    # universe in the isolated audit database at the current engine
+    # version: 542 priced / 6,441 unpriced (6,983 total). Per this
+    # workstream's own explicit instruction ("do not reduce valid
+    # discovery to satisfy a stale oracle"), the assertions below are
+    # updated to the new, larger, genuinely-measured real count rather
+    # than the old cutoff-bounded one.
+    assert len(priced) == 542
+    assert len(unpriced) == 6441
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -235,8 +253,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 159  # mirrors priced count above (Codex final-nine remediation: 160 -> 159, th_film_incentive)
-    assert accounting["unpriceable_count"] == 133  # mirrors unpriced count above (Codex final-nine remediation: 135 -> 133, th_film_incentive)
+    assert accounting["review_required_count"] == 542  # mirrors priced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
+    assert accounting["unpriceable_count"] == 6441  # mirrors unpriced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -258,8 +276,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 159  # mirrors priced count above (Codex final-nine remediation: 160 -> 159, th_film_incentive)
-    assert len(unpriceable_ranked) == 133  # mirrors unpriced count above (Codex final-nine remediation: 135 -> 133, th_film_incentive)
+    assert len(review_ranked) == 542  # mirrors priced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
+    assert len(unpriceable_ranked) == 6441  # mirrors unpriced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -504,7 +522,14 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # candidate-jurisdiction pool for bilateral-partner discovery).
     # 46 - 29 - 15 = +2. Still not the invariant this test guards: distinct
     # terminal causes.
-    assert len(unpriceable) == 133  # Codex bounded remediation B3: 135 -> 137 (th_film_incentive/za_nfvf_rebate add new terminal causes); (a prior pass reconciled 137 back to 135); Codex final-nine remediation: 135 -> 133 -- the same th_film_incentive fix documented in test_fvd_accounting_matches_codex_diagnosis (three Thailand component-routing candidates removed entirely -- already unpriced, so -3; one "Full relocation to Thailand" candidate flips in from priced, +1; net -2) -- see that test for the exact, directly-measured reconciliation
+    # Backend-wiring self-audit (2026-09-17): 133 is now stale for the same
+    # HO-013 top-200-cutoff-removal reason documented at length in
+    # test_fvd_accounting_matches_codex_diagnosis above -- real, complete
+    # discovery legitimately grew to 6,441, directly measured against the
+    # isolated audit database at the current engine version. The invariant
+    # this test actually guards (distinct terminal causes, asserted below)
+    # is unaffected by the count.
+    assert len(unpriceable) == 6441
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

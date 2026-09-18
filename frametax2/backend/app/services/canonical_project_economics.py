@@ -111,6 +111,20 @@ FACT_AMOUNT_FACT_PREFIX = "amount_fact:"
 #: account->jurisdiction allocation and is reported rather than guessed.
 _ACCOUNT_CODE_RE = re.compile(r"^\s*(\d{3,6})\s+(.*)$")
 
+#: Backend-wiring self-audit (2026-09-17): the boundary between a real
+#: source-document rounding artifact (Little Utopia's own $2 excess out of
+#: $4,364,393 -- 0.00005%) and a genuinely partial extraction (a reproduced
+#: synthetic case losing two-thirds of a declared $150,000 budget). Whichever
+#: is larger of a flat floor or a percentage of the declared total, so a
+#: small budget's absolute-dollar noise floor never falsely trips, and a
+#: large budget's small-percentage real variance never falsely trips either.
+_MATERIAL_VARIANCE_FLOOR_USD = 1_000.0
+_MATERIAL_VARIANCE_REL_PCT = 0.02
+
+
+def _material_variance_threshold_usd(gross_budget_usd: float) -> float:
+    return max(_MATERIAL_VARIANCE_FLOOR_USD, _MATERIAL_VARIANCE_REL_PCT * gross_budget_usd)
+
 
 @dataclass(frozen=True)
 class ProjectEconomicInputs:
@@ -633,6 +647,35 @@ async def build_project_economic_inputs(
         blockers.append(
             "BUDGET_TOTAL_MISSING — the budget document states no grand total. "
             "The leaf-line sum is not substituted for it."
+        )
+    elif abs(round(leaf_sum, 2) - float(doc.total_budget_raw)) > _material_variance_threshold_usd(
+        float(doc.total_budget_raw)
+    ):
+        # Backend-wiring self-audit, Section A (2026-09-17): reproduced
+        # live -- a real, unsupported budget-PDF layout (a narrative /
+        # non-account-coded top sheet, e.g. prose line items with no
+        # adjacent "$" amount) makes parse_budget_from_text's generic
+        # fallback silently DROP whole line items while still capturing
+        # the document's own declared grand total from its "TOTAL BUDGET"
+        # sentinel line -- e.g. a synthetic $150,000 budget where only
+        # $50,000 of line items survive extraction, with zero warning
+        # anywhere (parse_warnings stays empty; "no items at all" is the
+        # only case that already warned). Every real four-corpus
+        # production reconciles to within $2 (0.00005%) of its own
+        # declared total -- see CANONICAL_BUDGET_PARSER_REMEDIATION_
+        # CLAUDE.md Section 10 -- so a variance this large is never a
+        # source-document rounding artifact; it is a silently partial
+        # budget. Rather than guessing at a better heuristic extraction
+        # (out of scope -- this module never estimates), fail closed:
+        # the canonical engine prices an actual, COMPLETE budget, never
+        # a silently truncated one.
+        blockers.append(
+            "BUDGET_MATERIALLY_INCOMPLETE — the persisted line items sum to "
+            f"${leaf_sum:,.2f}, which diverges from the document's declared "
+            f"total of ${float(doc.total_budget_raw):,.2f} by more than can be "
+            "explained by normal source-document rounding. Extraction likely "
+            "dropped real line items silently; the canonical engine does not "
+            "price a partial budget."
         )
 
     if blockers:
