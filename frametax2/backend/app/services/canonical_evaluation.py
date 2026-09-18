@@ -640,7 +640,8 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.81.0"  # 1.81.0: structural-optimizer wiring correction pass, resumed at ba76cd2f. Corrects three real defects in the six-control closeout above (1.80.0), each a genuine economic-behavior change, never a cosmetic one. HO-013: REMOVED the arbitrary _MULTI_COMPONENT_TARGET_BOUND=200 flat cutoff, which sliced the SAME global, component-AGNOSTIC _combined_top_targets list for every routed component -- a real doctrine violation, since a genuinely component-specific real candidate ranked below 200 in the GLOBAL ranking could be silently excluded even while ranking near the top of its OWN component's real list. Replaced with (1) _hy_component_all_targets[component] -- the SAME real, independently-priced-per-component candidate list the pre-existing ordinary_component_hybrid mechanism already builds via _price_component_relocation_candidate, and (2) a genuine pigeonhole-exchange proof-based widening search (window starts at 2, the proven-sufficient size for 2 simultaneously-routed components, and doubles on failure until a real PRICED combination is found or every real candidate is exhausted), mirroring the SAME proof pattern canonical-1.72.0 already established elsewhere in this file. Runtime dropped from ~36s to ~3s on the real HO-013 fixture as a direct consequence (small, real, component-scoped lists vs. an arbitrary flat 200-candidate slice). HO-012: REVERTED from PRICED to an explicit RULE_REJECTED. Direct primary-authority verification found the prior pass's "each Eurimages co-producer independently accesses its own national incentive" pricing basis unsupported: treaty_engine.py's own eurimages-multilateral TreatyData carries EMPTY majority_unlocks/minority_unlocks (the codebase's own structured, authoritative "this treaty unlocks these specific programs" fields, populated with real slugs for every bilateral treaty) -- only fund_unlocks=["eu_eurimages"] (the fund itself, not each party's own program) is populated. The sole textual support was an uncited free-text `notes` field (confidence_tier="PARSED", no citation field -- contrast TreatyData.non_party_personnel_exception_citation, which DOES exist and IS populated for individually-researched propositions elsewhere in this same dataclass). Real subset-eligibility discovery (participant count, per-party minimum contribution share, cultural test) remains intact and disclosed; only the unsupported pricing claim is removed, persisting RULE_REJECTED/MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED instead. HO-011: reconciled the two conflicting authority_coverage_registry.py registries AT THEIR SOURCE instead of papering over the disagreement at the consumer site. Direct verification found program_rate_rules_worldwide.py's US_TN_DOCTRINE carries a real, VERIFIED-tier, officially-cited (tn.gov) RateRule -- a single unconditional flat-25%-of-QPE tier, structurally identical in kind to the 18 programs this same file's own changelog already documents removing from _B1_DISCRETIONARY_RULING as "genuinely misclassified as authority-exhausted" -- us_tn_performance_grant was evidently missed by that pass. Removed from _B1_DISCRETIONARY_RULING this pass (AUTHORITY_COVERAGE_REGISTRY_VERSION 1.8.0 -> 1.9.0), which is what actually caused the disagreement the prior pass's consumer-side _capability_only_status() workaround was only papering over; that workaround is removed in the same pass (reverted to its original, simpler form), since the disagreement it existed to disclose no longer exists. us_tn_performance_grant now prices normally (confirmed: $750,000.00 = 25% of $3,000,000 QPE) and participates in the full discovery pipeline (standalone, component_relocation, and structural_archetype_generator paths alike), not a special case. HO-003 and HO-010 needed no code change: direct re-verification found HO-003's literal required target ({uk_avec, au_producer_offset, NZ's international-post-vfx grant}) already reaches an EXACT PRICED match ($1,939,600.00) -- the prior pass's own CSV evidence had simply cited a different, non-literal illustrative example (Uzbekistan) instead of the literal target, a documentation defect, not a code gap, now corrected in the ledger and the prevention test. HO-010's standalone Creative Saskatchewan identity reconciliation (canonical-1.80.0) remains correct and unchanged; both authority registries independently confirm the program is a real, confirmed DISPLAY_ONLY_ZERO_GUARANTEED discretionary award that can never enter priced_by_code, so the FULL 3-program required control is honestly relabeled COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED rather than a false full-control verification claim. Invalidates every cached row so this fires fresh.
+ENGINE_VERSION = "canonical-1.82.0"  # 1.82.0: OPTIMIZER_AUDIT_DEFECT_REMEDIATION (2026-09-18), fixing CURRENT_TIP_OPTIMIZER_NUMERICAL_ACCEPTANCE_AUDIT.md's NUM-001..NUM-005, resumed at e880c44. Bumped because both the persisted trace shape and the served workspace contract changed, never because any priced economics changed (all four baseline incentive/NPC figures are confirmed byte-identical before/after). NUM-001: project_workspace_view.py's `top_result = comparable[0]` published a priced-but-genuinely-unresolved baseline (Little Utopia/F#K Valentine's Day) as the served recommendation, contradicting evaluate_project()'s own top_result=null -- fixed by extracting the ONE canonical qualification-admission predicate (new public qualification_admits_recommended(), previously three independent copies: this file's own _summarize_evaluation() closure, canonical_production_view.py's module function, and NONE in project_workspace_view.py) and consuming it from the workspace adapter, never re-implementing a fourth. NUM-002: hybrid (ordinary_component_hybrid) rows never called the SAME per-program discretionary/administrative disclosure helper the single_country/multi_program/component_relocation families already use -- structural_archetype_generator.StructuralCandidateResult now carries administrative_allocation_risk/administrative_allocation_risk_reasons, derived from EVERY component program via _competitive_allocation_disclosure, computed once in generate_structural_candidate() and persisted at both real ordinary_component_hybrid trace sites (the priced-candidate row and its own DOMINATED_WITH_PROOF aggregate is intentionally excluded -- that row has no single priced candidate's economics to attach). NUM-003: apply_stacking_adjustments()'s own StackingAdjustmentResult (raw_values, adjustments, program_values -- already fully computed inside generate_structural_candidate()) was discarded after only its aggregate total was kept; now persisted in full (raw_component_incentives_usd, stacking_adjustments, post_adjustment_component_incentives_usd) so an adjusted hybrid total reconstructs exactly from the trace alone. NUM-004: both DOMINATED_WITH_PROOF trace builders (ordinary_component_hybrid and combined_coproduction_multi_component_stack) now persist the numeric proof itself -- component_cutoff_bounds_usd, component_window_best_usd, an interaction-safe total upper bound (conservative independent-maxima single-component-substitution bound), incumbent_value_usd, and an explicit stopping_inequality/stopping_inequality_holds -- without altering the existing widening-search/stop decision in any way. NUM-005: project_workspace_view.py's evaluation block now returns engine_version/input_fingerprint (evaluate_project()'s own top-level response already did). Supporting validator correction: scripts/canonical_integrity_gate.py's QPE check no longer sums claim-specific qpe_usd across segments and compares to gross budget (a stale oracle -- lawful stacked programs, e.g. Ontario CPTC+OFTTC, correctly share the identical eligible-cost base, so summing produced false positives); replaced with per-segment non-negativity plus a real source-line disjoint-routing check across DIFFERENT components via component_allocations[].line_ids.
+# 1.81.0: structural-optimizer wiring correction pass, resumed at ba76cd2f. Corrects three real defects in the six-control closeout above (1.80.0), each a genuine economic-behavior change, never a cosmetic one. HO-013: REMOVED the arbitrary _MULTI_COMPONENT_TARGET_BOUND=200 flat cutoff, which sliced the SAME global, component-AGNOSTIC _combined_top_targets list for every routed component -- a real doctrine violation, since a genuinely component-specific real candidate ranked below 200 in the GLOBAL ranking could be silently excluded even while ranking near the top of its OWN component's real list. Replaced with (1) _hy_component_all_targets[component] -- the SAME real, independently-priced-per-component candidate list the pre-existing ordinary_component_hybrid mechanism already builds via _price_component_relocation_candidate, and (2) a genuine pigeonhole-exchange proof-based widening search (window starts at 2, the proven-sufficient size for 2 simultaneously-routed components, and doubles on failure until a real PRICED combination is found or every real candidate is exhausted), mirroring the SAME proof pattern canonical-1.72.0 already established elsewhere in this file. Runtime dropped from ~36s to ~3s on the real HO-013 fixture as a direct consequence (small, real, component-scoped lists vs. an arbitrary flat 200-candidate slice). HO-012: REVERTED from PRICED to an explicit RULE_REJECTED. Direct primary-authority verification found the prior pass's "each Eurimages co-producer independently accesses its own national incentive" pricing basis unsupported: treaty_engine.py's own eurimages-multilateral TreatyData carries EMPTY majority_unlocks/minority_unlocks (the codebase's own structured, authoritative "this treaty unlocks these specific programs" fields, populated with real slugs for every bilateral treaty) -- only fund_unlocks=["eu_eurimages"] (the fund itself, not each party's own program) is populated. The sole textual support was an uncited free-text `notes` field (confidence_tier="PARSED", no citation field -- contrast TreatyData.non_party_personnel_exception_citation, which DOES exist and IS populated for individually-researched propositions elsewhere in this same dataclass). Real subset-eligibility discovery (participant count, per-party minimum contribution share, cultural test) remains intact and disclosed; only the unsupported pricing claim is removed, persisting RULE_REJECTED/MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED instead. HO-011: reconciled the two conflicting authority_coverage_registry.py registries AT THEIR SOURCE instead of papering over the disagreement at the consumer site. Direct verification found program_rate_rules_worldwide.py's US_TN_DOCTRINE carries a real, VERIFIED-tier, officially-cited (tn.gov) RateRule -- a single unconditional flat-25%-of-QPE tier, structurally identical in kind to the 18 programs this same file's own changelog already documents removing from _B1_DISCRETIONARY_RULING as "genuinely misclassified as authority-exhausted" -- us_tn_performance_grant was evidently missed by that pass. Removed from _B1_DISCRETIONARY_RULING this pass (AUTHORITY_COVERAGE_REGISTRY_VERSION 1.8.0 -> 1.9.0), which is what actually caused the disagreement the prior pass's consumer-side _capability_only_status() workaround was only papering over; that workaround is removed in the same pass (reverted to its original, simpler form), since the disagreement it existed to disclose no longer exists. us_tn_performance_grant now prices normally (confirmed: $750,000.00 = 25% of $3,000,000 QPE) and participates in the full discovery pipeline (standalone, component_relocation, and structural_archetype_generator paths alike), not a special case. HO-003 and HO-010 needed no code change: direct re-verification found HO-003's literal required target ({uk_avec, au_producer_offset, NZ's international-post-vfx grant}) already reaches an EXACT PRICED match ($1,939,600.00) -- the prior pass's own CSV evidence had simply cited a different, non-literal illustrative example (Uzbekistan) instead of the literal target, a documentation defect, not a code gap, now corrected in the ledger and the prevention test. HO-010's standalone Creative Saskatchewan identity reconciliation (canonical-1.80.0) remains correct and unchanged; both authority registries independently confirm the program is a real, confirmed DISPLAY_ONLY_ZERO_GUARANTEED discretionary award that can never enter priced_by_code, so the FULL 3-program required control is honestly relabeled COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED rather than a false full-control verification claim. Invalidates every cached row so this fires fresh.
 # 1.80.0: six-control closeout (HO-003, HO-007, HO-012, HO-013, HO-010, HO-011) -- closes the acceptance gap left by 1.79.0's honest-but-incomplete MULTI_PRINCIPAL_PARTIALLY_RESOLVED/MULTI_PRINCIPAL_DEFERRED/GRANT_COMPONENT_UNWIRED_DEFERRED dispositions. HO-003: the binding doctrine ("ranking must never suppress feasible discovery") was being violated by _best_priced_treaty_side_candidate(), which picked ONE overall-best-priced partner program per jurisdiction rather than enumerating every treaty-valid unlock. New _all_priced_treaty_side_candidates() enumerates every program in a treaty's real minority_unlocks/majority_unlocks that independently prices (never inventing one outside the registered unlock list), and the home-anchored/non-home-anchored bilateral loops now iterate every returned candidate instead of a single winner -- _combined_top_targets was likewise flattened from one-best-per-jurisdiction to every-candidate-per-jurisdiction so two genuinely different real programs for the same jurisdiction (e.g. NZ's international-post-vfx grant vs nz_spg_international) can each be reached. This produces the exact literal HO-003 target {uk_avec, au_producer_offset, nz international post/vfx}: PRICED, $1,939,600.00 total incentive on a $7.5M budget. HO-007: the enumeration fix surfaces, for the first time, an explicit per-unlock RULE_REJECTED (NO_PRICEABLE_TREATY_UNLOCK) whenever a treaty's real minority_unlocks contains zero independently-priceable programs, citing each unlock's real authority_coverage_registry/program_rate_rules status -- applied to the real, registered uk-fr-bilateral treaty, whose real minority_unlocks are fr_tax_credit_cinema/fr_cnc_production, never fr_trip (confirmed via direct treaty_engine.py query, not assumed); this control's own literal fr_trip target is therefore a corrected-target RULE_REJECTED, not a forced PRICED. HO-013: new _price_combined_coproduction_multi_component_candidate() generalizes the existing single-component combined-co-production kernel to N>=2 simultaneous movable components with disjoint cost pools (account_splits excludes the union of every routed component's spend_category, never double-counted), wired as a new discovery pass over itertools.combinations of the production's real movable components x itertools.product of every per-component target candidate (bounded by a disclosed _MULTI_COMPONENT_TARGET_BOUND=200 practical search cap, this codebase's own precedented safety-limit pattern, never a doctrine choice); reaches the exact literal HO-013 4-program target {uk_avec, au_producer_offset, nz international post/vfx, OCASE}: PRICED, $2,046,160.00 total incentive on an $8M budget. HO-012: new _price_combined_multilateral_coproduction_candidate() (N-party multilateral generalization of the existing pair kernel, sharing every account across all N real evidenced participant percentages, normalized to sum to 1.0) plus new _real_multilateral_subset_participants() (reads the simpler, treaty-scoped coproduction_participant_pct::{treaty_slug}::{code} fact key rather than requiring a percentage fact for every one of Eurimages' ~37 member states, which made the pre-existing full-membership multilateral mechanism architecturally unreachable for a producer-intended specific N-party structure) together let a real 3-party Eurimages-eligible production reach the exact literal HO-012 target {fr_trip, uk_avec, ie_section_481} -- fr_trip IS a real, valid unlock here because Eurimages is a genuine, separately-registered multilateral fund route distinct from the bilateral UK-France treaty HO-007 depends on, confirmed via direct treaty_engine.py TreatyData reading, not assumed: PRICED, $2,476,080.00 total incentive on a $9M budget. HO-011: _capability_only_status() now checks _economic_block_for_program() (the OLDER, separate authority_coverage_registry.py block dict) before trusting a PRICEABLE_VALIDATED read from the newer coverage_state()/blocks_economic_candidacy() registry, because the two registries were found to genuinely disagree for us_tn_performance_grant and resolve_program_rate() empirically still honors the older block -- this disagreement is a real, disclosed, UNRESOLVED data-integrity gap between the two registries (not fixed this pass, a separate reconciliation project), but the persisted rejection reason now names it explicitly rather than silently returning a misleadingly-optimistic status: UNPRICEABLE_AUTHORITY_INSUFFICIENT/FAIL_CLOSED. HO-010: new canonical_program_slug field on conditional_programs.py's ConditionalProgramNode (plus _CANONICAL_SLUG_BY_NODE_ID reconciliation table, one verified entry so far: Creative Saskatchewan's catalog node -> ca_sk_creative_saskatchewan_grant) bridges the previously-separate conditional-discovery catalog identity and the priceable program_slug rate registry; the single-program capability_only branch now also calls the pre-existing _conditional_data() helper (previously only wired for combined/treaty structure types) so this reconciliation is actually visible on a real persisted structure's conditional_programs/conditional_compatibility disclosure -- disposition remains the real, pre-existing FEASIBILITY_REVIEW_REQUIRED/AUTHORITY_UNRESOLVED_NON_PRICEABLE (never a fabricated fund_overlay component; a genuinely disjoint real second budget line for one would need to be invented, which the explicit no-guessed-allocations constraint forbids), now confirmed via direct query to be a real, reconstructable, non-silently-omitted disposition rather than an unverified DEFERRED claim. Reinvestment/gross-up remains shelved throughout, per explicit instruction. Invalidates every cached row so this fires fresh.
 # 1.79.0: eight-control closeout, multi-principal pairwise co-production (REG-4; HO-003/007/013's own pairwise treaty leg) -- confirmed via direct code reading (never assumed) that every EXISTING combined-co-production pricing path in this file (_price_combined_coproduction_component_candidate, both the home-anchored and non-home-anchored loops) unconditionally required a THIRD movable-component target alongside the two treaty parties, so a pure 2-program co-production (a jurisdiction's own national program + its real treaty partner's own national program, no third program) could never be reached even when a real, registered bilateral treaty and real, evidenced majority_pct/minority_pct contribution facts existed for the pair. New _price_combined_coproduction_pair_candidate() is the direct sibling of the existing 3-way function with the routed component omitted: it applies the SAME real, evidenced (never invented) treaty contribution facts as an explicit spec.account_splits entry across every non-memo account (derive_account_allocation's own highest-precedence rule), reusing price_allocated_structure unchanged. Wired into the SAME home-anchored bilateral loop, immediately after the existing 3-way block, gated only on RESOLUTION_ELIGIBLE (never on whether the production happens to have movable post/vfx/music spend to route). This closes the real gap for GB-AU (uk-au-bilateral, unlocks uk_avec/au_producer_offset) and GB-IE (uk-ie-bilateral, unlocks uk_avec/ie_section_481) -- both real, already-registered treaties this codebase's own treaty_engine.py data already carried, confirmed via direct query, never newly researched. Two simultaneous principal_production legs is exactly the shape structural_archetype_generator.py's own generate_structural_candidate already accepted (confirmed by HO-003's own pre-existing direct-generator test); this fix is the missing REAL-runtime allocation source for that shape. Does NOT (this pass) layer authorized-local-stack composition onto either side of the pure-pair candidate, a disclosed scope reduction from the 3-way block's own richer treatment. HO-012 (three SIMULTANEOUS principal legs, fr_trip+ie_section_481+uk_avec) remains a genuine, confirmed gap: IE-FR has no registered bilateral treaty in treaty_engine.py (confirmed via direct query), so no pairwise or transitive treaty basis exists to combine all three without inventing a split -- carried forward, not forced. Invalidates every cached row so this fires fresh.
 # 1.78.0: eight-control closeout, REG-5 cost-pool-aware same-jurisdiction pricing -- the location_groups same-jurisdiction group-stack bridge could never price a registered same_cost_prohibited_distinct_costs_allowed pair (e.g. NY's ny_state_film principal credit + us_ny_post_production_credit post credit) because price_program_group_stack's StackCandidate objects are each priced against the WHOLE budget, so naively combining two would double-count the same dollars -- exactly what the rule prohibits. New _try_cost_pool_aware_same_jurisdiction_stack() prices each program against its own REAL, disjoint cost pool instead: it identifies whichever program carries a genuine CLOSED_POSITIVE_LIST of eligible spend categories (never guessed from doctrine alone), partitions the anchor's real per-line AccountAllocation rows into two disjoint pools by each row's own real spend_category (a strict partition of one real tuple, so a line_id can never appear in both pools -- the same same-cost-refusal-by-construction principle structural_archetype_generator.py already uses for movable components), and prices each pool independently via the existing price_segment() partial-register kernel -- never a new pricing path. Only persists PRICED when BOTH pools independently clear their own program's real threshold/rate resolution; otherwise persists a specific, reconstructable RULE_REJECTED (COST_POOL_EMPTY or COST_POOL_MEMBER_UNPRICEABLE), never a fabricated partial result. REG-5 is the only control this pass targets in canonical_evaluation.py itself; multi-principal composition (HO-003/007/012/013, REG-4) and grant/selective-component wiring (HO-010/011) are addressed separately -- see CAPABILITY_LEDGER.md and the 19-control reconciliation CSV for their own disposition. Invalidates every cached row so this fires fresh.
@@ -759,6 +760,30 @@ _QUALIFICATION_ADMITS_PRICING = frozenset({
 #: not by withholding economics (those remain visible under ALTERNATIVE/
 #: PRICED_LOW_FIT/CO_PRO_OPPORTUNITIES as appropriate).
 _QUALIFICATION_ADMITS_RECOMMENDED = frozenset({QUAL_QUALIFIES, QUAL_NOT_APPLICABLE})
+
+
+def qualification_admits_recommended(role_qualification: dict | None) -> bool:
+    """NUM-001 (optimizer audit defect remediation, 2026-09-18) — THE one
+    canonical qualification-admission predicate every served surface that
+    picks a "winner"/top_result must consume, extracted here so it is
+    never re-implemented. Before this fix, three independent copies of
+    this same rule existed: this file's own _summarize_evaluation() local
+    closure, canonical_production_view.py's module-level function of the
+    same name, and NONE at all in project_workspace_view.py (whose
+    `top_result = comparable[0]` published a priced-but-genuinely-
+    unresolved baseline as the served recommendation for Little Utopia
+    and F#K Valentine's Day, confirmed live and independently audited --
+    CURRENT_TIP_OPTIMIZER_NUMERICAL_ACCEPTANCE_AUDIT.md). A real but
+    genuinely UNRESOLVED qualification state (Curable Gap/User Fact
+    Required/Script Fact Required/Authority Unresolved/Rule Data
+    Incomplete) is priced and disclosed but must never be the served
+    winner -- truthful unresolved status is preferable to false
+    recommendation, even when that means no top_result at all. Absent
+    role_qualification (a program the bridge has genuinely no data for)
+    is treated as admitting -- there is no unresolved STATE to gate on,
+    as distinct from a real, resolved-to-unresolved state."""
+    state = (role_qualification or {}).get("state")
+    return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
 
 
 #: Codex final wiring remediation (P0-SEL-ALT-001, third pass) — the
@@ -1153,6 +1178,37 @@ def _competitive_allocation_disclosure(program_slug: str) -> str | None:
         "figures below are this program's real deterministic formula, "
         "priced normally): " + "; ".join(parts) + "."
     )
+
+
+def _hy_result_trace_extras(hy_result) -> dict:
+    """NUM-002/NUM-003 (optimizer audit defect remediation, 2026-09-18):
+    one shared serializer for the discretionary-risk and stacking-
+    adjustment reconstruction fields structural_archetype_generator.
+    StructuralCandidateResult now carries, used by every one of this
+    file's hybrid trace-construction sites -- never re-derived or
+    re-serialized independently at each site. Reconciliation: sum(
+    post_adjustment_component_incentives_usd.values()) equals the
+    structure's own total_guaranteed_incentive_usd (persisted as this
+    row's total_incentive_value_usd) exactly, by construction (see
+    generate_structural_candidate's own total_guaranteed computation)."""
+    return {
+        "administrative_allocation_risk": hy_result.administrative_allocation_risk,
+        "administrative_allocation_risk_reasons": list(hy_result.administrative_allocation_risk_reasons),
+        "raw_component_incentives_usd": dict(hy_result.raw_component_incentives_usd),
+        "stacking_adjustments": [
+            {
+                "program_a_id": a.program_a_id,
+                "program_b_id": a.program_b_id,
+                "rule_type": a.rule_type,
+                "description": a.description,
+                "original_value_usd": a.original_value_usd,
+                "adjustment_usd": a.adjustment_usd,
+                "adjusted_value_usd": a.adjusted_value_usd,
+            }
+            for a in hy_result.stacking_adjustments
+        ],
+        "post_adjustment_component_incentives_usd": dict(hy_result.post_adjustment_component_incentives_usd),
+    }
 
 
 #: CLAUDE_PRE_AG_HANDOFF_CORRECTION: boolean project-fact keys that gate a
@@ -6037,6 +6093,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                             "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
                                             "treaty_or_framework_id": None,
                                             "structure_type": "hybrid",
+                                            **_hy_result_trace_extras(_hy_result),
                                             "primary_jurisdiction": _anchor_code,
                                             "program_slugs": list(_hy_result.program_slugs),
                                             "jurisdiction_codes": list(_hy_result.jurisdiction_codes),
@@ -6143,6 +6200,65 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             ]
                             for _k in range(len(_subset))
                         }
+                        # NUM-004 (optimizer audit defect remediation,
+                        # 2026-09-18): the numeric proof itself, not just
+                        # the window/incumbent identity -- an auditor could
+                        # not previously check the stopping inequality
+                        # without re-running this exact search. Does NOT
+                        # alter which candidates are searched or how the
+                        # widening loop decides to stop (that logic above
+                        # is untouched) -- purely an after-the-fact
+                        # numeric explanation of why the ALREADY-COMPLETE
+                        # search proves domination.
+                        #
+                        # component_cutoff_bounds_usd: the marginal value
+                        # of the FIRST candidate just outside each
+                        # component's window (None when that component's
+                        # full candidate list was entirely exhausted
+                        # inside the window -- nothing remains to prove
+                        # domination against for that component).
+                        _component_cutoff_bounds_usd = {
+                            _subset[_k]: (
+                                round(_full_lists[_k][_window].selected_incentive_usd, 2)
+                                if _window < len(_full_lists[_k]) else None
+                            )
+                            for _k in range(len(_subset))
+                        }
+                        # component_window_best_usd: each component's OWN
+                        # best (rank-1) in-window value -- descending sort
+                        # by construction, so this is _full_lists[_k][0].
+                        _component_window_best_usd = {
+                            _subset[_k]: round(_full_lists[_k][0].selected_incentive_usd, 2)
+                            for _k in range(len(_subset)) if _full_lists[_k]
+                        }
+                        _sum_window_best_usd = round(sum(_component_window_best_usd.values()), 2)
+                        # interaction_safe_total_upper_bound_usd: the
+                        # MAXIMUM, over every component that still has a
+                        # cutoff, of "every OTHER component held at its own
+                        # best in-window value, this ONE component dropped
+                        # to its own cutoff" -- a deliberately conservative
+                        # (independent-maxima) bound on any single-
+                        # component out-of-window substitution, "safe"
+                        # because real pairwise/stacking interaction can
+                        # only ever REDUCE an achievable total relative to
+                        # this independent sum, never increase it. None
+                        # when no component has anything left outside its
+                        # window to substitute (proof complete by
+                        # exhaustion alone, no swap exists to bound).
+                        _component_single_swap_upper_bounds_usd = {
+                            _name: round(_sum_window_best_usd - _component_window_best_usd[_name] + _cutoff, 2)
+                            for _name, _cutoff in _component_cutoff_bounds_usd.items()
+                            if _cutoff is not None
+                        }
+                        _interaction_safe_total_upper_bound_usd = (
+                            max(_component_single_swap_upper_bounds_usd.values())
+                            if _component_single_swap_upper_bounds_usd else None
+                        )
+                        _incumbent_value_usd = round(_best_found, 2)
+                        _stopping_inequality_holds = (
+                            True if _interaction_safe_total_upper_bound_usd is None
+                            else _interaction_safe_total_upper_bound_usd <= _incumbent_value_usd
+                        )
                         _dom_structure_id = uuid.uuid4()
                         session.add(ProductionStructure(
                             id=_dom_structure_id, project_id=project.id,
@@ -6191,6 +6307,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 "incumbent_jurisdiction_codes": _incumbent_jurisdiction_codes,
                                 "incumbent_program_slugs": _incumbent_program_slugs,
                                 "component_target_windows": _component_target_windows,
+                                # NUM-004: the numeric proof itself -- see
+                                # the computation's own comment above for
+                                # the exact definitions.
+                                "incumbent_value_usd": _incumbent_value_usd,
+                                "component_cutoff_bounds_usd": _component_cutoff_bounds_usd,
+                                "component_window_best_usd": _component_window_best_usd,
+                                "interaction_safe_total_upper_bound_usd": _interaction_safe_total_upper_bound_usd,
+                                "stopping_inequality_holds": _stopping_inequality_holds,
+                                "stopping_inequality": (
+                                    "interaction_safe_total_upper_bound_usd <= incumbent_value_usd"
+                                    if _interaction_safe_total_upper_bound_usd is not None
+                                    else "no component has a candidate outside its own window -- proof complete "
+                                         "by exhaustion, no substitution bound is needed"
+                                ),
                                 "engine_version": ENGINE_VERSION,
                                 "input_fingerprint": fingerprint,
                                 "reason": (
@@ -7153,6 +7283,35 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             _mc_total_possible = len(_mc_full_a) * len(_mc_full_b)
                             _mc_remaining = _mc_total_possible - len(_mc_tried_pairs)
                             if _mc_remaining > 0:
+                                # NUM-004: same numeric-proof enrichment as
+                                # the ordinary_component_hybrid DOMINATED_
+                                # WITH_PROOF site above, adapted to this
+                                # search's own fixed 2-component (a, b)
+                                # shape -- see that site's own comment for
+                                # the full definitions. Does not alter the
+                                # widening/stop decision above in any way.
+                                _mc_cutoff_a = (
+                                    round(_mc_full_a[_mc_window].selected_incentive_usd, 2)
+                                    if _mc_window < len(_mc_full_a) else None
+                                )
+                                _mc_cutoff_b = (
+                                    round(_mc_full_b[_mc_window].selected_incentive_usd, 2)
+                                    if _mc_window < len(_mc_full_b) else None
+                                )
+                                _mc_best_a = round(_mc_full_a[0].selected_incentive_usd, 2) if _mc_full_a else 0.0
+                                _mc_best_b = round(_mc_full_b[0].selected_incentive_usd, 2) if _mc_full_b else 0.0
+                                _mc_sum_window_best = round(_mc_best_a + _mc_best_b, 2)
+                                _mc_swap_bounds = []
+                                if _mc_cutoff_a is not None:
+                                    _mc_swap_bounds.append(round(_mc_sum_window_best - _mc_best_a + _mc_cutoff_a, 2))
+                                if _mc_cutoff_b is not None:
+                                    _mc_swap_bounds.append(round(_mc_sum_window_best - _mc_best_b + _mc_cutoff_b, 2))
+                                _mc_interaction_safe_total_upper_bound_usd = max(_mc_swap_bounds) if _mc_swap_bounds else None
+                                _mc_incumbent_value_usd = round(_mc_best_total, 2)
+                                _mc_stopping_inequality_holds = (
+                                    True if _mc_interaction_safe_total_upper_bound_usd is None
+                                    else _mc_interaction_safe_total_upper_bound_usd <= _mc_incumbent_value_usd
+                                )
                                 # Genuine mathematical proof (pigeonhole
                                 # exchange argument, valid at the window
                                 # size actually reached), not a search-
@@ -7230,6 +7389,22 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                                 for _t in _mc_lists_b
                                             ],
                                         },
+                                        # NUM-004: the numeric proof itself.
+                                        "incumbent_value_usd": _mc_incumbent_value_usd,
+                                        "component_cutoff_bounds_usd": {
+                                            _mc_comp_a: _mc_cutoff_a, _mc_comp_b: _mc_cutoff_b,
+                                        },
+                                        "component_window_best_usd": {
+                                            _mc_comp_a: _mc_best_a, _mc_comp_b: _mc_best_b,
+                                        },
+                                        "interaction_safe_total_upper_bound_usd": _mc_interaction_safe_total_upper_bound_usd,
+                                        "stopping_inequality_holds": _mc_stopping_inequality_holds,
+                                        "stopping_inequality": (
+                                            "interaction_safe_total_upper_bound_usd <= incumbent_value_usd"
+                                            if _mc_interaction_safe_total_upper_bound_usd is not None
+                                            else "no component has a candidate outside its own window -- proof "
+                                                 "complete by exhaustion, no substitution bound is needed"
+                                        ),
                                         "engine_version": ENGINE_VERSION,
                                         "input_fingerprint": fingerprint,
                                         "reason": (
@@ -8561,18 +8736,11 @@ async def _summarize_evaluation(
         return bool((pair[1].calculation_trace_json or {}).get("is_baseline"))
 
     def _admits_recommended(pair) -> bool:
-        # Final Consolidated Backend Correction + Global Structuring
-        # Intelligence Acceptance, Part 4/CBA-001 — consistent with
-        # canonical_production_view.py's own _qualification_admits_
-        # recommended: a real but genuinely UNRESOLVED qualification
-        # state (Curable Gap/User Fact Required/Script Fact Required/
-        # Authority Unresolved/Rule Data Incomplete) is priced and
-        # disclosed (already true — it reached `priced` above) but must
-        # never be the served "winner"/top_result. Truthful unresolved
-        # status is preferable to false recommendation, even when that
-        # means no top_result at all.
-        state = ((pair[1].calculation_trace_json or {}).get("role_qualification") or {}).get("state")
-        return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
+        # NUM-001: delegates to the one shared predicate — see
+        # qualification_admits_recommended()'s own docstring.
+        return qualification_admits_recommended(
+            (pair[1].calculation_trace_json or {}).get("role_qualification")
+        )
 
     baseline_pair = next((pair for pair in priced if _is_baseline(pair)), None)
     # ITEM 5. A project's baseline can be RECOGNIZED but BLOCKED -- e.g.

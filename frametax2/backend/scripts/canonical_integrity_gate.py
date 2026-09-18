@@ -728,17 +728,63 @@ async def _gate_one_project(
                         f"ELIGIBILITY requirement ({req.get('requirement')}: {req.get('detail')})"
                     )
 
-        # QPE — non-negative, bounded by the structure's own gross budget.
+        # QPE (optimizer audit defect remediation, 2026-09-18 — supporting
+        # validator correction). The prior check summed EVERY segment's
+        # own qpe_usd and compared that sum against the structure's gross
+        # budget — a stale oracle: a lawful stacked structure (e.g. a
+        # same-jurisdiction multi_program stack, or an ordinary hybrid
+        # combining programs over the SAME eligible-cost base) can have
+        # two or more programs correctly claim against the identical
+        # dollar base (real example: Ontario CPTC + OFTTC both correctly
+        # report qpe_usd=$3,701,238.00, the same real qualifying-labour
+        # base each program independently qualifies under its own
+        # statute — summing them to ~$7.4M and flagging it as exceeding a
+        # ~$4.5M gross budget was a false positive on a genuinely correct
+        # served row). Spend conservation is a SOURCE-LINE property, not
+        # an arithmetic sum of claim-specific QPE figures — the real
+        # invariant (enforced at construction by structural_archetype_
+        # generator.generate_structural_candidate's own same-cost double-
+        # count refusal) is that two DIFFERENT ROUTED COMPONENTS (distinct
+        # jurisdiction/program pairs each claiming their OWN disjoint
+        # slice of the budget, e.g. a post-production component routed to
+        # a different jurisdiction than the principal-photography anchor)
+        # must never share a source budget line_id — same-cost STACKING
+        # of two programs over the identical component's own line_ids is
+        # exactly the lawful case this check must not reject.
         segments = s.get("segments") or []
-        total_qpe = sum((seg.get("qpe_usd") or 0.0) for seg in segments)
-        if total_qpe < -0.01:
-            result["failures"].append(f"QPE: {label} total qualified spend is negative ({total_qpe})")
-        gross_for_structure = s.get("gross_budget_usd") if s.get("gross_budget_usd") is not None else declared_gross
-        if gross_for_structure is not None and total_qpe > gross_for_structure + 1.0:
-            result["failures"].append(
-                f"QPE: {label} total qualified spend {total_qpe} exceeds its own gross budget "
-                f"{gross_for_structure}"
-            )
+        for seg in segments:
+            seg_qpe = seg.get("qpe_usd")
+            if seg_qpe is not None and seg_qpe < -0.01:
+                result["failures"].append(
+                    f"QPE: {label} segment {seg.get('jurisdiction_code')} qualified spend is "
+                    f"negative ({seg_qpe})"
+                )
+        comp_allocs_for_qpe = s.get("component_allocations") or []
+        if len(comp_allocs_for_qpe) > 1:
+            _line_ids_by_component: dict[tuple, frozenset] = {}
+            for _ca in comp_allocs_for_qpe:
+                _key = (_ca.get("component"), _ca.get("jurisdiction_code"), _ca.get("program_slug"))
+                _line_ids_by_component[_key] = frozenset(_ca.get("line_ids") or [])
+            _components_list = list(_line_ids_by_component.items())
+            for _i in range(len(_components_list)):
+                _key_a, _lines_a = _components_list[_i]
+                for _j in range(_i + 1, len(_components_list)):
+                    _key_b, _lines_b = _components_list[_j]
+                    # Two DIFFERENT routed components (distinct jurisdiction/
+                    # program targets) sharing a source line_id would be a
+                    # real double-claim; the SAME (jurisdiction, program)
+                    # pair reported more than once (a duplicate row, not a
+                    # distinct component) is a different, separately-caught
+                    # defect, not an overlap violation.
+                    if _key_a[1:] == _key_b[1:]:
+                        continue
+                    overlap = _lines_a & _lines_b
+                    if overlap:
+                        result["failures"].append(
+                            f"QPE: {label} components {_key_a} and {_key_b} both claim source "
+                            f"line_id(s) {sorted(overlap)} — the same cost may never be routed to "
+                            "two different components"
+                        )
 
         # INCENTIVE — never negative; any segment's own floor/ceiling band
         # is internally ordered.

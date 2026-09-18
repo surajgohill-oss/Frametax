@@ -704,21 +704,12 @@ SCENARIO_NOT_AVAILABLE = "NOT_AVAILABLE"
 
 
 def _qualification_admits_recommended(entry: dict) -> bool:
-    """Final Consolidated Backend Correction + Global Structuring
-    Intelligence Acceptance, Part 4/CBA-001 — a candidate whose
-    qualification is real but genuinely UNRESOLVED (Curable Gap/User
-    Fact Required/Script Fact Required/Authority Unresolved/Rule Data
-    Incomplete) is priced normally (canonical_evaluation.py admits it to
-    STATUS_PRICED; see _QUALIFICATION_ADMITS_PRICING there) and
-    disclosed with real economics, but must never be presented as the
-    comparable, rankable, RECOMMENDED winner — truthful unresolved
-    status is preferable to false recommendation, even when that leaves
-    a project with no Recommended scenario at all. Absent role_
-    qualification (a program the bridge has genuinely no data for at
-    all) is treated as admitting — there is no unresolved STATE to gate
-    on, as distinct from a real, resolved-to-unresolved state."""
-    state = ((entry.get("role_qualification") or {}).get("state"))
-    return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
+    """NUM-001: thin, entry-dict-shaped wrapper over the one shared
+    predicate (canonical_evaluation.qualification_admits_recommended) —
+    never a second, independently-maintained copy of the rule itself.
+    See that function's own docstring for the full rationale."""
+    from app.services.canonical_evaluation import qualification_admits_recommended
+    return qualification_admits_recommended(entry.get("role_qualification"))
 
 
 def _blocking_requirements(entry: dict) -> list[str]:

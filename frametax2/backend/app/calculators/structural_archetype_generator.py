@@ -48,7 +48,7 @@ from dataclasses import dataclass, field
 from itertools import combinations
 
 from app.calculators.allocation_pricing import price_segment, SegmentEconomics
-from app.calculators.apply_stacking_adjustments import apply_stacking_adjustments
+from app.calculators.apply_stacking_adjustments import StackingAdjustment, apply_stacking_adjustments
 from app.calculators.canonical_stack_bridge import load_named_pair_rule
 from app.calculators.production_allocation import AccountAllocation
 from app.data.authority_coverage_registry import economic_block_for_program
@@ -122,6 +122,29 @@ class StructuralCandidateResult:
     incremental_benefit_vs_anchor_usd: float | None
     materiality_recommended: bool | None   # incremental benefit >= $100,000
     disclosed_limitations: tuple[str, ...] = ()
+    # NUM-002 (optimizer audit defect remediation, 2026-09-18): True when
+    # ANY component program in this structure carries a real discretionary/
+    # competitive-allocation/preapproval disclosure (the same canonical
+    # per-program helper the single_country/multi_program/component_
+    # relocation families already call) -- a discretionary component
+    # propagates risk to the COMPLETE structure, never silently confined
+    # to its own segment. administrative_allocation_risk_reasons carries
+    # each real, non-duplicate disclosure text, in component order.
+    administrative_allocation_risk: bool = False
+    administrative_allocation_risk_reasons: tuple[str, ...] = ()
+    # NUM-003: full stacking-adjustment reconstruction bridge. raw_
+    # component_incentives_usd is each GUARANTEED component's own pre-
+    # adjustment incentive (program_slug -> usd); stacking_adjustments is
+    # every real ordered adjustment apply_stacking_adjustments() applied
+    # (rule identity, base, delta, post-adjustment value), exactly as
+    # already computed in generate_structural_candidate() but previously
+    # discarded after only its aggregate total was kept; post_adjustment_
+    # component_incentives_usd is each guaranteed component's own value
+    # AFTER every adjustment. sum(post_adjustment_component_incentives_usd
+    # .values()) reconciles exactly to total_guaranteed_incentive_usd.
+    raw_component_incentives_usd: dict[str, float] = field(default_factory=dict)
+    stacking_adjustments: tuple["StackingAdjustment", ...] = ()
+    post_adjustment_component_incentives_usd: dict[str, float] = field(default_factory=dict)
 
 
 UNRESOLVED_REQUIRED_TYPES = frozenset({"conditional", "prohibited"})
@@ -373,6 +396,15 @@ def generate_structural_candidate(
         if (r := load_named_pair_rule(a, b)) is not None and r["rule_type"] in _PUBLISHABLE_RULE_TYPES
     ]
     disclosed_limitations: list[str] = []
+    # NUM-003: raw (pre-adjustment) per-program guaranteed incentive --
+    # always available regardless of whether any adjustment rule fires,
+    # so a structure with zero adjustments still reconstructs (raw ==
+    # post-adjustment == total_guaranteed_incentive_usd trivially).
+    raw_component_incentives_usd: dict[str, float] = {
+        ce.component.program_slug: round(ce.guaranteed_incentive_usd, 2) for ce in guaranteed_econ
+    }
+    stacking_adjustments: tuple[StackingAdjustment, ...] = ()
+    post_adjustment_component_incentives_usd: dict[str, float] = dict(raw_component_incentives_usd)
     if guaranteed_econ and guaranteed_rules:
         adj = apply_stacking_adjustments(
             [
@@ -390,6 +422,14 @@ def generate_structural_candidate(
             guaranteed_rules,
         )
         total_guaranteed = round(adj.total_adjusted_value_usd, 2)
+        # NUM-003: persist the FULL bridge, not just the aggregate total --
+        # adj already carries every real ordered adjustment (rule
+        # identity, base, delta, post-adjustment value); previously
+        # discarded here once total_guaranteed was extracted.
+        stacking_adjustments = tuple(adj.adjustments)
+        post_adjustment_component_incentives_usd = {
+            pid: round(v, 2) for pid, v in adj.program_values.items()
+        }
         # Same disclosure canonical_stack_bridge._build_group_result already
         # makes for the identical, pre-existing limitation: the reused
         # apply_stacking_adjustments spend_reduction heuristic only
@@ -421,6 +461,21 @@ def generate_structural_candidate(
     incremental = round(anchor_npc_usd - npc, 2) if anchor_npc_usd is not None else None
     materiality = (incremental is not None and incremental >= 100_000.0)
 
+    # NUM-002: derived from EVERY component program (not just guaranteed
+    # ones -- a selective_upside/fund_overlay component contributing $0/$0
+    # is itself the discretionary risk this exists to disclose), via the
+    # SAME canonical per-program helper the single_country/multi_program/
+    # component_relocation families already call -- never a hybrid-only
+    # re-derivation. Lazy import: structural_archetype_generator.py is
+    # itself imported lazily by canonical_evaluation.py (no module-level
+    # cycle to begin with), so this stays a plain function-local import.
+    from app.services.canonical_evaluation import _competitive_allocation_disclosure
+    _admin_risk_reasons: list[str] = []
+    for ce in comp_econ:
+        _disclosure = _competitive_allocation_disclosure(ce.component.program_slug)
+        if _disclosure and _disclosure not in _admin_risk_reasons:
+            _admin_risk_reasons.append(_disclosure)
+
     return StructuralCandidateResult(
         structure_id=structure_id, component_types=component_types,
         program_slugs=program_slugs, jurisdiction_codes=jurisdiction_codes,
@@ -432,4 +487,9 @@ def generate_structural_candidate(
         gross_budget_usd=gross_budget_usd, npc_usd=npc, anchor_npc_usd=anchor_npc_usd,
         incremental_benefit_vs_anchor_usd=incremental, materiality_recommended=materiality,
         disclosed_limitations=tuple(selective_zero_notes) + tuple(disclosed_limitations),
+        administrative_allocation_risk=bool(_admin_risk_reasons),
+        administrative_allocation_risk_reasons=tuple(_admin_risk_reasons),
+        raw_component_incentives_usd=raw_component_incentives_usd,
+        stacking_adjustments=stacking_adjustments,
+        post_adjustment_component_incentives_usd=post_adjustment_component_incentives_usd,
     )

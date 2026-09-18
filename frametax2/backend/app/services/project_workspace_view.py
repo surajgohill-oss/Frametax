@@ -42,7 +42,7 @@ from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
 from app.services import script_parse_status as sps
-from app.services.canonical_evaluation import ENGINE_VERSION
+from app.services.canonical_evaluation import ENGINE_VERSION, qualification_admits_recommended
 from app.services.script_analysis_service import resolve_active_screenplay
 
 UI_COMPARABLE = "COMPARABLE"
@@ -146,6 +146,11 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
                 ),
                 "reason": trace.get("reason"),
                 "warnings": result.warnings or [],
+                # NUM-001: carried through so top_result selection below can
+                # apply the SAME canonical qualification-admission predicate
+                # _summarize_evaluation()/canonical_production_view.py use —
+                # never a second, workspace-only judgment.
+                "role_qualification": trace.get("role_qualification"),
             })
         evaluation_status = "EVALUATION_COMPLETE"
     elif project.total_budget_usd is None:
@@ -158,7 +163,24 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     comparable = [c for c in candidates if c["ui_status"] == UI_COMPARABLE]
     review_required = [c for c in candidates if c["ui_status"] == UI_REVIEW_REQUIRED]
     unpriceable = [c for c in candidates if c["ui_status"] == UI_UNPRICEABLE]
-    top_result = comparable[0] if comparable else None
+    # NUM-001 (optimizer audit defect remediation, 2026-09-18): previously
+    # `comparable[0]` alone, published as top_result regardless of
+    # qualification -- confirmed live to contradict evaluate_project()'s
+    # own top_result=null for Little Utopia and F#K Valentine's Day, both
+    # of which have a priced, UI_COMPARABLE baseline whose role
+    # qualification is genuinely unresolved (AUTHORITY_UNRESOLVED /
+    # USER_FACT_REQUIRED). relocation_cost_normalized (== UI_COMPARABLE)
+    # is true ONLY for the baseline candidate by construction, so
+    # `comparable` never held more than the one baseline row already --
+    # the missing check was qualification admission, not candidate
+    # selection. Reuses the SAME canonical predicate _summarize_
+    # evaluation()/canonical_production_view.py apply, never a workspace-
+    # local judgment.
+    top_result = (
+        comparable[0]
+        if comparable and qualification_admits_recommended(comparable[0]["role_qualification"])
+        else None
+    )
 
     # ── budget ────────────────────────────────────────────────────────────
     budget_doc = (await session.execute(
@@ -215,6 +237,15 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
         },
         "evaluation": {
             "status": evaluation_status,
+            # NUM-005 (optimizer audit defect remediation, 2026-09-18): the
+            # workspace endpoint was already internally scoped to the
+            # current engine_version/fingerprint (see current_generation_
+            # fingerprint() above), but never returned either value to the
+            # consumer -- a later Globe/UI caller had no way to
+            # independently verify served structure IDs and rankings
+            # belong to the expected generation without a second query.
+            "engine_version": ENGINE_VERSION if fingerprint else None,
+            "input_fingerprint": fingerprint,
             "baseline": baseline,
             "top_result": top_result,
             "comparable_count": len(comparable),
