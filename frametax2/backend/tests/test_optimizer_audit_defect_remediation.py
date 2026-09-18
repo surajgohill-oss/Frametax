@@ -169,6 +169,20 @@ async def test_ordinary_component_hybrid_rows_carry_administrative_risk_and_stac
 
 # ── NUM-004: DOMINATED_WITH_PROOF numeric proof, independently checkable. ─
 
+def _num004_incumbent_field(trace: dict) -> str:
+    """Which field the persisted stopping inequality is actually checked
+    against depends on structural_family: ordinary_component_hybrid uses
+    incumbent_value_usd (already a marginal, non-anchor quantity);
+    combined_coproduction_multi_component_stack uses
+    component_marginal_incumbent_usd (the incumbent's own a+b marginal
+    value -- incumbent_value_usd there is the FULL structure total, a
+    different scale, fixed as part of this correction)."""
+    return (
+        "component_marginal_incumbent_usd" if "component_marginal_incumbent_usd" in trace
+        else "incumbent_value_usd"
+    )
+
+
 async def test_dominated_with_proof_rows_carry_independently_checkable_numeric_proof(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     rows = (await db.execute(
@@ -176,36 +190,102 @@ async def test_dominated_with_proof_rows_carry_independently_checkable_numeric_p
             "SELECT scr.calculation_trace_json FROM structure_calculation_results scr "
             "JOIN production_structures ps ON ps.id = scr.structure_id "
             "WHERE ps.project_id = :pid AND scr.engine_version = :ev "
-            "AND scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF' "
-            "LIMIT 300"
+            "AND scr.calculation_trace_json->>'candidate_status' IN "
+            "('DOMINATED_WITH_PROOF', 'SEARCH_DEPTH_LIMIT_REACHED') "
+            "AND scr.calculation_trace_json ? 'stopping_inequality_holds' "
+            "LIMIT 400"
         ),
         {"pid": FVD_PROJECT_ID, "ev": ENGINE_VERSION},
     )).scalars().all()
-    assert rows, "no DOMINATED_WITH_PROOF rows found -- fixture/engine mismatch"
+    assert rows, "no NUM-004-enriched rows found -- fixture/engine mismatch"
 
-    found_holding = False
+    found_dominated_with_proof = False
     for trace in rows:
         for key in (
             "incumbent_value_usd", "component_cutoff_bounds_usd", "component_window_best_usd",
             "interaction_safe_total_upper_bound_usd", "stopping_inequality_holds", "stopping_inequality",
         ):
-            assert key in trace, f"missing {key!r} in DOMINATED_WITH_PROOF trace"
+            assert key in trace, f"missing {key!r} in trace"
 
+        status = trace["candidate_status"]
         holds = trace["stopping_inequality_holds"]
         bound = trace["interaction_safe_total_upper_bound_usd"]
-        incumbent = trace["incumbent_value_usd"]
-        # Independently re-derivable from the persisted numbers alone --
-        # never trust the persisted boolean without recomputing it.
+        incumbent = trace[_num004_incumbent_field(trace)]
+
+        # NUM-004 correction #2: the persisted boolean must always match
+        # an independent re-derivation from the persisted numbers alone.
         if bound is None:
             assert holds is True
         else:
             assert holds == (bound <= incumbent)
-            if holds:
-                found_holding = True
 
-    assert found_holding, (
-        "no sampled row's conservative bound independently proves domination -- cannot confirm "
-        "the new numeric proof is ever actually checkable-and-true on real data"
+        # The disposition itself must be GATED on the inequality -- never
+        # DOMINATED_WITH_PROOF with a false/unverified inequality, and
+        # never SEARCH_DEPTH_LIMIT_REACHED when the inequality actually
+        # holds (that would silently under-claim a real proof).
+        if status == "DOMINATED_WITH_PROOF":
+            assert holds is True, (
+                "a DOMINATED_WITH_PROOF row must never carry a false stopping inequality"
+            )
+            found_dominated_with_proof = True
+        elif status == "SEARCH_DEPTH_LIMIT_REACHED":
+            assert holds is False, (
+                "a row reclassified to SEARCH_DEPTH_LIMIT_REACHED must be the honest "
+                "consequence of the inequality NOT holding, never an arbitrary label"
+            )
+
+    assert found_dominated_with_proof, (
+        "no sampled row's bound independently proves domination -- cannot confirm the "
+        "gated DOMINATED_WITH_PROOF disposition is ever actually reached on real data"
+    )
+
+
+async def test_every_fvd_dominated_with_proof_row_has_a_complete_true_proof(db: AsyncSession):
+    """NUM-004 correction (2026-09-18): a stored stopping inequality that
+    holds for only 3/308 sampled rows does not satisfy the requirement,
+    and neither does substituting the widening loop's bare structural
+    precondition for an actual numeric bound. This test has NO row LIMIT
+    and NO "found at least one" fallback -- every current FVD row that
+    is actually persisted as DOMINATED_WITH_PROOF must carry a complete,
+    independently re-derivable numeric proof with
+    stopping_inequality_holds=True evaluating true, or the test fails
+    outright. Rows the algorithm could not prove are expected to appear
+    as SEARCH_DEPTH_LIMIT_REACHED instead -- that is the correct, honest
+    outcome, not a failure of this test."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    rows = (await db.execute(
+        text(
+            "SELECT scr.calculation_trace_json FROM structure_calculation_results scr "
+            "JOIN production_structures ps ON ps.id = scr.structure_id "
+            "WHERE ps.project_id = :pid AND scr.engine_version = :ev "
+            "AND scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF' "
+            "AND scr.calculation_trace_json ? 'stopping_inequality_holds'"
+        ),
+        {"pid": FVD_PROJECT_ID, "ev": ENGINE_VERSION},
+    )).scalars().all()
+    assert rows, "no DOMINATED_WITH_PROOF rows found -- fixture/engine mismatch"
+
+    failures = []
+    for trace in rows:
+        required = {
+            "incumbent_value_usd", "component_cutoff_bounds_usd", "component_window_best_usd",
+            "interaction_safe_total_upper_bound_usd", "stopping_inequality_holds", "stopping_inequality",
+            "component_target_windows", "proof_window_size",
+        }
+        missing = required - trace.keys()
+        holds = trace.get("stopping_inequality_holds")
+        bound = trace.get("interaction_safe_total_upper_bound_usd")
+        incumbent = trace.get(_num004_incumbent_field(trace))
+        recomputed = True if bound is None else (incumbent is not None and bound <= incumbent)
+        if missing or holds is not True or recomputed is not True:
+            failures.append({
+                "missing": sorted(missing), "holds": holds, "bound": bound, "incumbent": incumbent,
+                "recomputed": recomputed, "structural_family": trace.get("structural_family"),
+            })
+
+    assert not failures, (
+        f"{len(failures)}/{len(rows)} FVD DOMINATED_WITH_PROOF rows lack a complete, true proof: "
+        f"{failures[:5]}"
     )
 
 
