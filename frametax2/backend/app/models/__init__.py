@@ -31,7 +31,11 @@ from app.models.production_requirement import (  # noqa: F401
     ProductionRequirement,
     ProductionAssumption,
 )
-from app.models.production import ProductionStructure, StructureCalculationResult  # noqa: F401
+from app.models.production import (  # noqa: F401
+    EvaluationGenerationSummary,
+    ProductionStructure,
+    StructureCalculationResult,
+)
 from app.models.fx import FXRate  # noqa: F401
 from app.models.ingestion import IngestionJob  # noqa: F401
 from app.models.contribution import ProductionContribution  # noqa: F401

@@ -42,7 +42,18 @@ from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
 from app.services import script_parse_status as sps
-from app.services.canonical_evaluation import ENGINE_VERSION, qualification_admits_recommended
+from app.services.canonical_evaluation import (
+    ENGINE_VERSION,
+    UNPRICEABLE_PAGE_DEFAULT_LIMIT,
+    UNPRICEABLE_PAGE_ORDER,
+    UNPRICEABLE_RESULTS_ROUTE,
+    GenerationSummaryUnavailable,
+    load_generation_summary,
+    load_retained_rows,
+    qualification_admits_recommended,
+    summary_totals,
+    unpriceable_page,
+)
 from app.services.script_analysis_service import resolve_active_screenplay
 
 UI_COMPARABLE = "COMPARABLE"
@@ -102,15 +113,30 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     fingerprint = await current_generation_fingerprint(session, project.id)
 
     if fingerprint:
-        rows = (await session.execute(
-            select(ProductionStructure, StructureCalculationResult)
-            .join(StructureCalculationResult, StructureCalculationResult.structure_id == ProductionStructure.id)
-            .where(
-                ProductionStructure.project_id == project.id,
-                StructureCalculationResult.input_fingerprint == fingerprint,
-                StructureCalculationResult.engine_version == engine_version,
+        # Bounded read (2026-09-19): RULE_REJECTED rows -- 525,254 of 526,155 for
+        # F#K Valentine's Day -- were previously ALL loaded as ORM objects only to be
+        # dropped from every list below (they carry ui_status RULE_REJECTED and no
+        # list holds that status). The evaluation's one summary row (accumulated while
+        # it ran) now names the rows that are NOT plain RULE_REJECTED, which are fetched
+        # by generation_ordinal; the rest is summarized (exact total, by
+        # disposition/reason, first page + cursor) in evaluation["rejection_universe"].
+        # Nothing is dropped: every row stays in the database and behind
+        # GET /projects/{id}/evaluation/unpriceable.
+        try:
+            summary = await load_generation_summary(session, project.id, fingerprint, engine_version=engine_version)
+        except GenerationSummaryUnavailable:
+            # A fingerprint can be computed for a project with no evaluation persisted under
+            # it (yet): no rows, exactly as before -- empty lists, empty rejection universe.
+            rows = []
+            rejection_totals = {"total": 0, "priced": 0, "by_disposition": {}, "by_reason": []}
+            rejection_first_page = {"limit": UNPRICEABLE_PAGE_DEFAULT_LIMIT, "returned": 0, "has_more": False,
+                                    "next_cursor": None, "order": UNPRICEABLE_PAGE_ORDER, "results": []}
+        else:
+            rows = await load_retained_rows(session, project.id, fingerprint, summary, engine_version=engine_version)
+            rejection_totals = summary_totals(summary)
+            rejection_first_page = await unpriceable_page(
+                session, project.id, fingerprint, engine_version=engine_version,
             )
-        )).all()
 
         jurisdiction_ids = set()
         for structure, _ in rows:
@@ -158,6 +184,21 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             select(BudgetDocument.id).where(BudgetDocument.project_id == project.id)
         )).scalars().first()
         evaluation_status = "EVALUATION_COMPLETE" if budget_present else "BUDGET_REQUIRED_FOR_CURRENT_EVALUATION"
+
+    rejection_universe = {
+        "total_count": rejection_totals["total"],
+        "by_disposition": rejection_totals["by_disposition"],
+        "by_reason": rejection_totals["by_reason"],
+        "first_page": {
+            "limit": rejection_first_page["limit"],
+            "returned": rejection_first_page["returned"],
+            "has_more": rejection_first_page["has_more"],
+            "next_cursor": rejection_first_page["next_cursor"],
+            "order": rejection_first_page["order"],
+            "results": rejection_first_page["results"],
+        },
+        "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),
+    } if fingerprint else None
 
     baseline = next((c for c in candidates if c["is_baseline"]), None)
     comparable = [c for c in candidates if c["ui_status"] == UI_COMPARABLE]
@@ -254,6 +295,10 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             "comparable": comparable,
             "review_required": review_required,
             "unpriceable": unpriceable,
+            # Every unpriced (no-number) candidate of this evaluation -- the RULE_REJECTED
+            # universe included -- as exact totals + a bounded first page. The remainder
+            # is paged from results_route; has_more/next_cursor make that explicit.
+            "rejection_universe": rejection_universe,
             "mfni_limitation": (
                 "Regional production-cost normalization (MFNI) is not yet applied — "
                 "figures use this production's own nominal budget amounts and statutory "

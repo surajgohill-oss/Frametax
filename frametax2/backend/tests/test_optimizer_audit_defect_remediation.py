@@ -167,7 +167,9 @@ async def test_ordinary_component_hybrid_rows_carry_administrative_risk_and_stac
     )
 
 
-# ── NUM-004: DOMINATED_WITH_PROOF numeric proof, independently checkable. ─
+# ── NUM-004 / completeness closeout: DOMINATED_WITH_PROOF and ────────────
+# SEARCH_SPACE_EXHAUSTED numeric proof, independently checkable; zero ─────
+# SEARCH_DEPTH_LIMIT_REACHED across all four real productions. ───────────
 
 def _num004_incumbent_field(trace: dict) -> str:
     """Which field the persisted stopping inequality is actually checked
@@ -176,82 +178,180 @@ def _num004_incumbent_field(trace: dict) -> str:
     combined_coproduction_multi_component_stack uses
     component_marginal_incumbent_usd (the incumbent's own a+b marginal
     value -- incumbent_value_usd there is the FULL structure total, a
-    different scale, fixed as part of this correction)."""
+    different scale)."""
     return (
         "component_marginal_incumbent_usd" if "component_marginal_incumbent_usd" in trace
         else "incumbent_value_usd"
     )
 
 
-async def test_dominated_with_proof_rows_carry_independently_checkable_numeric_proof(db: AsyncSession):
-    await evaluate_project(db, FVD_PROJECT_ID)
-    rows = (await db.execute(
+def test_best_first_bound_search_matches_brute_force_enumeration():
+    """FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT deterministic control
+    (2026-09-18): _best_first_bound_search must always find the SAME
+    optimum a brute-force itertools.product enumeration over the same
+    lists would find -- proving the exact search matches exhaustive
+    enumeration, not an approximation. No DB, no pricing, fully
+    deterministic (fixed seed)."""
+    import asyncio
+    import itertools
+    import random
+
+    from app.services.canonical_evaluation import _best_first_bound_search
+
+    async def run_case(lists):
+        async def try_combo(idx, current_best):
+            return sum(lists[k][idx[k]] for k in range(len(lists)))
+
+        best, visited, bound = await _best_first_bound_search(lists, try_combo)
+        brute_force_best = max(sum(combo) for combo in itertools.product(*lists))
+        assert best == pytest.approx(brute_force_best, abs=1e-6), (lists, best, brute_force_best)
+        # The stopping bound, whenever present, must independently prove
+        # domination against the value this same call just found.
+        if bound is not None:
+            assert bound <= best + 1e-9
+        assert 1 <= visited <= sum(len(lst) for lst in lists)
+        return best, visited, bound
+
+    rng = random.Random(20260918)
+
+    async def main():
+        # Fixed hand-picked cases (including ties and negatives) plus
+        # randomized cases for broad coverage.
+        fixed_cases = [
+            [[5.0]],
+            [[3.0, 1.0], [4.0, 2.0]],
+            [[10.0, 10.0, 5.0], [8.0, 3.0], [7.0, 7.0, 1.0]],
+            [[-1.0, -5.0], [-2.0, -8.0]],
+            [[100.0, 1.0], [100.0, 1.0], [100.0, 1.0]],
+        ]
+        for case in fixed_cases:
+            await run_case(case)
+        for _ in range(100):
+            n_lists = rng.randint(1, 4)
+            lists = []
+            for _ in range(n_lists):
+                length = rng.randint(1, 6)
+                vals = sorted(
+                    (round(rng.uniform(-50, 100), 2) for _ in range(length)), reverse=True,
+                )
+                lists.append(vals)
+            await run_case(lists)
+
+    asyncio.run(main())
+
+
+def test_integrated_partner_component_search_matches_brute_force_enumeration():
+    """FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT integrated-search
+    deterministic control (2026-09-18, operator directive): the
+    combined_coproduction_multi_component_stack site folds a THIRD
+    dimension (treaty-partner selection) into the same
+    _best_first_bound_search call alongside the two movable-component
+    dimensions, with jurisdiction-distinctness rejecting entire
+    (partner, target_a, target_b) triples exactly like the real site
+    does (home/partner/target_a/target_b must be four distinct
+    jurisdictions). This proves that 3-dimensional, reject-some-
+    combinations search still matches brute-force itertools.product
+    enumeration over the SAME real domain shape, not merely the
+    simple no-rejection case the generic control above already covers.
+    No DB, no pricing, fully deterministic (fixed seed)."""
+    import asyncio
+    import itertools
+    import random
+
+    from app.services.canonical_evaluation import _best_first_bound_search
+
+    HOME = "US"
+
+    async def run_case(partners, comp_a, comp_b):
+        # partners/comp_a/comp_b: list of (jurisdiction_code, value),
+        # each list sorted descending by value (as the real candidate
+        # lists always are).
+        partner_values = [v for _j, v in partners]
+        a_values = [v for _j, v in comp_a]
+        b_values = [v for _j, v in comp_b]
+
+        async def try_combo(idx, current_best):
+            p_jur, p_val = partners[idx[0]]
+            a_jur, a_val = comp_a[idx[1]]
+            b_jur, b_val = comp_b[idx[2]]
+            if len({HOME, p_jur, a_jur, b_jur}) != 4:
+                return None
+            return p_val + a_val + b_val
+
+        best, visited, bound = await _best_first_bound_search(
+            [partner_values, a_values, b_values], try_combo,
+        )
+
+        brute_force_best = float("-inf")
+        for (p_jur, p_val), (a_jur, a_val), (b_jur, b_val) in itertools.product(partners, comp_a, comp_b):
+            if len({HOME, p_jur, a_jur, b_jur}) != 4:
+                continue
+            brute_force_best = max(brute_force_best, p_val + a_val + b_val)
+
+        assert best == pytest.approx(brute_force_best, abs=1e-6), (partners, comp_a, comp_b, best, brute_force_best)
+        if bound is not None:
+            assert bound <= best + 1e-9
+        return best, visited, bound
+
+    rng = random.Random(20260918)
+    jur_pool = ["US", "GB", "CA", "AU", "NZ", "FR", "DE"]
+
+    async def main():
+        # Fixed case matching a real shape: partner and one component
+        # target collide on jurisdiction, forcing the search past its
+        # naive top pick.
+        await run_case(
+            [("GB", 100.0), ("CA", 80.0), ("FR", 50.0)],
+            [("GB", 90.0), ("DE", 40.0), ("NZ", 30.0)],
+            [("CA", 70.0), ("AU", 60.0), ("FR", 20.0)],
+        )
+        for _ in range(60):
+            def rand_list():
+                length = rng.randint(1, 5)
+                jurs = rng.sample(jur_pool, length)
+                vals = sorted((round(rng.uniform(1, 100), 2) for _ in range(length)), reverse=True)
+                return list(zip(jurs, vals))
+
+            await run_case(rand_list(), rand_list(), rand_list())
+
+    asyncio.run(main())
+
+
+@pytest.mark.parametrize(
+    "project_id", [LITTLE_UTOPIA_PROJECT_ID, FVD_PROJECT_ID, BAD_HOMBRES_PROJECT_ID, LIPS_LIKE_SUGAR_PROJECT_ID],
+)
+async def test_zero_search_depth_limit_reached_rows(db: AsyncSession, project_id: str):
+    """Acceptance invariant: SEARCH_DEPTH_LIMIT_REACHED must never appear
+    for any of the four real productions under the completeness-closeout
+    engine version -- the corrected search always either proves
+    domination via a numeric bound or reaches genuine exhaustion, and
+    BOTH are persisted as DOMINATED_WITH_PROOF (distinguished only by
+    proof_type), never a separate incomplete-sounding status."""
+    await evaluate_project(db, project_id)
+    count = (await db.execute(
         text(
-            "SELECT scr.calculation_trace_json FROM structure_calculation_results scr "
+            "SELECT COUNT(*) FROM structure_calculation_results scr "
             "JOIN production_structures ps ON ps.id = scr.structure_id "
             "WHERE ps.project_id = :pid AND scr.engine_version = :ev "
-            "AND scr.calculation_trace_json->>'candidate_status' IN "
-            "('DOMINATED_WITH_PROOF', 'SEARCH_DEPTH_LIMIT_REACHED') "
-            "AND scr.calculation_trace_json ? 'stopping_inequality_holds' "
-            "LIMIT 400"
+            "AND scr.calculation_trace_json->>'candidate_status' NOT IN ("
+            "  'DOMINATED_WITH_PROOF', 'PRICED', 'RULE_REJECTED', 'CO_PRO_OPPORTUNITY', "
+            "  'FEASIBILITY_REVIEW_REQUIRED', 'UNPRICEABLE_AUTHORITY_INSUFFICIENT', "
+            "  'QUALIFICATION_HARD_FAIL'"
+            ") AND scr.calculation_trace_json->>'candidate_status' IS NOT NULL"
         ),
-        {"pid": FVD_PROJECT_ID, "ev": ENGINE_VERSION},
-    )).scalars().all()
-    assert rows, "no NUM-004-enriched rows found -- fixture/engine mismatch"
-
-    found_dominated_with_proof = False
-    for trace in rows:
-        for key in (
-            "incumbent_value_usd", "component_cutoff_bounds_usd", "component_window_best_usd",
-            "interaction_safe_total_upper_bound_usd", "stopping_inequality_holds", "stopping_inequality",
-        ):
-            assert key in trace, f"missing {key!r} in trace"
-
-        status = trace["candidate_status"]
-        holds = trace["stopping_inequality_holds"]
-        bound = trace["interaction_safe_total_upper_bound_usd"]
-        incumbent = trace[_num004_incumbent_field(trace)]
-
-        # NUM-004 correction #2: the persisted boolean must always match
-        # an independent re-derivation from the persisted numbers alone.
-        if bound is None:
-            assert holds is True
-        else:
-            assert holds == (bound <= incumbent)
-
-        # The disposition itself must be GATED on the inequality -- never
-        # DOMINATED_WITH_PROOF with a false/unverified inequality, and
-        # never SEARCH_DEPTH_LIMIT_REACHED when the inequality actually
-        # holds (that would silently under-claim a real proof).
-        if status == "DOMINATED_WITH_PROOF":
-            assert holds is True, (
-                "a DOMINATED_WITH_PROOF row must never carry a false stopping inequality"
-            )
-            found_dominated_with_proof = True
-        elif status == "SEARCH_DEPTH_LIMIT_REACHED":
-            assert holds is False, (
-                "a row reclassified to SEARCH_DEPTH_LIMIT_REACHED must be the honest "
-                "consequence of the inequality NOT holding, never an arbitrary label"
-            )
-
-    assert found_dominated_with_proof, (
-        "no sampled row's bound independently proves domination -- cannot confirm the "
-        "gated DOMINATED_WITH_PROOF disposition is ever actually reached on real data"
+        {"pid": project_id, "ev": ENGINE_VERSION},
+    )).scalar()
+    assert count == 0, (
+        f"{count} row(s) with an unexpected candidate_status found for project {project_id} "
+        "(SEARCH_DEPTH_LIMIT_REACHED / SEARCH_SPACE_EXHAUSTED must never appear)"
     )
 
 
-async def test_every_fvd_dominated_with_proof_row_has_a_complete_true_proof(db: AsyncSession):
-    """NUM-004 correction (2026-09-18): a stored stopping inequality that
-    holds for only 3/308 sampled rows does not satisfy the requirement,
-    and neither does substituting the widening loop's bare structural
-    precondition for an actual numeric bound. This test has NO row LIMIT
-    and NO "found at least one" fallback -- every current FVD row that
-    is actually persisted as DOMINATED_WITH_PROOF must carry a complete,
-    independently re-derivable numeric proof with
-    stopping_inequality_holds=True evaluating true, or the test fails
-    outright. Rows the algorithm could not prove are expected to appear
-    as SEARCH_DEPTH_LIMIT_REACHED instead -- that is the correct, honest
-    outcome, not a failure of this test."""
+async def test_dominated_with_proof_rows_carry_independently_checkable_proof(db: AsyncSession):
+    """Both proof_type outcomes (a real numeric bound, and genuine
+    exhaustion) are persisted under the SAME DOMINATED_WITH_PROOF status
+    -- exhaustion is a complete proof too, never a separate/incomplete
+    status."""
     await evaluate_project(db, FVD_PROJECT_ID)
     rows = (await db.execute(
         text(
@@ -259,7 +359,68 @@ async def test_every_fvd_dominated_with_proof_row_has_a_complete_true_proof(db: 
             "JOIN production_structures ps ON ps.id = scr.structure_id "
             "WHERE ps.project_id = :pid AND scr.engine_version = :ev "
             "AND scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF' "
-            "AND scr.calculation_trace_json ? 'stopping_inequality_holds'"
+            "LIMIT 500"
+        ),
+        {"pid": FVD_PROJECT_ID, "ev": ENGINE_VERSION},
+    )).scalars().all()
+    assert rows, "no completeness-closeout rows found -- fixture/engine mismatch"
+
+    found_bound_proof = False
+    found_exhaustive_proof = False
+    for trace in rows:
+        for key in (
+            "incumbent_value_usd", "stopping_bound_usd", "stopping_inequality_holds",
+            "stopping_inequality", "visited_combination_count", "total_candidate_combinations",
+            "proof_type",
+        ):
+            assert key in trace, f"missing {key!r} in trace"
+
+        holds = trace["stopping_inequality_holds"]
+        bound = trace["stopping_bound_usd"]
+        incumbent = trace[_num004_incumbent_field(trace)]
+        proof_type = trace["proof_type"]
+
+        # The persisted boolean must always match an independent
+        # re-derivation of the search's OWN stopping witness.
+        if bound is None:
+            assert holds is True
+        else:
+            assert holds == (bound <= incumbent)
+        assert holds is True, "every DOMINATED_WITH_PROOF row must carry a true stopping witness"
+
+        if proof_type == "best_first_heap_bound":
+            assert bound is not None, "a numeric-bound proof must carry a real stopping bound"
+            found_bound_proof = True
+        elif proof_type == "EXHAUSTIVE_SEARCH":
+            assert bound is None, "an exhaustive-search proof must never carry a numeric bound"
+            assert trace["visited_combination_count"] == trace["total_candidate_combinations"], (
+                "an exhaustive-search proof must have visited every candidate combination"
+            )
+            found_exhaustive_proof = True
+
+    assert found_bound_proof, (
+        "no sampled row's bound independently proves domination on real data"
+    )
+    assert found_exhaustive_proof, (
+        "no sampled row reached genuine exhaustion on real data -- cannot confirm "
+        "proof_type=EXHAUSTIVE_SEARCH is ever actually reached"
+    )
+
+
+async def test_every_fvd_dominated_with_proof_row_has_a_complete_true_proof(db: AsyncSession):
+    """A stored stopping inequality that holds for only a sample of rows
+    does not satisfy the requirement. This test has NO row LIMIT and NO
+    "found at least one" fallback -- every current FVD row persisted as
+    DOMINATED_WITH_PROOF must carry a complete, independently
+    re-derivable numeric proof with stopping_inequality_holds=True, or
+    the test fails outright."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    rows = (await db.execute(
+        text(
+            "SELECT scr.calculation_trace_json FROM structure_calculation_results scr "
+            "JOIN production_structures ps ON ps.id = scr.structure_id "
+            "WHERE ps.project_id = :pid AND scr.engine_version = :ev "
+            "AND scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF'"
         ),
         {"pid": FVD_PROJECT_ID, "ev": ENGINE_VERSION},
     )).scalars().all()
@@ -268,15 +429,15 @@ async def test_every_fvd_dominated_with_proof_row_has_a_complete_true_proof(db: 
     failures = []
     for trace in rows:
         required = {
-            "incumbent_value_usd", "component_cutoff_bounds_usd", "component_window_best_usd",
-            "interaction_safe_total_upper_bound_usd", "stopping_inequality_holds", "stopping_inequality",
-            "component_target_windows", "proof_window_size",
+            "incumbent_value_usd", "stopping_bound_usd", "stopping_inequality_holds",
+            "stopping_inequality", "visited_combination_count", "total_candidate_combinations",
+            "component_candidate_lists",
         }
         missing = required - trace.keys()
         holds = trace.get("stopping_inequality_holds")
-        bound = trace.get("interaction_safe_total_upper_bound_usd")
+        bound = trace.get("stopping_bound_usd")
         incumbent = trace.get(_num004_incumbent_field(trace))
-        recomputed = True if bound is None else (incumbent is not None and bound <= incumbent)
+        recomputed = bound is not None and incumbent is not None and bound <= incumbent
         if missing or holds is not True or recomputed is not True:
             failures.append({
                 "missing": sorted(missing), "holds": holds, "bound": bound, "incumbent": incumbent,
@@ -287,6 +448,29 @@ async def test_every_fvd_dominated_with_proof_row_has_a_complete_true_proof(db: 
         f"{len(failures)}/{len(rows)} FVD DOMINATED_WITH_PROOF rows lack a complete, true proof: "
         f"{failures[:5]}"
     )
+
+
+@pytest.mark.parametrize(
+    "project_id,expected_incentive,expected_npc",
+    [
+        (LITTLE_UTOPIA_PROJECT_ID, 573059.70, 3791333.30),
+        (FVD_PROJECT_ID, 1445659.84, 3072027.16),
+        (BAD_HOMBRES_PROJECT_ID, 596910.25, 1885112.75),
+        (LIPS_LIKE_SUGAR_PROJECT_ID, 3459278.90, 8524375.10),
+    ],
+)
+async def test_baseline_economics_byte_identical_under_completeness_closeout(
+    db: AsyncSession, project_id: str, expected_incentive: float, expected_npc: float,
+):
+    """The completeness-closeout search rewrite must never change any
+    priced economics -- only completeness of the DOMINATED_WITH_PROOF/
+    SEARCH_SPACE_EXHAUSTED disposition. Baseline incentive/NPC must
+    remain byte-identical to the pre-closeout accepted values."""
+    econ = await evaluate_project(db, project_id)
+    baseline = econ["baseline"]
+    assert baseline is not None
+    assert baseline["total_incentive_value_usd"] == pytest.approx(expected_incentive, abs=0.005)
+    assert baseline["true_net_cost_usd"] == pytest.approx(expected_npc, abs=0.005)
 
 
 # ── Supporting validator correction: lawful same-cost stacks must never ──

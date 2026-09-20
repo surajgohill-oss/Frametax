@@ -56,11 +56,17 @@ production has), not a disconnected one.
 """
 from __future__ import annotations
 
+import base64
 import functools
+import heapq
+import json
 import itertools
+import logging
+import time
 import uuid
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import cast, func, insert, inspect as sa_inspect, literal, or_, select, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.allocation_pricing import price_allocated_structure, price_segment, rank_allocated_structures
@@ -153,7 +159,13 @@ from app.data.program_rate_rules import (
 )
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
-from app.models.production import ProductionStructure, StructureCalculationResult
+from app.models.production import EvaluationGenerationSummary, ProductionStructure, StructureCalculationResult
+from app.services.generation_summary import GenerationSummaryBuilder
+from app.services.economic_identity import (
+    candidate_status_of,
+    canonical_economic_identity,
+    rejection_reason_class_of,
+)
 from app.models.project import Project
 from app.models.project_fact import ProjectFact
 from app.services.canonical_project_economics import (
@@ -640,7 +652,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.84.0"  # 1.84.0: NUM-004 CORRECTION #2 (2026-09-18) -- two prior attempts at both DOMINATED_WITH_PROOF trace builders (ordinary_component_hybrid and combined_coproduction_multi_component_stack) are rejected here. Attempt 1 persisted an independent-maxima "interaction_safe_total_upper_bound_usd" that only independently proved domination for 3/308 sampled real FVD rows. Attempt 2 replaced the numeric bound with the widening loop's own bare structural pigeonhole precondition (proof_window_size >= component_subset_size) -- rejected again: that precondition alone never bounds the REAL value achievable outside the window against the REAL incumbent, so it cannot by itself license the disposition. This version restores the numeric interaction-safe upper bound (component_cutoff_bounds_usd/component_window_best_usd/interaction_safe_total_upper_bound_usd, all real, already-computed per-target values -- see the computation's own comment at each site for the full derivation and why real interaction/uplift cannot exceed this additive sum) and GATES the persisted disposition on it PER ROW: candidate_status stays DOMINATED_WITH_PROOF only when interaction_safe_total_upper_bound_usd <= incumbent_value_usd actually holds; otherwise it is honestly reclassified to SEARCH_DEPTH_LIMIT_REACHED (the same disposition this codebase used before the pigeonhole-windowed search existed) rather than persisting a false/unproven inequality. Also fixes a real scale-mismatch bug found while rebuilding the combined_coproduction_multi_component_stack site: its bound (an a+b MARGINAL-component-only quantity) was previously compared against _mc_best_total (the FULL structure total, home+partner+a+b) -- now compared against a new component_marginal_incumbent_usd captured at the same scale. No discovery, pricing, or pruning behavior changed; only the persisted disposition/trace semantics, hence the version bump.
+ENGINE_VERSION = "canonical-1.88.0"  # 1.88.0: BOUNDED_RESPONSE_CONTRACT (2026-09-19), a served-contract + persisted-shape change, never an economics change (all four baseline incentive/NPC figures, every disposition and every proof are byte-identical to 1.87.0). evaluate_project()/POST /evaluation/begin previously embedded the COMPLETE unpriced universe (525,613 entries for F#K Valentine's Day) in its response, and the workspace view loaded every row as an ORM object to drop the rejected ones in Python. The response now carries the exact total (unpriceable_count), counts grouped by disposition and by (disposition, reason), and one bounded first page (limit 100, max 500) with explicit has_more/next_cursor; the remainder is served by the new keyset-paginated GET /projects/{id}/evaluation/unpriceable. No row is dropped or deleted: every rejection row and its full trace stay in the database. Persisted shape (migration 0076, prospective only, NO historical backfill): structure_calculation_results.generation_ordinal (monotonic 1..N assigned by the bulk writer in generation order; keyset for paging, sole index (input_fingerprint, engine_version, generation_ordinal), append-only inserts) and economic_identity (PRICED rows only: a SHA-256 over the routing/program/treaty fields, services/economic_identity.py, the deterministic equal-NPC tie-breaker replacing the random structure uuid); plus ONE narrow evaluation_generation_summaries row per (project, fingerprint, engine) accumulated during evaluation and committed with its rows (counts by disposition/reason and the ordinals of the non-RULE_REJECTED rows that ranking and the workspace load).  1.87.0: FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT, integrated partner search (2026-09-18, operator directive) -- combined_coproduction_multi_component_stack's own best-first search (introduced in 1.86.0) previously re-ran a full (component_a, component_b) branch-and-bound once per (partner_code, partner_best) pair inside the treaty-partner loop. This version folds partner selection INTO the same search: every real, independently-priced treaty-partner candidate across EVERY eligible partner is accumulated (cheaply, no pricing of its own) into one flat list during the partner loop, deduplicated by (partner_code, program_slug) canonical identity, and used as a THIRD dimension alongside the two movable-component candidate lists in one shared _best_first_bound_search call per (component_a, component_b) pair -- visiting each unique (partner, target_a, target_b) index-triple at most once, in strictly non-increasing combined naive-value order, caching pricing by canonical combination identity, and stopping the moment the remaining bound cannot beat the incumbent. Also, per explicit operator correction: genuine exhaustion (the heap empties with no better result possible) is no longer persisted as a separate SEARCH_SPACE_EXHAUSTED status at either widening-search site -- it is a complete proof of domination (nothing unvisited could beat the incumbent, because nothing is left at all) and is now persisted as DOMINATED_WITH_PROOF with proof_type="EXHAUSTIVE_SEARCH", distinguished from the numeric-bound proof (proof_type="best_first_heap_bound") only by that field and stopping_bound_usd being None. Every treaty/majority-minority-pct fact read, qualification check, stacking rule, jurisdiction-distinctness gate, and disjoint-spend routing rule from the pre-existing per-partner design is preserved exactly, evaluated dynamically per visited combination instead of once per fixed outer-loop partner. The single-component combined_coproduction_component_stack and combined_coproduction_pair_stack families (which share the same treaty-partner loop) are untouched. No discovery, pricing, jurisdiction-legality, stacking, or qualification checks changed; disjoint spend routing is untouched. Baseline incentive/NPC economics for all four real productions confirmed byte-identical before/after.
 # 1.82.0: OPTIMIZER_AUDIT_DEFECT_REMEDIATION (2026-09-18), fixing CURRENT_TIP_OPTIMIZER_NUMERICAL_ACCEPTANCE_AUDIT.md's NUM-001..NUM-005, resumed at e880c44. Bumped because both the persisted trace shape and the served workspace contract changed, never because any priced economics changed (all four baseline incentive/NPC figures are confirmed byte-identical before/after). NUM-001: project_workspace_view.py's `top_result = comparable[0]` published a priced-but-genuinely-unresolved baseline (Little Utopia/F#K Valentine's Day) as the served recommendation, contradicting evaluate_project()'s own top_result=null -- fixed by extracting the ONE canonical qualification-admission predicate (new public qualification_admits_recommended(), previously three independent copies: this file's own _summarize_evaluation() closure, canonical_production_view.py's module function, and NONE in project_workspace_view.py) and consuming it from the workspace adapter, never re-implementing a fourth. NUM-002: hybrid (ordinary_component_hybrid) rows never called the SAME per-program discretionary/administrative disclosure helper the single_country/multi_program/component_relocation families already use -- structural_archetype_generator.StructuralCandidateResult now carries administrative_allocation_risk/administrative_allocation_risk_reasons, derived from EVERY component program via _competitive_allocation_disclosure, computed once in generate_structural_candidate() and persisted at both real ordinary_component_hybrid trace sites (the priced-candidate row and its own DOMINATED_WITH_PROOF aggregate is intentionally excluded -- that row has no single priced candidate's economics to attach). NUM-003: apply_stacking_adjustments()'s own StackingAdjustmentResult (raw_values, adjustments, program_values -- already fully computed inside generate_structural_candidate()) was discarded after only its aggregate total was kept; now persisted in full (raw_component_incentives_usd, stacking_adjustments, post_adjustment_component_incentives_usd) so an adjusted hybrid total reconstructs exactly from the trace alone. NUM-004: both DOMINATED_WITH_PROOF trace builders (ordinary_component_hybrid and combined_coproduction_multi_component_stack) now persist the numeric proof itself -- component_cutoff_bounds_usd, component_window_best_usd, an interaction-safe total upper bound (conservative independent-maxima single-component-substitution bound), incumbent_value_usd, and an explicit stopping_inequality/stopping_inequality_holds -- without altering the existing widening-search/stop decision in any way. NUM-005: project_workspace_view.py's evaluation block now returns engine_version/input_fingerprint (evaluate_project()'s own top-level response already did). Supporting validator correction: scripts/canonical_integrity_gate.py's QPE check no longer sums claim-specific qpe_usd across segments and compares to gross budget (a stale oracle -- lawful stacked programs, e.g. Ontario CPTC+OFTTC, correctly share the identical eligible-cost base, so summing produced false positives); replaced with per-segment non-negativity plus a real source-line disjoint-routing check across DIFFERENT components via component_allocations[].line_ids.
 # 1.81.0: structural-optimizer wiring correction pass, resumed at ba76cd2f. Corrects three real defects in the six-control closeout above (1.80.0), each a genuine economic-behavior change, never a cosmetic one. HO-013: REMOVED the arbitrary _MULTI_COMPONENT_TARGET_BOUND=200 flat cutoff, which sliced the SAME global, component-AGNOSTIC _combined_top_targets list for every routed component -- a real doctrine violation, since a genuinely component-specific real candidate ranked below 200 in the GLOBAL ranking could be silently excluded even while ranking near the top of its OWN component's real list. Replaced with (1) _hy_component_all_targets[component] -- the SAME real, independently-priced-per-component candidate list the pre-existing ordinary_component_hybrid mechanism already builds via _price_component_relocation_candidate, and (2) a genuine pigeonhole-exchange proof-based widening search (window starts at 2, the proven-sufficient size for 2 simultaneously-routed components, and doubles on failure until a real PRICED combination is found or every real candidate is exhausted), mirroring the SAME proof pattern canonical-1.72.0 already established elsewhere in this file. Runtime dropped from ~36s to ~3s on the real HO-013 fixture as a direct consequence (small, real, component-scoped lists vs. an arbitrary flat 200-candidate slice). HO-012: REVERTED from PRICED to an explicit RULE_REJECTED. Direct primary-authority verification found the prior pass's "each Eurimages co-producer independently accesses its own national incentive" pricing basis unsupported: treaty_engine.py's own eurimages-multilateral TreatyData carries EMPTY majority_unlocks/minority_unlocks (the codebase's own structured, authoritative "this treaty unlocks these specific programs" fields, populated with real slugs for every bilateral treaty) -- only fund_unlocks=["eu_eurimages"] (the fund itself, not each party's own program) is populated. The sole textual support was an uncited free-text `notes` field (confidence_tier="PARSED", no citation field -- contrast TreatyData.non_party_personnel_exception_citation, which DOES exist and IS populated for individually-researched propositions elsewhere in this same dataclass). Real subset-eligibility discovery (participant count, per-party minimum contribution share, cultural test) remains intact and disclosed; only the unsupported pricing claim is removed, persisting RULE_REJECTED/MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED instead. HO-011: reconciled the two conflicting authority_coverage_registry.py registries AT THEIR SOURCE instead of papering over the disagreement at the consumer site. Direct verification found program_rate_rules_worldwide.py's US_TN_DOCTRINE carries a real, VERIFIED-tier, officially-cited (tn.gov) RateRule -- a single unconditional flat-25%-of-QPE tier, structurally identical in kind to the 18 programs this same file's own changelog already documents removing from _B1_DISCRETIONARY_RULING as "genuinely misclassified as authority-exhausted" -- us_tn_performance_grant was evidently missed by that pass. Removed from _B1_DISCRETIONARY_RULING this pass (AUTHORITY_COVERAGE_REGISTRY_VERSION 1.8.0 -> 1.9.0), which is what actually caused the disagreement the prior pass's consumer-side _capability_only_status() workaround was only papering over; that workaround is removed in the same pass (reverted to its original, simpler form), since the disagreement it existed to disclose no longer exists. us_tn_performance_grant now prices normally (confirmed: $750,000.00 = 25% of $3,000,000 QPE) and participates in the full discovery pipeline (standalone, component_relocation, and structural_archetype_generator paths alike), not a special case. HO-003 and HO-010 needed no code change: direct re-verification found HO-003's literal required target ({uk_avec, au_producer_offset, NZ's international-post-vfx grant}) already reaches an EXACT PRICED match ($1,939,600.00) -- the prior pass's own CSV evidence had simply cited a different, non-literal illustrative example (Uzbekistan) instead of the literal target, a documentation defect, not a code gap, now corrected in the ledger and the prevention test. HO-010's standalone Creative Saskatchewan identity reconciliation (canonical-1.80.0) remains correct and unchanged; both authority registries independently confirm the program is a real, confirmed DISPLAY_ONLY_ZERO_GUARANTEED discretionary award that can never enter priced_by_code, so the FULL 3-program required control is honestly relabeled COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED rather than a false full-control verification claim. Invalidates every cached row so this fires fresh.
 # 1.80.0: six-control closeout (HO-003, HO-007, HO-012, HO-013, HO-010, HO-011) -- closes the acceptance gap left by 1.79.0's honest-but-incomplete MULTI_PRINCIPAL_PARTIALLY_RESOLVED/MULTI_PRINCIPAL_DEFERRED/GRANT_COMPONENT_UNWIRED_DEFERRED dispositions. HO-003: the binding doctrine ("ranking must never suppress feasible discovery") was being violated by _best_priced_treaty_side_candidate(), which picked ONE overall-best-priced partner program per jurisdiction rather than enumerating every treaty-valid unlock. New _all_priced_treaty_side_candidates() enumerates every program in a treaty's real minority_unlocks/majority_unlocks that independently prices (never inventing one outside the registered unlock list), and the home-anchored/non-home-anchored bilateral loops now iterate every returned candidate instead of a single winner -- _combined_top_targets was likewise flattened from one-best-per-jurisdiction to every-candidate-per-jurisdiction so two genuinely different real programs for the same jurisdiction (e.g. NZ's international-post-vfx grant vs nz_spg_international) can each be reached. This produces the exact literal HO-003 target {uk_avec, au_producer_offset, nz international post/vfx}: PRICED, $1,939,600.00 total incentive on a $7.5M budget. HO-007: the enumeration fix surfaces, for the first time, an explicit per-unlock RULE_REJECTED (NO_PRICEABLE_TREATY_UNLOCK) whenever a treaty's real minority_unlocks contains zero independently-priceable programs, citing each unlock's real authority_coverage_registry/program_rate_rules status -- applied to the real, registered uk-fr-bilateral treaty, whose real minority_unlocks are fr_tax_credit_cinema/fr_cnc_production, never fr_trip (confirmed via direct treaty_engine.py query, not assumed); this control's own literal fr_trip target is therefore a corrected-target RULE_REJECTED, not a forced PRICED. HO-013: new _price_combined_coproduction_multi_component_candidate() generalizes the existing single-component combined-co-production kernel to N>=2 simultaneous movable components with disjoint cost pools (account_splits excludes the union of every routed component's spend_category, never double-counted), wired as a new discovery pass over itertools.combinations of the production's real movable components x itertools.product of every per-component target candidate (bounded by a disclosed _MULTI_COMPONENT_TARGET_BOUND=200 practical search cap, this codebase's own precedented safety-limit pattern, never a doctrine choice); reaches the exact literal HO-013 4-program target {uk_avec, au_producer_offset, nz international post/vfx, OCASE}: PRICED, $2,046,160.00 total incentive on an $8M budget. HO-012: new _price_combined_multilateral_coproduction_candidate() (N-party multilateral generalization of the existing pair kernel, sharing every account across all N real evidenced participant percentages, normalized to sum to 1.0) plus new _real_multilateral_subset_participants() (reads the simpler, treaty-scoped coproduction_participant_pct::{treaty_slug}::{code} fact key rather than requiring a percentage fact for every one of Eurimages' ~37 member states, which made the pre-existing full-membership multilateral mechanism architecturally unreachable for a producer-intended specific N-party structure) together let a real 3-party Eurimages-eligible production reach the exact literal HO-012 target {fr_trip, uk_avec, ie_section_481} -- fr_trip IS a real, valid unlock here because Eurimages is a genuine, separately-registered multilateral fund route distinct from the bilateral UK-France treaty HO-007 depends on, confirmed via direct treaty_engine.py TreatyData reading, not assumed: PRICED, $2,476,080.00 total incentive on a $9M budget. HO-011: _capability_only_status() now checks _economic_block_for_program() (the OLDER, separate authority_coverage_registry.py block dict) before trusting a PRICEABLE_VALIDATED read from the newer coverage_state()/blocks_economic_candidacy() registry, because the two registries were found to genuinely disagree for us_tn_performance_grant and resolve_program_rate() empirically still honors the older block -- this disagreement is a real, disclosed, UNRESOLVED data-integrity gap between the two registries (not fixed this pass, a separate reconciliation project), but the persisted rejection reason now names it explicitly rather than silently returning a misleadingly-optimistic status: UNPRICEABLE_AUTHORITY_INSUFFICIENT/FAIL_CLOSED. HO-010: new canonical_program_slug field on conditional_programs.py's ConditionalProgramNode (plus _CANONICAL_SLUG_BY_NODE_ID reconciliation table, one verified entry so far: Creative Saskatchewan's catalog node -> ca_sk_creative_saskatchewan_grant) bridges the previously-separate conditional-discovery catalog identity and the priceable program_slug rate registry; the single-program capability_only branch now also calls the pre-existing _conditional_data() helper (previously only wired for combined/treaty structure types) so this reconciliation is actually visible on a real persisted structure's conditional_programs/conditional_compatibility disclosure -- disposition remains the real, pre-existing FEASIBILITY_REVIEW_REQUIRED/AUTHORITY_UNRESOLVED_NON_PRICEABLE (never a fabricated fund_overlay component; a genuinely disjoint real second budget line for one would need to be invented, which the explicit no-guessed-allocations constraint forbids), now confirmed via direct query to be a real, reconstructable, non-silently-omitted disposition rather than an unverified DEFERRED claim. Reinvestment/gross-up remains shelved throughout, per explicit instruction. Invalidates every cached row so this fires fresh.
@@ -1124,6 +1136,72 @@ def _relocation_normalization(
     fx = compute_fx_normalization(jurisdiction_code, FXInputs(), local_cost_basis_usd=allocated_usd)
 
     return travel.incremental_delta_usd, fx.delta_usd, local_cost.incremental_delta_usd
+
+
+async def _best_first_bound_search(lists: list[list[float]], try_combination) -> tuple[float, int, float | None]:
+    """FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT (2026-09-18): a
+    generic, pure, independently-testable best-first branch-and-bound
+    over M sorted-descending real-valued candidate lists -- replaces the
+    prior Cartesian window-doubling design (which re-scanned already-
+    examined regions of the search space from scratch on every widening,
+    an architecturally wrong approach the operator explicitly rejected
+    after it made real FVD evaluation runs take 10+ minutes without
+    finishing).
+
+    Visits each unique index-tuple (one per candidate combination) AT
+    MOST ONCE, in strictly non-increasing order of the naive bound (the
+    sum of `lists[k][idx[k]]` for the tuple) -- the standard lazy
+    "top-K combinations from K sorted lists" heap technique. Stops as
+    soon as the heap's remaining maximum bound cannot exceed the best
+    real value found so far (a genuine, tight proof of domination -- not
+    an approximation), or the heap exhausts (the complete candidate
+    space was visited -- genuine exhaustion, not a numeric bound). No
+    arbitrary candidate/rank/depth cap of any kind.
+
+    `try_combination` is an async callable, `(idx, current_best) ->
+    float | None`, awaited for every visited index-tuple; it owns all
+    domain logic (jurisdiction-
+    distinctness, real pricing, persistence side effects, incumbent-
+    identity bookkeeping) and returns the real, priced value for that
+    combination if it is a genuine candidate for the incumbent, or None
+    if the combination is invalid/inexecutable/rejected. `current_best`
+    is passed in so the callback's own incumbent-identity bookkeeping
+    (e.g. "is this now the best PRICED structure we've seen") uses the
+    EXACT SAME threshold this function itself uses immediately after --
+    the two can never diverge.
+
+    Returns (best_value, visited_count, stopping_bound): stopping_bound
+    is the real, final top-of-heap bound that proved domination (always
+    <= best_value, by construction of the break condition -- an
+    independently re-derivable proof, never a separate formula), or None
+    when the heap emptied out (genuine, complete exhaustion instead).
+    best_value is float("-inf") if no valid combination was ever found.
+    """
+    if not lists or any(not lst for lst in lists):
+        return float("-inf"), 0, None
+    start = tuple([0] * len(lists))
+    heap: list[tuple[float, tuple[int, ...]]] = [(-sum(lst[0] for lst in lists), start)]
+    visited: set[tuple[int, ...]] = {start}
+    best_value = float("-inf")
+    visited_count = 0
+    while heap:
+        neg_bound, idx = heapq.heappop(heap)
+        bound = -neg_bound
+        if bound <= best_value:
+            return best_value, visited_count, bound
+        visited_count += 1
+        real_value = await try_combination(idx, best_value)
+        if real_value is not None and real_value > best_value:
+            best_value = real_value
+        for k in range(len(lists)):
+            nxt = list(idx)
+            nxt[k] += 1
+            nxt_t = tuple(nxt)
+            if nxt_t not in visited and nxt_t[k] < len(lists[k]):
+                visited.add(nxt_t)
+                nxt_bound = sum(lists[m][nxt_t[m]] for m in range(len(lists)))
+                heapq.heappush(heap, (-nxt_bound, nxt_t))
+    return best_value, visited_count, None
 
 
 @functools.lru_cache(maxsize=None)
@@ -3596,8 +3674,199 @@ async def _company_period_prior_award_facts(
     return frozenset(evidenced), amounts
 
 
+logger = logging.getLogger(__name__)
+
+#: Rows buffered before a chunked bulk INSERT is issued inside the
+#: evaluation's single transaction. Bounds memory (an FVD-scale evaluation
+#: persists >500K rows) without changing what is written or when it
+#: becomes visible (nothing is visible to other connections until the
+#: one commit).
+_BULK_PERSIST_CHUNK_ROWS = 2000
+
+#: Rows written by one evaluation at/above which the planner statistics for the
+#: two evaluation tables are refreshed right after the commit. Measured on FVD
+#: (526K rows into tables whose statistics still described a 10K-row table): the
+#: read-back join was planned as a nested loop with a join filter -- effectively
+#: quadratic, still running after 2+ minutes -- and became a linear scan plus
+#: primary-key lookups once ANALYZE had run. Autovacuum's own ANALYZE only fires
+#: some time AFTER the commit, i.e. after the read-back has already been planned.
+_ANALYZE_AFTER_ROWS = 10_000
+
+
+class _BulkEvaluationWriter:
+    """Chunked bulk persistence for evaluate_project()'s candidate rows.
+
+    Every candidate persisted by evaluate_project() follows one pattern:
+    ``session.add(ProductionStructure(id=uuid.uuid4(), ...))``,
+    ``await session.flush()`` (only so the FK target exists), then
+    ``session.add(StructureCalculationResult(structure_id=<that id>, ...))``.
+    Each id is already generated client-side, so the per-row flush was
+    pure round-trip overhead -- one synchronous INSERT per structure, over
+    500K times for a single FVD evaluation.
+
+    This wrapper is a drop-in for the ``session`` evaluate_project()
+    hands to itself and its helpers. ``add()`` buffers the two evaluation
+    row types (anything else falls straight through to the real session);
+    ``flush()`` only issues a chunked bulk INSERT once a chunk is full
+    (structures first, then results, so every FK target precedes its
+    referrers); ``commit()`` drains whatever is left and commits the ONE
+    transaction. Any read (``execute``/``get``/...) drains first, so
+    read-your-writes is exactly what the per-row flushes gave. Rows
+    written, their values, their defaults, and the single-transaction
+    atomicity are unchanged -- only the number of statements is.
+    """
+
+    _DRAIN_BEFORE = frozenset({
+        "execute", "scalars", "scalar", "get", "refresh", "delete", "merge",
+        "stream", "stream_scalars",
+    })
+
+    def __init__(self, session: AsyncSession, chunk_rows: int = _BULK_PERSIST_CHUNK_ROWS):
+        self._session = session
+        self._chunk_rows = chunk_rows
+        self._structures: list = []
+        self._results: list = []
+        self.structures_written = 0
+        self.results_written = 0
+        self.chunks = 0
+        self.drain_seconds = 0.0
+        # Accumulated WHILE the evaluation runs, persisted as one narrow summary
+        # row in the same transaction (see services/generation_summary.py).
+        self._next_ordinal = 0
+        self._summary = GenerationSummaryBuilder()
+        self._generation: dict = {}
+        # commit() may be called more than once per evaluation (the read-back's
+        # leading-structure repoint commits too): the summary row and the post-write
+        # ANALYZE happen exactly once, at the first commit that persisted rows.
+        self._finalized = False
+        self._analyze_due = False
+
+    def add(self, obj) -> None:
+        if isinstance(obj, ProductionStructure):
+            self._generation.setdefault("project_id", obj.project_id)
+            self._structures.append(obj)
+        elif isinstance(obj, StructureCalculationResult):
+            # generation_ordinal: 1..N in generation order, monotonic across the
+            # whole evaluation (independent of chunk boundaries).
+            self._next_ordinal += 1
+            obj.generation_ordinal = self._next_ordinal
+            self._results.append(obj)
+        else:
+            self._session.add(obj)
+
+    def add_all(self, objs) -> None:
+        for obj in objs:
+            self.add(obj)
+
+    async def flush(self) -> None:
+        if len(self._structures) + len(self._results) >= self._chunk_rows:
+            await self._drain()
+
+    async def _persist_generation_summary(self) -> None:
+        if not self._summary.total_rows or self._finalized:
+            return
+        self._finalized = True
+        await self._session.execute(insert(EvaluationGenerationSummary).values(
+            project_id=self._generation["project_id"],
+            input_fingerprint=self._generation["input_fingerprint"],
+            engine_version=self._generation["engine_version"],
+            **self._summary.payload(),
+        ))
+
+    async def commit(self) -> None:
+        await self._drain()
+        # One summary row per (project, fingerprint, engine), in the SAME transaction
+        # as the rows it summarizes.
+        first_finalize = not self._finalized
+        await self._persist_generation_summary()
+        if first_finalize and self.structures_written + self.results_written >= _ANALYZE_AFTER_ROWS:
+            self._analyze_due = True
+        if self.structures_written or self.results_written:
+            logger.info(
+                "evaluation persisted: %d structures + %d results in %d bulk chunks "
+                "(%.2fs writing)",
+                self.structures_written, self.results_written, self.chunks, self.drain_seconds,
+            )
+        await self._session.commit()
+        if self._analyze_due:
+            self._analyze_due = False
+            started = time.monotonic()
+            await self._session.execute(text("ANALYZE production_structures"))
+            await self._session.execute(text("ANALYZE structure_calculation_results"))
+            # ANALYZE's catalog updates are transactional; commit so they persist
+            # for every later reader, not just this session's read-back.
+            await self._session.commit()
+            logger.info("planner statistics refreshed after bulk write (%.2fs)", time.monotonic() - started)
+
+    async def rollback(self) -> None:
+        self._structures.clear()
+        self._results.clear()
+        self._next_ordinal = 0
+        self._summary = GenerationSummaryBuilder()
+        self._generation = {}
+        self._finalized = False
+        self._analyze_due = False
+        await self._session.rollback()
+
+    def __getattr__(self, name):
+        attr = getattr(self._session, name)
+        if name in self._DRAIN_BEFORE and callable(attr):
+            async def _drained(*args, **kwargs):
+                await self._drain()
+                return await attr(*args, **kwargs)
+            return _drained
+        return attr
+
+    async def _drain(self) -> None:
+        if not (self._structures or self._results):
+            return
+        started = time.monotonic()
+        # Any other pending ORM state (none is expected, but flush() used to
+        # carry it) goes first, in the same transaction.
+        await self._session.flush()
+        structures, results = self._structures, self._results
+        self._structures, self._results = [], []
+        if structures:
+            await self._bulk_insert(ProductionStructure, structures)
+            self.structures_written += len(structures)
+        if results:
+            await self._bulk_insert(StructureCalculationResult, results)
+            self.results_written += len(results)
+        self.chunks += 1
+        self.drain_seconds += time.monotonic() - started
+
+    async def _bulk_insert(self, model, objs) -> None:
+        keys = [attr.key for attr in sa_inspect(model).column_attrs]
+        # Only attributes the constructor actually set are sent, so column
+        # defaults (created_at, has_unverified_inputs, status, ...) apply
+        # exactly as they did under the ORM unit of work. Rows are grouped by
+        # their key set so each group is one uniform executemany batch.
+        groups: dict[frozenset, list[dict]] = {}
+        for obj in objs:
+            values = {key: obj.__dict__[key] for key in keys if key in obj.__dict__}
+            if model is StructureCalculationResult:
+                # Accumulated from THIS row's own trace at THIS persistence site --
+                # never a second, independent source.
+                trace = values.get("calculation_trace_json") or {}
+                priced = values.get("true_net_cost_usd") is not None
+                self._summary.observe(
+                    values["generation_ordinal"],
+                    status=candidate_status_of(trace), reason=rejection_reason_class_of(trace),
+                    priced=priced, is_baseline=bool(trace.get("is_baseline")),
+                )
+                self._generation.setdefault("input_fingerprint", values.get("input_fingerprint"))
+                self._generation.setdefault("engine_version", values.get("engine_version"))
+                if priced:
+                    # deterministic equal-NPC tie-breaker, PRICED rows only
+                    values["economic_identity"] = canonical_economic_identity(values.get("structure_type"), trace)
+            groups.setdefault(frozenset(values), []).append(values)
+        for rows in groups.values():
+            await self._session.execute(insert(model), rows)
+
+
 async def evaluate_project(session: AsyncSession, project_id) -> dict:
     """The canonical served evaluation entry point for any project."""
+    session = _BulkEvaluationWriter(session)
     project = await session.get(Project, project_id)
     if project is None:
         return {"status": "PROJECT_NOT_FOUND"}
@@ -3762,6 +4031,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             # persisted changed, only that the ECONOMIC INPUTS didn't.
             StructureCalculationResult.engine_version == ENGINE_VERSION,
         )
+        # Existence probe only: without LIMIT 1 this materialized every
+        # matching row (526K for FVD) as an ORM object just to test `is None`.
+        .limit(1)
     )).scalars().first()
     if existing is not None:
         return await _summarize_evaluation(session, project, inputs, fingerprint, reused=True)
@@ -4163,6 +4435,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 },
                 input_fingerprint=fingerprint,
             ))
+            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             continue
 
         pricing, register, rate_resolution = _price_candidate(inputs, code, program_slug)
@@ -4236,6 +4509,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 },
                 input_fingerprint=fingerprint,
             ))
+            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             continue
 
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
@@ -4416,6 +4690,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 },
                 input_fingerprint=fingerprint,
             ))
+            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             continue
 
         _qpe_for_stack = round(sum(
@@ -4606,6 +4881,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     # Existing Optimizer/Stacker Reconnection — multi-program combinations,
     # N-way (2 or more programs). Additive only: every existing single-
@@ -4949,6 +5225,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         },
                         input_fingerprint=fingerprint,
                     ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                     continue
 
                 if _cp_payload is None:
@@ -5016,6 +5293,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         },
                         input_fingerprint=fingerprint,
                     ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     # Codex global optimizer audit, P1-TRACE-001 remediation: "compute
     # exact unique qualifying spend from line-level allocation
@@ -5330,6 +5608,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     # Existing Optimizer/Stacker Reconnection, Task A — component/split.
     # Reuses production_allocation.StructureSpec's existing
@@ -5467,6 +5746,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         },
                         input_fingerprint=fingerprint,
                     ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                     continue
 
                 component_jur = jurisdiction_by_code.get(home_code)
@@ -5687,6 +5967,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     },
                     input_fingerprint=fingerprint,
                 ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     # CLAUDE_STRUCTURAL_GENERATOR_CANONICAL_INTEGRATION_CORRECTION, Task 1
     # -- the canonical integration of app.calculators.structural_
@@ -5830,8 +6111,6 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             ))
         _hy_component_all_targets[_comp] = _ranked
 
-    import heapq
-
     def _hy_component_type_for(jur_code: str, comp_by_jur: dict[str, str]) -> str:
         return comp_by_jur.get(jur_code, "component")
 
@@ -5902,521 +6181,373 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 if any(not lst for lst in _full_lists):
                     continue
 
-                # CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_CORRECTION:
-                # a PROVEN, not arbitrary, search window. For a subset of
-                # `_r` components, any candidate ranked below `_r` within
-                # its OWN component's descending-value list can never be
-                # part of the true optimum (ignoring pairwise legality for
-                # a moment): with only `_r - 1` OTHER components able to
-                # "occupy" a jurisdiction, at least one of this component's
-                # own top-`_r` candidates is always free -- swapping to it
-                # can only weakly improve the total, by a standard exchange
-                # argument (pigeonhole: `_r` slots, `_r - 1` possible
-                # competitors). This is a real mathematical proof, not a
-                # heuristic rank cutoff, and it holds at ANY window size
-                # W >= `_r`, so widening (below) never invalidates it.
-                #
-                # The prior version of this mechanism used a single fixed,
-                # documented cap (_HYBRID_BB_MAX_EXAMINED_PER_SUBSET) and
-                # an honest SEARCH_DEPTH_LIMIT_REACHED disposition when
-                # that cap was hit before a mathematical proof could be
-                # produced -- correct, but not "complete" in the sense
-                # required by this workstream. This version instead WIDENS
-                # the window (starting at the proven-sufficient `_r`,
-                # doubling on failure) until a real, executable combination
-                # is found or every full list is exhausted, so the
-                # disposition for the remainder is ALWAYS a genuine
-                # DOMINATED_WITH_PROOF (or, in the rare case nothing at all
-                # is feasible, no aggregate row is needed since nothing was
-                # dominated -- there was simply no winner).
-                _window = _r
-                _best_found = float("-inf")
-                _incumbent_structure_id: str | None = None
-                _incumbent_jurisdiction_codes: list[str] = []
-                _incumbent_program_slugs: list[str] = []
-                while True:
-                    _lists = [full[:_window] for full in _full_lists]
-                    _visited: set[tuple[int, ...]] = set()
-                    _start = tuple([0] * len(_lists))
-                    _heap = [(-sum(lst[0].selected_incentive_usd for lst in _lists), _start)]
-                    _visited.add(_start)
-                    _best_found = float("-inf")
-                    _incumbent_structure_id = None
-                    _incumbent_jurisdiction_codes = []
-                    _incumbent_program_slugs = []
-                    while _heap:
-                        _neg_bound, _idx = heapq.heappop(_heap)
-                        _bound = -_neg_bound
-                        if _bound <= _best_found:
-                            # Every remaining heap entry has a bound <= this
-                            # one (heap invariant), so all are provably
-                            # dominated by the best real total already found
-                            # WITHIN this window -- proof achieved before
-                            # the window was even exhausted.
-                            break
+                # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT (2026-09-18):
+                # a genuine best-first branch-and-bound over the COMPLETE
+                # real candidate lists (_best_first_bound_search, module-
+                # level, pure, and independently unit-tested against
+                # brute-force itertools.product enumeration -- see
+                # test_optimizer_audit_defect_remediation.py). Replaces the
+                # prior Cartesian window-doubling design: that design reset
+                # its heap/visited-set and re-scanned already-examined
+                # regions of the search space from scratch on every
+                # widening, which made real FVD evaluation runs take 10+
+                # minutes without finishing -- an architecturally wrong
+                # approach, not a tuning problem. This visits each unique
+                # (jurisdiction, program) combination across the `_r`
+                # components in this subset AT MOST ONCE, in strictly
+                # non-increasing naive-value-bound order, and stops the
+                # MOMENT the remaining bound cannot beat the incumbent (a
+                # genuine, tight proof of domination -- the search's own
+                # real witness, not an approximation) or the heap
+                # exhausts (genuine, complete exhaustion) -- no arbitrary
+                # candidate/rank/depth cap, and no separate "window" bound
+                # formula that could ever drift from what the search
+                # itself actually relies on.
+                _hy_incumbent_structure_id: str | None = None
+                _hy_incumbent_jurisdiction_codes: list[str] = []
+                _hy_incumbent_program_slugs: list[str] = []
+                _hy_examined_count = 0
+                _hy_rejected_count = 0
 
-                        _cands = [_lists[k][_idx[k]] for k in range(len(_lists))]
-                        _jur_codes = [c.jurisdiction_code for c in _cands]
-                        if len(set(_jur_codes)) == len(_jur_codes):
-                            _comp_by_jur = dict(zip(_jur_codes, _subset))
-                            _hy_program_for_jur = {c.jurisdiction_code: c.program_slug for c in _cands}
-                            if _anchor_program_slug:
-                                _hy_program_for_jur[_anchor_code] = _anchor_program_slug
+                async def _hy_try_combination(_idx: tuple[int, ...], _current_best: float) -> float | None:
+                    nonlocal _hy_incumbent_structure_id, _hy_incumbent_jurisdiction_codes
+                    nonlocal _hy_incumbent_program_slugs, _hy_examined_count, _hy_rejected_count
+                    _cands = [_full_lists[_k][_idx[_k]] for _k in range(len(_full_lists))]
+                    _jur_codes = [c.jurisdiction_code for c in _cands]
+                    if len(set(_jur_codes)) != len(_jur_codes):
+                        return None
+                    _comp_by_jur = dict(zip(_jur_codes, _subset))
+                    _hy_program_for_jur = {c.jurisdiction_code: c.program_slug for c in _cands}
+                    if _anchor_program_slug:
+                        _hy_program_for_jur[_anchor_code] = _anchor_program_slug
 
-                            _hy_spec = StructureSpec(
-                                structure_id=(
-                                    "CANON-HYBRID-BB-" + _anchor_code + "-" + "-".join(
-                                        f"{c}={jur}:{_hy_program_for_jur[jur]}"
-                                        for jur, c in sorted(_comp_by_jur.items(), key=lambda t: t[1])
-                                    )
-                                ),
-                                structure_type="hybrid",
-                                label=(
-                                    f"{_anchor_code} ({_anchor_program_slug}) + " + " + ".join(
-                                        f"{c}->{jc} ({_hy_program_for_jur[jc]})"
-                                        for jc, c in sorted(_comp_by_jur.items())
-                                    )
-                                ),
-                                primary_jurisdiction=_anchor_code,
-                                participants=tuple(dict.fromkeys([_anchor_code] + _jur_codes)),
-                                incentive_programs=_hy_program_for_jur,
-                                component_routes={c: jc for jc, c in _comp_by_jur.items()},
+                    _hy_spec = StructureSpec(
+                        structure_id=(
+                            "CANON-HYBRID-BB-" + _anchor_code + "-" + "-".join(
+                                f"{c}={jur}:{_hy_program_for_jur[jur]}"
+                                for jur, c in sorted(_comp_by_jur.items(), key=lambda t: t[1])
                             )
-                            _hy_alloc = derive_account_allocation(
-                                lines=inputs.budget_lines,
-                                spend_category_by_code=inputs.spend_category_by_code,
-                                spec=_hy_spec,
-                                stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+                        ),
+                        structure_type="hybrid",
+                        label=(
+                            f"{_anchor_code} ({_anchor_program_slug}) + " + " + ".join(
+                                f"{c}->{jc} ({_hy_program_for_jur[jc]})"
+                                for jc, c in sorted(_comp_by_jur.items())
                             )
-                            _hy_allocations_by_jur: dict[str, list] = {}
-                            for _a in _hy_alloc.assignments:
-                                _hy_allocations_by_jur.setdefault(_a.jurisdiction_code, []).append(_a)
+                        ),
+                        primary_jurisdiction=_anchor_code,
+                        participants=tuple(dict.fromkeys([_anchor_code] + _jur_codes)),
+                        incentive_programs=_hy_program_for_jur,
+                        component_routes={c: jc for jc, c in _comp_by_jur.items()},
+                    )
+                    _hy_alloc = derive_account_allocation(
+                        lines=inputs.budget_lines,
+                        spend_category_by_code=inputs.spend_category_by_code,
+                        spec=_hy_spec,
+                        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+                    )
+                    _hy_allocations_by_jur: dict[str, list] = {}
+                    for _a in _hy_alloc.assignments:
+                        _hy_allocations_by_jur.setdefault(_a.jurisdiction_code, []).append(_a)
 
-                            _hy_components = []
-                            for _jur_code, _accts in sorted(_hy_allocations_by_jur.items()):
-                                _program_slug = _hy_program_for_jur.get(_jur_code)
-                                if not _program_slug:
-                                    continue
-                                _component_type = (
-                                    "principal_production" if _jur_code == _anchor_code
-                                    else _hy_component_type_for(_jur_code, _comp_by_jur)
-                                )
-                                _hy_components.append(_HybridComponent(
-                                    component_type=_component_type,
-                                    jurisdiction_code=_jur_code,
-                                    program_slug=_program_slug,
-                                    allocations=tuple(_accts),
-                                    spend_category_by_code=inputs.spend_category_by_code,
-                                    offshore_payroll_accounts=inputs.offshore_payroll_accounts,
-                                    production_type=inputs.production_type,
-                                    evidenced_requirement_facts=inputs.evidenced_program_facts,
-                                    amount_facts=inputs.amount_facts,
-                                ))
+                    _hy_components = []
+                    for _jur_code, _accts in sorted(_hy_allocations_by_jur.items()):
+                        _program_slug = _hy_program_for_jur.get(_jur_code)
+                        if not _program_slug:
+                            continue
+                        _component_type = (
+                            "principal_production" if _jur_code == _anchor_code
+                            else _hy_component_type_for(_jur_code, _comp_by_jur)
+                        )
+                        _hy_components.append(_HybridComponent(
+                            component_type=_component_type,
+                            jurisdiction_code=_jur_code,
+                            program_slug=_program_slug,
+                            allocations=tuple(_accts),
+                            spend_category_by_code=inputs.spend_category_by_code,
+                            offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+                            production_type=inputs.production_type,
+                            evidenced_requirement_facts=inputs.evidenced_program_facts,
+                            amount_facts=inputs.amount_facts,
+                        ))
 
-                            if len(_hy_components) >= 2:
-                                _hy_result = _generate_hybrid_candidate(
-                                    _hy_components, gross_budget_usd=inputs.gross_budget_usd,
-                                    anchor_npc_usd=_hybrid_anchor_npc,
-                                )
-                                if _hy_result.structure_id not in _hy_seen_structure_ids:
-                                    _hy_seen_structure_ids.add(_hy_result.structure_id)
-                                    if _hy_result.executable:
-                                        _hy_status, _hy_rejection_class = STATUS_PRICED, None
-                                        # Compare like with like: `_bound` is a
-                                        # sum of MARGINAL (non-anchor) component
-                                        # values, so `_best_found` must track
-                                        # the same marginal quantity from the
-                                        # real result -- never the whole
-                                        # structure's total_guaranteed_incentive_usd
-                                        # (which also includes the anchor's own
-                                        # multi-million-dollar baseline and would
-                                        # make every bound look dominated after
-                                        # the very first real result).
-                                        _real_marginal = sum(
-                                            ce.guaranteed_incentive_usd for ce in _hy_result.component_economics
-                                            if ce.component.jurisdiction_code != _anchor_code
-                                        )
-                                        if _real_marginal > _best_found:
-                                            _best_found = _real_marginal
-                                            # Reconstruction data: the SPECIFIC
-                                            # real, priced structure that
-                                            # establishes the incumbent bound
-                                            # every DOMINATED_WITH_PROOF row
-                                            # below is measured against --
-                                            # never just a bare number.
-                                            _incumbent_structure_id = _hy_result.structure_id
-                                            _incumbent_jurisdiction_codes = list(_hy_result.jurisdiction_codes)
-                                            _incumbent_program_slugs = list(_hy_result.program_slugs)
-                                    elif _hy_result.blocking_pairs:
-                                        _hy_status, _hy_rejection_class = "RULE_REJECTED", "PAIRWISE_INCOMPATIBLE"
-                                    elif _hy_result.rejection_reason and "budget line" in _hy_result.rejection_reason:
-                                        _hy_status, _hy_rejection_class = "RULE_REJECTED", "SAME_COST_DOUBLE_CLAIM"
-                                    else:
-                                        _hy_status, _hy_rejection_class = "RULE_REJECTED", "THRESHOLD_NOT_MET"
+                    if len(_hy_components) < 2:
+                        return None
+                    _hy_result = _generate_hybrid_candidate(
+                        _hy_components, gross_budget_usd=inputs.gross_budget_usd,
+                        anchor_npc_usd=_hybrid_anchor_npc,
+                    )
+                    if _hy_result.structure_id in _hy_seen_structure_ids:
+                        return None
+                    _hy_seen_structure_ids.add(_hy_result.structure_id)
+                    _hy_examined_count += 1
+                    _real_marginal: float | None = None
+                    if _hy_result.executable:
+                        _hy_status, _hy_rejection_class = STATUS_PRICED, None
+                        # Compare like with like: the search's naive bound is
+                        # a sum of MARGINAL (non-anchor) component values, so
+                        # the returned real value must track the same
+                        # marginal quantity -- never the whole structure's
+                        # total_guaranteed_incentive_usd (which also includes
+                        # the anchor's own multi-million-dollar baseline and
+                        # would make every bound look dominated immediately).
+                        _real_marginal = sum(
+                            ce.guaranteed_incentive_usd for ce in _hy_result.component_economics
+                            if ce.component.jurisdiction_code != _anchor_code
+                        )
+                        if _real_marginal > _current_best:
+                            # Reconstruction data: the SPECIFIC real, priced
+                            # structure that establishes the incumbent bound
+                            # every DOMINATED_WITH_PROOF row is measured
+                            # against -- never just a bare number.
+                            _hy_incumbent_structure_id = _hy_result.structure_id
+                            _hy_incumbent_jurisdiction_codes = list(_hy_result.jurisdiction_codes)
+                            _hy_incumbent_program_slugs = list(_hy_result.program_slugs)
+                    elif _hy_result.blocking_pairs:
+                        _hy_status, _hy_rejection_class = "RULE_REJECTED", "PAIRWISE_INCOMPATIBLE"
+                        _hy_rejected_count += 1
+                    elif _hy_result.rejection_reason and "budget line" in _hy_result.rejection_reason:
+                        _hy_status, _hy_rejection_class = "RULE_REJECTED", "SAME_COST_DOUBLE_CLAIM"
+                        _hy_rejected_count += 1
+                    else:
+                        _hy_status, _hy_rejection_class = "RULE_REJECTED", "THRESHOLD_NOT_MET"
+                        _hy_rejected_count += 1
 
-                                    _hy_structure_id = uuid.uuid4()
-                                    session.add(ProductionStructure(
-                                        id=_hy_structure_id, project_id=project.id,
-                                        name=_hy_spec.label + (
-                                            " (hybrid, rejected)" if not _hy_result.executable else " (hybrid)"
-                                        ),
-                                        description=(
-                                            "Ordinary component hybrid: separately allocated production "
-                                            f"components routed to {len(_comp_by_jur)} distinct jurisdiction(s) "
-                                            f"beyond the {_anchor_code} anchor, each claiming only its own real, "
-                                            "separately allocated spend. No co-production treaty is involved. "
-                                            "Discovered via branch-and-bound over every real, independently-"
-                                            "priced destination -- never a named/allowlisted program."
-                                        ),
-                                        jurisdiction_allocations=[],
-                                        claimed_program_ids=list(_hy_result.program_slugs),
-                                        is_official_coproduction=False,
-                                        coproduction_treaty=None,
-                                    ))
-                                    session.add(StructureCalculationResult(
-                                        id=uuid.uuid4(), structure_id=_hy_structure_id, engine_version=ENGINE_VERSION,
-                                        total_budget_usd=inputs.gross_budget_usd,
-                                        total_incentive_value_usd=(
-                                            _hy_result.total_guaranteed_incentive_usd if _hy_result.executable else None
-                                        ),
-                                        true_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
-                                        risk_adjusted_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
-                                        has_unverified_inputs=True,
-                                        warnings=[LIMITATION_NOTE] + list(_hy_result.disclosed_limitations),
-                                        structure_type="hybrid",
-                                        calculation_trace_json={
-                                            "candidate_status": _hy_status,
-                                            "rejection_reason_class": _hy_rejection_class,
-                                            "reason": _hy_result.rejection_reason,
-                                            "discovery_classification": "structural_archetype_generator",
-                                            "discovery_method": "branch_and_bound_upper_bound",
-                                            "structural_family": "ordinary_component_hybrid",
-                                            "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
-                                            "treaty_or_framework_id": None,
-                                            "structure_type": "hybrid",
-                                            **_hy_result_trace_extras(_hy_result),
-                                            "primary_jurisdiction": _anchor_code,
-                                            "program_slugs": list(_hy_result.program_slugs),
-                                            "jurisdiction_codes": list(_hy_result.jurisdiction_codes),
-                                            "component_types": list(_hy_result.component_types),
-                                            "structural_generator_structure_id": _hy_result.structure_id,
-                                            "is_baseline": False,
-                                            "relocation_cost_normalized": False,
-                                            "is_directly_comparable": False,
-                                            "anchor_jurisdiction": _anchor_code,
-                                            "anchor_program": _anchor_program_slug,
-                                            "anchor_npc_usd": _hybrid_anchor_npc,
-                                            "total_allocated_usd": _hy_result.total_allocated_usd,
-                                            "total_guaranteed_incentive_usd": _hy_result.total_guaranteed_incentive_usd,
-                                            "total_conditional_incentive_usd": _hy_result.total_conditional_incentive_usd,
-                                            "incremental_benefit_vs_anchor_usd": _hy_result.incremental_benefit_vs_anchor_usd,
-                                            "materiality_recommended": _hy_result.materiality_recommended,
-                                            "blocking_pairs": [
-                                                {
-                                                    "program_a": p.program_a, "program_b": p.program_b,
-                                                    "disposition": p.disposition, "condition_text": p.condition_text,
-                                                }
-                                                for p in _hy_result.blocking_pairs
-                                            ],
-                                            "component_allocations": [
-                                                {
-                                                    "component": ce.component.component_type,
-                                                    "jurisdiction_code": ce.component.jurisdiction_code,
-                                                    "program_slug": ce.component.program_slug,
-                                                    "allocated_usd": ce.component.allocated_usd,
-                                                    "guaranteed_incentive_usd": ce.guaranteed_incentive_usd,
-                                                    "conditional_incentive_usd": ce.conditional_incentive_usd,
-                                                    "line_ids": sorted(ce.component.line_ids),
-                                                }
-                                                for ce in _hy_result.component_economics
-                                            ],
-                                        },
-                                        input_fingerprint=fingerprint,
-                                    ))
+                    _hy_structure_id = uuid.uuid4()
+                    session.add(ProductionStructure(
+                        id=_hy_structure_id, project_id=project.id,
+                        name=_hy_spec.label + (
+                            " (hybrid, rejected)" if not _hy_result.executable else " (hybrid)"
+                        ),
+                        description=(
+                            "Ordinary component hybrid: separately allocated production "
+                            f"components routed to {len(_comp_by_jur)} distinct jurisdiction(s) "
+                            f"beyond the {_anchor_code} anchor, each claiming only its own real, "
+                            "separately allocated spend. No co-production treaty is involved. "
+                            "Discovered via best-first branch-and-bound over every real, "
+                            "independently-priced destination -- never a named/allowlisted program."
+                        ),
+                        jurisdiction_allocations=[],
+                        claimed_program_ids=list(_hy_result.program_slugs),
+                        is_official_coproduction=False,
+                        coproduction_treaty=None,
+                    ))
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_hy_structure_id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=(
+                            _hy_result.total_guaranteed_incentive_usd if _hy_result.executable else None
+                        ),
+                        true_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
+                        risk_adjusted_net_cost_usd=_hy_result.npc_usd if _hy_result.executable else None,
+                        has_unverified_inputs=True,
+                        warnings=[LIMITATION_NOTE] + list(_hy_result.disclosed_limitations),
+                        structure_type="hybrid",
+                        calculation_trace_json={
+                            "candidate_status": _hy_status,
+                            "rejection_reason_class": _hy_rejection_class,
+                            "reason": _hy_result.rejection_reason,
+                            "discovery_classification": "structural_archetype_generator",
+                            "discovery_method": "best_first_branch_and_bound",
+                            "structural_family": "ordinary_component_hybrid",
+                            "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
+                            "treaty_or_framework_id": None,
+                            "structure_type": "hybrid",
+                            **_hy_result_trace_extras(_hy_result),
+                            "primary_jurisdiction": _anchor_code,
+                            "program_slugs": list(_hy_result.program_slugs),
+                            "jurisdiction_codes": list(_hy_result.jurisdiction_codes),
+                            "component_types": list(_hy_result.component_types),
+                            "structural_generator_structure_id": _hy_result.structure_id,
+                            "is_baseline": False,
+                            "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": _anchor_code,
+                            "anchor_program": _anchor_program_slug,
+                            "anchor_npc_usd": _hybrid_anchor_npc,
+                            "total_allocated_usd": _hy_result.total_allocated_usd,
+                            "total_guaranteed_incentive_usd": _hy_result.total_guaranteed_incentive_usd,
+                            "total_conditional_incentive_usd": _hy_result.total_conditional_incentive_usd,
+                            "incremental_benefit_vs_anchor_usd": _hy_result.incremental_benefit_vs_anchor_usd,
+                            "materiality_recommended": _hy_result.materiality_recommended,
+                            "blocking_pairs": [
+                                {
+                                    "program_a": p.program_a, "program_b": p.program_b,
+                                    "disposition": p.disposition, "condition_text": p.condition_text,
+                                }
+                                for p in _hy_result.blocking_pairs
+                            ],
+                            "component_allocations": [
+                                {
+                                    "component": ce.component.component_type,
+                                    "jurisdiction_code": ce.component.jurisdiction_code,
+                                    "program_slug": ce.component.program_slug,
+                                    "allocated_usd": ce.component.allocated_usd,
+                                    "guaranteed_incentive_usd": ce.guaranteed_incentive_usd,
+                                    "conditional_incentive_usd": ce.conditional_incentive_usd,
+                                    "line_ids": sorted(ce.component.line_ids),
+                                }
+                                for ce in _hy_result.component_economics
+                            ],
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
+                    return _real_marginal
 
-                        for _k in range(len(_lists)):
-                            _nxt = list(_idx)
-                            _nxt[_k] += 1
-                            _nxt = tuple(_nxt)
-                            if _nxt not in _visited and _nxt[_k] < len(_lists[_k]):
-                                _visited.add(_nxt)
-                                _nxt_bound = sum(_lists[m][_nxt[m]].selected_incentive_usd for m in range(len(_lists)))
-                                heapq.heappush(_heap, (-_nxt_bound, _nxt))
-                    # end of inner `while _heap:` -- either a mathematical
-                    # dominance proof was reached (bound <= best_found) or
-                    # the current window was fully exhausted.
-                    if _best_found > float("-inf"):
-                        # A real, executable, PROVEN-optimal-within-window
-                        # combination was found. By the pigeonhole argument
-                        # above (valid at ANY window >= _r), nothing beyond
-                        # this window can beat it either -- stop widening.
-                        break
-                    _max_full_len = max(len(full) for full in _full_lists)
-                    if _window >= _max_full_len:
-                        # Every full candidate list has been exhausted for
-                        # this anchor/subset and NOTHING executable exists
-                        # -- not a completeness gap, a genuine real result
-                        # (every individual attempt already has its own
-                        # persisted RULE_REJECTED/etc. disposition above).
-                        break
-                    _window = min(_window * 2, _max_full_len)
-                    # end of outer widen-loop -- retry with a larger,
-                    # still-proof-justified window.
+                _hy_naive_lists = [[t.selected_incentive_usd for t in full] for full in _full_lists]
+                _best_found, _hy_visited_count, _hy_stopping_bound = await _best_first_bound_search(
+                    _hy_naive_lists, _hy_try_combination,
+                )
+                _incumbent_structure_id = _hy_incumbent_structure_id
+                _incumbent_jurisdiction_codes = _hy_incumbent_jurisdiction_codes
+                _incumbent_program_slugs = _hy_incumbent_program_slugs
 
                 if _best_found > float("-inf"):
-                    _remaining = sum(len(full) for full in _full_lists) - sum(len(lst) for lst in _lists)
-                    if _remaining > 0:
-                        # Genuine mathematical proof (pigeonhole exchange
-                        # argument, valid at the window size actually
-                        # reached), not a search-depth admission: every
-                        # candidate beyond this window, in every dimension,
-                        # is provably incapable of improving on the found,
-                        # real, executable total -- recorded as a single
-                        # auditable aggregate row, never silently dropped.
-                        #
-                        # Reconstruction data (CLAUDE_GENERIC_STRUCTURAL_
-                        # DISCOVERY_FINAL_CORRECTION follow-on): an aggregate
-                        # count alone cannot be independently checked by a
-                        # reviewer who does not re-run this exact code path.
-                        # `component_target_windows` names the EXACT real
-                        # (jurisdiction_code, program_slug, marginal_value_usd)
-                        # candidates that were actually examined per
-                        # component in the window that produced the proof --
-                        # the deterministic ordering key is each target's own
-                        # real, independently-priced marginal incentive value
-                        # (descending; computed once, above, in
-                        # `_hy_component_all_targets`) -- so the exact
-                        # examined set, and by construction everything a
-                        # reviewer needs to know WAS provably excluded (every
-                        # candidate ranked below this window, in every
-                        # dimension), is named rather than merely counted.
-                        _component_target_windows = {
-                            _subset[_k]: [
-                                {
-                                    "jurisdiction_code": _t.jurisdiction_code,
-                                    "program_slug": _t.program_slug,
-                                    "marginal_value_usd": round(_t.selected_incentive_usd, 2),
-                                }
-                                for _t in _lists[_k]
-                            ]
-                            for _k in range(len(_subset))
-                        }
-                        # NUM-004 (optimizer audit defect remediation,
-                        # 2026-09-18): the numeric proof itself, not just
-                        # the window/incumbent identity -- an auditor could
-                        # not previously check the stopping inequality
-                        # without re-running this exact search. Does NOT
-                        # alter which candidates are searched or how the
-                        # widening loop decides to stop (that logic above
-                        # is untouched) -- purely an after-the-fact
-                        # numeric explanation of why the ALREADY-COMPLETE
-                        # search proves domination.
-                        #
-                        # component_cutoff_bounds_usd: the marginal value
-                        # of the FIRST candidate just outside each
-                        # component's window (None when that component's
-                        # full candidate list was entirely exhausted
-                        # inside the window -- nothing remains to prove
-                        # domination against for that component).
-                        _component_cutoff_bounds_usd = {
-                            _subset[_k]: (
-                                round(_full_lists[_k][_window].selected_incentive_usd, 2)
-                                if _window < len(_full_lists[_k]) else None
-                            )
-                            for _k in range(len(_subset))
-                        }
-                        _incumbent_value_usd = round(_best_found, 2)
-                        # NUM-004 CORRECTION #2 (2026-09-18): TWO prior
-                        # passes are rejected here. Pass 1 persisted
-                        # DOMINATED_WITH_PROOF with an independent-maxima
-                        # bound that only independently proved domination
-                        # for 3/308 sampled real FVD rows. Pass 2 replaced
-                        # the numeric bound with the widening loop's own
-                        # structural pigeonhole precondition
-                        # (proof_window_size >= _r) -- rejected again,
-                        # correctly: that precondition alone never bounds
-                        # the REAL value achievable outside the window
-                        # against the REAL incumbent value, so it cannot by
-                        # itself license DOMINATED_WITH_PROOF.
-                        #
-                        # This version computes the actual numeric witness
-                        # and GATES the disposition on whether it proves
-                        # domination for THIS SPECIFIC row -- never asserts
-                        # DOMINATED_WITH_PROOF when the inequality is false.
-                        #
-                        # component_cutoff_bounds_usd: the next EXCLUDED
-                        # candidate's marginal value for each component
-                        # (the first candidate just outside the window;
-                        # None when that component's full list was entirely
-                        # exhausted inside the window -- nothing remains
-                        # outside it to bound).
-                        # component_window_best_usd: each component's own
-                        # best (highest-value) candidate anywhere in its
-                        # FULL list -- since the list is sorted descending,
-                        # this is _full_lists[_k][0], regardless of which
-                        # rank the incumbent itself actually used for that
-                        # component (a higher-ranked candidate may have
-                        # been unusable for the incumbent because it
-                        # collided on jurisdiction with another component).
-                        # interaction_safe_total_upper_bound_usd: the
-                        # MAXIMUM, over every component that still has a
-                        # candidate outside the window, of "every OTHER
-                        # component held at its own unconstrained best
-                        # value, this ONE component dropped to its own
-                        # cutoff." No matter which subset of components a
-                        # hypothetical out-of-window combination uses,
-                        # giving every other component its own
-                        # unconstrained best can only equal or exceed what
-                        # that component could really contribute once
-                        # jointly constrained by jurisdiction-distinctness
-                        # and pairwise legality -- so this additive sum
-                        # dominates every real out-of-window possibility.
-                        # None when no component has anything left outside
-                        # its window (proof by exhaustion alone).
-                        #
-                        # Evidence no real interaction/uplift beyond this
-                        # additive sum is possible: every selected_
-                        # incentive_usd value is priced by _price_
-                        # component_relocation_candidate strictly per
-                        # (component, jurisdiction, program) against that
-                        # ONE component's own routed spend -- component_
-                        # routes never shares a dollar of spend across two
-                        # different components, so summing independently-
-                        # priced, disjoint-cost-base component values can
-                        # never UNDER-state a jointly-priced structure's
-                        # real total. Real structural pricing (stacking
-                        # caps/adjustments) can only ever REDUCE a joint
-                        # total below this additive sum, matching the same
-                        # admissible-bound assumption this search's own
-                        # heap priority already relies on for its in-window
-                        # proof (see the widening loop above, untouched).
-                        _component_window_best_usd = {
-                            _subset[_k]: round(_full_lists[_k][0].selected_incentive_usd, 2)
-                            for _k in range(len(_subset)) if _full_lists[_k]
-                        }
-                        _sum_window_best_usd = round(sum(_component_window_best_usd.values()), 2)
-                        _component_single_swap_upper_bounds_usd = {
-                            _name: round(_sum_window_best_usd - _component_window_best_usd[_name] + _cutoff, 2)
-                            for _name, _cutoff in _component_cutoff_bounds_usd.items()
-                            if _cutoff is not None
-                        }
-                        _interaction_safe_total_upper_bound_usd = (
-                            max(_component_single_swap_upper_bounds_usd.values())
-                            if _component_single_swap_upper_bounds_usd else None
+                    _hy_total_candidate_space = 1
+                    for _full in _full_lists:
+                        _hy_total_candidate_space *= len(_full)
+                    _hy_dominated_count = _hy_total_candidate_space - _hy_visited_count
+                    _incumbent_value_usd = round(_best_found, 2)
+                    # Reconstruction data: the exact real (jurisdiction_code,
+                    # program_slug, marginal_value_usd) candidates for every
+                    # component in this subset -- a reviewer can re-run
+                    # _best_first_bound_search (module-level, pure, unit-
+                    # tested) against these SAME lists and independently
+                    # reproduce the identical incumbent/stopping_bound_usd,
+                    # without re-executing any of this file's pricing code.
+                    _component_candidate_lists = {
+                        _subset[_k]: [
+                            {
+                                "jurisdiction_code": _t.jurisdiction_code,
+                                "program_slug": _t.program_slug,
+                                "marginal_value_usd": round(_t.selected_incentive_usd, 2),
+                            }
+                            for _t in _full_lists[_k]
+                        ]
+                        for _k in range(len(_subset))
+                    }
+                    # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT
+                    # correction (2026-09-18, operator directive): genuine
+                    # exhaustion is NOT a separate/new incomplete-sounding
+                    # status -- it IS a complete proof (nothing left
+                    # unvisited could beat the incumbent, because nothing
+                    # is left at all), so it is persisted as the SAME
+                    # DOMINATED_WITH_PROOF disposition, distinguished only
+                    # by proof_type ("best_first_heap_bound" vs
+                    # "EXHAUSTIVE_SEARCH") and stopping_bound_usd being
+                    # None for the exhaustion case.
+                    if _hy_stopping_bound is not None:
+                        # Genuine proof: the search itself stopped because
+                        # its own remaining heap bound could not beat the
+                        # incumbent -- this IS the exact witness the search
+                        # relies on, never a separate, independently-
+                        # invented formula. True by construction of the
+                        # break condition inside _best_first_bound_search.
+                        _stopping_bound_usd = round(_hy_stopping_bound, 2)
+                        assert _stopping_bound_usd <= _incumbent_value_usd
+                        _hy_proof_type = "best_first_heap_bound"
+                        _hy_proof_reason = (
+                            f"Best-first search stopped because its own remaining heap bound "
+                            f"(${_stopping_bound_usd:,.2f}) cannot exceed the incumbent "
+                            f"(${_incumbent_value_usd:,.2f}) -- every unvisited combination is "
+                            "provably dominated."
                         )
-                        _stopping_inequality_holds = (
-                            True if _interaction_safe_total_upper_bound_usd is None
-                            else _interaction_safe_total_upper_bound_usd <= _incumbent_value_usd
+                        _hy_proof_inequality = "stopping_bound_usd <= incumbent_value_usd"
+                        _hy_name_suffix = f"{_hy_dominated_count} proven dominated"
+                        _hy_desc = (
+                            f"Best-first branch-and-bound over {_anchor_code}'s {'/'.join(_subset)} "
+                            f"routing search examined {_hy_visited_count} index-tuple(s), in strictly "
+                            f"non-increasing naive-value order, and found a real, executable total of "
+                            f"${_best_found:,.2f}. The search's own remaining heap bound "
+                            f"(${_stopping_bound_usd:,.2f}) does not exceed this real result, so every "
+                            f"one of the remaining {_hy_dominated_count} unvisited combination(s) is "
+                            "provably incapable of beating it."
                         )
-                        _bound_str = (
-                            f"${_interaction_safe_total_upper_bound_usd:,.2f}"
-                            if _interaction_safe_total_upper_bound_usd is not None
-                            else "N/A (every component's full candidate list was exhausted inside the window)"
+                    else:
+                        # Genuine exhaustion: the heap emptied out -- every
+                        # reachable index-tuple across the COMPLETE real
+                        # candidate space was visited. Still a complete
+                        # proof of domination (there is nothing left that
+                        # could beat the incumbent), just via exhaustive
+                        # enumeration rather than a numeric bound.
+                        _stopping_bound_usd = None
+                        _hy_proof_type = "EXHAUSTIVE_SEARCH"
+                        _hy_proof_reason = (
+                            f"Exhaustive search: every reachable combination across the "
+                            f"{len(_subset)} component(s) in this subset was visited; the best "
+                            f"real, executable total found is ${_best_found:,.2f}."
                         )
-                        # When the bound does NOT prove domination, this
-                        # row must NEVER be persisted as DOMINATED_WITH_
-                        # PROOF (a false/unproven inequality) -- reclassify
-                        # to the same honest, pre-existing SEARCH_DEPTH_
-                        # LIMIT_REACHED disposition this codebase used
-                        # before this pigeonhole-windowed search existed
-                        # (see the 1.72.0 changelog above): a real result
-                        # WAS found, but domination over the remaining
-                        # out-of-window combinations is neither proven nor
-                        # disproven by this bound. Never fabricated as
-                        # proven, never silently dropped.
-                        _dom_candidate_status = (
-                            "DOMINATED_WITH_PROOF" if _stopping_inequality_holds
-                            else "SEARCH_DEPTH_LIMIT_REACHED"
+                        _hy_proof_inequality = (
+                            "N/A -- proof by direct exhaustion of the complete real candidate "
+                            "space (heap emptied; every reachable combination was visited), not "
+                            "a numeric bound"
                         )
-                        _dom_structure_id = uuid.uuid4()
-                        session.add(ProductionStructure(
-                            id=_dom_structure_id, project_id=project.id,
-                            name=(
-                                f"{_anchor_code} + {'/'.join(_subset)} hybrid search "
-                                f"({_remaining} combinations {'proven dominated' if _stopping_inequality_holds else 'unverified'})"
+                        _hy_name_suffix = f"exhausted, {_hy_visited_count} of {_hy_total_candidate_space} combination(s) visited"
+                        _hy_desc = (
+                            f"Best-first branch-and-bound over {_anchor_code}'s {'/'.join(_subset)} "
+                            f"routing search examined the COMPLETE real candidate space "
+                            f"({_hy_visited_count} index-tuple(s) visited, of {_hy_total_candidate_space} "
+                            f"possible: {_hy_examined_count} distinct combination(s) actually priced, "
+                            f"{_hy_rejected_count} rule-rejected) and found a real, executable total of "
+                            f"${_best_found:,.2f}. No candidate remains outside this search -- "
+                            "completeness is by direct exhaustion, not a numeric bound."
+                        )
+                    _dom_structure_id = uuid.uuid4()
+                    session.add(ProductionStructure(
+                        id=_dom_structure_id, project_id=project.id,
+                        name=f"{_anchor_code} + {'/'.join(_subset)} hybrid search ({_hy_name_suffix})",
+                        description=_hy_desc,
+                        jurisdiction_allocations=[], claimed_program_ids=[],
+                        is_official_coproduction=False, coproduction_treaty=None,
+                    ))
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_dom_structure_id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd,
+                        total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="hybrid",
+                        calculation_trace_json={
+                            "candidate_status": "DOMINATED_WITH_PROOF",
+                            "discovery_classification": "structural_archetype_generator",
+                            "discovery_method": "best_first_branch_and_bound",
+                            "structural_family": "ordinary_component_hybrid",
+                            "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": _anchor_code,
+                            "component_subset": list(_subset),
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": _anchor_code, "anchor_program": _anchor_program_slug,
+                            "total_candidate_combinations": _hy_total_candidate_space,
+                            "visited_combination_count": _hy_visited_count,
+                            "evaluated_combination_count": _hy_examined_count,
+                            "rejected_combination_count": _hy_rejected_count,
+                            "dominated_combination_count": _hy_dominated_count,
+                            "best_real_total_found_usd": _incumbent_value_usd,
+                            "incumbent_value_usd": _incumbent_value_usd,
+                            "stopping_bound_usd": _stopping_bound_usd,
+                            "stopping_inequality_holds": True,
+                            "stopping_inequality": _hy_proof_inequality,
+                            "proof_type": _hy_proof_type,
+                            "incumbent_structure_id": _incumbent_structure_id,
+                            "incumbent_jurisdiction_codes": _incumbent_jurisdiction_codes,
+                            "incumbent_program_slugs": _incumbent_program_slugs,
+                            "component_candidate_lists": _component_candidate_lists,
+                            "ordering_key": (
+                                "descending real, independently-priced marginal incentive value "
+                                "of the target jurisdiction's own segment for this component "
+                                "(_price_component_relocation_candidate's incentive_floor_usd, "
+                                "computed once and reused across every anchor)"
                             ),
-                            description=(
-                                f"Branch-and-bound over {_anchor_code}'s {'/'.join(_subset)} routing search found "
-                                f"a real, executable total of ${_best_found:,.2f} within a window of "
-                                f"{_window} candidate(s) per component. " + (
-                                    f"The interaction-safe upper bound on every remaining out-of-window "
-                                    f"combination ({_bound_str}) does not "
-                                    f"exceed this real result, so the remaining {_remaining} combination(s) are "
-                                    "provably incapable of beating it."
-                                    if _stopping_inequality_holds else
-                                    f"The interaction-safe upper bound on the remaining out-of-window "
-                                    f"combination(s) ({_bound_str}) exceeds "
-                                    "this real result, so domination over the remaining "
-                                    f"{_remaining} combination(s) is NOT proven -- disclosed honestly as "
-                                    "SEARCH_DEPTH_LIMIT_REACHED, never asserted as proof."
-                                )
-                            ),
-                            jurisdiction_allocations=[], claimed_program_ids=[],
-                            is_official_coproduction=False, coproduction_treaty=None,
-                        ))
-                        session.add(StructureCalculationResult(
-                            id=uuid.uuid4(), structure_id=_dom_structure_id, engine_version=ENGINE_VERSION,
-                            total_budget_usd=inputs.gross_budget_usd,
-                            total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                            has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                            structure_type="hybrid",
-                            calculation_trace_json={
-                                "candidate_status": _dom_candidate_status,
-                                "discovery_classification": "structural_archetype_generator",
-                                "discovery_method": "pigeonhole_windowed_branch_and_bound",
-                                "structural_family": "ordinary_component_hybrid",
-                                "evidence_level": "CANONICAL_PERSISTED_RUNTIME",
-                                "structure_type": "hybrid",
-                                "primary_jurisdiction": _anchor_code,
-                                "component_subset": list(_subset),
-                                "is_baseline": False, "relocation_cost_normalized": False,
-                                "is_directly_comparable": False,
-                                "anchor_jurisdiction": _anchor_code, "anchor_program": _anchor_program_slug,
-                                "dominated_combination_count": _remaining,
-                                "proof_window_size": _window,
-                                "best_real_total_found_usd": round(_best_found, 2),
-                                "proof_type": "interaction_safe_upper_bound_vs_incumbent",
-                                "ordering_key": (
-                                    "descending real, independently-priced marginal incentive value "
-                                    "of the target jurisdiction's own segment for this component "
-                                    "(_price_component_relocation_candidate's incentive_floor_usd, "
-                                    "computed once and reused across every anchor)"
-                                ),
-                                "incumbent_structure_id": _incumbent_structure_id,
-                                "incumbent_jurisdiction_codes": _incumbent_jurisdiction_codes,
-                                "incumbent_program_slugs": _incumbent_program_slugs,
-                                "component_target_windows": _component_target_windows,
-                                # NUM-004: the numeric proof itself -- see
-                                # the computation's own comment above for
-                                # the exact definitions.
-                                "incumbent_value_usd": _incumbent_value_usd,
-                                "component_cutoff_bounds_usd": _component_cutoff_bounds_usd,
-                                "component_window_best_usd": _component_window_best_usd,
-                                "interaction_safe_total_upper_bound_usd": _interaction_safe_total_upper_bound_usd,
-                                "stopping_inequality_holds": _stopping_inequality_holds,
-                                "stopping_inequality": (
-                                    "interaction_safe_total_upper_bound_usd <= incumbent_value_usd"
-                                    if _interaction_safe_total_upper_bound_usd is not None
-                                    else "no component has a candidate outside its own window -- proof complete "
-                                         "by exhaustion, no substitution bound is needed"
-                                ),
-                                "engine_version": ENGINE_VERSION,
-                                "input_fingerprint": fingerprint,
-                                "reason": (
-                                    f"Interaction-safe upper bound ({_bound_str})"
-                                    f" <= incumbent (${_incumbent_value_usd:,.2f}): the remaining {_remaining} "
-                                    "out-of-window combination(s) are provably incapable of beating the real, "
-                                    "executable result already found."
-                                    if _stopping_inequality_holds else
-                                    f"Interaction-safe upper bound ({_bound_str})"
-                                    f" exceeds the incumbent (${_incumbent_value_usd:,.2f}): domination over the "
-                                    f"remaining {_remaining} out-of-window combination(s) is NOT proven at window "
-                                    f"size {_window}. A real, executable result was found and is disclosed, but "
-                                    "the remainder is honestly unverified rather than falsely claimed dominated."
-                                ),
-                            },
-                            input_fingerprint=fingerprint,
-                        ))
+                            "engine_version": ENGINE_VERSION,
+                            "input_fingerprint": fingerprint,
+                            "reason": _hy_proof_reason,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
+
 
     # Existing Optimizer/Stacker Reconnection, Task B — treaty/official
     # co-production opportunities. Reuses the EXISTING treaty_engine.py
@@ -6548,6 +6679,23 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # partner returned by find_real_bilateral_partners is now evaluated;
     # any future display/pagination limit belongs in the SERVED VIEW
     # layer (canonical_production_view.py), never here.
+    #
+    # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT (2026-09-18): every
+    # real, independently-priced treaty-partner candidate across EVERY
+    # partner in this loop is accumulated here (cheap -- no pricing of
+    # its own, StackCandidate objects already priced by
+    # _all_priced_treaty_side_candidates below) into ONE flat, global
+    # list. combined_coproduction_multi_component_stack's own search,
+    # AFTER this loop, folds partner selection into the SAME best-first
+    # branch-and-bound as the movable-component dimensions -- rather
+    # than re-running a full component search once per partner, it
+    # explores (partner, component_a, component_b) combinations
+    # together in naive-value-descending order and stops as soon as the
+    # remaining bound cannot beat the incumbent. This never touches the
+    # single-component combined_coproduction_component_stack family
+    # immediately below (out of this workstream's scope) -- that family
+    # keeps its own, unmodified per-partner loop.
+    _mc_all_partner_candidates: list[tuple[str, object, str, float, float]] = []
     for partner_code in find_real_bilateral_partners(home_code, candidate_codes):
         # P0-QUAL-001: resolve the real treaty_slug FIRST (a read-only
         # registry lookup, te.get_bilateral_treaty -- no side effects, no
@@ -6690,6 +6838,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
         # Codex global optimizer audit, P0-COMB-001 — the combined
         # co-production + component-allocation + anchor + authorized-
@@ -6736,6 +6885,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 inputs, partner_code, priced_by_code,
                 tuple(_treaty_row.minority_unlocks) if _treaty_row else (),
             )
+            # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT: accumulate
+            # into the GLOBAL cross-partner list for the mc site's
+            # integrated search below -- no pricing here, these
+            # StackCandidate objects are already priced.
+            for _mc_partner_cand in _comb_partner_candidates:
+                _mc_all_partner_candidates.append((
+                    partner_code, _mc_partner_cand, comb_opp.treaty_slug,
+                    _bp_majority_pct, _bp_minority_pct,
+                ))
             if not _comb_partner_candidates:
                 # HO-007 closeout: a real, registered treaty whose OWN
                 # named unlocks are all currently unpriceable in this
@@ -6800,6 +6958,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     },
                     input_fingerprint=fingerprint,
                 ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             for partner_best in _comb_partner_candidates:
                 for _combined_component, _combined_spend_amount in _combined_components:
                     for _comb_target in _combined_top_targets:
@@ -6863,6 +7022,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 },
                                 input_fingerprint=fingerprint,
                             ))
+                            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                             continue
 
                         if not pricing.is_fully_priced:
@@ -6911,6 +7071,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 },
                                 input_fingerprint=fingerprint,
                             ))
+                            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                             continue
 
                         # P0-COMB-001 remediation: authorized local stacks
@@ -6983,6 +7144,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 },
                                 input_fingerprint=fingerprint,
                             ))
+                            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
                         _comb_home_jur = jurisdiction_by_code.get(home_code)
                         _comb_target_jur = jurisdiction_by_code.get(_comb_target.jurisdiction_code)
@@ -7078,496 +7240,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             },
                             input_fingerprint=fingerprint,
                         ))
+                        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
-                # Six-control correction pass (structural-optimizer wiring
-                # closure), HO-013: 2+ SIMULTANEOUS movable components
-                # routed to distinct targets in one combined structure --
-                # the single-component loop directly above tries exactly
-                # one component at a time (a real, disclosed scope limit
-                # of the pre-existing mechanism, not a doctrine choice).
-                # _price_combined_coproduction_multi_component_candidate
-                # (above) already supports an arbitrary number of
-                # simultaneously-routed components; this loop is the
-                # discovery side.
-                #
-                # REMOVED this pass: the prior _MULTI_COMPONENT_TARGET_
-                # BOUND=200 flat cutoff sliced the SAME global, component-
-                # AGNOSTIC _combined_top_targets list for every component,
-                # which could silently exclude a genuinely component-
-                # specific real candidate (e.g. a post/vfx-specific grant)
-                # ranked below 200 in the GLOBAL ranking even though it
-                # ranks near the top of its OWN component's real candidate
-                # list -- an arbitrary cutoff, not a proof, and a real
-                # violation of "ranking must never suppress feasible
-                # discovery" for this dimension specifically.
-                #
-                # Replaced with: (1) COMPONENT-SPECIFIC candidate lists --
-                # _hy_component_all_targets[component], the SAME real,
-                # independently-priced-per-component list the ordinary_
-                # component_hybrid mechanism above already builds via
-                # _price_component_relocation_candidate (real per-
-                # component eligibility, not a program-name heuristic);
-                # (2) a genuine PROOF-BASED widening search identical in
-                # structure to that same mechanism's own pigeonhole
-                # exchange argument: for exactly 2 simultaneously-routed
-                # components, no candidate ranked below its own
-                # component's top-2 (by real, independent marginal value)
-                # can ever be part of the true optimum, since only 1
-                # OTHER component can occupy a jurisdiction (pigeonhole:
-                # 2 slots, 1 competitor). The search starts at this
-                # proven-sufficient window=2 and WIDENS (doubling, never
-                # truncating) on failure until a real, executable PRICED
-                # combination is found or every real candidate has been
-                # exhausted -- so the disposition for every candidate
-                # beyond the window that produced a real result is always
-                # a genuine DOMINATED_WITH_PROOF aggregate row, never an
-                # admitted search-budget cutoff. Every combination
-                # actually tried within the window is still individually
-                # priced and persisted exactly as before (PRICED/
-                # RULE_REJECTED per pair) -- only the discovery bound
-                # changed, not the per-pair pricing/persistence contract.
-                if len(_combined_components) >= 2:
-                    for _mc_comp_a, _mc_comp_b in itertools.combinations(
-                        sorted(c for c, _amt in _combined_components), 2,
-                    ):
-                        _mc_full_a = [
-                            t for t in _hy_component_all_targets.get(_mc_comp_a, [])
-                            if t.jurisdiction_code not in (home_code, partner_code)
-                        ]
-                        _mc_full_b = [
-                            t for t in _hy_component_all_targets.get(_mc_comp_b, [])
-                            if t.jurisdiction_code not in (home_code, partner_code)
-                        ]
-                        if not _mc_full_a or not _mc_full_b:
-                            continue
-                        _mc_window = 2
-                        _mc_best_total = float("-inf")
-                        _mc_incumbent_structure_id: str | None = None
-                        _mc_incumbent_jurisdiction_codes: list[str] = []
-                        _mc_incumbent_program_slugs: list[str] = []
-                        # NUM-004: the incumbent's own NAIVE per-component
-                        # marginal values (target_a/target_b's own
-                        # selected_incentive_usd) -- the SAME scale as
-                        # _mc_cutoff_a/_mc_cutoff_b below, unlike
-                        # _mc_best_total (the FULL structure's real priced
-                        # total, home+partner+a+b). Needed to compare like
-                        # with like in the stopping-inequality gate.
-                        _mc_component_marginal_incumbent_usd: float | None = None
-                        _mc_tried_pairs: set[tuple[str, str, str, str]] = set()
-                        while True:
-                            _mc_lists_a = _mc_full_a[:_mc_window]
-                            _mc_lists_b = _mc_full_b[:_mc_window]
-                            for _mc_target_a, _mc_target_b in itertools.product(_mc_lists_a, _mc_lists_b):
-                                _mc_pair_key = (
-                                    _mc_target_a.jurisdiction_code, _mc_target_a.program_slug,
-                                    _mc_target_b.jurisdiction_code, _mc_target_b.program_slug,
-                                )
-                                if _mc_pair_key in _mc_tried_pairs:
-                                    continue
-                                _mc_tried_pairs.add(_mc_pair_key)
-                                if _mc_target_a.jurisdiction_code == _mc_target_b.jurisdiction_code:
-                                    continue  # each component's target must be a distinct jurisdiction
-                                _mc_component_targets = [
-                                    (_mc_comp_a, _mc_target_a.jurisdiction_code, _mc_target_a.program_slug),
-                                    (_mc_comp_b, _mc_target_b.jurisdiction_code, _mc_target_b.program_slug),
-                                ]
-                                _mc_claimed_programs = [
-                                    home_program_slug, partner_best.program_slug,
-                                    _mc_target_a.program_slug, _mc_target_b.program_slug,
-                                ]
-                                _mc_label = (
-                                    f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}) + "
-                                    f"{_mc_comp_a} routed to {_mc_target_a.jurisdiction_code} + "
-                                    f"{_mc_comp_b} routed to {_mc_target_b.jurisdiction_code}"
-                                )
-                                try:
-                                    _mc_spec, _mc_allocation, _mc_pricing = _price_combined_coproduction_multi_component_candidate(
-                                        inputs, home_code, home_program_slug, partner_code, partner_best.program_slug,
-                                        _mc_component_targets, comb_opp.treaty_slug,
-                                        _bp_majority_pct, _bp_minority_pct,
-                                    )
-                                except _InvalidCombinedAllocation as _mc_invalid:
-                                    _mc_invalid_structure = ProductionStructure(
-                                        id=uuid.uuid4(), project_id=project.id,
-                                        name=f"{_mc_label} (multi-component, rejected)",
-                                        description=f"Combined multi-component candidate rejected: {_mc_invalid.reason}",
-                                        jurisdiction_allocations=[], claimed_program_ids=_mc_claimed_programs,
-                                    )
-                                    session.add(_mc_invalid_structure)
-                                    await session.flush()
-                                    session.add(StructureCalculationResult(
-                                        id=uuid.uuid4(), structure_id=_mc_invalid_structure.id, engine_version=ENGINE_VERSION,
-                                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                                        structure_type="hybrid",
-                                        calculation_trace_json={
-                                            "candidate_status": "RULE_REJECTED",
-                                            "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
-                                            "discovery_classification": "combined_coproduction_multi_component_stack",
-                                            "structural_family": "combined_coproduction_multi_component_stack",
-                                            "structure_type": "hybrid",
-                                            "primary_jurisdiction": home_code,
-                                            "treaty_slug": comb_opp.treaty_slug,
-                                            "program_slugs": _mc_claimed_programs,
-                                            "reason": _mc_invalid.reason,
-                                            "is_baseline": False, "relocation_cost_normalized": False,
-                                            "is_directly_comparable": False,
-                                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
-                                        },
-                                        input_fingerprint=fingerprint,
-                                    ))
-                                    continue
-                                if not _mc_pricing.is_fully_priced:
-                                    _mc_rej_status, _mc_rej_class = _classify_component_rejection(_mc_pricing.blockers)
-                                    _mc_rej_structure = ProductionStructure(
-                                        id=uuid.uuid4(), project_id=project.id,
-                                        name=f"{_mc_label} (multi-component, rejected)",
-                                        description=(
-                                            "Combined multi-component candidate does not clear pricing: "
-                                            f"{'; '.join(_mc_pricing.blockers) or 'not fully priced.'}"
-                                        ),
-                                        jurisdiction_allocations=[], claimed_program_ids=_mc_claimed_programs,
-                                    )
-                                    session.add(_mc_rej_structure)
-                                    await session.flush()
-                                    session.add(StructureCalculationResult(
-                                        id=uuid.uuid4(), structure_id=_mc_rej_structure.id, engine_version=ENGINE_VERSION,
-                                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
-                                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                                        structure_type="hybrid",
-                                        calculation_trace_json={
-                                            "candidate_status": _mc_rej_status,
-                                            "rejection_reason_class": _mc_rej_class,
-                                            "discovery_classification": "combined_coproduction_multi_component_stack",
-                                            "structural_family": "combined_coproduction_multi_component_stack",
-                                            "structure_type": "hybrid",
-                                            "primary_jurisdiction": home_code,
-                                            "treaty_slug": comb_opp.treaty_slug,
-                                            "program_slugs": _mc_claimed_programs,
-                                            "reason": "; ".join(_mc_pricing.blockers) or "Not fully priced.",
-                                            "is_baseline": False, "relocation_cost_normalized": False,
-                                            "is_directly_comparable": False,
-                                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
-                                        },
-                                        input_fingerprint=fingerprint,
-                                    ))
-                                    continue
-                                _mc_by_jur = _mc_allocation.allocated_by_jurisdiction()
-                                _mc_home_jur = jurisdiction_by_code.get(home_code)
-                                _mc_target_a_jur = jurisdiction_by_code.get(_mc_target_a.jurisdiction_code)
-                                _mc_target_b_jur = jurisdiction_by_code.get(_mc_target_b.jurisdiction_code)
-                                _mc_structure = ProductionStructure(
-                                    id=uuid.uuid4(), project_id=project.id,
-                                    name=_mc_label,
-                                    description=(
-                                        f"Official co-production between {home_code} (anchor) and {partner_code} "
-                                        f"under {comb_opp.treaty_slug}, with {_mc_comp_a} routed to "
-                                        f"{_mc_target_a.jurisdiction_code} and {_mc_comp_b} routed to "
-                                        f"{_mc_target_b.jurisdiction_code} -- two simultaneous movable "
-                                        "components with disjoint real cost pools, no dollar counted twice."
-                                    ),
-                                    jurisdiction_allocations=[
-                                        j for j in (
-                                            {"jurisdiction_id": str(_mc_home_jur.id), "shoot_pct": 100,
-                                             "budget_pct": round(100 * _mc_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                            if _mc_home_jur else None,
-                                            {"jurisdiction_id": str(partner_jur.id), "shoot_pct": 0,
-                                             "budget_pct": round(100 * _mc_by_jur.get(partner_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                            if partner_jur else None,
-                                            {"jurisdiction_id": str(_mc_target_a_jur.id), "shoot_pct": 0,
-                                             "budget_pct": round(100 * _mc_by_jur.get(_mc_target_a.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                            if _mc_target_a_jur else None,
-                                            {"jurisdiction_id": str(_mc_target_b_jur.id), "shoot_pct": 0,
-                                             "budget_pct": round(100 * _mc_by_jur.get(_mc_target_b.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
-                                            if _mc_target_b_jur else None,
-                                        ) if j
-                                    ],
-                                    claimed_program_ids=_mc_claimed_programs,
-                                )
-                                session.add(_mc_structure)
-                                await session.flush()
-                                _mc_conditional_program_dicts, _mc_conditional_compatibility_dict = _conditional_data(
-                                    str(_mc_structure.id), home_code, tuple(_mc_claimed_programs),
-                                )
-                                session.add(StructureCalculationResult(
-                                    id=uuid.uuid4(), structure_id=_mc_structure.id, engine_version=ENGINE_VERSION,
-                                    total_budget_usd=inputs.gross_budget_usd,
-                                    total_incentive_value_usd=_mc_pricing.selected_incentive_usd,
-                                    true_net_cost_usd=_mc_pricing.npc_verified_usd,
-                                    risk_adjusted_net_cost_usd=_mc_pricing.npc_with_adjustments_usd,
-                                    has_unverified_inputs=True,
-                                    warnings=[
-                                        LIMITATION_NOTE,
-                                        "Combined co-production + TWO simultaneous movable-component "
-                                        "candidate: a new, additive structure topology -- not directly "
-                                        "comparable to single-component combined structures' own NPC "
-                                        "without confirming the same normalization basis.",
-                                    ],
-                                    structure_type="hybrid",
-                                    calculation_trace_json={
-                                        "candidate_status": STATUS_PRICED,
-                                        "discovery_classification": "combined_coproduction_multi_component_stack",
-                                        "structural_family": "combined_coproduction_multi_component_stack",
-                                        "structure_type": "hybrid",
-                                        "primary_jurisdiction": home_code,
-                                        "treaty_slug": comb_opp.treaty_slug,
-                                        "program_slugs": _mc_claimed_programs,
-                                        "is_baseline": False, "relocation_cost_normalized": False,
-                                        "is_directly_comparable": False,
-                                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
-                                        "coproduction_partners": [
-                                            {"jurisdiction_code": home_code, "allocated_usd": _mc_by_jur.get(home_code, 0.0)},
-                                            {"jurisdiction_code": partner_code, "allocated_usd": _mc_by_jur.get(partner_code, 0.0)},
-                                        ],
-                                        "component_allocations": [
-                                            {
-                                                "component": _mc_comp_a,
-                                                "jurisdiction_code": _mc_target_a.jurisdiction_code,
-                                                "program_slug": _mc_target_a.program_slug,
-                                                "allocated_usd": _mc_by_jur.get(_mc_target_a.jurisdiction_code, 0.0),
-                                            },
-                                            {
-                                                "component": _mc_comp_b,
-                                                "jurisdiction_code": _mc_target_b.jurisdiction_code,
-                                                "program_slug": _mc_target_b.program_slug,
-                                                "allocated_usd": _mc_by_jur.get(_mc_target_b.jurisdiction_code, 0.0),
-                                            },
-                                        ],
-                                        "selected_incentive_usd": _mc_pricing.selected_incentive_usd,
-                                        "npc_verified_usd": _mc_pricing.npc_verified_usd,
-                                        "npc_with_adjustments_usd": _mc_pricing.npc_with_adjustments_usd,
-                                        "gross_budget_usd": inputs.gross_budget_usd,
-                                        "segments": _segment_dicts(_mc_pricing),
-                                        "conditional_programs": _mc_conditional_program_dicts,
-                                        "conditional_compatibility": _mc_conditional_compatibility_dict,
-                                    },
-                                    input_fingerprint=fingerprint,
-                                ))
-                                if _mc_pricing.selected_incentive_usd > _mc_best_total:
-                                    _mc_best_total = _mc_pricing.selected_incentive_usd
-                                    _mc_incumbent_structure_id = str(_mc_structure.id)
-                                    _mc_incumbent_jurisdiction_codes = [
-                                        home_code, partner_code,
-                                        _mc_target_a.jurisdiction_code, _mc_target_b.jurisdiction_code,
-                                    ]
-                                    _mc_incumbent_program_slugs = list(_mc_claimed_programs)
-                                    _mc_component_marginal_incumbent_usd = round(
-                                        _mc_target_a.selected_incentive_usd + _mc_target_b.selected_incentive_usd, 2,
-                                    )
 
-                            if _mc_best_total > float("-inf"):
-                                # A real, executable combination was found
-                                # within this window. By the pigeonhole
-                                # exchange argument above (valid at ANY
-                                # window >= 2), nothing beyond this window
-                                # can beat it either -- stop widening.
-                                break
-                            _mc_max_len = max(len(_mc_full_a), len(_mc_full_b))
-                            if _mc_window >= _mc_max_len:
-                                # Every real candidate has been tried for
-                                # this component pair and nothing executable
-                                # exists -- a genuine real result (every
-                                # individual attempt already has its own
-                                # persisted RULE_REJECTED/etc. disposition
-                                # above), not a completeness gap.
-                                break
-                            _mc_window = min(_mc_window * 2, _mc_max_len)
-
-                        if _mc_best_total > float("-inf"):
-                            _mc_total_possible = len(_mc_full_a) * len(_mc_full_b)
-                            _mc_remaining = _mc_total_possible - len(_mc_tried_pairs)
-                            if _mc_remaining > 0:
-                                # NUM-004: same numeric-proof enrichment as
-                                # the ordinary_component_hybrid DOMINATED_
-                                # WITH_PROOF site above, adapted to this
-                                # search's own fixed 2-component (a, b)
-                                # shape -- see that site's own comment for
-                                # the full definitions. Does not alter the
-                                # widening/stop decision above in any way.
-                                _mc_cutoff_a = (
-                                    round(_mc_full_a[_mc_window].selected_incentive_usd, 2)
-                                    if _mc_window < len(_mc_full_a) else None
-                                )
-                                _mc_cutoff_b = (
-                                    round(_mc_full_b[_mc_window].selected_incentive_usd, 2)
-                                    if _mc_window < len(_mc_full_b) else None
-                                )
-                                _mc_incumbent_value_usd = round(_mc_best_total, 2)
-                                # NUM-004 CORRECTION #2 (2026-09-18): same
-                                # correction as the ordinary_component_hybrid
-                                # site above (its own comment there has the
-                                # full definitions/rationale) -- the prior
-                                # independent-maxima bound and, after that,
-                                # the bare structural precondition
-                                # (proof_window_size >= 2) are BOTH rejected:
-                                # neither actually bounds the real value of
-                                # what lies outside the window against the
-                                # real incumbent. This version restores the
-                                # numeric bound and GATES the disposition on
-                                # it. Bug fixed in the same pass: the prior
-                                # version compared this bound (a+b MARGINAL
-                                # scale, matching _mc_cutoff_a/_mc_cutoff_b)
-                                # against _mc_best_total (the FULL structure
-                                # total, home+partner+a+b) -- a scale
-                                # mismatch. Now compared against
-                                # _mc_component_marginal_incumbent_usd (the
-                                # incumbent's own a+b marginal naive value,
-                                # captured at the same point _mc_best_total
-                                # was set, above).
-                                _mc_best_a = round(_mc_full_a[0].selected_incentive_usd, 2) if _mc_full_a else 0.0
-                                _mc_best_b = round(_mc_full_b[0].selected_incentive_usd, 2) if _mc_full_b else 0.0
-                                _mc_sum_window_best = round(_mc_best_a + _mc_best_b, 2)
-                                _mc_swap_bounds = []
-                                if _mc_cutoff_a is not None:
-                                    _mc_swap_bounds.append(round(_mc_sum_window_best - _mc_best_a + _mc_cutoff_a, 2))
-                                if _mc_cutoff_b is not None:
-                                    _mc_swap_bounds.append(round(_mc_sum_window_best - _mc_best_b + _mc_cutoff_b, 2))
-                                _mc_interaction_safe_total_upper_bound_usd = max(_mc_swap_bounds) if _mc_swap_bounds else None
-                                _mc_stopping_inequality_holds = (
-                                    True if _mc_interaction_safe_total_upper_bound_usd is None
-                                    else _mc_interaction_safe_total_upper_bound_usd <= _mc_component_marginal_incumbent_usd
-                                )
-                                _mc_bound_str = (
-                                    f"${_mc_interaction_safe_total_upper_bound_usd:,.2f}"
-                                    if _mc_interaction_safe_total_upper_bound_usd is not None
-                                    else "N/A (every component's full candidate list was exhausted inside the window)"
-                                )
-                                # When the bound does NOT prove domination,
-                                # never persist DOMINATED_WITH_PROOF with a
-                                # false inequality -- reclassify to the same
-                                # honest SEARCH_DEPTH_LIMIT_REACHED
-                                # disposition used at the sibling site.
-                                _mc_dom_candidate_status = (
-                                    "DOMINATED_WITH_PROOF" if _mc_stopping_inequality_holds
-                                    else "SEARCH_DEPTH_LIMIT_REACHED"
-                                )
-                                _mc_dom_structure_id = uuid.uuid4()
-                                session.add(ProductionStructure(
-                                    id=_mc_dom_structure_id, project_id=project.id,
-                                    name=(
-                                        f"{home_code} + {partner_code} co-production ({comb_opp.treaty_slug}) "
-                                        f"{_mc_comp_a}/{_mc_comp_b} multi-component search "
-                                        f"({_mc_remaining} combinations "
-                                        f"{'proven dominated' if _mc_stopping_inequality_holds else 'unverified'})"
-                                    ),
-                                    description=(
-                                        f"Branch-and-bound over {_mc_comp_a}/{_mc_comp_b} simultaneous "
-                                        f"routing (home={home_code}, partner={partner_code}) found a real, "
-                                        f"executable total of ${_mc_best_total:,.2f} within a window of "
-                                        f"{_mc_window} candidate(s) per component. " + (
-                                            "The interaction-safe upper bound on the remaining out-of-window "
-                                            f"combination(s) ({_mc_bound_str}) "
-                                            "does not exceed the incumbent's own marginal component value "
-                                            f"(${_mc_component_marginal_incumbent_usd:,.2f}), so the remaining "
-                                            f"{_mc_remaining} combination(s) are provably incapable of beating it."
-                                            if _mc_stopping_inequality_holds else
-                                            "The interaction-safe upper bound on the remaining out-of-window "
-                                            f"combination(s) ({_mc_bound_str}) "
-                                            "exceeds the incumbent's own marginal component value "
-                                            f"(${_mc_component_marginal_incumbent_usd:,.2f}), so domination over "
-                                            f"the remaining {_mc_remaining} combination(s) is NOT proven -- "
-                                            "disclosed honestly as SEARCH_DEPTH_LIMIT_REACHED."
-                                        )
-                                    ),
-                                    jurisdiction_allocations=[], claimed_program_ids=[],
-                                ))
-                                session.add(StructureCalculationResult(
-                                    id=uuid.uuid4(), structure_id=_mc_dom_structure_id, engine_version=ENGINE_VERSION,
-                                    total_budget_usd=inputs.gross_budget_usd,
-                                    total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
-                                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
-                                    structure_type="hybrid",
-                                    calculation_trace_json={
-                                        "candidate_status": _mc_dom_candidate_status,
-                                        "discovery_classification": "combined_coproduction_multi_component_stack",
-                                        "structural_family": "combined_coproduction_multi_component_stack",
-                                        "discovery_method": "pigeonhole_windowed_branch_and_bound",
-                                        "structure_type": "hybrid",
-                                        "primary_jurisdiction": home_code,
-                                        "treaty_slug": comb_opp.treaty_slug,
-                                        "component_subset": [_mc_comp_a, _mc_comp_b],
-                                        "is_baseline": False, "relocation_cost_normalized": False,
-                                        "is_directly_comparable": False,
-                                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
-                                        "dominated_combination_count": _mc_remaining,
-                                        "proof_window_size": _mc_window,
-                                        "best_real_total_found_usd": round(_mc_best_total, 2),
-                                        "incumbent_structure_id": _mc_incumbent_structure_id,
-                                        "incumbent_jurisdiction_codes": _mc_incumbent_jurisdiction_codes,
-                                        "incumbent_program_slugs": _mc_incumbent_program_slugs,
-                                        "proof_type": "pigeonhole_membership_exchange_argument",
-                                        "ordering_key": (
-                                            "descending real, independently-priced marginal incentive value "
-                                            "of the target jurisdiction's own segment for this component "
-                                            "(_hy_component_all_targets, computed once per component and "
-                                            "reused across every anchor/partner)"
-                                        ),
-                                        "component_target_windows": {
-                                            _mc_comp_a: [
-                                                {
-                                                    "jurisdiction_code": _t.jurisdiction_code,
-                                                    "program_slug": _t.program_slug,
-                                                    "marginal_value_usd": round(_t.selected_incentive_usd, 2),
-                                                }
-                                                for _t in _mc_lists_a
-                                            ],
-                                            _mc_comp_b: [
-                                                {
-                                                    "jurisdiction_code": _t.jurisdiction_code,
-                                                    "program_slug": _t.program_slug,
-                                                    "marginal_value_usd": round(_t.selected_incentive_usd, 2),
-                                                }
-                                                for _t in _mc_lists_b
-                                            ],
-                                        },
-                                        # NUM-004: the numeric proof itself --
-                                        # note incumbent_value_usd/
-                                        # best_real_total_found_usd remain the
-                                        # FULL structure total (unchanged
-                                        # meaning); component_marginal_
-                                        # incumbent_usd is the SAME-scale
-                                        # value (a+b only) the stopping
-                                        # inequality is actually checked
-                                        # against, alongside the a+b-only
-                                        # component_cutoff_bounds_usd/
-                                        # component_window_best_usd/
-                                        # interaction_safe_total_upper_bound_usd.
-                                        "incumbent_value_usd": _mc_incumbent_value_usd,
-                                        "component_marginal_incumbent_usd": _mc_component_marginal_incumbent_usd,
-                                        "component_cutoff_bounds_usd": {
-                                            _mc_comp_a: _mc_cutoff_a, _mc_comp_b: _mc_cutoff_b,
-                                        },
-                                        "component_window_best_usd": {
-                                            _mc_comp_a: _mc_best_a, _mc_comp_b: _mc_best_b,
-                                        },
-                                        "interaction_safe_total_upper_bound_usd": _mc_interaction_safe_total_upper_bound_usd,
-                                        "stopping_inequality_holds": _mc_stopping_inequality_holds,
-                                        "stopping_inequality": (
-                                            "interaction_safe_total_upper_bound_usd <= component_marginal_incumbent_usd"
-                                            if _mc_interaction_safe_total_upper_bound_usd is not None
-                                            else "no component has a candidate outside its own window -- proof "
-                                                 "complete by exhaustion, no substitution bound is needed"
-                                        ),
-                                        "engine_version": ENGINE_VERSION,
-                                        "input_fingerprint": fingerprint,
-                                        "reason": (
-                                            f"Interaction-safe upper bound ({_mc_bound_str})"
-                                            f" <= incumbent marginal value (${_mc_component_marginal_incumbent_usd:,.2f}): "
-                                            f"the remaining {_mc_remaining} out-of-window combination(s) are provably "
-                                            "incapable of beating the real, executable result already found."
-                                            if _mc_stopping_inequality_holds else
-                                            f"Interaction-safe upper bound ({_mc_bound_str})"
-                                            f" exceeds the incumbent marginal value (${_mc_component_marginal_incumbent_usd:,.2f}): "
-                                            f"domination over the remaining {_mc_remaining} out-of-window "
-                                            f"combination(s) is NOT proven at window size {_mc_window}. A real, "
-                                            "executable result was found and is disclosed, but the remainder is "
-                                            "honestly unverified rather than falsely claimed dominated."
-                                        ),
-                                    },
-                                    input_fingerprint=fingerprint,
-                                ))
 
 
         # Eight-control closeout, multi-principal composition (REG-4;
@@ -7643,6 +7318,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     },
                     input_fingerprint=fingerprint,
                 ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             for _pair_partner_best in _pair_candidates:
                 _pair_claimed_programs = [home_program_slug, _pair_partner_best.program_slug]
                 try:
@@ -7681,6 +7357,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         },
                         input_fingerprint=fingerprint,
                     ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                 else:
                     if not _pair_pricing.is_fully_priced:
                         _pair_rej_status, _pair_rej_class = _classify_component_rejection(_pair_pricing.blockers)
@@ -7717,6 +7394,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             },
                             input_fingerprint=fingerprint,
                         ))
+                        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                     else:
                         _pair_home_jur = jurisdiction_by_code.get(home_code)
                         _pair_by_jur = _pair_allocation.allocated_by_jurisdiction()
@@ -7795,6 +7473,446 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             },
                             input_fingerprint=fingerprint,
                         ))
+                        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
+
+    # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT (2026-09-18, operator
+    # directive): combined_coproduction_multi_component_stack's own
+    # integrated best-first search, folding PARTNER selection into the
+    # SAME branch-and-bound as the two movable-component dimensions --
+    # replaces a design that re-ran a full 2-component search once per
+    # (partner_code, partner_best) pair inside the partner loop above
+    # (every real partner candidate across every partner was
+    # accumulated, cheaply, into _mc_all_partner_candidates during that
+    # loop -- no pricing of its own). ONE shared heap now explores
+    # (partner, component_a, component_b) index-triples together, in
+    # strictly non-increasing combined naive-value order, and stops the
+    # moment the remaining bound cannot beat the incumbent -- visiting
+    # each unique COMPLETE economic combination at most once, never
+    # re-running the same component search per partner. All existing
+    # gates are preserved exactly: treaty/majority/minority facts (per
+    # partner_code, read once during the partner loop above, carried
+    # through in _mc_all_partner_candidates), qualification/stacking via
+    # the unchanged _price_combined_coproduction_multi_component_
+    # candidate, jurisdiction distinctness (home/partner/target_a/
+    # target_b all pairwise distinct), and disjoint spend (component_
+    # routes, unchanged).
+    if len(_combined_components) >= 2 and _mc_all_partner_candidates:
+        # Deduplicate partner candidates by canonical economic identity:
+        # (partner_code, program_slug) fully determines this dimension's
+        # pricing inputs (majority/minority pct are per-partner-code
+        # facts, constant for a given partner regardless of which
+        # unlock program within it is chosen) -- the same real
+        # StackCandidate can never legitimately appear twice for one
+        # partner_code, but IS deduplicated defensively here in case a
+        # future partner-discovery change ever revisits one.
+        _mc_partner_seen: set[tuple[str, str]] = set()
+        _mc_partner_pool: list[tuple[str, object, str, float, float]] = []
+        for _p_code, _p_cand, _p_treaty, _p_maj, _p_min in _mc_all_partner_candidates:
+            _p_key = (_p_code, _p_cand.program_slug)
+            if _p_key in _mc_partner_seen:
+                continue
+            _mc_partner_seen.add(_p_key)
+            _mc_partner_pool.append((_p_code, _p_cand, _p_treaty, _p_maj, _p_min))
+        _mc_partner_pool.sort(key=lambda t: t[1].selected_incentive_usd, reverse=True)
+
+        # Cache full pricing by canonical combination identity --
+        # prevents duplicate _price_combined_coproduction_multi_
+        # component_candidate calls (and duplicate persisted rows) for
+        # the same real (partner, program, target_a, target_b) economic
+        # combination even if the heap's lazy neighbor-expansion could
+        # ever reach the same index-tuple via more than one path (it
+        # cannot, by construction of _best_first_bound_search's own
+        # `visited` set, but this is the SAME real-world identity key a
+        # reviewer would use to check for duplicates independently, and
+        # guards defensively against any future caller reusing this
+        # dict across component-pair iterations).
+        _mc_seen_combo_keys: set[tuple[str, str, str, str, str, str]] = set()
+
+        for _mc_comp_a, _mc_comp_b in itertools.combinations(
+            sorted(c for c, _amt in _combined_components), 2,
+        ):
+            _mc_full_a = _hy_component_all_targets.get(_mc_comp_a, [])
+            _mc_full_b = _hy_component_all_targets.get(_mc_comp_b, [])
+            if not _mc_full_a or not _mc_full_b:
+                continue
+
+            _mc_incumbent_structure_id: str | None = None
+            _mc_incumbent_jurisdiction_codes: list[str] = []
+            _mc_incumbent_program_slugs: list[str] = []
+            _mc_priced_count = 0
+            _mc_rejected_count = 0
+
+            async def _mc_try_combination(_idx: tuple[int, int, int], _current_best: float) -> float | None:
+                nonlocal _mc_incumbent_structure_id, _mc_incumbent_jurisdiction_codes
+                nonlocal _mc_incumbent_program_slugs, _mc_priced_count, _mc_rejected_count
+                _p_code, _p_cand, _p_treaty, _p_maj, _p_min = _mc_partner_pool[_idx[0]]
+                _mc_target_a = _mc_full_a[_idx[1]]
+                _mc_target_b = _mc_full_b[_idx[2]]
+                # Every one of home/partner/target_a/target_b must be a
+                # distinct jurisdiction -- the SAME gate the prior
+                # per-partner design enforced via list construction
+                # (excluding home_code/partner_code from _mc_full_a/
+                # _mc_full_b) plus an explicit target_a != target_b
+                # check; evaluated dynamically here since partner_code
+                # now varies per combination rather than being fixed.
+                _mc_all_codes = [home_code, _p_code, _mc_target_a.jurisdiction_code, _mc_target_b.jurisdiction_code]
+                if len(set(_mc_all_codes)) != 4:
+                    return None
+                _mc_combo_key = (
+                    _p_code, _p_cand.program_slug,
+                    _mc_target_a.jurisdiction_code, _mc_target_a.program_slug,
+                    _mc_target_b.jurisdiction_code, _mc_target_b.program_slug,
+                )
+                if _mc_combo_key in _mc_seen_combo_keys:
+                    return None
+                _mc_seen_combo_keys.add(_mc_combo_key)
+                _mc_component_targets = [
+                    (_mc_comp_a, _mc_target_a.jurisdiction_code, _mc_target_a.program_slug),
+                    (_mc_comp_b, _mc_target_b.jurisdiction_code, _mc_target_b.program_slug),
+                ]
+                _mc_claimed_programs = [
+                    home_program_slug, _p_cand.program_slug,
+                    _mc_target_a.program_slug, _mc_target_b.program_slug,
+                ]
+                _mc_label = (
+                    f"{home_code} + {_p_code} co-production ({_p_treaty}) + "
+                    f"{_mc_comp_a} routed to {_mc_target_a.jurisdiction_code} + "
+                    f"{_mc_comp_b} routed to {_mc_target_b.jurisdiction_code}"
+                )
+                try:
+                    _mc_spec, _mc_allocation, _mc_pricing = _price_combined_coproduction_multi_component_candidate(
+                        inputs, home_code, home_program_slug, _p_code, _p_cand.program_slug,
+                        _mc_component_targets, _p_treaty,
+                        _p_maj, _p_min,
+                    )
+                except _InvalidCombinedAllocation as _mc_invalid:
+                    _mc_invalid_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=f"{_mc_label} (multi-component, rejected)",
+                        description=f"Combined multi-component candidate rejected: {_mc_invalid.reason}",
+                        jurisdiction_allocations=[], claimed_program_ids=_mc_claimed_programs,
+                    )
+                    session.add(_mc_invalid_structure)
+                    await session.flush()
+                    _mc_rejected_count += 1
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_mc_invalid_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="hybrid",
+                        calculation_trace_json={
+                            "candidate_status": "RULE_REJECTED",
+                            "rejection_reason_class": "INVALID_COMBINED_ALLOCATION",
+                            "discovery_classification": "combined_coproduction_multi_component_stack",
+                            "structural_family": "combined_coproduction_multi_component_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": _p_treaty,
+                            "program_slugs": _mc_claimed_programs,
+                            "reason": _mc_invalid.reason,
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
+                    return None
+                if not _mc_pricing.is_fully_priced:
+                    _mc_rej_status, _mc_rej_class = _classify_component_rejection(_mc_pricing.blockers)
+                    _mc_rej_structure = ProductionStructure(
+                        id=uuid.uuid4(), project_id=project.id,
+                        name=f"{_mc_label} (multi-component, rejected)",
+                        description=(
+                            "Combined multi-component candidate does not clear pricing: "
+                            f"{'; '.join(_mc_pricing.blockers) or 'not fully priced.'}"
+                        ),
+                        jurisdiction_allocations=[], claimed_program_ids=_mc_claimed_programs,
+                    )
+                    session.add(_mc_rej_structure)
+                    await session.flush()
+                    _mc_rejected_count += 1
+                    session.add(StructureCalculationResult(
+                        id=uuid.uuid4(), structure_id=_mc_rej_structure.id, engine_version=ENGINE_VERSION,
+                        total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                        true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                        has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                        structure_type="hybrid",
+                        calculation_trace_json={
+                            "candidate_status": _mc_rej_status,
+                            "rejection_reason_class": _mc_rej_class,
+                            "discovery_classification": "combined_coproduction_multi_component_stack",
+                            "structural_family": "combined_coproduction_multi_component_stack",
+                            "structure_type": "hybrid",
+                            "primary_jurisdiction": home_code,
+                            "treaty_slug": _p_treaty,
+                            "program_slugs": _mc_claimed_programs,
+                            "reason": "; ".join(_mc_pricing.blockers) or "Not fully priced.",
+                            "is_baseline": False, "relocation_cost_normalized": False,
+                            "is_directly_comparable": False,
+                            "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                        },
+                        input_fingerprint=fingerprint,
+                    ))
+                    await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
+                    return None
+                _mc_by_jur = _mc_allocation.allocated_by_jurisdiction()
+                _mc_home_jur = jurisdiction_by_code.get(home_code)
+                _mc_partner_jur = jurisdiction_by_code.get(_p_code)
+                _mc_target_a_jur = jurisdiction_by_code.get(_mc_target_a.jurisdiction_code)
+                _mc_target_b_jur = jurisdiction_by_code.get(_mc_target_b.jurisdiction_code)
+                _mc_structure = ProductionStructure(
+                    id=uuid.uuid4(), project_id=project.id,
+                    name=_mc_label,
+                    description=(
+                        f"Official co-production between {home_code} (anchor) and {_p_code} "
+                        f"under {_p_treaty}, with {_mc_comp_a} routed to "
+                        f"{_mc_target_a.jurisdiction_code} and {_mc_comp_b} routed to "
+                        f"{_mc_target_b.jurisdiction_code} -- two simultaneous movable "
+                        "components with disjoint real cost pools, no dollar counted twice."
+                    ),
+                    jurisdiction_allocations=[
+                        j for j in (
+                            {"jurisdiction_id": str(_mc_home_jur.id), "shoot_pct": 100,
+                             "budget_pct": round(100 * _mc_by_jur.get(home_code, 0.0) / inputs.gross_budget_usd, 2)}
+                            if _mc_home_jur else None,
+                            {"jurisdiction_id": str(_mc_partner_jur.id), "shoot_pct": 0,
+                             "budget_pct": round(100 * _mc_by_jur.get(_p_code, 0.0) / inputs.gross_budget_usd, 2)}
+                            if _mc_partner_jur else None,
+                            {"jurisdiction_id": str(_mc_target_a_jur.id), "shoot_pct": 0,
+                             "budget_pct": round(100 * _mc_by_jur.get(_mc_target_a.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
+                            if _mc_target_a_jur else None,
+                            {"jurisdiction_id": str(_mc_target_b_jur.id), "shoot_pct": 0,
+                             "budget_pct": round(100 * _mc_by_jur.get(_mc_target_b.jurisdiction_code, 0.0) / inputs.gross_budget_usd, 2)}
+                            if _mc_target_b_jur else None,
+                        ) if j
+                    ],
+                    claimed_program_ids=_mc_claimed_programs,
+                )
+                session.add(_mc_structure)
+                await session.flush()
+                _mc_priced_count += 1
+                _mc_conditional_program_dicts, _mc_conditional_compatibility_dict = _conditional_data(
+                    str(_mc_structure.id), home_code, tuple(_mc_claimed_programs),
+                )
+                session.add(StructureCalculationResult(
+                    id=uuid.uuid4(), structure_id=_mc_structure.id, engine_version=ENGINE_VERSION,
+                    total_budget_usd=inputs.gross_budget_usd,
+                    total_incentive_value_usd=_mc_pricing.selected_incentive_usd,
+                    true_net_cost_usd=_mc_pricing.npc_verified_usd,
+                    risk_adjusted_net_cost_usd=_mc_pricing.npc_with_adjustments_usd,
+                    has_unverified_inputs=True,
+                    warnings=[
+                        LIMITATION_NOTE,
+                        "Combined co-production + TWO simultaneous movable-component "
+                        "candidate: a new, additive structure topology -- not directly "
+                        "comparable to single-component combined structures' own NPC "
+                        "without confirming the same normalization basis.",
+                    ],
+                    structure_type="hybrid",
+                    calculation_trace_json={
+                        "candidate_status": STATUS_PRICED,
+                        "discovery_classification": "combined_coproduction_multi_component_stack",
+                        "structural_family": "combined_coproduction_multi_component_stack",
+                        "structure_type": "hybrid",
+                        "primary_jurisdiction": home_code,
+                        "treaty_slug": _p_treaty,
+                        "program_slugs": _mc_claimed_programs,
+                        "is_baseline": False, "relocation_cost_normalized": False,
+                        "is_directly_comparable": False,
+                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                        "coproduction_partners": [
+                            {"jurisdiction_code": home_code, "allocated_usd": _mc_by_jur.get(home_code, 0.0)},
+                            {"jurisdiction_code": _p_code, "allocated_usd": _mc_by_jur.get(_p_code, 0.0)},
+                        ],
+                        "component_allocations": [
+                            {
+                                "component": _mc_comp_a,
+                                "jurisdiction_code": _mc_target_a.jurisdiction_code,
+                                "program_slug": _mc_target_a.program_slug,
+                                "allocated_usd": _mc_by_jur.get(_mc_target_a.jurisdiction_code, 0.0),
+                            },
+                            {
+                                "component": _mc_comp_b,
+                                "jurisdiction_code": _mc_target_b.jurisdiction_code,
+                                "program_slug": _mc_target_b.program_slug,
+                                "allocated_usd": _mc_by_jur.get(_mc_target_b.jurisdiction_code, 0.0),
+                            },
+                        ],
+                        "selected_incentive_usd": _mc_pricing.selected_incentive_usd,
+                        "npc_verified_usd": _mc_pricing.npc_verified_usd,
+                        "npc_with_adjustments_usd": _mc_pricing.npc_with_adjustments_usd,
+                        "gross_budget_usd": inputs.gross_budget_usd,
+                        "segments": _segment_dicts(_mc_pricing),
+                        "conditional_programs": _mc_conditional_program_dicts,
+                        "conditional_compatibility": _mc_conditional_compatibility_dict,
+                    },
+                    input_fingerprint=fingerprint,
+                ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
+                # The search's naive bound is built from the partner's
+                # OWN selected_incentive_usd plus comp_a/comp_b's own
+                # per-target selected_incentive_usd (three independently-
+                # priced, disjoint-cost-base MARGINAL quantities) -- the
+                # real value returned here must be on the SAME scale:
+                # SegmentEconomics.selected_incentive_usd summed over
+                # just the partner's own and the two target jurisdictions'
+                # own segments, never _mc_pricing.selected_incentive_usd
+                # (which also includes the home anchor's own segment, a
+                # constant across every combination and therefore never
+                # part of what this search is actually choosing between).
+                _mc_real_marginal = sum(
+                    s.selected_incentive_usd for s in _mc_pricing.segments
+                    if s.jurisdiction_code in (
+                        _p_code, _mc_target_a.jurisdiction_code, _mc_target_b.jurisdiction_code,
+                    )
+                )
+                if _mc_real_marginal > _current_best:
+                    _mc_incumbent_structure_id = str(_mc_structure.id)
+                    _mc_incumbent_jurisdiction_codes = [
+                        home_code, _p_code,
+                        _mc_target_a.jurisdiction_code, _mc_target_b.jurisdiction_code,
+                    ]
+                    _mc_incumbent_program_slugs = list(_mc_claimed_programs)
+                return _mc_real_marginal
+
+            _mc_partner_naive = [t[1].selected_incentive_usd for t in _mc_partner_pool]
+            _mc_naive_a = [t.selected_incentive_usd for t in _mc_full_a]
+            _mc_naive_b = [t.selected_incentive_usd for t in _mc_full_b]
+            _mc_best_found, _mc_visited_count, _mc_stopping_bound = await _best_first_bound_search(
+                [_mc_partner_naive, _mc_naive_a, _mc_naive_b], _mc_try_combination,
+            )
+
+            if _mc_best_found > float("-inf"):
+                _mc_total_possible = len(_mc_partner_pool) * len(_mc_full_a) * len(_mc_full_b)
+                _mc_dominated_count = _mc_total_possible - _mc_visited_count
+                _mc_incumbent_value_usd = round(_mc_best_found, 2)
+                _mc_component_candidate_lists = {
+                    "treaty_partner": [
+                        {
+                            "jurisdiction_code": _t[0], "program_slug": _t[1].program_slug,
+                            "marginal_value_usd": round(_t[1].selected_incentive_usd, 2),
+                        }
+                        for _t in _mc_partner_pool
+                    ],
+                    _mc_comp_a: [
+                        {
+                            "jurisdiction_code": _t.jurisdiction_code, "program_slug": _t.program_slug,
+                            "marginal_value_usd": round(_t.selected_incentive_usd, 2),
+                        }
+                        for _t in _mc_full_a
+                    ],
+                    _mc_comp_b: [
+                        {
+                            "jurisdiction_code": _t.jurisdiction_code, "program_slug": _t.program_slug,
+                            "marginal_value_usd": round(_t.selected_incentive_usd, 2),
+                        }
+                        for _t in _mc_full_b
+                    ],
+                }
+                # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT correction
+                # (2026-09-18, operator directive): genuine exhaustion is
+                # NOT a separate/new incomplete-sounding status -- it is
+                # a complete proof (nothing unvisited could beat the
+                # incumbent, because nothing is left at all), persisted
+                # as DOMINATED_WITH_PROOF with proof_type=
+                # "EXHAUSTIVE_SEARCH", never a different candidate_status.
+                if _mc_stopping_bound is not None:
+                    _mc_stopping_bound_usd = round(_mc_stopping_bound, 2)
+                    assert _mc_stopping_bound_usd <= _mc_incumbent_value_usd
+                    _mc_proof_type = "best_first_heap_bound"
+                    _mc_name_suffix = f"{_mc_visited_count} combination(s) examined, {_mc_dominated_count} proven dominated"
+                    _mc_desc = (
+                        f"Best-first branch-and-bound over {home_code}'s treaty-partner x "
+                        f"{_mc_comp_a}/{_mc_comp_b} routing search examined {_mc_visited_count} "
+                        "index-triple(s), in strictly non-increasing naive-value order, and found a "
+                        f"real, executable total of ${_mc_best_found:,.2f}. The search's own remaining "
+                        f"heap bound (${_mc_stopping_bound_usd:,.2f}) does not exceed this real result, "
+                        f"so every one of the remaining {_mc_dominated_count} unvisited combination(s) "
+                        "is provably incapable of beating it."
+                    )
+                    _mc_reason = (
+                        f"Best-first search stopped because its own remaining heap bound "
+                        f"(${_mc_stopping_bound_usd:,.2f}) cannot exceed the incumbent "
+                        f"(${_mc_incumbent_value_usd:,.2f}) -- every unvisited combination is "
+                        "provably dominated."
+                    )
+                    _mc_inequality = "stopping_bound_usd <= incumbent_value_usd"
+                else:
+                    _mc_stopping_bound_usd = None
+                    _mc_proof_type = "EXHAUSTIVE_SEARCH"
+                    _mc_name_suffix = f"exhausted, {_mc_visited_count} of {_mc_total_possible} combination(s) visited"
+                    _mc_desc = (
+                        f"Best-first branch-and-bound over {home_code}'s treaty-partner x "
+                        f"{_mc_comp_a}/{_mc_comp_b} routing search examined the COMPLETE real "
+                        f"candidate space ({_mc_visited_count} index-triple(s) visited, of "
+                        f"{_mc_total_possible} possible: {_mc_priced_count} priced, "
+                        f"{_mc_rejected_count} rule-rejected) and found a real, executable total of "
+                        f"${_mc_best_found:,.2f}. No candidate combination remains outside this search "
+                        "-- completeness is by direct exhaustion, not a numeric bound."
+                    )
+                    _mc_reason = (
+                        "Exhaustive search: every real (partner, target_a, target_b) combination for "
+                        f"{_mc_comp_a}/{_mc_comp_b} was examined; the best real, executable total found "
+                        f"is ${_mc_best_found:,.2f}."
+                    )
+                    _mc_inequality = (
+                        "N/A -- proof by direct exhaustion of the complete real candidate space "
+                        "(heap emptied; every reachable combination was visited), not a numeric bound"
+                    )
+                _mc_dom_structure_id = uuid.uuid4()
+                session.add(ProductionStructure(
+                    id=_mc_dom_structure_id, project_id=project.id,
+                    name=f"{home_code} {_mc_comp_a}/{_mc_comp_b} multi-component search ({_mc_name_suffix})",
+                    description=_mc_desc,
+                    jurisdiction_allocations=[], claimed_program_ids=[],
+                ))
+                session.add(StructureCalculationResult(
+                    id=uuid.uuid4(), structure_id=_mc_dom_structure_id, engine_version=ENGINE_VERSION,
+                    total_budget_usd=inputs.gross_budget_usd,
+                    total_incentive_value_usd=None, true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                    has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
+                    structure_type="hybrid",
+                    calculation_trace_json={
+                        "candidate_status": "DOMINATED_WITH_PROOF",
+                        "discovery_classification": "combined_coproduction_multi_component_stack",
+                        "structural_family": "combined_coproduction_multi_component_stack",
+                        "discovery_method": "best_first_branch_and_bound",
+                        "structure_type": "hybrid",
+                        "primary_jurisdiction": home_code,
+                        "component_subset": [_mc_comp_a, _mc_comp_b],
+                        "is_baseline": False, "relocation_cost_normalized": False,
+                        "is_directly_comparable": False,
+                        "anchor_jurisdiction": home_code, "anchor_program": home_program_slug,
+                        "total_candidate_combinations": _mc_total_possible,
+                        "visited_combination_count": _mc_visited_count,
+                        "evaluated_combination_count": _mc_priced_count,
+                        "rejected_combination_count": _mc_rejected_count,
+                        "best_real_total_found_usd": _mc_incumbent_value_usd,
+                        "incumbent_value_usd": _mc_incumbent_value_usd,
+                        "stopping_bound_usd": _mc_stopping_bound_usd,
+                        "stopping_inequality_holds": True,
+                        "stopping_inequality": _mc_inequality,
+                        "proof_type": _mc_proof_type,
+                        "incumbent_structure_id": _mc_incumbent_structure_id,
+                        "incumbent_jurisdiction_codes": _mc_incumbent_jurisdiction_codes,
+                        "incumbent_program_slugs": _mc_incumbent_program_slugs,
+                        "component_candidate_lists": _mc_component_candidate_lists,
+                        "ordering_key": (
+                            "descending real, independently-priced marginal incentive value of "
+                            "the treaty partner's own program (StackCandidate.selected_incentive_usd "
+                            "from _all_priced_treaty_side_candidates) and of each movable component's "
+                            "own target jurisdiction's segment (_hy_component_all_targets, computed "
+                            "once and reused across every anchor/partner)"
+                        ),
+                        "engine_version": ENGINE_VERSION,
+                        "input_fingerprint": fingerprint,
+                        "reason": _mc_reason,
+                    },
+                    input_fingerprint=fingerprint,
+                ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     # LU Co-Pro Opportunity Trace fix — a real, generic wiring gap: the
     # loop above only ever considers a bilateral treaty where the
@@ -7948,6 +8066,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
         # Codex D743 rejected-findings remediation (real-treaty proof
         # requirement): P0-COMB-001's combined co-production + component
@@ -8049,6 +8168,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     },
                                     input_fingerprint=fingerprint,
                                 ))
+                                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                                 continue
 
                             if not _nb_pricing.is_fully_priced:
@@ -8097,6 +8217,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     },
                                     input_fingerprint=fingerprint,
                                 ))
+                                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                                 continue
 
                             _nb_sides = [
@@ -8160,6 +8281,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     },
                                     input_fingerprint=fingerprint,
                                 ))
+                                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
                             _nb_majority_jur = jurisdiction_by_code.get(majority_code)
                             _nb_minority_jur = jurisdiction_by_code.get(minority_code)
@@ -8257,6 +8379,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                 },
                                 input_fingerprint=fingerprint,
                             ))
+                            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     eurimages_partners = find_eurimages_partners(home_code, candidate_codes)
     if eurimages_partners:
@@ -8380,6 +8503,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
         # Eight-control closeout, HO-012: a genuine N-way (N>=3) real
         # multilateral co-production route DOES exist (Eurimages,
@@ -8462,6 +8586,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 },
                 input_fingerprint=fingerprint,
             ))
+            await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
         _euri_eligible_subset = (
             len(_euri_subset_codes) >= _euri_min_parties
             and not _euri_below_min
@@ -8509,6 +8634,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     },
                     input_fingerprint=fingerprint,
                 ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             else:
                 # Structural-optimizer wiring correction pass, HO-012:
                 # REVERTED from pricing. The prior pass's _price_combined_
@@ -8595,6 +8721,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     },
                     input_fingerprint=fingerprint,
                 ))
+                await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 3/CBA-006 — the same real, fail-closed
@@ -8719,6 +8846,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+        await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
 
     await session.commit()
     summary = await _summarize_evaluation(session, project, inputs, fingerprint, reused=False)
@@ -8857,31 +8985,207 @@ async def current_generation_fingerprint(session, project_id) -> str | None:
     return fingerprint
 
 
+#: Bounded, deterministic pagination over an evaluation's UNPRICED rows (the
+#: "rejection universe": 525,613 of F#K Valentine's Day's 526,155 candidates).
+#: Every row stays in the database with its full trace; what is bounded is what ONE
+#: response carries. Pages are keyset-paged by generation_ordinal -- the writer's
+#: monotonic 1..N generation order -- through the single
+#: (input_fingerprint, engine_version, generation_ordinal) index, so page N costs
+#: the same as page 1 and the same generation always pages identically.
+UNPRICEABLE_PAGE_DEFAULT_LIMIT = 100
+UNPRICEABLE_PAGE_MAX_LIMIT = 500
+UNPRICEABLE_PAGE_ORDER = "generation_ordinal"
+UNPRICEABLE_RESULTS_ROUTE = "/api/v1/projects/{project_id}/evaluation/unpriceable"
+_RETAINED_FETCH_BATCH = 5000
+
+
+class InvalidPageCursor(ValueError):
+    """The supplied pagination cursor was not produced by this API."""
+
+
+class GenerationSummaryUnavailable(LookupError):
+    """No evaluation_generation_summaries row exists for this (project, fingerprint,
+    engine). Every canonical-1.88.0+ evaluation writes one in its own transaction;
+    earlier generations are never served as current and are not backfilled."""
+
+
+def encode_page_cursor(ordinal: int) -> str:
+    return base64.urlsafe_b64encode(json.dumps([int(ordinal)]).encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def decode_page_cursor(cursor: str) -> int:
+    try:
+        (ordinal,) = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
+        if isinstance(ordinal, bool) or not isinstance(ordinal, int) or ordinal < 0:
+            raise ValueError("cursor ordinal must be a non-negative integer")
+        return ordinal
+    except Exception as exc:  # noqa: BLE001 -- any malformed cursor is one client error
+        raise InvalidPageCursor("invalid pagination cursor") from exc
+
+
+def _generation_conditions(project_id, fingerprint: str, engine_version: str) -> tuple:
+    return (
+        ProductionStructure.project_id == uuid.UUID(str(project_id)),
+        StructureCalculationResult.input_fingerprint == fingerprint,
+        StructureCalculationResult.engine_version == engine_version,
+    )
+
+
+async def load_generation_summary(
+    session: AsyncSession, project_id, fingerprint: str, *, engine_version: str | None = None,
+) -> EvaluationGenerationSummary:
+    row = (await session.execute(
+        select(EvaluationGenerationSummary).where(
+            EvaluationGenerationSummary.project_id == uuid.UUID(str(project_id)),
+            EvaluationGenerationSummary.input_fingerprint == fingerprint,
+            EvaluationGenerationSummary.engine_version == (engine_version or ENGINE_VERSION),
+        )
+    )).scalars().first()
+    if row is None:
+        raise GenerationSummaryUnavailable(
+            f"no generation summary for project {project_id}, fingerprint {fingerprint[:12]}..."
+        )
+    return row
+
+
+def summary_totals(summary: EvaluationGenerationSummary) -> dict:
+    """Exact unpriced total + counts grouped by disposition / (disposition, reason).
+    total == sum(by_disposition.values()) == sum(g["count"] for g in by_reason)."""
+    return {
+        "total": summary.unpriced_count,
+        "priced": summary.priced_count,
+        "by_disposition": dict(summary.by_disposition),
+        "by_reason": list(summary.by_reason),
+    }
+
+
+async def load_retained_rows(
+    session: AsyncSession, project_id, fingerprint: str, summary: EvaluationGenerationSummary,
+    *, engine_version: str | None = None,
+) -> list:
+    """(structure, result) ORM pairs for every row that is NOT a plain RULE_REJECTED
+    (plus any baseline): priced, dominated, co-pro, feasibility, unpriceable -- fetched
+    by generation_ordinal through the (fingerprint, engine, ordinal) index, in
+    generation order. Never touches the rejected mass."""
+    ordinals = list(summary.non_rejected_ordinals)
+    conditions = _generation_conditions(project_id, fingerprint, engine_version or ENGINE_VERSION)
+    rows: list = []
+    for i in range(0, len(ordinals), _RETAINED_FETCH_BATCH):
+        batch = ordinals[i:i + _RETAINED_FETCH_BATCH]
+        rows.extend((await session.execute(
+            select(ProductionStructure, StructureCalculationResult)
+            .join(StructureCalculationResult, StructureCalculationResult.structure_id == ProductionStructure.id)
+            .where(*conditions, StructureCalculationResult.generation_ordinal.in_(batch))
+        )).all())
+    rows.sort(key=lambda pair: pair[1].generation_ordinal)
+    return [tuple(pair) for pair in rows]
+
+
+def _unpriced_entry_columns() -> list:
+    trace = StructureCalculationResult.calculation_trace_json
+    # coalesce(trace -> key, default) reproduces `(trace or {}).get(key, default)`
+    # exactly: a missing key or NULL trace is SQL NULL (-> default), while a
+    # present JSON null stays a JSON null (-> None), as .get() would return.
+    jsonb_false = cast(literal("false"), JSONB)
+    return [
+        ProductionStructure.id,
+        ProductionStructure.name,
+        StructureCalculationResult.generation_ordinal,
+        StructureCalculationResult.total_incentive_value_usd,
+        trace["candidate_status"].label("candidate_status"),
+        trace["rejection_reason_class"].label("rejection_reason_class"),
+        func.coalesce(trace["is_baseline"], jsonb_false).label("is_baseline"),
+        func.coalesce(trace["relocation_cost_normalized"], jsonb_false).label("relocation_cost_normalized"),
+        trace["reason"].label("reason"),
+    ]
+
+
+def _unpriced_entry(row) -> dict:
+    return {
+        "structure_id": str(row.id),
+        "name": row.name,
+        "generation_ordinal": row.generation_ordinal,
+        "candidate_status": row.candidate_status,
+        "rejection_reason_class": row.rejection_reason_class,
+        "true_net_cost_usd": None,
+        "total_incentive_value_usd": (
+            float(row.total_incentive_value_usd) if row.total_incentive_value_usd is not None else None
+        ),
+        "is_baseline": row.is_baseline,
+        "relocation_cost_normalized": row.relocation_cost_normalized,
+        "reason": row.reason,
+    }
+
+
+async def unpriceable_page(
+    session: AsyncSession, project_id, fingerprint: str, *,
+    engine_version: str | None = None,
+    limit: int = UNPRICEABLE_PAGE_DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict:
+    """One bounded, deterministic page of a generation's unpriced rows, in
+    generation order. Keyset (not offset) pagination: no row can be skipped or
+    repeated, and ``has_more``/``next_cursor`` are exact (limit+1 rows are read)."""
+    limit = max(1, min(int(limit), UNPRICEABLE_PAGE_MAX_LIMIT))
+    scr = StructureCalculationResult
+    after = decode_page_cursor(cursor) if cursor is not None else 0
+    rows = (await session.execute(
+        select(*_unpriced_entry_columns())
+        .select_from(scr)
+        .join(ProductionStructure, scr.structure_id == ProductionStructure.id)
+        .where(
+            *_generation_conditions(project_id, fingerprint, engine_version or ENGINE_VERSION),
+            scr.true_net_cost_usd.is_(None),
+            scr.generation_ordinal > after,
+        )
+        .order_by(scr.generation_ordinal)
+        .limit(limit + 1)
+    )).all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    return {
+        "limit": limit,
+        "returned": len(rows),
+        "has_more": has_more,
+        "next_cursor": encode_page_cursor(rows[-1].generation_ordinal) if has_more and rows else None,
+        "order": UNPRICEABLE_PAGE_ORDER,
+        "results": [_unpriced_entry(row) for row in rows],
+    }
+
+
 async def _summarize_evaluation(
     session: AsyncSession, project: Project, inputs: ProjectEconomicInputs,
-    fingerprint: str, *, reused: bool,
+    fingerprint: str, *, reused: bool, engine_version: str | None = None,
 ) -> dict:
     """Read back the persisted, fingerprint-matched rows and rank them.
-    Never recomputes — purely a read + rank of what is already committed."""
-    rows = (await session.execute(
-        select(ProductionStructure, StructureCalculationResult)
-        .join(StructureCalculationResult, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(
-            ProductionStructure.project_id == project.id,
-            StructureCalculationResult.input_fingerprint == fingerprint,
-            # Same freshness rule as the "existing" check above: a
-            # fingerprint match alone isn't enough once an older
-            # engine_version's rows can coexist with a freshly regenerated
-            # set for the SAME inputs — only the current engine's rows are
-            # "the" evaluation; older ones are superseded history, still in
-            # the table, never queried as current.
-            StructureCalculationResult.engine_version == ENGINE_VERSION,
-        )
-    )).all()
+    Never recomputes — purely a read + rank of what is already committed.
 
-    priced = [(s, r) for s, r in rows if r.true_net_cost_usd is not None]
-    unpriced = [(s, r) for s, r in rows if r.true_net_cost_usd is None]
-    priced.sort(key=lambda pair: float(pair[1].true_net_cost_usd))
+    Read shape: the PRICED rows (the candidates that carry a number, the only
+    ones ranked / eligible to win) are loaded as full ORM rows. The UNPRICED
+    rows -- 99.8% of an FVD evaluation, almost all RULE_REJECTED -- are NEVER
+    embedded whole: the response carries their exact total, counts grouped by
+    disposition/reason, and ONE bounded deterministic first page with
+    ``has_more``/``next_cursor``; the rest is served by
+    GET /projects/{id}/evaluation/unpriceable. Every row remains in the
+    database with its full trace."""
+    engine_version = engine_version or ENGINE_VERSION
+    # One narrow summary row per (project, fingerprint, engine), accumulated while
+    # the evaluation ran: exact counts and the ordinals of the non-rejected rows.
+    summary = await load_generation_summary(session, project.id, fingerprint, engine_version=engine_version)
+    retained = await load_retained_rows(session, project.id, fingerprint, summary, engine_version=engine_version)
+    priced = [pair for pair in retained if pair[1].true_net_cost_usd is not None]
+    retained_unpriced = [pair for pair in retained if pair[1].true_net_cost_usd is None]
+
+    def _identity_of(pair) -> str:
+        r = pair[1]
+        return r.economic_identity or canonical_economic_identity(r.structure_type, r.calculation_trace_json)
+
+    # Ties in net cost are broken by the run-independent canonical economic
+    # identity, never by the per-generation random structure uuid.
+    priced.sort(key=lambda pair: (float(pair[1].true_net_cost_usd), _identity_of(pair)))
+
+    unpriceable_totals = summary_totals(summary)
+    unpriceable_first_page = await unpriceable_page(session, project.id, fingerprint, engine_version=engine_version)
 
     def _is_baseline(pair) -> bool:
         return bool((pair[1].calculation_trace_json or {}).get("is_baseline"))
@@ -8904,7 +9208,7 @@ async def _summarize_evaluation(
     # sees "no baseline" for a production that plainly has one.
     blocked_baseline_pair = (
         None if baseline_pair is not None
-        else next((pair for pair in unpriced if _is_baseline(pair)), None)
+        else next((pair for pair in retained_unpriced if _is_baseline(pair)), None)
     )
     # The served "winner"/top_result is the baseline whenever it is priced
     # AND its own qualification admits Recommended — never a relocation
@@ -9033,16 +9337,21 @@ async def _summarize_evaluation(
             "is_baseline": trace.get("is_baseline", False),
             "relocation_cost_normalized": trace.get("relocation_cost_normalized", False),
             "reason": trace.get("reason"),
+            "economic_identity": (
+                result.economic_identity or canonical_economic_identity(result.structure_type, trace)
+            ),
         }
 
     return {
         "status": "EVALUATION_REUSED" if reused else "EVALUATION_COMPLETE",
-        "engine_version": ENGINE_VERSION,
+        "engine_version": engine_version,
         "state_fingerprint": fingerprint,
         "gross_budget_usd": inputs.gross_budget_usd,
         "base_jurisdiction_code": inputs.jurisdiction_code,
         "priced_count": len(priced),
-        "unpriceable_count": len(unpriced),
+        # TOTAL unpriced rows (unchanged meaning); the rows themselves are the
+        # bounded first page below + the paginated route, never embedded whole.
+        "unpriceable_count": unpriceable_totals["total"],
         "baseline": (
             _entry(*baseline_pair) if baseline_pair
             else _entry(*blocked_baseline_pair) if blocked_baseline_pair
@@ -9053,7 +9362,18 @@ async def _summarize_evaluation(
         "baseline_blocked": blocked_baseline_pair is not None,
         "top_result": _entry(*top_pair) if top_pair else None,
         "ranked": [_entry(s, r) for s, r in priced],
-        "unpriceable": [_entry(s, r) for s, r in unpriced],
+        "unpriceable": unpriceable_first_page["results"],
+        "unpriceable_page": {
+            "limit": unpriceable_first_page["limit"],
+            "returned": unpriceable_first_page["returned"],
+            "total": unpriceable_totals["total"],
+            "has_more": unpriceable_first_page["has_more"],
+            "next_cursor": unpriceable_first_page["next_cursor"],
+            "order": unpriceable_first_page["order"],
+            "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),
+        },
+        "unpriceable_by_disposition": unpriceable_totals["by_disposition"],
+        "unpriceable_by_reason": unpriceable_totals["by_reason"],
         "mfni_limitation": LIMITATION_NOTE,
         "relocation_comparability_limitation": RELOCATION_COMPARABILITY_NOTE,
     }

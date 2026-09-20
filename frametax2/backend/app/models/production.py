@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Text, ForeignKey, Numeric, Boolean, Integer
+from sqlalchemy import BigInteger, String, Text, ForeignKey, Numeric, Boolean, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -84,6 +84,19 @@ class StructureCalculationResult(Base):
     # family that genuinely never assigns one) may carry no classification.
     structure_type: Mapped[str | None] = mapped_column(String(60), index=True)
 
+    # Bounded-response contract (2026-09-19). Both nullable and written PROSPECTIVELY
+    # (canonical-1.88.0+); no historical row is backfilled.
+    # generation_ordinal: 1..N, assigned monotonically by evaluate_project()'s bulk
+    # writer in generation order within one evaluation. It is the keyset for paging
+    # the (huge) unpriced set; its only index is (input_fingerprint, engine_version,
+    # generation_ordinal), which ascends within an evaluation (append-only inserts).
+    generation_ordinal: Mapped[int | None] = mapped_column(BigInteger)
+    # economic_identity: run-independent SHA-256 of the routing/program/treaty fields
+    # (services/economic_identity.py). Written for PRICED rows ONLY, as the
+    # deterministic tie-breaker for equal-NPC ranking in place of the per-generation
+    # random structure uuid. Never indexed.
+    economic_identity: Mapped[str | None] = mapped_column(String(64))
+
     # Top-level outputs
     total_budget_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
     rebase_btl_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
@@ -134,3 +147,32 @@ class StructureCalculationResult(Base):
     # Relationships
     structure: Mapped["ProductionStructure"] = relationship(back_populates="calculation_results")
     input_budget_document_version: Mapped["DocumentVersion | None"] = relationship()
+
+
+class EvaluationGenerationSummary(Base):
+    """ONE narrow row per (project, input_fingerprint, engine_version): what an
+    evaluation's persisted rows add up to, accumulated WHILE the evaluation ran and
+    committed in the same transaction as the rows. Serves the bounded evaluation
+    and workspace responses without counting, grouping or loading the (>500K-row)
+    unpriced universe. Holds no trace and no row payload; every row and its full
+    trace remain in structure_calculation_results."""
+    __tablename__ = "evaluation_generation_summaries"
+    __table_args__ = (
+        UniqueConstraint("project_id", "input_fingerprint", "engine_version", name="uq_evaluation_generation_summary"),
+    )
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    input_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    engine_version: Mapped[str] = mapped_column(String(50), nullable=False)
+    total_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    priced_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    unpriced_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    # {candidate_status: count} over the UNPRICED rows
+    by_disposition: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    # [{"candidate_status", "rejection_reason_class", "count"}] over the UNPRICED rows
+    by_reason: Mapped[list] = mapped_column(JSONB, nullable=False)
+    # generation_ordinal of every row that is not a plain RULE_REJECTED (plus any
+    # baseline): the rows ranking and the workspace load, fetched by ordinal.
+    non_rejected_ordinals: Mapped[list] = mapped_column(JSONB, nullable=False)
