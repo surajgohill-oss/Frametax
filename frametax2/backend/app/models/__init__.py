@@ -32,6 +32,7 @@ from app.models.production_requirement import (  # noqa: F401
     ProductionAssumption,
 )
 from app.models.production import (  # noqa: F401
+    EvaluationCandidateAggregate,
     EvaluationGenerationSummary,
     ProductionStructure,
     StructureCalculationResult,

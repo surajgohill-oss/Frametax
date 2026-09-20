@@ -7,6 +7,12 @@ EvaluationGenerationSummary row in the same transaction. Nothing here re-reads t
 database, so serving an FVD-scale evaluation never has to count, group or load its
 525K-row unpriced universe again.
 
+Bounded candidate retention (canonical-1.90.0): a candidate outside the retained decision set (plain
+RULE_REJECTED, PRICED outside the retained top sets, anything over a status cap) is COUNTED here
+(``observe(None, ...)``, no ordinal) but never becomes a physical row -- it is folded into
+evaluation_candidate_aggregates (services/candidate_aggregation.py). ``total_rows`` therefore counts
+every candidate GENERATED and always equals ``persisted_rows + aggregated``.
+
 "Unpriced" means no net cost (true_net_cost_usd IS NULL) -- exactly the population the
 evaluator has always served as ``unpriceable``. ``non_rejected_ordinals`` lists the
 generation_ordinal of every row that is NOT a plain RULE_REJECTED (plus any baseline,
@@ -26,19 +32,30 @@ class GenerationSummaryBuilder:
         self.priced_count = 0
         self.unpriced_count = 0
         self._by_reason: Counter = Counter()
+        self.persisted_rows = 0
+        self.aggregated = 0
+        self.aggregated_priced = 0
         self._non_rejected: list[int] = []
 
-    def observe(self, ordinal: int, *, status: str, reason: str, priced: bool, is_baseline: bool) -> None:
+    def observe(self, ordinal: int | None, *, status: str, reason: str, priced: bool, is_baseline: bool) -> None:
+        """``ordinal`` is the physical row's generation_ordinal, or None for a candidate that was
+        aggregated instead of persisted."""
         self.total_rows += 1
+        if ordinal is None:
+            self.aggregated += 1
+            if priced:
+                self.aggregated_priced += 1
+        else:
+            self.persisted_rows += 1
         if priced:
             self.priced_count += 1
         else:
             self.unpriced_count += 1
             self._by_reason[(status, reason)] += 1
-        if status != REJECTED_STATUS or is_baseline:
+        if ordinal is not None and (status != REJECTED_STATUS or is_baseline):
             self._non_rejected.append(ordinal)
 
-    def payload(self) -> dict:
+    def payload(self, aggregate_groups: int = 0) -> dict:
         by_reason = [
             {"candidate_status": status or None, "rejection_reason_class": reason or None, "count": count}
             for (status, reason), count in sorted(self._by_reason.items())
@@ -53,4 +70,8 @@ class GenerationSummaryBuilder:
             "by_disposition": by_disposition,
             "by_reason": by_reason,
             "non_rejected_ordinals": sorted(self._non_rejected),
+            "persisted_rows": self.persisted_rows,
+            "aggregated_candidates": self.aggregated,
+            "aggregated_priced": self.aggregated_priced,
+            "aggregate_groups": aggregate_groups,
         }

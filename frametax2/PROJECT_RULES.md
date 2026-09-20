@@ -104,3 +104,13 @@ Applies to every test run, evaluation, or other command that can take minutes, a
 10. **Any reader that could load an evaluation generation must use bounded, current-generation SQL** (the generation summary, generation ordinal keyset pages, the retained-ordinal set). Loading an entire generation -- or the whole rejected/unpriced set -- into ORM memory is prohibited, in services, views, routes, and tests alike. An evaluation generation can exceed 500,000 rows.
 11. **A phase is not complete** while any of these holds: an unbounded read path, an unexplained timeout, a background process still running, or incomplete test evidence. Report `BLOCKED` with the specific gap instead.
 
+
+### PERSISTENCE CARDINALITY RULE
+
+**Enumeration cardinality must never define persistence cardinality. Every high-volume status, including PRICED, requires an explicit bounded retention policy before implementation.**
+
+1. The engine may evaluate every candidate; it persists only the bounded decision set CineGlobe serves. Anything outside that set is COUNTED EXACTLY in aggregate groups, never stored one row per permutation.
+2. The current policy (`app/services/candidate_retention.py`, `candidate_aggregation.py`, table `evaluation_candidate_aggregates`): detailed rows for the baseline; the global top-100 and per-`structure_type` top-100 PRICED candidates (verified NPC and risk-adjusted NPC, ties by canonical economic identity); the best single/local-stack candidate per jurisdiction; every DOMINATED_WITH_PROOF row and reviewable/opportunity row (each status capped); and any row a retained proof or recommendation references. Everything else is aggregated by (original status, structure family/type, reason class, primary + participant jurisdiction set, program/component/treaty family) with exact count, min/max NPC and incentive, best economic identity, one representative and the retained dominating reference.
+3. **Fail-closed invariant** at commit: `candidates generated == detailed rows persisted + sum(candidate aggregate counts)`. Any mismatch, and any retained proof that references a non-retained candidate, rolls the evaluation back.
+4. Introducing a new high-volume candidate status, or a new persisted per-candidate row type, requires stating its retention bound in the same change, with a deterministic synthetic full-enumeration-versus-bounded comparison proving the retained set, rankings, economics and accounting are identical before any real production is evaluated.
+5. Served surfaces take exact totals from the generation summary + aggregates, rank and recommend from the retained rows, and paginate retained details and aggregate groups -- never every internal permutation.

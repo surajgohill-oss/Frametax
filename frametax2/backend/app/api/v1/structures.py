@@ -402,7 +402,9 @@ async def list_structure_results(
     total = None
     if cursor is None:
         try:
-            total = (await load_generation_summary(db, project_id, fingerprint)).total_rows
+            _summary = await load_generation_summary(db, project_id, fingerprint)
+            # detailed rows this endpoint pages over (rejections are counted, not rows)
+            total = _summary.persisted_rows if _summary.persisted_rows is not None else _summary.total_rows
         except GenerationSummaryUnavailable:
             pass
     return _page(rows, scope="current_generation", fingerprint=fingerprint, order="generation_ordinal",

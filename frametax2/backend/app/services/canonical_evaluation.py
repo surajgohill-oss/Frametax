@@ -64,6 +64,7 @@ import itertools
 import logging
 import time
 import uuid
+from collections import Counter
 
 from sqlalchemy import cast, func, insert, inspect as sa_inspect, literal, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -159,7 +160,19 @@ from app.data.program_rate_rules import (
 )
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
-from app.models.production import EvaluationGenerationSummary, ProductionStructure, StructureCalculationResult
+from app.models.production import (
+    EvaluationCandidateAggregate,
+    EvaluationGenerationSummary,
+    ProductionStructure,
+    StructureCalculationResult,
+)
+from app.services.candidate_aggregation import REJECTED_STATUS, CandidateAggregator
+from app.services.candidate_retention import (
+    DOMINATED_CAP,
+    OPPORTUNITY_CAP,
+    BoundedRetention,
+    Held as _Held,
+)
 from app.services.generation_summary import GenerationSummaryBuilder
 from app.services.economic_identity import (
     candidate_status_of,
@@ -652,7 +665,7 @@ from app.services.canonical_project_economics import (
 # bridge.evaluate_treaty_personnel_gate), and CoproOpportunity carries
 # new served fields. Every row persisted under 1.56.0 was generated
 # without this gate ever being consulted and must be treated as stale.
-ENGINE_VERSION = "canonical-1.88.0"  # 1.88.0: BOUNDED_RESPONSE_CONTRACT (2026-09-19), a served-contract + persisted-shape change, never an economics change (all four baseline incentive/NPC figures, every disposition and every proof are byte-identical to 1.87.0). evaluate_project()/POST /evaluation/begin previously embedded the COMPLETE unpriced universe (525,613 entries for F#K Valentine's Day) in its response, and the workspace view loaded every row as an ORM object to drop the rejected ones in Python. The response now carries the exact total (unpriceable_count), counts grouped by disposition and by (disposition, reason), and one bounded first page (limit 100, max 500) with explicit has_more/next_cursor; the remainder is served by the new keyset-paginated GET /projects/{id}/evaluation/unpriceable. No row is dropped or deleted: every rejection row and its full trace stay in the database. Persisted shape (migration 0076, prospective only, NO historical backfill): structure_calculation_results.generation_ordinal (monotonic 1..N assigned by the bulk writer in generation order; keyset for paging, sole index (input_fingerprint, engine_version, generation_ordinal), append-only inserts) and economic_identity (PRICED rows only: a SHA-256 over the routing/program/treaty fields, services/economic_identity.py, the deterministic equal-NPC tie-breaker replacing the random structure uuid); plus ONE narrow evaluation_generation_summaries row per (project, fingerprint, engine) accumulated during evaluation and committed with its rows (counts by disposition/reason and the ordinals of the non-RULE_REJECTED rows that ranking and the workspace load).  1.87.0: FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT, integrated partner search (2026-09-18, operator directive) -- combined_coproduction_multi_component_stack's own best-first search (introduced in 1.86.0) previously re-ran a full (component_a, component_b) branch-and-bound once per (partner_code, partner_best) pair inside the treaty-partner loop. This version folds partner selection INTO the same search: every real, independently-priced treaty-partner candidate across EVERY eligible partner is accumulated (cheaply, no pricing of its own) into one flat list during the partner loop, deduplicated by (partner_code, program_slug) canonical identity, and used as a THIRD dimension alongside the two movable-component candidate lists in one shared _best_first_bound_search call per (component_a, component_b) pair -- visiting each unique (partner, target_a, target_b) index-triple at most once, in strictly non-increasing combined naive-value order, caching pricing by canonical combination identity, and stopping the moment the remaining bound cannot beat the incumbent. Also, per explicit operator correction: genuine exhaustion (the heap empties with no better result possible) is no longer persisted as a separate SEARCH_SPACE_EXHAUSTED status at either widening-search site -- it is a complete proof of domination (nothing unvisited could beat the incumbent, because nothing is left at all) and is now persisted as DOMINATED_WITH_PROOF with proof_type="EXHAUSTIVE_SEARCH", distinguished from the numeric-bound proof (proof_type="best_first_heap_bound") only by that field and stopping_bound_usd being None. Every treaty/majority-minority-pct fact read, qualification check, stacking rule, jurisdiction-distinctness gate, and disjoint-spend routing rule from the pre-existing per-partner design is preserved exactly, evaluated dynamically per visited combination instead of once per fixed outer-loop partner. The single-component combined_coproduction_component_stack and combined_coproduction_pair_stack families (which share the same treaty-partner loop) are untouched. No discovery, pricing, jurisdiction-legality, stacking, or qualification checks changed; disjoint spend routing is untouched. Baseline incentive/NPC economics for all four real productions confirmed byte-identical before/after.
+ENGINE_VERSION = "canonical-1.90.0"  # 1.90.0: BOUNDED_CANDIDATE_RETENTION (2026-09-20), a PERSISTENCE-semantics change, never an economics change (every incentive/NPC, ranking, opportunity, disposition and dominance proof is identical to 1.88.0). Root architecture correction: candidate ENUMERATION is not the persistence contract. The engine still generates and prices every candidate, but persists only the bounded decision set CineGlobe serves: the baseline; the global top-100 and per-structure_type top-100 PRICED candidates (on both ranking keys the served surfaces use, verified NPC and risk-adjusted NPC, ties by canonical economic identity); the best single/local-stack candidate per jurisdiction (frozen Jurisdictions Globe); every DOMINATED_WITH_PROOF row and every reviewable/opportunity row (CO_PRO_OPPORTUNITY, FEASIBILITY_REVIEW_REQUIRED, UNPRICEABLE_AUTHORITY_INSUFFICIENT, ... each status capped); and any PRICED candidate a retained proof references (its incumbent). Every other candidate -- all plain RULE_REJECTED permutations (99.8% of FVD's 526,155) and all PRICED candidates outside the retained sets (the bulk of Lips Like Sugar's) -- is COUNTED EXACTLY in evaluation_candidate_aggregates (migration 0077), grouped by (original status, structure family/type, reason class, primary + participant jurisdiction set, program/component/treaty family), each with exact count, min/max NPC and incentive, best economic identity, one reconstructable representative and the retained dominating structure. Retention is decided in one streaming pass with exact bounded top-K lanes (services/candidate_retention.py), so memory and persistence are O(bound) however many candidates are enumerated. Fail-closed accounting invariant at commit: candidates generated == detailed rows persisted + sum(candidate aggregate counts); a retained proof that references a non-retained candidate also fails closed. The served evaluation/workspace/production views take exact totals from the generation summary + aggregates, rank and recommend from the retained rows, and serve best-per-jurisdiction and top-per-family blocks; pagination covers retained details and aggregate groups (GET /projects/{id}/evaluation/aggregates), never every internal permutation. generation_ordinal is 1..M over the persisted rows only. (1.89.0, never released: rejection-only aggregation, superseded by this generalization.) 1.88.0: BOUNDED_RESPONSE_CONTRACT (2026-09-19), a served-contract + persisted-shape change, never an economics change (all four baseline incentive/NPC figures, every disposition and every proof are byte-identical to 1.87.0). evaluate_project()/POST /evaluation/begin previously embedded the COMPLETE unpriced universe (525,613 entries for F#K Valentine's Day) in its response, and the workspace view loaded every row as an ORM object to drop the rejected ones in Python. The response now carries the exact total (unpriceable_count), counts grouped by disposition and by (disposition, reason), and one bounded first page (limit 100, max 500) with explicit has_more/next_cursor; the remainder is served by the new keyset-paginated GET /projects/{id}/evaluation/unpriceable. No row is dropped or deleted: every rejection row and its full trace stay in the database. Persisted shape (migration 0076, prospective only, NO historical backfill): structure_calculation_results.generation_ordinal (monotonic 1..N assigned by the bulk writer in generation order; keyset for paging, sole index (input_fingerprint, engine_version, generation_ordinal), append-only inserts) and economic_identity (PRICED rows only: a SHA-256 over the routing/program/treaty fields, services/economic_identity.py, the deterministic equal-NPC tie-breaker replacing the random structure uuid); plus ONE narrow evaluation_generation_summaries row per (project, fingerprint, engine) accumulated during evaluation and committed with its rows (counts by disposition/reason and the ordinals of the non-RULE_REJECTED rows that ranking and the workspace load).  1.87.0: FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT, integrated partner search (2026-09-18, operator directive) -- combined_coproduction_multi_component_stack's own best-first search (introduced in 1.86.0) previously re-ran a full (component_a, component_b) branch-and-bound once per (partner_code, partner_best) pair inside the treaty-partner loop. This version folds partner selection INTO the same search: every real, independently-priced treaty-partner candidate across EVERY eligible partner is accumulated (cheaply, no pricing of its own) into one flat list during the partner loop, deduplicated by (partner_code, program_slug) canonical identity, and used as a THIRD dimension alongside the two movable-component candidate lists in one shared _best_first_bound_search call per (component_a, component_b) pair -- visiting each unique (partner, target_a, target_b) index-triple at most once, in strictly non-increasing combined naive-value order, caching pricing by canonical combination identity, and stopping the moment the remaining bound cannot beat the incumbent. Also, per explicit operator correction: genuine exhaustion (the heap empties with no better result possible) is no longer persisted as a separate SEARCH_SPACE_EXHAUSTED status at either widening-search site -- it is a complete proof of domination (nothing unvisited could beat the incumbent, because nothing is left at all) and is now persisted as DOMINATED_WITH_PROOF with proof_type="EXHAUSTIVE_SEARCH", distinguished from the numeric-bound proof (proof_type="best_first_heap_bound") only by that field and stopping_bound_usd being None. Every treaty/majority-minority-pct fact read, qualification check, stacking rule, jurisdiction-distinctness gate, and disjoint-spend routing rule from the pre-existing per-partner design is preserved exactly, evaluated dynamically per visited combination instead of once per fixed outer-loop partner. The single-component combined_coproduction_component_stack and combined_coproduction_pair_stack families (which share the same treaty-partner loop) are untouched. No discovery, pricing, jurisdiction-legality, stacking, or qualification checks changed; disjoint spend routing is untouched. Baseline incentive/NPC economics for all four real productions confirmed byte-identical before/after.
 # 1.82.0: OPTIMIZER_AUDIT_DEFECT_REMEDIATION (2026-09-18), fixing CURRENT_TIP_OPTIMIZER_NUMERICAL_ACCEPTANCE_AUDIT.md's NUM-001..NUM-005, resumed at e880c44. Bumped because both the persisted trace shape and the served workspace contract changed, never because any priced economics changed (all four baseline incentive/NPC figures are confirmed byte-identical before/after). NUM-001: project_workspace_view.py's `top_result = comparable[0]` published a priced-but-genuinely-unresolved baseline (Little Utopia/F#K Valentine's Day) as the served recommendation, contradicting evaluate_project()'s own top_result=null -- fixed by extracting the ONE canonical qualification-admission predicate (new public qualification_admits_recommended(), previously three independent copies: this file's own _summarize_evaluation() closure, canonical_production_view.py's module function, and NONE in project_workspace_view.py) and consuming it from the workspace adapter, never re-implementing a fourth. NUM-002: hybrid (ordinary_component_hybrid) rows never called the SAME per-program discretionary/administrative disclosure helper the single_country/multi_program/component_relocation families already use -- structural_archetype_generator.StructuralCandidateResult now carries administrative_allocation_risk/administrative_allocation_risk_reasons, derived from EVERY component program via _competitive_allocation_disclosure, computed once in generate_structural_candidate() and persisted at both real ordinary_component_hybrid trace sites (the priced-candidate row and its own DOMINATED_WITH_PROOF aggregate is intentionally excluded -- that row has no single priced candidate's economics to attach). NUM-003: apply_stacking_adjustments()'s own StackingAdjustmentResult (raw_values, adjustments, program_values -- already fully computed inside generate_structural_candidate()) was discarded after only its aggregate total was kept; now persisted in full (raw_component_incentives_usd, stacking_adjustments, post_adjustment_component_incentives_usd) so an adjusted hybrid total reconstructs exactly from the trace alone. NUM-004: both DOMINATED_WITH_PROOF trace builders (ordinary_component_hybrid and combined_coproduction_multi_component_stack) now persist the numeric proof itself -- component_cutoff_bounds_usd, component_window_best_usd, an interaction-safe total upper bound (conservative independent-maxima single-component-substitution bound), incumbent_value_usd, and an explicit stopping_inequality/stopping_inequality_holds -- without altering the existing widening-search/stop decision in any way. NUM-005: project_workspace_view.py's evaluation block now returns engine_version/input_fingerprint (evaluate_project()'s own top-level response already did). Supporting validator correction: scripts/canonical_integrity_gate.py's QPE check no longer sums claim-specific qpe_usd across segments and compares to gross budget (a stale oracle -- lawful stacked programs, e.g. Ontario CPTC+OFTTC, correctly share the identical eligible-cost base, so summing produced false positives); replaced with per-segment non-negativity plus a real source-line disjoint-routing check across DIFFERENT components via component_allocations[].line_ids.
 # 1.81.0: structural-optimizer wiring correction pass, resumed at ba76cd2f. Corrects three real defects in the six-control closeout above (1.80.0), each a genuine economic-behavior change, never a cosmetic one. HO-013: REMOVED the arbitrary _MULTI_COMPONENT_TARGET_BOUND=200 flat cutoff, which sliced the SAME global, component-AGNOSTIC _combined_top_targets list for every routed component -- a real doctrine violation, since a genuinely component-specific real candidate ranked below 200 in the GLOBAL ranking could be silently excluded even while ranking near the top of its OWN component's real list. Replaced with (1) _hy_component_all_targets[component] -- the SAME real, independently-priced-per-component candidate list the pre-existing ordinary_component_hybrid mechanism already builds via _price_component_relocation_candidate, and (2) a genuine pigeonhole-exchange proof-based widening search (window starts at 2, the proven-sufficient size for 2 simultaneously-routed components, and doubles on failure until a real PRICED combination is found or every real candidate is exhausted), mirroring the SAME proof pattern canonical-1.72.0 already established elsewhere in this file. Runtime dropped from ~36s to ~3s on the real HO-013 fixture as a direct consequence (small, real, component-scoped lists vs. an arbitrary flat 200-candidate slice). HO-012: REVERTED from PRICED to an explicit RULE_REJECTED. Direct primary-authority verification found the prior pass's "each Eurimages co-producer independently accesses its own national incentive" pricing basis unsupported: treaty_engine.py's own eurimages-multilateral TreatyData carries EMPTY majority_unlocks/minority_unlocks (the codebase's own structured, authoritative "this treaty unlocks these specific programs" fields, populated with real slugs for every bilateral treaty) -- only fund_unlocks=["eu_eurimages"] (the fund itself, not each party's own program) is populated. The sole textual support was an uncited free-text `notes` field (confidence_tier="PARSED", no citation field -- contrast TreatyData.non_party_personnel_exception_citation, which DOES exist and IS populated for individually-researched propositions elsewhere in this same dataclass). Real subset-eligibility discovery (participant count, per-party minimum contribution share, cultural test) remains intact and disclosed; only the unsupported pricing claim is removed, persisting RULE_REJECTED/MULTILATERAL_NATIONAL_TREATMENT_UNVERIFIED instead. HO-011: reconciled the two conflicting authority_coverage_registry.py registries AT THEIR SOURCE instead of papering over the disagreement at the consumer site. Direct verification found program_rate_rules_worldwide.py's US_TN_DOCTRINE carries a real, VERIFIED-tier, officially-cited (tn.gov) RateRule -- a single unconditional flat-25%-of-QPE tier, structurally identical in kind to the 18 programs this same file's own changelog already documents removing from _B1_DISCRETIONARY_RULING as "genuinely misclassified as authority-exhausted" -- us_tn_performance_grant was evidently missed by that pass. Removed from _B1_DISCRETIONARY_RULING this pass (AUTHORITY_COVERAGE_REGISTRY_VERSION 1.8.0 -> 1.9.0), which is what actually caused the disagreement the prior pass's consumer-side _capability_only_status() workaround was only papering over; that workaround is removed in the same pass (reverted to its original, simpler form), since the disagreement it existed to disclose no longer exists. us_tn_performance_grant now prices normally (confirmed: $750,000.00 = 25% of $3,000,000 QPE) and participates in the full discovery pipeline (standalone, component_relocation, and structural_archetype_generator paths alike), not a special case. HO-003 and HO-010 needed no code change: direct re-verification found HO-003's literal required target ({uk_avec, au_producer_offset, NZ's international-post-vfx grant}) already reaches an EXACT PRICED match ($1,939,600.00) -- the prior pass's own CSV evidence had simply cited a different, non-literal illustrative example (Uzbekistan) instead of the literal target, a documentation defect, not a code gap, now corrected in the ledger and the prevention test. HO-010's standalone Creative Saskatchewan identity reconciliation (canonical-1.80.0) remains correct and unchanged; both authority registries independently confirm the program is a real, confirmed DISPLAY_ONLY_ZERO_GUARANTEED discretionary award that can never enter priced_by_code, so the FULL 3-program required control is honestly relabeled COMPONENT_BLOCKED_NOT_CANONICALLY_EXECUTED rather than a false full-control verification claim. Invalidates every cached row so this fires fresh.
 # 1.80.0: six-control closeout (HO-003, HO-007, HO-012, HO-013, HO-010, HO-011) -- closes the acceptance gap left by 1.79.0's honest-but-incomplete MULTI_PRINCIPAL_PARTIALLY_RESOLVED/MULTI_PRINCIPAL_DEFERRED/GRANT_COMPONENT_UNWIRED_DEFERRED dispositions. HO-003: the binding doctrine ("ranking must never suppress feasible discovery") was being violated by _best_priced_treaty_side_candidate(), which picked ONE overall-best-priced partner program per jurisdiction rather than enumerating every treaty-valid unlock. New _all_priced_treaty_side_candidates() enumerates every program in a treaty's real minority_unlocks/majority_unlocks that independently prices (never inventing one outside the registered unlock list), and the home-anchored/non-home-anchored bilateral loops now iterate every returned candidate instead of a single winner -- _combined_top_targets was likewise flattened from one-best-per-jurisdiction to every-candidate-per-jurisdiction so two genuinely different real programs for the same jurisdiction (e.g. NZ's international-post-vfx grant vs nz_spg_international) can each be reached. This produces the exact literal HO-003 target {uk_avec, au_producer_offset, nz international post/vfx}: PRICED, $1,939,600.00 total incentive on a $7.5M budget. HO-007: the enumeration fix surfaces, for the first time, an explicit per-unlock RULE_REJECTED (NO_PRICEABLE_TREATY_UNLOCK) whenever a treaty's real minority_unlocks contains zero independently-priceable programs, citing each unlock's real authority_coverage_registry/program_rate_rules status -- applied to the real, registered uk-fr-bilateral treaty, whose real minority_unlocks are fr_tax_credit_cinema/fr_cnc_production, never fr_trip (confirmed via direct treaty_engine.py query, not assumed); this control's own literal fr_trip target is therefore a corrected-target RULE_REJECTED, not a forced PRICED. HO-013: new _price_combined_coproduction_multi_component_candidate() generalizes the existing single-component combined-co-production kernel to N>=2 simultaneous movable components with disjoint cost pools (account_splits excludes the union of every routed component's spend_category, never double-counted), wired as a new discovery pass over itertools.combinations of the production's real movable components x itertools.product of every per-component target candidate (bounded by a disclosed _MULTI_COMPONENT_TARGET_BOUND=200 practical search cap, this codebase's own precedented safety-limit pattern, never a doctrine choice); reaches the exact literal HO-013 4-program target {uk_avec, au_producer_offset, nz international post/vfx, OCASE}: PRICED, $2,046,160.00 total incentive on an $8M budget. HO-012: new _price_combined_multilateral_coproduction_candidate() (N-party multilateral generalization of the existing pair kernel, sharing every account across all N real evidenced participant percentages, normalized to sum to 1.0) plus new _real_multilateral_subset_participants() (reads the simpler, treaty-scoped coproduction_participant_pct::{treaty_slug}::{code} fact key rather than requiring a percentage fact for every one of Eurimages' ~37 member states, which made the pre-existing full-membership multilateral mechanism architecturally unreachable for a producer-intended specific N-party structure) together let a real 3-party Eurimages-eligible production reach the exact literal HO-012 target {fr_trip, uk_avec, ie_section_481} -- fr_trip IS a real, valid unlock here because Eurimages is a genuine, separately-registered multilateral fund route distinct from the bilateral UK-France treaty HO-007 depends on, confirmed via direct treaty_engine.py TreatyData reading, not assumed: PRICED, $2,476,080.00 total incentive on a $9M budget. HO-011: _capability_only_status() now checks _economic_block_for_program() (the OLDER, separate authority_coverage_registry.py block dict) before trusting a PRICEABLE_VALIDATED read from the newer coverage_state()/blocks_economic_candidacy() registry, because the two registries were found to genuinely disagree for us_tn_performance_grant and resolve_program_rate() empirically still honors the older block -- this disagreement is a real, disclosed, UNRESOLVED data-integrity gap between the two registries (not fixed this pass, a separate reconciliation project), but the persisted rejection reason now names it explicitly rather than silently returning a misleadingly-optimistic status: UNPRICEABLE_AUTHORITY_INSUFFICIENT/FAIL_CLOSED. HO-010: new canonical_program_slug field on conditional_programs.py's ConditionalProgramNode (plus _CANONICAL_SLUG_BY_NODE_ID reconciliation table, one verified entry so far: Creative Saskatchewan's catalog node -> ca_sk_creative_saskatchewan_grant) bridges the previously-separate conditional-discovery catalog identity and the priceable program_slug rate registry; the single-program capability_only branch now also calls the pre-existing _conditional_data() helper (previously only wired for combined/treaty structure types) so this reconciliation is actually visible on a real persisted structure's conditional_programs/conditional_compatibility disclosure -- disposition remains the real, pre-existing FEASIBILITY_REVIEW_REQUIRED/AUTHORITY_UNRESOLVED_NON_PRICEABLE (never a fabricated fund_overlay component; a genuinely disjoint real second budget line for one would need to be invented, which the explicit no-guessed-allocations constraint forbids), now confirmed via direct query to be a real, reconstructable, non-silently-omitted disposition rather than an unverified DEFERRED claim. Reinvestment/gross-up remains shelved throughout, per explicit instruction. Invalidates every cached row so this fires fresh.
@@ -3693,27 +3706,46 @@ _BULK_PERSIST_CHUNK_ROWS = 2000
 _ANALYZE_AFTER_ROWS = 10_000
 
 
-class _BulkEvaluationWriter:
-    """Chunked bulk persistence for evaluate_project()'s candidate rows.
+#: Rejection-aggregate rows per bulk INSERT.
+_AGGREGATE_INSERT_ROWS = 1000
 
-    Every candidate persisted by evaluate_project() follows one pattern:
+
+class EvaluationAccountingError(RuntimeError):
+    """candidates generated != detailed rows persisted + candidate aggregates (or a retained proof
+    references a candidate that is not retained). The evaluation's transaction is rolled back; nothing
+    is committed."""
+
+
+class _BulkEvaluationWriter:
+    """Chunked bulk persistence for evaluate_project()'s candidate rows, with BOUNDED RETENTION.
+
+    Every candidate evaluate_project() generates follows one pattern:
     ``session.add(ProductionStructure(id=uuid.uuid4(), ...))``,
     ``await session.flush()`` (only so the FK target exists), then
     ``session.add(StructureCalculationResult(structure_id=<that id>, ...))``.
-    Each id is already generated client-side, so the per-row flush was
-    pure round-trip overhead -- one synchronous INSERT per structure, over
-    500K times for a single FVD evaluation.
 
-    This wrapper is a drop-in for the ``session`` evaluate_project()
-    hands to itself and its helpers. ``add()`` buffers the two evaluation
-    row types (anything else falls straight through to the real session);
-    ``flush()`` only issues a chunked bulk INSERT once a chunk is full
-    (structures first, then results, so every FK target precedes its
-    referrers); ``commit()`` drains whatever is left and commits the ONE
-    transaction. Any read (``execute``/``get``/...) drains first, so
-    read-your-writes is exactly what the per-row flushes gave. Rows
-    written, their values, their defaults, and the single-transaction
-    atomicity are unchanged -- only the number of statements is.
+    This wrapper is a drop-in for the ``session`` evaluate_project() hands to itself and its helpers.
+    ``add()`` accepts the two evaluation row types (anything else falls straight through to the real
+    session); ``flush()`` only issues a chunked bulk INSERT once a chunk is full (structures first, then
+    results, so every FK target precedes its referrers); ``commit()`` drains whatever is left and commits
+    the ONE transaction. Any read (``execute``/``get``/...) drains first (read-your-writes).
+
+    Enumeration cardinality never defines persistence cardinality (canonical-1.90.0). Every candidate is
+    generated and priced, but only the bounded DECISION SET becomes physical rows
+    (services/candidate_retention.py): the baseline; the global top-100 and per-structure_type top-100
+    PRICED candidates; the best local candidate per jurisdiction; every DOMINATED_WITH_PROOF row and
+    reviewable/opportunity row (each status capped); and any candidate a retained proof references.
+    Everything else -- every plain RULE_REJECTED permutation and every PRICED candidate outside the
+    retained sets -- is folded into a ``CandidateAggregator`` group (exact count, min/max NPC and
+    incentive, best economic identity, one representative, dominating retained reference) and persisted
+    as one narrow evaluation_candidate_aggregates row per GROUP.
+
+    A structure is held "pending" until its result arrives (the flush() between the two calls can never
+    drain it); PRICED candidates then compete for the retention lanes in memory and are persisted at
+    commit; all other retained rows are persisted as they are generated. commit() enforces, and fails
+    closed on:
+
+        candidates generated == detailed rows persisted + sum(candidate aggregate counts)
     """
 
     _DRAIN_BEFORE = frozenset({
@@ -3721,9 +3753,19 @@ class _BulkEvaluationWriter:
         "stream", "stream_scalars",
     })
 
-    def __init__(self, session: AsyncSession, chunk_rows: int = _BULK_PERSIST_CHUNK_ROWS):
+    def __init__(self, session: AsyncSession, chunk_rows: int = _BULK_PERSIST_CHUNK_ROWS,
+                 bounded_retention: bool = True):
         self._session = session
         self._chunk_rows = chunk_rows
+        # False only for the legacy full-enumeration control in tests: every candidate is a row.
+        self._bounded = bounded_retention
+        self._pending: dict = {}
+        self._aggregator = CandidateAggregator()
+        self._retention = BoundedRetention()
+        self._status_counts: Counter = Counter()
+        self._persisted_refs: set = set()
+        self._retention_finalized = False
+        self.generated_results = 0
         self._structures: list = []
         self._results: list = []
         self.structures_written = 0
@@ -3741,18 +3783,117 @@ class _BulkEvaluationWriter:
         self._finalized = False
         self._analyze_due = False
 
+    # ------------------------------------------------------------------ add
+    @staticmethod
+    def _refs_of(result) -> tuple:
+        trace = result.calculation_trace_json or {}
+        refs = [str(result.structure_id)]
+        generator_id = trace.get("structural_generator_structure_id")
+        if generator_id:
+            refs.append(str(generator_id))
+        return tuple(refs)
+
+    def _aggregate_result(self, seq: int, structure, result, *, npc=None, incentive=None, identity=None) -> None:
+        trace = result.calculation_trace_json or {}
+        self._aggregator.observe(
+            seq, status=candidate_status_of(trace), structure_type=result.structure_type, trace=trace,
+            warnings=result.warnings, structure=structure, npc=npc, incentive=incentive, identity=identity,
+        )
+        self._generation.setdefault("input_fingerprint", result.input_fingerprint)
+        self._generation.setdefault("engine_version", result.engine_version)
+        self._summary.observe(
+            None, status=candidate_status_of(trace), reason=rejection_reason_class_of(trace),
+            priced=result.true_net_cost_usd is not None, is_baseline=False,
+        )
+
+    def _aggregate_held(self, held) -> None:
+        self._aggregate_result(held.seq, held.structure, held.result,
+                               npc=held.npc, incentive=held.incentive, identity=held.identity)
+
+    def _persist_now(self, structure, result) -> None:
+        if structure is not None:
+            self._structures.append(structure)
+        # generation_ordinal: 1..M over the PERSISTED rows, monotonic across the whole evaluation
+        # (independent of chunk boundaries), in the order they are persisted.
+        self._next_ordinal += 1
+        result.generation_ordinal = self._next_ordinal
+        self._results.append(result)
+
     def add(self, obj) -> None:
         if isinstance(obj, ProductionStructure):
             self._generation.setdefault("project_id", obj.project_id)
-            self._structures.append(obj)
+            if self._bounded and obj.id is not None:
+                # Held until its result arrives: persisted with it, or discarded with it if the
+                # candidate is aggregated instead.
+                self._pending[obj.id] = obj
+            else:
+                self._structures.append(obj)
         elif isinstance(obj, StructureCalculationResult):
-            # generation_ordinal: 1..N in generation order, monotonic across the
-            # whole evaluation (independent of chunk boundaries).
-            self._next_ordinal += 1
-            obj.generation_ordinal = self._next_ordinal
-            self._results.append(obj)
+            self.generated_results += 1
+            structure = self._pending.pop(obj.structure_id, None) if self._bounded else None
+            if structure is None:
+                # legacy full enumeration, or a structure already flushed by an intervening read:
+                # the candidate is a plain physical row (counted once, in persisted rows).
+                self._persist_now(None, obj)
+                return
+            self._route(structure, obj)
         else:
             self._session.add(obj)
+
+    def _route(self, structure, result) -> None:
+        if self._retention_finalized:
+            raise EvaluationAccountingError(
+                "a candidate was generated after bounded retention was finalized (commit() mid-evaluation)")
+        trace = result.calculation_trace_json or {}
+        status = candidate_status_of(trace)
+        is_baseline = bool(trace.get("is_baseline"))
+        seq = self.generated_results
+        npc = float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None
+        incentive = float(result.total_incentive_value_usd) if result.total_incentive_value_usd is not None else None
+        stype = result.structure_type
+
+        if status == STATUS_PRICED and npc is not None:
+            adjusted = float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
+            held = _Held(
+                seq, structure, result, npc=npc, adjusted=adjusted, incentive=incentive,
+                identity=canonical_economic_identity(stype, trace), stype=stype or "",
+                jurisdiction=str(trace.get("primary_jurisdiction") or ""), refs=self._refs_of(result),
+                baseline=is_baseline,
+            )
+            self._generation.setdefault("input_fingerprint", result.input_fingerprint)
+            self._generation.setdefault("engine_version", result.engine_version)
+            for dropped in self._retention.consider(held):
+                self._aggregate_held(dropped)
+            return
+
+        if not is_baseline:
+            if status == REJECTED_STATUS and npc is None:
+                self._aggregate_result(seq, structure, result)          # plain RULE_REJECTED permutation
+                return
+            cap = DOMINATED_CAP if status == "DOMINATED_WITH_PROOF" else OPPORTUNITY_CAP
+            if self._status_counts[status] >= cap:
+                self._aggregate_result(seq, structure, result, npc=npc, incentive=incentive)
+                return
+        self._status_counts[status] += 1
+        if status == "DOMINATED_WITH_PROOF":
+            ref = trace.get("incumbent_structure_id")
+            if ref and str(ref) not in self._persisted_refs and not self._retention.resolve_final(str(ref)):
+                raise EvaluationAccountingError(
+                    f"a retained DOMINATED_WITH_PROOF row references candidate {ref}, which is not retained")
+        self._persisted_refs.update(self._refs_of(result))
+        self._persist_now(structure, result)
+
+    # --------------------------------------------- incumbent tracking hooks
+    def hold_candidate(self, ref) -> None:
+        """A search block's running incumbent is (about to be) ``ref``: keep it retained until released
+        or referenced by a proof row."""
+        if self._bounded and ref:
+            self._retention.hold(str(ref))
+
+    def release_candidate(self, ref) -> None:
+        if self._bounded and ref:
+            for dropped in self._retention.release(str(ref)):
+                self._aggregate_held(dropped)
 
     def add_all(self, objs) -> None:
         for obj in objs:
@@ -3762,30 +3903,85 @@ class _BulkEvaluationWriter:
         if len(self._structures) + len(self._results) >= self._chunk_rows:
             await self._drain()
 
+    def _finalize_retention(self) -> None:
+        """Decide, once, which held PRICED candidates are physical rows: everything still in a lane, the
+        baseline, and proof-referenced incumbents (sorted by NPC, then identity); the rest is aggregated."""
+        if not self._bounded or self._retention_finalized or self.generated_results == 0:
+            # (a commit() before the first candidate -- evaluate_project commits early once -- has nothing
+            # to finalize and must not consume the one real finalization at the end.)
+            return
+        self._retention_finalized = True
+        for structure in self._pending.values():
+            self._structures.append(structure)      # a structure whose result never arrived stays a row (as before)
+        self._pending.clear()
+        retained, to_aggregate = self._retention.finalize()
+        for held in to_aggregate:
+            self._aggregate_held(held)
+        for held in retained:
+            self._persist_now(held.structure, held.result)
+
+    def _assert_accounting(self) -> None:
+        """candidates generated == detailed rows persisted + sum(candidate aggregate counts).
+        Any mismatch is a silent omission or a double count: fail closed."""
+        aggregated = self._aggregator.total
+        groups_sum = self._aggregator.counted()
+        problems = []
+        if self.generated_results != self.results_written + aggregated:
+            problems.append(
+                f"generated {self.generated_results} != persisted {self.results_written} + aggregated {aggregated}")
+        if groups_sum != aggregated:
+            problems.append(f"sum of group counts {groups_sum} != aggregated {aggregated}")
+        if self._summary.total_rows != self.generated_results:
+            problems.append(f"summary counted {self._summary.total_rows} != generated {self.generated_results}")
+        if self._summary.persisted_rows != self.results_written or self._summary.aggregated != aggregated:
+            problems.append("summary persisted/aggregated split disagrees with the writer")
+        if self._summary.aggregated_priced != self._aggregator.priced_total:
+            problems.append("summary aggregated PRICED count disagrees with the aggregator")
+        if problems:
+            raise EvaluationAccountingError("evaluation accounting invariant violated: " + "; ".join(problems))
+
     async def _persist_generation_summary(self) -> None:
         if not self._summary.total_rows or self._finalized:
             return
         self._finalized = True
-        await self._session.execute(insert(EvaluationGenerationSummary).values(
+        identity = dict(
             project_id=self._generation["project_id"],
             input_fingerprint=self._generation["input_fingerprint"],
             engine_version=self._generation["engine_version"],
-            **self._summary.payload(),
+        )
+        batch: list[dict] = []
+        for row in self._aggregator.rows(self._retention.dominating_by_type):
+            batch.append({**identity, **row})
+            if len(batch) >= _AGGREGATE_INSERT_ROWS:
+                await self._session.execute(insert(EvaluationCandidateAggregate), batch)
+                batch = []
+        if batch:
+            await self._session.execute(insert(EvaluationCandidateAggregate), batch)
+        await self._session.execute(insert(EvaluationGenerationSummary).values(
+            **identity, **self._summary.payload(aggregate_groups=self._aggregator.group_count),
         ))
 
     async def commit(self) -> None:
-        await self._drain()
+        self._finalize_retention()
+        await self._drain(promote_pending=True)
         # One summary row per (project, fingerprint, engine), in the SAME transaction
         # as the rows it summarizes.
         first_finalize = not self._finalized
+        if first_finalize and self._summary.total_rows:
+            try:
+                self._assert_accounting()
+            except EvaluationAccountingError:
+                await self.rollback()
+                raise
         await self._persist_generation_summary()
         if first_finalize and self.structures_written + self.results_written >= _ANALYZE_AFTER_ROWS:
             self._analyze_due = True
         if self.structures_written or self.results_written:
             logger.info(
                 "evaluation persisted: %d structures + %d results in %d bulk chunks "
-                "(%.2fs writing)",
+                "(%.2fs writing); %d candidates aggregated in %d groups",
                 self.structures_written, self.results_written, self.chunks, self.drain_seconds,
+                self._aggregator.total, self._aggregator.group_count,
             )
         await self._session.commit()
         if self._analyze_due:
@@ -3801,6 +3997,13 @@ class _BulkEvaluationWriter:
     async def rollback(self) -> None:
         self._structures.clear()
         self._results.clear()
+        self._pending.clear()
+        self._aggregator = CandidateAggregator()
+        self._retention = BoundedRetention()
+        self._status_counts = Counter()
+        self._persisted_refs = set()
+        self._retention_finalized = False
+        self.generated_results = 0
         self._next_ordinal = 0
         self._summary = GenerationSummaryBuilder()
         self._generation = {}
@@ -3812,12 +4015,17 @@ class _BulkEvaluationWriter:
         attr = getattr(self._session, name)
         if name in self._DRAIN_BEFORE and callable(attr):
             async def _drained(*args, **kwargs):
-                await self._drain()
+                # A read may target a structure whose result has not arrived yet: promote the
+                # pending ones (read-your-writes). Their results are then persisted normally.
+                await self._drain(promote_pending=True)
                 return await attr(*args, **kwargs)
             return _drained
         return attr
 
-    async def _drain(self) -> None:
+    async def _drain(self, promote_pending: bool = False) -> None:
+        if promote_pending and self._pending:
+            self._structures.extend(self._pending.values())
+            self._pending.clear()
         if not (self._structures or self._results):
             return
         started = time.monotonic()
@@ -4035,6 +4243,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # matching row (526K for FVD) as an ORM object just to test `is None`.
         .limit(1)
     )).scalars().first()
+    if existing is None:
+        # A generation whose every candidate was aggregated (nothing retained as a detailed row) has
+        # only its summary row + aggregates: still a complete, reusable evaluation.
+        existing = (await session.execute(
+            select(EvaluationGenerationSummary.id).where(
+                EvaluationGenerationSummary.project_id == project.id,
+                EvaluationGenerationSummary.input_fingerprint == fingerprint,
+                EvaluationGenerationSummary.engine_version == ENGINE_VERSION,
+            ).limit(1)
+        )).scalars().first()
     if existing is not None:
         return await _summarize_evaluation(session, project, inputs, fingerprint, reused=True)
 
@@ -6300,7 +6518,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             # structure that establishes the incumbent bound
                             # every DOMINATED_WITH_PROOF row is measured
                             # against -- never just a bare number.
+                            session.release_candidate(_hy_incumbent_structure_id)
                             _hy_incumbent_structure_id = _hy_result.structure_id
+                            # retention: keep the running incumbent's row until a proof references it
+                            session.hold_candidate(_hy_incumbent_structure_id)
                             _hy_incumbent_jurisdiction_codes = list(_hy_result.jurisdiction_codes)
                             _hy_incumbent_program_slugs = list(_hy_result.program_slugs)
                     elif _hy_result.blocking_pairs:
@@ -7769,7 +7990,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     )
                 )
                 if _mc_real_marginal > _current_best:
+                    session.release_candidate(_mc_incumbent_structure_id)
                     _mc_incumbent_structure_id = str(_mc_structure.id)
+                    # retention: keep the running incumbent's row until a proof references it
+                    session.hold_candidate(_mc_incumbent_structure_id)
                     _mc_incumbent_jurisdiction_codes = [
                         home_code, _p_code,
                         _mc_target_a.jurisdiction_code, _mc_target_b.jurisdiction_code,
@@ -8876,8 +9100,8 @@ async def current_result_fingerprint(session, project_id) -> str | None:
     generation. This is a pure read: it computes no economics and writes
     nothing, so read-only callers (the served production view) can use it.
     """
-    return (await session.execute(
-        select(StructureCalculationResult.input_fingerprint)
+    row = (await session.execute(
+        select(StructureCalculationResult.input_fingerprint, StructureCalculationResult.created_at)
         .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
         .where(
             ProductionStructure.project_id == project_id,
@@ -8885,7 +9109,20 @@ async def current_result_fingerprint(session, project_id) -> str | None:
         )
         .order_by(StructureCalculationResult.created_at.desc())
         .limit(1)
-    )).scalars().first()
+    )).first()
+    summary_row = (await session.execute(
+        select(EvaluationGenerationSummary.input_fingerprint, EvaluationGenerationSummary.created_at)
+        .where(
+            EvaluationGenerationSummary.project_id == uuid.UUID(str(project_id)),
+            EvaluationGenerationSummary.engine_version == ENGINE_VERSION,
+        )
+        .order_by(EvaluationGenerationSummary.created_at.desc())
+        .limit(1)
+    )).first()
+    # The summary row is committed in the same transaction as the rows, so it is at least as new;
+    # it also covers a generation with no detailed row.
+    candidates = [r for r in (row, summary_row) if r is not None]
+    return max(candidates, key=lambda r: r.created_at).input_fingerprint if candidates else None
 
 
 async def current_generation_fingerprint(session, project_id) -> str | None:
@@ -9051,11 +9288,23 @@ async def load_generation_summary(
 def summary_totals(summary: EvaluationGenerationSummary) -> dict:
     """Exact unpriced total + counts grouped by disposition / (disposition, reason).
     total == sum(by_disposition.values()) == sum(g["count"] for g in by_reason)."""
+    persisted = summary.persisted_rows if summary.persisted_rows is not None else summary.total_rows
+    aggregated = summary.aggregated_candidates or 0
+    aggregated_priced = summary.aggregated_priced or 0
     return {
         "total": summary.unpriced_count,
         "priced": summary.priced_count,
         "by_disposition": dict(summary.by_disposition),
         "by_reason": list(summary.by_reason),
+        # Exact accounting: generated == persisted detailed rows + aggregated candidates.
+        "generated": summary.total_rows,
+        "persisted_rows": persisted,
+        "aggregated_candidates": aggregated,
+        "aggregated_priced": aggregated_priced,
+        "aggregate_groups": summary.aggregate_groups or 0,
+        # what the detailed-row pages walk: unpriced / priced candidates that ARE physical rows
+        "persisted_unpriced": summary.unpriced_count - (aggregated - aggregated_priced),
+        "persisted_priced": summary.priced_count - aggregated_priced,
     }
 
 
@@ -9153,6 +9402,95 @@ async def unpriceable_page(
     }
 
 
+CANDIDATE_GROUPS_PAGE_DEFAULT_LIMIT = 50
+CANDIDATE_GROUPS_PAGE_MAX_LIMIT = 200
+CANDIDATE_GROUPS_ORDER = "group_ordinal"
+CANDIDATE_GROUPS_ROUTE = "/api/v1/projects/{project_id}/evaluation/aggregates"
+
+
+def _candidate_group_entry(row, *, detail: bool) -> dict:
+    representative = row.representative or {}
+    entry = {
+        "group_ordinal": row.group_ordinal,
+        "group_key": row.group_key,
+        "candidate_status": row.candidate_status,
+        "structure_type": row.structure_type,
+        "structural_family": row.structural_family,
+        "reason_class": row.reason_class,
+        "primary_jurisdiction": row.primary_jurisdiction,
+        "jurisdiction_codes": row.jurisdiction_codes,
+        "program_slugs": row.program_slugs,
+        "component_family": row.component_family,
+        "treaty_family": row.treaty_family,
+        "candidate_count": row.candidate_count,
+        "min_npc_usd": float(row.min_npc_usd) if row.min_npc_usd is not None else None,
+        "max_npc_usd": float(row.max_npc_usd) if row.max_npc_usd is not None else None,
+        "min_incentive_usd": float(row.min_incentive_usd) if row.min_incentive_usd is not None else None,
+        "max_incentive_usd": float(row.max_incentive_usd) if row.max_incentive_usd is not None else None,
+        "best_economic_identity": row.best_economic_identity,
+        "dominating_structure_id": str(row.dominating_structure_id) if row.dominating_structure_id else None,
+        "first_candidate_seq": row.first_candidate_seq,
+        "representative_name": (representative.get("structure") or {}).get("name"),
+        "representative_reason": (representative.get("trace") or {}).get("reason"),
+    }
+    if detail:
+        entry["representative"] = representative
+    return entry
+
+
+async def candidate_groups_page(
+    session: AsyncSession, project_id, fingerprint: str, *,
+    engine_version: str | None = None,
+    limit: int = CANDIDATE_GROUPS_PAGE_DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail: bool = False,
+    status: str | None = None,
+) -> dict:
+    """One bounded, deterministic page of a generation's candidate AGGREGATE groups (exact count, min/max
+    economics, best identity, retained dominating reference, one representative each), keyset-paged by
+    group_ordinal. ``detail`` adds each group's full representative; ``status`` filters by the original
+    candidate status."""
+    limit = max(1, min(int(limit), CANDIDATE_GROUPS_PAGE_MAX_LIMIT))
+    agg = EvaluationCandidateAggregate
+    after = decode_page_cursor(cursor) if cursor is not None else 0
+    conditions = [
+        agg.project_id == uuid.UUID(str(project_id)),
+        agg.input_fingerprint == fingerprint,
+        agg.engine_version == (engine_version or ENGINE_VERSION),
+        agg.group_ordinal > after,
+    ]
+    if status:
+        conditions.append(agg.candidate_status == status)
+    rows = (await session.execute(
+        select(agg).where(*conditions).order_by(agg.group_ordinal).limit(limit + 1)
+    )).scalars().all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    return {
+        "limit": limit,
+        "returned": len(rows),
+        "has_more": has_more,
+        "next_cursor": encode_page_cursor(rows[-1].group_ordinal) if has_more and rows else None,
+        "order": CANDIDATE_GROUPS_ORDER,
+        "results": [_candidate_group_entry(r, detail=detail) for r in rows],
+    }
+
+
+def candidate_aggregates_block(project_id, totals: dict, first_page: dict) -> dict:
+    """The served ``candidate_aggregates`` section: exact accounting + the first bounded page of groups.
+    Shared by the evaluation, workspace and production views."""
+    return {
+        "generated_candidates": totals["generated"],
+        "persisted_rows": totals["persisted_rows"],
+        "aggregated_candidates": totals["aggregated_candidates"],
+        "aggregated_priced": totals["aggregated_priced"],
+        "group_count": totals["aggregate_groups"],
+        "accounting_holds": totals["generated"] == totals["persisted_rows"] + totals["aggregated_candidates"],
+        "first_page": {k: first_page[k] for k in ("limit", "returned", "has_more", "next_cursor", "order", "results")},
+        "results_route": CANDIDATE_GROUPS_ROUTE.format(project_id=project_id),
+    }
+
+
 async def _summarize_evaluation(
     session: AsyncSession, project: Project, inputs: ProjectEconomicInputs,
     fingerprint: str, *, reused: bool, engine_version: str | None = None,
@@ -9186,6 +9524,8 @@ async def _summarize_evaluation(
 
     unpriceable_totals = summary_totals(summary)
     unpriceable_first_page = await unpriceable_page(session, project.id, fingerprint, engine_version=engine_version)
+    aggregate_first_page = await candidate_groups_page(
+        session, project.id, fingerprint, engine_version=engine_version)
 
     def _is_baseline(pair) -> bool:
         return bool((pair[1].calculation_trace_json or {}).get("is_baseline"))
@@ -9348,7 +9688,10 @@ async def _summarize_evaluation(
         "state_fingerprint": fingerprint,
         "gross_budget_usd": inputs.gross_budget_usd,
         "base_jurisdiction_code": inputs.jurisdiction_code,
-        "priced_count": len(priced),
+        # EXACT total of priced candidates (retained + aggregated); ``ranked`` carries only the RETAINED
+        # priced candidates (bounded decision set), ``retained_priced_count`` of them.
+        "priced_count": unpriceable_totals["priced"],
+        "retained_priced_count": len(priced),
         # TOTAL unpriced rows (unchanged meaning); the rows themselves are the
         # bounded first page below + the paginated route, never embedded whole.
         "unpriceable_count": unpriceable_totals["total"],
@@ -9366,7 +9709,9 @@ async def _summarize_evaluation(
         "unpriceable_page": {
             "limit": unpriceable_first_page["limit"],
             "returned": unpriceable_first_page["returned"],
-            "total": unpriceable_totals["total"],
+            # the DETAILED unpriced rows this page walks (physical rows); the aggregated remainder is
+            # counted exactly in ``candidate_aggregates`` and paged as groups.
+            "total": unpriceable_totals["persisted_unpriced"],
             "has_more": unpriceable_first_page["has_more"],
             "next_cursor": unpriceable_first_page["next_cursor"],
             "order": unpriceable_first_page["order"],
@@ -9374,6 +9719,7 @@ async def _summarize_evaluation(
         },
         "unpriceable_by_disposition": unpriceable_totals["by_disposition"],
         "unpriceable_by_reason": unpriceable_totals["by_reason"],
+        "candidate_aggregates": candidate_aggregates_block(project.id, unpriceable_totals, aggregate_first_page),
         "mfni_limitation": LIMITATION_NOTE,
         "relocation_comparability_limitation": RELOCATION_COMPARABILITY_NOTE,
     }

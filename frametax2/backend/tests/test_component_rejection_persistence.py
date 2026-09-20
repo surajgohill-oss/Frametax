@@ -30,7 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
-from app.models.production import ProductionStructure, StructureCalculationResult
+from app.models.production import EvaluationCandidateAggregate
 from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
@@ -49,20 +49,36 @@ async def db():
         yield session
 
 
-async def _rejected_component_rows(db: AsyncSession, project_id: str) -> list[StructureCalculationResult]:
+class _RejectionGroup:
+    """A persisted rejection GROUP viewed as the row-shaped record these controls were written for.
+    canonical-1.89.0 (bounded rejection accounting) counts plain RULE_REJECTED candidates exactly in
+    evaluation_candidate_aggregates instead of persisting one row per permutation; each group keeps a
+    representative (structure identity + full trace) sufficient to reconstruct why it was rejected."""
+
+    def __init__(self, agg: EvaluationCandidateAggregate):
+        self.calculation_trace_json = (agg.representative or {}).get("trace") or {}
+        self.input_fingerprint = agg.input_fingerprint
+        self.engine_version = agg.engine_version
+        self.rejected_count = agg.candidate_count
+        self.total_incentive_value_usd = None
+        self.true_net_cost_usd = None
+
+
+async def _rejected_component_rows(db: AsyncSession, project_id: str) -> list[_RejectionGroup]:
     rows = (await db.execute(
-        select(StructureCalculationResult)
-        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(
-            ProductionStructure.project_id == project_id,
-            StructureCalculationResult.engine_version == ENGINE_VERSION,
+        select(EvaluationCandidateAggregate).where(
+            EvaluationCandidateAggregate.project_id == project_id,
+            EvaluationCandidateAggregate.engine_version == ENGINE_VERSION,
         )
     )).scalars().all()
     return [
-        r for r in rows
-        if (r.calculation_trace_json or {}).get("structure_type") == "component_relocation"
-        and (r.calculation_trace_json or {}).get("rejection_reason_class")
+        _RejectionGroup(r) for r in rows
+        if r.candidate_status == "RULE_REJECTED" and r.structure_type == "component_relocation" and r.reason_class
     ]
+
+
+def _rejected_total(groups: list[_RejectionGroup]) -> int:
+    return sum(g.rejected_count for g in groups)
 
 
 async def test_locked_corpus_produces_durable_component_rejections(db: AsyncSession):
@@ -72,7 +88,7 @@ async def test_locked_corpus_produces_durable_component_rejections(db: AsyncSess
     total = 0
     for project_id in ALL_LOCKED_PROJECT_IDS:
         await evaluate_project(db, project_id)
-        total += len(await _rejected_component_rows(db, project_id))
+        total += _rejected_total(await _rejected_component_rows(db, project_id))
     assert total > 0, "expected at least one real persisted component rejection across the locked corpus"
 
 
@@ -89,7 +105,7 @@ async def test_rejection_rows_carry_full_reconstructible_disposition(db: AsyncSe
             assert trace.get("reason"), "missing real reason text"
             assert trace.get("candidate_status") == "RULE_REJECTED"
             comp_allocs = trace.get("component_allocations") or []
-            assert comp_allocs, "missing component/target disclosure"
+            assert comp_allocs, "missing component/target disclosure"  # the group's representative reconstructs why
             assert comp_allocs[0].get("jurisdiction_code"), "missing TARGET jurisdiction"
             assert comp_allocs[0].get("component"), "missing COMPONENT"
             assert row.input_fingerprint, "missing GENERATION/FINGERPRINT"
@@ -120,9 +136,9 @@ async def test_rerunning_same_generation_is_idempotent(db: AsyncSession):
     fix relies on rather than reinventing its own idempotency check."""
     for project_id in ALL_LOCKED_PROJECT_IDS:
         await evaluate_project(db, project_id)
-        first_count = len(await _rejected_component_rows(db, project_id))
+        first_count = _rejected_total(await _rejected_component_rows(db, project_id))
         await evaluate_project(db, project_id)
-        second_count = len(await _rejected_component_rows(db, project_id))
+        second_count = _rejected_total(await _rejected_component_rows(db, project_id))
         assert first_count == second_count, (
             f"{project_id}: rejection row count changed across an idempotent rerun "
             f"({first_count} -> {second_count})"

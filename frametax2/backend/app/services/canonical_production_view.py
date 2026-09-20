@@ -53,8 +53,21 @@ from app.services.canonical_evaluation import (
     GenerationSummaryUnavailable,
     load_generation_summary,
     load_retained_rows,
+    candidate_aggregates_block,
+    candidate_groups_page,
     summary_totals,
     unpriceable_page,
+)
+
+from app.services.candidate_retention import (  # noqa: E402
+    GLOBAL_TOP,
+    LOCAL_STACK_TYPES,
+    TYPE_TOP,
+)
+
+RETENTION_POLICY_NOTE = (
+    "Enumeration cardinality never defines persistence cardinality: every candidate is evaluated, but only "
+    "the bounded decision set is a detailed row. Counts are exact (retained rows + aggregate groups)."
 )
 
 #: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
@@ -1199,6 +1212,9 @@ async def build_production_and_structures(
         "limit": UNPRICEABLE_PAGE_DEFAULT_LIMIT, "returned": 0, "has_more": False,
         "next_cursor": None, "order": UNPRICEABLE_PAGE_ORDER, "results": [],
     }
+    aggregate_groups_first_page = {
+        "limit": 0, "returned": 0, "has_more": False, "next_cursor": None, "order": "group_ordinal", "results": [],
+    }
     if fingerprint:
         try:
             _summary = await load_generation_summary(session, project.id, fingerprint, engine_version=engine_version)
@@ -1211,6 +1227,11 @@ async def build_production_and_structures(
             generation_totals = summary_totals(_summary)
             generation_total_rows = _summary.total_rows
             rejection_first_page = await unpriceable_page(
+                session, project.id, fingerprint, engine_version=engine_version,
+            )
+            # Bounded candidate retention (canonical-1.90.0): every candidate outside the retained
+            # decision set is counted exactly and served as aggregate GROUPS, never as rows.
+            aggregate_groups_first_page = await candidate_groups_page(
                 session, project.id, fingerprint, engine_version=engine_version,
             )
 
@@ -1621,7 +1642,44 @@ async def build_production_and_structures(
     }
 
     comparable_count = len(comparable)
-    review_required_count = len(review_required)
+    # Bounded candidate retention (canonical-1.90.0): ``review_required`` above holds only the RETAINED
+    # priced candidates; the EXACT count of priced non-comparable candidates comes from the generation
+    # summary (retained + aggregated), never from the length of a bounded list.
+    retained_review_required_count = len(review_required)
+    review_required_count = (
+        generation_totals["priced"] - comparable_count
+        if fingerprint and generation_total_rows else retained_review_required_count
+    )
+
+    # Frozen Jurisdictions Globe: the best single/local-stack candidate per primary jurisdiction. Optimizer
+    # Globe: the retained top candidates of each canonical structure_type. Both are read from the retained
+    # decision set (candidate_retention.py), ordered by the verified NPC, ties by the canonical identity.
+    def _retention_sort_key(e):
+        return (
+            e["npc_verified_usd"] if e["npc_verified_usd"] is not None else float("inf"),
+            _identity_by_structure.get(e["structure_id"], ""),
+        )
+
+    def _retention_compact(e, rank=None):
+        return {
+            "structure_id": e["structure_id"], "structure_type": e["structure_type"],
+            "primary_jurisdiction": e["primary_jurisdiction"], "label": e["label"],
+            "npc_verified_usd": e["npc_verified_usd"], "npc_with_adjustments_usd": e["npc_with_adjustments_usd"],
+            "selected_incentive_usd": e["selected_incentive_usd"], "is_baseline": e["is_baseline"],
+            "economic_identity": _identity_by_structure.get(e["structure_id"]),
+            **({"rank_in_type": rank} if rank is not None else {}),
+        }
+
+    _priced_entries = sorted((e for e in structure_entries if e["is_fully_priced"]), key=_retention_sort_key)
+    best_per_jurisdiction: dict[str, dict] = {}
+    for e in _priced_entries:
+        if e["structure_type"] in LOCAL_STACK_TYPES and e["primary_jurisdiction"]:
+            best_per_jurisdiction.setdefault(e["primary_jurisdiction"], _retention_compact(e))
+    top_by_structure_type: dict[str, list] = {}
+    for e in _priced_entries:
+        _bucket = top_by_structure_type.setdefault(e["structure_type"], [])
+        if len(_bucket) < TYPE_TOP:
+            _bucket.append(_retention_compact(e, rank=len(_bucket) + 1))
 
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
     # Everything above (selection, ranking, conditional pool, accounting) ran over ALL served
@@ -1701,6 +1759,8 @@ async def build_production_and_structures(
                 "by_reason": generation_totals["by_reason"],
                 "first_page": rejection_first_page,
                 "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),
+                "aggregates": candidate_aggregates_block(project.id, generation_totals, aggregate_groups_first_page)
+                if generation_total_rows else None,
             } if fingerprint else None,
             "contingency": {},
             "ranking": page_ranking,
@@ -1728,9 +1788,22 @@ async def build_production_and_structures(
             # (own base jurisdiction); PRICED, not normalized -> review
             # required (a real economics figure, just not regionally
             # comparable yet); UNPRICEABLE -> authority insufficient.
+            "best_per_jurisdiction": best_per_jurisdiction,
+            "top_by_structure_type": top_by_structure_type,
+            "retention": {
+                "policy": {
+                    "global_top": GLOBAL_TOP, "per_structure_type_top": TYPE_TOP,
+                    "best_local_candidate_per_jurisdiction": True,
+                    "all_proof_and_opportunity_rows_capped": True, "note": RETENTION_POLICY_NOTE,
+                },
+                "retained_rows": len(rows),
+                "generated_candidates": generation_totals.get("generated", len(rows)),
+                "aggregated_candidates": generation_totals.get("aggregated_candidates", 0),
+            },
             "candidate_accounting": {
                 "comparable_count": comparable_count,
                 "review_required_count": review_required_count,
+                "retained_review_required_count": retained_review_required_count,
                 "unpriceable_count": generation_totals["total"] if fingerprint and generation_total_rows else len(unpriced),
             },
         },

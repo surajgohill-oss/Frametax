@@ -94,7 +94,7 @@ async def test_bulk_writer_writes_exactly_what_orm_add_flush_wrote(db: AsyncSess
         db.add(r)
     await db.flush()
     # new path: bulk writer, tiny chunks so several chunk boundaries are crossed
-    writer = ce._BulkEvaluationWriter(db, chunk_rows=4)
+    writer = ce._BulkEvaluationWriter(db, chunk_rows=4, bounded_retention=False)  # bulk-INSERT mechanics: every candidate a row
     for i in range(n):
         s, r = _pair("BULKGRP", i)
         writer.add(s)
@@ -129,7 +129,7 @@ async def test_bulk_writer_fk_order_holds_at_every_chunk_boundary(db: AsyncSessi
     in an earlier chunk; chunk_rows=1000 keeps structure and result in the same
     chunk. Either way structures are inserted before results (FKs are enforced)."""
     for chunk_rows in (1, 2, 1000):
-        writer = ce._BulkEvaluationWriter(db, chunk_rows=chunk_rows)
+        writer = ce._BulkEvaluationWriter(db, chunk_rows=chunk_rows, bounded_retention=False)
         for i in range(7):
             s, r = _pair(f"FK{chunk_rows}", i)
             writer.add(s)
@@ -145,7 +145,7 @@ async def test_bulk_writer_fk_order_holds_at_every_chunk_boundary(db: AsyncSessi
 async def test_bulk_writer_reads_see_buffered_rows_and_rollback_discards_everything(db: AsyncSession):
     before = (await db.execute(text(
         "SELECT count(*) FROM production_structures WHERE name LIKE 'RYW %'"))).scalar()
-    writer = ce._BulkEvaluationWriter(db, chunk_rows=10_000)  # nothing hits the threshold
+    writer = ce._BulkEvaluationWriter(db, chunk_rows=10_000, bounded_retention=False)  # nothing hits the threshold
     for i in range(5):
         s, r = _pair("RYW", i)
         writer.add(s)
@@ -164,8 +164,11 @@ async def test_bulk_writer_reads_see_buffered_rows_and_rollback_discards_everyth
 
 async def test_bounded_readback_accounts_for_every_row_of_the_orm_readback(db: AsyncSession):
     """The payload no longer embeds every unpriced row -- but every one must still be
-    ACCOUNTED for: exact totals, grouped counts, and a page walk that returns each row
-    exactly once and equals an independent ORM read of the same generation."""
+    ACCOUNTED for. Plain RULE_REJECTED candidates are counted exactly in
+    evaluation_candidate_aggregates (canonical-1.89.0: no physical row per rejected permutation);
+    every other candidate is a row. Exact totals, grouped counts, a page walk that returns each
+    persisted row exactly once, and the aggregate accounting must all reconcile with an
+    independent ORM read of the same generation."""
     econ = await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
     project = await db.get(Project, BAD_HOMBRES_PROJECT_ID)
     rows = (await db.execute(
@@ -180,20 +183,33 @@ async def test_bounded_readback_accounts_for_every_row_of_the_orm_readback(db: A
     priced = [(s, r) for s, r in rows if r.true_net_cost_usd is not None]
     unpriced = [(s, r) for s, r in rows if r.true_net_cost_usd is None]
 
+    summary = await ce.load_generation_summary(db, project.id, econ["state_fingerprint"])
+    aggregated = summary.aggregated_candidates
     assert econ["priced_count"] == len(priced)
-    assert econ["unpriceable_count"] == len(unpriced) == econ["unpriceable_page"]["total"]
-    assert sum(econ["unpriceable_by_disposition"].values()) == len(unpriced)
-    assert sum(g["count"] for g in econ["unpriceable_by_reason"]) == len(unpriced)
+    # exact totals still cover the whole generation (rejected mass included) ...
+    assert econ["unpriceable_count"] == len(unpriced) + aggregated
+    assert sum(econ["unpriceable_by_disposition"].values()) == len(unpriced) + aggregated
+    assert sum(g["count"] for g in econ["unpriceable_by_reason"]) == len(unpriced) + aggregated
+    # ... while the page walks the DETAILED (physical) unpriced rows
+    assert econ["unpriceable_page"]["total"] == len(unpriced)
     orm_by_status: dict = {}
     for _, r in unpriced:
         status = (r.calculation_trace_json or {}).get("candidate_status") or "UNSPECIFIED"
         orm_by_status[status] = orm_by_status.get(status, 0) + 1
-    assert econ["unpriceable_by_disposition"] == orm_by_status  # the accumulated summary == a fresh ORM count
+    if aggregated:
+        orm_by_status["RULE_REJECTED"] = orm_by_status.get("RULE_REJECTED", 0) + aggregated
+    assert econ["unpriceable_by_disposition"] == orm_by_status  # summary == ORM rows + aggregate counts
 
-    # the summary's total row count and ordinals cover the whole generation, 1..N
-    summary = await ce.load_generation_summary(db, project.id, econ["state_fingerprint"])
-    assert summary.total_rows == len(rows) == len(priced) + len(unpriced)
+    # fail-closed accounting: generated == persisted rows + aggregated rejections; ordinals run 1..M
+    assert summary.total_rows == len(rows) + aggregated == len(priced) + len(unpriced) + aggregated
+    assert summary.persisted_rows == len(rows) and summary.aggregated_candidates == aggregated
     assert sorted(r.generation_ordinal for _, r in rows) == list(range(1, len(rows) + 1))
+    agg_sum = (await db.execute(text(
+        "SELECT coalesce(sum(candidate_count), 0), count(*) FROM evaluation_candidate_aggregates "
+        "WHERE project_id = :p AND input_fingerprint = :fp AND engine_version = :ev"),
+        {"p": project.id, "fp": econ["state_fingerprint"], "ev": ce.ENGINE_VERSION})).one()
+    assert agg_sum[0] == aggregated and agg_sum[1] == summary.aggregate_groups
+    assert econ["candidate_aggregates"]["accounting_holds"] is True
 
     # bounded first page with explicit continuation metadata
     page = econ["unpriceable_page"]
@@ -254,6 +270,9 @@ class _RecordingSession:
     async def commit(self):
         self.commits += 1
 
+    async def rollback(self):
+        pass
+
 
 async def test_writer_commit_is_idempotent_summary_row_and_analyze_run_exactly_once(monkeypatch):
     """evaluate_project()'s read-back may commit AGAIN (leading-structure repoint): the
@@ -267,6 +286,7 @@ async def test_writer_commit_is_idempotent_summary_row_and_analyze_run_exactly_o
     writer._summary.observe(2, status="RULE_REJECTED", reason="THRESHOLD_NOT_MET", priced=False, is_baseline=False)
     writer._generation = {"project_id": uuid.uuid4(), "input_fingerprint": "e" * 64, "engine_version": "x"}
     writer.structures_written = writer.results_written = 2  # as if drained
+    writer.generated_results = 2  # accounting: generated == persisted + aggregated (0)
 
     await writer.commit()
     after_first = list(session.executed)

@@ -51,6 +51,8 @@ from app.services.canonical_evaluation import (
     load_generation_summary,
     load_retained_rows,
     qualification_admits_recommended,
+    candidate_aggregates_block,
+    candidate_groups_page,
     summary_totals,
     unpriceable_page,
 )
@@ -131,11 +133,18 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             rejection_totals = {"total": 0, "priced": 0, "by_disposition": {}, "by_reason": []}
             rejection_first_page = {"limit": UNPRICEABLE_PAGE_DEFAULT_LIMIT, "returned": 0, "has_more": False,
                                     "next_cursor": None, "order": UNPRICEABLE_PAGE_ORDER, "results": []}
+            candidate_aggregates = None
         else:
             rows = await load_retained_rows(session, project.id, fingerprint, summary, engine_version=engine_version)
             rejection_totals = summary_totals(summary)
             rejection_first_page = await unpriceable_page(
                 session, project.id, fingerprint, engine_version=engine_version,
+            )
+            # Bounded candidate retention (canonical-1.90.0): exact counts + a bounded page of
+            # aggregate GROUPS; candidates outside the retained decision set are not rows.
+            candidate_aggregates = candidate_aggregates_block(
+                project.id, rejection_totals,
+                await candidate_groups_page(session, project.id, fingerprint, engine_version=engine_version),
             )
 
         jurisdiction_ids = set()
@@ -198,6 +207,7 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             "results": rejection_first_page["results"],
         },
         "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),
+        "aggregates": candidate_aggregates,
     } if fingerprint else None
 
     baseline = next((c for c in candidates if c["is_baseline"]), None)
@@ -290,7 +300,13 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             "baseline": baseline,
             "top_result": top_result,
             "comparable_count": len(comparable),
-            "review_required_count": len(review_required),
+            # EXACT priced non-comparable count (retained + aggregated, from the generation summary); the
+            # ``review_required`` list carries only the RETAINED priced candidates (bounded decision set).
+            "review_required_count": (
+                rejection_totals["priced"] - len(comparable) if fingerprint and rejection_totals.get("generated")
+                else len(review_required)
+            ),
+            "retained_review_required_count": len(review_required),
             "unpriceable_count": len(unpriceable),
             "comparable": comparable,
             "review_required": review_required,

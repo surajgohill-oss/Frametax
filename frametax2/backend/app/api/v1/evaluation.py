@@ -18,12 +18,15 @@ from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     UNPRICEABLE_PAGE_DEFAULT_LIMIT,
     UNPRICEABLE_PAGE_MAX_LIMIT,
+    CANDIDATE_GROUPS_PAGE_DEFAULT_LIMIT,
+    CANDIDATE_GROUPS_PAGE_MAX_LIMIT,
     GenerationSummaryUnavailable,
     InvalidPageCursor,
     load_generation_summary,
     summary_totals,
     current_generation_fingerprint,
     evaluate_project,
+    candidate_groups_page,
     unpriceable_page,
 )
 
@@ -76,6 +79,48 @@ async def list_unpriceable_candidates(
             total_unpriceable_count=totals["total"],
             by_disposition=totals["by_disposition"],
             by_reason=totals["by_reason"],
+        )
+    return response
+
+
+@router.get("/{project_id}/evaluation/aggregates")
+async def list_candidate_aggregates(
+    project_id: uuid.UUID,
+    limit: int = Query(CANDIDATE_GROUPS_PAGE_DEFAULT_LIMIT, ge=1, le=CANDIDATE_GROUPS_PAGE_MAX_LIMIT),
+    cursor: str | None = Query(None, description="next_cursor from the previous page; omit for the first page"),
+    detail: bool = Query(False, description="include each group's full representative (structure, trace, warnings)"),
+    status: str | None = Query(None, description="only groups of this original candidate status (e.g. PRICED, RULE_REJECTED)"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """The AGGREGATE groups of the project's CURRENT evaluation, one bounded page at a time, in
+    group_ordinal (first-seen) order. Every generated candidate that is not a retained detailed row
+    (plain RULE_REJECTED permutations, PRICED candidates outside the retained top sets, capped statuses)
+    is counted exactly in one group per (original status, structure family/type, reason class, primary +
+    participant jurisdiction set, program/component/treaty family), with min/max NPC and incentive, the
+    best economic identity, the retained dominating structure and one representative. Follow
+    ``next_cursor`` while ``has_more`` is true to receive every group exactly once. Exact accounting
+    (generated == persisted + aggregated) accompanies the first page. Read-only."""
+    if await db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    fingerprint = await current_generation_fingerprint(db, project_id)
+    if fingerprint is None:
+        return {"status": "NO_CURRENT_EVALUATION", "engine_version": ENGINE_VERSION, "input_fingerprint": None,
+                "limit": limit, "returned": 0, "has_more": False, "next_cursor": None, "results": []}
+    try:
+        page = await candidate_groups_page(db, project_id, fingerprint, limit=limit, cursor=cursor, detail=detail, status=status)
+    except InvalidPageCursor as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    response = {"status": "OK", "engine_version": ENGINE_VERSION, "input_fingerprint": fingerprint, **page}
+    if cursor is None:
+        try:
+            totals = summary_totals(await load_generation_summary(db, project_id, fingerprint))
+        except GenerationSummaryUnavailable:
+            return {**response, "status": "NO_CURRENT_EVALUATION", "results": [], "returned": 0}
+        response.update(
+            generated_candidates=totals["generated"], persisted_rows=totals["persisted_rows"],
+            aggregated_candidates=totals["aggregated_candidates"], aggregated_priced=totals["aggregated_priced"],
+            group_count=totals["aggregate_groups"],
+            accounting_holds=totals["generated"] == totals["persisted_rows"] + totals["aggregated_candidates"],
         )
     return response
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import BigInteger, String, Text, ForeignKey, Numeric, Boolean, Integer, UniqueConstraint
+from sqlalchemy import BigInteger, Index, String, Text, ForeignKey, Numeric, Boolean, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -176,3 +176,59 @@ class EvaluationGenerationSummary(Base):
     # generation_ordinal of every row that is not a plain RULE_REJECTED (plus any
     # baseline): the rows ranking and the workspace load, fetched by ordinal.
     non_rejected_ordinals: Mapped[list] = mapped_column(JSONB, nullable=False)
+    # Bounded candidate retention (canonical-1.90.0+; NULL on earlier generations, which are never
+    # served as current): ``total_rows`` counts every candidate GENERATED; ``persisted_rows`` of them are
+    # physical rows in structure_calculation_results and ``aggregated_candidates`` are counted (exactly)
+    # in evaluation_candidate_aggregates instead, of which ``aggregated_priced`` are PRICED.
+    # total_rows == persisted_rows + aggregated_candidates.
+    persisted_rows: Mapped[int | None] = mapped_column(Integer)
+    aggregated_candidates: Mapped[int | None] = mapped_column(Integer)
+    aggregated_priced: Mapped[int | None] = mapped_column(Integer)
+    aggregate_groups: Mapped[int | None] = mapped_column(Integer)
+
+
+class EvaluationCandidateAggregate(Base):
+    """One row per aggregate GROUP of an evaluation generation: the exact number of generated candidates
+    that were NOT retained as detailed rows and share (original candidate status, structure type/family,
+    reason class, primary + participant jurisdiction set, program/component/treaty family), with their
+    min/max NPC and incentive, the best economic identity, ONE representative (first member's structure
+    identity, full trace, warnings) and -- for PRICED groups -- the retained detailed row that dominates
+    every member. Replaces one physical row per enumerated permutation (services/candidate_aggregation.py)."""
+    __tablename__ = "evaluation_candidate_aggregates"
+    __table_args__ = (
+        UniqueConstraint("project_id", "input_fingerprint", "engine_version", "group_ordinal",
+                         name="uq_candidate_aggregate_ordinal"),
+        UniqueConstraint("project_id", "input_fingerprint", "engine_version", "group_key",
+                         name="uq_candidate_aggregate_key"),
+        # the ON DELETE SET NULL foreign key needs a supporting index: without it every structure delete
+        # scans this table (measured: a 254K-structure project delete exceeded 550 s)
+        Index("ix_candidate_aggregate_dominating_structure", "dominating_structure_id"),
+    )
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    input_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    engine_version: Mapped[str] = mapped_column(String(50), nullable=False)
+    group_ordinal: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    group_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    candidate_status: Mapped[str] = mapped_column(String(60), nullable=False)
+    structure_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    structural_family: Mapped[str | None] = mapped_column(String(100))
+    reason_class: Mapped[str | None] = mapped_column(String(100))
+    primary_jurisdiction: Mapped[str | None] = mapped_column(String(50))
+    jurisdiction_codes: Mapped[list] = mapped_column(JSONB, nullable=False)
+    program_slugs: Mapped[list] = mapped_column(JSONB, nullable=False)
+    component_family: Mapped[list] = mapped_column(JSONB, nullable=False)
+    treaty_family: Mapped[str | None] = mapped_column(String(200))
+    candidate_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    min_npc_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
+    max_npc_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
+    min_incentive_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
+    max_incentive_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
+    best_economic_identity: Mapped[str | None] = mapped_column(String(64))
+    dominating_structure_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("production_structures.id", ondelete="SET NULL"), nullable=True
+    )
+    first_candidate_seq: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    representative: Mapped[dict] = mapped_column(JSONB, nullable=False)

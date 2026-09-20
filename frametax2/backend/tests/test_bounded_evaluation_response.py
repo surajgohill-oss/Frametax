@@ -66,7 +66,9 @@ async def _seed(db: AsyncSession, plan):
         writer.add(structure)
         await writer.flush()
         writer.add(result)
-    await writer._drain()
+    writer._finalize_retention()
+    await writer._drain(promote_pending=True)
+    writer._assert_accounting()
     await writer._persist_generation_summary()
     return writer
 
@@ -78,7 +80,9 @@ _PLAN = (
     + [("UNPRICEABLE_AUTHORITY_INSUFFICIENT", "UNRESOLVED_NO_AUTHORITY", None)] * 3
     + [("PRICED", "", 100.0)] * 3
 )
-# generation order is the plan order: ordinals 1..27; unpriced = 1..24; priced = 25..27
+# Generated order is the plan order (27 candidates). The 17 plain RULE_REJECTED candidates are COUNTED
+# (evaluation_rejection_aggregates), never rows; the 10 others are rows with ordinals 1..10 in generation
+# order: dominated 1-4, unpriceable-authority 5-7 (the 7 persisted unpriced rows), priced 8-10.
 
 
 async def _summary(db):
@@ -93,10 +97,13 @@ async def test_ordinals_are_monotonic_across_chunk_boundaries_and_summary_counts
                StructureCalculationResult.engine_version == TEST_ENGINE)
         .order_by(StructureCalculationResult.generation_ordinal)
     )).scalars().all()
-    assert ordinals == list(range(1, 28))  # 1..N, no gaps, in generation order (chunk size 6)
+    assert ordinals == list(range(1, 11))  # 1..M over the PERSISTED rows, no gaps, generation order (chunk size 6)
 
     totals = ce.summary_totals(await _summary(db))
     assert totals["total"] == 24 and totals["priced"] == 3  # PRICED rows are not "unpriced"
+    # exact accounting: 27 generated == 10 persisted rows + 17 aggregated rejections, in 17 groups
+    assert (totals["generated"], totals["persisted_rows"], totals["aggregated_candidates"], totals["aggregate_groups"]) == (27, 10, 17, 17)
+    assert totals["persisted_unpriced"] == 7
     assert totals["by_disposition"] == {
         "DOMINATED_WITH_PROOF": 4, "RULE_REJECTED": 17, "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 3,
     }
@@ -120,7 +127,7 @@ async def test_retained_rows_are_exactly_the_non_rejected_ones_plus_any_baseline
     plan = list(_PLAN) + [("RULE_REJECTED", "THRESHOLD_NOT_MET", None, True)]  # a REJECTED baseline, ordinal 28
     await _seed(db, plan)
     summary = await _summary(db)
-    assert summary.non_rejected_ordinals == list(range(18, 29))  # dominated 18-21, unpriceable 22-24, priced 25-27, baseline 28
+    assert summary.non_rejected_ordinals == list(range(1, 12))  # dominated 1-4, unpriceable 5-7, priced 8-10, baseline 11
     retained = await ce.load_retained_rows(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, summary, engine_version=TEST_ENGINE)
     got = [(r.generation_ordinal, r.calculation_trace_json["candidate_status"]) for _, r in retained]
     assert [o for o, _ in got] == sorted(o for o, _ in got)  # generation order
@@ -143,10 +150,20 @@ async def test_pages_are_bounded_deterministic_exact_and_complete(db: AsyncSessi
         assert page["has_more"] is (cursor is not None)
         if not page["has_more"]:
             break
-    assert [p["returned"] for p in pages] == [5, 5, 5, 5, 4]  # exact has_more on a non-multiple total
+    assert [p["returned"] for p in pages] == [5, 2]  # exact has_more on a non-multiple total
     walked = [e for p in pages for e in p["results"]]
-    assert [e["generation_ordinal"] for e in walked] == list(range(1, 25))  # every unpriced row, in order
-    assert len({e["structure_id"] for e in walked}) == 24  # exactly once, none dropped
+    assert [e["generation_ordinal"] for e in walked] == list(range(1, 8))  # every PERSISTED unpriced row, in order
+    assert len({e["structure_id"] for e in walked}) == 7  # exactly once, none dropped
+    # the 17 rejected candidates are not rows: they are counted exactly and paged as GROUPS
+    groups, cursor = [], None
+    while True:
+        gp = await ce.candidate_groups_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=4, cursor=cursor)
+        groups += gp["results"]
+        cursor = gp["next_cursor"]
+        if not gp["has_more"]:
+            break
+    assert sum(g["candidate_count"] for g in groups) == 17 and len(groups) == 17
+    assert [g["group_ordinal"] for g in groups] == list(range(1, 18))
     assert all(e["true_net_cost_usd"] is None for e in walked)  # PRICED rows never appear
     again = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=5)
     assert again == pages[0]  # the same generation pages IDENTICALLY every time
@@ -155,7 +172,7 @@ async def test_pages_are_bounded_deterministic_exact_and_complete(db: AsyncSessi
 async def test_page_limit_clamp_and_empty_generation(db: AsyncSession):
     await _seed(db, _PLAN)
     clamped = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=10_000)
-    assert clamped["limit"] == ce.UNPRICEABLE_PAGE_MAX_LIMIT and clamped["returned"] == 24
+    assert clamped["limit"] == ce.UNPRICEABLE_PAGE_MAX_LIMIT and clamped["returned"] == 7
     floor = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=0)
     assert floor["limit"] == 1 and floor["has_more"] is True
     nothing = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, "d" * 64, engine_version=TEST_ENGINE)
@@ -171,7 +188,13 @@ async def test_evaluation_begin_payload_is_bounded_and_routes_reproduce_the_univ
     assert len(econ["unpriceable"]) <= ce.UNPRICEABLE_PAGE_DEFAULT_LIMIT
     assert len(json.dumps(unpriceable_part)) < 200_000
     assert econ["unpriceable_page"]["results_route"] == f"/api/v1/projects/{BAD_HOMBRES_PROJECT_ID}/evaluation/unpriceable"
-    assert sum(econ["unpriceable_by_disposition"].values()) == econ["unpriceable_count"] == econ["unpriceable_page"]["total"]
+    agg = econ["candidate_aggregates"]
+    assert sum(econ["unpriceable_by_disposition"].values()) == econ["unpriceable_count"]  # exact, rejected mass included
+    assert agg["accounting_holds"] and agg["generated_candidates"] == agg["persisted_rows"] + agg["aggregated_candidates"]
+    # the page walks the DETAILED unpriced rows; the rejected mass is counted exactly and paged as groups
+    assert econ["unpriceable_page"]["total"] == econ["unpriceable_count"] - agg["aggregated_candidates"]
+    assert agg["results_route"] == f"/api/v1/projects/{BAD_HOMBRES_PROJECT_ID}/evaluation/aggregates"
+    assert len(json.dumps(agg)) < 200_000
 
     first = await list_unpriceable_candidates(BAD_HOMBRES_PROJECT_ID, limit=40, cursor=None, db=db)
     assert first["status"] == "OK" and first["total_unpriceable_count"] == econ["unpriceable_count"]
@@ -182,7 +205,16 @@ async def test_evaluation_begin_payload_is_bounded_and_routes_reproduce_the_univ
         page = await list_unpriceable_candidates(BAD_HOMBRES_PROJECT_ID, limit=40, cursor=page["next_cursor"], db=db)
         assert "total_unpriceable_count" not in page  # totals ride the first page only
         got += page["results"]
-    assert len(got) == econ["unpriceable_count"] and len({e["structure_id"] for e in got}) == len(got)
+    assert len(got) == econ["unpriceable_page"]["total"] and len({e["structure_id"] for e in got}) == len(got)
+    from app.api.v1.evaluation import list_candidate_aggregates
+    g1 = await list_candidate_aggregates(BAD_HOMBRES_PROJECT_ID, limit=20, cursor=None, detail=False, db=db)
+    assert g1["status"] == "OK" and g1["accounting_holds"] and g1["aggregated_candidates"] == agg["aggregated_candidates"]
+    walked_groups, gpage = list(g1["results"]), g1
+    while gpage["has_more"]:
+        gpage = await list_candidate_aggregates(BAD_HOMBRES_PROJECT_ID, limit=20, cursor=gpage["next_cursor"], detail=False, db=db)
+        walked_groups += gpage["results"]
+    assert sum(g["candidate_count"] for g in walked_groups) == agg["aggregated_candidates"] == g1["aggregated_candidates"]
+    assert [g["group_ordinal"] for g in walked_groups] == list(range(1, len(walked_groups) + 1)) and len(walked_groups) == agg["group_count"]
     assert [e["structure_id"] for e in got[: len(econ["unpriceable"])]] == [e["structure_id"] for e in econ["unpriceable"]]
     assert [e["generation_ordinal"] for e in got] == sorted(e["generation_ordinal"] for e in got)
 
@@ -203,7 +235,9 @@ async def test_workspace_view_is_bounded_and_carries_the_same_accounting(db: Asy
     assert universe["by_disposition"] == econ["unpriceable_by_disposition"]
     assert universe["by_reason"] == econ["unpriceable_by_reason"]
     assert universe["first_page"]["returned"] <= ce.UNPRICEABLE_PAGE_DEFAULT_LIMIT
-    assert universe["first_page"]["has_more"] is (universe["total_count"] > universe["first_page"]["returned"])
+    aggregated = universe["aggregates"]["aggregated_candidates"]
+    assert universe["aggregates"]["generated_candidates"] == universe["aggregates"]["persisted_rows"] + aggregated
+    assert universe["first_page"]["has_more"] is (universe["total_count"] - aggregated > universe["first_page"]["returned"])
     assert [e["structure_id"] for e in universe["first_page"]["results"]] == [e["structure_id"] for e in econ["unpriceable"]]
     assert universe["results_route"].endswith("/evaluation/unpriceable")
     assert evaluation["unpriceable_count"] == len(evaluation["unpriceable"])  # pre-existing list meaning kept
