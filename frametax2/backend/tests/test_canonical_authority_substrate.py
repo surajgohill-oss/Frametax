@@ -17,6 +17,7 @@ import json
 from pathlib import Path
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
@@ -29,7 +30,14 @@ from app.services.canonical_evaluation import (
     evaluate_project,
     ENGINE_VERSION,
 )
-from app.services.canonical_production_view import build_production_and_structures
+from app.services.canonical_production_view import (
+    _empty_structure_entry,
+    _scenario_category,
+    build_production_and_structures,
+)
+from app.models.production import EvaluationCandidateAggregate, ProductionStructure, StructureCalculationResult
+from app.services.canonical_evaluation import current_generation_fingerprint, load_generation_summary
+import uuid as _uuid_mod
 from app.services.canonical_program_identity import (
     all_canonical_identities,
     resolve_identity,
@@ -68,6 +76,52 @@ VALIDATION_JSON = (
 async def db():
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
+
+
+async def _served_entries(db: AsyncSession, project_id: str) -> list[dict]:
+    """Every candidate the canonical-1.90 contract makes reachable, as served-entry dicts: the RETAINED detailed rows
+    (all pages of the production view's candidate pagination) plus, for every NON-PRICED aggregate group, one entry
+    built from the group's representative trace with the view's own entry builder. Bounded retention keeps the
+    baseline, the global/per-family top-100 PRICED, the best local candidate per jurisdiction and every proof/
+    opportunity row as detailed rows and COUNTS everything else exactly in aggregate groups (plain RULE_REJECTED
+    permutations, PRICED candidates outside the retained sets), so "this candidate was discovered" is verified
+    against both. ``aggregated_count`` on an entry is its group's exact candidate count."""
+    entries, offset = [], 0
+    while True:
+        view = await build_production_and_structures(db, project_id, candidate_limit=100, candidate_offset=offset)
+        block = view["structures"]["allocated_structures"]
+        entries += block["structures"]
+        page = block["candidates_page"]
+        if not page["has_more"]:
+            break
+        offset += page["limit"]
+    fingerprint = await current_generation_fingerprint(db, project_id)
+    groups = (await db.execute(
+        select(EvaluationCandidateAggregate).where(
+            EvaluationCandidateAggregate.project_id == project_id,
+            EvaluationCandidateAggregate.input_fingerprint == fingerprint,
+            EvaluationCandidateAggregate.engine_version == ENGINE_VERSION,
+            EvaluationCandidateAggregate.candidate_status != "PRICED",
+        ).order_by(EvaluationCandidateAggregate.group_ordinal)
+    )).scalars().all()
+    for g in groups:
+        rep = g.representative or {}
+        rs = rep.get("structure") or {}
+        structure = ProductionStructure(
+            id=_uuid_mod.uuid4(), project_id=project_id, name=rs.get("name"), description=rs.get("description"),
+            jurisdiction_allocations=rs.get("jurisdiction_allocations") or [], claimed_program_ids=rs.get("claimed_program_ids") or [],
+        )
+        result = StructureCalculationResult(
+            id=_uuid_mod.uuid4(), structure_id=structure.id, engine_version=g.engine_version,
+            structure_type=rep.get("structure_type"), calculation_trace_json=rep.get("trace") or {},
+            warnings=rep.get("warnings") or [], true_net_cost_usd=None, total_incentive_value_usd=None,
+            input_fingerprint=g.input_fingerprint,
+        )
+        entry = _empty_structure_entry(structure, result, {}, {})
+        entry["scenario_category"] = _scenario_category(entry, rank=None)
+        entry["aggregated_count"] = g.candidate_count
+        entries.append(entry)
+    return entries
 
 
 def _one_jurisdiction_entry(entries: list[dict], code: str) -> dict:
@@ -132,8 +186,7 @@ async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: 
     expectation.
     """
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
 
     for code in ("MN", "UZ"):
         entry = _one_jurisdiction_entry(entries, code)
@@ -150,8 +203,7 @@ async def test_statutory_eligibility_failure_still_rejects_correctly(db: AsyncSe
     candidate as unpriceable — this repair only removed the SOFT
     feasibility gate, never the real economic gates."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    structures = view["structures"]["allocated_structures"]["structures"]
+    structures = await _served_entries(db, FVD_PROJECT_ID)
     # AU now carries MORE THAN ONE candidate (au_location_offset plus
     # au_pdv_offset), so a {primary_jurisdiction: entry} dict silently keeps
     # whichever happens to be last. Select the program this test is actually
@@ -187,13 +239,13 @@ async def test_sa1_requirements_remain_consumed(db: AsyncSession):
     disclosed as feasibility metadata, even though it no longer gates
     economic discovery."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    served = await _served_entries(db, FVD_PROJECT_ID)
     # Existing Optimizer/Stacker Reconnection: multiple structures can now
     # share one primary_jurisdiction (single-program plus component/split/
     # treaty candidates anchored there) -- restrict this lookup to the
     # original single-program structure types this test examines.
     entries = {
-        e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]
+        e["primary_jurisdiction"]: e for e in served
         if e["structure_type"] in ("single_country", "full_relocation")
     }
     assert entries["MN"]["feasibility_status"] == FEASIBILITY_WEAK
@@ -656,8 +708,7 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
       169 - 4 + 3 = 168 entries; 135 - 30 = 105 priced; 34 + 30 - 1 = 63.
     """
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     # Cluster 5 (labour-only qualifying base): Canada's CPTC/PSTC family declares rate_base_narrower_than_qpe and is now withheld, so every candidate, pair and combination whose economics depended on a Canadian labour credit is correctly no longer priced. entries 171 -> 156, priced 101 -> 92, unpriced 70 -> 64.
@@ -826,10 +877,16 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     # regression). Directly re-measured against the same isolated audit
     # database, same project, same current engine version: 6,983 total /
     # 542 priced / 6,441 unpriced.
-    assert len(entries) == 6983
-    assert len(priced) == 542
-    assert len(unpriced) == 6441
-    assert len(priced) + len(unpriced) == len(entries)
+    # canonical-1.90 contract: the exact totals are the generation summary's. 526,155 candidates were generated =
+    # detailed persisted rows + aggregate counts; 542 are PRICED (unchanged economics) and 525,613 are unpriced
+    # (6,983 / 6,441 were the canonical-1.81.0 enumeration, before the integrated partner search enumerated the
+    # rejected permutations). ``entries`` here are the retained detailed rows + one entry per non-priced group.
+    summary = await load_generation_summary(db, FVD_PROJECT_ID, await current_generation_fingerprint(db, FVD_PROJECT_ID))
+    assert summary.total_rows == summary.persisted_rows + summary.aggregated_candidates == 526_155
+    assert summary.priced_count == 542
+    assert summary.unpriced_count == 525_613
+    assert len(priced) + summary.aggregated_priced == 542            # retained priced + aggregated priced == exact
+    assert summary.priced_count + summary.unpriced_count == summary.total_rows
 
     for code in ("MN", "UZ", "AT"):
         e = _one_jurisdiction_entry(entries, code)
@@ -1137,8 +1194,7 @@ async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):
     appear PRICED in FVD's candidate set with a real, traced incentive
     derived from O.C.G.A. Section 48-7-40.26, not a placeholder."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     ga = _one_jurisdiction_entry(entries, "US-GA")
     assert ga["is_fully_priced"] is True
     assert ga["candidate_status"] == "PRICED"
@@ -1220,8 +1276,7 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     """Runtime proof (not just the read-only registries) that all 8 batch-1
     programs reach served state with real, distinct, non-zero numbers."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     # US-MD is EXCLUDED from the priced list: us_md_film_production_activity_
     # credit states only band ceilings (28%/30%) with an unevaluable
     # us-md-tv-series-uplift condition, so under the cluster-6 repair it has
@@ -1303,8 +1358,7 @@ async def test_batch2_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     block) and replaces the runtime pricing proof with SA and SI both
     withheld-but-disclosed."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     for code in ("SA", "SI"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
         assert e["is_fully_priced"] is False, f"{code} unexpectedly priced"
@@ -1384,8 +1438,7 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     terminal state, not a wiring defect. Verified separately below rather
     than silently dropped from coverage."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     # MASTER RECONCILIATION (2026-09-02): Norway is back in the priced set.
     # ITEM 5's NON_GUARANTEED_SELECTIVE derivation for `no_film_incentive`
     # was itself the regression -- git-history reconciliation established
@@ -1515,8 +1568,7 @@ def test_batch5_coverage_veto_removed_including_alias_spellings():
 
 async def test_batch5_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     codes = ("US-AL", "US-CT", "US-NV", "US-NC", "US-MA", "US-MS")
     for code in codes:
         e = _one_jurisdiction_entry(entries, code)
@@ -1589,8 +1641,7 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     distinct NPCs -- this test now also proves the 4 combined ones
     coexist rather than replacing them."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     ca_on_entries = [e for e in entries if e["anchor_jurisdiction"] == "CA-ON"]
     # Backend-wiring closeout (2026-09-17): the "CPTC declares ca-cptc-
     # labour-only-base and is withheld" premise behind the old "7 -> 4"
@@ -1737,8 +1788,7 @@ async def test_batch4_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
     """Runtime proof (not just the read-only registries) that all 3 batch-4
     programs reach served state with real, non-zero numbers."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
+    entries = await _served_entries(db, FVD_PROJECT_ID)
     # ITEM 5: US-CA is COMPETITIVE (ranked jobs-ratio allocation within fixed
     # application windows, Credit Allocation Letter required before principal
     # photography) -- not an entitlement, so it must NOT price

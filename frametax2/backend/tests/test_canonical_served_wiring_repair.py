@@ -35,7 +35,13 @@ from sqlalchemy import func, select
 
 from app.db.session import engine
 from app.models.production import ProductionStructure, StructureCalculationResult
-from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
+from app.services.canonical_evaluation import (
+    ENGINE_VERSION,
+    current_generation_fingerprint,
+    evaluate_project,
+    load_generation_summary,
+)
+from app.models.production import EvaluationCandidateAggregate
 from app.services.canonical_production_view import (
     build_generic_pkg_and_economics,
     build_production_and_structures,
@@ -56,6 +62,29 @@ def _single_segment_structures(structure_entries: list[dict], code: str) -> list
         e for e in structure_entries
         if len(e.get("segments") or []) == 1 and e["segments"][0].get("jurisdiction_code") == code
     ]
+
+
+async def _all_served_entries(db: AsyncSession, project_id: str):
+    """Every RETAINED detailed candidate of the current generation, by following the production view's own
+    candidate pagination (canonical-1.90 bounded retention: a page holds <= 100 candidates; the retained set
+    is the baseline, the global/per-family top-100 PRICED, the best local candidate per jurisdiction, every
+    proof and opportunity row -- everything else is counted exactly in the generation summary/aggregates).
+    Returns (last page's allocated_structures block, all structure entries, all ranking entries)."""
+    entries, ranking, offset = [], [], 0
+    while True:
+        view = await build_production_and_structures(db, project_id, candidate_limit=100, candidate_offset=offset)
+        block = view["structures"]["allocated_structures"]
+        entries += block["structures"]
+        ranking += block["ranking"]
+        page = block["candidates_page"]
+        if not page["has_more"]:
+            return block, entries, ranking
+        offset += page["limit"]
+
+
+async def _generation_summary(db: AsyncSession, project_id: str):
+    fingerprint = await current_generation_fingerprint(db, project_id)
+    return await load_generation_summary(db, project_id, fingerprint)
 
 
 async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
@@ -92,10 +121,13 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     assert view["status"] == "OK"
 
-    entries = view["structures"]["allocated_structures"]["structures"]
+    # canonical-1.90 bounded retention: ``entries`` are the RETAINED detailed candidates (all pages); the exact
+    # totals below come from candidate_accounting + the generation summary (retained + aggregated).
+    block, entries, _ranking_all = await _all_served_entries(db, FVD_PROJECT_ID)
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
+    accounting = block["candidate_accounting"]
+    summary = await _generation_summary(db, FVD_PROJECT_ID)
 
     # Existing Optimizer/Stacker Reconnection: priced grew 113 -> 119 (6
     # additive multi_program combined structures — CA-BC, CA-QC, and
@@ -243,8 +275,15 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # discovery to satisfy a stale oracle"), the assertions below are
     # updated to the new, larger, genuinely-measured real count rather
     # than the old cutoff-bounded one.
-    assert len(priced) == 542
-    assert len(unpriced) == 6441
+    # canonical-1.90 contract: generated == detailed persisted + aggregated; the exact priced/unpriced totals are
+    # the summary's (retained + aggregated). 526,155 generated = 542 priced + 525,613 unpriced (measured as the
+    # full enumeration of this generation under 1.88.0 and reproduced exactly by the 1.90.0 accounting).
+    assert summary.total_rows == summary.persisted_rows + summary.aggregated_candidates == 526_155
+    assert summary.priced_count == 542
+    assert summary.unpriced_count == 525_613
+    assert len(priced) + summary.aggregated_priced == 542                    # retained + aggregated == exact
+    assert len(unpriced) + (summary.aggregated_candidates - summary.aggregated_priced) == 525_613
+    assert len(entries) == summary.persisted_rows                            # every persisted detailed row is served
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -254,7 +293,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
     assert accounting["review_required_count"] == 542  # mirrors priced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
-    assert accounting["unpriceable_count"] == 6441  # mirrors unpriced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
+    assert accounting["unpriceable_count"] == 525_613  # exact total (retained + aggregated); 6,441 was the canonical-1.81.0 enumeration
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -268,7 +307,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the numerically-ranked comparable set because its qualification is
     # genuinely unresolved (see _qualification_admits_recommended). `rank`
     # is only ever assigned to entries that made it into that pool.
-    ranking = view["structures"]["allocated_structures"]["ranking"]
+    ranking = _ranking_all
     comparable_ranked = [r for r in ranking if r["rank"] is not None]
     review_ranked = [r for r in ranking if r["is_fully_priced"] and r["rank"] is None]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
@@ -276,8 +315,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # the matching, fully-attributed comment above test_fvd_accounting_
     # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 542  # mirrors priced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
-    assert len(unpriceable_ranked) == 6441  # mirrors unpriced count above (HO-013 top-200-cutoff removal, canonical-1.81.0)
+    assert len(review_ranked) + summary.aggregated_priced == 542       # retained ranked + aggregated == exact priced
+    assert len(unpriceable_ranked) + (summary.aggregated_candidates - summary.aggregated_priced) == 525_613
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -338,9 +377,9 @@ async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics
     lower QPE — not a wiring defect. Malta's own economics are
     untouched (no contingency category in its own rules)."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
-    rank_by_id = {r["structure_id"]: r for r in view["structures"]["allocated_structures"]["ranking"]}
+    # canonical-1.90: the best local candidate per jurisdiction is always retained; read the full retained set
+    _block, entries, _ranking_all = await _all_served_entries(db, FVD_PROJECT_ID)
+    rank_by_id = {r["structure_id"]: r for r in _ranking_all}
 
     mt = _single_segment_structures(entries, "MT")
     assert len(mt) == 1
@@ -422,9 +461,9 @@ async def test_australia_queensland_priced_flat_rate_not_comparable(db: AsyncSes
     25% flat).
     """
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = view["structures"]["allocated_structures"]["structures"]
-    rank_by_id = {r["structure_id"]: r for r in view["structures"]["allocated_structures"]["ranking"]}
+    # canonical-1.90: the best local candidate per jurisdiction is always retained; read the full retained set
+    _block, entries, _ranking_all = await _all_served_entries(db, FVD_PROJECT_ID)
+    rank_by_id = {r["structure_id"]: r for r in _ranking_all}
 
     it = _single_segment_structures(entries, "IT")
     assert len(it) == 1
@@ -458,16 +497,29 @@ async def test_australia_location_offset_rule_rejected_with_program_identity(db:
     every other capability-only candidate without doctrine/rate data at
     all correctly falls into."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    ranking = view["structures"]["allocated_structures"]["ranking"]
-
-    au_offset = [r for r in ranking if r.get("program_slug") == "au_location_offset"]
-    assert len(au_offset) == 1
-    r = au_offset[0]
-    assert r["is_fully_priced"] is False
-    assert r["is_directly_comparable"] is False
-    assert r["candidate_status"] == "RULE_REJECTED"
-    assert r["rejection_reason_class"] == "STATUTORY_CONDITIONS_UNMET"
+    # canonical-1.90: a plain RULE_REJECTED candidate is COUNTED EXACTLY in an aggregate group (not a detailed row);
+    # the group's representative keeps the full trace, so its program identity and reason remain reconstructable.
+    fingerprint = await current_generation_fingerprint(db, FVD_PROJECT_ID)
+    groups = (await db.execute(
+        select(EvaluationCandidateAggregate).where(
+            EvaluationCandidateAggregate.project_id == FVD_PROJECT_ID,
+            EvaluationCandidateAggregate.input_fingerprint == fingerprint,
+            EvaluationCandidateAggregate.engine_version == ENGINE_VERSION,
+            EvaluationCandidateAggregate.program_slugs.contains(["au_location_offset"]),
+            EvaluationCandidateAggregate.structure_type == "full_relocation",
+        )
+    )).scalars().all()
+    assert len(groups) == 1 and groups[0].candidate_count == 1          # exactly one such candidate, exactly counted
+    g = groups[0]
+    trace = g.representative["trace"]
+    assert g.candidate_status == "RULE_REJECTED"
+    assert g.reason_class == "STATUTORY_CONDITIONS_UNMET" == trace["rejection_reason_class"]
+    assert trace["program_slug"] == "au_location_offset"               # program identity preserved, not flattened
+    assert trace["candidate_status"] == "RULE_REJECTED" and trace["reason"]
+    assert trace.get("is_directly_comparable") is False and g.representative["structure_type"] == "full_relocation"
+    # and it is NOT flattened into the authority-insufficient bucket: the two causes stay distinct in the summary
+    summary = await _generation_summary(db, FVD_PROJECT_ID)
+    assert summary.by_disposition.get("RULE_REJECTED", 0) > 0 and summary.by_disposition.get("UNPRICEABLE_AUTHORITY_INSUFFICIENT", 0) > 0
 
 
 async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: AsyncSession):
@@ -488,9 +540,9 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     own contingency reserve is no longer counted as 100%-unconditionally
     qualifying) -- see test_batch3_programs_price_with_real_numbers_in_fvd."""
     await evaluate_project(db, FVD_PROJECT_ID)
-    view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    ranking = view["structures"]["allocated_structures"]["ranking"]
-    unpriceable = [r for r in ranking if not r["is_fully_priced"]]
+    _block, _entries, ranking = await _all_served_entries(db, FVD_PROJECT_ID)
+    unpriceable = [r for r in ranking if not r["is_fully_priced"]]           # the RETAINED unpriced candidates
+    summary = await _generation_summary(db, FVD_PROJECT_ID)
 
     # LU Co-Pro Opportunity Trace: grew again 11 -> 34 (+23) -- 23 real
     # bilateral candidate-pair treaty opportunities (see
@@ -529,11 +581,15 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     # isolated audit database at the current engine version. The invariant
     # this test actually guards (distinct terminal causes, asserted below)
     # is unaffected by the count.
-    assert len(unpriceable) == 6441
-    statuses = {r["candidate_status"] for r in unpriceable}
+    # canonical-1.90: the exact unpriced total (525,613) is the summary's; the plain RULE_REJECTED mass is counted in
+    # aggregate groups, the reviewable/authority-insufficient candidates are retained detailed rows.
+    assert summary.unpriced_count == sum(summary.by_disposition.values()) == 525_613
+    assert len(unpriceable) + (summary.aggregated_candidates - summary.aggregated_priced) == 525_613
+    statuses = set(summary.by_disposition)
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"
     )
+    assert {r["candidate_status"] for r in unpriceable} >= {"UNPRICEABLE_AUTHORITY_INSUFFICIENT"}   # retained rows keep it
     for r in unpriceable:
         assert r["candidate_status"], "every unpriceable candidate must carry a real terminal status, never blank"
 

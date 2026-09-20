@@ -402,7 +402,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.services.canonical_evaluation  # noqa: F401  (import-order fix)
 from app.db.session import engine
 from app.services.canonical_evaluation import evaluate_project
-from app.services.canonical_production_view import build_production_and_structures
+from app.services.canonical_production_view import (
+    _empty_structure_entry,
+    _scenario_category,
+    build_production_and_structures,
+)
+from app.models.production import EvaluationCandidateAggregate, ProductionStructure, StructureCalculationResult
+from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+import uuid as _uuid_mod
+from sqlalchemy import select
 from app.services.canonical_project_economics import build_project_economic_inputs
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
@@ -414,13 +422,56 @@ async def db():
         yield session
 
 
+async def _served_structures(db: AsyncSession, project_id: str) -> list[dict]:
+    """Every candidate the canonical-1.90 bounded-retention contract makes reachable, as served-entry dicts: all
+    RETAINED detailed rows (every page of the production view's candidate pagination -- a page holds at most 100)
+    plus one entry per NON-PRICED aggregate group, built from the group's representative trace with the view's own
+    entry builder. Plain RULE_REJECTED candidates are counted exactly in aggregate groups, not detailed rows.
+    (Scanning only page 1 would silently skip real structures -- and these checks skip when none is found.)"""
+    entries, offset = [], 0
+    while True:
+        view = await build_production_and_structures(db, project_id, candidate_limit=100, candidate_offset=offset)
+        block = view["structures"]["allocated_structures"]
+        entries += block["structures"]
+        page = block["candidates_page"]
+        if not page["has_more"]:
+            break
+        offset += page["limit"]
+    fingerprint = await current_generation_fingerprint(db, project_id)
+    groups = (await db.execute(
+        select(EvaluationCandidateAggregate).where(
+            EvaluationCandidateAggregate.project_id == project_id,
+            EvaluationCandidateAggregate.input_fingerprint == fingerprint,
+            EvaluationCandidateAggregate.engine_version == ENGINE_VERSION,
+            EvaluationCandidateAggregate.candidate_status != "PRICED",
+        ).order_by(EvaluationCandidateAggregate.group_ordinal)
+    )).scalars().all()
+    for g in groups:
+        rep = g.representative or {}
+        rs = rep.get("structure") or {}
+        structure = ProductionStructure(
+            id=_uuid_mod.uuid4(), project_id=project_id, name=rs.get("name"), description=rs.get("description"),
+            jurisdiction_allocations=rs.get("jurisdiction_allocations") or [], claimed_program_ids=rs.get("claimed_program_ids") or [],
+        )
+        result = StructureCalculationResult(
+            id=_uuid_mod.uuid4(), structure_id=structure.id, engine_version=g.engine_version,
+            structure_type=rep.get("structure_type"), calculation_trace_json=rep.get("trace") or {},
+            warnings=rep.get("warnings") or [], true_net_cost_usd=None, total_incentive_value_usd=None,
+            input_fingerprint=g.input_fingerprint,
+        )
+        entry = _empty_structure_entry(structure, result, {}, {})
+        entry["scenario_category"] = _scenario_category(entry, rank=None)
+        entry["aggregated_count"] = g.candidate_count
+        entries.append(entry)
+    return entries
+
+
 async def _find_a_resolved_treaty_structure(db: AsyncSession, project_id: str) -> dict | None:
     """Generic lookup, not project/jurisdiction-specific: the first
     treaty_coproduction structure this project currently has with a
     fully-priced conditional_scenario, whatever its real participants
     happen to be."""
-    view = await build_production_and_structures(db, project_id)
-    structures = view["structures"]["allocated_structures"]["structures"]
+    structures = await _served_structures(db, project_id)
     for s in structures:
         cond = s.get("conditional_scenario")
         if s.get("structure_type") == "treaty_coproduction" and isinstance(cond, dict) and cond.get("fully_priced"):
@@ -447,8 +498,7 @@ async def test_independent_qpe_recomputation_matches_known_good_real_treaty_stru
 
 
 async def _all_resolved_treaty_structures(db: AsyncSession, project_id: str) -> list[dict]:
-    view = await build_production_and_structures(db, project_id)
-    structures = view["structures"]["allocated_structures"]["structures"]
+    structures = await _served_structures(db, project_id)
     return [
         s for s in structures
         if s.get("structure_type") == "treaty_coproduction"
@@ -549,8 +599,7 @@ async def test_gate_one_project_integration_reaches_rejected_component_participa
     (never a synthetic project) -- confirms no rejected row's participant
     field is silently skipped by the live integration path."""
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
-    structures = view["structures"]["allocated_structures"]["structures"]
+    structures = await _served_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     rejected = [
         s for s in structures
         if s.get("structure_type") == "component_relocation" and not s.get("is_fully_priced")

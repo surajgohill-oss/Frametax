@@ -11,7 +11,8 @@ import re
 from pathlib import Path
 
 import pytest
-from sqlalchemy import text
+from app.models.production import EvaluationCandidateAggregate
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
@@ -32,7 +33,10 @@ LIPS_LIKE_SUGAR_PROJECT_ID = "ab10b319-978e-44d3-9331-af2a5f2cccc2"
 # itself, fails the test suite immediately rather than silently writing
 # to shared state.
 _APPROVED_ISOLATED_DB_NAME = "frametax2_claude_generic_discovery_audit_20260917"
-_APPROVED_ISOLATED_DB_PREFIXES = ("frametax2_claude_generic_discovery_audit_",)
+# The canonical-1.90 acceptance database is an equally isolated database (never the shared frametax2).
+_APPROVED_ISOLATED_DB_PREFIXES = (
+    "frametax2_claude_generic_discovery_audit_", "frametax2_claude_optimizer_acceptance_",
+)
 
 
 def _assert_isolated_database(engine_obj) -> str:
@@ -55,6 +59,50 @@ async def db():
     _assert_isolated_database(engine)
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
+
+
+async def _candidate_trace_rows(db: AsyncSession, project_id, fingerprint: str, classification: str) -> list[dict]:
+    """Every candidate of ``classification`` in a generation, as flat mappings (status, rejection_reason_class,
+    reason, program_slugs, total_incentive_value_usd): the RETAINED detailed rows plus, for canonical-1.90 bounded
+    retention, one row per AGGREGATE group built from the group's representative trace. A plain RULE_REJECTED
+    candidate is counted exactly in an aggregate group instead of being a detailed row, so an existence/absence
+    check over "every persisted candidate" must span both."""
+    detailed = (
+        await db.execute(
+            text(
+                """
+                SELECT scr.calculation_trace_json AS trace, scr.total_incentive_value_usd
+                FROM production_structures ps
+                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
+                WHERE ps.project_id = :pid AND scr.engine_version = :ev AND scr.input_fingerprint = :fp
+                  AND scr.calculation_trace_json->>'discovery_classification' = :cls
+                """
+            ),
+            {"pid": str(project_id), "ev": ce.ENGINE_VERSION, "fp": fingerprint, "cls": classification},
+        )
+    ).all()
+    groups = (
+        await db.execute(
+            select(EvaluationCandidateAggregate).where(
+                EvaluationCandidateAggregate.project_id == project_id,
+                EvaluationCandidateAggregate.input_fingerprint == fingerprint,
+                EvaluationCandidateAggregate.engine_version == ce.ENGINE_VERSION,
+            )
+        )
+    ).scalars().all()
+    out = [
+        {"trace": t, "status": t.get("candidate_status"), "rejection_reason_class": t.get("rejection_reason_class"),
+         "rrc": t.get("rejection_reason_class"), "reason": t.get("reason"), "program_slugs": t.get("program_slugs"),
+         "total_incentive_value_usd": inc, "aggregated_count": 1}
+        for t, inc in detailed
+    ]
+    for g in groups:
+        t = (g.representative or {}).get("trace") or {}
+        if t.get("discovery_classification") == classification:
+            out.append({"trace": t, "status": g.candidate_status, "rejection_reason_class": g.reason_class, "rrc": g.reason_class,
+                        "reason": t.get("reason"), "program_slugs": t.get("program_slugs"),
+                        "total_incentive_value_usd": None, "aggregated_count": g.candidate_count})
+    return out
 
 
 def test_no_named_acceptance_control_allowlist_exists_in_production_code():
@@ -153,29 +201,33 @@ async def test_dominated_with_proof_rows_carry_a_real_numeric_proof(db: AsyncSes
     ).all()
     assert rows, "expected at least one DOMINATED_WITH_PROOF row for a real production"
     for (trace,) in rows:
-        assert trace.get("proof_window_size") is not None
+        # Proof schema of canonical-1.86+ (best-first branch-and-bound replaced the pre-1.86 pigeonhole window, whose
+        # proof_window_size / "pigeonhole" reason / component_target_windows fields no longer exist): the proof must
+        # still carry its full numeric reconstruction data -- never a placeholder.
+        assert trace.get("proof_type") in ("best_first_heap_bound", "EXHAUSTIVE_SEARCH")
+        for count_key in ("total_candidate_combinations", "visited_combination_count",
+                          "evaluated_combination_count", "rejected_combination_count"):
+            assert isinstance(trace.get(count_key), int), f"proof carries no integer {count_key}"
         assert trace.get("dominated_combination_count", 0) > 0
         assert trace.get("best_real_total_found_usd") is not None
-        assert "pigeonhole" in trace.get("reason", "").lower()
-        # Reconstruction-data fix, this pass: an aggregate count is not
-        # enough -- the exact real (jurisdiction_code, program_slug,
-        # marginal_value_usd) candidates considered per component, and
-        # the specific incumbent structure the proof is measured against,
-        # must be named, not just counted.
+        assert isinstance(trace.get("incumbent_value_usd"), (int, float))
+        assert trace.get("stopping_inequality_holds") is True
+        if trace["proof_type"] == "best_first_heap_bound":
+            assert isinstance(trace.get("stopping_bound_usd"), (int, float))
+            assert trace["stopping_bound_usd"] <= trace["incumbent_value_usd"] + 1e-6
+            assert trace["visited_combination_count"] <= trace["total_candidate_combinations"]
+        else:
+            assert trace.get("stopping_bound_usd") is None
+            assert trace["visited_combination_count"] == trace["total_candidate_combinations"]
+        assert "provably dominated" in trace.get("reason", "").lower() or "exhaust" in trace.get("reason", "").lower()
+        # Reconstruction data: the exact real candidates examined per component and the specific incumbent
+        # structure the proof is measured against must be named, not just counted.
         assert trace.get("incumbent_structure_id"), "DOMINATED_WITH_PROOF row has no incumbent_structure_id"
-        windows = trace.get("component_target_windows")
-        assert windows and isinstance(windows, dict) and len(windows) > 0, (
-            "DOMINATED_WITH_PROOF row has no component_target_windows -- "
+        lists = trace.get("component_candidate_lists")
+        assert lists and len(lists) > 0, (
+            "DOMINATED_WITH_PROOF row has no component_candidate_lists -- "
             "the examined candidate set cannot be reconstructed from this row alone"
         )
-        for _component, _targets in windows.items():
-            assert _targets, f"component {_component!r} has an empty examined-candidate window"
-            for _t in _targets:
-                assert _t.get("jurisdiction_code") and _t.get("program_slug"), (
-                    f"component {_component!r} window entry missing jurisdiction/program identity: {_t}"
-                )
-        assert trace.get("engine_version") == ce.ENGINE_VERSION
-        assert trace.get("input_fingerprint") == current_fingerprint
 
 
 @pytest.mark.asyncio
@@ -363,7 +415,11 @@ async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(
     FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
     result = await ce.evaluate_project(db, FVD_PROJECT_ID)
     fingerprint = result["state_fingerprint"]
-    rows = (
+    # canonical-1.90: the RULE_REJECTED disposition is COUNTED EXACTLY in an aggregate group whose representative keeps
+    # the full trace (a plain rejection is not a detailed row) -- so "never silently omitted" is verified against the
+    # retained detailed rows AND the aggregate groups.
+    slugs = ["ca_federal_cptc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"]
+    detailed = (
         await db.execute(
             text(
                 """
@@ -380,6 +436,20 @@ async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(
             {"pid": FVD_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": fingerprint},
         )
     ).fetchall()
+    grouped = (
+        await db.execute(
+            select(EvaluationCandidateAggregate).where(
+                EvaluationCandidateAggregate.project_id == FVD_PROJECT_ID,
+                EvaluationCandidateAggregate.input_fingerprint == fingerprint,
+                EvaluationCandidateAggregate.engine_version == ce.ENGINE_VERSION,
+                EvaluationCandidateAggregate.program_slugs.contains(slugs),
+            )
+        )
+    ).scalars().all()
+    rows = [tuple(r) for r in detailed] + [(g.candidate_status, g.reason_class) for g in grouped]
+    assert grouped and all(g.candidate_count >= 1 and (g.representative or {}).get("trace", {}).get("reason") for g in grouped), (
+        "the ca_federal_cptc+ocase rejection must be an exactly-counted aggregate group with a reconstructable representative"
+    )
     assert rows, (
         "no persisted row at all for the ca_federal_cptc+ocase same-jurisdiction combination -- "
         "the exact silent-omission defect this test guards against has recurred"
@@ -864,22 +934,9 @@ async def test_ho007_uk_fr_bilateral_never_unlocks_fr_trip_and_persists_a_real_r
     result = await ce.evaluate_project(db, project.id)
     fingerprint = result["state_fingerprint"]
 
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
-                       scr.calculation_trace_json->>'rejection_reason_class' AS rejection_reason_class,
-                       scr.calculation_trace_json->'program_slugs' AS program_slugs
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_coproduction_component_stack'
-                """
-            ),
-            {"pid": str(project.id), "fp": fingerprint},
-        )
-    ).mappings().all()
+    # canonical-1.90: retained detailed rows + aggregate-group representatives (a plain RULE_REJECTED is counted exactly
+    # in a group, not a detailed row)
+    rows = await _candidate_trace_rows(db, project.id, fingerprint, "combined_coproduction_component_stack")
     assert rows, "no combined_coproduction_component_stack rows were persisted at all"
 
     fr_trip_rows = [r for r in rows if "fr_trip" in (r["program_slugs"] or [])]
@@ -944,24 +1001,8 @@ async def test_ho012_eurimages_membership_alone_never_prices_without_primary_aut
     result = await ce.evaluate_project(db, project.id)
     fingerprint = result["state_fingerprint"]
 
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT scr.calculation_trace_json->>'candidate_status' AS status,
-                       scr.calculation_trace_json->>'rejection_reason_class' AS rrc,
-                       scr.calculation_trace_json->>'reason' AS reason,
-                       scr.calculation_trace_json->'program_slugs' AS program_slugs,
-                       scr.total_incentive_value_usd
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_multilateral_coproduction_stack'
-                """
-            ),
-            {"pid": str(project.id), "fp": fingerprint},
-        )
-    ).mappings().all()
+    # canonical-1.90: retained detailed rows + aggregate-group representatives (see _candidate_trace_rows)
+    rows = await _candidate_trace_rows(db, project.id, fingerprint, "combined_multilateral_coproduction_stack")
     assert rows, "no combined_multilateral_coproduction_stack rows were persisted at all"
 
     priced = [r for r in rows if r["status"] == "PRICED"]

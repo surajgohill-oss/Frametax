@@ -567,8 +567,22 @@ async def _gate_one_project(
 
     production = view["production"]
     allocated = view["structures"]["allocated_structures"]
-    structures = allocated["structures"]
-    ranking = allocated["ranking"]
+    structures = list(allocated["structures"])
+    ranking = list(allocated["ranking"])
+    # canonical-1.90 bounded retention: the served view returns ONE page (<= 100) of the RETAINED detailed
+    # candidates; every retained candidate is reachable through its candidate pagination. The gate must check all
+    # of them, not just page 1 (the pages partition one deterministic sequence, so no duplicates are introduced).
+    _page = allocated["candidates_page"]
+    _offset = 0
+    while _page["has_more"]:
+        _offset += _page["limit"]
+        _next = await build_production_and_structures(
+            session, project_id, candidate_limit=_page["limit"], candidate_offset=_offset,
+        )
+        _next_allocated = _next["structures"]["allocated_structures"]
+        structures += _next_allocated["structures"]
+        ranking += _next_allocated["ranking"]
+        _page = _next_allocated["candidates_page"]
     declared_gross = production.get("gross_budget_usd")
 
     by_type: dict[str, int] = {}

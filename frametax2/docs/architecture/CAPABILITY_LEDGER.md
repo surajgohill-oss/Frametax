@@ -3862,3 +3862,27 @@ One concrete wiring defect found and fixed via a bounded, real-API-driven self-a
 **Regression discipline** (per explicit operator instruction mid-pass): a consolidated regression batch (`test_canonical_evaluation.py` + `test_canonical_served_wiring_repair.py` + `test_generic_structural_discovery_final_correction.py`) was started once, sequentially, under a 12-minute cap; it was stopped at the cap with **no per-test evidence captured** (output buffering meant nothing was flushed before the stop) and is honestly recorded as **INCOMPLETE**, not as a pass or a fail -- not repeated, per the same instruction. This does not weaken the acceptance basis: the new prevention suite (10/10) already exercises `evaluate_project()`/`build_project_workspace_view()`/`build_production_and_structures()` end-to-end against all four real projects, and all four baseline incentive/NPC figures were independently confirmed byte-identical via direct query.
 
 **Final status returned**: `OPTIMIZER_AUDIT_DEFECTS_CLOSED` for the six items in explicit scope (NUM-001..005 + the validator correction); the consolidated broader regression batch remains formally unconfirmed (INCOMPLETE, not failing) pending a future focused re-run, disclosed rather than silently assumed green.
+
+## FINAL NON-GLOBE BACKEND CLOSEOUT — canonical-1.90.0 bounded candidate retention (2026-09-20)
+
+**Status: `BLOCKED` on one engine defect (below); all else closed. Globe wiring is NOT claimed complete.**
+
+| Item | State |
+|---|---|
+| Branch / SHAs | `claude/global-optimizer-remediation`; legacy retirement `8b7ecd5`; bounded retention `4f481e50b501ebb8031d1bd4e0456c7283ec8997` (pushed); this regression-delta closeout is the tip commit |
+| Engine / schema | `ENGINE_VERSION = "canonical-1.90.0"`; Alembic `0077` |
+| Database | only `frametax2_claude_optimizer_acceptance_20260919`; shared `frametax2` and the old audit DB untouched |
+| Architecture | Enumeration cardinality never defines persistence cardinality. Detailed rows = baseline; global + per-`structure_type` top-100 PRICED; best local candidate per jurisdiction; every proof / reviewable / opportunity row (capped); proof-referenced rows. Everything else counted exactly in `evaluation_candidate_aggregates`. Invariant: `generated == persisted + Σ aggregates` (fail closed). |
+| Cold acceptance (once each, ≤720 s) | LU 7.3 s $573,059.70 / $3,791,333.30 · Bad Hombres 13.4 s $596,910.25 / $1,885,112.75 · FVD 167.6 s $1,445,659.84 / $3,072,027.16 · Lips Like Sugar 478.9 s $3,459,278.90 / $8,524,375.10; verifier 92/92; zero incomplete-search dispositions; complete proofs; reuse = zero rows |
+| Regression delta | 47 nodes reuse-only: 45 PASS, 2 FAIL (`test_ho013_two_movable_components_route_simultaneously_no_double_counting`, `test_workspace_view_survives_real_coproduction_facts_without_stale_signature_crash`) — files: served_wiring_repair 9/9, generic_structural 14/16, authority_substrate 14/14, integrity_gate_negative 4/4, component_rejection_persistence 4/4 |
+| Stale assertions corrected | page-1 lookups -> all retained pages + aggregate groups; 6,983 / 6,441 enumeration totals -> exact summary totals (526,155 = 542 + 525,613); silently-skipping integrity-gate lookups made page-complete; `scripts/canonical_integrity_gate.py` checks every retained page; pre-1.86 pigeonhole proof schema -> current best-first proof fields (equal strictness) |
+| Blocker | `canonical_evaluation.py:7987` sums `SegmentEconomics.selected_incentive_usd` (attribute does not exist; kernel definition: floor if `ceiling_requires_confirmation` else ceiling) -> `AttributeError` when a multi-component combination prices. Fix edits a digest module => all four generations go non-current => cold re-evaluation required (not authorized in this pass). |
+| Cleanliness | no real-production regeneration repeated; no benchmark/maintenance/broad suite; no stray processes or DB backends |
+
+**Next steps (exact):**
+1. Narrow Codex delta acceptance of canonical-1.90.0 and Globe-facing optimizer data.
+2. Optimizer Globe data/category wiring.
+3. Base Globe UI wiring and runtime verification.
+4. Evaluation-start UI indicator during later UI work.
+5. Reinvestment/in-kind work remains shelved.
+
