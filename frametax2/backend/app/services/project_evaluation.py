@@ -1,62 +1,40 @@
 """
-project_evaluation.py
+project_evaluation.py -- RETIRED_UNREACHABLE (legacy "Begin Evaluation" orchestrator)
 
-The missing link behind "Begin Evaluation": a generic, project-agnostic
-orchestrator that connects a project's already-ingested materials to the
-already-existing, already-populated worldwide evaluation engine.
+`begin_evaluation` and `_summarize` -- the run_full_analysis-backed orchestrator that generated and
+ranked ProductionStructure/StructureCalculationResult rows outside the canonical engine -- have been
+REMOVED. They were unreachable from production (no route, service or script called them: the served
+evaluation is app/services/canonical_evaluation.py::evaluate_project, POST /projects/{id}/evaluation/begin),
+and their read-back loaded every row of a project -- all engine versions and generations -- into
+memory, which an evaluation generation of 500,000+ rows makes prohibited (PROJECT_RULES.md, LONG-RUNNING
+PROCESS DISCIPLINE, rule 10).
 
-    Project Record
-      -> CanonicalProductionState        (SA-1, existing, reused)
-      -> ProductionOptimizerInput        (SA-1 handoff, existing, reused)
-      -> production_requirements /
-         production_discovery            (Phase 6 discovery, existing, reused)
-      -> ProductionStructure /
-         StructureCalculationResult      (DB-backed structures API, existing,
-                                           reused — app/api/v1/structures.py's
-                                           calculate_structure_impl and its
-                                           underlying run_full_analysis are
-                                           called exactly as that route
-                                           already calls them)
+This module is NOT a member of the canonical fingerprint's pricing-source digest
+(canonical_runtime_attribution._SEMANTIC_PRICING_MODULES), so removing the entrypoint changed no fingerprint
+and invalidated no persisted generation.
 
-This module adds NO new economics. It only decides, generically, WHICH
-existing structures to generate and calculate for a given project, then
-calls the existing generation/calculation code unchanged.
+Still present, and still canonically used:
 
-Two things this module intentionally does NOT do, per product policy:
+  * `_derive_home_jurisdiction` -- imported (lazily) by canonical_project_economics.py to derive a
+    project's base jurisdiction from its budget filename. Do not remove.
 
-  * MFNI / regional production-cost normalization. `calculate_structure_impl`
-    already passes `cost_benchmark=None` (see structures.py's own TODO) —
-    every structure here is priced from the production's own nominal,
-    unnormalized budget. That limitation is surfaced honestly on every
-    result via `extra_warnings`, never silently implied away.
-  * Per-line territorial classification. No line in a generically-ingested
-    project's budget currently states which jurisdiction it was spent in
-    (see CanonicalProductionState's own territorial_basis="UNKNOWN" on
-    every line). Every structure therefore uses the SAME jurisdiction_spend_pct
-    default `calculate_structure_impl`'s own caller already uses when none
-    is supplied (1.0 — the full nominal budget, exactly as a single-location
-    production's baseline or a full-relocation candidate already models it
-    in the existing dormant structures API). This is not a new assumption;
-    it is the pre-existing default of the code being reused.
+Retained unchanged, unused by any production caller: `_production_type_for`, `_load_program_bundle`,
+`MFNI_LIMITATION_NOTE`, `_FORMAT_TO_PRODUCTION_TYPE`.
+
+tests/test_project_evaluation.py guards the retirement: the removed names stay removed, and no production
+module may import or call anything here except `_derive_home_jurisdiction`.
 """
 from __future__ import annotations
 
 import re
-import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.structures import calculate_structure_impl
-from app.calculators.production_discovery import discover_executable_jurisdictions
-from app.calculators.production_requirements import derive_production_requirements
 from app.models.budget import BudgetDocument
 from app.models.incentive import IncentiveProgram
 from app.models.jurisdiction import Jurisdiction
-from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
-from app.services.canonical_production_state import CanonicalProductionStateBuilder
-from app.services.optimizer_handoff import build_optimizer_input
 
 MFNI_LIMITATION_NOTE = (
     "Regional production-cost normalization is not yet applied to this "
@@ -167,202 +145,4 @@ async def _load_program_bundle(session: AsyncSession, jurisdiction_id, program_s
         "uplifts": [],
         "jurisdiction_spend_pct": 1.0,
         "program_id": prog.id,
-    }
-
-
-async def begin_evaluation(session: AsyncSession, project_id) -> dict:
-    """The full orchestration behind "Begin Evaluation". Idempotent per
-    CanonicalProductionState fingerprint: a repeat click against unchanged
-    inputs returns the prior run rather than recomputing/duplicating."""
-    project = await session.get(Project, project_id)
-    if project is None:
-        return {"status": "PROJECT_NOT_FOUND"}
-
-    state = await CanonicalProductionStateBuilder(session).build(project_id)
-    handoff = build_optimizer_input(state)
-
-    if not handoff.accepted:
-        blockers = handoff.blockers or ["Incomplete inputs."]
-        status = (
-            "BUDGET_REQUIRED_FOR_CURRENT_EVALUATION"
-            if any("BUDGET_MISSING" in b for b in blockers)
-            else "BLOCKED_INCOMPLETE_INPUTS"
-        )
-        return {
-            "status": status,
-            "blockers": blockers,
-            "state_fingerprint": state.input_fingerprint,
-        }
-
-    oi = handoff.optimizer_input
-
-    # Idempotency: an existing evaluation run for THIS exact input
-    # fingerprint is returned unchanged rather than duplicated.
-    existing = (await session.execute(
-        select(StructureCalculationResult)
-        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(
-            ProductionStructure.project_id == project.id,
-            StructureCalculationResult.input_fingerprint == state.input_fingerprint,
-        )
-    )).scalars().all()
-    if existing:
-        return await _summarize(session, project, state, reused=True)
-
-    home = await _derive_home_jurisdiction(session, project)
-    if home is not None and project.home_jurisdiction_id is None:
-        project.home_jurisdiction_id = home.id
-        await session.flush()
-
-    requirements = derive_production_requirements({})  # honestly empty: SA-1 does not
-    # yet populate the environment/infrastructure signal shape this needs.
-    production_type = _production_type_for(project)
-
-    discovery = discover_executable_jurisdictions(
-        requirements=requirements,
-        production_type=production_type,
-        # A ceiling, not a qualifying-spend figure: used only to screen
-        # which jurisdictions could conceivably clear a minimum-spend
-        # gate. The REAL qualifying spend for each priced candidate below
-        # comes from run_full_analysis's own category-rule computation
-        # against the project's real budget lines.
-        qpe_usd=state.gross_budget_usd,
-        home_code=(home.code if home is not None else "ZZ"),
-    )
-
-    candidate_codes: list[tuple[str, str]] = []
-    if home is not None:
-        home_prog = next((s for c, s in discovery.accepted if c == home.code), None)
-        if home_prog:
-            candidate_codes.append((home.code, home_prog))
-    candidate_codes.extend(discovery.accepted_alternatives(home.code if home is not None else "ZZ"))
-
-    priced_structure_ids: list[uuid.UUID] = []
-    skipped: list[dict] = []
-
-    for code, program_slug in candidate_codes:
-        jurisdiction = (await session.execute(
-            select(Jurisdiction).where(Jurisdiction.code == code)
-        )).scalars().first()
-        if jurisdiction is None:
-            skipped.append({"jurisdiction_code": code, "reason": "no DB jurisdiction record"})
-            continue
-
-        bundle = await _load_program_bundle(session, jurisdiction.id, program_slug)
-        if bundle is None:
-            skipped.append({"jurisdiction_code": code, "reason": f"no DB program record for {program_slug}"})
-            continue
-
-        is_home = home is not None and code == home.code
-        structure = ProductionStructure(
-            id=uuid.uuid4(),
-            project_id=project.id,
-            name=(
-                f"{jurisdiction.name} — production's current base"
-                if is_home else f"Full relocation to {jurisdiction.name}"
-            ),
-            description=(
-                "The production's own confirmed base jurisdiction, priced as-is."
-                if is_home else
-                "Whole production relocated; nominal budget unchanged (no regional "
-                "cost normalization applied)."
-            ),
-            jurisdiction_allocations=[{"jurisdiction_id": str(jurisdiction.id), "shoot_pct": 100, "budget_pct": 100}],
-            claimed_program_ids=[str(bundle["program_id"])],
-            assumed_jurisdiction_spend_pcts={str(bundle["program_id"]): 1.0},
-        )
-        session.add(structure)
-        await session.flush()
-
-        await calculate_structure_impl(
-            str(project.id), str(structure.id), session,
-            extra_warnings=[MFNI_LIMITATION_NOTE],
-            has_unverified_inputs_override=True,
-            input_fingerprint=state.input_fingerprint,
-        )
-        priced_structure_ids.append(structure.id)
-
-    summary = await _summarize(session, project, state, reused=False)
-    summary["discovery_examined"] = len(discovery.examinations)
-    summary["discovery_rejected"] = discovery.metrics.get("rejected_count", 0)
-    summary["discovery_capability_only"] = discovery.metrics.get("capability_only_count", 0)
-    summary["skipped_candidates"] = skipped
-    return summary
-
-
-async def _summarize(session: AsyncSession, project: Project, state, *, reused: bool) -> dict:
-    """Read back the persisted structures/results for this project and
-    rank them by true_net_cost_usd — the same figure the existing
-    Analysis panel and structures API already expose. Never recomputes;
-    purely a read + rank of what is already in the database."""
-    rows = (await session.execute(
-        select(ProductionStructure, StructureCalculationResult)
-        .join(StructureCalculationResult, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(ProductionStructure.project_id == project.id)
-        .order_by(StructureCalculationResult.created_at.desc())
-    )).all()
-
-    # Keep only the latest result per structure.
-    latest_by_structure: dict[uuid.UUID, tuple[ProductionStructure, StructureCalculationResult]] = {}
-    for structure, result in rows:
-        if structure.id not in latest_by_structure:
-            latest_by_structure[structure.id] = (structure, result)
-
-    ranked = sorted(
-        latest_by_structure.values(),
-        key=lambda pair: (pair[1].true_net_cost_usd if pair[1].true_net_cost_usd is not None else float("inf")),
-    )
-
-    baseline_pair = next(
-        (pair for pair in ranked if pair[0].description and "confirmed base jurisdiction" in pair[0].description),
-        ranked[0] if ranked else None,
-    )
-    top_pair = ranked[0] if ranked else None
-
-    if top_pair and project.leading_structure_id is None:
-        # The lowest-NPC priced structure is the leading one — whether
-        # that turns out to be the baseline itself (no relocation beats
-        # the production's own base) or an alternative. Never overwrites
-        # a human-set leading structure on a re-summarize of an unchanged
-        # (idempotent) run.
-        project.leading_structure_id = top_pair[0].id
-        await session.flush()
-
-    return {
-        "status": "EVALUATION_REUSED" if reused else "EVALUATION_COMPLETE",
-        "state_fingerprint": state.input_fingerprint,
-        "gross_budget_usd": state.gross_budget_usd,
-        "priced_count": len(ranked),
-        "baseline": (
-            {
-                "structure_id": str(baseline_pair[0].id),
-                "name": baseline_pair[0].name,
-                "true_net_cost_usd": (
-                    float(baseline_pair[1].true_net_cost_usd)
-                    if baseline_pair[1].true_net_cost_usd is not None else None
-                ),
-            } if baseline_pair else None
-        ),
-        "top_result": (
-            {
-                "structure_id": str(top_pair[0].id),
-                "name": top_pair[0].name,
-                "true_net_cost_usd": (
-                    float(top_pair[1].true_net_cost_usd)
-                    if top_pair[1].true_net_cost_usd is not None else None
-                ),
-            } if top_pair else None
-        ),
-        "ranked": [
-            {
-                "structure_id": str(s.id),
-                "name": s.name,
-                "true_net_cost_usd": float(r.true_net_cost_usd) if r.true_net_cost_usd is not None else None,
-                "total_incentive_value_usd": (
-                    float(r.total_incentive_value_usd) if r.total_incentive_value_usd is not None else None
-                ),
-            }
-            for s, r in ranked
-        ],
-        "mfni_limitation": MFNI_LIMITATION_NOTE,
     }
