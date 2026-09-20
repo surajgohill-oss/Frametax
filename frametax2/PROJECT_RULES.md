@@ -87,3 +87,20 @@ On timeout:
 - Retry at most once, and only after a documented causal correction (a specific, stated reason the retry will behave differently — a fixed query, a narrower scope, a cleared lock). A bare retry with no causal change is not permitted; a second timeout on the same step is final for that step and must be reported as `INCOMPLETE`, not silently retried again.
 
 Never run the full backend test suite as a substitute for the focused/grouped tests above unless a task explicitly requires it — a full-suite run has no place in this hard-timeout schedule and must not be started speculatively "to be safe."
+
+### LONG-RUNNING PROCESS DISCIPLINE
+
+Applies to every test run, evaluation, or other command that can take minutes, and to anything that can read or write an evaluation generation. It is an addition to, and where the two conflict takes precedence over, the anti-loop rule above: the ceilings above are the defaults for ordinary commands; where a task explicitly grants a long-running test/evaluation invocation, **720 seconds (12 minutes) is the maximum** and is fixed before launch. On timeout inside a sequenced run, the sequence stops -- it does not "continue with independent steps".
+
+1. **Never warm up or cold-evaluate a real production for test preparation.** A missing or stale generation of a real production is not a reason to generate it. Use a minimal isolated fixture (a throw-away project created and deleted by the test) or report the dependency as unmet.
+2. **Classify before launch.** Before starting any command, state which it is: *synthetic* (isolated fixture only), *reuse-only* (reads an existing generation; can never generate), or *cold evaluation* (may generate rows).
+3. **Cold evaluation of Little Utopia, F#K Valentine's Day, Lips Like Sugar, or Bad Hombres requires explicit user authorization** for that specific run. Earlier authorization does not carry over.
+4. **Every test/evaluation command has**: one process only; line-buffered/unbuffered output (`python -u`, `PYTHONUNBUFFERED=1`, `pytest -v` so each node is printed as it runs); a hard 12-minute timeout established before launch by a real process alarm (e.g. `perl -e 'alarm shift; exec @ARGV' 720 <command>`, which keeps it a single process) -- never an output-yield heuristic; and visible current file / test / phase.
+5. **Never run overlapping regression or evaluation processes.** One at a time, to completion or timeout, on a given database.
+6. **At timeout:** terminate the exact process tree this task started (nothing else); verify with `ps` that no child processes remain and with `pg_stat_activity` that no connection of this task remains; record the last completed test and the timed-out node; and **do not restart automatically.** Then report.
+7. **No timeout avoidance.** Never use warm-ups, sleeps, repeated monitors/polling, or broad reruns to get around a timeout. A timeout is a finding to explain, not an obstacle to route around.
+8. **Green tests are never rerun.** After a fix, rerun only the failed/timed-out node IDs (identified with `pytest --collect-only -q`) and the tests never previously executed. Re-running an entire completed file requires explicit authorization.
+9. **Fail closed on the database before any DB-backed test:** assert the exact isolated DB name (e.g. `engine.url.database == "frametax2_claude_optimizer_acceptance_20260919"`) at session start, before any query. A mismatch aborts the run. Never connect to, or modify, shared `frametax2` or a preserved audit database.
+10. **Any reader that could load an evaluation generation must use bounded, current-generation SQL** (the generation summary, generation ordinal keyset pages, the retained-ordinal set). Loading an entire generation -- or the whole rejected/unpriced set -- into ORM memory is prohibited, in services, views, routes, and tests alike. An evaluation generation can exceed 500,000 rows.
+11. **A phase is not complete** while any of these holds: an unbounded read path, an unexplained timeout, a background process still running, or incomplete test evidence. Report `BLOCKED` with the specific gap instead.
+

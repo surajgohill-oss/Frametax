@@ -3,7 +3,7 @@ Production structure generation and calculation endpoints.
 
 POST /projects/{id}/structures/generate    — create a candidate structure
 POST /projects/{id}/structures/{sid}/calculate — run the engine
-GET  /projects/{id}/structure-results      — list calculated results
+GET  /projects/{id}/structures/results     — list calculated results (bounded, keyset-paginated)
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from app.schemas.production import (
     ProductionStructureCreate,
     ProductionStructureRead,
     StructureCalculationResultRead,
+    StructureResultsPage,
 )
 
 router = APIRouter(prefix="/projects/{project_id}/structures", tags=["structures"])
@@ -293,54 +294,116 @@ async def calculate_structure_impl(
     return calc_result
 
 
-@router.get("/results", response_model=list[StructureCalculationResultRead])
+#: Bounded page sizes for GET .../structures/results. Each result carries its full
+#: calculation trace (several KB), so pages are deliberately small.
+RESULTS_PAGE_DEFAULT_LIMIT = 50
+RESULTS_PAGE_MAX_LIMIT = 200
+
+
+def _encode_id_cursor(row_id: uuid.UUID) -> str:
+    import base64
+    return base64.urlsafe_b64encode(str(row_id).encode("ascii")).decode("ascii").rstrip("=")
+
+
+def _decode_id_cursor(cursor: str) -> uuid.UUID:
+    import base64
+    try:
+        return uuid.UUID(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)).decode("ascii"))
+    except Exception as exc:  # noqa: BLE001 -- any malformed cursor is one client error
+        raise HTTPException(status_code=422, detail="invalid pagination cursor") from exc
+
+
+@router.get("/results", response_model=StructureResultsPage)
 async def list_structure_results(
-    project_id: str,
+    project_id: uuid.UUID,
     historical: bool = Query(
         False,
         description=(
-            "False (default): only the current engine version's current-generation "
-            "results — the same scope build_project_workspace_view() serves. True: "
-            "every historical row ever persisted for this project, across every past "
-            "engine version and superseded fingerprint."
+            "False (default): only the CURRENT generation's results (current engine version AND "
+            "current input fingerprint) -- the same scope the workspace and production views serve -- "
+            "paged in generation order. True: an audit walk of every row ever persisted for this "
+            "project across every engine version and superseded fingerprint, paged by row id."
         ),
     ),
+    limit: int = Query(RESULTS_PAGE_DEFAULT_LIMIT, ge=1, le=RESULTS_PAGE_MAX_LIMIT),
+    cursor: str | None = Query(None, description="next_cursor from the previous page; omit for the first page"),
     db: AsyncSession = Depends(get_db),
-) -> list[StructureCalculationResult]:
-    """List calculation results for structures in this project.
+) -> dict:
+    """List calculation results for this project, ONE BOUNDED PAGE AT A TIME.
 
-    Backend-wiring self-audit (2026-09-17): previously returned EVERY
-    historical row for the project with no engine_version/input_fingerprint
-    filter at all — a project re-evaluated many times (or carrying legacy-
-    engine rows) returned its FULL cross-generation history by default,
-    unlike every other served-state reader in this codebase (project_
-    workspace_view.build_project_workspace_view, canonical_production_view),
-    which are correctly scoped to the current generation. Default now
-    matches that scope exactly; `historical=true` opts into the full
-    unscoped history explicitly, rather than that being the only mode.
+    There is no unbounded path: a production's current generation can hold >500K rows
+    (F#K Valentine's Day: 526,155), so every mode is keyset-paginated. Follow ``next_cursor``
+    while ``has_more`` is true to receive every row exactly once; nothing is silently dropped.
+
+    Default (current generation): filtered to the current engine version + input fingerprint,
+    ordered by ``generation_ordinal`` (the evaluation's own monotonic generation order) through
+    the (input_fingerprint, engine_version, generation_ordinal) index, so page N costs the same
+    as page 1. The exact ``total_count`` accompanies the first page (from the evaluation's own
+    summary row). Rows of superseded fingerprints or older engine versions are never returned.
+
+    ``historical=true``: an explicit audit walk over all generations, keyset by row id. It
+    reads through the existing structure_id/pkey indexes, so a deep page on a very large
+    project is slower than a current-generation page -- but it is bounded, never a full load.
     """
-    structs_result = await db.execute(
-        select(ProductionStructure.id).where(ProductionStructure.project_id == project_id)
-    )
-    struct_ids = [row[0] for row in structs_result.all()]
-
-    if not struct_ids:
-        return []
-
-    stmt = select(StructureCalculationResult).where(
-        StructureCalculationResult.structure_id.in_(struct_ids)
+    from app.services.canonical_evaluation import (
+        ENGINE_VERSION,
+        GenerationSummaryUnavailable,
+        InvalidPageCursor,
+        current_generation_fingerprint,
+        decode_page_cursor,
+        encode_page_cursor,
+        load_generation_summary,
     )
 
-    if not historical:
-        from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
+    if await db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    scr = StructureCalculationResult
 
-        current_fingerprint = await current_generation_fingerprint(db, project_id)
-        if current_fingerprint is None:
-            return []
-        stmt = stmt.where(
-            StructureCalculationResult.engine_version == ENGINE_VERSION,
-            StructureCalculationResult.input_fingerprint == current_fingerprint,
+    def _page(rows, *, scope, fingerprint, order, next_cursor_of, total=None) -> dict:
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        return {
+            "status": "OK", "scope": scope, "engine_version": ENGINE_VERSION if scope == "current_generation" else None,
+            "input_fingerprint": fingerprint, "limit": limit, "returned": len(rows), "has_more": has_more,
+            "next_cursor": next_cursor_of(rows[-1]) if has_more and rows else None,
+            "order": order, "total_count": total, "results": rows,
+        }
+
+    if historical:
+        stmt = select(scr).where(
+            scr.structure_id.in_(select(ProductionStructure.id).where(ProductionStructure.project_id == project_id))
         )
+        if cursor is not None:
+            stmt = stmt.where(scr.id > _decode_id_cursor(cursor))
+        rows = list((await db.execute(stmt.order_by(scr.id).limit(limit + 1))).scalars().all())
+        return _page(rows, scope="historical", fingerprint=None, order="id", next_cursor_of=lambda r: _encode_id_cursor(r.id))
 
-    results = await db.execute(stmt.order_by(StructureCalculationResult.created_at.desc()))
-    return list(results.scalars().all())
+    fingerprint = await current_generation_fingerprint(db, project_id)
+    if fingerprint is None:
+        return {"status": "NO_CURRENT_EVALUATION", "scope": "current_generation", "engine_version": ENGINE_VERSION,
+                "input_fingerprint": None, "limit": limit, "returned": 0, "has_more": False, "next_cursor": None,
+                "order": "generation_ordinal", "total_count": None, "results": []}
+    try:
+        after = decode_page_cursor(cursor) if cursor is not None else 0
+    except InvalidPageCursor as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    rows = list((await db.execute(
+        select(scr)
+        .join(ProductionStructure, scr.structure_id == ProductionStructure.id)
+        .where(
+            ProductionStructure.project_id == project_id,
+            scr.input_fingerprint == fingerprint,
+            scr.engine_version == ENGINE_VERSION,
+            scr.generation_ordinal > after,
+        )
+        .order_by(scr.generation_ordinal)
+        .limit(limit + 1)
+    )).scalars().all())
+    total = None
+    if cursor is None:
+        try:
+            total = (await load_generation_summary(db, project_id, fingerprint)).total_rows
+        except GenerationSummaryUnavailable:
+            pass
+    return _page(rows, scope="current_generation", fingerprint=fingerprint, order="generation_ordinal",
+                 next_cursor_of=lambda r: encode_page_cursor(r.generation_ordinal), total=total)

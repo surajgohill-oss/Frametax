@@ -54,3 +54,22 @@ class StructureCalculationResultRead(TimestampedSchema):
     optimization_opportunities: list[Any] | None
     program_results: list[Any] | None
     calculation_trace_json: dict | None
+    # Bounded-response contract (canonical-1.88.0+): the writer's monotonic 1..N generation
+    # order (the pagination key) and, for PRICED rows, the canonical economic identity.
+    generation_ordinal: int | None = None
+    economic_identity: str | None = None
+
+
+class StructureResultsPage(BaseModel):
+    """One bounded, keyset-paginated page of a project's calculation results."""
+    status: str
+    scope: str  # "current_generation" | "historical"
+    engine_version: str | None
+    input_fingerprint: str | None
+    limit: int
+    returned: int
+    has_more: bool
+    next_cursor: str | None
+    order: str
+    total_count: int | None = None  # first page of the current generation only
+    results: list[StructureCalculationResultRead]

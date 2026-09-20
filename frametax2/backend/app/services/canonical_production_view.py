@@ -41,11 +41,20 @@ from app.models.project import Project
 from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
+from app.services.economic_identity import canonical_economic_identity
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
+    UNPRICEABLE_PAGE_DEFAULT_LIMIT,
+    UNPRICEABLE_PAGE_ORDER,
+    UNPRICEABLE_RESULTS_ROUTE,
     _QUALIFICATION_ADMITS_PRICING,
     _QUALIFICATION_ADMITS_RECOMMENDED,
     _RELOCATION_DIMENSIONS,
+    GenerationSummaryUnavailable,
+    load_generation_summary,
+    load_retained_rows,
+    summary_totals,
+    unpriceable_page,
 )
 
 #: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
@@ -964,6 +973,39 @@ def _ranking_entry(entry: dict) -> dict:
     return base
 
 
+async def _load_baseline_results(session: AsyncSession, project_id, fingerprint: str) -> list[tuple]:
+    """(StructureCalculationResult, structure name) for the current generation's BASELINE row(s),
+    newest first -- WITHOUT reading the generation.
+
+    A baseline is always among the generation summary's retained ordinals (the summary keeps every
+    non-RULE_REJECTED row plus any baseline whatever its status), so it is fetched by
+    generation_ordinal through the (fingerprint, engine, ordinal) index and filtered on
+    is_baseline inside that small set. The previous form loaded every row of the generation as an
+    ORM object (526,155 for F#K Valentine's Day) to find that one row. A generation with no summary
+    (never one written by canonical-1.88.0+) has no served baseline."""
+    try:
+        summary = await load_generation_summary(session, project_id, fingerprint, engine_version=ENGINE_VERSION)
+    except GenerationSummaryUnavailable:
+        return []
+    scr = StructureCalculationResult
+    ordinals = list(summary.non_rejected_ordinals)
+    found: list[tuple] = []
+    for i in range(0, len(ordinals), 5000):
+        found.extend((await session.execute(
+            select(scr, ProductionStructure.name)
+            .join(ProductionStructure, ProductionStructure.id == scr.structure_id)
+            .where(
+                ProductionStructure.project_id == project_id,
+                scr.input_fingerprint == fingerprint,
+                scr.engine_version == ENGINE_VERSION,
+                scr.generation_ordinal.in_(ordinals[i:i + 5000]),
+                scr.calculation_trace_json["is_baseline"].astext == "true",
+            )
+        )).all())
+    found.sort(key=lambda pair: pair[0].created_at, reverse=True)
+    return [tuple(pair) for pair in found]
+
+
 async def compute_anchor_budget_contract(session: AsyncSession, project_id) -> dict:
     """CLAUDE_CORRECT_FAILED_OPTIMIZER_CLOSEOUT, Section A — the Anchor
     Budget Contract. THIS FUNCTION IS A THIN PRESENTATION READER, NOT THE
@@ -995,16 +1037,8 @@ async def compute_anchor_budget_contract(session: AsyncSession, project_id) -> d
     if not fingerprint:
         return {"status": "NO_CURRENT_EVALUATION", "project_id": str(project_id)}
 
-    baseline_row = (await session.execute(
-        select(StructureCalculationResult, ProductionStructure.name)
-        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
-        .where(
-            ProductionStructure.project_id == project_id,
-            StructureCalculationResult.input_fingerprint == fingerprint,
-            StructureCalculationResult.engine_version == ENGINE_VERSION,
-            StructureCalculationResult.calculation_trace_json["is_baseline"].astext == "true",
-        )
-    )).first()
+    baseline_rows = await _load_baseline_results(session, project_id, fingerprint)
+    baseline_row = baseline_rows[0] if baseline_rows else None
     if baseline_row is None:
         return {"status": "NO_BASELINE_STRUCTURE", "project_id": str(project_id)}
     scr, sname = baseline_row
@@ -1041,10 +1075,56 @@ async def compute_anchor_budget_contract(session: AsyncSession, project_id) -> d
     }
 
 
-async def build_production_and_structures(session: AsyncSession, project_id) -> dict:
+#: The production view serves at most this many DETAILED candidates per response (a served
+#: candidate entry is ~6-50 KB: segments, conditional programs/compatibility, warnings ...).
+#: Counts, the selected structure, the leading conditional structure and the baseline are always
+#: exact and always on the first page; the remainder is reached with candidate_offset (or the
+#: opaque next_cursor via GET /projects/{id}/evaluation/candidates). Every row stays in storage.
+CANDIDATE_PAGE_DEFAULT_LIMIT = 100
+CANDIDATE_PAGE_MAX_LIMIT = 100
+CANDIDATES_ROUTE = "/api/v1/projects/{project_id}/evaluation/candidates"
+_CANDIDATE_ORDER = (
+    "selected structure, leading conditional structure and baseline first; then ranking order "
+    "(comparable by rank, then review-required by NPC, then unpriced), equal NPCs by canonical "
+    "economic identity"
+)
+
+
+def encode_candidate_cursor(fingerprint: str, offset: int) -> str:
+    """Opaque cursor bound to ONE generation: a cursor minted for another fingerprint is refused."""
+    import base64
+    import json
+    raw = json.dumps([fingerprint[:16], int(offset)], separators=(",", ":")).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def decode_candidate_cursor(cursor: str) -> tuple[str, int]:
+    import base64
+    import json
+
+    from app.services.canonical_evaluation import InvalidPageCursor
+    try:
+        fp16, offset = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
+        if not isinstance(fp16, str) or isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+            raise ValueError("bad cursor parts")
+        return fp16, offset
+    except Exception as exc:  # noqa: BLE001 -- any malformed cursor is one client error
+        raise InvalidPageCursor("invalid pagination cursor") from exc
+
+
+async def build_production_and_structures(
+    session: AsyncSession, project_id, *,
+    candidate_limit: int = CANDIDATE_PAGE_DEFAULT_LIMIT, candidate_offset: int = 0,
+) -> dict:
     """Generic, project_id-driven replacement for GET /cineglobe/production
     + GET /cineglobe/structures, sourced from canonical_evaluation.py's
     persisted rows instead of the Little-Utopia-only in-memory get_state().
+
+    BOUNDED: ``structures.allocated_structures.structures`` / ``ranking`` carry at most
+    ``candidate_limit`` (<= 100) detailed candidates -- a deterministic page (see
+    ``candidates_page``) -- never the whole candidate set, and never the rejection universe.
+    Selection, ranking, conditional pooling and every count are still computed over ALL served
+    (non-rejected) candidates, so they are exact; only the DETAIL returned is paged.
     """
     project = await session.get(Project, project_id)
     if project is None:
@@ -1101,17 +1181,38 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     from app.services.canonical_evaluation import current_generation_fingerprint
     fingerprint = await current_generation_fingerprint(session, project.id)
 
+    # Bounded read (2026-09-19): this view previously built a structure entry for EVERY
+    # row of the current generation -- 526,155 for F#K Valentine's Day, 99.9% of them
+    # RULE_REJECTED -- and served every one in structures/ranking. The evaluation's one
+    # summary row (accumulated while it ran) now names the rows that are NOT plain
+    # RULE_REJECTED (priced, dominated, co-pro, feasibility, unpriceable-authority, plus
+    # any baseline), which are fetched by generation_ordinal; the rejected mass is
+    # summarized (exact totals, counts by disposition/reason, one bounded first page +
+    # cursor) under structures["rejection_universe"]. Nothing is dropped: every row stays
+    # in the database and behind GET /projects/{id}/evaluation/unpriceable. Only rows of
+    # THIS (fingerprint, engine_version) generation are ever read: stale fingerprints and
+    # older engine versions are excluded by construction.
     rows: list[tuple] = []
+    generation_totals = {"total": 0, "priced": 0, "by_disposition": {}, "by_reason": []}
+    generation_total_rows = 0
+    rejection_first_page = {
+        "limit": UNPRICEABLE_PAGE_DEFAULT_LIMIT, "returned": 0, "has_more": False,
+        "next_cursor": None, "order": UNPRICEABLE_PAGE_ORDER, "results": [],
+    }
     if fingerprint:
-        rows = (await session.execute(
-            select(ProductionStructure, StructureCalculationResult)
-            .join(StructureCalculationResult, StructureCalculationResult.structure_id == ProductionStructure.id)
-            .where(
-                ProductionStructure.project_id == project.id,
-                StructureCalculationResult.input_fingerprint == fingerprint,
-                StructureCalculationResult.engine_version == engine_version,
+        try:
+            _summary = await load_generation_summary(session, project.id, fingerprint, engine_version=engine_version)
+        except GenerationSummaryUnavailable:
+            # A fingerprint can be computed for a project with no evaluation persisted
+            # under it (yet): no rows, exactly as before.
+            _summary = None
+        if _summary is not None:
+            rows = await load_retained_rows(session, project.id, fingerprint, _summary, engine_version=engine_version)
+            generation_totals = summary_totals(_summary)
+            generation_total_rows = _summary.total_rows
+            rejection_first_page = await unpriceable_page(
+                session, project.id, fingerprint, engine_version=engine_version,
             )
-        )).all()
 
     jurisdiction_ids = set()
     for structure, _ in rows:
@@ -1209,10 +1310,22 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # the same explicit is_directly_comparable field to decide what to
     # rank vs. what to show as priced-but-review, never overloading
     # is_fully_priced to mean both things.
+    # Equal-NPC ties are ordered by the run-independent canonical economic identity (the same
+    # tie-breaker evaluate_project's ranking uses), never by database row order or the
+    # per-generation random structure uuid -- so a ranking is reproducible across
+    # regenerations of the same economics.
+    _identity_by_structure = {
+        str(s.id): (r.economic_identity or canonical_economic_identity(r.structure_type, r.calculation_trace_json))
+        for s, r in rows
+    }
+    _rank_key = lambda e: (
+        e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
+        _identity_by_structure.get(e["structure_id"], ""),
+    )
     comparable = sorted(
         (e for e in structure_entries
          if e["is_fully_priced"] and e["is_directly_comparable"] and _qualification_admits_recommended(e)),
-        key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
+        key=_rank_key,
     )
     # Workspace Top-6/Data Truthfulness: review_required carries NO rank
     # (comparability, not priceability, gates numeric rank — see above),
@@ -1227,7 +1340,7 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     review_required = sorted(
         (e for e in structure_entries
          if e["is_fully_priced"] and not (e["is_directly_comparable"] and _qualification_admits_recommended(e))),
-        key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
+        key=_rank_key,
     )
     unpriced = [e for e in structure_entries if not e["is_fully_priced"]]
 
@@ -1252,7 +1365,7 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     conditional_pool = (
         sorted(
             (e for e in structure_entries if _is_conditional_eligible(e)),
-            key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
+            key=_rank_key,
         )
         if not comparable else []
     )
@@ -1510,6 +1623,44 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     comparable_count = len(comparable)
     review_required_count = len(review_required)
 
+    # ── Bounded candidate page ────────────────────────────────────────────────────────────
+    # Everything above (selection, ranking, conditional pool, accounting) ran over ALL served
+    # candidates. What is RETURNED in detail is one deterministic page of them: the headline
+    # candidates (selected structure, leading conditional structure, baseline) first, then the
+    # ranking order. Pages partition that sequence, so following next_cursor returns every
+    # served candidate exactly once.
+    _page_limit = max(1, min(int(candidate_limit), CANDIDATE_PAGE_MAX_LIMIT))
+    _page_offset = max(0, int(candidate_offset))
+    _entry_by_id = {e["structure_id"]: e for e in structure_entries}
+    _ranking_by_id = {r["structure_id"]: r for r in ranking}
+    _pinned = [
+        i for i in dict.fromkeys([
+            canonical_selected_structure_id,
+            _leading_conditional_id,
+            next((e["structure_id"] for e in structure_entries if e["is_baseline"]), None),
+        ]) if i
+    ]
+    _pinned_set = set(_pinned)
+    _sequence = _pinned + [r["structure_id"] for r in ranking if r["structure_id"] not in _pinned_set]
+    _page_ids = _sequence[_page_offset:_page_offset + _page_limit]
+    _has_more = _page_offset + _page_limit < len(_sequence)
+    candidates_page = {
+        "limit": _page_limit,
+        "offset": _page_offset,
+        "returned": len(_page_ids),
+        "total": len(_sequence),
+        "has_more": _has_more,
+        "next_cursor": (
+            encode_candidate_cursor(fingerprint, _page_offset + _page_limit) if _has_more and fingerprint else None
+        ),
+        "order": _CANDIDATE_ORDER,
+        "results_route": CANDIDATES_ROUTE.format(project_id=project.id),
+    }
+    page_entries = [_entry_by_id[i] for i in _page_ids]
+    page_ranking = [_ranking_by_id[i] for i in _page_ids]
+    _alternatives_total = len(unlockable_alternatives)
+    page_alternatives = unlockable_alternatives[:CANDIDATE_PAGE_MAX_LIMIT]
+
     structures = {
         "candidates": [],
         "pruned": [],
@@ -1522,7 +1673,10 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
                 "own relocation_cost_normalized flag."
             ),
             "coverage": {
-                "executable_jurisdictions": [e["primary_jurisdiction"] for e in structure_entries if e["primary_jurisdiction"]],
+                # distinct, first-seen order: bounded by the number of jurisdictions
+                "executable_jurisdictions": list(dict.fromkeys(
+                    e["primary_jurisdiction"] for e in structure_entries if e["primary_jurisdiction"]
+                )),
                 "catalog_only_excluded": None,
                 "reachable_treaty_partners": [],
                 "categories": [],
@@ -1530,15 +1684,26 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             },
             "discovery": {
                 "metrics": {},
-                "generated_structures": len(structure_entries),
+                "generated_structures": generation_total_rows or len(structure_entries),
                 "optimized_structures": len(comparable) + len(review_required),
                 "final_ranked_structures": len(comparable),
                 "production_requirements": {"environments": [], "infrastructure": [], "required_capabilities": []},
                 "examinations": [],
             },
-            "structures": structure_entries,
+            "structures": page_entries,
+            "candidates_page": candidates_page,
+            # Every unpriced (no-number) candidate of this evaluation -- the RULE_REJECTED
+            # universe included -- as exact totals + a bounded first page. The remainder is
+            # paged from results_route; has_more/next_cursor make that explicit.
+            "rejection_universe": {
+                "total_count": generation_totals["total"],
+                "by_disposition": generation_totals["by_disposition"],
+                "by_reason": generation_totals["by_reason"],
+                "first_page": rejection_first_page,
+                "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),
+            } if fingerprint else None,
             "contingency": {},
-            "ranking": ranking,
+            "ranking": page_ranking,
             # Item A (canonical scenario-selection consistency) — see the
             # long comment above where this is computed. The single
             # authoritative structure_id every non-Globe surface (Overview,
@@ -1552,7 +1717,9 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             # is_directly_comparable priced candidate is blocked only by
             # a genuinely unlockable qualification state.
             "leading_conditional_structure": leading_conditional_structure,
-            "unlockable_alternatives": unlockable_alternatives,
+            "unlockable_alternatives": page_alternatives,
+            "unlockable_alternatives_total": _alternatives_total,
+            "unlockable_alternatives_has_more": _alternatives_total > len(page_alternatives),
             "stack_combinations": {},
             "advisor_routing_decisions_input": {},
             # Restoration-phase candidate accounting, matching the earlier
@@ -1564,7 +1731,7 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             "candidate_accounting": {
                 "comparable_count": comparable_count,
                 "review_required_count": review_required_count,
-                "unpriceable_count": len(unpriced),
+                "unpriceable_count": generation_totals["total"] if fingerprint and generation_total_rows else len(unpriced),
             },
         },
     }
@@ -1639,16 +1806,13 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     # never a second freshness architecture.
     from app.services.canonical_evaluation import current_generation_fingerprint
     current_fingerprint = await current_generation_fingerprint(session, project.id)
-    baseline_rows = (await session.execute(
-        select(StructureCalculationResult)
-        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
-        .where(
-            ProductionStructure.project_id == project.id,
-            StructureCalculationResult.engine_version == ENGINE_VERSION,
-            StructureCalculationResult.input_fingerprint == current_fingerprint,
-        )
-        .order_by(StructureCalculationResult.created_at.desc())
-    )).scalars().all() if current_fingerprint else []
+    # Bounded read (2026-09-19): this previously loaded EVERY row of the current generation
+    # (526,155 ORM objects for F#K Valentine's Day) only to pick out the baseline. The baseline
+    # is fetched directly (see _load_baseline_results); the generation is never read.
+    baseline_rows = (
+        [r for r, _ in await _load_baseline_results(session, project.id, current_fingerprint)]
+        if current_fingerprint else []
+    )
     leading_result = next(
         (r for r in baseline_rows if (r.calculation_trace_json or {}).get("is_baseline")), None,
     )

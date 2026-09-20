@@ -90,24 +90,48 @@ async def test_every_structure_has_a_non_null_type_and_jurisdiction(db: AsyncSes
         view = await build_production_and_structures(db, project_id)
         for s in view["structures"]["allocated_structures"]["structures"]:
             assert s["structure_type"] is not None, f"{project_id}: {s['structure_id']} has null structure_type"
+            # "hybrid" (ordinary component hybrid, canonical since 1.70.0) is a valid
+            # canonical family: the served set has always carried it once a generation exists.
             assert s["structure_type"] in (
                 "single_country", "full_relocation", "multi_program",
-                "component_relocation", "treaty_coproduction",
+                "component_relocation", "treaty_coproduction", "hybrid",
             )
 
 
 async def test_unpriceable_candidates_never_ranked_as_opportunities(db: AsyncSession):
     """Abu Dhabi (or any UNPRICEABLE_AUTHORITY_INSUFFICIENT candidate) must
     never appear as a ranked opportunity — Part N."""
+    # The production view now returns ONE bounded page (<= 100) of the served candidates, so an
+    # unpriceable candidate is not required to be on page 1 (they sit at the tail of the ranking
+    # order). They are verified through the exact summary counts and by paging the whole served
+    # set with candidate_offset -- every served candidate is visited exactly once.
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
-        view = await build_production_and_structures(db, project_id)
-        alloc = view["structures"]["allocated_structures"]
+        entries, ranking, offset = [], [], 0
+        while True:
+            view = await build_production_and_structures(
+                db, project_id, candidate_limit=100, candidate_offset=offset,
+            )
+            alloc = view["structures"]["allocated_structures"]
+            page = alloc["candidates_page"]
+            assert page["returned"] <= 100
+            entries += alloc["structures"]
+            ranking += alloc["ranking"]
+            if not page["has_more"]:
+                break
+            offset += page["limit"]
+        assert len(entries) == len({e["structure_id"] for e in entries}) == page["total"], (
+            f"{project_id}: paging must visit every served candidate exactly once"
+        )
         unpriceable_ids = {
-            s["structure_id"] for s in alloc["structures"]
+            s["structure_id"] for s in entries
             if s["candidate_status"] == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
         }
         assert unpriceable_ids, f"{project_id}: expected at least one unpriceable candidate"
-        for r in alloc["ranking"]:
+        # the exact total (from the generation summary) covers them, and the rejection universe
+        # is summarized rather than embedded
+        assert alloc["candidate_accounting"]["unpriceable_count"] >= len(unpriceable_ids)
+        assert alloc["rejection_universe"]["total_count"] == alloc["candidate_accounting"]["unpriceable_count"]
+        for r in ranking:
             if r["structure_id"] in unpriceable_ids:
                 assert r.get("rank") is None, f"{project_id}: unpriceable candidate {r['structure_id']} must not be ranked"
 

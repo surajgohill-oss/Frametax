@@ -7,6 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.models.project import Project
+from app.services.canonical_production_view import (
+    CANDIDATE_PAGE_DEFAULT_LIMIT,
+    CANDIDATE_PAGE_MAX_LIMIT,
+    build_production_and_structures,
+    decode_candidate_cursor,
+)
+from app.services.evaluation_contract import apply_evaluation_contract
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     UNPRICEABLE_PAGE_DEFAULT_LIMIT,
@@ -31,7 +38,8 @@ async def begin_project_evaluation(project_id: uuid.UUID, db: AsyncSession = Dep
     result = await evaluate_project(db, project_id)
     if result.get("status") == "PROJECT_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Project not found")
-    return result
+    # One served shape for fresh and reused evaluations: only ``status`` may differ.
+    return await apply_evaluation_contract(db, project_id, result)
 
 
 @router.get("/{project_id}/evaluation/unpriceable")
@@ -70,3 +78,43 @@ async def list_unpriceable_candidates(
             by_reason=totals["by_reason"],
         )
     return response
+
+
+@router.get("/{project_id}/evaluation/candidates")
+async def list_served_candidates(
+    project_id: uuid.UUID,
+    limit: int = Query(CANDIDATE_PAGE_DEFAULT_LIMIT, ge=1, le=CANDIDATE_PAGE_MAX_LIMIT),
+    cursor: str | None = Query(None, description="next_cursor from the previous page; omit for the first page"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """The DETAILED served candidates (priced, dominated, co-pro, feasibility, unpriceable-authority
+    -- everything that is not a plain RULE_REJECTED) of the project's CURRENT evaluation, one bounded
+    page (max 100) at a time. The production view returns page 1 of this same sequence; follow
+    ``next_cursor`` while ``has_more`` is true to receive every served candidate exactly once. The
+    rejection universe is paged separately at /evaluation/unpriceable. Read-only; a cursor minted for
+    another evaluation generation is refused (409) rather than silently mis-paged."""
+    if await db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    fingerprint = await current_generation_fingerprint(db, project_id)
+    if fingerprint is None:
+        return {"status": "NO_CURRENT_EVALUATION", "engine_version": ENGINE_VERSION, "input_fingerprint": None,
+                "limit": limit, "returned": 0, "total": 0, "has_more": False, "next_cursor": None,
+                "structures": [], "ranking": []}
+    offset = 0
+    if cursor is not None:
+        try:
+            fp16, offset = decode_candidate_cursor(cursor)
+        except InvalidPageCursor as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        if fp16 != fingerprint[:16]:
+            raise HTTPException(
+                status_code=409,
+                detail="cursor belongs to a different evaluation generation; restart from the first page",
+            )
+    view = await build_production_and_structures(db, project_id, candidate_limit=limit, candidate_offset=offset)
+    allocated = view["structures"]["allocated_structures"]
+    return {
+        "status": "OK", "engine_version": ENGINE_VERSION, "input_fingerprint": fingerprint,
+        **allocated["candidates_page"],
+        "structures": allocated["structures"], "ranking": allocated["ranking"],
+    }
