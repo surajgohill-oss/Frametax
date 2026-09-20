@@ -93,7 +93,8 @@ async def _candidate_trace_rows(db: AsyncSession, project_id, fingerprint: str, 
     out = [
         {"trace": t, "status": t.get("candidate_status"), "rejection_reason_class": t.get("rejection_reason_class"),
          "rrc": t.get("rejection_reason_class"), "reason": t.get("reason"), "program_slugs": t.get("program_slugs"),
-         "total_incentive_value_usd": inc, "aggregated_count": 1}
+         "total_incentive_value_usd": inc, "component_allocations": t.get("component_allocations"),
+         "aggregated_count": 1}
         for t, inc in detailed
     ]
     for g in groups:
@@ -101,7 +102,8 @@ async def _candidate_trace_rows(db: AsyncSession, project_id, fingerprint: str, 
         if t.get("discovery_classification") == classification:
             out.append({"trace": t, "status": g.candidate_status, "rejection_reason_class": g.reason_class, "rrc": g.reason_class,
                         "reason": t.get("reason"), "program_slugs": t.get("program_slugs"),
-                        "total_incentive_value_usd": None, "aggregated_count": g.candidate_count})
+                        "total_incentive_value_usd": g.min_incentive_usd, "component_allocations": t.get("component_allocations"),
+                        "aggregated_count": g.candidate_count})
     return out
 
 
@@ -1096,6 +1098,9 @@ async def test_ho013_two_movable_components_route_simultaneously_no_double_count
     # independently-priced, examined candidates for THIS project --
     # never silently absent -- even though (as with HO-001) they do not
     # necessarily win the final dominance comparison.
+    # A single-program (full_relocation) candidate names its program in the singular ``program_slug``; a stacked/combined one
+    # in ``program_slugs`` -- match either. canonical-1.90 bounded retention: a PRICED candidate is either a retained detailed row or counted exactly in a
+    # PRICED aggregate group (exact count + representative trace); "appears as a real PRICED candidate" spans both.
     for slug in (NZ_POST_VFX_SLUG, OCASE_SLUG):
         priced_elsewhere = (
             await db.execute(
@@ -1104,34 +1109,32 @@ async def test_ho013_two_movable_components_route_simultaneously_no_double_count
                     SELECT 1 FROM production_structures ps
                     JOIN structure_calculation_results scr ON scr.structure_id = ps.id
                     WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
-                      AND scr.calculation_trace_json->'program_slugs' @> :slugjson
+                      AND (scr.calculation_trace_json->'program_slugs' @> :slugjson
+                           OR scr.calculation_trace_json->>'program_slug' = :slug)
                       AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
                     LIMIT 1
                     """
                 ),
-                {"pid": str(project.id), "fp": fingerprint, "slugjson": json.dumps([slug])},
+                {"pid": str(project.id), "fp": fingerprint, "slugjson": json.dumps([slug]), "slug": slug},
             )
         ).first()
-        assert priced_elsewhere, f"{slug} never appears as a real PRICED candidate for this project"
+        priced_aggregated = (
+            await db.execute(
+                select(EvaluationCandidateAggregate.candidate_count).where(
+                    EvaluationCandidateAggregate.project_id == project.id,
+                    EvaluationCandidateAggregate.input_fingerprint == fingerprint,
+                    EvaluationCandidateAggregate.engine_version == ce.ENGINE_VERSION,
+                    EvaluationCandidateAggregate.candidate_status == "PRICED",
+                    EvaluationCandidateAggregate.program_slugs.contains([slug]),
+                ).limit(1)
+            )
+        ).first()
+        assert priced_elsewhere or priced_aggregated, f"{slug} never appears as a real PRICED candidate for this project"
 
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT scr.id, scr.calculation_trace_json->>'candidate_status' AS status,
-                       scr.calculation_trace_json->'program_slugs' AS program_slugs,
-                       scr.calculation_trace_json->'component_allocations' AS component_allocations,
-                       scr.total_incentive_value_usd, scr.true_net_cost_usd
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'discovery_classification' = 'combined_coproduction_multi_component_stack'
-                  AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
-                """
-            ),
-            {"pid": str(project.id), "fp": fingerprint},
-        )
-    ).mappings().all()
+    rows = [
+        r for r in await _candidate_trace_rows(db, project.id, fingerprint, "combined_coproduction_multi_component_stack")
+        if r["status"] == "PRICED"
+    ]  # retained detailed rows + PRICED aggregate groups (representative trace), canonical-1.90
     assert rows, "no PRICED combined_coproduction_multi_component_stack row was ever persisted"
     for r in rows:
         assert len(set(r["program_slugs"] or [])) == 4, r["program_slugs"]

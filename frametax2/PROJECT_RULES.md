@@ -114,3 +114,7 @@ Applies to every test run, evaluation, or other command that can take minutes, a
 3. **Fail-closed invariant** at commit: `candidates generated == detailed rows persisted + sum(candidate aggregate counts)`. Any mismatch, and any retained proof that references a non-retained candidate, rolls the evaluation back.
 4. Introducing a new high-volume candidate status, or a new persisted per-candidate row type, requires stating its retention bound in the same change, with a deterministic synthetic full-enumeration-versus-bounded comparison proving the retained set, rankings, economics and accounting are identical before any real production is evaluated.
 5. Served surfaces take exact totals from the generation summary + aggregates, rank and recommend from the retained rows, and paginate retained details and aggregate groups -- never every internal permutation.
+
+### CONFIRMED-DEFECT RULE
+
+A confirmed in-scope code defect may not be deferred merely because its fix invalidates acceptance generations. Fix it, bump the engine, and regenerate the bounded acceptance set once. Do not repeat already-passing tests.
