@@ -402,6 +402,57 @@ export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
   return byIso;
 }
 
+// LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21) — CONFIRMED LIVE ROOT CAUSE of
+// blank Optimizer overlays across all four productions: every candidate the
+// generic structural generator builds (HYBRID_ANCHOR_COMPONENT and every
+// other family sharing that code path) carries `segments: []` — it never
+// populates `segments` at all, only `component_allocations` (confirmed live
+// against Little Utopia's own served payload: a real, priced
+// HYBRID_ANCHOR_COMPONENT structure with segments.length === 0 and 3 real,
+// fully-priced component_allocations entries). Every hover/click-through
+// consumer read ONLY `structure.segments`, so every Optimizer-mode
+// jurisdiction/card silently found no match — the hover card correctly fell
+// back to its own honest "Not available" text (never a raw blank), but the
+// Inspector click-through had no such fallback at all: `segments` empty AND
+// `recommendation` null meant clicking any Optimizer jurisdiction or card
+// opened NO Inspector whatsoever, confirmed live (zero DOM change on click).
+//
+// Fix: prefer a real `segments` entry when present (single-jurisdiction and
+// treaty structures, unchanged); otherwise derive the same shape from the
+// matching `component_allocations` entry — ONLY the fields that entry
+// actually carries (jurisdiction_code, program_slug, allocated_usd,
+// guaranteed_incentive_usd). Fields component_allocations never tracks at
+// this granularity (rate_floor/rate_ceiling/is_band_ceiling, excluded_usd,
+// statutory_basis, blockers, qualification_trace) are left OMITTED, never
+// invented — every existing consumer (GlobeHoverCard, AllocationSegment
+// Inspector) already renders an explicit "—"/"Not available" for an absent
+// field, so omitting rather than fabricating is the correct, already-
+// established honest-unavailable treatment. One resolver, reused by the
+// hover path below and by every click-through in ProjectGlobe.jsx/
+// Workspace.jsx — never a second, independently-maintained lookup.
+export function resolveSegmentDetail(structure, code) {
+  const seg = structure?.segments?.find((sg) => sg.jurisdiction_code === code);
+  if (seg) return seg;
+  const ca = structure?.component_allocations?.find((c) => c.jurisdiction_code === code);
+  if (!ca) return null;
+  return {
+    jurisdiction_code: ca.jurisdiction_code,
+    program_slug: ca.program_slug,
+    // A component_allocations entry exists only when this jurisdiction's
+    // component was actually claimed/routed — real fact, not a guess.
+    claims_incentive: !!ca.program_slug,
+    allocated_usd: ca.allocated_usd,
+    qpe_usd: ca.allocated_usd,
+    // component_allocations tracks one real, deterministic per-component
+    // figure (guaranteed_incentive_usd) rather than segments' separate
+    // floor/modeled-ceiling split. Used for both the Inspector's
+    // "Incentive (floor)" and the hover card's modeled-incentive figure —
+    // never two invented numbers, the one real figure this data model has.
+    incentive_floor_usd: ca.guaranteed_incentive_usd,
+    incentive_ceiling_usd: ca.guaranteed_incentive_usd,
+  };
+}
+
 // Per-country hover payload — read verbatim from the best (highest-state)
 // structure touching that country. Countries with no participating
 // structure (Excluded, from discovery only) carry state + jurisdiction
@@ -447,7 +498,10 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
     // second derivation. Only the segment for THIS jurisdiction's own code,
     // not the structure's dominant segment (that's scenarioDisplay's job on
     // the card, a different question: "what defines this whole structure").
-    const seg = structure?.segments?.find((sg) => sg.jurisdiction_code === code);
+    // resolveSegmentDetail (see its own comment) falls back to
+    // component_allocations for structures the structural generator built
+    // (every Optimizer family), which never populate `segments` at all.
+    const seg = resolveSegmentDetail(structure, code);
     const baseIncentive = seg?.claims_incentive && seg.program_slug
       ? {
           programLabel: programDisplay(seg.program_slug),
@@ -561,7 +615,14 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
     ...(structure.participants || []).filter((c) => c !== structure.primary_jurisdiction),
   ].filter((c) => JURISDICTION_COORDS[c]);
 
-  const qpeByCode = new Map((structure.segments || []).map((sg) => [sg.jurisdiction_code, sg.qpe_usd]));
+  // resolveSegmentDetail (component_allocations fallback) so a hybrid/
+  // Optimizer structure's real per-leg QPE — allocated_usd, confirmed live
+  // as the genuine served component spend, never a segments-only structure
+  // type — drives real arc-weight/point qpeUsd instead of every leg
+  // silently falling back to the fixed default width.
+  const qpeByCode = new Map(
+    ordered.map((code) => [code, resolveSegmentDetail(structure, code)?.qpe_usd ?? null]),
+  );
   const maxQpe = Math.max(1, ...ordered.map((c) => qpeByCode.get(c) || 0));
 
   // The primary shoot reads Recommended; every downstream routed/

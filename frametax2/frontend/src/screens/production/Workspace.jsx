@@ -7,7 +7,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
@@ -100,7 +100,17 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // spend from its own per-segment QPE, incentive and NPC from its own
   // priced fields. No production-level or prototype figure is shown.
   const gross = structure.gross_budget_usd ?? grossBudget;
-  const qualifiedSpendRaw = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
+  // LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21): every Optimizer-family
+  // structure (built by the structural generator) carries segments: [] and
+  // only populates component_allocations — confirmed live this silently
+  // displayed "Qualified spend $0" on every Optimizer scenario card
+  // (Lanes/Split), not a real zero. Sums the same real served field
+  // (allocated_usd, the routed/qualified spend per component) this line
+  // already sums for segments' qpe_usd — no new derivation, just the other
+  // real field name this structure type actually carries.
+  const qualifiedSpendRaw = structure.segments?.length
+    ? structure.segments.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0)
+    : (structure.component_allocations || []).reduce((sum, ca) => sum + (ca.allocated_usd || 0), 0);
   // Segment QPE is summed from the same real leaf accounts the production's
   // Gross budget is drawn from; when a structure excludes nothing, that sum
   // can land a few dollars off the source document's own stated Grand Total
@@ -433,21 +443,30 @@ export default function Workspace() {
   ].slice(0, 8);
 
   const contingencyByAccount = allocated?.contingency || {};
+  // LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21): resolveSegmentDetail falls
+  // back to component_allocations for structures the structural generator
+  // built (every Optimizer family), which never populate `segments` at all
+  // — confirmed live: clicking any Optimizer jurisdiction/structure here
+  // previously opened no Inspector (segments empty, recommendation null).
   function handleGlobeClick(pt) {
     const code = pt.jurisdictionCode || pt.id;
     setSelectedJurisdiction(code);
     const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
-    const seg = s.segments.find((sg) => sg.jurisdiction_code === code);
+    const seg = resolveSegmentDetail(s, code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
   function handleSelectStructure(structure) {
     if (structure.recommendation) openInspector("structure-recommendation", structure.recommendation);
-    else if (structure.segments?.[0]) openInspector("allocation-segment", { ...structure.segments[0], structureLabel: structure.label, contingencyByAccount });
+    else {
+      const firstCode = structure.segments?.[0]?.jurisdiction_code ?? structure.component_allocations?.[0]?.jurisdiction_code ?? null;
+      const seg = firstCode ? resolveSegmentDetail(structure, firstCode) : null;
+      if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, contingencyByAccount });
+    }
   }
   function handleSelectSegment(structure, code) {
-    const seg = structure.segments.find((sg) => sg.jurisdiction_code === code);
+    const seg = resolveSegmentDetail(structure, code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, contingencyByAccount });
   }
 
