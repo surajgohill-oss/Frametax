@@ -5,10 +5,17 @@
 // Pure logic tests for lib/workspaceScenarioMode.js — no JSX, no backend,
 // no economics: every input below is a hand-built structure entry shaped
 // like the real allocated_structures payload (canonical_production_view.py's
-// own `classification` field — app/services/structural_classification.py's
-// canonical enum). Every assertion checks SELECTION only: which structures
-// occupy which of the six Workspace slots for a given mode, never a
-// re-derivation of family/classification.
+// own `classification`/`best_per_jurisdiction` fields). Every assertion
+// checks SELECTION only: which structures occupy which of the six
+// Workspace slots for a given mode.
+//
+// WORKSPACE_CANONICAL_JURISDICTION_WINNERS (2026-09-21): Single
+// Jurisdiction mode now consumes the backend's own canonical
+// `best_per_jurisdiction` projection directly (one entry per jurisdiction,
+// already deduplicated/ranked server-side) instead of reconstructing
+// jurisdiction winners client-side from the bounded `structures` page —
+// the root cause of the earlier duplicate/missing-jurisdiction defect
+// (see the module's own header comment for the full trace).
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -28,9 +35,6 @@ function structure(overrides) {
     structure_type: "single_country",
     classification: "SINGLE_JURISDICTION",
     label: "Base",
-    // Distinct by default (keyed off structure_id) so ordinary fixtures
-    // never accidentally collide under the new canonical-identity dedup
-    // — a test that WANTS a collision sets these explicitly.
     primary_jurisdiction: `JUR-${id}`,
     participants: [`JUR-${id}`],
     program_slugs: [`program-${id}`],
@@ -43,141 +47,79 @@ function structure(overrides) {
   };
 }
 
-function allocatedOf(structures) {
-  return { structures, ranking: [] };
+// best_per_jurisdiction fixture builder — the SAME real shape
+// canonical_production_view.py now serves (the full structure entry plus
+// economic_identity), keyed by jurisdiction code.
+function bestPerJurisdiction(entries) {
+  const out = {};
+  for (const e of entries) out[e.primary_jurisdiction] = e;
+  return out;
 }
 
-test("admissibleForMode: Normal mode admits only SINGLE_JURISDICTION and STACKED_PROGRAMS classifications", () => {
-  const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "stack", classification: "STACKED_PROGRAMS", npc_with_adjustments_usd: 2 }),
-    structure({ structure_id: "hybrid", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 3 }),
-    structure({ structure_id: "treaty", classification: "OFFICIAL_COPRODUCTION", npc_with_adjustments_usd: 4 }),
-    structure({ structure_id: "combined", classification: "COMBINED_COPRO_HYBRID_STACK", npc_with_adjustments_usd: 5 }),
-    structure({ structure_id: "multilateral", classification: "MULTI_PRINCIPAL_MULTILATERAL", npc_with_adjustments_usd: 6 }),
-  ];
-  const admissible = admissibleForMode(allocatedOf(structures), MODE_NORMAL);
-  assert.deepEqual(admissible.map((s) => s.structure_id).sort(), ["anchor", "stack"]);
+function allocatedOf(structures, bpjEntries) {
+  return {
+    structures,
+    ranking: [],
+    best_per_jurisdiction: bestPerJurisdiction(bpjEntries ?? structures.filter((s) => NORMAL_FAMILIES.includes(s.classification))),
+  };
+}
+
+test("admissibleForMode (Single Jurisdiction): consumes best_per_jurisdiction directly — one entry per jurisdiction, already the canonical winner", () => {
+  const anchor = structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "GR", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const on = structure({ structure_id: "on-winner", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 2_556_030 });
+  const mb = structure({ structure_id: "mb-winner", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "CA-MB", npc_with_adjustments_usd: 3_183_389 });
+  const allocated = allocatedOf([anchor, on, mb]);
+  const admissible = admissibleForMode(allocated, MODE_NORMAL);
+  assert.deepEqual(admissible.map((s) => s.structure_id), ["anchor", "on-winner", "mb-winner"]);
 });
 
-test("admissibleForMode: Optimizer mode admits every component/co-production/multilateral family, never SINGLE_JURISDICTION/STACKED_PROGRAMS", () => {
+test("admissibleForMode (Single Jurisdiction): multiple Ontario candidate permutations collapse into the single canonical best-NPC Ontario winner", () => {
+  // Four REAL, distinct Ontario program-stack permutations (like F#K
+  // Valentine's Day's own data) never reach admissibleForMode as raw
+  // candidates at all here — best_per_jurisdiction has ALREADY reduced
+  // them, server-side, to their one canonical winner (on_ofttc+ocase,
+  // the lowest-NPC of the four). This fixture proves the frontend trusts
+  // that reduction rather than re-deriving it from raw permutations.
+  const onWinner = structure({
+    structure_id: "on-ofttc-ocase", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON",
+    label: "Ontario — OFTTC + OCASE (combined)", program_slugs: ["on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"],
+    npc_with_adjustments_usd: 2_556_030.86,
+  });
+  const mb = structure({ structure_id: "mb", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "CA-MB", npc_with_adjustments_usd: 3_183_389.9 });
+  const allocated = allocatedOf([onWinner, mb], [onWinner, mb]);
+  const admissible = admissibleForMode(allocated, MODE_NORMAL);
+  const ontario = admissible.filter((s) => s.primary_jurisdiction === "CA-ON");
+  assert.equal(ontario.length, 1, "exactly one Ontario headline entry, never several permutations");
+  assert.equal(ontario[0].structure_id, "on-ofttc-ocase");
+  assert.equal(ontario[0].npc_with_adjustments_usd, 2_556_030.86, "the winner is the canonical best-NPC executable Ontario outcome");
+  assert.match(ontario[0].label, /OFTTC \+ OCASE/, "the winning stack's contributing programs remain disclosed in the label");
+});
+
+test("admissibleForMode (Single Jurisdiction): ordered by canonical NPC ascending, never re-ranked by geography/diversity", () => {
+  const a = structure({ structure_id: "a", primary_jurisdiction: "AA", npc_with_adjustments_usd: 300 });
+  const b = structure({ structure_id: "b", primary_jurisdiction: "BB", npc_with_adjustments_usd: 100 });
+  const c = structure({ structure_id: "c", primary_jurisdiction: "CC", npc_with_adjustments_usd: 200 });
+  const allocated = allocatedOf([a, b, c], [a, b, c]);
+  const admissible = admissibleForMode(allocated, MODE_NORMAL);
+  assert.deepEqual(admissible.map((s) => s.structure_id), ["b", "c", "a"]);
+});
+
+test("admissibleForMode (Optimizer): every canonical multi-jurisdiction family is admitted, single-jurisdiction families are not", () => {
   const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
     structure({ structure_id: "stack", classification: "STACKED_PROGRAMS", npc_with_adjustments_usd: 2 }),
     structure({ structure_id: "hybrid", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 3 }),
     structure({ structure_id: "treaty", classification: "OFFICIAL_COPRODUCTION", npc_with_adjustments_usd: 4 }),
     structure({ structure_id: "combined", classification: "COMBINED_COPRO_HYBRID_STACK", npc_with_adjustments_usd: 5 }),
     structure({ structure_id: "multilateral", classification: "MULTI_PRINCIPAL_MULTILATERAL", npc_with_adjustments_usd: 6 }),
   ];
-  const admissible = admissibleForMode(allocatedOf(structures), MODE_OPTIMIZER);
+  const admissible = admissibleForMode(allocatedOf(structures, []), MODE_OPTIMIZER);
   assert.deepEqual(
     admissible.map((s) => s.structure_id).sort(),
     ["combined", "hybrid", "multilateral", "treaty"],
   );
 });
 
-test("admissibleForMode: never admits a rejected/authority-insufficient/unresolved candidate into either mode", () => {
-  const structures = [
-    structure({ structure_id: "priced-normal", classification: "SINGLE_JURISDICTION", npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "rejected", classification: "REJECTED_FOR_PROJECT", is_fully_priced: false, npc_with_adjustments_usd: null }),
-    structure({ structure_id: "authority-locked", classification: "AUTHORITY_LOCKED", is_fully_priced: false, npc_with_adjustments_usd: null }),
-    structure({ structure_id: "rule-incomplete", classification: "RULE_DATA_INCOMPLETE", is_fully_priced: false, npc_with_adjustments_usd: null }),
-  ];
-  assert.deepEqual(admissibleForMode(allocatedOf(structures), MODE_NORMAL).map((s) => s.structure_id), ["priced-normal"]);
-  assert.deepEqual(admissibleForMode(allocatedOf(structures), MODE_OPTIMIZER).map((s) => s.structure_id), []);
-});
-
-test("admissibleForMode: Optimizer mode appends conditional grant/fund opportunities strictly after every priced candidate", () => {
-  const structures = [
-    structure({ structure_id: "hybrid-1", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 2 }),
-    structure({ structure_id: "opportunity", classification: "CONDITIONAL_USER_FACT_REQUIRED", is_fully_priced: false, npc_with_adjustments_usd: null }),
-  ];
-  const admissible = admissibleForMode(allocatedOf(structures), MODE_OPTIMIZER);
-  assert.deepEqual(admissible.map((s) => s.structure_id), ["hybrid-1", "opportunity"]);
-});
-
-test("selectSixSlots: Current Location (the anchor) never changes between modes", () => {
-  const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "hybrid-1", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 2 }),
-    structure({ structure_id: "stack-1", classification: "STACKED_PROGRAMS", npc_with_adjustments_usd: 3 }),
-  ];
-  const allocated = allocatedOf(structures);
-  const normal = selectSixSlots(allocated, MODE_NORMAL, null);
-  const optimizer = selectSixSlots(allocated, MODE_OPTIMIZER, null);
-  assert.equal(normal.anchor.structure_id, "anchor");
-  assert.equal(optimizer.anchor.structure_id, "anchor");
-});
-
-test("selectSixSlots: slots 2-5 are the top four mode-admissible scenarios, excluding the anchor, in canonical rank/NPC order", () => {
-  const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    ...["a", "b", "c", "d", "e", "f"].map((id, i) =>
-      structure({ structure_id: `hybrid-${id}`, classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 10 + i }),
-    ),
-  ];
-  const { leading } = selectSixSlots(allocatedOf(structures), MODE_OPTIMIZER, null);
-  assert.deepEqual(leading.map((s) => s.structure_id), ["hybrid-a", "hybrid-b", "hybrid-c", "hybrid-d"]);
-});
-
-test("selectSixSlots: slot 6 defaults to the canonical rank-5 admissible candidate when no override is stored", () => {
-  const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    ...["a", "b", "c", "d", "e", "f"].map((id, i) =>
-      structure({ structure_id: `hybrid-${id}`, classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 10 + i }),
-    ),
-  ];
-  const { slot6, dropdownOptions } = selectSixSlots(allocatedOf(structures), MODE_OPTIMIZER, null);
-  assert.equal(slot6.structure_id, "hybrid-e");
-  assert.deepEqual(dropdownOptions.map((s) => s.structure_id), ["hybrid-e", "hybrid-f"]);
-});
-
-test("selectSixSlots: a stored slot-6 override selects that candidate instead of the default rank-5", () => {
-  const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    ...["a", "b", "c", "d", "e", "f"].map((id, i) =>
-      structure({ structure_id: `hybrid-${id}`, classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 10 + i }),
-    ),
-  ];
-  const { slot6 } = selectSixSlots(allocatedOf(structures), MODE_OPTIMIZER, "hybrid-f");
-  assert.equal(slot6.structure_id, "hybrid-f");
-});
-
-test("selectSixSlots: fewer than six real candidates is a valid, honest result — nothing is fabricated", () => {
-  const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "stack-1", classification: "STACKED_PROGRAMS", npc_with_adjustments_usd: 2 }),
-  ];
-  const { slots, slot6, dropdownOptions } = selectSixSlots(allocatedOf(structures), MODE_NORMAL, null);
-  assert.equal(slots.length, 2);
-  assert.equal(slot6, null);
-  assert.deepEqual(dropdownOptions, []);
-});
-
-// ── WORKSPACE_VISUAL_REGRESSION_CORRECTION (2026-09-22) ───────────────────
-// Canonical scenario deduplication — the real, confirmed defect: F#K
-// Valentine's Day served FOUR distinct Ontario stacking permutations
-// (different program combinations, different NPC) as four separate
-// headline cards, crowding out every other jurisdiction/family. Fixed by
-// collapsing to one canonical best (lowest-NPC, since rankOrNpcOrder
-// already sorts ascending) scenario per identity — jurisdiction for
-// Normal mode, full routed combination for Optimizer mode.
-
-test("admissibleForMode (Normal): multiple stacking permutations of the SAME jurisdiction collapse to the single lowest-NPC one", () => {
-  const structures = [
-    structure({ structure_id: "on-a", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 2_556_030 }),
-    structure({ structure_id: "on-b", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 3_043_784 }),
-    structure({ structure_id: "on-c", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 3_055_697 }),
-    structure({ structure_id: "on-d", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 3_321_377 }),
-    structure({ structure_id: "mb", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-MB", npc_with_adjustments_usd: 3_183_390 }),
-  ];
-  const admissible = admissibleForMode(allocatedOf(structures), MODE_NORMAL);
-  assert.deepEqual(admissible.map((s) => s.structure_id), ["on-a", "mb"], (
-    "only the lowest-NPC Ontario candidate (on-a) survives; on-b/c/d are the same jurisdiction, never four headline slots"
-  ));
-});
-
-test("admissibleForMode (Optimizer): hybrids sharing the identical routed participants AND programs collapse to the single lowest-NPC one", () => {
+test("admissibleForMode (Optimizer): structures sharing the identical routed participants AND programs collapse to the single lowest-NPC one — full economic identity, never bare jurisdiction", () => {
   const structures = [
     structure({
       structure_id: "hy-1", classification: "HYBRID_ANCHOR_COMPONENT",
@@ -191,41 +133,127 @@ test("admissibleForMode (Optimizer): hybrids sharing the identical routed partic
     }),
     structure({
       structure_id: "hy-3", classification: "HYBRID_ANCHOR_COMPONENT",
-      participants: ["GR", "RO"], program_slugs: ["gr_cash_rebate", "ro_film_office_cash_rebate"],
+      participants: ["CA-MB", "CA-ON"], program_slugs: ["ca_mb_film_video_credit", "on_ofttc"],
       npc_with_adjustments_usd: 3_062_526,
     }),
   ];
-  const admissible = admissibleForMode(allocatedOf(structures), MODE_OPTIMIZER);
+  const admissible = admissibleForMode(allocatedOf(structures, []), MODE_OPTIMIZER);
   assert.deepEqual(admissible.map((s) => s.structure_id), ["hy-1", "hy-3"], (
-    "hy-2 is the SAME routed combination as hy-1 (order-independent) at a worse NPC -- collapsed; the genuinely distinct GR+RO hybrid (hy-3) is kept"
+    "hy-2 is the SAME routed combination as hy-1 (order-independent) at a worse NPC -- collapsed; hy-3 " +
+    "shares jurisdiction CA-MB with hy-1 but is a materially different route (CA-ON, not CA-NL/IT) -- kept, " +
+    "never collapsed merely for sharing a participant jurisdiction"
   ));
 });
 
-test("admissibleForMode: a real, non-null economic_identity is preferred over the jurisdiction/routing fallback key", () => {
+test("admissibleForMode (Optimizer): a real, non-null economic_identity is preferred over the participants/programs fallback key", () => {
   const structures = [
-    structure({ structure_id: "e-1", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "CA-ON", economic_identity: "econ-abc", npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "e-2", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "CA-ON", economic_identity: "econ-xyz", npc_with_adjustments_usd: 2 }),
+    structure({ structure_id: "e-1", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["A", "B"], program_slugs: ["p1"], economic_identity: "econ-abc", npc_with_adjustments_usd: 1 }),
+    structure({ structure_id: "e-2", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["A", "B"], program_slugs: ["p1"], economic_identity: "econ-xyz", npc_with_adjustments_usd: 2 }),
   ];
-  const admissible = admissibleForMode(allocatedOf(structures), MODE_NORMAL);
+  const admissible = admissibleForMode(allocatedOf(structures, []), MODE_OPTIMIZER);
   assert.deepEqual(admissible.map((s) => s.structure_id), ["e-1", "e-2"], (
-    "two DIFFERENT real economic identities in the same jurisdiction are never collapsed just because the jurisdiction matches"
+    "two DIFFERENT real economic identities are never collapsed just because their routing fields happen to match"
   ));
 });
 
-test("selectSixSlots: deduplicated distinct jurisdictions fill all six slots when enough real distinct scenarios exist", () => {
+test("admissibleForMode (Optimizer): conditional grant/fund opportunities are appended strictly after every priced candidate", () => {
   const structures = [
-    structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "US-GA", is_baseline: true, npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "on-a", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 2 }),
-    structure({ structure_id: "on-b", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 3 }),
-    structure({ structure_id: "mb", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-MB", npc_with_adjustments_usd: 4 }),
-    structure({ structure_id: "it", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "IT", npc_with_adjustments_usd: 5 }),
-    structure({ structure_id: "gr", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "GR", npc_with_adjustments_usd: 6 }),
-    structure({ structure_id: "nz", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "NZ", npc_with_adjustments_usd: 7 }),
+    structure({ structure_id: "hybrid-1", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 2 }),
+    structure({ structure_id: "opportunity", classification: "CONDITIONAL_USER_FACT_REQUIRED", is_fully_priced: false, npc_with_adjustments_usd: null }),
   ];
-  const { slots, leading, slot6 } = selectSixSlots(allocatedOf(structures), MODE_NORMAL, null);
+  const admissible = admissibleForMode(allocatedOf(structures, []), MODE_OPTIMIZER);
+  assert.deepEqual(admissible.map((s) => s.structure_id), ["hybrid-1", "opportunity"]);
+});
+
+test("selectSixSlots: the original/as-ingested scenario (Current Location) is always slot 1 and never changes between modes", () => {
+  const anchor = structure({ structure_id: "anchor", classification: "SINGLE_JURISDICTION", primary_jurisdiction: "GR", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const hybrid1 = structure({ structure_id: "hybrid-1", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 2 });
+  const stack1 = structure({ structure_id: "stack-1", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 3 });
+  const allocated = allocatedOf([anchor, hybrid1, stack1], [anchor, stack1]);
+  const normal = selectSixSlots(allocated, MODE_NORMAL, null);
+  const optimizer = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  assert.equal(normal.anchor.structure_id, "anchor");
+  assert.equal(optimizer.anchor.structure_id, "anchor");
+});
+
+test("selectSixSlots (Single Jurisdiction): five unique jurisdiction winners populate slots 2-6 in canonical NPC order, slot 6 defaults to rank 5", () => {
+  const anchor = structure({ structure_id: "anchor", primary_jurisdiction: "US-GA", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const winners = ["CA-ON", "CA-MB", "IT", "GR", "NZ", "FR"].map((jur, i) =>
+    structure({ structure_id: `w-${jur}`, primary_jurisdiction: jur, npc_with_adjustments_usd: 10 + i }),
+  );
+  const allocated = allocatedOf([anchor, ...winners], [anchor, ...winners]);
+  const { slots, leading, slot6, dropdownOptions } = selectSixSlots(allocated, MODE_NORMAL, null);
   assert.equal(slots.length, 6);
-  assert.deepEqual(leading.map((s) => s.structure_id), ["on-a", "mb", "it", "gr"]);
-  assert.equal(slot6.structure_id, "nz");
+  assert.equal(slots[0].structure_id, "anchor");
+  assert.deepEqual(leading.map((s) => s.primary_jurisdiction), ["CA-ON", "CA-MB", "IT", "GR"]);
+  assert.equal(slot6.primary_jurisdiction, "NZ");
+  assert.deepEqual(dropdownOptions.map((s) => s.primary_jurisdiction), ["NZ", "FR"]);
+  const jurisdictions = slots.map((s) => s.primary_jurisdiction);
+  assert.equal(new Set(jurisdictions).size, jurisdictions.length, "no jurisdiction repeats across the six headline slots");
+});
+
+test("selectSixSlots (Single Jurisdiction): slot-6 dropdown contains every remaining unique jurisdiction not already in slots 1-5, with no duplicates", () => {
+  const anchor = structure({ structure_id: "anchor", primary_jurisdiction: "US-GA", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const winners = ["CA-ON", "CA-MB", "IT", "GR", "NZ", "FR", "AU"].map((jur, i) =>
+    structure({ structure_id: `w-${jur}`, primary_jurisdiction: jur, npc_with_adjustments_usd: 10 + i }),
+  );
+  const allocated = allocatedOf([anchor, ...winners], [anchor, ...winners]);
+  const { anchor: slot1, leading, dropdownOptions } = selectSixSlots(allocated, MODE_NORMAL, null);
+  // Slots 1-5 (anchor + the top four) must never reappear in the dropdown
+  // — the dropdown replaces ONLY slot 6, so it is scoped to every
+  // remaining candidate AFTER rank 4, which by construction includes the
+  // current slot 6 itself (the same "current item also selectable"
+  // contract the pre-existing Other Scenarios control already used).
+  const shownInSlots1to5 = new Set([slot1.primary_jurisdiction, ...leading.map((s) => s.primary_jurisdiction)]);
+  for (const opt of dropdownOptions) assert.equal(shownInSlots1to5.has(opt.primary_jurisdiction), false);
+  const dropdownJurisdictions = dropdownOptions.map((s) => s.primary_jurisdiction);
+  assert.equal(new Set(dropdownJurisdictions).size, dropdownJurisdictions.length, "no duplicate jurisdictions in the dropdown");
+  assert.deepEqual(dropdownJurisdictions, ["NZ", "FR", "AU"]);
+});
+
+test("selectSixSlots: a stored slot-6 override selects that candidate instead of the default rank-5", () => {
+  const anchor = structure({ structure_id: "anchor", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const winners = ["a", "b", "c", "d", "e", "f"].map((id, i) =>
+    structure({ structure_id: `hybrid-${id}`, classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 10 + i }),
+  );
+  const allocated = allocatedOf([anchor, ...winners], [anchor]);
+  const { slot6 } = selectSixSlots(allocated, MODE_OPTIMIZER, "hybrid-f");
+  assert.equal(slot6.structure_id, "hybrid-f");
+});
+
+test("selectSixSlots: fewer than six real distinct jurisdiction winners is a valid, honest result — never backfilled with a duplicate", () => {
+  const anchor = structure({ structure_id: "anchor", primary_jurisdiction: "US-GA", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const on = structure({ structure_id: "on", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 2 });
+  const allocated = allocatedOf([anchor, on], [anchor, on]);
+  const { slots, slot6, dropdownOptions } = selectSixSlots(allocated, MODE_NORMAL, null);
+  assert.equal(slots.length, 2);
+  assert.equal(slot6, null);
+  assert.deepEqual(dropdownOptions, []);
+});
+
+test("an arbitrary new/synthetic project (no special-casing) uses the identical best_per_jurisdiction projection and six-slot wiring", () => {
+  // No hardcoded production id/name anywhere in workspaceScenarioMode.js
+  // — this fixture is deliberately a project this module has never seen,
+  // proving the wiring is generic.
+  const anchor = structure({ structure_id: "brand-new-anchor", primary_jurisdiction: "PT", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const singleJurStack = structure({ structure_id: "brand-new-stack", classification: "STACKED_PROGRAMS", primary_jurisdiction: "HR", npc_with_adjustments_usd: 2 });
+  const hybrid = structure({ structure_id: "brand-new-hybrid", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["PT", "HR"], program_slugs: ["pt_x", "hr_y"], npc_with_adjustments_usd: 3 });
+  const allocated = allocatedOf([anchor, singleJurStack, hybrid], [anchor, singleJurStack]);
+  const normal = selectSixSlots(allocated, MODE_NORMAL, null);
+  const optimizer = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  assert.equal(normal.anchor.structure_id, "brand-new-anchor");
+  assert.deepEqual(normal.leading.map((s) => s.structure_id), ["brand-new-stack"]);
+  assert.deepEqual(optimizer.leading.map((s) => s.structure_id), ["brand-new-hybrid"]);
+});
+
+test("an unevaluated new project (no best_per_jurisdiction, no structures) never fabricates a scenario", () => {
+  const allocated = { structures: [], ranking: [], best_per_jurisdiction: {} };
+  const { slots, anchor, leading, slot6, dropdownOptions } = selectSixSlots(allocated, MODE_NORMAL, null);
+  assert.equal(anchor, null);
+  assert.deepEqual(leading, []);
+  assert.equal(slot6, null);
+  assert.deepEqual(slots, []);
+  assert.deepEqual(dropdownOptions, []);
 });
 
 test("family constants are the exact canonical values, never inferred/renamed", () => {

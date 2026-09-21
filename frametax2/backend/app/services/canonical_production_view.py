@@ -1660,10 +1660,36 @@ async def build_production_and_structures(
         }
 
     _priced_entries = sorted((e for e in structure_entries if e["is_fully_priced"]), key=_retention_sort_key)
+    # WORKSPACE_CANONICAL_JURISDICTION_WINNERS (2026-09-21): best_per_
+    # jurisdiction now stores the FULL structure entry (the exact same
+    # shape every `structures[]` array element already carries, plus its
+    # real economic_identity -- never a second, compacted shape) instead
+    # of the earlier _retention_compact() summary. Root cause this
+    # corrects: Workspace's Single Jurisdiction cards were being
+    # reconstructed client-side from the bounded, overall-rank-ordered
+    # `structures[]` PAGE (candidates_page, limit 100) -- for a
+    # production whose page is dominated by a different family (e.g. F#K
+    # Valentine's Day's real page: 93 of the first 100 candidates by
+    # OVERALL rank are HYBRID_ANCHOR_COMPONENT), only 5 of the real 76
+    # jurisdiction winners this block already computes ever appeared in
+    # that page, so the frontend's own per-jurisdiction reconstruction
+    # necessarily saw duplicates/gaps that were never present in the
+    # canonical retained set -- only in what got serialized onto page 1.
+    # `structure_entries` (this loop's own source, built before ANY
+    # pagination) already covers every RETAINED candidate, including
+    # every jurisdiction's real winner (retention explicitly keeps "the
+    # best single/local-stack candidate per jurisdiction" -- see
+    # PROJECT_RULES.md's PERSISTENCE CARDINALITY RULE), so serving the
+    # full entry here requires no new query, no new retention, no
+    # discovery/pricing change -- only NOT throwing detail away before
+    # this dict is populated.
     best_per_jurisdiction: dict[str, dict] = {}
     for e in _priced_entries:
         if e["structure_type"] in LOCAL_STACK_TYPES and e["primary_jurisdiction"]:
-            best_per_jurisdiction.setdefault(e["primary_jurisdiction"], _retention_compact(e))
+            best_per_jurisdiction.setdefault(
+                e["primary_jurisdiction"],
+                {**e, "economic_identity": _identity_by_structure.get(e["structure_id"])},
+            )
     top_by_structure_type: dict[str, list] = {}
     for e in _priced_entries:
         _bucket = top_by_structure_type.setdefault(e["structure_type"], [])

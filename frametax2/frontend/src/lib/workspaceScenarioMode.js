@@ -37,56 +37,62 @@ export function familiesForMode(mode) {
   return mode === MODE_OPTIMIZER ? OPTIMIZER_FAMILIES : NORMAL_FAMILIES;
 }
 
-// WORKSPACE_VISUAL_REGRESSION_CORRECTION (2026-09-22): the served
-// structure payload does not (yet) populate a canonical `economic_
-// identity` for multi_program/ordinary_component_hybrid candidates —
-// confirmed live against F#K Valentine's Day (every candidate in both
-// families serves economic_identity: null). Never invented client-side
-// from scratch; the SAME real, already-served fields the identity would
-// have been built from are used instead:
-//   Normal mode (single_jurisdiction / local stacks) — the canonical
-//     identity is the jurisdiction itself: a producer's headline view
-//     needs ONE best scenario per distinct jurisdiction, not every
-//     stacking permutation of the same jurisdiction (confirmed live:
-//     F#K Valentine's Day's real data has FOUR distinct Ontario
-//     candidates -- on_ofttc+ocase, ca_federal_cptc+on_ofttc,
-//     on_opstc+ocase, ca_federal_cptc+ca_qc_pstc -- each a genuinely
-//     different program combination with different NPC, but all reading
-//     as "Ontario" on the headline card, crowding four of six slots with
-//     one jurisdiction). Keyed on primary_jurisdiction alone -- the same
-//     concept canonical_production_view.py's own best_per_jurisdiction
-//     block already applies server-side for the frozen Jurisdictions
-//     Globe, just consumed here from the per-structure field it already
-//     serves rather than a second server round-trip.
-//   Optimizer mode (component/co-production/multilateral hybrids) — a
-//     single jurisdiction is never enough (a hybrid's whole point is
-//     multiple routed jurisdictions), so the canonical identity is the
-//     full routed combination: every participant jurisdiction plus every
-//     claimed program, both already real, served fields. Confirmed live:
-//     three of F#K Valentine's Day's real hybrid candidates share the
-//     IDENTICAL participants (CA-MB, CA-NL, IT) and IDENTICAL program_
-//     slugs, differing only by a few dollars of allocation-order rounding
-//     -- the same canonical routed outcome discovered via different
-//     search paths, not three distinct scenarios.
-// Either way: `rankOrNpcOrder` has ALREADY sorted candidates by canonical
-// NPC ascending before this runs, so keeping the FIRST candidate seen per
-// key is exactly "the canonical best scenario for that identity" — never
-// a second, independently-derived ranking.
-function _canonicalScenarioKey(structure, mode) {
-  if (structure.economic_identity) return structure.economic_identity;
-  if (mode === MODE_OPTIMIZER) {
-    const participants = [...(structure.participants || [])].sort().join(",");
-    const programs = [...(structure.program_slugs || [])].sort().join(",");
-    return `${participants}|${programs}`;
-  }
-  return structure.primary_jurisdiction || structure.structure_id;
+// WORKSPACE_CANONICAL_JURISDICTION_WINNERS (2026-09-21) — ROOT CAUSE:
+// Single Jurisdiction mode's admissible pool used to be reconstructed
+// client-side from `allocated.structures` -- the bounded, OVERALL-rank-
+// ordered served PAGE (candidates_page, limit 100), never the full
+// retained set. Confirmed live against F#K Valentine's Day: that page is
+// dominated by a different family (93 of the first 100 candidates by
+// overall rank are HYBRID_ANCHOR_COMPONENT), so only 5 of the real 76
+// jurisdiction winners the backend already computes ever reached the
+// page at all -- the frontend was deduplicating/ranking a fundamentally
+// incomplete, wrongly-ordered slice, which is what produced duplicate-
+// looking and missing jurisdictions alike; it was never a backend
+// discovery/pricing defect.
+//
+// The backend ALREADY serves the correct canonical projection:
+// `allocated.best_per_jurisdiction` (canonical_production_view.py) -- one
+// entry per jurisdiction, the real best (lowest verified NPC) EXECUTABLE
+// candidate for that jurisdiction, computed from the full RETAINED set
+// (never the bounded page), with its real economic_identity. Single
+// Jurisdiction mode now consumes this projection DIRECTLY -- no frontend
+// reconstruction from raw candidates, no dedup heuristic needed here (the
+// backend's own retention already guarantees exactly one entry per
+// jurisdiction).
+function _singleJurisdictionCandidates(allocated) {
+  const byJurisdiction = allocated?.best_per_jurisdiction || {};
+  return Object.values(byJurisdiction)
+    .filter(Boolean)
+    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
 }
 
-function _dedupeByCanonicalIdentity(structures, mode) {
+// Optimizer mode is different by design: a single jurisdiction is never
+// enough (a hybrid/co-production/multilateral structure's whole point is
+// multiple routed jurisdictions), so there is no per-jurisdiction winner
+// concept to consume -- the canonical identity here is the FULL routed
+// structure. Prefers the served `economic_identity` when present;
+// otherwise falls back to the full routed combination (every participant
+// jurisdiction plus every claimed program, both real, already-served
+// fields) -- confirmed live: several of F#K Valentine's Day's real hybrid
+// candidates share IDENTICAL participants and program_slugs, differing
+// only by a few dollars of allocation-order rounding (the same canonical
+// routed outcome discovered via different search paths, not materially
+// distinct scenarios). `rankOrNpcOrder` has already sorted ascending by
+// canonical NPC, so keeping the first candidate seen per key is exactly
+// "the canonical best scenario for that identity" — never a second,
+// independently-derived ranking.
+function _optimizerScenarioKey(structure) {
+  if (structure.economic_identity) return structure.economic_identity;
+  const participants = [...(structure.participants || [])].sort().join(",");
+  const programs = [...(structure.program_slugs || [])].sort().join(",");
+  return `${participants}|${programs}`;
+}
+
+function _dedupeOptimizer(structures) {
   const seen = new Set();
   const out = [];
   for (const s of structures) {
-    const key = _canonicalScenarioKey(s, mode);
+    const key = _optimizerScenarioKey(s);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(s);
@@ -94,27 +100,23 @@ function _dedupeByCanonicalIdentity(structures, mode) {
   return out;
 }
 
-// Every candidate admissible for `mode`, in the same canonical rank/NPC
-// order productionOptions.js's rankOrNpcOrder already establishes for
-// every other Workspace selection (never a second, independently-derived
-// ordering), with equivalent/duplicate canonical scenarios collapsed to
-// their single best (lowest-NPC) representative. rankOrNpcOrder already
-// restricts to is_fully_priced structures, so a rejected/authority-
-// insufficient/unresolved candidate can never reach a ranked slot here —
-// the one deliberate exception is Optimizer mode's own disclosed
-// conditional grant/fund opportunities, appended strictly after every
-// priced candidate (also deduplicated, by the same Optimizer-mode key).
+// Every candidate admissible for `mode`. Single Jurisdiction mode reads
+// the canonical best_per_jurisdiction projection directly (see above) --
+// never a second, independently-derived ordering or dedup. Optimizer mode
+// keeps its own canonical rank/NPC order (productionOptions.js's
+// rankOrNpcOrder, the same order every other Workspace selection uses)
+// with equivalent/duplicate full-structure identities collapsed to their
+// single best representative; disclosed conditional grant/fund
+// opportunities (CONDITIONAL_USER_FACT_REQUIRED — a real registry entry
+// with a real project fact still missing) are appended strictly after
+// every priced Optimizer candidate, never promoted ahead of one.
 export function admissibleForMode(allocated, mode) {
-  if (!allocated?.structures) return [];
-  const families = new Set(familiesForMode(mode));
-  const priced = _dedupeByCanonicalIdentity(
-    rankOrNpcOrder(allocated).filter((s) => families.has(s.classification)),
-    mode,
-  );
-  if (mode !== MODE_OPTIMIZER) return priced;
-  const opportunities = _dedupeByCanonicalIdentity(
-    allocated.structures.filter((s) => s.classification === CONDITIONAL_OPPORTUNITY_CLASS),
-    mode,
+  if (!allocated) return [];
+  if (mode !== MODE_OPTIMIZER) return _singleJurisdictionCandidates(allocated);
+  const families = new Set(OPTIMIZER_FAMILIES);
+  const priced = _dedupeOptimizer(rankOrNpcOrder(allocated).filter((s) => families.has(s.classification)));
+  const opportunities = _dedupeOptimizer(
+    (allocated.structures || []).filter((s) => s.classification === CONDITIONAL_OPPORTUNITY_CLASS),
   );
   return [...priced, ...opportunities];
 }
