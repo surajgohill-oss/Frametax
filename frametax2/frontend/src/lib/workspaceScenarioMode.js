@@ -100,6 +100,31 @@ function _dedupeOptimizer(structures) {
   return out;
 }
 
+// GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21) — GD-4 backstop: the bounded,
+// overall-rank-ordered `allocated.structures` page can omit a whole family
+// entirely when a different family dominates it (confirmed by the Codex Globe
+// data contract delta audit, GDC-002) -- a combined-co-production or
+// multilateral candidate can be the real best-in-family and never once appear
+// on the page. `allocated.top_by_structural_family` is the backend's own
+// per-family winner block (canonical_production_view.py), pre-seeded with an
+// honest [] for every priced family, computed from the FULL ranked candidate
+// set -- never the bounded page. Normalizes its compact shape (`structural_
+// family`) to the same `classification` key every page structure already
+// carries, and marks it as fully priced (the block is documented as sourced
+// from `_priced_entries` only) so it can flow through the exact same
+// dedupe/tier logic as a page structure -- never a second, differently-shaped
+// candidate type for downstream consumers (Globe, Workspace) to special-case.
+function _familyBackstopCandidates(allocated) {
+  const byFamily = allocated?.top_by_structural_family || {};
+  const out = [];
+  for (const [family, entries] of Object.entries(byFamily)) {
+    for (const e of entries || []) {
+      out.push({ ...e, classification: family, is_fully_priced: true, segments: e.segments || [], blockers: e.blockers || [] });
+    }
+  }
+  return out;
+}
+
 // Every candidate admissible for `mode`. Single Jurisdiction mode reads
 // the canonical best_per_jurisdiction projection directly (see above) --
 // never a second, independently-derived ordering or dedup. Optimizer mode
@@ -114,7 +139,16 @@ export function admissibleForMode(allocated, mode) {
   if (!allocated) return [];
   if (mode !== MODE_OPTIMIZER) return _singleJurisdictionCandidates(allocated);
   const families = new Set(OPTIMIZER_FAMILIES);
-  const priced = _dedupeOptimizer(rankOrNpcOrder(allocated).filter((s) => families.has(s.classification)));
+  const pagePriced = rankOrNpcOrder(allocated).filter((s) => families.has(s.classification));
+  // GD-4 backstop (see _familyBackstopCandidates above): only ever ADDS a
+  // family that has ZERO representation on the bounded page -- a family the
+  // page DOES represent keeps its own real page-ranked candidates untouched,
+  // never overridden or reordered by the backstop.
+  const familiesOnPage = new Set(pagePriced.map((s) => s.classification));
+  const backstop = _familyBackstopCandidates(allocated).filter(
+    (s) => families.has(s.classification) && !familiesOnPage.has(s.classification),
+  );
+  const priced = _dedupeOptimizer([...pagePriced, ...backstop]);
   const opportunities = _dedupeOptimizer(
     (allocated.structures || []).filter((s) => s.classification === CONDITIONAL_OPPORTUNITY_CLASS),
   );

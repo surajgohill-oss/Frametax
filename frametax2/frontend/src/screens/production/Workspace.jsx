@@ -279,7 +279,14 @@ export default function Workspace() {
   // (e.g. Australia Location Offset vs Australia PDV Offset) are never
   // collapsed into one comparison target.
   const [compareStructureId, setCompareStructureId] = useState(null);
-  const [globeMode, setGlobeMode] = useState("jurisdictions"); // "jurisdictions" | "optimizer"
+  // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the Map/Split embedded
+  // Globe previously kept its OWN local "jurisdictions"/"optimizer" mode,
+  // entirely independent of the shared `workspaceMode` (destructured below)
+  // that already drives the six-scenario-card rack — switching one never
+  // moved the other, even though both live on this same screen. The Globe
+  // now reads/writes `workspaceMode` directly (MODE_NORMAL === Single
+  // Jurisdiction / "Jurisdictions"; MODE_OPTIMIZER === "Optimizer Overlay"),
+  // so this is the one project-scoped mode Workspace and Globe share.
   const [globeHover, setGlobeHover] = useState(null);
   const {
     openInspector, inspector, closeInspector, setDocked,
@@ -352,8 +359,8 @@ export default function Workspace() {
     [allocated],
   );
   const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
-    () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
-    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
+    () => buildGlobeView(allocated, rankById, { mode: workspaceMode, leadingStructureId, selectedJurisdiction }),
+    [allocated, rankById, workspaceMode, leadingStructureId, selectedJurisdiction],
   );
   // Workspace scenario-mode data wiring: slot 6's producer override is
   // stored per (project, mode) in shared AppState so switching modes
@@ -630,8 +637,8 @@ export default function Workspace() {
                   />
                   <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
-                    <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
-                    <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+                    <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Jurisdictions</button>
+                    <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer Overlay</button>
                   </div>
                   {globeHover && (
                     <div className="globe-tooltip">
@@ -686,8 +693,8 @@ export default function Workspace() {
                   />
                   <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
-                    <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
-                    <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+                    <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Jurisdictions</button>
+                    <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer Overlay</button>
                   </div>
                   {globeHover && (
                     <div className="globe-tooltip">

@@ -6,6 +6,7 @@ import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey } from "../../lib/globeData";
+import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER } from "../../lib/workspaceScenarioMode";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken } from "../../lib/format";
@@ -34,8 +35,18 @@ export default function ProjectGlobe() {
   // touched.
   const { projectId } = useParams();
   const { data, error, loading } = useCineGlobe(projectId);
-  const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
-  const [globeMode, setGlobeMode] = useState("jurisdictions");
+  const {
+    inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction,
+    workspaceMode, setWorkspaceMode,
+  } = useAppState();
+  // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): reads/writes the SAME
+  // shared mode Workspace's six-scenario-card rack uses — previously local
+  // state here, so switching mode on Project Globe never moved Workspace and
+  // vice versa. MODE_NORMAL === Single Jurisdiction / "Jurisdictions";
+  // MODE_OPTIMIZER === "Optimizer Overlay" (labels unchanged, per the
+  // approved design — only the underlying state is now shared).
+  const globeMode = workspaceMode;
+  const setGlobeMode = setWorkspaceMode;
   const [hover, setHover] = useState(null);
   // Viewport-relative box of the hovered marker (see Globe3D's mouseenter),
   // converted to a position relative to canvasRef below at render time.
@@ -61,6 +72,18 @@ export default function ProjectGlobe() {
       grossBudgetUsd: data?.production?.gross_budget_usd ?? null,
     }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction, data?.production?.gross_budget_usd],
+  );
+  // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the "Production
+  // structures" card list below the mode toggle must show the SAME
+  // candidate set the Globe itself is currently rendering (best_per_
+  // jurisdiction winners in Single Jurisdiction mode; the canonical,
+  // GD-4-backstopped multi-jurisdiction families in Optimizer mode) —
+  // previously it always listed every `allocated.structures` (the bounded
+  // general candidate page) regardless of `globeMode`, so the mode toggle
+  // changed the Globe's own colouring/routing but never the list beside it.
+  const visibleStructures = useMemo(
+    () => admissibleForMode(allocated, globeMode),
+    [allocated, globeMode],
   );
 
   // PHASE 3B BATCH 2 (objective 9): opening the Inspector clears hover
@@ -193,8 +216,8 @@ export default function ProjectGlobe() {
           and the opportunities still to unlock.
         </p>
         <div className="wsx-viewtabs" style={{ marginBottom: 10 }}>
-          <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
-          <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+          <button className={globeMode === MODE_NORMAL ? "active" : ""} onClick={() => setGlobeMode(MODE_NORMAL)}>Jurisdictions</button>
+          <button className={globeMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setGlobeMode(MODE_OPTIMIZER)}>Optimizer Overlay</button>
         </div>
         {/* DATA-SOURCE LABEL (required). These cards read the PRODUCTION engine
             — `structureTier()` over the live allocated structures and ranking —
@@ -212,7 +235,7 @@ export default function ProjectGlobe() {
               so a producer scanning this list sees the leading option first
               instead of raw generation order. Unranked candidates keep their
               original order after every ranked one. */}
-          {[...allocated.structures]
+          {[...visibleStructures]
             .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity))
             .map((s) => {
               // Card <-> Globe selection sync: a card is "active" when the
@@ -293,7 +316,7 @@ export default function ProjectGlobe() {
               recommended structure is single-jurisdiction there is no routing
               to show — the overlay correctly lights one jurisdiction and draws
               no arc, and the caption then read as a rendering failure. */}
-          {globeMode === "optimizer"
+          {globeMode === MODE_OPTIMIZER
             ? arcs.length > 0
               ? "Showing the recommended structure's production routing only."
               : "The recommended structure is single-jurisdiction — no routing to show."

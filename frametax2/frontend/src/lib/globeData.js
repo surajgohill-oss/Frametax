@@ -5,6 +5,19 @@ import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts }
 // Workspace and Scenarios (see format.jsx) — so a hovered jurisdiction's
 // "base incentive" line can never disagree with what its own card shows.
 import { programDisplay } from "./programNames.js";
+// GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the SAME canonical
+// candidate-set selection Workspace's six-slot contract already uses —
+// never a second, independently-derived Globe-only notion of "which
+// candidates are admissible for this mode". Single Jurisdiction mode
+// (MODE_NORMAL) resolves to `allocated.best_per_jurisdiction` directly (one
+// canonical winner per jurisdiction, never a reconstruction from the
+// bounded `structures[]` page); Optimizer mode resolves to the canonical
+// multi-jurisdiction families, backstopped by `top_by_structural_family` so
+// a combined/multilateral family can never be silently dropped because a
+// different family dominates the bounded page (GD-4). Reusing this module
+// is also what makes Workspace and Globe share one mode vocabulary instead
+// of two independently-maintained ones.
+import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER } from "./workspaceScenarioMode.js";
 
 // Great-circle angular separation (degrees) between two {lat, lng} points —
 // used only to size the Optimizer Overlay's auto-framing distance to the
@@ -49,10 +62,21 @@ export function structureTier(structure, rankById) {
 // used to fall back to here still runs, but ONLY as a defensive guard
 // for a served payload that predates the canonical field, never as a
 // second authoritative computation.
-export function activeStructure(allocated, leadingStructureId) {
+// `extraPool` (optional): an additional candidate array to search for
+// `leadingStructureId` before falling back to canonical/rank-1 — needed
+// because a producer can select a candidate that only exists via the
+// admissibleForMode() GD-4 family backstop (top_by_structural_family),
+// never reachable through `allocated.structures`'s own bounded page byId
+// map alone. Every existing 2-arg call site is unaffected — extraPool
+// defaults to none, so this can never change a result no caller opted into.
+export function activeStructure(allocated, leadingStructureId, extraPool = null) {
   if (!allocated) return null;
   const byId = new Map(allocated.structures.map((s) => [s.structure_id, s]));
   if (leadingStructureId && byId.has(leadingStructureId)) return byId.get(leadingStructureId);
+  if (leadingStructureId && extraPool) {
+    const found = extraPool.find((s) => s.structure_id === leadingStructureId);
+    if (found) return found;
+  }
   if (allocated.canonical_selected_structure_id && byId.has(allocated.canonical_selected_structure_id)) {
     return byId.get(allocated.canonical_selected_structure_id);
   }
@@ -289,9 +313,25 @@ function roleFor(structure, code) {
 // countries (China, Russia, Brazil, India, Indonesia, ...) had no
 // coordinate entry and were vanishing from the choropleth entirely — the
 // precise, identifiable cause of the Globe reading as almost all Jade.
-export function buildCountryStatuses(allocated, rankById) {
+// GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): `mode` selects the
+// candidate set via the SAME admissibleForMode() Workspace's six-slot
+// contract uses (workspaceScenarioMode.js) — MODE_NORMAL (Single
+// Jurisdiction) resolves to `allocated.best_per_jurisdiction` (one
+// canonical winner per jurisdiction; the previous version of this function
+// iterated `allocated.structures`, the bounded general candidate page,
+// which is exactly the reconstruction-from-a-bounded-page defect the later
+// Workspace finding identified — a jurisdiction's real canonical winner can
+// be entirely absent from that page for a production whose page is
+// dominated by a different family, producing both missing AND duplicate-
+// looking jurisdictions on the Globe). MODE_OPTIMIZER resolves to the
+// canonical multi-jurisdiction families, GD-4-backstopped by
+// `top_by_structural_family`. Defaults to MODE_NORMAL so any pre-existing
+// 2-arg caller keeps the single-canonical-winner behavior, never the old
+// bounded-page one.
+export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
   const byIso = new Map(); // iso2 -> { status, hex, jurisdictionCodes:Set, best:{structure,code} }
   if (!allocated) return byIso;
+  const pool = admissibleForMode(allocated, mode);
 
   // `meta` carries presentation-only extras that aren't part of the
   // status/ranking decision itself — currently just the discovery
@@ -312,11 +352,13 @@ export function buildCountryStatuses(allocated, rankById) {
     }
   };
 
-  // 1. Every participant of every generated structure — status from the
-  //    SAME structureTier the rest of the app uses (gold/jade/amber/silver).
-  //    Keyed by globeKey, so US/CA sub-national jurisdictions each carry
-  //    their own status rather than collapsing into one country verdict.
-  for (const s of allocated.structures) {
+  // 1. Every participant of every mode-admissible structure — status from
+  //    the SAME structureTier the rest of the app uses
+  //    (gold/jade/amber/silver). Keyed by globeKey, so US/CA sub-national
+  //    jurisdictions each carry their own status rather than collapsing
+  //    into one country verdict. `pool` (not `allocated.structures`) is the
+  //    canonical mode-admissible set — see the function comment above.
+  for (const s of pool) {
     const tier = structureTier(s, rankById);
     for (const code of s.participants) {
       upsert(globeKey(code), tier, code, s);
@@ -486,8 +528,19 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
 // spend. When a leg's segment isn't present in the data, its arc falls
 // back to a fixed mid-width rather than inventing a weight.
 export function buildOptimizerPathway(allocated, leadingStructureId) {
-  const structure = activeStructure(allocated, leadingStructureId);
-  if (!structure) return { points: [], arcs: [], structure: null };
+  // extraPool: the canonical Optimizer-admissible set (including any GD-4
+  // family-backstop candidate) — a producer selecting a combined/
+  // multilateral card that only exists via top_by_structural_family must
+  // still resolve here, not silently fall through to the rank-1 default.
+  const structure = activeStructure(allocated, leadingStructureId, admissibleForMode(allocated, MODE_OPTIMIZER));
+  // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): a production can
+  // genuinely have no resolvable Optimizer structure yet (no priced
+  // multi-jurisdiction candidate and no canonical/rank-1 fallback — a real,
+  // honest state, not an error). The early return must still carry
+  // `participantColors` as an empty Map, matching every other branch's
+  // shape, so buildGlobeView's optimizer return never serves `polygonColors:
+  // undefined` to a Globe3D render that expects a Map.
+  if (!structure) return { points: [], arcs: [], structure: null, participantColors: new Map(), focusLat: null, focusLng: null, focusDistance: null };
   const ordered = [
     structure.primary_jurisdiction,
     ...(structure.participants || []).filter((c) => c !== structure.primary_jurisdiction),
@@ -580,7 +633,12 @@ export function buildGlobeView(
   };
   if (!allocated) return empty;
 
-  const statuses = buildCountryStatuses(allocated, rankById);
+  // The SAME mode-admissible pool drives statuses, click-through lookup and
+  // the treaty-arc scope below — so a jurisdiction's colour, its Inspector
+  // detail on click, and its arc all resolve from the identical candidate
+  // set and can never disagree with one another.
+  const pool = admissibleForMode(allocated, mode);
+  const statuses = buildCountryStatuses(allocated, rankById, mode);
   // Development-only visual fixture. THE single injection point for the whole
   // Globe: polygon fill, beacons, ring/pulse eligibility, hover labels and the
   // structure-card dots all derive from this one map, so rewriting it here
@@ -599,8 +657,14 @@ export function buildGlobeView(
   const polygonColors = new Map();
   for (const [iso, entry] of statuses) polygonColors.set(iso, entry.hex);
 
+  // Built from `pool` (the same mode-admissible set statuses came from),
+  // not raw `allocated.structures` — a jurisdiction whose marker/status was
+  // resolved from `best_per_jurisdiction` (Single Jurisdiction mode) must
+  // click through to THAT SAME winning structure's own detail, never a
+  // different (and possibly absent-from-the-bounded-page) structure that
+  // merely happens to share the participant code.
   const structuresByCode = new Map();
-  for (const s of allocated.structures) {
+  for (const s of pool) {
     for (const code of s.participants) {
       const list = structuresByCode.get(code) || [];
       list.push(s);
@@ -675,7 +739,11 @@ export function buildGlobeView(
       });
     }
   };
-  for (const s of allocated.structures) {
+  // Scoped to `pool` (the same mode-admissible set as statuses/click-
+  // through) rather than the raw bounded page — a treaty structure that
+  // isn't even the canonical winner for its own jurisdiction shouldn't draw
+  // an arc that the choropleth itself doesn't otherwise represent.
+  for (const s of pool) {
     if (s.treaty_slug && s.participants.length === 2) pushStructureArcs(s);
   }
   pushStructureArcs(activeMultiJurisdiction);
