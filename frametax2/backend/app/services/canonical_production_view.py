@@ -1328,6 +1328,22 @@ async def build_production_and_structures(
         str(s.id): (r.economic_identity or canonical_economic_identity(r.structure_type, r.calculation_trace_json))
         for s, r in rows
     }
+    # FOUR_PRODUCTION_GLOBE_RUNTIME_CORRECTION (2026-09-21): the same
+    # canonical economic_identity every retention-summary block
+    # (best_per_jurisdiction, top_by_structural_family) already attaches
+    # individually now stamps EVERY served structure entry generically, here,
+    # once -- so the served `structures[]` page (the bounded candidates_page
+    # Globe/Workspace consume for ordinary, non-backstop candidates) carries
+    # the real identity too, not only the two retention-summary projections.
+    # Confirmed live: an Optimizer structure sourced from the bounded page
+    # (the common case -- a family with real page representation) served
+    # `economic_identity: null` even though `_identity_by_structure` already
+    # computed a real value for that exact structure_id here; only the
+    # SEPARATE compact summaries re-attached it. No new computation, no
+    # second identity formula -- `_identity_by_structure` is unchanged, this
+    # only stops discarding it before `structure_entries` is built out.
+    for _e in structure_entries:
+        _e["economic_identity"] = _identity_by_structure.get(_e["structure_id"])
     _rank_key = lambda e: (
         e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
         _identity_by_structure.get(e["structure_id"], ""),

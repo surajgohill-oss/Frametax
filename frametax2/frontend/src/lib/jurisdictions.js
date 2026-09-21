@@ -39,6 +39,20 @@ export const JURISDICTION_COORDS = {
   CL: { lat: -33.45, lng: -70.67, name: "Chile" },
   CO: { lat: 4.71, lng: -74.07, name: "Colombia" },
   CR: { lat: 9.93, lng: -84.08, name: "Costa Rica" },
+  // FOUR_PRODUCTION_GLOBE_RUNTIME_CORRECTION (2026-09-21) — CONFIRMED ROOT
+  // CAUSE for Bad Hombres' broken Optimizer scenes: buildOptimizerPathway's
+  // marker/arc arrays are gated on `JURISDICTION_COORDS[code]` existing; a
+  // structure whose real routed participant has NO entry here silently
+  // drops that leg from BOTH the marker and arc arrays, even though the
+  // structure's own served `participants` (and its card label) correctly
+  // list it. Cross-checked live against all four productions'
+  // best_per_jurisdiction + every structure's participants
+  // (/api/v1/cineglobe/projects/{id}/state) — CZ, MK, MN, RS, SK, UY, UZ and
+  // eight US states (added below) are REAL, currently-served jurisdiction
+  // codes with no coordinate entry. Standard public geographic data
+  // (capital or principal production-hub city), same convention as every
+  // other entry in this table — never fabricated.
+  CZ: { lat: 50.08, lng: 14.44, name: "Czech Republic" },
   DK: { lat: 55.68, lng: 12.57, name: "Denmark" },
   DO: { lat: 18.49, lng: -69.9, name: "Dominican Republic" },
   EE: { lat: 59.44, lng: 24.75, name: "Estonia" },
@@ -57,6 +71,8 @@ export const JURISDICTION_COORDS = {
   LV: { lat: 56.95, lng: 24.11, name: "Latvia" },
   MA: { lat: 33.97, lng: -6.85, name: "Morocco" },
   ME: { lat: 42.44, lng: 19.26, name: "Montenegro" },
+  MK: { lat: 41.99, lng: 21.43, name: "North Macedonia" },
+  MN: { lat: 47.89, lng: 106.91, name: "Mongolia" },
   MX: { lat: 19.43, lng: -99.13, name: "Mexico" },
   MY: { lat: 3.14, lng: 101.69, name: "Malaysia" },
   NL: { lat: 52.37, lng: 4.9, name: "Netherlands" },
@@ -68,17 +84,21 @@ export const JURISDICTION_COORDS = {
   PT: { lat: 38.72, lng: -9.14, name: "Portugal" },
   QA: { lat: 25.29, lng: 51.53, name: "Qatar" },
   RO: { lat: 44.43, lng: 26.1, name: "Romania" },
+  RS: { lat: 44.79, lng: 20.45, name: "Serbia" },
   SA: { lat: 24.71, lng: 46.68, name: "Saudi Arabia" },
   SE: { lat: 59.33, lng: 18.07, name: "Sweden" },
   SG: { lat: 1.35, lng: 103.82, name: "Singapore" },
   SI: { lat: 46.06, lng: 14.51, name: "Slovenia" },
+  SK: { lat: 48.15, lng: 17.11, name: "Slovakia" },
   TH: { lat: 13.75, lng: 100.5, name: "Thailand" },
   TT: { lat: 10.65, lng: -61.52, name: "Trinidad and Tobago" },
   TW: { lat: 25.03, lng: 121.57, name: "Taiwan" },
   UA: { lat: 50.45, lng: 30.52, name: "Ukraine" },
   US: { lat: 38.9, lng: -77.04, name: "United States" },
   "US-AL": { lat: 32.38, lng: -86.3, name: "Alabama" },
+  "US-AZ": { lat: 33.45, lng: -112.07, name: "Arizona" },
   "US-CA": { lat: 34.05, lng: -118.24, name: "California" },
+  "US-CO": { lat: 39.74, lng: -104.99, name: "Colorado" },
   "US-CT": { lat: 41.6, lng: -72.7, name: "Connecticut" },
   // Qualified because the COUNTRY Georgia (GE, above) is also a jurisdiction in
   // this catalogue — renaming this from "Atlanta" to the state it actually is
@@ -96,13 +116,21 @@ export const JURISDICTION_COORDS = {
   "US-MS": { lat: 32.3, lng: -90.18, name: "Mississippi" },
   "US-MT": { lat: 46.59, lng: -112.04, name: "Montana" },
   "US-NC": { lat: 35.78, lng: -78.64, name: "North Carolina" },
+  "US-NM": { lat: 35.08, lng: -106.65, name: "New Mexico" },
+  "US-NV": { lat: 36.17, lng: -115.14, name: "Nevada" },
   "US-NY": { lat: 40.71, lng: -74.01, name: "New York" },
+  "US-OK": { lat: 35.47, lng: -97.52, name: "Oklahoma" },
   "US-OR": { lat: 45.52, lng: -122.68, name: "Oregon" },
+  "US-PA": { lat: 39.95, lng: -75.17, name: "Pennsylvania" },
   "US-PR": { lat: 18.47, lng: -66.11, name: "Puerto Rico" },
   "US-RI": { lat: 41.82, lng: -71.41, name: "Rhode Island" },
   "US-SC": { lat: 33.84, lng: -81.16, name: "South Carolina" },
+  "US-TN": { lat: 36.16, lng: -86.78, name: "Tennessee" },
   "US-TX": { lat: 30.27, lng: -97.74, name: "Texas" },
+  "US-UT": { lat: 40.76, lng: -111.89, name: "Utah" },
   "US-VA": { lat: 37.54, lng: -77.44, name: "Virginia" },
   "US-WA": { lat: 47.61, lng: -122.33, name: "Washington" },
+  UY: { lat: -34.9, lng: -56.16, name: "Uruguay" },
+  UZ: { lat: 41.31, lng: 69.24, name: "Uzbekistan" },
   ZA: { lat: -33.92, lng: 18.42, name: "South Africa" },
 };
