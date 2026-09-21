@@ -7,7 +7,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
@@ -457,13 +457,14 @@ export default function Workspace() {
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
+  // CODEX_FG-002 (2026-09-21): the card's "Inspect" action opens that whole
+  // structure's own complete identity via buildCandidateDetail — the same
+  // shared adapter ProjectGlobe.jsx's selectStructure uses — never an
+  // arbitrarily chosen first participant's segment. onSelectSegment (below)
+  // stays scoped to one row/jurisdiction on purpose.
   function handleSelectStructure(structure) {
     if (structure.recommendation) openInspector("structure-recommendation", structure.recommendation);
-    else {
-      const firstCode = structure.segments?.[0]?.jurisdiction_code ?? structure.component_allocations?.[0]?.jurisdiction_code ?? null;
-      const seg = firstCode ? resolveSegmentDetail(structure, firstCode) : null;
-      if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, contingencyByAccount });
-    }
+    else openInspector("candidate-structure", buildCandidateDetail(structure));
   }
   function handleSelectSegment(structure, code) {
     const seg = resolveSegmentDetail(structure, code);

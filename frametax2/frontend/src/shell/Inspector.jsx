@@ -406,6 +406,73 @@ function StructureRecommendationInspector({ data }) {
   );
 }
 
+// FG-002 (2026-09-21, Codex Frontend Workspace/Globe Runtime Audit): the
+// structure-level Inspector — opened when a producer selects a whole
+// candidate (a Full Globe/Workspace card), never a single jurisdiction
+// marker (that stays AllocationSegmentInspector, unchanged). Every field
+// below is read verbatim from globeData.js's buildCandidateDetail(), the
+// ONE shared adapter every consumer (this Inspector, ScenarioCard, hover)
+// derives from — no second, independently-computed structure summary.
+function StructureDetailInspector({ data }) {
+  const components = data.components || [];
+  return (
+    <>
+      <p className="inspector-eyebrow">
+        Structure{data.classification ? ` · ${humanizeToken(data.classification)}` : ""}
+      </p>
+      <h3>{data.label || jurisdictionName(data.primary_jurisdiction)}</h3>
+      {data.economic_identity && (
+        <p className="text-tertiary small" style={{ margin: "2px 0 8px", wordBreak: "break-all" }}>
+          {data.economic_identity.slice(0, 16)}…
+        </p>
+      )}
+      <dl className="kv-list">
+        <div><dt>Participants</dt><dd>{(data.participants || []).map(jurisdictionName).join(", ") || "—"}</dd></div>
+        <div><dt>Total incentive</dt><dd className="mono"><Money value={data.incentive_usd} /></dd></div>
+        <div><dt>Total QPE</dt><dd className="mono"><Money value={data.qpe_usd} /></dd></div>
+        <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>
+        <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
+      </dl>
+      {components.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>
+            Program{components.length > 1 ? " stack" : ""} ({components.length})
+          </p>
+          <div className="row-list">
+            {components.map((c, i) => (
+              <div className="row-item" key={`${c.code}-${c.program_slug}-${i}`} style={{ cursor: "default" }}>
+                <div className="row-main">
+                  <div className="row-title small">
+                    {jurisdictionName(c.code)}{c.program_slug ? ` · ${programDisplay(c.program_slug)}` : ""}
+                  </div>
+                  <div className="row-sub">
+                    {c.component ? `${humanizeToken(c.component)} · ` : ""}
+                    QPE <Money value={c.qpe_usd} bare /> · Incentive <Money value={c.incentive_usd} bare />
+                    {c.rate_ceiling != null ? ` · ${c.is_band_ceiling ? "up to " : ""}${Math.round(c.rate_ceiling * 100)}%` : ""}
+                  </div>
+                </div>
+                <div className="row-value mono small"><Money value={c.allocated_usd} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {data.blockers?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why this structure isn't fully priced</p>
+          {data.blockers.map((b, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{b}</p>)}
+        </div>
+      )}
+      {data.warnings?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Warnings</p>
+          {data.warnings.map((w, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{w}</p>)}
+        </div>
+      )}
+    </>
+  );
+}
+
 function JurisdictionInspector({ data }) {
   return (
     <>
@@ -434,6 +501,7 @@ const RENDERERS = {
   "allocation-segment": AllocationSegmentInspector,
   "allocation-assignment": AllocationAssignmentInspector,
   "structure-recommendation": StructureRecommendationInspector,
+  "candidate-structure": StructureDetailInspector,
 };
 
 // Shared inspector body — the selected item's detail. Used by BOTH the

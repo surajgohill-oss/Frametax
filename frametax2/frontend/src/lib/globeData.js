@@ -453,6 +453,81 @@ export function resolveSegmentDetail(structure, code) {
   };
 }
 
+// FG-002 (2026-09-21, Codex Frontend Workspace/Globe Runtime Audit): the ONE
+// canonical structure-level detail adapter — Full Globe/Workspace's
+// "Inspect this structure" click (never the per-jurisdiction marker click,
+// which stays scoped to resolveSegmentDetail/allocation-segment) must open
+// this candidate's OWN complete identity and economics, not an arbitrarily
+// chosen participant's segment. Confirmed live: clicking an Alabama-primary
+// Optimizer card previously opened Manitoba's segment Inspector instead —
+// the participant lookup (`participants.find(c => c !== primary)`) has
+// nothing to do with WHICH structure was clicked; the card already has its
+// own exact structure in hand and must describe itself.
+//
+// `components` is built from the structure's OWN full `segments` array (or
+// `component_allocations` when segments is empty — see resolveSegmentDetail
+// above) WITHOUT deduping by jurisdiction code, so a same-jurisdiction
+// program stack (confirmed live: Ontario OFTTC + OCASE, two real segments
+// both carrying jurisdiction_code "CA-ON") shows every real stacked program
+// — never collapsed to whichever happened to be found first, which is
+// exactly the "blank/incomplete stack" gap the audit's own live sample
+// showed. `qpe_usd` sums the structure's own real per-row spend field (the
+// same real figures ScenarioCard's qualifiedSpendRaw already sums, now one
+// shared computation instead of two independently-maintained copies) —
+// never a fabricated or independently-derived total.
+export function buildCandidateDetail(structure) {
+  if (!structure) return null;
+  const useSegments = (structure.segments?.length || 0) > 0;
+  const rows = useSegments ? structure.segments : (structure.component_allocations || []);
+  const components = rows.map((row) => (useSegments ? {
+    code: row.jurisdiction_code ?? null,
+    program_slug: row.program_slug ?? null,
+    program_display_name: row.program_display_name ?? null,
+    component: null,
+    claims_incentive: !!row.claims_incentive,
+    allocated_usd: row.allocated_usd ?? null,
+    qpe_usd: row.qpe_usd ?? null,
+    incentive_usd: row.incentive_ceiling_usd ?? row.incentive_floor_usd ?? null,
+    rate_floor: row.rate_floor ?? null,
+    rate_ceiling: row.rate_ceiling ?? null,
+    is_band_ceiling: !!row.is_band_ceiling,
+  } : {
+    code: row.jurisdiction_code ?? null,
+    program_slug: row.program_slug ?? null,
+    program_display_name: null,
+    component: row.component ?? null,
+    claims_incentive: !!row.program_slug,
+    allocated_usd: row.allocated_usd ?? null,
+    qpe_usd: row.allocated_usd ?? null,
+    incentive_usd: row.guaranteed_incentive_usd ?? null,
+    rate_floor: null,
+    rate_ceiling: null,
+    is_band_ceiling: false,
+  }));
+  const totalQpe = rows.reduce(
+    (sum, row) => sum + (useSegments ? (row.qpe_usd || 0) : (row.allocated_usd || 0)),
+    0,
+  );
+  return {
+    structure_id: structure.structure_id,
+    economic_identity: structure.economic_identity ?? null,
+    structure_type: structure.structure_type ?? null,
+    classification: structure.classification ?? null,
+    label: structure.label ?? null,
+    primary_jurisdiction: structure.primary_jurisdiction ?? null,
+    participants: structure.participants || [],
+    program_slugs: structure.program_slugs || [],
+    is_fully_priced: !!structure.is_fully_priced,
+    candidate_status: structure.candidate_status ?? null,
+    incentive_usd: structure.selected_incentive_usd ?? null,
+    qpe_usd: totalQpe,
+    npc_usd: structure.npc_with_adjustments_usd ?? null,
+    blockers: structure.blockers || [],
+    warnings: structure.warnings || [],
+    components,
+  };
+}
+
 // Per-country hover payload — read verbatim from the best (highest-state)
 // structure touching that country. Countries with no participating
 // structure (Excluded, from discovery only) carry state + jurisdiction

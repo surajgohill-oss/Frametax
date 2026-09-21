@@ -3,6 +3,7 @@ import {
   getEconomics, getFacts, getLegal, getPackage, getPeople, getProduction,
   getProjectState, getRecommendations, getStructures,
 } from "../api";
+import { useAppState } from "../state/AppState";
 
 // One combined fetch of the full backend state — every screen reads
 // from this rather than re-deriving anything client-side.
@@ -22,6 +23,12 @@ import {
 export function useCineGlobe(projectId) {
   const [state, setState] = useState({ data: null, error: null, loading: true });
   const mounted = useRef(true);
+  // CODEX_FG-004 (2026-09-21): seed AppState's leadingStructureId from this
+  // project's own served, persisted `production.leading_structure_id` the
+  // moment it's known — initLeadingStructureId itself guards against
+  // re-seeding after the producer's own later choice/clear (see AppState.jsx).
+  // No-op when this hook is called without a projectId (Company-level pages).
+  const { initLeadingStructureId } = useAppState();
   // Re-arm on every mount (not just the initial useRef value) — StrictMode's
   // dev-only mount→cleanup→mount cycle would otherwise leave this stuck
   // false after the first cleanup, permanently dropping every setState.
@@ -44,6 +51,9 @@ export function useCineGlobe(projectId) {
       .then((data) => {
         if (!mounted.current) return;
         setState({ data, error: null, loading: false });
+        if (projectId && data?.production?.leading_structure_id) {
+          initLeadingStructureId(projectId, data.production.leading_structure_id);
+        }
       })
       .catch((err) => {
         if (!mounted.current) return;

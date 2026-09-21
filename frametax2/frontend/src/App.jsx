@@ -25,8 +25,14 @@ import Settings from "./screens/production/Settings";
 
 export default function App() {
   return (
-    <AppStateProvider>
-      <BrowserRouter>
+    // CODEX_FG-001/FG-003 (2026-09-21): AppStateProvider now lives INSIDE
+    // BrowserRouter (was outside) — it needs useLocation() to detect a
+    // project-boundary crossing (see state/AppState.jsx's own header
+    // comment), which only resolves inside a Router. Pure reordering: Router
+    // itself provides no app data, so nothing outside it depended on this
+    // nesting order.
+    <BrowserRouter>
+      <AppStateProvider>
         <ErrorBoundary>
         <AppShell>
           <Routes>
@@ -69,7 +75,7 @@ export default function App() {
           </Routes>
         </AppShell>
         </ErrorBoundary>
-      </BrowserRouter>
-    </AppStateProvider>
+      </AppStateProvider>
+    </BrowserRouter>
   );
 }

@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, resolveSegmentDetail } from "../../lib/globeData";
+import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, resolveSegmentDetail, buildCandidateDetail } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER } from "../../lib/workspaceScenarioMode";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -224,18 +224,20 @@ export default function ProjectGlobe() {
     // setting it there would only leak into Workspace's separate "Leading"
     // FX badge with no Globe-rendering benefit.
     if (globeMode === MODE_OPTIMIZER) setLeadingStructureId(s.structure_id);
-    // LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21): resolveSegmentDetail's
-    // component_allocations fallback (see globeData.js) — without it, every
-    // Optimizer/hybrid structure (segments always empty, recommendation
-    // always null) silently opened no Inspector at all, confirmed live.
-    // Falls back to the FIRST real segment or component_allocations entry
-    // (whichever the structure actually has) when `code` itself doesn't
-    // exactly match one — same "show something real rather than nothing"
-    // precedent the old `s.segments?.[0]` fallback already established.
-    const firstRealCode = s.segments?.[0]?.jurisdiction_code ?? s.component_allocations?.[0]?.jurisdiction_code ?? null;
-    const seg = resolveSegmentDetail(s, code) || (firstRealCode ? resolveSegmentDetail(s, firstRealCode) : null);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
-    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+    // CODEX_FG-002 (2026-09-21): selecting a STRUCTURE (a card) must open
+    // that structure's own complete identity — structure ID, economic
+    // identity, classification, every participant, the full program stack,
+    // and structure-level totals — never an arbitrarily chosen non-primary
+    // participant's segment. Confirmed live: an Alabama-primary Optimizer
+    // candidate previously opened Manitoba's segment Inspector instead,
+    // because `code` above is only used for the choropleth focus/highlight,
+    // not for identifying which candidate was actually clicked — the card
+    // already has its own exact structure in hand (`s`) and must describe
+    // itself via buildCandidateDetail, the one shared structure-level
+    // adapter (see globeData.js). Per-jurisdiction marker clicks
+    // (selectJurisdiction, below) are unaffected — those stay scoped to a
+    // single segment on purpose.
+    openInspector("candidate-structure", buildCandidateDetail(s));
   }
 
   return (
