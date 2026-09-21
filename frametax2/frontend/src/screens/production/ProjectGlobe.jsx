@@ -36,7 +36,7 @@ export default function ProjectGlobe() {
   const { projectId } = useParams();
   const { data, error, loading } = useCineGlobe(projectId);
   const {
-    inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction,
+    inspector, openInspector, leadingStructureId, setLeadingStructureId, selectedJurisdiction, setSelectedJurisdiction,
     workspaceMode, setWorkspaceMode,
   } = useAppState();
   // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): reads/writes the SAME
@@ -66,13 +66,22 @@ export default function ProjectGlobe() {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode, categoryByIso } = useMemo(
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode, categoryByIso, sceneSignature } = useMemo(
     () => buildGlobeView(allocated, rankById, {
       mode: globeMode, leadingStructureId, selectedJurisdiction,
       grossBudgetUsd: data?.production?.gross_budget_usd ?? null,
     }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction, data?.production?.gross_budget_usd],
   );
+  // FVD_GLOBE_RENDERER_CORRECTION (2026-09-21) — Phase 5 diagnostic contract:
+  // exposes the EXACT scene signature computed from the SAME `points`/`arcs`
+  // handed to <Globe3D> below (never re-derived), dev-only, so a live
+  // browser check can assert what the renderer actually received without
+  // reaching into three.js internals. No production behavior depends on
+  // this — it is read-only and inert outside DEV.
+  useEffect(() => {
+    if (import.meta.env.DEV) window.__cineGlobeSceneSignature = sceneSignature;
+  }, [sceneSignature]);
   // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the "Production
   // structures" card list below the mode toggle must show the SAME
   // candidate set the Globe itself is currently rendering (best_per_
@@ -197,6 +206,19 @@ export default function ProjectGlobe() {
     const routedTo = (s.participants || []).find((c) => c !== s.primary_jurisdiction);
     const code = routedTo || s.primary_jurisdiction || s.participants?.[0];
     setSelectedJurisdiction(code);
+    // FVD_GLOBE_RENDERER_CORRECTION (2026-09-21): this previously only set
+    // selectedJurisdiction, which drives the choropleth's selection
+    // highlight/camera-focus but is NEVER read by buildOptimizerPathway —
+    // that function resolves the rendered Optimizer scene from
+    // leadingStructureId alone. Confirmed live against F#K Valentine's Day:
+    // clicking every one of the 36 Optimizer cards left the Globe scene
+    // completely unchanged (same blank/default state) because nothing ever
+    // set leadingStructureId. Scoped to Optimizer mode only — Single
+    // Jurisdiction mode's choropleth already derives its full jurisdiction
+    // set from best_per_jurisdiction independent of leadingStructureId, so
+    // setting it there would only leak into Workspace's separate "Leading"
+    // FX badge with no Globe-rendering benefit.
+    if (globeMode === MODE_OPTIMIZER) setLeadingStructureId(s.structure_id);
     const seg = s.segments?.find((sg) => sg.jurisdiction_code === code) || s.segments?.[0];
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);

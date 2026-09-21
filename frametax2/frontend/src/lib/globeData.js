@@ -528,18 +528,33 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
 // spend. When a leg's segment isn't present in the data, its arc falls
 // back to a fixed mid-width rather than inventing a weight.
 export function buildOptimizerPathway(allocated, leadingStructureId) {
-  // extraPool: the canonical Optimizer-admissible set (including any GD-4
-  // family-backstop candidate) — a producer selecting a combined/
-  // multilateral card that only exists via top_by_structural_family must
-  // still resolve here, not silently fall through to the rank-1 default.
-  const structure = activeStructure(allocated, leadingStructureId, admissibleForMode(allocated, MODE_OPTIMIZER));
-  // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): a production can
-  // genuinely have no resolvable Optimizer structure yet (no priced
-  // multi-jurisdiction candidate and no canonical/rank-1 fallback — a real,
-  // honest state, not an error). The early return must still carry
-  // `participantColors` as an empty Map, matching every other branch's
-  // shape, so buildGlobeView's optimizer return never serves `polygonColors:
-  // undefined` to a Globe3D render that expects a Map.
+  // FVD_GLOBE_RENDERER_CORRECTION (2026-09-21) — CONFIRMED LIVE ROOT CAUSE:
+  // this used to resolve via activeStructure(allocated, leadingStructureId,
+  // optimizerPool) — whose FALLBACK (no leadingStructureId set) is
+  // canonical_selected_structure_id, then the overall rank-1 structure,
+  // NEITHER of which is family-gated. Confirmed live against F#K Valentine's
+  // Day: canonical_selected_structure_id is null AND no rank-1 entry exists
+  // at all ("no verified winner"), so activeStructure(...) returned null and
+  // the Optimizer scene rendered ZERO points/arcs by default — a genuinely
+  // blank Globe, not merely a sparse one. Even where a canonical/rank-1
+  // structure DOES exist, it can be a SINGLE_JURISDICTION structure (that IS
+  // the overall production-wide pick in Single Jurisdiction-heavy data),
+  // which Optimizer mode must never reuse (Phase 4's explicit requirement).
+  //
+  // The fix: resolve directly against `pool` — the canonical, already NPC-
+  // ascending-sorted, GD-4-backstopped Optimizer-admissible set
+  // (admissibleForMode) — never through activeStructure()'s generic,
+  // family-unaware fallback. `pool[0]` IS the canonical top-ranked
+  // admissible Optimizer structure by construction (rankOrNpcOrder feeds
+  // admissibleForMode, ties broken by the GD-4 backstop's own rank_in_family
+  // ordering), so no second ranking is introduced here.
+  const pool = admissibleForMode(allocated, MODE_OPTIMIZER);
+  const structure = (leadingStructureId && pool.find((s) => s.structure_id === leadingStructureId)) || pool[0] || null;
+  // A production can genuinely have zero priced Optimizer-family candidates
+  // yet (a real, honest state, not an error). The early return must still
+  // carry `participantColors` as an empty Map, matching every other
+  // branch's shape, so buildGlobeView's optimizer return never serves
+  // `polygonColors: undefined` to a Globe3D render that expects a Map.
   if (!structure) return { points: [], arcs: [], structure: null, participantColors: new Map(), focusLat: null, focusLng: null, focusDistance: null };
   const ordered = [
     structure.primary_jurisdiction,
@@ -579,6 +594,14 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
       startLat: a.lat, startLng: a.lng, endLat: b.lat, endLng: b.lng,
       tier: "gold", strokeWidth,
       color: [STATUS_HEX[i === 0 ? "gold" : "jade"], STATUS_HEX.jade],
+      // startCode/endCode: additive, real jurisdiction-code fields (three-
+      // globe's arc layer reads only the start/end Lat/Lng + color/
+      // strokeWidth keys above and ignores unknown properties — verified
+      // against the installed three-globe source). Carried so a non-visual
+      // scene-signature diagnostic can report "which real jurisdictions
+      // this arc connects" without re-deriving it from lat/lng, per the
+      // FVD_GLOBE_RENDERER_CORRECTION diagnostic contract.
+      startCode: ordered[i], endCode: ordered[i + 1],
     });
   }
 
@@ -614,6 +637,47 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
   return { points, arcs, structure, participantColors, focusLat, focusLng, focusDistance };
 }
 
+// FVD_GLOBE_RENDERER_CORRECTION (2026-09-21) — Phase 5 diagnostic contract.
+// A nonvisual, read-only signature of the ACTUAL data a Globe3D render is
+// about to receive — computed here from the exact `points`/`arcs` arrays
+// buildGlobeView is already returning (never re-derived independently, and
+// never from `allocated.structures` or any other upstream candidate array),
+// so a live/test assertion against this signature is an assertion against
+// what the renderer itself was handed, not against a side list or a helper
+// that never reached Three-Globe. Exposed via buildGlobeView's own return
+// value (`sceneSignature`) rather than reaching inside the frozen Globe3D.jsx
+// engine — ProjectGlobe.jsx/Workspace.jsx pass these SAME `points`/`arcs`
+// values as Globe3D's own props, so the signature and the render can never
+// disagree.
+export function sceneSignature(mode, structure, points, arcs, polygonColors = null) {
+  const markerCodes = [...new Set(
+    (points || []).map((p) => p?.jurisdictionCode || p?.id).filter(Boolean),
+  )].sort();
+  const arcEndpoints = [...new Set(
+    (arcs || [])
+      .filter((a) => a?.startCode && a?.endCode)
+      .map((a) => `${a.startCode}->${a.endCode}`),
+  )].sort();
+  // polygonCodes: the PRIMARY visualization (this module's own header
+  // comment: "Country polygons are the primary visualization" — `points`
+  // are secondary click/hover hit-targets, gated on JURISDICTION_COORDS
+  // coverage, so a jurisdiction with real choropleth fill but no beacon
+  // coordinate would otherwise be invisible to this diagnostic).
+  const polygonCodes = polygonColors ? [...polygonColors.keys()].sort() : [];
+  return {
+    mode,
+    economicIdentity: structure?.economic_identity ?? null,
+    classification: structure?.classification ?? null,
+    markerCodes,
+    arcEndpoints,
+    polygonCodes,
+    participantCount: structure?.participants?.length ?? 0,
+    markerCount: (points || []).length,
+    arcCount: (arcs || []).length,
+    polygonCount: polygonCodes.length,
+  };
+}
+
 // Single entry point for every Globe-consuming screen (Overview, Workspace
 // Map/Split, ProjectGlobe) — replaces the old buildGlobeData. Returns
 // everything Globe3D and its callers need: polygonColors (iso->hex) for the
@@ -630,6 +694,7 @@ export function buildGlobeView(
     selectedLat: null, selectedLng: null, focusLat: null, focusLng: null, focusDistance: null,
     hoverByIso: new Map(), structuresByCode: new Map(),
     stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0 }, categoryByIso: new Map(),
+    sceneSignature: sceneSignature(mode, null, [], []),
   };
   if (!allocated) return empty;
 
@@ -698,6 +763,7 @@ export function buildGlobeView(
       focusLng: selectedCoord?.lng ?? pathway.focusLng,
       focusDistance: pathway.focusDistance,
       hoverByIso, structuresByCode, stateCounts, categoryByIso,
+      sceneSignature: sceneSignature(mode, pathway.structure, pathway.points, pathway.arcs, pathway.participantColors),
     };
   }
 
@@ -754,6 +820,12 @@ export function buildGlobeView(
     selectedLat: selectedCoord?.lat ?? null, selectedLng: selectedCoord?.lng ?? null,
     focusLat: selectedCoord?.lat ?? null, focusLng: selectedCoord?.lng ?? null, focusDistance: null,
     hoverByIso, structuresByCode, stateCounts, categoryByIso,
+    // Single Jurisdiction mode has no single "active structure" (it's a
+    // whole choropleth of independent jurisdiction winners) — structure is
+    // intentionally null here; economicIdentity/classification stay null,
+    // which is itself part of what makes this signature distinguishable
+    // from an Optimizer signature (Phase 5's explicit acceptance item).
+    sceneSignature: sceneSignature(mode, null, points, structureArcs, polygonColors),
   };
 }
 

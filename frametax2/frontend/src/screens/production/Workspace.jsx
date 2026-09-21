@@ -358,10 +358,18 @@ export default function Workspace() {
     () => (allocated ? bestPricedCandidate(allocated)?.structure_id ?? null : null),
     [allocated],
   );
-  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode, sceneSignature } = useMemo(
     () => buildGlobeView(allocated, rankById, { mode: workspaceMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, workspaceMode, leadingStructureId, selectedJurisdiction],
   );
+  // FVD_GLOBE_RENDERER_CORRECTION (2026-09-21) — same Phase 5 diagnostic
+  // contract as ProjectGlobe.jsx, same window key: the embedded Map/Split
+  // Globe and the full-page Project Globe must be provably the SAME
+  // scene-data contract (buildGlobeView), so this intentionally shares the
+  // identical diagnostic global rather than a second, screen-specific one.
+  useEffect(() => {
+    if (import.meta.env.DEV) window.__cineGlobeSceneSignature = sceneSignature;
+  }, [sceneSignature]);
   // Workspace scenario-mode data wiring: slot 6's producer override is
   // stored per (project, mode) in shared AppState so switching modes
   // restores each mode's own prior choice (see AppState.jsx). The six-
