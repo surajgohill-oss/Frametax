@@ -9,7 +9,8 @@ import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
-import { selectAnchorLeadingOptimized, isBaselineStructure } from "../../lib/productionOptions";
+import { isBaselineStructure } from "../../lib/productionOptions";
+import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
@@ -57,44 +58,12 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // generated every one of these; the control only changes which of them
 // occupies a visible lane.
 //
-// 2x2 anchor/scenario composition, history-based restoration (item 7):
-// the first four lanes are ALWAYS Anchor -> Leading -> Leading ->
-// Optimized, via lib/productionOptions.js's selectAnchorLeadingOptimized
-// — the SAME canonical selection Overview's Top Structures uses, never a
-// second, independently-maintained copy. Remaining lanes (5-6, and
-// anything reachable via Other Scenarios) keep the existing rank-then-
-// NPC order, excluding whatever the first four already claimed.
-const MAX_VISIBLE = 6;
-function visibleStructures(allocated, rankById, swapId) {
-  const structures = allocated.structures;
-  const anchorLeadingOptimized = selectAnchorLeadingOptimized(allocated);
-  const claimedIds = new Set(anchorLeadingOptimized.map((s) => s.structure_id));
-  const rest = [...structures]
-    .filter((s) => !claimedIds.has(s.structure_id))
-    .sort((a, b) => {
-      const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
-      const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
-      if (ra !== rb) return ra - rb;
-      // Workspace Top-6/Data Truthfulness: among structures with no
-      // canonical rank (comparable_count can be 0 — the production's own
-      // baseline is unpriceable — while real priced candidates still
-      // exist), the served array order is arbitrary generation order, not
-      // economic order. Tie-break by the SAME real NPC field the canonical
-      // comparable ranking already sorts by — grants no rank, no
-      // recommendation; it only makes "which 6 show first" deterministic
-      // and cost-ordered instead of accidental. Priced structures sort
-      // before unpriced ones.
-      const an = a.is_fully_priced ? (a.npc_with_adjustments_usd ?? Infinity) : Infinity;
-      const bn = b.is_fully_priced ? (b.npc_with_adjustments_usd ?? Infinity) : Infinity;
-      return an - bn;
-    });
-  const ordered = [...anchorLeadingOptimized, ...rest];
-  const base = ordered.slice(0, MAX_VISIBLE);
-  const overflow = ordered.slice(MAX_VISIBLE);
-  const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
-  const cols = swapped ? [...base.slice(0, MAX_VISIBLE - 1), swapped] : base;
-  return { overflow, cols };
-}
+// Workspace scenario-mode data wiring: the six-slot composition itself
+// (Current Location -> top four mode-admissible scenarios -> slot 6) now
+// lives in lib/workspaceScenarioMode.js's selectSixSlots(), keyed off the
+// backend's own canonical `classification` field for the active Normal/
+// Optimizer mode — never a second, independently-maintained selection
+// here. See that module's header comment for the exact family mapping.
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
 // Workspace Display Regression: "Other Scenarios" is a real HTML <select>
@@ -304,10 +273,6 @@ export default function Workspace() {
   const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
-  // Which overflow (optimizer-generated, not user-created) structure is
-  // swapped into the last visible lane via "Other Scenarios" — selecting,
-  // never creating.
-  const [swapId, setSwapId] = useState("");
   // Compare identity (Workspace Top-6/Data Truthfulness): the canonical
   // structure_id of whichever card's Compare was last clicked — never a
   // jurisdiction code, so two same-country/different-program structures
@@ -320,6 +285,7 @@ export default function Workspace() {
     openInspector, inspector, closeInspector, setDocked,
     leadingStructureId, setLeadingStructureId,
     selectedJurisdiction, setSelectedJurisdiction,
+    workspaceMode, setWorkspaceMode, getSlot6Selection, setSlot6Selection,
   } = useAppState();
 
   // Phase C write-through for "Set as Leading": persists to the real
@@ -389,6 +355,20 @@ export default function Workspace() {
     () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
+  // Workspace scenario-mode data wiring: slot 6's producer override is
+  // stored per (project, mode) in shared AppState so switching modes
+  // restores each mode's own prior choice (see AppState.jsx). The six-
+  // slot composition itself is selectSixSlots() — Current Location (never
+  // mode-filtered) + the top four mode-admissible scenarios + slot 6.
+  const projectId = data?.production?.project_id ?? null;
+  const slot6Override = getSlot6Selection(projectId, workspaceMode);
+  const { cols, dropdownOptions: overflow } = useMemo(
+    () => {
+      const { slots, dropdownOptions } = selectSixSlots(allocated, workspaceMode, slot6Override);
+      return { cols: slots, dropdownOptions };
+    },
+    [allocated, workspaceMode, slot6Override],
+  );
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -398,7 +378,6 @@ export default function Workspace() {
   const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
-  const { overflow, cols } = visibleStructures(allocated, rankById, swapId);
   // Workspace/FX Display Regression: Leading (activeStructure, which
   // already carries this project's OWN manual-selection-or-canonical-
   // rank-1 semantics — the same "leading" identity every other Workspace
@@ -519,7 +498,19 @@ export default function Workspace() {
             wsx-g-modetoggle below), not here. */}
         <div className="wsx-station">
           <div className="wsx-station-head">
-            <div className="wsx-station-head-spacer" aria-hidden="true" />
+            {/* Workspace scenario-mode data wiring: smallest functional
+                Normal/Optimizer control, reusing the existing .wsx-viewtabs
+                button style (Lanes/Map/Split's own) rather than a new
+                visual system. Placed in the existing left spacer slot so
+                the Lanes/Map/Split tabs stay exactly centered (the grid's
+                1fr/auto/1fr geometry is unaffected by this slot's content
+                — see screens.css's .wsx-station-head). */}
+            <div className="wsx-station-head-spacer wsx-scenario-mode">
+              <div className="wsx-viewtabs">
+                <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Normal</button>
+                <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
+              </div>
+            </div>
             <div className="wsx-viewtabs">
               {MODES.map((m) => (
                 <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
@@ -529,16 +520,17 @@ export default function Workspace() {
             </div>
             {/* Other Scenarios — navigates among structures the optimizer
                 already generated but that don't currently occupy a visible
-                lane; it swaps the last lane's contents, it never creates a
-                new structure and never reruns the optimizer. */}
+                lane, WITHIN the active scenario mode; it swaps slot 6's
+                contents, it never creates a new structure and never
+                reruns the optimizer. */}
             {mode !== "map" && overflow.length > 0 ? (
               <div className="wsx-other-scenarios">
                 <label htmlFor="wsx-swap">Other scenarios</label>
                 <select
                   id="wsx-swap"
                   className="field-select"
-                  value={swapId}
-                  onChange={(e) => setSwapId(e.target.value)}
+                  value={slot6Override ?? ""}
+                  onChange={(e) => setSlot6Selection(projectId, workspaceMode, e.target.value)}
                 >
                   <option value="">— {(() => { const last = cols[cols.length - 1]; return last ? scenarioOptionLabel(last) : "—"; })()} —</option>
                   {overflow.map((s) => (

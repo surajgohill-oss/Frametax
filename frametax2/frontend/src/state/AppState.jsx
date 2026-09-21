@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from "react";
+import { MODE_NORMAL } from "../lib/workspaceScenarioMode";
 
 // Shared app-level state: which Inspector content is open, plus the
 // production-wide selection state (leading structure / selected
@@ -29,6 +30,31 @@ export function AppStateProvider({ children }) {
   // Selected" state and scopes Budget Rail's jurisdiction-allocation view.
   const [selectedJurisdiction, setSelectedJurisdiction] = useState(null);
 
+  // Workspace scenario-mode data wiring: one shared 'normal' | 'optimizer'
+  // mode, kept here (not local Workspace.jsx state) so a later Globe
+  // wiring pass can read the exact same active mode without a second,
+  // independently-maintained copy — see lib/workspaceScenarioMode.js for
+  // the canonical family mapping this mode drives.
+  const [workspaceMode, setWorkspaceMode] = useState(MODE_NORMAL);
+  // Slot 6's producer-chosen override, stored per (project, mode) so
+  // switching modes restores each mode's own prior choice instead of
+  // leaking one mode's selection into the other, and so it survives a
+  // mode round-trip without re-deriving anything. { [projectId]: { normal:
+  // structureId|null, optimizer: structureId|null } }. null/absent means
+  // "no override — use the canonical rank-5 admissible candidate."
+  const [slot6ByProjectMode, setSlot6ByProjectMode] = useState({});
+  const getSlot6Selection = useCallback(
+    (projectId, mode) => (projectId ? slot6ByProjectMode[projectId]?.[mode] ?? null : null),
+    [slot6ByProjectMode],
+  );
+  const setSlot6Selection = useCallback((projectId, mode, structureId) => {
+    if (!projectId) return;
+    setSlot6ByProjectMode((prev) => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], [mode]: structureId || null },
+    }));
+  }, []);
+
   const openInspector = useCallback((kind, data) => setInspector({ kind, data }), []);
   const closeInspector = useCallback(() => setInspector(null), []);
 
@@ -37,6 +63,7 @@ export function AppStateProvider({ children }) {
       inspector, openInspector, closeInspector, docked, setDocked,
       leadingStructureId, setLeadingStructureId,
       selectedJurisdiction, setSelectedJurisdiction,
+      workspaceMode, setWorkspaceMode, getSlot6Selection, setSlot6Selection,
     }}>
       {children}
     </AppStateContext.Provider>
