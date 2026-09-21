@@ -38,7 +38,14 @@ function structure(overrides) {
     primary_jurisdiction: `JUR-${id}`,
     participants: [`JUR-${id}`],
     program_slugs: [`program-${id}`],
-    economic_identity: null,
+    // COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): every real,
+    // priced structure the backend ever serves carries its own real,
+    // distinct economic_identity (confirmed live across all four
+    // productions: 0 nulls, 0 duplicates) — default to a per-fixture
+    // unique value here rather than null, so a test that does not care
+    // about economic_identity does not accidentally exercise a dedup
+    // collision it never intended.
+    economic_identity: `econ-${id}`,
     is_fully_priced: true,
     is_baseline: false,
     npc_with_adjustments_usd: 900_000,
@@ -56,11 +63,25 @@ function bestPerJurisdiction(entries) {
   return out;
 }
 
-function allocatedOf(structures, bpjEntries) {
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): `optimizer_candidates`
+// fixture builder — mirrors canonical_production_view.py's own construction
+// exactly (filter to OPTIMIZER_FAMILIES + is_fully_priced, ascending NPC,
+// already deduplicated by economic_identity server-side) so every existing
+// Optimizer-mode fixture below keeps working by simply listing its
+// structures once, the same as it already does for Single Jurisdiction via
+// best_per_jurisdiction.
+function optimizerCandidatesOf(entries) {
+  return [...entries]
+    .filter((s) => OPTIMIZER_FAMILIES.includes(s.classification) && s.is_fully_priced)
+    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
+}
+
+function allocatedOf(structures, bpjEntries, optimizerEntries) {
   return {
     structures,
     ranking: [],
     best_per_jurisdiction: bestPerJurisdiction(bpjEntries ?? structures.filter((s) => NORMAL_FAMILIES.includes(s.classification))),
+    optimizer_candidates: optimizerEntries ?? optimizerCandidatesOf(structures),
   };
 }
 
@@ -119,40 +140,56 @@ test("admissibleForMode (Optimizer): every canonical multi-jurisdiction family i
   );
 });
 
-test("admissibleForMode (Optimizer): structures sharing the identical routed participants AND programs collapse to the single lowest-NPC one — full economic identity, never bare jurisdiction", () => {
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21) — ROOT CAUSE regression
+// guard: the OLD admissibleForMode read `allocated.structures` (bounded to
+// 100 across ALL families) plus `allocated.top_by_structural_family`
+// (bounded to TYPE_TOP=100 PER family) as a "family entirely absent"
+// backstop — which never helped a family that WAS represented, just
+// incompletely. Confirmed live for F#K Valentine's Day: 411 real PRICED
+// HYBRID_ANCHOR_COMPONENT candidates, of which only 93 ever reached the
+// page. This fixture reproduces that shape at a smaller scale (150 real
+// candidates in one family, far past the old 100-per-family cap) and
+// proves every one is now reachable, since `optimizer_candidates` itself
+// is never capped.
+test("admissibleForMode (Optimizer): a family with more than 100 real priced candidates is served completely, never capped at the old page/backstop limit", () => {
+  const many = Array.from({ length: 150 }, (_, i) =>
+    structure({
+      structure_id: `hybrid-${i}`, classification: "HYBRID_ANCHOR_COMPONENT",
+      economic_identity: `econ-hybrid-${i}`, npc_with_adjustments_usd: 1000 + i,
+    }));
+  const admissible = admissibleForMode(allocatedOf(many, []), MODE_OPTIMIZER);
+  assert.equal(admissible.length, 150, "every one of the 150 real priced optimizer candidates must be reachable");
+  assert.equal(new Set(admissible.map((s) => s.economic_identity)).size, 150);
+});
+
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21) — supersedes the two
+// tests this replaces (both pinned a client-side participants/programs
+// collapse heuristic that no longer exists): admissibleForMode's Optimizer
+// branch now reads `allocated.optimizer_candidates` verbatim — the
+// backend's own complete, already-deduplicated-by-economic_identity
+// projection (canonical_production_view.py) — never re-deriving its own
+// dedup/collapse rule. Two structures sharing identical participants AND
+// programs but DIFFERENT real economic identities (a real, legitimate
+// case: several of F#K Valentine's Day's hybrid candidates share a routed
+// combination at a few dollars' rounding difference) must both survive —
+// collapsing them client-side was the old, now-removed behavior.
+test("admissibleForMode (Optimizer): reads allocated.optimizer_candidates verbatim — no client-side collapse by shared participants/programs, only the backend's own economic_identity dedup", () => {
   const structures = [
     structure({
-      structure_id: "hy-1", classification: "HYBRID_ANCHOR_COMPONENT",
+      structure_id: "hy-1", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-abc",
       participants: ["CA-MB", "CA-NL", "IT"], program_slugs: ["ca_mb_film_video_credit", "ca_nl_all_spend_credit", "it_tax_credit_foreign"],
       npc_with_adjustments_usd: 2_853_139,
     }),
     structure({
-      structure_id: "hy-2", classification: "HYBRID_ANCHOR_COMPONENT",
-      participants: ["IT", "CA-NL", "CA-MB"], program_slugs: ["it_tax_credit_foreign", "ca_mb_film_video_credit", "ca_nl_all_spend_credit"],
+      structure_id: "hy-2", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-xyz",
+      participants: ["CA-MB", "CA-NL", "IT"], program_slugs: ["ca_mb_film_video_credit", "ca_nl_all_spend_credit", "it_tax_credit_foreign"],
       npc_with_adjustments_usd: 2_859_952,
     }),
-    structure({
-      structure_id: "hy-3", classification: "HYBRID_ANCHOR_COMPONENT",
-      participants: ["CA-MB", "CA-ON"], program_slugs: ["ca_mb_film_video_credit", "on_ofttc"],
-      npc_with_adjustments_usd: 3_062_526,
-    }),
   ];
   const admissible = admissibleForMode(allocatedOf(structures, []), MODE_OPTIMIZER);
-  assert.deepEqual(admissible.map((s) => s.structure_id), ["hy-1", "hy-3"], (
-    "hy-2 is the SAME routed combination as hy-1 (order-independent) at a worse NPC -- collapsed; hy-3 " +
-    "shares jurisdiction CA-MB with hy-1 but is a materially different route (CA-ON, not CA-NL/IT) -- kept, " +
-    "never collapsed merely for sharing a participant jurisdiction"
-  ));
-});
-
-test("admissibleForMode (Optimizer): a real, non-null economic_identity is preferred over the participants/programs fallback key", () => {
-  const structures = [
-    structure({ structure_id: "e-1", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["A", "B"], program_slugs: ["p1"], economic_identity: "econ-abc", npc_with_adjustments_usd: 1 }),
-    structure({ structure_id: "e-2", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["A", "B"], program_slugs: ["p1"], economic_identity: "econ-xyz", npc_with_adjustments_usd: 2 }),
-  ];
-  const admissible = admissibleForMode(allocatedOf(structures, []), MODE_OPTIMIZER);
-  assert.deepEqual(admissible.map((s) => s.structure_id), ["e-1", "e-2"], (
-    "two DIFFERENT real economic identities are never collapsed just because their routing fields happen to match"
+  assert.deepEqual(admissible.map((s) => s.structure_id), ["hy-1", "hy-2"], (
+    "hy-1 and hy-2 share identical participants and programs but carry two DIFFERENT real economic " +
+    "identities -- both must be reachable, never collapsed to one just because the routing looks the same"
   ));
 });
 

@@ -51,13 +51,29 @@ function bestPerJurisdiction(entries) {
   return out;
 }
 
-function allocatedOf({ structures, bpj, ranking = [], topByFamily = {} }) {
+const OPTIMIZER_FAMILY_SET = new Set([
+  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
+]);
+
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): `optimizer_candidates`
+// mirrors canonical_production_view.py's own construction (filter to the
+// optimizer families + is_fully_priced, ascending NPC) so every existing
+// fixture below keeps working by listing its structures once, same as it
+// already does for Single Jurisdiction via best_per_jurisdiction.
+function optimizerCandidatesOf(structures) {
+  return [...structures]
+    .filter((s) => OPTIMIZER_FAMILY_SET.has(s.classification) && s.is_fully_priced)
+    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
+}
+
+function allocatedOf({ structures, bpj, ranking = [], topByFamily = {}, optimizerCandidates }) {
   return {
     structures,
     ranking,
     canonical_selected_structure_id: null,
     best_per_jurisdiction: bpj ?? bestPerJurisdiction(structures.filter((s) => s.classification === "SINGLE_JURISDICTION")),
     top_by_structural_family: topByFamily,
+    optimizer_candidates: optimizerCandidates ?? optimizerCandidatesOf(structures),
   };
 }
 
@@ -148,55 +164,31 @@ test("MULTI_PRINCIPAL_MULTILATERAL is Optimizer-only and carries every simultane
   assert.deepEqual(optimizer[0].participants, ["FR", "DE", "BE", "IT"]);
 });
 
-// 9. top_by_structural_family is consumed (GD-4 backstop).
-test("a family entirely absent from the bounded structures[] page is still admissible via top_by_structural_family", () => {
-  const hybridOnPage = structure({ structure_id: "hy-onpage", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "IT"] });
-  const allocated = allocatedOf({
-    structures: [hybridOnPage], // no MULTI_PRINCIPAL_MULTILATERAL row anywhere on the page
-    topByFamily: {
-      MULTI_PRINCIPAL_MULTILATERAL: [{
-        structure_id: "multi-backstop", structural_family: "MULTI_PRINCIPAL_MULTILATERAL",
-        structure_type: "hybrid", label: "FR + DE + BE Multilateral", primary_jurisdiction: "FR",
-        participants: ["FR", "DE", "BE"], npc_verified_usd: 1_000_000, npc_with_adjustments_usd: 1_000_000,
-        selected_incentive_usd: 200_000, candidate_status: "PRICED", is_baseline: false,
-        economic_identity: "econ-multi-backstop", rank_in_family: 1,
-      }],
-    },
-  });
+// 9. COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21) — SUPERSEDES the
+// two tests this replaces: the `top_by_structural_family` GD-4 "family
+// entirely absent" backstop is now dead code in admissibleForMode (removed
+// entirely) — root cause: it never helped a family that WAS represented on
+// the bounded page but only PARTIALLY (F#K Valentine's Day: 411 real
+// HYBRID_ANCHOR_COMPONENT candidates, page carried 93). `optimizer_candidates`
+// (canonical_production_view.py) is now the sole, COMPLETE source for every
+// optimizer family — no backstop merge is needed because it is never capped
+// in the first place. This test proves a family genuinely absent from
+// optimizer_candidates serves nothing for that family, never a fabricated
+// entry from elsewhere.
+test("a family genuinely absent from optimizer_candidates serves nothing for that family, never fabricated from a different source", () => {
+  const hybrid = structure({ structure_id: "hy-onpage", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "IT"] });
+  const allocated = allocatedOf({ structures: [hybrid] }); // no MULTI_PRINCIPAL_MULTILATERAL row anywhere
   const optimizer = admissibleForMode(allocated, MODE_OPTIMIZER);
-  const backstopped = optimizer.find((s) => s.structure_id === "multi-backstop");
-  assert.ok(backstopped, "the family-backstop candidate must be admissible when its family has no page representative");
-  assert.equal(backstopped.classification, "MULTI_PRINCIPAL_MULTILATERAL", "the backstop's structural_family must normalize to the same classification field every page structure carries");
-  assert.deepEqual(backstopped.participants, ["FR", "DE", "BE"]);
+  assert.ok(!optimizer.some((s) => s.classification === "MULTI_PRINCIPAL_MULTILATERAL"), "an absent family must serve honestly empty, never invented");
+  assert.deepEqual(optimizer.map((s) => s.structure_id), ["hy-onpage"]);
 });
 
-test("top_by_structural_family never overrides a family that DOES have real page representation", () => {
-  const pageWinner = structure({ structure_id: "hy-real", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "IT"], npc_with_adjustments_usd: 400_000 });
-  const allocated = allocatedOf({
-    structures: [pageWinner],
-    topByFamily: {
-      HYBRID_ANCHOR_COMPONENT: [{
-        structure_id: "hy-stale-backstop", structural_family: "HYBRID_ANCHOR_COMPONENT",
-        structure_type: "hybrid", label: "Stale", primary_jurisdiction: "CA-MB",
-        participants: ["CA-MB", "GR"], npc_with_adjustments_usd: 900_000,
-        economic_identity: "econ-stale", rank_in_family: 1,
-      }],
-    },
-  });
+test("optimizer_candidates already carries every real family representative directly — no separate backstop merge step exists", () => {
+  const hybrid = structure({ structure_id: "hy-real", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "IT"], npc_with_adjustments_usd: 400_000 });
+  const multilateral = structure({ structure_id: "multi-real", classification: "MULTI_PRINCIPAL_MULTILATERAL", structure_type: "hybrid", primary_jurisdiction: "FR", participants: ["FR", "DE", "BE"], npc_with_adjustments_usd: 1_000_000 });
+  const allocated = allocatedOf({ structures: [hybrid, multilateral] });
   const optimizer = admissibleForMode(allocated, MODE_OPTIMIZER);
-  const hybrids = optimizer.filter((s) => s.classification === "HYBRID_ANCHOR_COMPONENT");
-  assert.equal(hybrids.length, 1, "a represented family must not gain a second, backstop-sourced entry");
-  assert.equal(hybrids[0].structure_id, "hy-real", "the real page candidate must win, never the backstop");
-});
-
-// 10. Exact optimizer identities deduplicate (Globe-facing check, mirroring
-// the already-covered Workspace unit but exercised through buildCountryStatuses).
-test("buildCountryStatuses (Optimizer) never double-counts two page rows sharing the identical economic_identity", () => {
-  const a = structure({ structure_id: "dupe-a", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "IT"], economic_identity: "econ-x", npc_with_adjustments_usd: 400_000 });
-  const b = structure({ structure_id: "dupe-b", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "IT"], economic_identity: "econ-x", npc_with_adjustments_usd: 400_001 });
-  const allocated = allocatedOf({ structures: [a, b] });
-  const optimizer = admissibleForMode(allocated, MODE_OPTIMIZER);
-  assert.equal(optimizer.length, 1, "two rows sharing one economic_identity must collapse to exactly one Optimizer candidate");
+  assert.deepEqual(optimizer.map((s) => s.structure_id).sort(), ["hy-real", "multi-real"]);
 });
 
 // 11. Conditional/prohibited treatment remains correct.

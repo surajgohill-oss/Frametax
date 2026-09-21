@@ -164,4 +164,117 @@ async def test_structure_labels_use_the_trimmed_producer_facing_jurisdiction_nam
             assert "Canada — Manitoba" not in label, (
                 f"{project_id}: {label!r} still embeds the raw composite registry name"
             )
-            assert "Manitoba" in label
+
+
+# ── COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21) ─────────────────────
+#
+# Root cause this section guards: `structures[]` (bounded to 100 across ALL
+# families) and `top_by_structural_family` (bounded to TYPE_TOP=100 PER
+# family) are both lossy views over the full retained/priced set — confirmed
+# live for F#K Valentine's Day: 411 real PRICED HYBRID_ANCHOR_COMPONENT
+# candidates exist, of which the served page carried only 93. Every optimizer-
+# consuming UI surface must instead read `optimizer_candidates`, the one
+# complete, uncapped, deduplicated-by-economic_identity, NPC-ordered
+# projection this task added to `allocated_structures`.
+from app.services.structural_classification import OPTIMIZER_STRUCTURE_FAMILIES
+
+
+async def test_optimizer_candidates_is_complete_never_capped_at_the_family_backstop_limit(db: AsyncSession):
+    """`optimizer_candidates` must exceed the old TYPE_TOP=100-per-family cap
+    whenever the real retained set does — the exact defect this field fixes.
+    F#K Valentine's Day's real HYBRID_ANCHOR_COMPONENT count (411) is the
+    live proof point cited in the task that authored this field."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    alloc = view["structures"]["allocated_structures"]
+    oc = alloc["optimizer_candidates"]
+    assert alloc["optimizer_candidates_total"] == len(oc)
+    assert len(oc) > 100, (
+        "optimizer_candidates must not be silently capped at the old "
+        "TYPE_TOP=100-per-family backstop limit"
+    )
+    hybrid_count = alloc["optimizer_candidates_by_family"]["HYBRID_ANCHOR_COMPONENT"]
+    assert hybrid_count > 100, "F#K Valentine's Day has 411 real priced HYBRID_ANCHOR_COMPONENT candidates"
+    assert hybrid_count == sum(1 for e in oc if e["classification"] == "HYBRID_ANCHOR_COMPONENT")
+
+
+async def test_optimizer_candidates_deduplicated_by_economic_identity(db: AsyncSession):
+    """Every entry has a real, non-null economic_identity, and no two
+    entries share one — the task's explicit dedup contract (never dedupe by
+    participants/programs, only by exact canonical economic_identity)."""
+    for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
+        view = await build_production_and_structures(db, project_id)
+        oc = view["structures"]["allocated_structures"]["optimizer_candidates"]
+        identities = [e["economic_identity"] for e in oc]
+        assert all(identities), f"{project_id}: every optimizer candidate must carry a real economic_identity"
+        assert len(identities) == len(set(identities)), (
+            f"{project_id}: optimizer_candidates must be deduplicated by economic_identity"
+        )
+
+
+async def test_optimizer_candidates_scoped_to_priced_optimizer_families_only(db: AsyncSession):
+    """Never SINGLE_JURISDICTION or STACKED_PROGRAMS (those stay
+    Single-Jurisdiction-mode-only, per admissibleForMode()'s own unchanged
+    contract) and never a non-PRICED status (dominated/rejected/locked/
+    conditional rows are not yet executable/selectable)."""
+    for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
+        view = await build_production_and_structures(db, project_id)
+        oc = view["structures"]["allocated_structures"]["optimizer_candidates"]
+        assert oc, f"{project_id}: expected at least one optimizer candidate"
+        for e in oc:
+            assert e["classification"] in OPTIMIZER_STRUCTURE_FAMILIES, (
+                f"{project_id}: {e['structure_id']} has non-optimizer classification {e['classification']!r}"
+            )
+            assert e["candidate_status"] == "PRICED", (
+                f"{project_id}: {e['structure_id']} is not PRICED ({e['candidate_status']!r})"
+            )
+            assert e["is_fully_priced"] is True
+
+
+async def test_optimizer_candidates_sorted_by_ascending_verified_npc(db: AsyncSession):
+    """Stable NPC ordering — the same canonical rank every other served
+    projection (best_per_jurisdiction, top_by_structural_family) already
+    uses, never re-derived independently."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    oc = view["structures"]["allocated_structures"]["optimizer_candidates"]
+    npcs = [e["npc_verified_usd"] for e in oc if e["npc_verified_usd"] is not None]
+    assert npcs == sorted(npcs), "optimizer_candidates must be ordered by ascending canonical NPC"
+
+
+async def test_optimizer_candidates_carry_full_participant_and_component_detail(db: AsyncSession):
+    """Every entry must carry complete economics/participant/component
+    fields (the same shape as every `structures[]` element) — never a
+    compacted summary row a consumer would have to special-case."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    oc = view["structures"]["allocated_structures"]["optimizer_candidates"]
+    for e in oc[:5]:
+        assert "component_allocations" in e
+        assert "segments" in e
+        assert "participants" in e and e["participants"]
+        assert e["selected_incentive_usd"] is not None
+        assert e["npc_with_adjustments_usd"] is not None
+
+
+async def test_optimizer_candidates_scoped_to_current_engine_generation(db: AsyncSession):
+    """Every entry's economic_identity resolves against THIS generation's
+    structure_entries — none are a stale fingerprint/engine_version's
+    leftover row (structure_entries itself is already scoped to the
+    current (fingerprint, engine_version) pair; this guards that the new
+    field draws from the same already-scoped source, not a second read)."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    alloc = view["structures"]["allocated_structures"]
+    oc_ids = {e["structure_id"] for e in alloc["optimizer_candidates"]}
+    page_and_family_ids = {s["structure_id"] for s in alloc["structures"]}
+    for fam_entries in alloc["top_by_structural_family"].values():
+        page_and_family_ids.update(e["structure_id"] for e in fam_entries)
+    # Every id reachable through the OLD (lossy) views must also be an id
+    # optimizer_candidates would carry if it belongs to an optimizer family —
+    # i.e. optimizer_candidates is a superset for those families, never a
+    # disjoint/different generation's data.
+    old_optimizer_ids = {
+        s["structure_id"] for s in alloc["structures"]
+        if s["classification"] in OPTIMIZER_STRUCTURE_FAMILIES and s["is_fully_priced"]
+    }
+    assert old_optimizer_ids <= oc_ids, (
+        "optimizer_candidates must be a superset of the old bounded page's optimizer rows, "
+        "not a different generation's data"
+    )

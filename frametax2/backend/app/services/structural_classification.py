@@ -85,6 +85,22 @@ PRICED_STRUCTURE_FAMILIES: tuple[str, ...] = (
     CLASS_MULTI_PRINCIPAL_MULTILATERAL,
 )
 
+#: COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): the classifications the Workspace
+#: Optimizer rack, its slot-6 dropdown, and every Globe surface treat as "optimizer" candidates
+#: -- routed, multi-jurisdiction/multi-component structures. Deliberately excludes
+#: CLASS_SINGLE_JURISDICTION (served through its own best_per_jurisdiction projection) and
+#: CLASS_STACKED_PROGRAMS (a same-jurisdiction program stack; admissibleForMode() in
+#: workspaceScenarioMode.js already routes it to Single Jurisdiction mode, never Optimizer --
+#: see that module's own passing regression test, unchanged by this addition). One canonical
+#: definition; the optimizer-candidates serving code in canonical_production_view.py consumes
+#: this directly rather than re-deriving its own family list.
+OPTIMIZER_STRUCTURE_FAMILIES: frozenset[str] = frozenset({
+    CLASS_HYBRID_ANCHOR_COMPONENT,
+    CLASS_OFFICIAL_COPRODUCTION,
+    CLASS_COMBINED_COPRO_HYBRID_STACK,
+    CLASS_MULTI_PRINCIPAL_MULTILATERAL,
+})
+
 
 def classify_structure(trace: dict, structure_type: str, is_priced: bool) -> str:
     """The canonical derivation. Checked in a fail-closed order (most severe / most specific first,

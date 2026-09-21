@@ -7,7 +7,7 @@
 // onto every served structure — GD-2 remediation) verbatim; never
 // inferred from structure_type, treaty_slug, or a display label.
 
-import { isBaselineStructure, rankOrNpcOrder } from "./productionOptions.js";
+import { isBaselineStructure } from "./productionOptions.js";
 
 export const MODE_NORMAL = "normal";
 export const MODE_OPTIMIZER = "optimizer";
@@ -66,21 +66,13 @@ function _singleJurisdictionCandidates(allocated) {
     .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
 }
 
-// Optimizer mode is different by design: a single jurisdiction is never
-// enough (a hybrid/co-production/multilateral structure's whole point is
-// multiple routed jurisdictions), so there is no per-jurisdiction winner
-// concept to consume -- the canonical identity here is the FULL routed
-// structure. Prefers the served `economic_identity` when present;
-// otherwise falls back to the full routed combination (every participant
-// jurisdiction plus every claimed program, both real, already-served
-// fields) -- confirmed live: several of F#K Valentine's Day's real hybrid
-// candidates share IDENTICAL participants and program_slugs, differing
-// only by a few dollars of allocation-order rounding (the same canonical
-// routed outcome discovered via different search paths, not materially
-// distinct scenarios). `rankOrNpcOrder` has already sorted ascending by
-// canonical NPC, so keeping the first candidate seen per key is exactly
-// "the canonical best scenario for that identity" — never a second,
-// independently-derived ranking.
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): no longer used to
+// dedupe the priced optimizer pool itself (`allocated.optimizer_candidates`
+// is already deduplicated by real economic_identity server-side, and every
+// priced entry always carries one — see canonical_production_view.py).
+// Retained only for the much smaller CONDITIONAL_USER_FACT_REQUIRED
+// "opportunities" list below, where a real economic_identity is not always
+// present; the participants+programs fallback stays scoped to that list.
 function _optimizerScenarioKey(structure) {
   if (structure.economic_identity) return structure.economic_identity;
   const participants = [...(structure.participants || [])].sort().join(",");
@@ -100,55 +92,43 @@ function _dedupeOptimizer(structures) {
   return out;
 }
 
-// GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21) — GD-4 backstop: the bounded,
-// overall-rank-ordered `allocated.structures` page can omit a whole family
-// entirely when a different family dominates it (confirmed by the Codex Globe
-// data contract delta audit, GDC-002) -- a combined-co-production or
-// multilateral candidate can be the real best-in-family and never once appear
-// on the page. `allocated.top_by_structural_family` is the backend's own
-// per-family winner block (canonical_production_view.py), pre-seeded with an
-// honest [] for every priced family, computed from the FULL ranked candidate
-// set -- never the bounded page. Normalizes its compact shape (`structural_
-// family`) to the same `classification` key every page structure already
-// carries, and marks it as fully priced (the block is documented as sourced
-// from `_priced_entries` only) so it can flow through the exact same
-// dedupe/tier logic as a page structure -- never a second, differently-shaped
-// candidate type for downstream consumers (Globe, Workspace) to special-case.
-function _familyBackstopCandidates(allocated) {
-  const byFamily = allocated?.top_by_structural_family || {};
-  const out = [];
-  for (const [family, entries] of Object.entries(byFamily)) {
-    for (const e of entries || []) {
-      out.push({ ...e, classification: family, is_fully_priced: true, segments: e.segments || [], blockers: e.blockers || [] });
-    }
-  }
-  return out;
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21) — ROOT CAUSE (supersedes
+// the GD-4 backstop this function used to apply): the bounded, overall-rank-
+// ordered `allocated.structures` page AND `allocated.top_by_structural_family`
+// (capped at TYPE_TOP=100 per family) are BOTH lossy views over the backend's
+// full retained/priced set -- confirmed live for F#K Valentine's Day: 411 real
+// PRICED HYBRID_ANCHOR_COMPONENT candidates exist, of which the page carried
+// only 93 and the family backstop only 100. The old "add a family's backstop
+// entries only when the page has ZERO representation for that family" logic
+// never helped here, because HYBRID_ANCHOR_COMPONENT WAS represented on the
+// page (just incompletely) — so 318 real, priced, producer-selectable
+// optimizer candidates were silently unreachable in every UI surface.
+//
+// `allocated.optimizer_candidates` (canonical_production_view.py) is the
+// backend's own complete fix: every PRICED candidate in an optimizer family
+// (HYBRID_ANCHOR_COMPONENT, OFFICIAL_COPRODUCTION, COMBINED_COPRO_HYBRID_STACK,
+// MULTI_PRINCIPAL_MULTILATERAL), uncapped, already deduplicated by canonical
+// `economic_identity`, already sorted by canonical NPC ascending. Consumed
+// directly — no page reconstruction, no per-family backstop, no re-dedup by
+// participants/programs (which previously risked collapsing distinct routed
+// structures that merely shared a jurisdiction).
+function _optimizerCandidates(allocated) {
+  return allocated?.optimizer_candidates || [];
 }
 
 // Every candidate admissible for `mode`. Single Jurisdiction mode reads
-// the canonical best_per_jurisdiction projection directly (see above) --
-// never a second, independently-derived ordering or dedup. Optimizer mode
-// keeps its own canonical rank/NPC order (productionOptions.js's
-// rankOrNpcOrder, the same order every other Workspace selection uses)
-// with equivalent/duplicate full-structure identities collapsed to their
-// single best representative; disclosed conditional grant/fund
+// the canonical best_per_jurisdiction projection directly (see above);
+// Optimizer mode reads the canonical optimizer_candidates projection
+// directly (see _optimizerCandidates above) — neither re-derives an
+// ordering or dedup client-side. Disclosed conditional grant/fund
 // opportunities (CONDITIONAL_USER_FACT_REQUIRED — a real registry entry
 // with a real project fact still missing) are appended strictly after
-// every priced Optimizer candidate, never promoted ahead of one.
+// every priced Optimizer candidate, never promoted ahead of one, and are
+// NOT part of the optimizer candidate count (they are not yet executable).
 export function admissibleForMode(allocated, mode) {
   if (!allocated) return [];
   if (mode !== MODE_OPTIMIZER) return _singleJurisdictionCandidates(allocated);
-  const families = new Set(OPTIMIZER_FAMILIES);
-  const pagePriced = rankOrNpcOrder(allocated).filter((s) => families.has(s.classification));
-  // GD-4 backstop (see _familyBackstopCandidates above): only ever ADDS a
-  // family that has ZERO representation on the bounded page -- a family the
-  // page DOES represent keeps its own real page-ranked candidates untouched,
-  // never overridden or reordered by the backstop.
-  const familiesOnPage = new Set(pagePriced.map((s) => s.classification));
-  const backstop = _familyBackstopCandidates(allocated).filter(
-    (s) => families.has(s.classification) && !familiesOnPage.has(s.classification),
-  );
-  const priced = _dedupeOptimizer([...pagePriced, ...backstop]);
+  const priced = _optimizerCandidates(allocated);
   const opportunities = _dedupeOptimizer(
     (allocated.structures || []).filter((s) => s.classification === CONDITIONAL_OPPORTUNITY_CLASS),
   );

@@ -49,13 +49,28 @@ function bestPerJurisdiction(entries) {
   return out;
 }
 
-function allocatedOf({ structures, bpj, ranking = [], canonicalId = null }) {
+const OPTIMIZER_FAMILY_SET = new Set([
+  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
+]);
+
+// COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): mirrors
+// canonical_production_view.py's own construction — see the identically-
+// named helper in globe-single-and-optimizer-wiring.test.mjs for the full
+// root-cause comment.
+function optimizerCandidatesOf(structures) {
+  return [...structures]
+    .filter((s) => OPTIMIZER_FAMILY_SET.has(s.classification) && s.is_fully_priced)
+    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
+}
+
+function allocatedOf({ structures, bpj, ranking = [], canonicalId = null, optimizerCandidates }) {
   return {
     structures,
     ranking,
     canonical_selected_structure_id: canonicalId,
     best_per_jurisdiction: bpj ?? bestPerJurisdiction(structures.filter((s) => s.classification === "SINGLE_JURISDICTION")),
     top_by_structural_family: {},
+    optimizer_candidates: optimizerCandidates ?? optimizerCandidatesOf(structures),
   };
 }
 

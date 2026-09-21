@@ -249,6 +249,7 @@ from app.services.structural_classification import (  # noqa: E402
     CLASS_RULE_DATA_INCOMPLETE,
     CLASS_SINGLE_JURISDICTION,
     CLASS_STACKED_PROGRAMS,
+    OPTIMIZER_STRUCTURE_FAMILIES as _OPTIMIZER_STRUCTURE_FAMILIES,
     PRICED_STRUCTURE_FAMILIES as _PRICED_STRUCTURE_FAMILIES,
     STRUCTURE_CLASSIFICATIONS,
     classify_structure as _classify_structure,
@@ -1753,6 +1754,43 @@ async def build_production_and_structures(
         if len(_family_bucket) < TYPE_TOP:
             _family_bucket.append(_family_top_entry(e, rank=len(_family_bucket) + 1))
 
+    # COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): the served candidate PAGE
+    # (`structures[]`, below) and `top_by_structural_family` (just above, capped at
+    # TYPE_TOP=100 per family) are both lossy views over `_priced_entries` -- confirmed live
+    # for F#K Valentine's Day: 411 real PRICED HYBRID_ANCHOR_COMPONENT rows exist in
+    # `_priced_entries`, of which the served page carried only 93 and
+    # `top_by_structural_family` only 100, so a frontend built from either one silently
+    # dropped the majority of real, priced, producer-selectable optimizer candidates. Root
+    # cause: `admissibleForMode()` (workspaceScenarioMode.js) read only those two lossy views,
+    # with a "family entirely absent" backstop that never helps a PARTIALLY-represented family
+    # like this one.
+    #
+    # `optimizer_candidates` is the ONE authoritative, complete, canonical optimizer
+    # projection every UI surface (Workspace rack/dropdown, Overview's count, Full Globe's
+    # side list, Map, Split) must read from instead: every PRICED candidate whose
+    # classification is in OPTIMIZER_STRUCTURE_FAMILIES (HYBRID_ANCHOR_COMPONENT,
+    # OFFICIAL_COPRODUCTION, COMBINED_COPRO_HYBRID_STACK, MULTI_PRINCIPAL_MULTILATERAL --
+    # never SINGLE_JURISDICTION or STACKED_PROGRAMS, which stay Single-Jurisdiction-mode-only
+    # per the existing, unchanged admissibleForMode() contract), uncapped, in the same
+    # already-computed `_priced_entries` NPC order, each carrying full economics/participant/
+    # component detail (the exact same shape as every `structures[]` element -- no new query,
+    # no re-derivation, no economics/discovery/pruning change, no ENGINE_VERSION bump: this
+    # reads what candidate_retention.py already retained and canonical_evaluation.py already
+    # priced). `structure_entries` rows are already one-per-`economic_identity` by
+    # construction (confirmed live: 0 duplicate economic_identity values across FVD's full
+    # 855-row retained set), so no additional dedup pass is required -- `dict.fromkeys` below
+    # is a defensive belt-and-suspenders guard, not a correction of an observed defect.
+    _optimizer_entries_raw = [e for e in _priced_entries if e["classification"] in _OPTIMIZER_STRUCTURE_FAMILIES]
+    _optimizer_by_identity = {
+        (_identity_by_structure.get(e["structure_id"]) or e["structure_id"]): e for e in _optimizer_entries_raw
+    }
+    optimizer_candidates = list(_optimizer_by_identity.values())
+    optimizer_candidates_total = len(optimizer_candidates)
+    optimizer_candidates_by_family = {
+        family: sum(1 for e in optimizer_candidates if e["classification"] == family)
+        for family in sorted(_OPTIMIZER_STRUCTURE_FAMILIES)
+    }
+
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
     # Everything above (selection, ranking, conditional pool, accounting) ran over ALL served
     # candidates. What is RETURNED in detail is one deterministic page of them: the headline
@@ -1863,6 +1901,14 @@ async def build_production_and_structures(
             "best_per_jurisdiction": best_per_jurisdiction,
             "top_by_structure_type": top_by_structure_type,
             "top_by_structural_family": top_by_structural_family,
+            # COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): the ONE authoritative,
+            # uncapped, deduplicated-by-economic_identity optimizer projection -- see the
+            # comment above `_optimizer_entries_raw`'s construction for the full root-cause
+            # narrative. Every optimizer-consuming UI surface must read this field, never
+            # reconstruct a pool from `structures[]` or `top_by_structural_family`.
+            "optimizer_candidates": optimizer_candidates,
+            "optimizer_candidates_total": optimizer_candidates_total,
+            "optimizer_candidates_by_family": optimizer_candidates_by_family,
             "retention": {
                 "policy": {
                     "global_top": GLOBAL_TOP, "per_structure_type_top": TYPE_TOP,
