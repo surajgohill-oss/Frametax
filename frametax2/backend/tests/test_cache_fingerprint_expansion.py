@@ -54,37 +54,37 @@ def test_script_facts_changes_fingerprint():
     assert len({a, b, c}) == 3
 
 
-def test_fx_context_digest_changes_fingerprint_even_on_the_same_date():
-    """Codex bounded remediation (P0-FX-001, CROSSCHECK "FX-cache-identity"):
-    two CanonicalFXContext objects sharing the SAME snapshot_date but
-    differing in rate, source, or freshness_status are calculation-driving
-    differences -- the prior implementation hashed only snapshot_date,
-    so a same-day rate correction (or a fresh-vs-stale_fallback
-    disposition change) could silently reuse a stale cached evaluation.
-    _compute_fingerprint() must now hash a full digest of every
-    calculation-driving FX field, not the date alone."""
+def test_fx_context_never_changes_the_fingerprint():
+    """PROJECT_UI_DATA_INTEGRITY correction (2026-09-21), superseding the
+    P0-FX-001 fix this test used to pin: that fix made the fingerprint
+    hash a full digest of inputs.fx_context (rate/source/freshness_status,
+    not just snapshot_date) -- but fx_context is itself rebuilt on every
+    call from production_normalization's mutable, process-wide live FX
+    state, so this made a project's canonical identity change on a mere
+    page view (confirmed live: opening one project changed a DIFFERENT
+    project's own fingerprint; reopening the SAME project repeatedly
+    could force a full re-evaluation with no real economic input change).
+    Canonical evaluation identity must never depend on FX at all -- a
+    materially different FX context (any rate, source, or freshness_status,
+    on the same or a different date) must now produce the IDENTICAL
+    fingerprint, and the same holds for a project with no fx_context
+    (None) at all."""
     from app.calculators.apply_fx_rates import CanonicalFXContext
 
     ctx_a = CanonicalFXContext(
         snapshot_date="2026-07-13", rates={"EUR": 0.85}, source="source1", freshness_status="fresh",
     )
     ctx_b = CanonicalFXContext(
-        snapshot_date="2026-07-13", rates={"EUR": 0.95}, source="source2", freshness_status="stale_fallback",
+        snapshot_date="2026-09-21", rates={"EUR": 0.95}, source="source2", freshness_status="stale_fallback",
     )
     fp_a = _compute_fingerprint(_inputs(fx_context=ctx_a))
     fp_b = _compute_fingerprint(_inputs(fx_context=ctx_b))
-    assert fp_a != fp_b, (
-        "same-date FX contexts differing in rate/source/freshness must never collide -- a "
-        "cached evaluation from one must never be silently served for the other"
+    fp_none = _compute_fingerprint(_inputs(fx_context=None))
+    assert fp_a == fp_b == fp_none, (
+        "no FX context field (date, rate, source, freshness, or its very presence) may ever "
+        "change the canonical evaluation fingerprint -- opening/refreshing a project's live FX "
+        "display must never mutate any project's canonical identity"
     )
-
-    # Regression: an identical context (same date, rate, source, freshness)
-    # must still produce the SAME fingerprint -- the digest is deterministic,
-    # not merely "always different."
-    ctx_a_again = CanonicalFXContext(
-        snapshot_date="2026-07-13", rates={"EUR": 0.85}, source="source1", freshness_status="fresh",
-    )
-    assert _compute_fingerprint(_inputs(fx_context=ctx_a)) == _compute_fingerprint(_inputs(fx_context=ctx_a_again))
 
 
 def test_coproduction_facts_changes_fingerprint():

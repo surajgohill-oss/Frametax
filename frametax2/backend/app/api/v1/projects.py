@@ -60,13 +60,31 @@ async def list_projects(
     organization_id: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> list[ProjectCard]:
-    """Project Library grid — every real persisted Project, each carrying
-    just what a card needs: artwork, and completeness across the four
-    CORE material categories. No NPC, no scenario economics — those are
-    optimizer output and don't belong in a durable-corpus summary."""
-    stmt = select(Project)
-    if organization_id:
-        stmt = stmt.where(Project.organization_id == organization_id)
+    """Project Library grid — every real persisted Project belonging to
+    ONE organization, each carrying just what a card needs: artwork, and
+    completeness across the four CORE material categories. No NPC, no
+    scenario economics — those are optimizer output and don't belong in
+    a durable-corpus summary.
+
+    PROJECT_UI_DATA_INTEGRITY (2026-09-21): PREVIOUSLY, an absent
+    `organization_id` returned every project across every organization —
+    confirmed live to include 245 of 329 total projects belonging to 256
+    separate one-off `AUDIT_CONTROL_*` fixture organizations, alongside
+    the real production company's own 4 real productions. Organization
+    scope is never optional now: an explicit `organization_id` is used
+    when the caller supplies one, otherwise the deployment's own
+    settings.CURRENT_ORGANIZATION_ID (see app/api/v1/organizations.py's
+    `/organizations/current`) — and if NEITHER resolves to a real
+    organization, this fails closed (returns an empty list) rather than
+    ever falling back to "every organization". Never a name-pattern
+    filter (`AUDIT_CONTROL_*` projects/organizations are untouched, never
+    deleted, never excluded by name — they simply no longer leak into a
+    request that carries or resolves a different organization's scope).
+    """
+    organization_id = organization_id or settings.CURRENT_ORGANIZATION_ID or None
+    if not organization_id:
+        return []
+    stmt = select(Project).where(Project.organization_id == organization_id)
     stmt = stmt.order_by(Project.updated_at.desc())
     projects = list((await db.execute(stmt)).scalars().all())
     if not projects:
@@ -581,3 +599,31 @@ async def update_project(
     await db.commit()
     await db.refresh(row)
     return row
+
+
+@router.post("/{project_id}/people/extract")
+async def extract_project_people(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """PROJECT_UI_DATA_INTEGRITY (2026-09-21): scans this project's own
+    current screenplay/deck documents on disk for real credited names/
+    roles (app/ingestion/document_person_extractor.py's generic patterns
+    -- never a hardcoded name) and creates any missing ProjectPerson/
+    TalentProfile rows. Idempotent -- safe to call again after new
+    documents are added; never duplicates an already-extracted (project,
+    person, role). Never infers nationality/residency -- a new record's
+    nationality_resolution_status is always "not_attempted", which the
+    existing missing_inputs disclosure (canonical_production_view.py)
+    already surfaces to the producer as a real question."""
+    from app.ingestion.document_person_ingestion import extract_and_persist_project_people
+
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    created = await extract_and_persist_project_people(db, project_id)
+    await db.commit()
+    return {
+        "created_count": len(created),
+        "created": [
+            {"project_person_id": str(pp.id), "talent_id": str(pp.talent_id), "role": pp.role}
+            for pp in created
+        ],
+    }

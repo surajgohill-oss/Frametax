@@ -30,8 +30,22 @@ import { flagEmoji } from "../lib/format.jsx";
 // `structureIsLeading`: true when `structure` is a real producer
 // selection, false when it is the Top Priced fallback — drives the cell
 // tag text only.
-export default function FXStrip({ economics, structure, structureIsLeading }) {
-  const dynamicLabel = structureIsLeading ? "LEADING" : (structure ? "TOP PRICED" : null);
+// `structureIsCurrentLocation` (PROJECT_UI_DATA_INTEGRITY, 2026-09-21):
+// true when `structure` is neither a Leading selection nor a Top Priced
+// candidate but the production's own Current Location (anchor) — the
+// final rung of the fourth-cell fallback chain, used whenever no
+// canonical recommendation exists yet (e.g. F#K Valentine's Day, which
+// has no directly-comparable winner). Never fabricates a leading
+// recommendation; the cell simply discloses which real structure it is
+// showing, using the same selection/current-location terminology already
+// established elsewhere in Workspace (ScenarioCard's own "◆ ANCHOR"/
+// "Current Location" concept).
+export default function FXStrip({ economics, structure, structureIsLeading, structureIsCurrentLocation }) {
+  const dynamicLabel = structureIsLeading
+    ? "LEADING"
+    : structureIsCurrentLocation
+      ? "CURRENT_LOCATION"
+      : (structure ? "TOP PRICED" : null);
   // buildLeaderFxItems lives in lib/todayCompute.js, a pure "no React, no
   // DOM" module (independently testable with plain `node`) — it returns
   // each leader item's raw `jurisdiction` rather than a resolved flag, and
@@ -61,7 +75,11 @@ export default function FXStrip({ economics, structure, structureIsLeading }) {
             <div className="wsx-fx-head">
               <span className="wsx-fx-flag" aria-hidden="true">{it.flag}</span>
               <span className="wsx-fx-code">{it.code}</span>
-              {it.isLeader && it.leaderLabel && <span className="wsx-fx-tag">{it.leaderLabel === "LEADING" ? "Leading" : "Top Priced"}</span>}
+              {it.isLeader && it.leaderLabel && (
+                <span className="wsx-fx-tag">
+                  {it.leaderLabel === "LEADING" ? "Leading" : it.leaderLabel === "CURRENT_LOCATION" ? "Current Location" : "Top Priced"}
+                </span>
+              )}
               {it.available && it.deltaPct != null && (
                 <span className={`wsx-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`} title={`12-month move on USD/${it.code}`}>
                   {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}%

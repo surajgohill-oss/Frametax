@@ -389,8 +389,27 @@ export default function Workspace() {
   // back to bestPricedCandidate, the SAME real economics the Hero already
   // uses for its own "Top Priced Candidate" state (ProjectHeader.jsx) —
   // never a second, divergent "best" computation.
-  const dynamicFxStructure = leadingStructure || bestPricedCandidate(allocated);
+  // PROJECT_UI_DATA_INTEGRITY (2026-09-21), fourth FX cell: when NEITHER
+  // a manual Leading selection NOR a canonical bestPricedCandidate exists
+  // (F#K Valentine's Day's real state — no directly-comparable winner),
+  // the cell used to disappear entirely (buildLeaderFxItems(economics,
+  // null, ...) returns []). Extends the SAME existing fallback chain,
+  // never a fabricated recommendation: (3) the active selected scenario
+  // for the current Normal/Optimizer mode — cols[1], the top mode-
+  // admissible scenario selectSixSlots() already ranks into slot 2 —
+  // then (4) Current Location itself (cols[0], the production's own
+  // anchor), which always exists. `dynamicFxStructureKind` distinguishes
+  // all four states for FXStrip's own tag text — never re-derived there.
+  const bestPriced = bestPricedCandidate(allocated);
+  const dynamicFxStructure = leadingStructure || bestPriced || cols[1] || cols[0];
   const dynamicFxIsLeading = !!leadingStructure;
+  // True only on the FINAL fallback rung — the production's own Current
+  // Location, reached when nothing else (Leading, bestPriced, or an
+  // active mode-admissible scenario) resolved to a real structure. Rung
+  // tracked explicitly rather than compared by identity afterward, so an
+  // anchor that ALSO happens to be the real bestPricedCandidate is still
+  // correctly labeled "Top Priced", never miscategorized as a fallback.
+  const dynamicFxIsCurrentLocation = !dynamicFxIsLeading && !bestPriced && !cols[1];
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -425,7 +444,10 @@ export default function Workspace() {
           components/FXStrip.jsx engine (CineGlobe Overview FX Strip +
           Vertical Scrolling closeout) — Overview mounts the identical
           component. */}
-      <FXStrip economics={economics} structure={dynamicFxStructure} structureIsLeading={dynamicFxIsLeading} />
+      <FXStrip
+        economics={economics} structure={dynamicFxStructure}
+        structureIsLeading={dynamicFxIsLeading} structureIsCurrentLocation={dynamicFxIsCurrentLocation}
+      />
 
       {/* Grid geometry matches the artifact: 48px | 1fr | 38px collapsed;
           left widens to 220px (stack) / 340px (Recs/Inputs); the right

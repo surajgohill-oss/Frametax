@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
+    # PROJECT_UI_DATA_INTEGRITY (2026-09-21): the one organization this
+    # deployment is scoped to -- no multi-tenant auth/session exists yet,
+    # so this is the interim "current/authenticated organization" context
+    # every organization-scoped read must derive visibility from (never
+    # "every organization", never a name-pattern filter). Empty by
+    # default -- fails closed (list_projects() returns []) rather than
+    # guessing an arbitrary organization when unset.
+    CURRENT_ORGANIZATION_ID: str = ""
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_origins(cls, v: Any) -> list[str]:

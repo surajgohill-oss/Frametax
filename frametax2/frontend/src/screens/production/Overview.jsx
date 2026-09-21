@@ -7,6 +7,7 @@ import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, activeStructure } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
+import { isBaselineStructure, rankOrNpcOrder } from "../../lib/productionOptions";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
@@ -94,8 +95,20 @@ export default function Overview() {
   // Hero already uses for its own "Top Priced Candidate" state — never a
   // second "best" computation — so the Budget card and Hero can never
   // silently disagree about which structure they describe.
-  const structure = allocated ? (activeStructure(allocated, leadingStructureId) || bestPricedCandidate(allocated)) : null;
+  // PROJECT_UI_DATA_INTEGRITY (2026-09-21), fourth FX cell: the same
+  // fallback chain Workspace.jsx now uses when neither a Leading
+  // selection nor a canonical bestPricedCandidate exists (F#K
+  // Valentine's Day's real state) — (3) the top-ranked priced candidate
+  // (rankOrNpcOrder(allocated)[0], the same canonical rank/NPC order
+  // every other Workspace/Overview selection reads), then (4) the
+  // production's own Current Location (its real baseline/anchor), which
+  // always exists. Never fabricates a leading recommendation.
+  const _leadingOrBest = allocated ? (activeStructure(allocated, leadingStructureId) || bestPricedCandidate(allocated)) : null;
+  const _topRanked = allocated ? rankOrNpcOrder(allocated)[0] : null;
+  const _anchor = allocated ? allocated.structures.find(isBaselineStructure) : null;
+  const structure = _leadingOrBest || _topRanked || _anchor || null;
   const structureIsLeading = allocated ? !!activeStructure(allocated, leadingStructureId) : false;
+  const structureIsCurrentLocation = !structureIsLeading && !bestPricedCandidate(allocated) && !_topRanked;
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -131,7 +144,10 @@ export default function Overview() {
 
   return (
     <div className="screen ovxg-screen">
-      <FXStrip economics={economics} structure={structure} structureIsLeading={structureIsLeading} />
+      <FXStrip
+        economics={economics} structure={structure}
+        structureIsLeading={structureIsLeading} structureIsCurrentLocation={structureIsCurrentLocation}
+      />
       <div className="ovxg-grid">
 
         {/* ── LEFT — Production Facts + Production Requirements ─────────── */}

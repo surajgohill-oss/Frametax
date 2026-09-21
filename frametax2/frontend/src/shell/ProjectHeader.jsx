@@ -216,7 +216,11 @@ export default function ProjectHeader() {
         stageControl={stageControl}
         openQuestions={openQuestions}
         swing={swing}
-        onBack={() => navigate("/company/today")}
+        // PROJECT_UI_DATA_INTEGRITY (2026-09-21): every project-scoped
+        // page's back link now returns to the Project Library, not
+        // Today — same "← " button appearance, styling and position,
+        // only the destination and label changed.
+        onBack={() => navigate("/company/library")}
         headerActions={headerActions}
       />
       <nav className="project-tabs" aria-label="Production sections">

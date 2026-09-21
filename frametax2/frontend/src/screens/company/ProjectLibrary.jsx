@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_ORIGIN, getProjects } from "../../api";
+import { API_ORIGIN, getCurrentOrganization, getProjects } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
@@ -52,9 +52,18 @@ export default function ProjectLibrary() {
   // theme implementation.
   const [theme, setThemeState] = useState(getTheme);
 
+  // PROJECT_UI_DATA_INTEGRITY (2026-09-21): resolve the current
+  // organization FIRST (never getOrganizations()[0] — see api.js's own
+  // header comment) and pass its id explicitly to getProjects(). A null
+  // current organization (unconfigured deployment) fails closed to an
+  // empty list, same as the backend's own fail-closed contract — never a
+  // silent fallback to fetching every organization's projects.
   function load() {
     setError(null);
-    getProjects().then(setProjects).catch((err) => setError(err.message || String(err)));
+    getCurrentOrganization()
+      .then((org) => getProjects(org?.id))
+      .then(setProjects)
+      .catch((err) => setError(err.message || String(err)));
   }
   useEffect(() => { load(); }, []);
 

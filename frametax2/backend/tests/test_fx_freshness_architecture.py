@@ -218,16 +218,29 @@ async def test_concurrent_stale_requests_single_flight_to_one_consistent_snapsho
     assert len(as_of_values) == 1, "every concurrent caller must observe the SAME resolved snapshot"
 
 
-def test_fingerprint_includes_the_live_fx_snapshot_date():
-    """F: DISPLAYED FX == MODEL-CONSUMED FX — a changed live snapshot date
-    must change the evaluation fingerprint, so a stale persisted result
-    can never keep serving paired with fresh FX metadata."""
+def test_fingerprint_never_reads_the_live_fx_snapshot_date():
+    """F, superseded by PROJECT_UI_DATA_INTEGRITY (2026-09-21): this test
+    used to require the OPPOSITE -- that a changed live FX snapshot date
+    changes the evaluation fingerprint. That was the confirmed P0 defect:
+    since ensure_fx_freshness() (called from the READ-ONLY GET
+    /projects/{id}/state) mutates this exact process-global, a mere page
+    view could change a project's canonical identity (and even a
+    DIFFERENT project's, since the global is shared), forcing spurious
+    full re-evaluations with no real economic input change. Canonical
+    evaluation identity must never read production_normalization's
+    mutable live FX state, directly or indirectly, under any field name."""
     import inspect
 
     from app.services.canonical_evaluation import _compute_fingerprint
-    source = inspect.getsource(_compute_fingerprint)
-    assert "fx_live_snapshot_date" in source
-    assert "production_normalization.FX_LIVE_SNAPSHOT_DATE" in source
+    # Code only -- the function's own explanatory comments legitimately
+    # name the removed fields/module for history; only the executable
+    # body must never reference them again.
+    source_code_only = "\n".join(
+        line.split("#", 1)[0] for line in inspect.getsource(_compute_fingerprint).splitlines()
+    )
+    assert "fx_live_snapshot_date" not in source_code_only
+    assert "fx_context_digest" not in source_code_only
+    assert "production_normalization" not in source_code_only
 
 
 def test_saudi_arabia_sar_is_a_tracked_currency_never_silently_excluded():

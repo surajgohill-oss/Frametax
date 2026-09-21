@@ -157,9 +157,21 @@ export async function patchProject(projectId, changes) {
 // card (artwork + material completeness), the full Project Record for
 // one project, and creation. All read the same real tables Phase C
 // migrated into; no separate/duplicate project-summary store.
-export const getProjects = () => request2(`${PROJECTS_BASE}`);
+// PROJECT_UI_DATA_INTEGRITY (2026-09-21): organization scope is never
+// optional — an unscoped call used to return every project across every
+// organization (245 of 329 real rows were one-off AUDIT_CONTROL fixture
+// projects). Callers must resolve the current organization (see
+// getCurrentOrganization below) and pass its id explicitly.
+export const getProjects = (organizationId) =>
+  request2(`${PROJECTS_BASE}${organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : ""}`);
 export const getProjectRecord = (projectId) => request2(`${PROJECTS_BASE}/${projectId}/record`);
 export const getOrganizations = () => request2(`${ORGANIZATIONS_BASE}`);
+// The one organization this deployment is scoped to (no multi-tenant
+// auth/session exists yet) — resolved server-side from settings.
+// CURRENT_ORGANIZATION_ID, never guessed as getOrganizations()[0]. null
+// when unconfigured — callers must treat that as "no current
+// organization", never fall back to fetching every organization's data.
+export const getCurrentOrganization = () => request2(`${ORGANIZATIONS_BASE}/current`);
 export async function createProject(body) {
   const res = await fetch(PROJECTS_BASE, {
     method: "POST",

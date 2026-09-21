@@ -2127,7 +2127,22 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         for entry in entries:
             if entry.get("name") and not entry.get("nationality"):
                 pkg_missing_inputs.append({
-                    "identifier": f"MISSING-{role_bucket.upper()}-NATIONALITY",
+                    # PROJECT_UI_DATA_INTEGRITY (2026-09-21): the
+                    # identifier used to be bare MISSING-{ROLE}-
+                    # NATIONALITY, with no per-person component --
+                    # harmless while a role bucket never held more than
+                    # one real name, but a real, confirmed defect once
+                    # document-person extraction (app/ingestion/document_
+                    # person_ingestion.py) can attach several real people
+                    # to the SAME role bucket (e.g. four producers):
+                    # every one of their questions collided on the
+                    # identical identifier, which QuestionStack.jsx keys
+                    # its list by -- a live "duplicate key" React error,
+                    # confirmed in the browser against F#K Valentine's
+                    # Day's own real producers. person_id is already a
+                    # real, stable identity (TalentProfile.id) -- never
+                    # fabricated.
+                    "identifier": f"MISSING-{role_bucket.upper()}-NATIONALITY-{entry['person_id']}",
                     "question": f"What is {entry['name']}'s ({label}) nationality?",
                     "why_it_matters": (
                         "Nationality is a qualification input for treaty co-production, "

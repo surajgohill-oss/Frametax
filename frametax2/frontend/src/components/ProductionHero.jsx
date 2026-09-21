@@ -112,7 +112,7 @@ export default function ProductionHero({
           actually shows is not multiplied back into near-black. */}
       <div className="ph-hero-scrim" aria-hidden="true" />
       <div className="ph-hero-topbar">
-        <button className="ph-back ph-hero-back" onClick={onBack}>← Today</button>
+        <button className="ph-back ph-hero-back" onClick={onBack}>← Project Library</button>
         {headerActions}
       </div>
       <div className="ph-hero-row">
