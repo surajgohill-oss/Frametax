@@ -230,90 +230,48 @@ def _program_display_name(program_slug: str | None) -> str | None:
     return doctrine.program_name if doctrine else None
 
 
-#: Codex global optimizer audit, P1-CLASS-001: "Add one backend-owned,
-#: mutually exclusive classification for every emitted structure. Do not
-#: require UI inference." The nine values below are the full, closed
-#: contract (Codex's own structure matrix): every structure this backend
-#: ever emits resolves to EXACTLY one, derived here from fields this
-#: module already reads off calculation_trace_json/StructureCalculationResult
-#: for every other field on the same entry -- never a new signal, never
-#: left for a frontend consumer to infer from structure_type +
-#: relationship_types + candidate_status combinations on its own.
-CLASS_SINGLE_JURISDICTION = "SINGLE_JURISDICTION"
-CLASS_OFFICIAL_COPRODUCTION = "OFFICIAL_COPRODUCTION"
-CLASS_HYBRID_ANCHOR_COMPONENT = "HYBRID_ANCHOR_COMPONENT"
-CLASS_STACKED_PROGRAMS = "STACKED_PROGRAMS"
-CLASS_COMBINED_COPRO_HYBRID_STACK = "COMBINED_COPRO_HYBRID_STACK"
-CLASS_CONDITIONAL_USER_FACT_REQUIRED = "CONDITIONAL_USER_FACT_REQUIRED"
-CLASS_RULE_DATA_INCOMPLETE = "RULE_DATA_INCOMPLETE"
-CLASS_AUTHORITY_LOCKED = "AUTHORITY_LOCKED"
-CLASS_REJECTED_FOR_PROJECT = "REJECTED_FOR_PROJECT"
-
-STRUCTURE_CLASSIFICATIONS: tuple[str, ...] = (
-    CLASS_SINGLE_JURISDICTION,
-    CLASS_OFFICIAL_COPRODUCTION,
-    CLASS_HYBRID_ANCHOR_COMPONENT,
-    CLASS_STACKED_PROGRAMS,
+#: GD-2 (Globe data contract remediation, 2026-09-20): the classification
+#: constants and derivation formerly lived only in this module. They are
+#: now canonically owned by app/services/structural_classification.py
+#: (imported by canonical_evaluation.py at candidate-creation time too, so
+#: the value is part of the persisted contract, not solely serve-time
+#: projection logic) -- re-exported here under the SAME names so every
+#: existing `cpv.CLASS_*` / `cpv.STRUCTURE_CLASSIFICATIONS` reference in
+#: this module and in tests is unaffected.
+from app.services.structural_classification import (  # noqa: E402
+    CLASS_AUTHORITY_LOCKED,
     CLASS_COMBINED_COPRO_HYBRID_STACK,
     CLASS_CONDITIONAL_USER_FACT_REQUIRED,
-    CLASS_RULE_DATA_INCOMPLETE,
-    CLASS_AUTHORITY_LOCKED,
+    CLASS_HYBRID_ANCHOR_COMPONENT,
+    CLASS_MULTI_PRINCIPAL_MULTILATERAL,
+    CLASS_OFFICIAL_COPRODUCTION,
     CLASS_REJECTED_FOR_PROJECT,
+    CLASS_RULE_DATA_INCOMPLETE,
+    CLASS_SINGLE_JURISDICTION,
+    CLASS_STACKED_PROGRAMS,
+    PRICED_STRUCTURE_FAMILIES as _PRICED_STRUCTURE_FAMILIES,
+    STRUCTURE_CLASSIFICATIONS,
+    classify_structure as _classify_structure,
 )
 
 
 def _structure_classification(
     trace: dict, structure_type: str, is_priced: bool,
 ) -> str:
-    """P1-CLASS-001's derivation. Checked in the SAME fail-closed order
-    every other precedence rule in this file already follows (most severe
-    / most specific first, generic fallback last) -- unresolved/blocked
-    states always win over a structure_type-based guess, exactly the same
-    "unknown never silently becomes priced" convention P0-STACK-001 and
-    the rest of this remediation pass already establish:
-
-    1. RULE_DATA_INCOMPLETE  -- an unresolved named-rule gap (P0-STACK-001's
-       own scenario status, or a rejection explicitly classed this way).
-    2. AUTHORITY_LOCKED      -- authority coverage fails closed (never a
-       priceability question at all).
-    3. CONDITIONAL_USER_FACT_REQUIRED -- registry presence is real but a
-       real project fact (ownership share, cultural test, ...) is
-       missing; disclosed, never fabricated-eligible.
-    4. REJECTED_FOR_PROJECT  -- any other real, explicit rejection
-       (minimum spend, statutory conditions, qualification hard-fail).
-    5. Priced structures resolve by real composition, most-combined
-       first: COMBINED_COPRO_HYBRID_STACK > OFFICIAL_COPRODUCTION >
-       HYBRID_ANCHOR_COMPONENT > STACKED_PROGRAMS > SINGLE_JURISDICTION
-       (the last also covers full_relocation -- a single jurisdiction,
-       just not the production's original one).
-    """
-    candidate_status = trace.get("candidate_status")
-    rejection_reason_class = trace.get("rejection_reason_class")
-    conditional_scenario = trace.get("conditional_scenario") or {}
-
-    if (
-        candidate_status == "RULE_DATA_INCOMPLETE"
-        or rejection_reason_class == "RULE_DATA_INCOMPLETE"
-        or conditional_scenario.get("status") == "RULE_DATA_INCOMPLETE"
-    ):
-        return CLASS_RULE_DATA_INCOMPLETE
-    if candidate_status == "UNPRICEABLE_AUTHORITY_INSUFFICIENT":
-        return CLASS_AUTHORITY_LOCKED
-    if candidate_status == "CO_PRO_OPPORTUNITY" or candidate_status == "QUALIFICATION_UNRESOLVED":
-        return CLASS_CONDITIONAL_USER_FACT_REQUIRED
-    if not is_priced:
-        return CLASS_REJECTED_FOR_PROJECT
-
-    discovery_classification = trace.get("discovery_classification")
-    if discovery_classification == "combined_coproduction_component_stack":
-        return CLASS_COMBINED_COPRO_HYBRID_STACK
-    if structure_type == "treaty_coproduction":
-        return CLASS_OFFICIAL_COPRODUCTION
-    if structure_type == "component_relocation":
-        return CLASS_HYBRID_ANCHOR_COMPONENT
-    if structure_type == "multi_program":
-        return CLASS_STACKED_PROGRAMS
-    return CLASS_SINGLE_JURISDICTION
+    """Serves the canonical classification. GD-2: prefers the value
+    app/services/canonical_evaluation.py already stamped onto
+    calculation_trace_json["structural_classification"] at candidate-
+    creation time (the SAME value retention's per-family lane and
+    aggregation's per-family dominator reconciliation consume) -- only
+    calling the shared live derivation (app.services.structural_
+    classification.classify_structure, identical logic) for the small
+    number of historical rows generated before this field existed, the
+    same graceful-degradation precedent already used throughout this
+    module for structure_type/selected_incentive_usd/etc."""
+    persisted = trace.get("structural_classification")
+    if persisted in STRUCTURE_CLASSIFICATIONS:
+        return persisted
+    return _classify_structure(trace, structure_type, is_priced)
 
 
 def _empty_structure_entry(
@@ -461,7 +419,23 @@ def _empty_structure_entry(
     # jurisdiction-code/project-name special case. `code`'s own presence
     # in `trace["segments"]` (never removed there) is untouched; only
     # its membership in the canonical PARTICIPANT list is now gated.
-    if structure_type == "component_relocation":
+    # GD-3 (Globe data contract remediation, 2026-09-20): the ordinary and
+    # combined component-hybrid families (structural_archetype_generator's
+    # `structure_type="hybrid"`, `structural_family in {ordinary_component_
+    # hybrid, combined_coproduction_pair_stack, combined_coproduction_
+    # component_stack, combined_coproduction_multi_component_stack,
+    # combined_multilateral_coproduction_stack}`) route real, separately
+    # allocated components to real distinct jurisdictions exactly the same
+    # way component_relocation does -- confirmed by the Codex Globe data
+    # contract delta audit (GDC-001), which found every one of these
+    # structures served only its single anchor jurisdiction in
+    # `participants`, even though `component_allocations` already carries
+    # every routed leg's own real jurisdiction_code. Scoped to these two
+    # structure_type values only -- single_country/full_relocation/
+    # multi_program/treaty_coproduction's own existing bare/coproduction-
+    # partner participant derivation is unchanged ("already correct -- do
+    # not reopen", per the same audit).
+    if structure_type in ("component_relocation", "hybrid"):
         _primary_claims = next(
             (
                 _seg.get("claims_incentive") is True
@@ -470,11 +444,26 @@ def _empty_structure_entry(
             ),
             False,
         )
+        # A hybrid structure built by the structural generator (ordinary or
+        # combined) never carries a `segments` trace at all -- only
+        # `component_allocations`, whose real presence (with a genuine
+        # anchor program on file) IS the structure's claim of economic
+        # participation for its own primary jurisdiction. Never a
+        # jurisdiction-code special case, and never inferred for a
+        # rejected/unpriced row (a rejected candidate's component_
+        # allocations describe an ATTEMPTED route, not a real claim).
+        if not trace.get("segments") and trace.get("component_allocations") and is_priced:
+            _primary_claims = bool(trace.get("anchor_program") or trace.get("program_slug"))
         _participant_codes = [code] if (code and _home_is_party and _primary_claims) else []
         for _seg in trace.get("segments") or []:
             _c = _seg.get("jurisdiction_code")
             if _c and _seg.get("claims_incentive") is True and _c not in _participant_codes:
                 _participant_codes.append(_c)
+        if is_priced:
+            for _comp_alloc in trace.get("component_allocations") or []:
+                _c = _comp_alloc.get("jurisdiction_code")
+                if _c and _c not in _participant_codes:
+                    _participant_codes.append(_c)
     else:
         _participant_codes = [code] if (code and _home_is_party) else []
     for _partner in _coprod_partners:
@@ -1681,6 +1670,47 @@ async def build_production_and_structures(
         if len(_bucket) < TYPE_TOP:
             _bucket.append(_retention_compact(e, rank=len(_bucket) + 1))
 
+    # GD-4 (Globe data contract remediation, 2026-09-20): `top_by_structure_
+    # type` above buckets by the broad, persisted `structure_type` column,
+    # which collapses every hybrid family (ordinary, combined-pair,
+    # combined-component, combined-multi-component, multilateral) into one
+    # `"hybrid"` bucket -- so a combined or multilateral winner could be
+    # silently displaced by an unrelated ordinary hybrid competing for the
+    # same TYPE_TOP slots. `top_by_structural_family` pins the canonical
+    # best candidate for EVERY canonical family (using `classification`,
+    # the same GD-2 backend-owned enum every served structure already
+    # carries -- never a second, independently-derived family signal) from
+    # the SAME already-computed, already-ranked `_priced_entries` list
+    # (`_retention_sort_key`'s canonical NPC ranking, ties by canonical
+    # economic identity -- no new ranking). Every priced-eligible family is
+    # pre-seeded with an empty list so a production with no candidate in a
+    # given family serves an honest `[]`, never a missing key.
+    top_by_structural_family: dict[str, list] = {family: [] for family in _PRICED_STRUCTURE_FAMILIES}
+
+    def _family_top_entry(e, rank):
+        return {
+            "structure_id": e["structure_id"],
+            "structural_family": e["classification"],
+            "structure_type": e["structure_type"],
+            "label": e["label"],
+            "primary_jurisdiction": e["primary_jurisdiction"],
+            "participants": e["participants"],
+            "npc_verified_usd": e["npc_verified_usd"],
+            "npc_with_adjustments_usd": e["npc_with_adjustments_usd"],
+            "selected_incentive_usd": e["selected_incentive_usd"],
+            "candidate_status": e["candidate_status"],
+            "is_baseline": e["is_baseline"],
+            "economic_identity": _identity_by_structure.get(e["structure_id"]),
+            "engine_version": engine_version or ENGINE_VERSION,
+            "input_fingerprint": fingerprint,
+            "rank_in_family": rank,
+        }
+
+    for e in _priced_entries:
+        _family_bucket = top_by_structural_family.setdefault(e["classification"], [])
+        if len(_family_bucket) < TYPE_TOP:
+            _family_bucket.append(_family_top_entry(e, rank=len(_family_bucket) + 1))
+
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
     # Everything above (selection, ranking, conditional pool, accounting) ran over ALL served
     # candidates. What is RETURNED in detail is one deterministic page of them: the headline
@@ -1790,6 +1820,7 @@ async def build_production_and_structures(
             # comparable yet); UNPRICEABLE -> authority insufficient.
             "best_per_jurisdiction": best_per_jurisdiction,
             "top_by_structure_type": top_by_structure_type,
+            "top_by_structural_family": top_by_structural_family,
             "retention": {
                 "policy": {
                     "global_top": GLOBAL_TOP, "per_structure_type_top": TYPE_TOP,

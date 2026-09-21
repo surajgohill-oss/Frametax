@@ -118,3 +118,14 @@ Applies to every test run, evaluation, or other command that can take minutes, a
 ### CONFIRMED-DEFECT RULE
 
 A confirmed in-scope code defect may not be deferred merely because its fix invalidates acceptance generations. Fix it, bump the engine, and regenerate the bounded acceptance set once. Do not repeat already-passing tests.
+
+### SCOPE EXCLUSION AND UNBOUNDED-PROCESS RULE (2026-09-20)
+
+Added after a real violation: a bounded GD-2/GD-3/GD-4 remediation task launched two large, previously-passing regression suites (`test_canonical_served_wiring_repair.py`, `test_generic_structural_discovery_final_correction.py`) that the task's own execution discipline ("No broad audit or broad regression", "never rerun a passing test") already excluded, as an unbounded background process with no fixed ceiling actually enforced on it.
+
+1. A task's named "DO NOT RUN" test or suite exclusion is absolute. It is never reinterpreted, expanded around, or treated as satisfied by running something adjacent.
+2. No pytest invocation or evaluation may run as an unbounded or backgrounded process. Every invocation is foregrounded under a real process alarm (e.g. `perl -e 'alarm shift; exec @ARGV' <seconds> <command>`) that this task itself waits on to completion or timeout -- never dispatched to a background task runner and left unattended, which defeats the ceiling instead of enforcing it.
+3. The 720-second (12-minute) ceiling in the LONG-RUNNING PROCESS DISCIPLINE section applies to the entire unrequested/exploratory regression phase as a whole, not independently to each file in an expanding sequence of invocations.
+4. Focused/new tests passing never authorizes broadening into previously-completed regression suites, "for confidence" or otherwise. If the task did not name a suite, do not run it.
+5. If a running command produces no new phase/progress output for 180 seconds, stop it and report the last known node/phase rather than continuing to wait or letting it run unattended in the background.
+6. Never add "confidence" tests, or run tests, outside the explicitly authorized acceptance plan for the current task.

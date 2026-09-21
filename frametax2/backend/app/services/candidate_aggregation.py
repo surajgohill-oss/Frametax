@@ -63,6 +63,17 @@ def candidate_group_identity(status: str | None, structure_type: str | None, tra
         "candidate_status": status or "",
         "structure_type": structure_type or trace.get("structure_type") or "",
         "structural_family": trace.get("structural_family") or "",
+        # GD-4 (Globe data contract remediation, 2026-09-20): the canonical
+        # classification app.services.structural_classification stamped
+        # onto this candidate's trace at creation time
+        # (canonical_evaluation.py's centralized _route() call site) --
+        # never re-derived here. Fully determined by the other fields
+        # already in this identity (status/structure_type/structural_
+        # family/reason_class), so adding it changes no group's fold
+        # granularity; it only lets rows() reconcile a group's dominator
+        # at the same canonical family precision retention uses, rather
+        # than the coarser raw structural_family/structure_type.
+        "structural_classification": trace.get("structural_classification") or "",
         "reason_class": trace.get("rejection_reason_class") or "",
         "primary_jurisdiction": str(primary),
         "component_family": _strings(trace.get("component_types"), [a.get("component") for a in allocations]),
@@ -165,12 +176,33 @@ class CandidateAggregator:
         writer can check the two independent tallies against each other."""
         return sum(g.count for g in self._groups.values())
 
-    def rows(self, dominating_by_type: dict[str, Any] | None = None) -> Iterator[dict]:
+    def rows(
+        self, dominating_by_type: dict[str, Any] | None = None,
+        dominating_by_family: dict[str, Any] | None = None,
+    ) -> Iterator[dict]:
         """One persistence row per group, in group_ordinal (first-seen) order. ``dominating_by_type`` maps a
-        structure_type to the id of the RETAINED detailed row that dominates every PRICED member of that type."""
+        structure_type to the id of the RETAINED detailed row that dominates every PRICED member of that type.
+
+        GD-4 (Globe data contract remediation, 2026-09-20): ``dominating_by_family`` is keyed by the SAME
+        canonical `structural_classification` value retention's per-family lane uses (`Held.family` --
+        app.services.structural_classification.classify_structure's own output, stamped onto every
+        candidate's trace at creation time) -- required because the structural generator's ordinary and
+        every combined/multilateral co-production family all share the one broad structure_type
+        ``"hybrid"``, so a type-level dominator could wrongly claim to dominate a distinct family's
+        aggregate group (e.g. an ordinary hybrid's own winner "dominating" a combined-multilateral group it
+        was never even compared against on that finer axis). Preferred whenever the group carries a real
+        classification; falls back to the type-level dominator otherwise (every non-hybrid structure_type,
+        unchanged)."""
         dominating_by_type = dominating_by_type or {}
+        dominating_by_family = dominating_by_family or {}
         for key, g in self._groups.items():
             ident = g.identity
+            _dominator = (
+                dominating_by_family.get(ident["structural_classification"])
+                if ident["structural_classification"] else None
+            )
+            if _dominator is None:
+                _dominator = dominating_by_type.get(ident["structure_type"])
             yield {
                 "group_ordinal": g.ordinal,
                 "group_key": key,
@@ -188,7 +220,7 @@ class CandidateAggregator:
                 "min_incentive_usd": g.min_inc, "max_incentive_usd": g.max_inc,
                 "best_economic_identity": g.best_identity,
                 "dominating_structure_id": (
-                    dominating_by_type.get(ident["structure_type"]) if ident["candidate_status"] == PRICED_STATUS else None
+                    _dominator if ident["candidate_status"] == PRICED_STATUS else None
                 ),
                 "first_candidate_seq": g.first_seq,
                 "representative": json.loads(zlib.decompress(g.representative_z)),

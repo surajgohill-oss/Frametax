@@ -3886,3 +3886,23 @@ One concrete wiring defect found and fixed via a bounded, real-API-driven self-a
 3. Base Globe UI wiring and runtime verification.
 4. Evaluation-start UI indicator during later UI work.
 5. Reinvestment/in-kind work remains shelved.
+
+## CINEGLOBE_ACCOUNT_HANDOFF_GD234_REMEDIATION (2026-09-20)
+
+**Status: `GLOBE_DATA_CONTRACT_REMEDIATED`, `ENGINE_VERSION = canonical-1.92.0`.** Closes GD-2/GD-3/GD-4, the three FAIL items from Codex's read-only Globe data contract delta audit (`docs/validation/CODEX_OPTIMIZER_GLOBE_DATA_CONTRACT_DELTA.md`, audited at `08060f9`) -- the ONLY scope for this pass; no research/rates/eligibility/discovery/ranking change, no Globe/frontend work.
+
+**GD-2 (canonical structural family):** new `app/services/structural_classification.py` -- the single canonical `classify_structure()`/`CLASS_*` mapping, now imported by BOTH `canonical_evaluation.py` (stamps `calculation_trace_json["structural_classification"]` once per candidate at the `_BulkEvaluationWriter._route()` call site, before persistence -- part of the canonical persisted contract, not solely serve-time projection) and `canonical_production_view.py` (serves the persisted stamp, falls back to live derivation for pre-1.92.0 rows). Ordinary/combined/multilateral hybrids (all `structure_type="hybrid"`) now resolve to `HYBRID_ANCHOR_COMPONENT` / `COMBINED_COPRO_HYBRID_STACK` / new `MULTI_PRINCIPAL_MULTILATERAL` instead of falling through to the generic `SINGLE_JURISDICTION` default (the exact GDC-001 defect, confirmed by Codex on all four real productions).
+
+**GD-3 (participants):** `_empty_structure_entry()`'s claiming-participant derivation broadened from `structure_type=="component_relocation"` only to also cover `"hybrid"`, reading `component_allocations` (every routed leg's real jurisdiction_code, already persisted, hybrids carry no `segments` trace) with the same claims-only-when-priced discipline. `component_relocation`'s own already-correct behavior is untouched.
+
+**GD-4 (per-family retention/served contract):** `candidate_retention.py`'s `Held` gets a `family` field (the GD-2 classification) and `BoundedRetention` a dedicated per-family lane (`best_structure_id_by_family`/`dominating_by_family`) at the same budget as the per-type lane -- prevents a combined/multilateral candidate from being evicted purely by an unrelated ordinary-hybrid competitor sharing `structure_type="hybrid"`. `candidate_aggregation.py`'s `candidate_group_identity`/`rows()` reconcile a PRICED group's dominator against the family-level winner first, type-level as fallback. New served `top_by_structural_family` block, pre-seeded with all 6 priced-eligible families (honest `[]` when absent), ranked from the same existing canonical NPC ranking `top_by_structure_type` already uses.
+
+**Tests:** 5 new parametrize rows in `test_class_001_...` (`tests/test_claude_global_optimizer_p0_remediation.py`) + new synthetic file `tests/test_globe_data_contract_gd234.py` (10 tests, no DB) + one focused DB-backed node proving the end-to-end persisted stamp. Per explicit operator instruction mid-pass, no other previously-passing regression suite was rerun.
+
+**Fresh four-production acceptance (cold, sequential, canonical-1.92.0):** Little Utopia $573,059.70/$3,791,333.30 (via the focused test node); Bad Hombres 6.4s $596,910.25/$1,885,112.75; F#K Valentine's Day 176.4s $1,445,659.84/$3,072,027.16; Lips Like Sugar 480.2s $3,459,278.90/$8,524,375.10. All four exact matches to `1.91.0`. Reuse verifier (Bad Hombres, re-run): `EVALUATION_REUSED`, identical baseline, 482==482 retained rows, zero new rows.
+
+**Process discipline correction (recorded permanently as a new PROJECT_RULES.md rule):** mid-pass, two large previously-passing regression suites were launched as an unattended background process, violating this task's explicit "do not run" exclusion. Stopped immediately on operator instruction, before either produced output; verified zero processes/connections remained; not retried.
+
+**Not attempted, per explicit scope boundary:** any research/rates/eligibility/discovery/ranking change; Globe/frontend visuals; a new DB column for `structural_classification` (persisted inside existing JSONB fields instead, proportionate to this bounded pass); HO-001..HO-013/six-registered-control re-verification (unaffected -- no discovery/ranking/pricing logic changed this pass); DB-connected semantic validator; reinvestment/in-kind (still shelved); base Globe UI wiring (still not started).
+
+Final status returned: `GLOBE_DATA_CONTRACT_REMEDIATED`.

@@ -86,10 +86,10 @@ class _Lane:
 class Held:
     """A PRICED candidate (structure + result objects) currently retained in memory."""
     __slots__ = ("seq", "structure", "result", "npc", "adjusted", "incentive", "identity", "stype",
-                 "jurisdiction", "refs", "lane_refs", "baseline", "holds", "final")
+                 "family", "jurisdiction", "refs", "lane_refs", "baseline", "holds", "final")
 
     def __init__(self, seq, structure, result, *, npc, adjusted, incentive, identity, stype, jurisdiction,
-                 refs, baseline) -> None:
+                 refs, baseline, family: str = "") -> None:
         self.seq = seq
         self.structure = structure
         self.result = result
@@ -98,6 +98,22 @@ class Held:
         self.incentive = incentive
         self.identity = identity
         self.stype = stype
+        # GD-4 (Globe data contract remediation, 2026-09-20): the
+        # canonical structural classification (app.services.structural_
+        # classification.classify_structure's own output, stamped onto
+        # this candidate's trace at creation time -- the SAME value the
+        # served view and aggregation's dominator reconciliation consume,
+        # never a second independently-derived signal) -- a finer
+        # partition than `stype` for the structural-generator's own
+        # `"hybrid"` structure_type, which the ordinary and every
+        # combined/multilateral co-production family all share. Without a
+        # dedicated family lane below, a combined or multilateral
+        # candidate competes for the SAME `("type", "hybrid")` TYPE_TOP
+        # slots as every ordinary hybrid and can be aggregated away before
+        # ever reaching a served `top_by_structural_family` block --
+        # exactly the GDC-002 defect. "" (never retained a family lane)
+        # for any candidate with no real classification on its trace.
+        self.family = family or ""
         self.jurisdiction = jurisdiction
         self.refs = refs
         self.lane_refs = 0
@@ -135,6 +151,12 @@ class BoundedRetention:
             key = (value, h.identity, h.seq)
             yield self._lane((metric, "global"), self.global_top), key
             yield self._lane((metric, "type", h.stype), self.type_top), key
+            # GD-4: a dedicated per-structural-family lane, same budget as
+            # the per-type lane, so a combined/multilateral candidate is
+            # never squeezed out of retention by unrelated ordinary-hybrid
+            # competitors sharing the same broad structure_type.
+            if h.family:
+                yield self._lane((metric, "family", h.family), self.type_top), key
             if h.jurisdiction and h.stype in LOCAL_STACK_TYPES:
                 yield self._lane((metric, "jurisdiction", h.jurisdiction), self.jurisdiction_top), key
 
@@ -233,6 +255,18 @@ class BoundedRetention:
                     out[name[2]] = h.structure.id
         return out
 
+    def best_structure_id_by_family(self) -> dict:
+        """GD-4: structural_family -> id of the RETAINED best (verified NPC) candidate of that family --
+        the family-lane analogue of ``best_structure_id_by_type``, so an aggregate group's dominator can be
+        reconciled at the finer family granularity rather than the broad, shared ``"hybrid"`` structure_type."""
+        out = {}
+        for name, lane in self._lanes.items():
+            if name[0] == "verified" and name[1] == "family" and lane.items:
+                h = self.held.get(lane.items[0][2])
+                if h is not None:
+                    out[name[2]] = h.structure.id
+        return out
+
     def finalize(self) -> tuple[list[Held], list[Held]]:
         """(retained, to_aggregate). retained is sorted by (verified NPC, identity, seq)."""
         # A hold is TEMPORARY protection for a running incumbent: at the end only lane members, the
@@ -241,6 +275,7 @@ class BoundedRetention:
         retained = sorted((h for h in self.held.values() if keeps(h)), key=lambda h: (h.npc, h.identity, h.seq))
         to_aggregate = list(self._ring.values()) + [h for h in self.held.values() if not keeps(h)]
         self._dominating = self.best_structure_id_by_type()
+        self._dominating_family = self.best_structure_id_by_family()
         self.held = {}
         self._by_ref = {}
         self._ring = OrderedDict()
@@ -249,6 +284,11 @@ class BoundedRetention:
     @property
     def dominating_by_type(self) -> dict:
         return getattr(self, "_dominating", {})
+
+    @property
+    def dominating_by_family(self) -> dict:
+        """GD-4: the family-lane analogue of ``dominating_by_type``."""
+        return getattr(self, "_dominating_family", {})
 
     def bound(self, structure_types: int, jurisdictions: int) -> int:
         """Upper bound on lane-retained PRICED candidates for that many types/jurisdictions (both metrics)."""

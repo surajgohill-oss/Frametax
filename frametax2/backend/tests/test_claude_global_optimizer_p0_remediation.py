@@ -671,6 +671,16 @@ def test_comb_001_resolved_named_local_stack_adds_incremental_value_only():
     ({}, "multi_program", True, cpv.CLASS_STACKED_PROGRAMS),
     ({}, "single_country", True, cpv.CLASS_SINGLE_JURISDICTION),
     ({}, "full_relocation", True, cpv.CLASS_SINGLE_JURISDICTION),
+    # GD-2 (Globe data contract remediation, 2026-09-20): every
+    # structural_family the structural generator persists under the broad
+    # structure_type="hybrid" now resolves to its own real classification
+    # -- confirmed defect was every one of these falling through to the
+    # generic SINGLE_JURISDICTION default (Codex delta audit GDC-001).
+    ({"structural_family": "ordinary_component_hybrid"}, "hybrid", True, cpv.CLASS_HYBRID_ANCHOR_COMPONENT),
+    ({"structural_family": "combined_coproduction_pair_stack"}, "hybrid", True, cpv.CLASS_COMBINED_COPRO_HYBRID_STACK),
+    ({"structural_family": "combined_coproduction_component_stack"}, "hybrid", True, cpv.CLASS_COMBINED_COPRO_HYBRID_STACK),
+    ({"structural_family": "combined_coproduction_multi_component_stack"}, "hybrid", True, cpv.CLASS_COMBINED_COPRO_HYBRID_STACK),
+    ({"structural_family": "combined_multilateral_coproduction_stack"}, "hybrid", True, cpv.CLASS_MULTI_PRINCIPAL_MULTILATERAL),
 ])
 def test_class_001_classification_is_derived_and_mutually_exclusive(trace, structure_type, is_priced, expected):
     result = cpv._structure_classification(trace, structure_type, is_priced)

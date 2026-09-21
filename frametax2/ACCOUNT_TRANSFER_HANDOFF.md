@@ -6,6 +6,46 @@
 
 ---
 
+## CURRENT STATE (2026-09-20) — GD-2/GD-3/GD-4 Globe Data Contract Remediation
+
+**Status: `GLOBE_DATA_CONTRACT_REMEDIATED`.** This section supersedes the "CURRENT STATE (2026-09-16)" section immediately below it for the branch tip; that section is preserved as history, not rewritten.
+
+**Starting SHA:** `7350004b29244bdee40f3b5cea260284be0221b4` (docs-only Globe data contract delta audit). **Scope:** ONLY GD-2 (canonical structural-family classification), GD-3 (participants/routed jurisdictions), GD-4 (per-structural-family retention/served contract) from `docs/validation/CODEX_OPTIMIZER_GLOBE_DATA_CONTRACT_DELTA.md` (Codex, audited at `08060f99e7c0faa036bd5ad3fb9e13ec75f885a3`, status `GLOBE_DATA_CONTRACT_NOT_ACCEPTED`). No research, rates, eligibility, discovery, or ranking changes; no Globe/frontend work.
+
+**`ENGINE_VERSION = "canonical-1.92.0"`** (was `1.91.0`). A served-contract + persistence-shape change, never an economics change -- no discovery, pricing, ranking, or dominance-proof logic changed; all four real productions' baselines are byte-identical to `1.91.0`.
+
+**GD-2 -- canonical structural family, now part of the persisted contract, not view-only:**
+- New shared module `app/services/structural_classification.py` owns the CLASS_* constants and `classify_structure(trace, structure_type, is_priced)` -- the single canonical enum/mapping. `canonical_production_view.py` re-exports the same names (no caller-visible rename) and its `_structure_classification()` now prefers a persisted `trace["structural_classification"]` stamp, falling back to live derivation only for historical pre-1.92.0 rows.
+- `canonical_evaluation.py`'s `_BulkEvaluationWriter._route()` -- the ONE call site every candidate already passes through exactly once -- computes `classify_structure(...)` and stamps it onto `calculation_trace_json["structural_classification"]` before the candidate is persisted (retained detail row or aggregate representative). This is what makes the classification a canonical PERSISTED value, not solely serve-time projection logic, and it is the exact value retention and aggregation now consume too (see GD-4).
+- Ordinary/combined/multilateral hybrid families (all persisted under the broad `structure_type="hybrid"`) now resolve to their own real classification instead of the generic `SINGLE_JURISDICTION` default: `ordinary_component_hybrid` -> `HYBRID_ANCHOR_COMPONENT`; `combined_coproduction_pair_stack`/`combined_coproduction_component_stack`/`combined_coproduction_multi_component_stack` -> `COMBINED_COPRO_HYBRID_STACK`; `combined_multilateral_coproduction_stack` -> new `MULTI_PRINCIPAL_MULTILATERAL` (previously not distinguished from the other combined families at all).
+
+**GD-3 -- participants now match every routed jurisdiction:**
+- `canonical_production_view.py::_empty_structure_entry()`'s claiming-participant derivation was scoped only to `structure_type="component_relocation"`. Broadened to `structure_type in ("component_relocation", "hybrid")`: a hybrid candidate's `component_allocations` (every routed leg's own real `jurisdiction_code`, already persisted) is now read the same way `segments` already was for component_relocation, gated on the same "never fabricate a claim for a non-priced/attempted route" discipline. `component_relocation`'s own existing (already-correct) segments-based derivation is untouched.
+
+**GD-4 -- bounded retention/aggregation preserve a per-family winner, served as `top_by_structural_family`:**
+- `candidate_retention.py`: `Held` carries a new `family` field (the canonical classification, GD-2's stamped value) and `BoundedRetention` gets a dedicated per-family lane (same `TYPE_TOP` budget as the per-type lane) plus `best_structure_id_by_family()`/`dominating_by_family`. Without this, a combined/multilateral candidate could be evicted from the bounded persisted set purely by an unrelated ordinary-hybrid competitor sharing the same broad `structure_type="hybrid"`.
+- `candidate_aggregation.py`: `candidate_group_identity()` carries the new `structural_classification` field (redundant with existing fields, so no group-fold granularity changes); `rows()` now reconciles each PRICED aggregate group's `dominating_structure_id` against the FAMILY-level dominator first, falling back to the type-level one only when the group carries no real classification (every non-hybrid `structure_type`, unchanged).
+- `canonical_production_view.py`: new served `top_by_structural_family` block, pre-seeded with every priced-eligible canonical family (`SINGLE_JURISDICTION`, `STACKED_PROGRAMS`, `HYBRID_ANCHOR_COMPONENT`, `OFFICIAL_COPRODUCTION`, `COMBINED_COPRO_HYBRID_STACK`, `MULTI_PRINCIPAL_MULTILATERAL`) so an available-but-absent family serves an honest `[]`, never a missing key. Ranked from the same already-computed `_retention_sort_key`-ordered `_priced_entries` list `top_by_structure_type` already uses -- no new ranking.
+
+**Tests:** 5 new rows in the existing `test_class_001_classification_is_derived_and_mutually_exclusive` parametrize table (`tests/test_claude_global_optimizer_p0_remediation.py`) plus a new 10-test synthetic file `tests/test_globe_data_contract_gd234.py` (no DB) covering: every canonical family classifies and never defaults to `SINGLE_JURISDICTION`; combined vs. multilateral are distinguishable; ordinary-hybrid and combined-pair participants exactly match their routed jurisdictions; an unpriced hybrid never fabricates a participant from an attempted route; `component_relocation`'s existing participants are unchanged; a family winner survives aggregation even when a different family's type-lane would have squeezed it out; an aggregate group's dominator prefers its own family's winner over the generic type winner; the type-level fallback still works when a group carries no real family; the served family set is exactly the priced-eligible six. All 10 passed standalone; one additional focused DB-backed node (`test_class_001_served_structure_entries_always_carry_a_classification_field`) proved the end-to-end persisted-stamp path against a real production. Per explicit operator instruction, no other previously-passing regression suite was rerun this pass.
+
+**Fresh four-production acceptance under canonical-1.92.0 (cold, sequential, one at a time, each under a 720s cap):**
+
+| Project | Time | Baseline incentive | Baseline NPC | Match |
+|---|---:|---:|---:|---|
+| The Little Utopia | (via focused test node) | $573,059.70 | $3,791,333.30 | exact |
+| Bad Hombres | 6.4s | $596,910.25 | $1,885,112.75 | exact |
+| F#K Valentine's Day | 176.4s | $1,445,659.84 | $3,072,027.16 | exact |
+| Lips Like Sugar | 480.2s | $3,459,278.90 | $8,524,375.10 | exact |
+
+All four `EVALUATION_COMPLETE`, all four baselines byte-identical to the `1.91.0` acceptance. Reuse verifier: re-ran Bad Hombres a second time -> `EVALUATION_REUSED`, identical baseline, identical retained row count (482 == 482, zero new rows).
+
+**Process discipline note (self-correction, recorded permanently in `PROJECT_RULES.md`'s new SCOPE EXCLUSION AND UNBOUNDED-PROCESS RULE):** mid-pass, two previously-completed regression suites (`test_canonical_served_wiring_repair.py`, `test_generic_structural_discovery_final_correction.py`) were launched as an unattended background process in violation of this task's own explicit exclusion. Stopped immediately on operator instruction before either suite produced any output; zero processes/connections remained afterward; no further attempt was made to run either suite this pass.
+
+**Not attempted this pass, per explicit scope boundary:** any research/rates/eligibility/discovery/ranking change; Globe/frontend/visual work; a new DB migration/column for `structural_classification` (it is persisted inside `calculation_trace_json`/the aggregate `representative` JSONB, which satisfies "part of the canonical persisted contract" without a schema change disproportionate to this bounded pass); re-verification of HO-001 through HO-013/the six registered controls under 1.92.0 (unaffected by this pass -- no discovery/ranking/pricing logic changed); the DB-connected semantic validator; reinvestment/in-kind (still shelved); base Globe UI/frontend wiring (still not started).
+
+---
+
 ## CURRENT STATE (2026-09-16) — Global Optimizer / Structural Stacking Remediation Lineage
 
 This section is authoritative for the `claude/global-optimizer-remediation` branch/lineage specifically (global stacking, structural archetype generation, alternate-anchor discovery). It does not supersede §0-§7 below, which cover the separate Production Knowledge Database / Cross-Model Bridge lineage on this same repo.
