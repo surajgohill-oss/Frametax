@@ -63,14 +63,18 @@ function optimizerCandidatesOf(structures) {
     .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
 }
 
-function allocatedOf({ structures, bpj, ranking = [], canonicalId = null, optimizerCandidates }) {
+function allocatedOf({ structures, bpj, ranking = [], canonicalId = null, optimizerCandidates, optimizerScenarios }) {
+  const candidates = optimizerCandidates ?? optimizerCandidatesOf(structures);
   return {
     structures,
     ranking,
     canonical_selected_structure_id: canonicalId,
     best_per_jurisdiction: bpj ?? bestPerJurisdiction(structures.filter((s) => s.classification === "SINGLE_JURISDICTION")),
     top_by_structural_family: {},
-    optimizer_candidates: optimizerCandidates ?? optimizerCandidatesOf(structures),
+    optimizer_candidates: candidates,
+    // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION: see identical comment in
+    // globe-single-and-optimizer-wiring.test.mjs.
+    optimizer_scenarios: optimizerScenarios ?? candidates,
   };
 }
 

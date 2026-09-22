@@ -190,9 +190,27 @@ function _hasUpsideGap(structure) {
 // (still real, disclosed, non-fabricated data) without manufacturing a
 // dollar figure no single fund, let alone their sum, actually guarantees
 // this specific production.
+// PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): the raw, bounded
+// `allocated.structures` page can carry several near-identical search/
+// enumeration iterations of the SAME optimizer route (see workspaceScenarioMode.js's
+// own header comment for the confirmed F#K Valentine's Day example) — this card must
+// never surface one of those raw iterations as "the Optimized structure". Every
+// optimizer-classified row is swapped for its canonical `optimizer_scenarios`
+// representative (one per materially distinct route, already lowest-NPC-selected);
+// every other row (single-jurisdiction, stacked, conditional, non-optimizer treaty)
+// passes through untouched.
+const _OPTIMIZER_FAMILY_SET = new Set([
+  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
+]);
+
+function _dedupedOptimizerPool(allocated) {
+  const nonOptimizer = (allocated.structures || []).filter((s) => !_OPTIMIZER_FAMILY_SET.has(s.classification));
+  return [...nonOptimizer, ...(allocated.optimizer_scenarios || [])];
+}
+
 export function selectMaxPotentialCard(allocated, excludeIds) {
   if (!allocated?.structures) return null;
-  const candidates = allocated.structures.filter((s) => !excludeIds.has(s.structure_id));
+  const candidates = _dedupedOptimizerPool(allocated).filter((s) => !excludeIds.has(s.structure_id));
 
   // Selection signal stays the total documented_cap_usd (a real,
   // disclosed per-program ceiling, summed only to RANK candidates

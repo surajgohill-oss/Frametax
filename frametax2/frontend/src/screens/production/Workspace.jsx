@@ -567,17 +567,20 @@ export default function Workspace() {
                 <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Normal</button>
                 <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
               </div>
-              {/* COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21): a truthful
-                  count of the complete canonical optimizer projection this
-                  mode's rack/dropdown/Globe surfaces all draw from —
-                  `allocated.optimizer_candidates_total` (canonical_production_
-                  view.py), never the length of whatever happens to render.
-                  Compact text, no new card/section — Overview's own compact
-                  presentation contract is unaffected since this label lives
-                  only here, next to the mode toggle it describes. */}
-              {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_candidates_total != null && (
+              {/* PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): a
+                  truthful count of the DISTINCT producer-facing optimizer
+                  scenarios this mode's rack/dropdown/Globe surfaces draw from
+                  — `allocated.optimizer_scenarios_total` (canonical_production_
+                  view.py), never the raw search-iteration count
+                  (optimizer_candidates_total, which counts multiple
+                  permutations of the same route separately) and never the
+                  length of whatever happens to render. Compact text, no new
+                  card/section — Overview's own compact presentation contract
+                  is unaffected since this label lives only here, next to the
+                  mode toggle it describes. */}
+              {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_scenarios_total != null && (
                 <span className="text-tertiary small" style={{ marginLeft: 10, whiteSpace: "nowrap" }}>
-                  {allocated.optimizer_candidates_total} optimized structure{allocated.optimizer_candidates_total === 1 ? "" : "s"}
+                  {allocated.optimizer_scenarios_total} optimized structure{allocated.optimizer_scenarios_total === 1 ? "" : "s"}
                 </span>
               )}
             </div>

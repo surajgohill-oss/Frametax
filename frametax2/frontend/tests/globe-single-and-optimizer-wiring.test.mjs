@@ -66,14 +66,21 @@ function optimizerCandidatesOf(structures) {
     .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
 }
 
-function allocatedOf({ structures, bpj, ranking = [], topByFamily = {}, optimizerCandidates }) {
+function allocatedOf({ structures, bpj, ranking = [], topByFamily = {}, optimizerCandidates, optimizerScenarios }) {
+  const candidates = optimizerCandidates ?? optimizerCandidatesOf(structures);
   return {
     structures,
     ranking,
     canonical_selected_structure_id: null,
     best_per_jurisdiction: bpj ?? bestPerJurisdiction(structures.filter((s) => s.classification === "SINGLE_JURISDICTION")),
     top_by_structural_family: topByFamily,
-    optimizer_candidates: optimizerCandidates ?? optimizerCandidatesOf(structures),
+    optimizer_candidates: candidates,
+    // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION: unit fixtures build one
+    // hand-crafted structure per conceptual route, so the scenario
+    // projection equals the candidate pool by default — the real backend
+    // grouping/collapse logic is pinned separately against live data in
+    // test_canonical_production_view.py.
+    optimizer_scenarios: optimizerScenarios ?? candidates,
   };
 }
 

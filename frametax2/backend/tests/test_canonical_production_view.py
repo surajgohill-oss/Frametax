@@ -278,3 +278,91 @@ async def test_optimizer_candidates_scoped_to_current_engine_generation(db: Asyn
         "optimizer_candidates must be a superset of the old bounded page's optimizer rows, "
         "not a different generation's data"
     )
+
+
+# ── PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21) ───────────────
+#
+# `optimizer_candidates` dedupes only by exact economic_identity, so multiple
+# search/enumeration iterations of the SAME producer-facing route (identical
+# participants/programs/jurisdiction-to-program routing, differing only by
+# which internal budget-category label triggered a non-principal leg, and a
+# few dollars of rounding) each kept their own row. `optimizer_scenarios` is
+# the canonical producer-facing fix: one entry per materially distinct route.
+# These tests pin the grouping contract against F#K Valentine's Day's own
+# confirmed live repeat (its first three optimizer_candidates are all
+# "Manitoba (principal) + Newfoundland & Labrador + Italy" at near-identical
+# economics).
+
+async def test_optimizer_scenarios_collapses_the_confirmed_fvd_manitoba_repeat(db: AsyncSession):
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    alloc = view["structures"]["allocated_structures"]
+    oc = alloc["optimizer_candidates"]
+    scenarios = alloc["optimizer_scenarios"]
+
+    # The three raw candidates this task's own bug report names.
+    repeats = [
+        e for e in oc[:5]
+        if e["primary_jurisdiction"] == "CA-MB" and set(e["participants"]) == {"CA-MB", "CA-NL", "IT"}
+    ]
+    assert len(repeats) >= 3, "expected at least 3 raw Manitoba+NL+Italy iterations among the first few candidates"
+
+    lowest_npc_id = min(repeats, key=lambda e: e["npc_verified_usd"])["structure_id"]
+    matching_scenarios = [
+        s for s in scenarios
+        if s["primary_jurisdiction"] == "CA-MB" and set(s["participants"]) == {"CA-MB", "CA-NL", "IT"}
+    ]
+    assert len(matching_scenarios) == 1, "the repeated Manitoba+NL+Italy route must collapse to exactly one scenario"
+    rep = matching_scenarios[0]
+    assert rep["structure_id"] == lowest_npc_id, "the representative must be the lowest-verified-NPC raw candidate"
+    assert rep["raw_variant_count"] >= 3
+    assert set(rep["raw_variant_structure_ids"]) >= {e["structure_id"] for e in repeats}
+
+
+async def test_optimizer_scenarios_never_collapses_a_materially_different_route(db: AsyncSession):
+    """A structure adding a fourth jurisdiction (e.g. Ontario) to the same
+    Manitoba+NL+Italy base is a genuinely different route and must remain
+    its own separate scenario, never merged into the 3-jurisdiction group."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    alloc = view["structures"]["allocated_structures"]
+    scenarios = alloc["optimizer_scenarios"]
+    three_way = [s for s in scenarios if set(s["participants"]) == {"CA-MB", "CA-NL", "IT"}]
+    four_way = [s for s in scenarios if set(s["participants"]) == {"CA-MB", "CA-NL", "CA-ON", "IT"}]
+    assert three_way, "the 3-jurisdiction route must survive as its own scenario"
+    assert four_way, "the 4-jurisdiction route must survive as its own separate scenario"
+    assert three_way[0]["structure_id"] != four_way[0]["structure_id"]
+
+
+async def test_optimizer_scenarios_total_is_less_than_optimizer_candidates_total_when_repeats_exist(db: AsyncSession):
+    for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
+        view = await build_production_and_structures(db, project_id)
+        alloc = view["structures"]["allocated_structures"]
+        assert alloc["optimizer_scenarios_total"] < alloc["optimizer_candidates_total"], (
+            f"{project_id}: real search-permutation repeats are expected in this dataset; "
+            "scenarios must be strictly fewer than raw candidates"
+        )
+        assert alloc["optimizer_scenarios_total"] == len(alloc["optimizer_scenarios"])
+        assert sum(alloc["optimizer_scenarios_by_family"].values()) == alloc["optimizer_scenarios_total"]
+
+
+async def test_optimizer_scenarios_every_raw_candidate_is_accounted_for_exactly_once(db: AsyncSession):
+    """Auditability: every raw optimizer_candidates row must appear in
+    exactly one scenario's raw_variant_structure_ids list — nothing is
+    dropped, nothing is double-counted."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    alloc = view["structures"]["allocated_structures"]
+    all_raw_ids = {e["structure_id"] for e in alloc["optimizer_candidates"]}
+    accounted = []
+    for s in alloc["optimizer_scenarios"]:
+        accounted.extend(s["raw_variant_structure_ids"])
+    assert len(accounted) == len(set(accounted)) == len(all_raw_ids)
+    assert set(accounted) == all_raw_ids
+    assert sum(s["raw_variant_count"] for s in alloc["optimizer_scenarios"]) == len(alloc["optimizer_candidates"])
+
+
+async def test_optimizer_candidates_untouched_by_scenario_grouping(db: AsyncSession):
+    """Raw candidate evidence must never be mutated or removed by the
+    grouping pass — same count, same rows, before and after."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    alloc = view["structures"]["allocated_structures"]
+    for e in alloc["optimizer_candidates"][:5]:
+        assert "raw_variant_count" not in e, "raw optimizer_candidates rows must never carry scenario-grouping annotations"

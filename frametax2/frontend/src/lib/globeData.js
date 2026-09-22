@@ -525,6 +525,13 @@ export function buildCandidateDetail(structure) {
     blockers: structure.blockers || [],
     warnings: structure.warnings || [],
     components,
+    // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): present only on an
+    // optimizer_scenarios representative (canonical_production_view.py) — the count of
+    // raw search/enumeration iterations this one canonical scenario collapsed. Absent
+    // (undefined) for a raw candidate/segment/jurisdiction-winner structure, which never
+    // had a grouping pass applied to it; the Inspector shows the disclosure line only
+    // when this is a real number greater than 1, never a fabricated "1 variant".
+    raw_variant_count: structure.raw_variant_count ?? undefined,
   };
 }
 

@@ -91,7 +91,7 @@ test("buildCountryHoverData's baseIncentive/segmentIncentiveUsd are populated (n
   const s = hybridStructure();
   const rankById = new Map();
   const view = buildGlobeView(
-    { structures: [s], ranking: [], canonical_selected_structure_id: null, best_per_jurisdiction: {}, top_by_structural_family: {}, optimizer_candidates: [s] },
+    { structures: [s], ranking: [], canonical_selected_structure_id: null, best_per_jurisdiction: {}, top_by_structural_family: {}, optimizer_candidates: [s], optimizer_scenarios: [s] },
     rankById,
     { mode: MODE_OPTIMIZER, leadingStructureId: "hy-1" },
   );
@@ -108,7 +108,7 @@ test("buildCountryHoverData's baseIncentive/segmentIncentiveUsd are populated (n
 test("buildOptimizerPathway's points/arcs carry real qpeUsd from component_allocations, not null for every leg", async () => {
   const { buildOptimizerPathway } = await import("../src/lib/globeData.js");
   const s = hybridStructure();
-  const pathway = buildOptimizerPathway({ structures: [s], optimizer_candidates: [s] }, "hy-1");
+  const pathway = buildOptimizerPathway({ structures: [s], optimizer_candidates: [s], optimizer_scenarios: [s] }, "hy-1");
   const nlPoint = pathway.points.find((p) => p.id === "CA-NL");
   assert.equal(nlPoint.qpeUsd, 9_068);
 });

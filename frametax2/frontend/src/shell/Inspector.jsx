@@ -433,6 +433,16 @@ function StructureDetailInspector({ data }) {
         <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
+      {/* PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): disclosure only —
+          this scenario is one canonical representative of N raw search/enumeration
+          iterations of the same route (canonical_production_view.py's optimizer_scenarios
+          grouping); never rendered as a separate headline per iteration. Shown only when
+          a real grouping pass collapsed more than one raw variant. */}
+      {data.raw_variant_count > 1 && (
+        <p className="text-tertiary small" style={{ margin: "-4px 0 8px" }}>
+          {data.raw_variant_count} raw optimizer variants evaluated
+        </p>
+      )}
       {components.length > 0 && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>

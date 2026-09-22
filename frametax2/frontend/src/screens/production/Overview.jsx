@@ -5,7 +5,7 @@ import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, activeStructure, buildCandidateDetail } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, rankOrNpcOrder } from "../../lib/productionOptions";
 import ProductionDetails from "../../components/ProductionDetails";
@@ -125,11 +125,16 @@ export default function Overview() {
   // Production Options card click — same inspect pattern Scenarios.jsx
   // already uses (open the structure's first segment, or its
   // recommendation if it has no segments yet).
+  // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): a Top Structures card
+  // click selects a whole STRUCTURE — its own complete identity via the one canonical
+  // structure-level adapter (globeData.js, the same one ProjectGlobe.jsx/Workspace.jsx
+  // use), never an arbitrary `segments[0]` (which silently picked WHICHEVER participant's
+  // segment happened to be first, not necessarily the one that makes this card distinct —
+  // the exact CODEX_FG-002 defect already fixed for the Globe/Workspace click paths).
   function openIntelligenceCard(s) {
     setSelectedJurisdiction(s.primary_jurisdiction || s.participants?.[0] || null);
-    const seg = s.segments?.[0];
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
-    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+    if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+    else openInspector("candidate-structure", buildCandidateDetail(s));
   }
 
   function handleGlobeClick(pt) {

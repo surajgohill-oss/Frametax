@@ -125,9 +125,17 @@ test("Overview's Budget card falls back to bestPricedCandidate (the SAME functio
   // byte-exact to the July 30 freeze) — same function, same single source
   // every caller shares, different file.
   const src = stripComments(read("screens/production/Overview.jsx"));
-  assert.match(src, /import \{ buildGlobeView, activeStructure \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /import \{ buildGlobeView, activeStructure, buildCandidateDetail \} from "\.\.\/\.\.\/lib\/globeData";/);
   assert.match(src, /import \{ bestPricedCandidate \} from "\.\.\/\.\.\/lib\/bestPricedCandidate";/);
-  assert.match(src, /const structure = allocated \? \(activeStructure\(allocated, leadingStructureId\) \|\| bestPricedCandidate\(allocated\)\) : null;/);
+  // PROJECT_UI_DATA_INTEGRITY (2026-09-21) extended the two-step fallback
+  // this test originally pinned into a four-step chain (Leading -> real
+  // bestPricedCandidate -> top-ranked -> the production's own anchor,
+  // which always exists) so the Budget card is never blank even when
+  // neither a Leading selection nor a comparable priced candidate exists —
+  // bestPricedCandidate is still the SAME real function, still checked
+  // before any further fallback, never bypassed.
+  assert.match(src, /const _leadingOrBest = allocated \? \(activeStructure\(allocated, leadingStructureId\) \|\| bestPricedCandidate\(allocated\)\) : null;/);
+  assert.match(src, /const structure = _leadingOrBest \|\| _topRanked \|\| _anchor \|\| null;/);
 });
 
 test("BudgetRail is self-labeled (Leading/Top Priced) so it can never be read as silently contradicting the Hero", () => {

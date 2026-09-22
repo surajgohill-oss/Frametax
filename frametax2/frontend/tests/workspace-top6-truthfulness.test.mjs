@@ -146,10 +146,29 @@ test("Workspace's BEST PRICED role reuses bestPricedCandidate — the SAME selec
 
 // A. review_required (no canonical rank) still sorts deterministically —
 // priced-cheapest-first — never arbitrary array order.
-test("visibleStructures tie-breaks unranked structures by real NPC, never leaving array order to decide the primary six", () => {
-  const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /npc_with_adjustments_usd \?\? Infinity/);
-  assert.match(src, /an - bn/);
+//
+// This logic no longer lives inline in Workspace.jsx (it was extracted into
+// productionOptions.js's rankOrNpcOrder() — the same shared, exported,
+// directly-testable function Workspace.jsx now imports and reuses rather
+// than carrying its own copy — see item 7 of the Consolidated UI closeout:
+// "Do not duplicate business logic independently in two React
+// components"). Replaced the stale inline-source-pattern check with a real
+// call to that function, proving the actual tie-break behavior rather than
+// asserting where the code physically lives.
+test("rankOrNpcOrder (the function Workspace.jsx's visibleStructures reuses) tie-breaks unranked structures by real NPC, never array order", async () => {
+  const { rankOrNpcOrder } = await import("../src/lib/productionOptions.js");
+  const allocated = {
+    structures: [
+      { structure_id: "c", is_fully_priced: true, npc_with_adjustments_usd: 300 },
+      { structure_id: "a", is_fully_priced: true, npc_with_adjustments_usd: 100 },
+      { structure_id: "b", is_fully_priced: true, npc_with_adjustments_usd: 200 },
+    ],
+    // None of these three carry a real rank — every tie-break must come
+    // from NPC ascending, never the original array position.
+    ranking: [],
+  };
+  const ordered = rankOrNpcOrder(allocated);
+  assert.deepEqual(ordered.map((s) => s.structure_id), ["a", "b", "c"], "unranked structures must sort by ascending NPC, never left in raw array order");
 });
 
 // G. Recommendation vs top-priced-candidate/leading-structure semantics
@@ -265,12 +284,26 @@ test("no Lips Like Sugar/project-UUID branching in the repaired Workspace/Hero/f
 // LEADING/TOP PRICED label derivation moved into the shared
 // components/FXStrip.jsx (Overview needs the identical derivation and
 // must not carry a second copy of it).
-test("the dynamic FX slot is driven by activeStructure (Leading) when it resolves, labeled LEADING", () => {
+// PROJECT_UI_DATA_INTEGRITY (2026-09-21) evolved this from a plain Leading/
+// Top-Priced binary to a real three-state resolution (LEADING / real
+// bestPricedCandidate / CURRENT_LOCATION anchor fallback, so the dynamic
+// slot is never blank when neither a producer selection nor a comparable
+// priced candidate exists) — the prior two tests here pinned the earlier
+// two-state shape. Updated to match the current, still-real chain: Leading
+// wins, then the SAME bestPricedCandidate() selection the Hero/BudgetRail
+// already use, then the production's own anchor — never a second,
+// independently-invented "best" computation for the FX rail alone.
+test("the dynamic FX slot resolves LEADING, then the SAME bestPricedCandidate() selection the Hero uses, then falls back to the anchor — never blank", () => {
   const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /const dynamicFxStructure = leadingStructure \|\| bestPricedCandidate\(allocated\);/);
+  assert.match(src, /const bestPriced = bestPricedCandidate\(allocated\);/);
+  assert.match(src, /const dynamicFxStructure = leadingStructure \|\| bestPriced \|\| cols\[1\] \|\| cols\[0\];/);
   assert.match(src, /const dynamicFxIsLeading = !!leadingStructure;/);
   const fxStripSrc = stripComments(read("components/FXStrip.jsx"));
-  assert.match(fxStripSrc, /const dynamicLabel = structureIsLeading \? "LEADING" : \(structure \? "TOP PRICED" : null\);/);
+  assert.match(
+    fxStripSrc,
+    /const dynamicLabel = structureIsLeading\s*\n?\s*\? "LEADING"\s*\n?\s*: structureIsCurrentLocation\s*\n?\s*\? "CURRENT_LOCATION"\s*\n?\s*: \(structure \? "TOP PRICED" : null\);/,
+    "must resolve all three real states — LEADING, CURRENT_LOCATION, TOP PRICED — never collapse back to a two-state binary",
+  );
 });
 
 // H. No Leading exists but a Top Priced candidate does — the SAME real
@@ -283,7 +316,7 @@ test("bestPricedCandidate (imported from the same module the Hero uses) drives t
   // byte-exact to the July 30 freeze) — same function, same single source
   // every caller shares, different file.
   const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail \} from "\.\.\/\.\.\/lib\/globeData";/);
   assert.match(src, /import \{ bestPricedCandidate \} from "\.\.\/\.\.\/lib\/bestPricedCandidate";/);
 });
 
@@ -324,7 +357,35 @@ test("a resolved currency with no snapshot entry renders its own code plus a tru
   assert.doesNotMatch(computeSrc, /SAR|Saudi/, "no jurisdiction/currency may be special-cased by name in the FX compute module");
 });
 
-test("the LEADING/TOP PRICED tag is self-contained on the resolved dynamic slot, never a detached label over an unresolved cell", () => {
+// PROJECT_UI_DATA_INTEGRITY (2026-09-21) added the third CURRENT_LOCATION
+// state — updated to match the current three-way tag text, same self-
+// contained-on-the-resolved-cell guard (it.isLeader && it.leaderLabel)
+// unchanged.
+test("the LEADING/CURRENT_LOCATION/TOP PRICED tag is self-contained on the resolved dynamic slot, never a detached label over an unresolved cell", () => {
   const src = stripComments(read("components/FXStrip.jsx"));
-  assert.match(src, /it\.isLeader && it\.leaderLabel && <span className="wsx-fx-tag">\{it\.leaderLabel === "LEADING" \? "Leading" : "Top Priced"\}<\/span>/);
+  assert.match(
+    src,
+    /\{it\.isLeader && it\.leaderLabel && \(\s*\n?\s*<span className="wsx-fx-tag">\s*\n?\s*\{it\.leaderLabel === "LEADING" \? "Leading" : it\.leaderLabel === "CURRENT_LOCATION" \? "Current Location" : "Top Priced"\}/,
+  );
+});
+
+// PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21) — genuine
+// behavioral coverage (this file's convention is source-regex only; there
+// is no DOM harness here to render FXStrip itself, but buildLeaderFxItems
+// is a real, pure, directly-callable function): confirm the label the
+// caller resolves (LEADING/CURRENT_LOCATION/TOP PRICED) is threaded
+// through verbatim onto every returned FX cell, for a real multi-
+// jurisdiction structure.
+test("buildLeaderFxItems threads the resolved leaderLabel through onto every FX cell, whatever label the caller resolved", async () => {
+  const { buildLeaderFxItems } = await import("../src/lib/todayCompute.js");
+  const economics = { fx_horizons: { CAD: { current: 1.4, "12m": 1.35 } }, jurisdiction_currency: { CA: "CAD" } };
+  const structure = { participants: ["CA-MB"], primary_jurisdiction: "CA-MB" };
+  for (const label of ["LEADING", "CURRENT_LOCATION", "TOP PRICED"]) {
+    const items = buildLeaderFxItems(economics, structure, label);
+    assert.ok(items.length > 0, `expected at least one FX cell for label=${label}`);
+    for (const item of items) {
+      assert.equal(item.isLeader, true);
+      assert.equal(item.leaderLabel, label, "the cell must carry the EXACT label the caller resolved, never a re-derived one");
+    }
+  }
 });

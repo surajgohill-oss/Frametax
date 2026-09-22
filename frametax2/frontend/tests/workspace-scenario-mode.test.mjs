@@ -76,12 +76,19 @@ function optimizerCandidatesOf(entries) {
     .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
 }
 
-function allocatedOf(structures, bpjEntries, optimizerEntries) {
+function allocatedOf(structures, bpjEntries, optimizerEntries, optimizerScenarios) {
+  const candidates = optimizerEntries ?? optimizerCandidatesOf(structures);
   return {
     structures,
     ranking: [],
     best_per_jurisdiction: bestPerJurisdiction(bpjEntries ?? structures.filter((s) => NORMAL_FAMILIES.includes(s.classification))),
-    optimizer_candidates: optimizerEntries ?? optimizerCandidatesOf(structures),
+    optimizer_candidates: candidates,
+    // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): unit
+    // fixtures build one hand-crafted structure per conceptual route, so the
+    // scenario projection equals the candidate pool by default — the real
+    // backend grouping/collapse logic is pinned separately against live
+    // data in test_canonical_production_view.py.
+    optimizer_scenarios: optimizerScenarios ?? candidates,
   };
 }
 
@@ -123,6 +130,26 @@ test("admissibleForMode (Single Jurisdiction): ordered by canonical NPC ascendin
   const allocated = allocatedOf([a, b, c], [a, b, c]);
   const admissible = admissibleForMode(allocated, MODE_NORMAL);
   assert.deepEqual(admissible.map((s) => s.structure_id), ["b", "c", "a"]);
+});
+
+// PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): admissibleForMode
+// must read the canonical `optimizer_scenarios` projection, never the raw
+// `optimizer_candidates` collection — even when both are present and differ
+// (the exact live shape: optimizer_candidates has 3 raw Manitoba+NL+Italy
+// iterations, optimizer_scenarios has already collapsed them to 1).
+test("admissibleForMode (Optimizer): reads allocated.optimizer_scenarios, never the raw optimizer_candidates collection", () => {
+  const rawA = structure({ structure_id: "raw-a", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-a", npc_with_adjustments_usd: 1 });
+  const rawB = structure({ structure_id: "raw-b", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-b", npc_with_adjustments_usd: 2 });
+  const rawC = structure({ structure_id: "raw-c", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-c", npc_with_adjustments_usd: 3 });
+  const scenarioRep = { ...rawA, raw_variant_count: 3, raw_variant_structure_ids: ["raw-a", "raw-b", "raw-c"] };
+  const allocated = {
+    structures: [rawA, rawB, rawC], ranking: [], best_per_jurisdiction: {},
+    optimizer_candidates: [rawA, rawB, rawC],
+    optimizer_scenarios: [scenarioRep],
+  };
+  const admissible = admissibleForMode(allocated, MODE_OPTIMIZER);
+  assert.deepEqual(admissible.map((s) => s.structure_id), ["raw-a"], "must resolve through optimizer_scenarios (1 collapsed entry), never the 3 raw candidates");
+  assert.equal(admissible[0].raw_variant_count, 3);
 });
 
 test("admissibleForMode (Optimizer): every canonical multi-jurisdiction family is admitted, single-jurisdiction families are not", () => {

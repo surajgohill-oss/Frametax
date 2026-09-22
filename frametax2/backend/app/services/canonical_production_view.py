@@ -1791,6 +1791,77 @@ async def build_production_and_structures(
         for family in sorted(_OPTIMIZER_STRUCTURE_FAMILIES)
     }
 
+    # PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): `optimizer_candidates`
+    # (above) is the complete RAW priced set -- correct for auditability, but it dedupes
+    # only by exact economic_identity, so multiple search/enumeration iterations of the
+    # SAME producer-facing route (identical participants, programs and jurisdiction-to-
+    # program routing, differing only in which internal budget category label -- "music"
+    # vs "post" vs "vfx" -- happened to trigger a given non-principal leg, and in a few
+    # dollars of allocation-order rounding) all surface as separate cards. Confirmed live
+    # for F#K Valentine's Day: candidates 0-2 of optimizer_candidates are all "Manitoba
+    # (principal) + [CA-NL claiming ca_nl_all_spend_credit] + [IT claiming
+    # it_tax_credit_foreign]" -- the ONLY difference is which of "music"/"post"/"vfx"
+    # labels the search attached to the CA-NL and IT legs; the real (jurisdiction ->
+    # program) routing and every dollar figure worth showing a producer is materially
+    # identical. `optimizer_scenarios` is the ONE canonical producer-facing projection:
+    # one entry per materially distinct route, keyed by
+    # (classification, primary_jurisdiction, sorted participants, sorted
+    #  (jurisdiction_code, program_slug, is_principal_component) triples, treaty_slug) --
+    # explicitly EXCLUDING structure_id, economic_identity, search/enumeration order and
+    # the specific non-principal component/category label (which is an internal search-
+    # path artifact, never a materially different route). `is_principal_component`
+    # (component == "principal_production") is retained in the key specifically so a
+    # genuine multi-principal/treaty structure where role assignment differs (item 7 of
+    # the task) is never collapsed with one where it doesn't -- the FVD case above never
+    # has more than one principal leg, so this dimension is inert for it but load-bearing
+    # for OFFICIAL_COPRODUCTION/MULTI_PRINCIPAL_MULTILATERAL once real candidates exist in
+    # those families. The lowest-verified-NPC member of each group is the representative
+    # (a shallow copy, annotated with raw_variant_count/raw_variant_structure_ids/
+    # raw_variant_economic_identities for audit traceability back to the untouched
+    # optimizer_candidates rows) -- optimizer_candidates itself is never mutated.
+    def _scenario_topology_key(e):
+        rows = e.get("segments") or e.get("component_allocations") or []
+        triples = set()
+        for r in rows:
+            code = r.get("jurisdiction_code")
+            slug = r.get("program_slug")
+            is_principal = r.get("component") == "principal_production"
+            triples.add((code, slug, is_principal))
+        return (
+            e.get("classification"),
+            e.get("primary_jurisdiction"),
+            tuple(sorted(e.get("participants") or [])),
+            tuple(sorted(triples, key=lambda t: (t[0] or "", t[1] or "", t[2]))),
+            e.get("treaty_slug"),
+        )
+
+    def _scenario_sort_key(e):
+        return (
+            e["npc_verified_usd"] if e.get("npc_verified_usd") is not None else float("inf"),
+            _identity_by_structure.get(e["structure_id"], ""),
+        )
+
+    _scenario_groups: dict[tuple, list[dict]] = {}
+    for _e in optimizer_candidates:
+        _scenario_groups.setdefault(_scenario_topology_key(_e), []).append(_e)
+
+    optimizer_scenarios = []
+    for _group in _scenario_groups.values():
+        _group_sorted = sorted(_group, key=_scenario_sort_key)
+        _rep = dict(_group_sorted[0])
+        _rep["raw_variant_count"] = len(_group_sorted)
+        _rep["raw_variant_structure_ids"] = [g["structure_id"] for g in _group_sorted]
+        _rep["raw_variant_economic_identities"] = [
+            _identity_by_structure.get(g["structure_id"]) for g in _group_sorted
+        ]
+        optimizer_scenarios.append(_rep)
+    optimizer_scenarios.sort(key=_scenario_sort_key)
+    optimizer_scenarios_total = len(optimizer_scenarios)
+    optimizer_scenarios_by_family = {
+        family: sum(1 for e in optimizer_scenarios if e["classification"] == family)
+        for family in sorted(_OPTIMIZER_STRUCTURE_FAMILIES)
+    }
+
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
     # Everything above (selection, ranking, conditional pool, accounting) ran over ALL served
     # candidates. What is RETURNED in detail is one deterministic page of them: the headline
@@ -1909,6 +1980,12 @@ async def build_production_and_structures(
             "optimizer_candidates": optimizer_candidates,
             "optimizer_candidates_total": optimizer_candidates_total,
             "optimizer_candidates_by_family": optimizer_candidates_by_family,
+            # PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): the ONE canonical
+            # producer-facing projection every UI surface must read from -- see the comment
+            # above `_scenario_topology_key`'s construction for the full grouping contract.
+            "optimizer_scenarios": optimizer_scenarios,
+            "optimizer_scenarios_total": optimizer_scenarios_total,
+            "optimizer_scenarios_by_family": optimizer_scenarios_by_family,
             "retention": {
                 "policy": {
                     "global_top": GLOBAL_TOP, "per_structure_type_top": TYPE_TOP,

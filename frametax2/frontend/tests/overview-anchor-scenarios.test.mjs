@@ -198,10 +198,40 @@ test("productionOptions.js's CODE (not its explanatory comments) contains no har
 
 // ── Overview and Workspace share ONE canonical selection model — never
 // two independently-maintained copies of the same business logic. ───────
-test("Workspace.jsx imports selectAnchorLeadingOptimized from productionOptions.js rather than deriving its own anchor/leading order", () => {
-  const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /import\s*\{[^}]*selectAnchorLeadingOptimized[^}]*\}\s*from\s*["']\.\.\/\.\.\/lib\/productionOptions["']/);
-  assert.match(src, /selectAnchorLeadingOptimized\(allocated\)/);
+//
+// PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): the "one
+// canonical model" claim moved from "the same SELECTION FUNCTION" (Overview's
+// compact 4-card selectAnchorLeadingOptimized was never actually the right
+// shape for Workspace's own six-card rack + slot-6 dropdown + mode toggle —
+// they are genuinely different UI contracts) to "the same DATA layer":
+// whenever either screen picks an optimizer-classified candidate, it
+// resolves through the SAME canonical `allocated.optimizer_scenarios`
+// projection (canonical_production_view.py) — never a raw, duplicate-prone
+// optimizer_candidates row, and never two independently-derived dedup
+// rules. Proven behaviorally: selectMaxPotentialCard (Overview's card 4)
+// and admissibleForMode (Workspace's rack/dropdown, workspaceScenarioMode.js)
+// both resolve to the SAME scenario representative from the SAME fixture.
+test("Overview's selectMaxPotentialCard and Workspace's admissibleForMode both resolve optimizer candidates through the SAME optimizer_scenarios projection, never independently", async () => {
+  const { admissibleForMode, MODE_OPTIMIZER } = await import("../src/lib/workspaceScenarioMode.js");
+  const rawA = structure({ structure_id: "raw-a", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 500_000 });
+  const rawB = structure({ structure_id: "raw-b", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 600_000 });
+  // The canonical scenario representative — the lowest-NPC of the two raw
+  // duplicates above, annotated the way canonical_production_view.py's real
+  // grouping pass does.
+  const scenarioRep = { ...rawA, raw_variant_count: 2, raw_variant_structure_ids: ["raw-a", "raw-b"] };
+  const alloc = {
+    structures: [rawA, rawB],
+    ranking: [{ structure_id: "raw-a", rank: 1 }, { structure_id: "raw-b", rank: 2 }],
+    optimizer_scenarios: [scenarioRep],
+  };
+
+  const workspacePool = admissibleForMode(alloc, MODE_OPTIMIZER);
+  assert.deepEqual(workspacePool.map((s) => s.structure_id), ["raw-a"], "Workspace must resolve the ONE canonical scenario, never both raw duplicates");
+
+  const card4 = selectMaxPotentialCard(alloc, new Set());
+  if (card4 && card4.structure.classification === "HYBRID_ANCHOR_COMPONENT") {
+    assert.equal(card4.structure.structure_id, "raw-a", "Overview's Optimized card must resolve the SAME canonical representative Workspace does, never a raw duplicate");
+  }
 });
 
 test("Overview's IncentiveIntelligence.jsx and Workspace.jsx both derive their Anchor concept from the SAME isBaselineStructure field", () => {

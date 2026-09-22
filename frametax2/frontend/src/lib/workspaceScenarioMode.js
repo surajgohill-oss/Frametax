@@ -104,31 +104,45 @@ function _dedupeOptimizer(structures) {
 // page (just incompletely) — so 318 real, priced, producer-selectable
 // optimizer candidates were silently unreachable in every UI surface.
 //
-// `allocated.optimizer_candidates` (canonical_production_view.py) is the
-// backend's own complete fix: every PRICED candidate in an optimizer family
-// (HYBRID_ANCHOR_COMPONENT, OFFICIAL_COPRODUCTION, COMBINED_COPRO_HYBRID_STACK,
-// MULTI_PRINCIPAL_MULTILATERAL), uncapped, already deduplicated by canonical
-// `economic_identity`, already sorted by canonical NPC ascending. Consumed
-// directly — no page reconstruction, no per-family backstop, no re-dedup by
-// participants/programs (which previously risked collapsing distinct routed
-// structures that merely shared a jurisdiction).
-function _optimizerCandidates(allocated) {
-  return allocated?.optimizer_candidates || [];
+// `allocated.optimizer_candidates` (canonical_production_view.py) was the
+// backend's complete fix for that: every PRICED candidate in an optimizer
+// family, uncapped, deduplicated by real economic_identity. It is still
+// served (and still complete) for auditability, but it dedupes only by
+// exact economic_identity — multiple search/enumeration iterations of the
+// SAME producer-facing route (identical participants/programs/routing,
+// differing only by which internal budget-category label triggered a leg,
+// and a few dollars of rounding) each keep their own row. Confirmed live:
+// F#K Valentine's Day's optimizer_candidates[0..2] are all "Manitoba
+// (principal) + Newfoundland & Labrador + Italy" at materially the same
+// economics — Workspace and Globe repeated the same apparent card three
+// times in a row.
+//
+// PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21):
+// `allocated.optimizer_scenarios` is the backend's canonical producer-
+// facing projection — one entry per materially distinct route (grouped by
+// classification/primary jurisdiction/participants/routed jurisdiction-to-
+// program topology/treaty identity, never by structure_id, economic_
+// identity or search order), each the group's own lowest-verified-NPC
+// representative, uncapped, already sorted by canonical NPC ascending.
+// Every optimizer-consuming UI surface reads THIS, never the raw
+// optimizer_candidates collection.
+function _optimizerScenarios(allocated) {
+  return allocated?.optimizer_scenarios || [];
 }
 
 // Every candidate admissible for `mode`. Single Jurisdiction mode reads
 // the canonical best_per_jurisdiction projection directly (see above);
-// Optimizer mode reads the canonical optimizer_candidates projection
-// directly (see _optimizerCandidates above) — neither re-derives an
+// Optimizer mode reads the canonical optimizer_scenarios projection
+// directly (see _optimizerScenarios above) — neither re-derives an
 // ordering or dedup client-side. Disclosed conditional grant/fund
 // opportunities (CONDITIONAL_USER_FACT_REQUIRED — a real registry entry
 // with a real project fact still missing) are appended strictly after
-// every priced Optimizer candidate, never promoted ahead of one, and are
-// NOT part of the optimizer candidate count (they are not yet executable).
+// every priced Optimizer scenario, never promoted ahead of one, and are
+// NOT part of the optimizer scenario count (they are not yet executable).
 export function admissibleForMode(allocated, mode) {
   if (!allocated) return [];
   if (mode !== MODE_OPTIMIZER) return _singleJurisdictionCandidates(allocated);
-  const priced = _optimizerCandidates(allocated);
+  const priced = _optimizerScenarios(allocated);
   const opportunities = _dedupeOptimizer(
     (allocated.structures || []).filter((s) => s.classification === CONDITIONAL_OPPORTUNITY_CLASS),
   );
