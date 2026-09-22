@@ -75,6 +75,7 @@ function allocatedOf({ structures, bpj, ranking = [], topByFamily = {}, canonica
     // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION: see identical comment in
     // globe-single-and-optimizer-wiring.test.mjs.
     optimizer_scenarios: optimizerScenarios ?? candidates,
+    producer_optimizer_options: optimizerScenarios ?? candidates,
   };
 }
 

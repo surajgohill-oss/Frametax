@@ -162,16 +162,6 @@ function _rankOrNpcOrder(allocated) {
     });
 }
 
-function _hasUpsideGap(structure) {
-  const claiming = (structure.segments || []).filter((sg) => sg.claims_incentive);
-  const floors = claiming.map((sg) => sg.rate_floor).filter((r) => r != null);
-  const ceilings = claiming.map((sg) => sg.rate_ceiling ?? sg.rate_floor).filter((r) => r != null);
-  if (!floors.length || !ceilings.length) return false;
-  const floor = Math.min(...floors);
-  const ceiling = Math.max(...ceilings);
-  return Math.round(floor * 10000) !== Math.round(ceiling * 10000);
-}
-
 // F#K Valentine's Day economic/semantic regression fix (2026-09-03):
 // this used to sum every conditional_programs[].documented_cap_usd and
 // present the total as "Potential up to $X" — for FVD's real Manitoba
@@ -190,61 +180,13 @@ function _hasUpsideGap(structure) {
 // (still real, disclosed, non-fabricated data) without manufacturing a
 // dollar figure no single fund, let alone their sum, actually guarantees
 // this specific production.
-// PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): the raw, bounded
-// `allocated.structures` page can carry several near-identical search/
-// enumeration iterations of the SAME optimizer route (see workspaceScenarioMode.js's
-// own header comment for the confirmed F#K Valentine's Day example) — this card must
-// never surface one of those raw iterations as "the Optimized structure". Every
-// optimizer-classified row is swapped for its canonical `optimizer_scenarios`
-// representative (one per materially distinct route, already lowest-NPC-selected);
-// every other row (single-jurisdiction, stacked, conditional, non-optimizer treaty)
-// passes through untouched.
-const _OPTIMIZER_FAMILY_SET = new Set([
-  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
-]);
-
-function _dedupedOptimizerPool(allocated) {
-  const nonOptimizer = (allocated.structures || []).filter((s) => !_OPTIMIZER_FAMILY_SET.has(s.classification));
-  return [...nonOptimizer, ...(allocated.optimizer_scenarios || [])];
-}
-
 export function selectMaxPotentialCard(allocated, excludeIds) {
   if (!allocated?.structures) return null;
-  const candidates = _dedupedOptimizerPool(allocated).filter((s) => !excludeIds.has(s.structure_id));
-
-  // Selection signal stays the total documented_cap_usd (a real,
-  // disclosed per-program ceiling, summed only to RANK candidates
-  // against each other — never displayed as a dollar figure; see the
-  // rendering fix in IncentiveIntelligence.jsx). Ranking by fund COUNT
-  // instead was tried and reverted: it picked a differently-labeled
-  // treaty/co-production structure over the real single-jurisdiction
-  // relocation candidate the cap-sum ranking already correctly
-  // surfaced — changing WHICH structure Card 4 selects was never the
-  // defect here, only what dollar figure it displayed.
-  let bestFund = null;
-  let bestFundCap = 0;
-  let bestFundNames = [];
-  for (const s of candidates) {
-    const programs = s.conditional_programs || [];
-    const cap = programs.reduce((sum, p) => sum + (p.documented_cap_usd || 0), 0);
-    if (cap > bestFundCap) {
-      bestFundCap = cap;
-      bestFundNames = programs.map((p) => p.program_name).filter(Boolean);
-      bestFund = s;
-    }
+  const practical = (allocated.producer_optimizer_options || [])
+    .find((s) => !excludeIds.has(s.structure_id));
+  if (practical) {
+    return { structure: practical, isOpportunity: false, isProducerOptimizer: true, potentialUsd: null, fundCount: 0, fundNames: [] };
   }
-  if (bestFund) return { structure: bestFund, isOpportunity: true, potentialUsd: null, fundCount: bestFund.conditional_programs.length, fundNames: bestFundNames };
-
-  const treatyOpportunity = candidates.find(
-    (s) => s.treaty_slug || s.structure_type === "treaty_coproduction" || s.candidate_status === "STATUS_CO_PRO_OPPORTUNITY",
-  );
-  if (treatyOpportunity) return { structure: treatyOpportunity, isOpportunity: true, potentialUsd: null, fundCount: 0, fundNames: [] };
-
-  const withOwnUpside = candidates
-    .filter((s) => s.is_fully_priced && _hasUpsideGap(s))
-    .sort((a, b) => (b.npc_with_adjustments_usd ?? 0) - (a.npc_with_adjustments_usd ?? 0));
-  if (withOwnUpside.length) return { structure: withOwnUpside[0], isOpportunity: false, potentialUsd: null, fundCount: 0, fundNames: [] };
-
   return null;
 }
 
@@ -265,9 +207,12 @@ export function selectMaxPotentialCard(allocated, excludeIds) {
 // requirement list), falling back to the next-best ranked alternative
 // when no legitimate opportunity exists (never fabricated).
 export function selectAnchorLeadingOptimized(allocated) {
-  if (!allocated?.ranking || !allocated?.structures) return [];
+  if (!allocated?.structures) return [];
   const anchor = allocated.structures.find(isBaselineStructure) || null;
-  const ordered = _rankOrNpcOrder(allocated).filter(
+  const ordered = Object.values(allocated.best_per_jurisdiction || {})
+    .filter(Boolean)
+    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity))
+    .filter(
     (s) => !anchor || s.structure_id !== anchor.structure_id,
   );
   const leading = ordered.slice(0, 2);
@@ -279,13 +224,11 @@ export function selectAnchorLeadingOptimized(allocated) {
     cards.push({
       ...maxPotential.structure,
       __isOpportunity: maxPotential.isOpportunity,
+      __isProducerOptimizer: maxPotential.isProducerOptimizer,
       __potentialUsd: maxPotential.potentialUsd,
       __fundCount: maxPotential.fundCount,
       __fundNames: maxPotential.fundNames,
     });
-  } else {
-    const fourth = ordered.find((s) => !shownIds.has(s.structure_id));
-    if (fourth) cards.push(fourth);
   }
   return cards.slice(0, 4);
 }
@@ -302,6 +245,6 @@ export function selectAnchorLeadingOptimized(allocated) {
 export function cardStatus(structure, cardIndex) {
   if (structure.__isOpportunity) return "OPTIMIZED";
   if (cardIndex === 0 && isBaselineStructure(structure)) return "ANCHOR";
-  if (cardIndex === 3) return "OPTIMIZED";
+  if (structure.__isProducerOptimizer) return "OPTIMIZED";
   return "LEADING";
 }

@@ -25,14 +25,6 @@ export const OPTIMIZER_FAMILIES = [
   "MULTI_PRINCIPAL_MULTILATERAL",
 ];
 
-// Conditional grant/fund opportunities (the backend's own
-// CONDITIONAL_USER_FACT_REQUIRED classification — a real registry entry
-// with a real project fact still missing, e.g. CO_PRO_OPPORTUNITY) are
-// Optimizer-mode upside, disclosed but never a ranked/priced
-// recommendation. Included in Optimizer's admissible pool ONLY after
-// every real priced Optimizer candidate — never promoted ahead of one.
-const CONDITIONAL_OPPORTUNITY_CLASS = "CONDITIONAL_USER_FACT_REQUIRED";
-
 export function familiesForMode(mode) {
   return mode === MODE_OPTIMIZER ? OPTIMIZER_FAMILIES : NORMAL_FAMILIES;
 }
@@ -73,25 +65,6 @@ function _singleJurisdictionCandidates(allocated) {
 // Retained only for the much smaller CONDITIONAL_USER_FACT_REQUIRED
 // "opportunities" list below, where a real economic_identity is not always
 // present; the participants+programs fallback stays scoped to that list.
-function _optimizerScenarioKey(structure) {
-  if (structure.economic_identity) return structure.economic_identity;
-  const participants = [...(structure.participants || [])].sort().join(",");
-  const programs = [...(structure.program_slugs || [])].sort().join(",");
-  return `${participants}|${programs}`;
-}
-
-function _dedupeOptimizer(structures) {
-  const seen = new Set();
-  const out = [];
-  for (const s of structures) {
-    const key = _optimizerScenarioKey(s);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(s);
-  }
-  return out;
-}
-
 // COMPLETE_OPTIMIZER_CANDIDATE_UI_WIRING (2026-09-21) — ROOT CAUSE (supersedes
 // the GD-4 backstop this function used to apply): the bounded, overall-rank-
 // ordered `allocated.structures` page AND `allocated.top_by_structural_family`
@@ -127,26 +100,19 @@ function _dedupeOptimizer(structures) {
 // Every optimizer-consuming UI surface reads THIS, never the raw
 // optimizer_candidates collection.
 function _optimizerScenarios(allocated) {
-  return allocated?.optimizer_scenarios || [];
+  return allocated?.producer_optimizer_options || [];
 }
 
 // Every candidate admissible for `mode`. Single Jurisdiction mode reads
 // the canonical best_per_jurisdiction projection directly (see above);
-// Optimizer mode reads the canonical optimizer_scenarios projection
-// directly (see _optimizerScenarios above) — neither re-derives an
-// ordering or dedup client-side. Disclosed conditional grant/fund
-// opportunities (CONDITIONAL_USER_FACT_REQUIRED — a real registry entry
-// with a real project fact still missing) are appended strictly after
-// every priced Optimizer scenario, never promoted ahead of one, and are
-// NOT part of the optimizer scenario count (they are not yet executable).
+// Optimizer mode reads the canonical material producer projection directly.
+// Conditional/unpriced opportunities and exhaustive 3+ jurisdiction search
+// rows stay available in the backend audit collections but never enter the
+// ordinary producer UI.
 export function admissibleForMode(allocated, mode) {
   if (!allocated) return [];
   if (mode !== MODE_OPTIMIZER) return _singleJurisdictionCandidates(allocated);
-  const priced = _optimizerScenarios(allocated);
-  const opportunities = _dedupeOptimizer(
-    (allocated.structures || []).filter((s) => s.classification === CONDITIONAL_OPPORTUNITY_CLASS),
-  );
-  return [...priced, ...opportunities];
+  return _optimizerScenarios(allocated);
 }
 
 // Six-slot Workspace composition for the active mode.

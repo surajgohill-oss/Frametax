@@ -81,6 +81,7 @@ function allocatedOf({ structures, bpj, ranking = [], topByFamily = {}, optimize
     // grouping/collapse logic is pinned separately against live data in
     // test_canonical_production_view.py.
     optimizer_scenarios: optimizerScenarios ?? candidates,
+    producer_optimizer_options: optimizerScenarios ?? candidates,
   };
 }
 

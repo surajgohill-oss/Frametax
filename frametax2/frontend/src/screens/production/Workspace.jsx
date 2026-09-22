@@ -595,17 +595,18 @@ export default function Workspace() {
                 visual system. */}
             <div className="wsx-station-head-spacer wsx-scenario-mode">
               <div className="wsx-viewtabs">
-                <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Normal</button>
+                <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
                 <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
               </div>
             </div>
             {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): a
                 truthful count of the DISTINCT producer-facing optimizer
                 scenarios this mode's rack/dropdown/Globe surfaces draw from
-                — `allocated.optimizer_scenarios_total`/`_by_tier`
+                — `allocated.producer_optimizer_options_total`
                 (canonical_production_view.py), never the raw search-
-                iteration count (optimizer_candidates_total, kept available
-                for audit/debug evidence only) and never the length of
+                iteration count (`optimizer_candidates_total`, kept available
+                for audit/debug evidence only), the exhaustive canonical
+                scenario count (`optimizer_scenarios_total`), or the length of
                 whatever happens to render.
                 WORKSPACE_RESPONSIVE_CONTROL/RACK_CLOSEOUT (2026-09-23): now
                 its own grid item (.wsx-scenario-count, no inline
@@ -613,18 +614,11 @@ export default function Workspace() {
                 wrap instead of ever sharing a line with Lanes/Map/Split or
                 Other Scenarios. Compact producer copy; the 0-value Formal
                 tier is omitted rather than printed as "0 formal". */}
-            {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_scenarios_total != null && (() => {
-              const total = allocated.optimizer_scenarios_total;
-              const byTier = allocated.optimizer_scenarios_by_tier;
-              const practical = byTier?.PRACTICAL_HYBRID ?? 0;
-              const formal = byTier?.FORMAL_COPRODUCTION ?? 0;
-              const advanced = byTier?.ADVANCED_MULTI_JURISDICTION ?? 0;
-              const tierParts = byTier
-                ? [`${practical} practical`, ...(formal ? [`${formal} formal`] : []), `${advanced} advanced`]
-                : [];
+            {workspaceMode === MODE_OPTIMIZER && allocated?.producer_optimizer_options_total != null && (() => {
+              const total = allocated.producer_optimizer_options_total;
               return (
                 <span className="wsx-scenario-count">
-                  {total} scenario{total === 1 ? "" : "s"}{tierParts.length ? ` · ${tierParts.join(" · ")}` : ""}
+                  {total} practical optimizer option{total === 1 ? "" : "s"} · each saves more than $100K
                 </span>
               );
             })()}
@@ -725,8 +719,8 @@ export default function Workspace() {
                   />
                   <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
-                    <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Jurisdictions</button>
-                    <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer Overlay</button>
+                    <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
+                    <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
                   </div>
                   {globeHover && (
                     <div className="globe-tooltip">
@@ -781,8 +775,8 @@ export default function Workspace() {
                   />
                   <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
-                    <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Jurisdictions</button>
-                    <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer Overlay</button>
+                    <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
+                    <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
                   </div>
                   {globeHover && (
                     <div className="globe-tooltip">

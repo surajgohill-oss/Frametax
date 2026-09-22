@@ -50,7 +50,7 @@ export default function Overview() {
     openInspector, leadingStructureId, setLeadingStructureId,
     selectedJurisdiction, setSelectedJurisdiction,
   } = useAppState();
-  const [globeMode, setGlobeMode] = useState("jurisdictions");
+  const [globeMode, setGlobeMode] = useState("normal");
   const [hover, setHover] = useState(null);
   // Overview Globe hover data parity: same GlobeHoverCard/hoverRect pattern
   // ProjectGlobe.jsx uses to anchor the card near the hovered marker rather
@@ -172,8 +172,8 @@ export default function Overview() {
             <div className="oh">
               <b>Project Globe</b>
               <div className="wsx-viewtabs" style={{ marginLeft: 10 }}>
-                <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
-                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+                <button className={globeMode === "normal" ? "active" : ""} onClick={() => setGlobeMode("normal")}>Single Jurisdiction</button>
+                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer</button>
               </div>
               <button className="act" onClick={() => navigate(`/projects/${projectId}/globe`)}>Full screen →</button>
             </div>

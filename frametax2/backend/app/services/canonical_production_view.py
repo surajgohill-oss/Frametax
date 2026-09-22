@@ -38,6 +38,7 @@ from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.production_requirement import ProductionRequirement
 from app.models.project import Project
+from app.models.project_asset import ProjectAsset
 from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
@@ -69,6 +70,149 @@ RETENTION_POLICY_NOTE = (
     "Enumeration cardinality never defines persistence cardinality: every candidate is evaluated, but only "
     "the bounded decision set is a detailed row. Counts are exact (retained rows + aggregate groups)."
 )
+
+# Producer-facing optimizer projection.  The exhaustive optimizer collections remain
+# untouched for auditability; ordinary UI surfaces receive only executable, bilateral
+# decisions that improve the production's own persisted current-location NPC by more
+# than this amount.
+MIN_PRODUCER_SAVINGS_USD = 100_000.0
+
+
+def _economic_jurisdictions(entry: dict) -> set[str]:
+    """Return the jurisdictions that participate in this candidate's economics."""
+    jurisdictions = {c for c in (entry.get("participants") or []) if c}
+    jurisdictions.update(
+        r.get("jurisdiction_code")
+        for r in (entry.get("component_allocations") or [])
+        if r.get("jurisdiction_code")
+    )
+    if entry.get("primary_jurisdiction"):
+        jurisdictions.add(entry["primary_jurisdiction"])
+    return jurisdictions
+
+
+def _single_jurisdiction_winners(entries: list[dict], identity_by_structure: dict[str, str]) -> dict[str, dict]:
+    """Choose one lowest-verified-NPC priced candidate per economic jurisdiction."""
+    eligible = []
+    for entry in entries:
+        primary = entry.get("primary_jurisdiction")
+        if (
+            entry.get("candidate_status") != "PRICED"
+            or not entry.get("is_fully_priced")
+            or entry.get("structure_type") not in LOCAL_STACK_TYPES
+            or not primary
+            or _economic_jurisdictions(entry) != {primary}
+        ):
+            continue
+        eligible.append(entry)
+    eligible.sort(key=lambda e: (
+        e.get("npc_verified_usd") if e.get("npc_verified_usd") is not None else float("inf"),
+        identity_by_structure.get(e.get("structure_id"), ""),
+    ))
+    winners: dict[str, dict] = {}
+    for entry in eligible:
+        winners.setdefault(
+            entry["primary_jurisdiction"],
+            {**entry, "economic_identity": identity_by_structure.get(entry["structure_id"])},
+        )
+    return winners
+
+
+def _producer_decision_key(entry: dict) -> tuple:
+    routes = {
+        (
+            row.get("component") or row.get("category"),
+            row.get("jurisdiction_code"),
+            row.get("program_slug"),
+        )
+        for row in (entry.get("component_allocations") or [])
+    }
+    return (
+        entry.get("primary_jurisdiction"),
+        tuple(sorted(routes, key=lambda r: tuple(v or "" for v in r))),
+        entry.get("treaty_slug") if entry.get("classification") == "OFFICIAL_COPRODUCTION" else None,
+    )
+
+
+def _build_producer_optimizer_projection(
+    optimizer_scenarios: list[dict], baseline_entry: dict | None,
+) -> tuple[list[dict], dict[str, int], float | None]:
+    """Filter exhaustive scenarios into practical, material producer decisions."""
+    baseline_npc = (baseline_entry or {}).get("npc_with_adjustments_usd")
+    excluded: dict[str, int] = {}
+
+    def reject(reason: str) -> None:
+        excluded[reason] = excluded.get(reason, 0) + 1
+
+    if baseline_npc is None:
+        if optimizer_scenarios:
+            excluded["MISSING_CANONICAL_BASELINE"] = len(optimizer_scenarios)
+        return [], excluded, None
+
+    candidates: list[dict] = []
+    for entry in optimizer_scenarios:
+        classification = entry.get("classification")
+        jurisdictions = _economic_jurisdictions(entry)
+        candidate_npc = entry.get("npc_with_adjustments_usd")
+        if entry.get("candidate_status") != "PRICED" or not entry.get("is_fully_priced") or candidate_npc is None:
+            reject("NOT_FULLY_PRICED_EXECUTABLE")
+            continue
+        if len(jurisdictions) != 2:
+            reject("NOT_BILATERAL")
+            continue
+        if classification == "HYBRID_ANCHOR_COMPONENT":
+            option_type = "PRACTICAL_HYBRID"
+            routes = entry.get("component_allocations") or []
+            if not routes or any(
+                not row.get("component") or not row.get("jurisdiction_code") or not row.get("program_slug")
+                for row in routes
+            ):
+                reject("INCOMPLETE_CANONICAL_IDENTITY")
+                continue
+        elif classification == "OFFICIAL_COPRODUCTION":
+            option_type = "FORMAL_COPRODUCTION"
+            if (
+                not entry.get("treaty_slug")
+                or entry.get("treaty_resolution_state") != "ELIGIBLE"
+                or entry.get("treaty_disqualification_reasons")
+                or (entry.get("treaty_cultural_test_required") and not entry.get("treaty_cultural_test_resolved"))
+                or entry.get("personnel_gate_state") not in (None, "QUALIFIES", "NOT_APPLICABLE")
+            ):
+                reject("FORMAL_COPRODUCTION_NOT_FULLY_QUALIFIED")
+                continue
+        else:
+            reject("UNSUPPORTED_PRODUCER_STRUCTURE")
+            continue
+        if not entry.get("structure_id") or not entry.get("economic_identity") or not entry.get("primary_jurisdiction"):
+            reject("INCOMPLETE_CANONICAL_IDENTITY")
+            continue
+        savings = float(baseline_npc) - float(candidate_npc)
+        if savings <= MIN_PRODUCER_SAVINGS_USD:
+            reject("SAVINGS_NOT_ABOVE_100K")
+            continue
+        candidates.append({
+            **entry,
+            "producer_optimizer_baseline_npc_usd": float(baseline_npc),
+            "producer_optimizer_candidate_npc_usd": float(candidate_npc),
+            "savings_vs_current_usd": savings,
+            "producer_optimizer_jurisdiction_count": 2,
+            "producer_optimizer_option_type": option_type,
+        })
+
+    candidates.sort(key=lambda e: (
+        0 if e["producer_optimizer_option_type"] == "PRACTICAL_HYBRID" else 1,
+        -e["savings_vs_current_usd"],
+        e["producer_optimizer_candidate_npc_usd"],
+        e.get("economic_identity") or "",
+    ))
+    unique: dict[tuple, dict] = {}
+    for entry in candidates:
+        key = _producer_decision_key(entry)
+        if key in unique:
+            reject("DUPLICATE_PRODUCER_DECISION")
+            continue
+        unique[key] = entry
+    return list(unique.values()), excluded, float(baseline_npc)
 
 #: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
 #: PART C / leading conditional recommendation) -- the qualification
@@ -1593,11 +1737,21 @@ async def build_production_and_structures(
         },
     }
 
+    has_master_artwork = await session.scalar(
+        select(ProjectAsset.id).where(
+            ProjectAsset.project_id == project.id,
+            ProjectAsset.is_master.is_(True),
+        ).limit(1)
+    )
+
     production = {
         "production_id": str(project.id),
         "production_name": project.title,
         "jurisdiction_code": base_code,
         "project_id": str(project.id),
+        "artwork_url": (
+            f"/api/v1/projects/{project.id}/artwork" if has_master_artwork else None
+        ),
         "lifecycle": project.lifecycle,
         "leading_structure_id": str(project.leading_structure_id) if project.leading_structure_id else None,
         "gross_budget_usd": gross_budget_usd,
@@ -1700,13 +1854,7 @@ async def build_production_and_structures(
     # full entry here requires no new query, no new retention, no
     # discovery/pricing change -- only NOT throwing detail away before
     # this dict is populated.
-    best_per_jurisdiction: dict[str, dict] = {}
-    for e in _priced_entries:
-        if e["structure_type"] in LOCAL_STACK_TYPES and e["primary_jurisdiction"]:
-            best_per_jurisdiction.setdefault(
-                e["primary_jurisdiction"],
-                {**e, "economic_identity": _identity_by_structure.get(e["structure_id"])},
-            )
+    best_per_jurisdiction = _single_jurisdiction_winners(_priced_entries, _identity_by_structure)
     top_by_structure_type: dict[str, list] = {}
     for e in _priced_entries:
         _bucket = top_by_structure_type.setdefault(e["structure_type"], [])
@@ -1901,6 +2049,24 @@ async def build_production_and_structures(
         TIER_ADVANCED: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_ADVANCED),
     }
 
+    _baseline_entry = next((e for e in structure_entries if e.get("is_baseline")), None)
+    (
+        producer_optimizer_options,
+        producer_optimizer_excluded_counts,
+        producer_optimizer_baseline_npc_usd,
+    ) = _build_producer_optimizer_projection(optimizer_scenarios, _baseline_entry)
+    producer_optimizer_options_total = len(producer_optimizer_options)
+    producer_optimizer_options_by_type = {
+        TIER_PRACTICAL: sum(
+            1 for e in producer_optimizer_options
+            if e["producer_optimizer_option_type"] == TIER_PRACTICAL
+        ),
+        TIER_FORMAL: sum(
+            1 for e in producer_optimizer_options
+            if e["producer_optimizer_option_type"] == TIER_FORMAL
+        ),
+    }
+
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
     # Everything above (selection, ranking, conditional pool, accounting) ran over ALL served
     # candidates. What is RETURNED in detail is one deterministic page of them: the headline
@@ -2030,6 +2196,13 @@ async def build_production_and_structures(
             # co-productions / A advanced" disclosure every optimizer-consuming surface
             # must show instead of the raw iteration count.
             "optimizer_scenarios_by_tier": optimizer_scenarios_by_tier,
+            # Practical producer projection.  Exhaustive optimizer_candidates/
+            # optimizer_scenarios above remain unchanged as audit evidence.
+            "producer_optimizer_options": producer_optimizer_options,
+            "producer_optimizer_options_total": producer_optimizer_options_total,
+            "producer_optimizer_options_by_type": producer_optimizer_options_by_type,
+            "producer_optimizer_excluded_counts": producer_optimizer_excluded_counts,
+            "producer_optimizer_baseline_npc_usd": producer_optimizer_baseline_npc_usd,
             "retention": {
                 "policy": {
                     "global_top": GLOBAL_TOP, "per_structure_type_top": TYPE_TOP,

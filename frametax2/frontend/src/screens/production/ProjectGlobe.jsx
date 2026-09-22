@@ -14,14 +14,12 @@ import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../.
 
 // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 2: Optimizer
 // mode's side list used to render one flat, undifferentiated list. The
-// backend already partitions `optimizer_scenarios` into these three real
-// tiers, in this exact order (canonical_production_view.py's own
-// PRODUCER_PRACTICALITY_TIER) — this is the fixed section order every
+// backend already partitions `producer_optimizer_options` into these two
+// producer-facing types, in this exact order — this is the fixed section order every
 // optimizer-consuming surface renders them in, never re-derived.
 const TIER_SECTIONS = [
   { tier: "PRACTICAL_HYBRID", heading: "Practical Hybrids" },
   { tier: "FORMAL_COPRODUCTION", heading: "Formal Co-Productions" },
-  { tier: "ADVANCED_MULTI_JURISDICTION", heading: "Advanced Multi-Jurisdiction" },
 ];
 
 // Project Globe — this production's structures and their routing on the
@@ -290,7 +288,7 @@ export default function ProjectGlobe() {
               scenarioOptionLabel/ScenarioCard now use too) reads
               component_allocations directly, so component-distinct
               scenarios render visibly distinct titles, with its own
-              Advanced-tier prefix. Single Jurisdiction mode is
+              producer-option prefix. Single Jurisdiction mode is
               unaffected — s.label unchanged there. */}
           <div className="row-title small">
             {globeMode === MODE_OPTIMIZER ? buildScenarioLabel(s) : s.label}
@@ -317,8 +315,8 @@ export default function ProjectGlobe() {
           and the opportunities still to unlock.
         </p>
         <div className="wsx-viewtabs" style={{ marginBottom: 10 }}>
-          <button className={globeMode === MODE_NORMAL ? "active" : ""} onClick={() => setGlobeMode(MODE_NORMAL)}>Jurisdictions</button>
-          <button className={globeMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setGlobeMode(MODE_OPTIMIZER)}>Optimizer Overlay</button>
+          <button className={globeMode === MODE_NORMAL ? "active" : ""} onClick={() => setGlobeMode(MODE_NORMAL)}>Single Jurisdiction</button>
+          <button className={globeMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setGlobeMode(MODE_OPTIMIZER)}>Optimizer</button>
         </div>
         {/* DATA-SOURCE LABEL (required). These cards read the PRODUCTION engine
             — `structureTier()` over the live allocated structures and ranking —
@@ -332,11 +330,14 @@ export default function ProjectGlobe() {
           </p>
         )}
         <div className="sc-jurlist">
+          {globeMode === MODE_OPTIMIZER && visibleStructures.length === 0 && (
+            <p className="empty-state">No practical optimizer options currently save more than $100K.</p>
+          )}
           {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 1:
               this list used to re-sort `visibleStructures` by `rankById` in
-              EVERY mode, including Optimizer. `allocated.optimizer_scenarios`
+              EVERY mode, including Optimizer. `allocated.producer_optimizer_options`
               (canonical_production_view.py) already arrives pre-sorted
-              Practical -> Formal -> Advanced, ascending NPC within each tier —
+              Practical -> Formal, savings descending and NPC ascending —
               `rankById` (built from `allocated.ranking`, the SINGLE combined
               overall ranking, which only the baseline/comparable candidates
               ever populate) has no relationship to that tier partition and
@@ -347,7 +348,7 @@ export default function ProjectGlobe() {
               now renders `visibleStructures` verbatim, in the exact order the
               backend served it. */}
           {globeMode === MODE_OPTIMIZER ? (
-            /* ROOT DEFECT 2: Optimizer mode now renders three genuine
+            /* ROOT DEFECT 2: Optimizer mode now renders the genuine
                sections, in this exact order, each with its own real count —
                never one flattened, undifferentiated list. Section boundaries
                are detected from the already-tier-sorted array itself (no
@@ -356,7 +357,7 @@ export default function ProjectGlobe() {
                scenarios renders no section at all (never a fabricated empty
                header). */
             TIER_SECTIONS.map(({ tier, heading }) => {
-              const tierStructures = visibleStructures.filter((s) => s.practicality_tier === tier);
+              const tierStructures = visibleStructures.filter((s) => s.producer_optimizer_option_type === tier);
               if (tierStructures.length === 0) return null;
               return (
                 <div key={tier} className="sc-jurlist-section">
@@ -420,7 +421,9 @@ export default function ProjectGlobe() {
               to show — the overlay correctly lights one jurisdiction and draws
               no arc, and the caption then read as a rendering failure. */}
           {globeMode === MODE_OPTIMIZER
-            ? arcs.length > 0
+            ? visibleStructures.length === 0
+              ? "No practical bilateral optimizer option currently clears the $100K savings threshold."
+              : arcs.length > 0
               ? "Showing the recommended structure's production routing only."
               : "The recommended structure is single-jurisdiction — no routing to show."
             : arcs.length > 0
@@ -431,4 +434,3 @@ export default function ProjectGlobe() {
     </div>
   );
 }
-

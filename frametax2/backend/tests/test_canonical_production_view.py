@@ -22,16 +22,122 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
-from app.services.canonical_production_view import build_production_and_structures
+from app.services.canonical_production_view import (
+    MIN_PRODUCER_SAVINGS_USD,
+    _build_producer_optimizer_projection,
+    _economic_jurisdictions,
+    _single_jurisdiction_winners,
+    build_production_and_structures,
+)
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
+CURRENT_ACCEPTANCE_PROJECT_IDS = (
+    LITTLE_UTOPIA_PROJECT_ID,
+    "4355ae88-a636-4c18-af60-ad73b2646124",
+    FVD_PROJECT_ID,
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+)
+
+
+def _projection_candidate(identifier: str, *, npc: float, participants=None, classification="HYBRID_ANCHOR_COMPONENT", **extra):
+    participants = participants or ["GR", "CA-MB"]
+    return {
+        "structure_id": identifier,
+        "economic_identity": f"econ-{identifier}",
+        "candidate_status": "PRICED",
+        "is_fully_priced": True,
+        "classification": classification,
+        "primary_jurisdiction": participants[0],
+        "participants": participants,
+        "npc_with_adjustments_usd": npc,
+        "component_allocations": [{
+            "component": "post", "jurisdiction_code": participants[-1], "program_slug": "post-credit",
+        }],
+        **extra,
+    }
+
+
+def test_producer_optimizer_materiality_and_fail_closed_contract():
+    baseline = {"npc_with_adjustments_usd": 1_000_000.0}
+    exact = _projection_candidate("exact", npc=900_000.0)
+    above = _projection_candidate("above", npc=899_999.99, component_allocations=[{
+        "component": "vfx", "jurisdiction_code": "CA-MB", "program_slug": "vfx-credit",
+    }])
+    three = _projection_candidate("three", npc=700_000.0, participants=["GR", "CA-MB", "IT"])
+    conditional = _projection_candidate("conditional", npc=700_000.0, candidate_status="QUALIFICATION_UNRESOLVED")
+    options, excluded, baseline_npc = _build_producer_optimizer_projection(
+        [exact, above, three, conditional], baseline,
+    )
+    assert MIN_PRODUCER_SAVINGS_USD == 100_000.0
+    assert [o["structure_id"] for o in options] == ["above"]
+    assert options[0]["savings_vs_current_usd"] == pytest.approx(100_000.01)
+    assert baseline_npc == 1_000_000.0
+    assert excluded == {
+        "SAVINGS_NOT_ABOVE_100K": 1,
+        "NOT_BILATERAL": 1,
+        "NOT_FULLY_PRICED_EXECUTABLE": 1,
+    }
+    no_baseline, missing, baseline_npc = _build_producer_optimizer_projection([above], None)
+    assert no_baseline == []
+    assert missing == {"MISSING_CANONICAL_BASELINE": 1}
+    assert baseline_npc is None
+
+
+def test_producer_optimizer_deduplicates_only_identical_decisions_and_keeps_distinct_components():
+    baseline = {"npc_with_adjustments_usd": 1_000_000.0}
+    post_best = _projection_candidate("post-best", npc=700_000.0)
+    post_duplicate = _projection_candidate("post-duplicate", npc=710_000.0)
+    music = _projection_candidate("music", npc=720_000.0, component_allocations=[{
+        "component": "music", "jurisdiction_code": "CA-MB", "program_slug": "post-credit",
+    }])
+    options, excluded, _ = _build_producer_optimizer_projection(
+        [post_duplicate, music, post_best], baseline,
+    )
+    assert [o["structure_id"] for o in options] == ["post-best", "music"]
+    assert excluded == {"DUPLICATE_PRODUCER_DECISION": 1}
+
+
+def test_single_jurisdiction_winners_allow_local_stack_and_reject_cross_jurisdiction():
+    single = _projection_candidate(
+        "single", npc=800_000.0, participants=["CA-ON"], classification="SINGLE_JURISDICTION",
+        structure_type="full_relocation", primary_jurisdiction="CA-ON", npc_verified_usd=800_000.0,
+        component_allocations=[],
+    )
+    stack = {**single, "structure_id": "stack", "economic_identity": "econ-stack", "classification": "STACKED_PROGRAMS", "structure_type": "multi_program", "npc_verified_usd": 700_000.0}
+    cross = {**stack, "structure_id": "cross", "participants": ["CA-ON", "US-NY"], "npc_verified_usd": 600_000.0}
+    winners = _single_jurisdiction_winners(
+        [single, stack, cross], {"single": "econ-single", "stack": "econ-stack", "cross": "econ-cross"},
+    )
+    assert list(winners) == ["CA-ON"]
+    assert winners["CA-ON"]["structure_id"] == "stack"
 
 
 @pytest.fixture
 async def db():
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
+
+
+async def test_current_producer_projection_is_complete_and_preserves_exhaustive_optimizer(db: AsyncSession):
+    for project_id in CURRENT_ACCEPTANCE_PROJECT_IDS:
+        view = await build_production_and_structures(db, project_id)
+        allocated = view["structures"]["allocated_structures"]
+        assert allocated["optimizer_candidates_total"] == len(allocated["optimizer_candidates"])
+        assert allocated["optimizer_scenarios_total"] == len(allocated["optimizer_scenarios"])
+        assert (
+            allocated["producer_optimizer_options_total"]
+            + sum(allocated["producer_optimizer_excluded_counts"].values())
+            == allocated["optimizer_scenarios_total"]
+        )
+        assert len(allocated["best_per_jurisdiction"]) == len(set(allocated["best_per_jurisdiction"]))
+        for code, winner in allocated["best_per_jurisdiction"].items():
+            assert winner["candidate_status"] == "PRICED"
+            assert winner["is_fully_priced"] is True
+            assert _economic_jurisdictions(winner) == {code}
+        for option in allocated["producer_optimizer_options"]:
+            assert option["savings_vs_current_usd"] > MIN_PRODUCER_SAVINGS_USD
+            assert option["producer_optimizer_jurisdiction_count"] == 2
 
 
 async def test_unknown_project_returns_not_found(db: AsyncSession):

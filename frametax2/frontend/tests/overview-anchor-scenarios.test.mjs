@@ -50,6 +50,8 @@ function allocated(structures, ranking) {
   return {
     structures,
     ranking: ranking || structures.map((s, i) => ({ structure_id: s.structure_id, rank: i + 1, is_fully_priced: s.is_fully_priced })),
+    best_per_jurisdiction: Object.fromEntries(structures.map((s) => [s.structure_id, s])),
+    producer_optimizer_options: [],
   };
 }
 
@@ -89,7 +91,7 @@ test("selectAnchorLeadingOptimized: Leading cards exclude the Anchor structure_i
   assert.equal(new Set(ids).size, ids.length, "no duplicate structure_id across the four cards");
 });
 
-test("selectAnchorLeadingOptimized: Leading cards are ranked (rank-then-NPC, the same order Workspace's own rack uses)", () => {
+test("selectAnchorLeadingOptimized: Leading cards use the canonical jurisdiction-winner NPC order", () => {
   const baseline = structure({ structure_id: "base", is_baseline: true });
   const a = structure({ structure_id: "a", npc_with_adjustments_usd: 500 });
   const b = structure({ structure_id: "b", npc_with_adjustments_usd: 300 });
@@ -99,33 +101,19 @@ test("selectAnchorLeadingOptimized: Leading cards are ranked (rank-then-NPC, the
     { structure_id: "b", rank: 2, is_fully_priced: true },
   ];
   const result = selectAnchorLeadingOptimized(allocated([baseline, a, b], ranking));
-  assert.deepEqual(result.slice(1, 3).map((s) => s.structure_id), ["a", "b"]);
+  assert.deepEqual(result.slice(1, 3).map((s) => s.structure_id), ["b", "a"]);
 });
 
 // ── Card 4 (Optimized) never duplicates another card and never
 // fabricates an opportunity. ─────────────────────────────────────────────
-test("selectMaxPotentialCard prefers a structure with real disclosed conditional_programs, ranked by total documented cap", () => {
-  const withFund = structure({
-    structure_id: "fund",
-    conditional_programs: [
-      { program_name: "Regional Fund", documented_cap_usd: 5_000_000 },
-      { program_name: "Export Program", documented_cap_usd: 500_000 },
-    ],
-  });
-  const plain = structure({ structure_id: "plain" });
-  const result = selectMaxPotentialCard(allocated([withFund, plain]), new Set());
-  assert.equal(result.structure.structure_id, "fund");
-  assert.equal(result.isOpportunity, true);
-  // F#K Valentine's Day economic/semantic regression fix (2026-09-03,
-  // item 4b): the total documented_cap_usd stays the internal RANKING
-  // signal only (it picks WHICH structure becomes Card 4) — it must
-  // never be exposed as a displayable dollar "potential" figure, since
-  // summing several unrelated programs' own per-project ceilings is not
-  // this project's calculated potential. The public contract is now a
-  // truthful fund count/name disclosure instead.
-  assert.equal(result.potentialUsd, null, "must never surface a summed-cap dollar figure as this project's potential");
-  assert.equal(result.fundCount, 2);
-  assert.deepEqual(result.fundNames, ["Regional Fund", "Export Program"]);
+test("selectMaxPotentialCard uses only the canonical material producer optimizer projection", () => {
+  const option = structure({ structure_id: "practical" });
+  const alloc = allocated([structure({ structure_id: "plain" })]);
+  alloc.producer_optimizer_options = [option];
+  const result = selectMaxPotentialCard(alloc, new Set());
+  assert.equal(result.structure.structure_id, "practical");
+  assert.equal(result.isOpportunity, false);
+  assert.equal(result.potentialUsd, null);
 });
 
 test("selectMaxPotentialCard never fabricates a potential figure — null when nothing legitimate exists", () => {
@@ -134,7 +122,7 @@ test("selectMaxPotentialCard never fabricates a potential figure — null when n
   assert.equal(result, null);
 });
 
-test("selectAnchorLeadingOptimized: Card 4 falls back to the next-best ranked alternative when no legitimate opportunity exists — never fabricated, never a duplicate of Cards 1-3", () => {
+test("selectAnchorLeadingOptimized: no producer optimizer card is fabricated when the canonical projection is empty", () => {
   const baseline = structure({ structure_id: "base", is_baseline: true });
   const structs = [
     baseline,
@@ -144,9 +132,7 @@ test("selectAnchorLeadingOptimized: Card 4 falls back to the next-best ranked al
   ];
   const result = selectAnchorLeadingOptimized(allocated(structs));
   const ids = result.map((s) => s.structure_id);
-  assert.equal(ids.length, 4);
-  assert.equal(new Set(ids).size, 4, "Card 4 must never duplicate Cards 1-3");
-  assert.ok(!result[3].__isOpportunity, "the fallback 4th card must not be mislabeled as an opportunity");
+  assert.deepEqual(ids, ["base", "a", "b"]);
 });
 
 // ── Status vocabulary — exactly ANCHOR/LEADING/OPTIMIZED, positionally
@@ -159,11 +145,12 @@ test("cardStatus: Card 1 is ANCHOR only when it is genuinely the baseline struct
   assert.equal(cardStatus(notBaseline, 0), "LEADING", "position 0 alone must never imply Anchor without the real baseline field");
 });
 
-test("cardStatus: Cards at index 1-2 are LEADING, index 3 (or an opportunity flag) is OPTIMIZED", () => {
+test("cardStatus: only a canonical producer optimizer (or disclosed opportunity) is OPTIMIZED", () => {
   const s = structure({ structure_id: "s" });
   assert.equal(cardStatus(s, 1), "LEADING");
   assert.equal(cardStatus(s, 2), "LEADING");
-  assert.equal(cardStatus(s, 3), "OPTIMIZED");
+  assert.equal(cardStatus(s, 3), "LEADING");
+  assert.equal(cardStatus({ ...s, __isProducerOptimizer: true }, 3), "OPTIMIZED");
   const opportunity = { ...structure({ structure_id: "opp" }), __isOpportunity: true };
   assert.equal(cardStatus(opportunity, 2), "OPTIMIZED", "an opportunity flag always reads OPTIMIZED regardless of position");
 });
@@ -223,6 +210,7 @@ test("Overview's selectMaxPotentialCard and Workspace's admissibleForMode both r
     structures: [rawA, rawB],
     ranking: [{ structure_id: "raw-a", rank: 1 }, { structure_id: "raw-b", rank: 2 }],
     optimizer_scenarios: [scenarioRep],
+    producer_optimizer_options: [scenarioRep],
   };
 
   const workspacePool = admissibleForMode(alloc, MODE_OPTIMIZER);

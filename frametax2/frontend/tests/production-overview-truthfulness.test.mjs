@@ -36,6 +36,8 @@ test("ProductionHero: a project without its own artwork never falls back to anot
   // except inside the explicit, documented isLittleUtopia branch.
   assert.match(src, /showNeutralFallback[\s\S]{0,200}ph-hero-art-neutral/, "a project with no artwork must render the neutral fallback element");
   assert.match(src, /const heroSrc = isLittleUtopia \? heroArt : artworkUrl/, "heroArt must be scoped strictly to the Little Utopia branch, never a generic fallback");
+  assert.match(src, /production\?\.artwork_url/, "generic artwork must be requested only when canonical state confirms a master asset exists");
+  assert.doesNotMatch(src, /projects\/\$\{production\.project_id\}\/artwork/, "the Hero must not probe an unverified artwork endpoint and create a failed API request");
 });
 
 test("Today.jsx: the Production Slate thumbnail is per-project, never Little Utopia's photo for every row", () => {

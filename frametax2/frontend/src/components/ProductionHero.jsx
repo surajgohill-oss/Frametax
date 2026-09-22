@@ -72,8 +72,8 @@ export default function ProductionHero({
   const LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae";
   const isLittleUtopia = production?.project_id === LITTLE_UTOPIA_PROJECT_ID;
   const [artworkFailed, setArtworkFailed] = useState(false);
-  const artworkUrl = production?.project_id && !isLittleUtopia
-    ? `${API_ORIGIN}/api/v1/projects/${production.project_id}/artwork`
+  const artworkUrl = production?.artwork_url && !isLittleUtopia
+    ? `${API_ORIGIN}${production.artwork_url}`
     : null;
   // Production Overview Truthfulness: a project with no artwork of its own
   // must fall back to a production-NEUTRAL treatment, never another real
