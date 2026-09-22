@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, compactScenarioIdentity, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
+import { Money, compactScenarioIdentity, buildScenarioLabel, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail } from "../../lib/globeData";
@@ -75,21 +75,36 @@ const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) *
 // compactScenarioIdentity already derives (never a second name/ID
 // scheme) whenever it exists, so the producer can tell them apart
 // without the full legal program name.
-// PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): an ADVANCED_MULTI_
-// JURISDICTION scenario (3+ distinct jurisdictions, or a combined/multilateral
-// structure) carries real coordination overhead a producer must see BEFORE
-// opening it — never silently mixed into the dropdown looking like an
-// ordinary two-jurisdiction option. Prefix only; the underlying compact
-// identity/program label construction is unchanged.
+// OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22): the four canonical
+// optimizer classifications (structural_classification.py's own
+// OPTIMIZER_STRUCTURE_FAMILIES) — a plain inline set rather than a
+// cross-module import, since every optimizer-consuming display site here
+// only needs to answer one question: "is this structure's identity best
+// described by its routed COMPONENTS (buildScenarioLabel) or its plain
+// jurisdiction/program (compactScenarioIdentity)?"
+const OPTIMIZER_CLASSIFICATIONS = new Set([
+  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
+]);
+
+// OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 3/4: this
+// used to derive its label from compactScenarioIdentity alone, which (a)
+// can append a non-claiming cost-tracking segment jurisdiction to the
+// visible text (never real routed-component data) and (b) never surfaces
+// WHICH component routed where, so component-distinct scenarios (post vs
+// music vs vfx to the same destination) rendered identical dropdown text.
+// buildScenarioLabel (lib/format.jsx) is the one canonical producer
+// scenario label adapter — every optimizer-classified structure now
+// resolves through it (its own Advanced-tier prefix supersedes the
+// duplicate prefix this function used to add locally); a non-optimizer
+// structure (Single Jurisdiction winner, stacked program) is unaffected,
+// unchanged.
 function scenarioOptionLabel(structure) {
+  if (OPTIMIZER_CLASSIFICATIONS.has(structure.classification)) {
+    return buildScenarioLabel(structure);
+  }
   const { flags, name, programLabel } = compactScenarioIdentity(structure);
   const label = flags ? `${flags} ${name}` : name;
-  const full = programLabel ? `${label} — ${programLabel}` : label;
-  if (structure.practicality_tier === "ADVANCED_MULTI_JURISDICTION") {
-    const n = structure.participant_count ?? new Set(structure.participants || []).size;
-    return `Advanced · ${n} jurisdictions · ${full}`;
-  }
-  return full;
+  return programLabel ? `${label} — ${programLabel}` : label;
 }
 
 // Project FX strip — CineGlobe Overview FX Strip + Vertical Scrolling
@@ -171,7 +186,15 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // Compact card identity (flag + full jurisdiction name + "Up to X%") —
   // the approved Workspace format. See compactScenarioIdentity in
   // lib/format.jsx; detailed program mechanics live in Inspector, not here.
-  const { flags, name, subtitle } = compactScenarioIdentity(structure);
+  // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22): an optimizer-
+  // classified structure's headline name comes from buildScenarioLabel
+  // (its own routed-component identity, e.g. "Post → Manitoba") instead —
+  // flags/subtitle (rate) still come from compactScenarioIdentity, which
+  // remains correct for those; only the jurisdiction-name portion changes.
+  const { flags, name: compactName, subtitle } = compactScenarioIdentity(structure);
+  const name = OPTIMIZER_CLASSIFICATIONS.has(structure.classification)
+    ? buildScenarioLabel(structure)
+    : compactName;
   // FX presentation is intentionally hidden here for now: structure.fx_basis
   // is real, sourced exchange-rate provenance (currency/rate/source/date),
   // but under the default economics controls fx_delta_usd is always $0 —

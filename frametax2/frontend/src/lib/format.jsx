@@ -440,6 +440,13 @@ export function compactScenarioIdentity(structure) {
   return { flags, name, subtitle, rateOnly: rateText, programLabel: compactLabel };
 }
 
+// OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22): the one canonical
+// producer scenario label adapter now lives in its own pure .js module
+// (lib/scenarioLabel.js — independently unit-testable with plain node,
+// same reason lib/incentiveRate.js is separate — see that file's own
+// header comment) and is re-exported here for existing callers.
+export { buildScenarioLabel } from "./scenarioLabel.js";
+
 // Real AccountQualification.state values -> plain-language label + tier.
 export function accountStateLabel(state) {
   switch (state) {

@@ -9,8 +9,20 @@ import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, resol
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER } from "../../lib/workspaceScenarioMode";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
-import { Money, humanizeToken } from "../../lib/format";
+import { Money, humanizeToken, buildScenarioLabel } from "../../lib/format";
 import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../../lib/globeCategoryDiff";
+
+// OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 2: Optimizer
+// mode's side list used to render one flat, undifferentiated list. The
+// backend already partitions `optimizer_scenarios` into these three real
+// tiers, in this exact order (canonical_production_view.py's own
+// PRODUCER_PRACTICALITY_TIER) — this is the fixed section order every
+// optimizer-consuming surface renders them in, never re-derived.
+const TIER_SECTIONS = [
+  { tier: "PRACTICAL_HYBRID", heading: "Practical Hybrids" },
+  { tier: "FORMAL_COPRODUCTION", heading: "Formal Co-Productions" },
+  { tier: "ADVANCED_MULTI_JURISDICTION", heading: "Advanced Multi-Jurisdiction" },
+];
 
 // Project Globe — this production's structures and their routing on the
 // canonical globe. Same live model as the Workspace Map mode, given its own
@@ -240,6 +252,57 @@ export default function ProjectGlobe() {
     openInspector("candidate-structure", buildCandidateDetail(s));
   }
 
+  // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22): one chip renderer for
+  // both modes — Card <-> Globe selection sync ("active" when the routed/
+  // primary jurisdiction matches selectedJurisdiction) and the click handler
+  // are unchanged; only the title text differs by mode (buildScenarioLabel
+  // for Optimizer, the backend's own s.label for Single Jurisdiction — see
+  // the row-title comment below).
+  function renderStructureChip(s) {
+    const routedTo = (s.participants || []).find((c) => c !== s.primary_jurisdiction);
+    const code = routedTo || s.primary_jurisdiction || s.participants?.[0];
+    const active = code && code === selectedJurisdiction;
+    return (
+      <div
+        className={`portfolio-chip${active ? " active" : ""}`}
+        key={s.structure_id}
+        onClick={() => selectStructure(s)}
+      >
+        {/* Inline colour from the Globe's own STATUS_HEX, not the
+            ".dot" CSS class — that class pulls from unrelated
+            app-wide --gold/--jade/--silver/--amber tokens (a
+            different palette used by every other tier dot in the
+            app), which meant this card's dot and the Globe's own
+            fill for the same jurisdiction never actually matched
+            colours despite sharing a category name. */}
+        <span className="dot" style={{ background: STATUS_HEX[structureTier(s, rankById)] }} />
+        <div>
+          {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT
+              DEFECT 3/4: `s.label` is the backend's own free-text label,
+              which never distinguishes WHICH routed component went where
+              (post/music/vfx to the same destination all read
+              identically) and, via compactScenarioIdentity elsewhere,
+              risked pulling in a non-claiming segment jurisdiction. In
+              Optimizer mode every card here IS an optimizer-classified
+              structure (visibleStructures already comes from
+              admissibleForMode(allocated, MODE_OPTIMIZER)) —
+              buildScenarioLabel (the one shared adapter Workspace's own
+              scenarioOptionLabel/ScenarioCard now use too) reads
+              component_allocations directly, so component-distinct
+              scenarios render visibly distinct titles, with its own
+              Advanced-tier prefix. Single Jurisdiction mode is
+              unaffected — s.label unchanged there. */}
+          <div className="row-title small">
+            {globeMode === MODE_OPTIMIZER ? buildScenarioLabel(s) : s.label}
+          </div>
+          <div className="row-sub">
+            {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="globe-screen">
       <div className="globe-screen-context">
@@ -269,54 +332,46 @@ export default function ProjectGlobe() {
           </p>
         )}
         <div className="sc-jurlist">
-          {/* Rank-first ordering — mirrors Workspace/Scenarios (visibleStructures),
-              so a producer scanning this list sees the leading option first
-              instead of raw generation order. Unranked candidates keep their
-              original order after every ranked one. */}
-          {[...visibleStructures]
-            .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity))
-            .map((s) => {
-              // Card <-> Globe selection sync: a card is "active" when the
-              // jurisdiction that makes IT distinct (its routed destination,
-              // or its primary shoot for a single-country baseline — same
-              // rule selectStructure() uses) is the currently selected
-              // jurisdiction, so the mapping is symmetric in both directions.
-              const routedTo = (s.participants || []).find((c) => c !== s.primary_jurisdiction);
-              const code = routedTo || s.primary_jurisdiction || s.participants?.[0];
-              const active = code && code === selectedJurisdiction;
+          {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 1:
+              this list used to re-sort `visibleStructures` by `rankById` in
+              EVERY mode, including Optimizer. `allocated.optimizer_scenarios`
+              (canonical_production_view.py) already arrives pre-sorted
+              Practical -> Formal -> Advanced, ascending NPC within each tier —
+              `rankById` (built from `allocated.ranking`, the SINGLE combined
+              overall ranking, which only the baseline/comparable candidates
+              ever populate) has no relationship to that tier partition and
+              re-sorting by it risked silently interleaving/breaking the tier
+              order the whole point of this pass is to preserve. Rank-first
+              ordering is still correct and unchanged for Single Jurisdiction
+              mode (real per-jurisdiction ranks exist there); Optimizer mode
+              now renders `visibleStructures` verbatim, in the exact order the
+              backend served it. */}
+          {globeMode === MODE_OPTIMIZER ? (
+            /* ROOT DEFECT 2: Optimizer mode now renders three genuine
+               sections, in this exact order, each with its own real count —
+               never one flattened, undifferentiated list. Section boundaries
+               are detected from the already-tier-sorted array itself (no
+               re-sort, no re-grouping — a section is exactly a contiguous
+               run of the same practicality_tier). A tier with zero real
+               scenarios renders no section at all (never a fabricated empty
+               header). */
+            TIER_SECTIONS.map(({ tier, heading }) => {
+              const tierStructures = visibleStructures.filter((s) => s.practicality_tier === tier);
+              if (tierStructures.length === 0) return null;
               return (
-                <div
-                  className={`portfolio-chip${active ? " active" : ""}`}
-                  key={s.structure_id}
-                  onClick={() => selectStructure(s)}
-                >
-                  {/* Inline colour from the Globe's own STATUS_HEX, not the
-                      ".dot" CSS class — that class pulls from unrelated
-                      app-wide --gold/--jade/--silver/--amber tokens (a
-                      different palette used by every other tier dot in the
-                      app), which meant this card's dot and the Globe's own
-                      fill for the same jurisdiction never actually matched
-                      colours despite sharing a category name. */}
-                  <span className="dot" style={{ background: STATUS_HEX[structureTier(s, rankById)] }} />
-                  <div>
-                    <div className="row-title small">{s.label}</div>
-                    <div className="row-sub">
-                      {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22):
-                          an Advanced-tier scenario (3+ distinct jurisdictions, or
-                          a combined/multilateral structure) carries real
-                          coordination overhead the producer must see before
-                          opening it — same disclosure text Workspace's own
-                          dropdown uses (scenarioOptionLabel), never a second,
-                          differently-worded label. */}
-                      {s.practicality_tier === "ADVANCED_MULTI_JURISDICTION" && (
-                        <>Advanced · {s.participant_count ?? new Set(s.participants || []).size} jurisdictions · </>
-                      )}
-                      {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
-                    </div>
-                  </div>
+                <div key={tier} className="sc-jurlist-section">
+                  <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
+                    {heading} ({tierStructures.length})
+                  </p>
+                  {tierStructures.map((s) => renderStructureChip(s))}
                 </div>
               );
-            })}
+            })
+          ) : (
+            [...visibleStructures]
+              .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity))
+              .map((s) => renderStructureChip(s))
+          )}
         </div>
       </div>
 

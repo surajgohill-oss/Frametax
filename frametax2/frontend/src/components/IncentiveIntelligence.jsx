@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Money, scenarioDisplay, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
+import { Money, scenarioDisplay, buildScenarioLabel, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
 import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, qpeOf, isBaselineStructure } from "../lib/productionOptions";
 import { postJurisdictionPreference, beginEvaluation } from "../api";
 
@@ -29,9 +29,29 @@ const JURISDICTION_PREFERENCE_FACT_PREFIX = "jurisdiction_preference:";
 // not already shown, or the canonical next-best alternative when none
 // exists — never fabricated).
 
+// OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22): the four canonical
+// optimizer classifications (structural_classification.py's own
+// OPTIMIZER_STRUCTURE_FAMILIES) — see the identical constant/comment in
+// Workspace.jsx.
+const OPTIMIZER_CLASSIFICATIONS = new Set([
+  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
+]);
+
 function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPreferenceSaved }) {
   const classification = classifyStructure(structure);
-  const { title } = scenarioDisplay(structure);
+  // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 3: an
+  // optimizer-classified Optimized card (Card 4) used scenarioDisplay's
+  // plain "Primary + Other" jurisdiction join, which never disclosed WHICH
+  // component routed where — two component-distinct scenarios sharing the
+  // same participants (e.g. post->Manitoba vs music->Manitoba) rendered
+  // identical titles. buildScenarioLabel (the one shared adapter every
+  // other optimizer surface now uses) replaces it for that case only; a
+  // non-optimizer card (Anchor/Leading, Single Jurisdiction/Stacked) keeps
+  // its existing scenarioDisplay title, unchanged.
+  const { title: plainTitle } = scenarioDisplay(structure);
+  const title = OPTIMIZER_CLASSIFICATIONS.has(structure.classification)
+    ? buildScenarioLabel(structure)
+    : plainTitle;
   // Batched producer-control closeout (2026-09-03), item 2: Top
   // Structures' country/jurisdiction flags were dropped when this
   // 2x2 grid was rebuilt on scenarioDisplay (which returns a plain
