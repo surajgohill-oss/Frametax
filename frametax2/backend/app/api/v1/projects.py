@@ -39,64 +39,41 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 # is scoped to — deliberately not the full DocumentCategory taxonomy.
 _CORE_CATEGORIES = {"screenplay": "script", "budget": "budget", "deck": "deck", "schedule": "schedule"}
 
-# PROJECT_LIBRARY_FIXTURE_EXCLUSION (2026-09-22) — ROOT CAUSE: the
-# `Project.organization_id` scoping above (PROJECT_UI_DATA_INTEGRITY) is
-# necessary but, confirmed live against this database, not sufficient. The
-# ~49 audit/test/synthetic projects seeded alongside the 4 real productions
-# (Little Utopia, Bad Hombres, F#K Valentine's Day, Lips Like Sugar) were
-# NOT each minted under their own one-off organization the way
-# scripts/build_audit_control_fixtures.py does for its own later batches —
-# they were bulk-created under the SAME real organization ("Mind The Story
-# Media") in the same seeding pass, so organization scope alone cannot
-# separate them.
+# PROJECT_LIBRARY_FIXTURE_EXCLUSION (2026-09-22, corrected same day) —
+# ROOT CAUSE: the `Project.organization_id` scoping above
+# (PROJECT_UI_DATA_INTEGRITY) is necessary but, confirmed live against this
+# database, not sufficient — audit/test/synthetic projects seeded here
+# share the SAME real organization as the real productions, so
+# organization scope alone cannot separate them.
 #
+# CORRECTION (same day): the first version of this predicate additionally
+# enumerated 46 legacy titles ("Underwater", "Rust", "Safehaven", "The
+# Cure", ...) as fixtures. That was wrong and has been reverted — those are
+# plausible real company project titles with no evidenced audit/test/
+# synthetic signal, and hiding them risked hiding genuine company work.
 # There is no explicit audit/test/synthetic metadata field, no provenance/
-# source-type column, and no reliable per-row signal on `Project` today
-# (confirmed by inspecting the model: no is_test/is_fixture/source column
-# exists) — a real DB column + migration + backfill was considered and
-# explicitly deferred (operator directive: name-based filtering only for
-# this pass, no schema change against the shared acceptance database).
-# Falling back to naming convention (per this task's own explicit priority
-# order, item 4) is therefore the correct, evidenced mechanism here: 3 of
-# the 49 fixtures already follow the `AUDIT_CONTROL_*` convention
-# (scripts/build_audit_control_fixtures.py's own naming); the other 46 were
-# confirmed, by direct operator review of the live title list, to be
-# synthetic seed data with no shared substring — enumerated explicitly
-# below rather than guessed at with a fragile regex. A GENUINE new project
-# (real future ingestion) is never affected: it is never named
-# `AUDIT_CONTROL_*` and is never one of these 46 exact legacy titles, so it
-# appears automatically with no allowlist update required. Nothing here
-# deletes or modifies a fixture row — see `include_fixtures` below for how
-# audit tooling reaches them deliberately.
+# source-type column, and no reliable per-row signal on `Project` today.
+# Per explicit operator direction, the ONLY evidenced exclusion signal is
+# the `AUDIT_CONTROL_` naming convention
+# (scripts/build_audit_control_fixtures.py's own naming) — nothing broader.
+# A genuine new or historically-persisted company project, whether or not
+# it has been evaluated/ingested, is never named `AUDIT_CONTROL_*` and so
+# appears automatically with no allowlist update required, and no
+# allowlist of the four currently-evaluated production IDs exists anywhere
+# in this logic. Nothing here deletes or modifies a fixture row — see
+# `include_fixtures` below for how audit tooling reaches them deliberately.
 _AUDIT_CONTROL_TITLE_PREFIX = "AUDIT_CONTROL_"
-_KNOWN_LEGACY_FIXTURE_TITLES: frozenset[str] = frozenset({
-    "10 Double Zero", "5 LBS OF PRESSURE", "97 Minutes", "Adam & Eve",
-    "All My Friends Are Dead", "Almost Perfect", "Artists of Cinema",
-    "Baron Samedi", "Being Britney", "Braking Point", "David",
-    "Dead After Dark", "Drug Honey", "Flash Before the Bang", "Gifted",
-    "Give or Take", "Going Places", "Hightower", "Interference",
-    "Jane Millen", "Maggie Moves On", "Model Wars", "One Night Stand",
-    "Otherwise Engaged", "Replacements", "Rocky Mountain", "Rust",
-    "Safehaven", "Serpent Girl", "Sierra Madre", "Sky Unconditional",
-    "Spice Route", "Terezin", "The Arrangement", "The Cure", "The Dale",
-    "The Men We Leave Behind", "The Room Below", "The System",
-    "Trail Mates", "Twilight of the Dead", "Unconditional Love",
-    "Underwater", "Werewolf", "White Feather", "White Line Highway",
-})
 
 
 def _is_producer_visible(title: str | None) -> bool:
     """The ONE canonical producer-visibility predicate — every project-
     listing surface must call this, never re-derive its own fixture check.
-    A project is a fixture when its title carries the evidenced
-    AUDIT_CONTROL_ naming convention OR is one of the enumerated legacy
-    seed titles above; everything else (including every title never seen
-    before) is producer-visible by default."""
+    A project is a fixture ONLY when its title carries the evidenced
+    AUDIT_CONTROL_ naming convention; every other title (including every
+    title never seen before) is producer-visible by default."""
     if not title:
         return True
-    if title.startswith(_AUDIT_CONTROL_TITLE_PREFIX):
-        return False
-    return title not in _KNOWN_LEGACY_FIXTURE_TITLES
+    return not title.startswith(_AUDIT_CONTROL_TITLE_PREFIX)
 
 
 @router.post("", response_model=ProjectRead, status_code=201)

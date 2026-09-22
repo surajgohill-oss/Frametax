@@ -75,10 +75,21 @@ const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) *
 // compactScenarioIdentity already derives (never a second name/ID
 // scheme) whenever it exists, so the producer can tell them apart
 // without the full legal program name.
+// PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): an ADVANCED_MULTI_
+// JURISDICTION scenario (3+ distinct jurisdictions, or a combined/multilateral
+// structure) carries real coordination overhead a producer must see BEFORE
+// opening it — never silently mixed into the dropdown looking like an
+// ordinary two-jurisdiction option. Prefix only; the underlying compact
+// identity/program label construction is unchanged.
 function scenarioOptionLabel(structure) {
   const { flags, name, programLabel } = compactScenarioIdentity(structure);
   const label = flags ? `${flags} ${name}` : name;
-  return programLabel ? `${label} — ${programLabel}` : label;
+  const full = programLabel ? `${label} — ${programLabel}` : label;
+  if (structure.practicality_tier === "ADVANCED_MULTI_JURISDICTION") {
+    const n = structure.participant_count ?? new Set(structure.participants || []).size;
+    return `Advanced · ${n} jurisdictions · ${full}`;
+  }
+  return full;
 }
 
 // Project FX strip — CineGlobe Overview FX Strip + Vertical Scrolling
@@ -567,20 +578,25 @@ export default function Workspace() {
                 <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Normal</button>
                 <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
               </div>
-              {/* PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): a
+              {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): a
                   truthful count of the DISTINCT producer-facing optimizer
                   scenarios this mode's rack/dropdown/Globe surfaces draw from
-                  — `allocated.optimizer_scenarios_total` (canonical_production_
-                  view.py), never the raw search-iteration count
-                  (optimizer_candidates_total, which counts multiple
-                  permutations of the same route separately) and never the
-                  length of whatever happens to render. Compact text, no new
-                  card/section — Overview's own compact presentation contract
-                  is unaffected since this label lives only here, next to the
+                  — `allocated.optimizer_scenarios_total`/`_by_tier`
+                  (canonical_production_view.py), never the raw search-
+                  iteration count (optimizer_candidates_total, kept available
+                  for audit/debug evidence only) and never the length of
+                  whatever happens to render. Compact text, no new card/
+                  section — Overview's own compact presentation contract is
+                  unaffected since this label lives only here, next to the
                   mode toggle it describes. */}
               {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_scenarios_total != null && (
                 <span className="text-tertiary small" style={{ marginLeft: 10, whiteSpace: "nowrap" }}>
-                  {allocated.optimizer_scenarios_total} optimized structure{allocated.optimizer_scenarios_total === 1 ? "" : "s"}
+                  {allocated.optimizer_scenarios_total} distinct optimized scenario{allocated.optimizer_scenarios_total === 1 ? "" : "s"}
+                  {allocated.optimizer_scenarios_by_tier && (
+                    <> · {allocated.optimizer_scenarios_by_tier.PRACTICAL_HYBRID ?? 0} practical
+                    · {allocated.optimizer_scenarios_by_tier.FORMAL_COPRODUCTION ?? 0} formal
+                    · {allocated.optimizer_scenarios_by_tier.ADVANCED_MULTI_JURISDICTION ?? 0} advanced</>
+                  )}
                 </span>
               )}
             </div>

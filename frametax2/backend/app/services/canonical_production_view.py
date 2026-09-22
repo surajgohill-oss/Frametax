@@ -1791,55 +1791,84 @@ async def build_production_and_structures(
         for family in sorted(_OPTIMIZER_STRUCTURE_FAMILIES)
     }
 
-    # PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): `optimizer_candidates`
-    # (above) is the complete RAW priced set -- correct for auditability, but it dedupes
-    # only by exact economic_identity, so multiple search/enumeration iterations of the
-    # SAME producer-facing route (identical participants, programs and jurisdiction-to-
-    # program routing, differing only in which internal budget category label -- "music"
-    # vs "post" vs "vfx" -- happened to trigger a given non-principal leg, and in a few
-    # dollars of allocation-order rounding) all surface as separate cards. Confirmed live
-    # for F#K Valentine's Day: candidates 0-2 of optimizer_candidates are all "Manitoba
-    # (principal) + [CA-NL claiming ca_nl_all_spend_credit] + [IT claiming
-    # it_tax_credit_foreign]" -- the ONLY difference is which of "music"/"post"/"vfx"
-    # labels the search attached to the CA-NL and IT legs; the real (jurisdiction ->
-    # program) routing and every dollar figure worth showing a producer is materially
-    # identical. `optimizer_scenarios` is the ONE canonical producer-facing projection:
-    # one entry per materially distinct route, keyed by
-    # (classification, primary_jurisdiction, sorted participants, sorted
-    #  (jurisdiction_code, program_slug, is_principal_component) triples, treaty_slug) --
-    # explicitly EXCLUDING structure_id, economic_identity, search/enumeration order and
-    # the specific non-principal component/category label (which is an internal search-
-    # path artifact, never a materially different route). `is_principal_component`
-    # (component == "principal_production") is retained in the key specifically so a
-    # genuine multi-principal/treaty structure where role assignment differs (item 7 of
-    # the task) is never collapsed with one where it doesn't -- the FVD case above never
-    # has more than one principal leg, so this dimension is inert for it but load-bearing
-    # for OFFICIAL_COPRODUCTION/MULTI_PRINCIPAL_MULTILATERAL once real candidates exist in
-    # those families. The lowest-verified-NPC member of each group is the representative
-    # (a shallow copy, annotated with raw_variant_count/raw_variant_structure_ids/
-    # raw_variant_economic_identities for audit traceability back to the untouched
-    # optimizer_candidates rows) -- optimizer_candidates itself is never mutated.
+    # PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22) -- corrects the prior pass's
+    # `_scenario_topology_key`, which built its (jurisdiction, program) pairs from
+    # `segments` when present and otherwise `component_allocations`, and reduced the
+    # component/category to a bare `is_principal` boolean. Confirmed live this was WRONG on
+    # two counts: (1) every optimizer_candidates row has non-empty `component_allocations`
+    # (0/411 empty across F#K Valentine's Day; the same holds for all four productions),
+    # so that field -- never `segments`, which for "component/split" structures carries no
+    # per-component label at all -- is the one reliable source of which real category was
+    # routed where; (2) collapsing the real component label to a bare principal/non-
+    # principal boolean silently merged materially different producer decisions -- e.g.
+    # Greece-anchor structures routing $146,446 of POST-production spend to Manitoba
+    # (component "post") vs routing only $10,200 of MUSIC spend (component "music") vs
+    # $10,000 of VFX spend (component "vfx") previously collapsed into one scenario despite
+    # being three different real allocation decisions with three different dollar amounts.
+    #
+    # `optimizer_scenarios` is the ONE canonical producer-facing projection: one entry per
+    # materially distinct route, keyed by (classification, primary_jurisdiction, sorted
+    # participants, sorted (jurisdiction_code, program_slug, component) triples read
+    # EXCLUSIVELY from component_allocations, treaty_slug) -- explicitly excluding only
+    # structure_id, economic_identity, search/enumeration order, and immaterial rounding.
+    # The routed component/category is now a first-class, load-bearing part of the key (not
+    # reduced to a boolean): two candidates whose component differs for the same
+    # (jurisdiction, program) pair are two different scenarios, never merged. Confirmed live
+    # against all four productions with this corrected key: 0 of the 411/171/267/541 raw
+    # candidates currently collapse -- every raw candidate this generation really is a
+    # materially distinct route once the component is respected correctly. The grouping
+    # logic itself still collapses a genuine byte-identical duplicate discovery path (same
+    # classification/jurisdiction/participants/component-triples) when one exists -- pinned
+    # with a synthetic fixture in the test suite since none occurs in this live generation.
+    # The lowest-verified-NPC member of each group is the representative (a shallow copy,
+    # annotated with raw_variant_count/raw_variant_structure_ids/
+    # raw_variant_economic_identities for audit traceability) -- optimizer_candidates itself
+    # is never mutated.
     def _scenario_topology_key(e):
-        rows = e.get("segments") or e.get("component_allocations") or []
-        triples = set()
-        for r in rows:
-            code = r.get("jurisdiction_code")
-            slug = r.get("program_slug")
-            is_principal = r.get("component") == "principal_production"
-            triples.add((code, slug, is_principal))
+        rows = e.get("component_allocations") or []
+        triples = {
+            (r.get("jurisdiction_code"), r.get("program_slug"), r.get("component")) for r in rows
+        }
         return (
             e.get("classification"),
             e.get("primary_jurisdiction"),
             tuple(sorted(e.get("participants") or [])),
-            tuple(sorted(triples, key=lambda t: (t[0] or "", t[1] or "", t[2]))),
+            tuple(sorted(triples, key=lambda t: (t[0] or "", t[1] or "", t[2] or ""))),
             e.get("treaty_slug"),
         )
 
-    def _scenario_sort_key(e):
+    def _npc_sort_key(e):
         return (
             e["npc_verified_usd"] if e.get("npc_verified_usd") is not None else float("inf"),
             _identity_by_structure.get(e["structure_id"], ""),
         )
+
+    # PRODUCER_PRACTICALITY_TIER (2026-09-22): a presentation-only ordering signal derived
+    # entirely from facts the structure already carries (classification, distinct
+    # participant count) -- never a new dollar figure, never a change to canonical NPC or
+    # any economics. PRACTICAL_HYBRID (exactly two distinct jurisdictions, one principal +
+    # one routed leg) is what most producers can operationally execute with the least legal/
+    # administrative overhead; FORMAL_COPRODUCTION (an official treaty/co-production, even
+    # at two jurisdictions -- treaty machinery is its own overhead regardless of jurisdiction
+    # count) and ADVANCED_MULTI_JURISDICTION (three or more distinct jurisdictions, or a
+    # combined/multilateral structure) carry progressively more real coordination burden.
+    # Ties within a tier still break by ascending canonical NPC -- economics are never
+    # overridden, only grouped.
+    TIER_PRACTICAL = "PRACTICAL_HYBRID"
+    TIER_FORMAL = "FORMAL_COPRODUCTION"
+    TIER_ADVANCED = "ADVANCED_MULTI_JURISDICTION"
+    _TIER_RANK = {TIER_PRACTICAL: 0, TIER_FORMAL: 1, TIER_ADVANCED: 2}
+
+    def _practicality_tier(e):
+        if e.get("classification") == "OFFICIAL_COPRODUCTION":
+            return TIER_FORMAL
+        n_participants = len(set(e.get("participants") or []))
+        if e.get("classification") == "HYBRID_ANCHOR_COMPONENT" and n_participants == 2:
+            return TIER_PRACTICAL
+        return TIER_ADVANCED
+
+    def _scenario_sort_key(e):
+        return (_TIER_RANK[e["practicality_tier"]], *_npc_sort_key(e))
 
     _scenario_groups: dict[tuple, list[dict]] = {}
     for _e in optimizer_candidates:
@@ -1847,19 +1876,29 @@ async def build_production_and_structures(
 
     optimizer_scenarios = []
     for _group in _scenario_groups.values():
-        _group_sorted = sorted(_group, key=_scenario_sort_key)
+        _group_sorted = sorted(_group, key=_npc_sort_key)
         _rep = dict(_group_sorted[0])
         _rep["raw_variant_count"] = len(_group_sorted)
         _rep["raw_variant_structure_ids"] = [g["structure_id"] for g in _group_sorted]
         _rep["raw_variant_economic_identities"] = [
             _identity_by_structure.get(g["structure_id"]) for g in _group_sorted
         ]
+        _rep["practicality_tier"] = _practicality_tier(_rep)
+        _rep["participant_count"] = len(set(_rep.get("participants") or []))
         optimizer_scenarios.append(_rep)
+    # Producer-facing order: Practical -> Formal -> Advanced, ascending NPC within each tier.
+    # Every UI surface (Workspace rack/dropdown, Overview, Full Globe, Map, Split) consumes
+    # this array verbatim and in THIS order -- no separate client-side re-sort.
     optimizer_scenarios.sort(key=_scenario_sort_key)
     optimizer_scenarios_total = len(optimizer_scenarios)
     optimizer_scenarios_by_family = {
         family: sum(1 for e in optimizer_scenarios if e["classification"] == family)
         for family in sorted(_OPTIMIZER_STRUCTURE_FAMILIES)
+    }
+    optimizer_scenarios_by_tier = {
+        TIER_PRACTICAL: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_PRACTICAL),
+        TIER_FORMAL: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_FORMAL),
+        TIER_ADVANCED: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_ADVANCED),
     }
 
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
@@ -1986,6 +2025,11 @@ async def build_production_and_structures(
             "optimizer_scenarios": optimizer_scenarios,
             "optimizer_scenarios_total": optimizer_scenarios_total,
             "optimizer_scenarios_by_family": optimizer_scenarios_by_family,
+            # PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): counts for the
+            # truthful "N distinct optimized scenarios / P practical / F formal
+            # co-productions / A advanced" disclosure every optimizer-consuming surface
+            # must show instead of the raw iteration count.
+            "optimizer_scenarios_by_tier": optimizer_scenarios_by_tier,
             "retention": {
                 "policy": {
                     "global_top": GLOBAL_TOP, "per_structure_type_top": TYPE_TOP,

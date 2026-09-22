@@ -285,6 +285,39 @@ test("selectSixSlots: a stored slot-6 override selects that candidate instead of
   assert.equal(slot6.structure_id, "hybrid-f");
 });
 
+// PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): canonical_production_
+// view.py now serves `optimizer_scenarios` PRE-SORTED Practical -> Formal ->
+// Advanced (ascending NPC within each tier) — admissibleForMode/selectSixSlots
+// consume that order verbatim, with no client-side re-sort. This fixture
+// mirrors that real served shape (a Practical tier or two, then Advanced) and
+// proves Workspace's headline cards/dropdown correctly inherit it: Practical
+// scenarios fill the leading slots first, Advanced scenarios only appear once
+// Practical is exhausted, and every remaining scenario (of either tier) stays
+// reachable in the dropdown.
+test("selectSixSlots (Optimizer): Practical-tier scenarios fill the leading slots before any Advanced scenario, matching the backend's pre-sorted order", () => {
+  const anchor = structure({ structure_id: "anchor", is_baseline: true, npc_with_adjustments_usd: 1 });
+  // 3 Practical (2-jurisdiction) scenarios, cheaper overall, then 2 Advanced
+  // (3+-jurisdiction) scenarios that are even CHEAPER by NPC alone — proving
+  // the tier partition wins over a naive NPC-only sort, exactly like the
+  // real backend's tier-then-NPC key.
+  const practical = ["p1", "p2", "p3"].map((id, i) => structure({
+    structure_id: id, classification: "HYBRID_ANCHOR_COMPONENT", participants: ["GR", `X${i}`],
+    npc_with_adjustments_usd: 100 + i, practicality_tier: "PRACTICAL_HYBRID", participant_count: 2,
+  }));
+  const advanced = ["a1", "a2"].map((id, i) => structure({
+    structure_id: id, classification: "HYBRID_ANCHOR_COMPONENT", participants: ["GR", "CA-MB", "IT"],
+    npc_with_adjustments_usd: 10 + i, practicality_tier: "ADVANCED_MULTI_JURISDICTION", participant_count: 3,
+  }));
+  // Pre-sorted the way canonical_production_view.py serves it: Practical
+  // (ascending NPC), then Advanced (ascending NPC) — NOT plain NPC order.
+  const preSorted = [...practical, ...advanced];
+  const allocated = { structures: [anchor, ...preSorted], ranking: [], best_per_jurisdiction: {}, optimizer_scenarios: preSorted };
+  const { leading, slot6, dropdownOptions } = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  assert.deepEqual(leading.map((s) => s.structure_id), ["p1", "p2", "p3", "a1"], "the 3 Practical scenarios must fill first, an Advanced one only after Practical is exhausted, never re-sorted by NPC alone");
+  assert.equal(slot6.structure_id, "a2");
+  assert.deepEqual(dropdownOptions.map((s) => s.structure_id), ["a2"], "every remaining scenario, Practical or Advanced, must stay reachable in the dropdown");
+});
+
 test("selectSixSlots: fewer than six real distinct jurisdiction winners is a valid, honest result — never backfilled with a duplicate", () => {
   const anchor = structure({ structure_id: "anchor", primary_jurisdiction: "US-GA", is_baseline: true, npc_with_adjustments_usd: 1 });
   const on = structure({ structure_id: "on", classification: "STACKED_PROGRAMS", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 2 });

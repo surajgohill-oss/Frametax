@@ -301,6 +301,16 @@ export default function ProjectGlobe() {
                   <div>
                     <div className="row-title small">{s.label}</div>
                     <div className="row-sub">
+                      {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22):
+                          an Advanced-tier scenario (3+ distinct jurisdictions, or
+                          a combined/multilateral structure) carries real
+                          coordination overhead the producer must see before
+                          opening it — same disclosure text Workspace's own
+                          dropdown uses (scenarioOptionLabel), never a second,
+                          differently-worded label. */}
+                      {s.practicality_tier === "ADVANCED_MULTI_JURISDICTION" && (
+                        <>Advanced · {s.participant_count ?? new Set(s.participants || []).size} jurisdictions · </>
+                      )}
                       {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
                     </div>
                   </div>
