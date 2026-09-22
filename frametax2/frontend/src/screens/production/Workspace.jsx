@@ -578,51 +578,56 @@ export default function Workspace() {
           </aside>
         )}
 
-        {/* Station — card rack or globe. One horizontal control row:
-            Lanes/Map/Split stays centered over the scenario-comparison
-            region (a fixed left spacer column balances the right-hand
-            Other Scenarios column so the tabs never drift off-center
-            depending on whether Other Scenarios is present); Other
-            Scenarios sits at the right, same baseline, never a second
-            row. The Jurisdictions/Optimizer Overlay toggle is secondary
-            to the Globe itself and lives docked to the globe pane (see
-            wsx-g-modetoggle below), not here. */}
+        {/* Station — card rack or globe. Wide station: one control row —
+            mode toggle (count stacked beneath it) at left, Lanes/Map/Split
+            centered, Other Scenarios at right. Constrained station (narrow
+            viewport, or Question Stack/Inspector open shrinking this
+            station's own width): two rows — see .wsx-station-head's
+            @container rule in screens.css. The Jurisdictions/Optimizer
+            Overlay toggle is secondary to the Globe itself and lives
+            docked to the globe pane (see wsx-g-modetoggle below), not
+            here. */}
         <div className="wsx-station">
           <div className="wsx-station-head">
             {/* Workspace scenario-mode data wiring: smallest functional
                 Normal/Optimizer control, reusing the existing .wsx-viewtabs
                 button style (Lanes/Map/Split's own) rather than a new
-                visual system. Placed in the existing left spacer slot so
-                the Lanes/Map/Split tabs stay exactly centered (the grid's
-                1fr/auto/1fr geometry is unaffected by this slot's content
-                — see screens.css's .wsx-station-head). */}
+                visual system. */}
             <div className="wsx-station-head-spacer wsx-scenario-mode">
               <div className="wsx-viewtabs">
                 <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Normal</button>
                 <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
               </div>
-              {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): a
-                  truthful count of the DISTINCT producer-facing optimizer
-                  scenarios this mode's rack/dropdown/Globe surfaces draw from
-                  — `allocated.optimizer_scenarios_total`/`_by_tier`
-                  (canonical_production_view.py), never the raw search-
-                  iteration count (optimizer_candidates_total, kept available
-                  for audit/debug evidence only) and never the length of
-                  whatever happens to render. Compact text, no new card/
-                  section — Overview's own compact presentation contract is
-                  unaffected since this label lives only here, next to the
-                  mode toggle it describes. */}
-              {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_scenarios_total != null && (
-                <span className="text-tertiary small" style={{ marginLeft: 10, whiteSpace: "nowrap" }}>
-                  {allocated.optimizer_scenarios_total} distinct optimized scenario{allocated.optimizer_scenarios_total === 1 ? "" : "s"}
-                  {allocated.optimizer_scenarios_by_tier && (
-                    <> · {allocated.optimizer_scenarios_by_tier.PRACTICAL_HYBRID ?? 0} practical
-                    · {allocated.optimizer_scenarios_by_tier.FORMAL_COPRODUCTION ?? 0} formal
-                    · {allocated.optimizer_scenarios_by_tier.ADVANCED_MULTI_JURISDICTION ?? 0} advanced</>
-                  )}
-                </span>
-              )}
             </div>
+            {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): a
+                truthful count of the DISTINCT producer-facing optimizer
+                scenarios this mode's rack/dropdown/Globe surfaces draw from
+                — `allocated.optimizer_scenarios_total`/`_by_tier`
+                (canonical_production_view.py), never the raw search-
+                iteration count (optimizer_candidates_total, kept available
+                for audit/debug evidence only) and never the length of
+                whatever happens to render.
+                WORKSPACE_RESPONSIVE_CONTROL/RACK_CLOSEOUT (2026-09-23): now
+                its own grid item (.wsx-scenario-count, no inline
+                whiteSpace:"nowrap") so it lays out on its own row and can
+                wrap instead of ever sharing a line with Lanes/Map/Split or
+                Other Scenarios. Compact producer copy; the 0-value Formal
+                tier is omitted rather than printed as "0 formal". */}
+            {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_scenarios_total != null && (() => {
+              const total = allocated.optimizer_scenarios_total;
+              const byTier = allocated.optimizer_scenarios_by_tier;
+              const practical = byTier?.PRACTICAL_HYBRID ?? 0;
+              const formal = byTier?.FORMAL_COPRODUCTION ?? 0;
+              const advanced = byTier?.ADVANCED_MULTI_JURISDICTION ?? 0;
+              const tierParts = byTier
+                ? [`${practical} practical`, ...(formal ? [`${formal} formal`] : []), `${advanced} advanced`]
+                : [];
+              return (
+                <span className="wsx-scenario-count">
+                  {total} scenario{total === 1 ? "" : "s"}{tierParts.length ? ` · ${tierParts.join(" · ")}` : ""}
+                </span>
+              );
+            })()}
             <div className="wsx-viewtabs">
               {MODES.map((m) => (
                 <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
@@ -650,7 +655,7 @@ export default function Workspace() {
                   ))}
                 </select>
               </div>
-            ) : <div aria-hidden="true" />}
+            ) : <div aria-hidden="true" className="wsx-other-scenarios-spacer" />}
           </div>
 
           {mode === "lanes" && (

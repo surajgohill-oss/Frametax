@@ -1071,29 +1071,79 @@
 .qs-empty { margin: 8px 6px; padding: 16px 10px; text-align: center; color: var(--text-tertiary); border: 1px dashed var(--hairline); border-radius: 9px; font-size: 12px; }
 .qs-hint { margin: 10px 6px 0; font-size: 10.5px; color: var(--text-tertiary); }
 
-.wsx-station { overflow: auto; position: relative; min-height: 0; display: flex; flex-direction: column; }
-/* One horizontal row: a fixed-width left spacer, the centered Lanes/Map/
-   Split selector, and Other Scenarios at the right — same baseline, never
-   two rows. The spacer column balances the right column's width so the
-   mode selector stays visually centered over the scenario region whether
-   or not Other Scenarios is present (mode==="map", or no overflow). The
-   Jurisdictions/Optimizer Overlay toggle lives docked to the globe pane
-   itself (.wsx-g-modetoggle), never here, so it never distorts this row. */
-.wsx-station-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 12px 18px 0; }
+/* container-type: inline-size makes .wsx-station-head and .wsx-rack (both
+   direct descendants) responsive to THIS element's own content-box width —
+   which shrinks when the Question Stack or Inspector opens even though the
+   viewport itself hasn't changed — rather than only reacting to viewport
+   media queries (WORKSPACE_RESPONSIVE_CONTROL/RACK_CLOSEOUT, 2026-09-23).
+   overflow-x is hidden (never horizontal scroll) — the rack reflows its
+   column count instead; overflow-y stays auto so the sixth card remains
+   reachable by scrolling down. */
+.wsx-station { container-type: inline-size; container-name: wsx-station; overflow-x: hidden; overflow-y: auto; position: relative; min-height: 0; display: flex; flex-direction: column; }
+/* Wide station: one row — mode toggle (with its scenario-count disclosure
+   stacked beneath it) at left, Lanes/Map/Split centered, Other Scenarios at
+   right. Constrained station (narrow viewport, or Question Stack/Inspector
+   open reducing this station's own width): two rows — mode toggle + Lanes/
+   Map/Split share row 1, the scenario count + Other Scenarios share row 2
+   — via the @container rule below, never by overlapping the row-1 controls. */
+.wsx-station-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: "mode tabs other" "count tabs other";
+  align-items: center;
+  gap: 4px 14px;
+  padding: 12px 18px 0;
+}
 .wsx-station-head-spacer { min-width: 0; }
+.wsx-scenario-mode { grid-area: mode; min-width: 0; }
+/* Scenario-count disclosure — was an inline whiteSpace:"nowrap" span; now a
+   named class so it can wrap and is laid out (grid-area: count) instead of
+   sharing a line with Lanes/Map/Split or Other Scenarios. */
+.wsx-scenario-count { grid-area: count; min-width: 0; font-size: 12px; line-height: 1.4; color: var(--text-tertiary); white-space: normal; }
 /* Other Scenarios — navigation among EXISTING optimizer-generated
-   structures beyond the visible lanes, never a scenario-creation control.
-   Right column of the shared control row, same baseline as Lanes/Map/
-   Split — never a second row (that was the rejected placement). */
+   structures beyond the visible lanes, never a scenario-creation control. */
+.wsx-other-scenarios, .wsx-other-scenarios-spacer { grid-area: other; min-width: 0; }
 .wsx-other-scenarios { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.wsx-other-scenarios label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
-.wsx-viewtabs { display: inline-flex; align-items: center; height: 30px; box-sizing: border-box; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 7px; padding: 2px; gap: 1px; }
+.wsx-other-scenarios label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; flex: none; }
+/* Bounded width + internal ellipsis so a long optimizer label never forces
+   the control row to overflow horizontally. */
+.wsx-other-scenarios #wsx-swap { min-width: 0; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wsx-viewtabs { display: inline-flex; align-items: center; height: 30px; box-sizing: border-box; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 7px; padding: 2px; gap: 1px; min-width: 0; }
 .wsx-viewtabs button { height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 12px; font: 500 12px var(--font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); border-radius: 5px; }
 .wsx-viewtabs button.active { background: var(--surface-1); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+/* The center Lanes/Map/Split selector and the right Other Scenarios column
+   span both head rows at wide station widths (vertically centered next to
+   the stacked mode-toggle/count column); the @container rule below drops
+   that span for the constrained two-row layout. Disambiguated from the
+   Normal/Optimizer toggle — which shares the same .wsx-viewtabs button
+   style by design — via the direct-child combinator: only Lanes/Map/Split
+   is a direct child of .wsx-station-head. */
+.wsx-station-head > .wsx-viewtabs { grid-area: tabs; grid-row: span 2; justify-self: center; }
+.wsx-other-scenarios, .wsx-other-scenarios-spacer { grid-row: span 2; }
 
-/* Pinned to 3 columns like the artifact — the station scrolls horizontally
-   when the question stack opens instead of reflowing the rack. */
-.wsx-rack { display: grid; grid-template-columns: repeat(3, minmax(310px, 320px)); justify-content: start; gap: 18px; padding: 20px 10px 20px 18px; }
+@container wsx-station (max-width: 860px) {
+  .wsx-station-head {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "mode tabs" "count other";
+  }
+  .wsx-station-head > .wsx-viewtabs { grid-row: auto; justify-self: start; }
+  .wsx-other-scenarios, .wsx-other-scenarios-spacer { grid-row: auto; }
+  .wsx-other-scenarios { justify-content: flex-start; }
+}
+
+/* Three columns at spacious station width; reflows to two, then one, as
+   the station's own content-box narrows (Question Stack/Inspector open, or
+   a smaller viewport) — replacing the old fixed repeat(3, minmax(310px,
+   320px)) that only ever grew a horizontal scrollbar. minmax(0, 320px)
+   keeps a sensible maximum card width close to the original 320px while
+   letting a track shrink to fit rather than overflow. */
+.wsx-rack { display: grid; grid-template-columns: repeat(3, minmax(0, 320px)); justify-content: start; gap: 18px; padding: 20px 10px 20px 18px; }
+@container wsx-station (max-width: 1023px) {
+  .wsx-rack { grid-template-columns: repeat(2, minmax(0, 320px)); }
+}
+@container wsx-station (max-width: 685px) {
+  .wsx-rack { grid-template-columns: minmax(0, 320px); }
+}
 
 .wsx-lane { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 5px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; cursor: pointer; }
 .wsx-lane:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
@@ -1104,7 +1154,13 @@
 .wsx-lane.draft { border-style: dashed; border-color: var(--blue); }
 .wsx-lh { padding: 14px 18px 10px; border-bottom: 0.5px solid var(--hairline); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; min-height: 70px; box-sizing: border-box; }
 .wsx-lh-id { min-width: 0; }
-.wsx-nm { font-family: var(--font-serif); font-weight: 500; font-size: 19px; color: var(--text-primary); }
+/* overflow-wrap: break-word — a long unbreakable optimizer component-
+   routing word (e.g. "Newfoundland", "Manitoba,") can exceed the narrow
+   card-title column at a reflowed (2-column) rack width; without this the
+   word overflows its own box horizontally instead of wrapping, which is
+   what a plain white-space wrap alone does not prevent
+   (WORKSPACE_RESPONSIVE_CONTROL/RACK_CLOSEOUT, 2026-09-23). */
+.wsx-nm { font-family: var(--font-serif); font-weight: 500; font-size: 19px; color: var(--text-primary); overflow-wrap: break-word; }
 .wsx-lb { font: 13px var(--font-sans); color: var(--text-tertiary); margin-top: 3px; }
 /* Per-lane FX chip — frozen artifact .lane-fx (real spot, honest data) */
 .wsx-lane-fx { font: 13px var(--font-mono); color: var(--text-primary); margin-top: 6px; display: flex; align-items: baseline; gap: 5px; line-height: 1.3; white-space: nowrap; overflow: hidden; max-width: 100%; cursor: pointer; }
