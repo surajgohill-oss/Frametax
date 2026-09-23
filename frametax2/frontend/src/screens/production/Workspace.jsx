@@ -507,6 +507,19 @@ export default function Workspace() {
   function handleGlobeClick(pt) {
     const code = pt.jurisdictionCode || pt.id;
     setSelectedJurisdiction(code);
+    // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): Single Jurisdiction mode
+    // (Map/Split's embedded globe, same contract as ProjectGlobe.jsx's own
+    // selectJurisdiction) resolves the EXACT canonical
+    // best_per_jurisdiction[code] winner directly, opening the same full
+    // structure-level Inspector every Optimizer card already uses — never
+    // structuresByCode[0], and never the single-segment view that silently
+    // dropped every program past the first in a real same-jurisdiction stack.
+    if (workspaceMode === MODE_NORMAL) {
+      const winner = allocated?.best_per_jurisdiction?.[code];
+      if (!winner) return;
+      openInspector("candidate-structure", buildCandidateDetail(winner));
+      return;
+    }
     const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
     const seg = resolveSegmentDetail(s, code);

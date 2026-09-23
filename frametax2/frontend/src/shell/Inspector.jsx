@@ -462,6 +462,24 @@ function StructureDetailInspector({ data }) {
           </div>
         </dl>
       )}
+      {/* SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the Jurisdictions-layer
+          counterpart to the Optimizer block above — a best_per_jurisdiction
+          winner carries no recommendation_status (that concept is Optimizer-
+          only), but every real winner except the anchor itself carries its
+          own real net_benefit_vs_anchor_usd (canonical_production_view.py),
+          read verbatim — never re-derived from two NPCs client-side. Positive
+          = saves, negative = costs more, exactly Money(±) already displays
+          for delta above. */}
+      {data.recommendation_status == null && data.net_benefit_vs_anchor_usd != null && (
+        <dl className="kv-list" style={{ marginTop: -4, marginBottom: 8 }}>
+          <div>
+            <dt>{data.net_benefit_vs_anchor_usd < 0 ? "Costs more than Current Location"
+              : data.net_benefit_vs_anchor_usd === 0 ? "Same as Current Location"
+              : "Saves vs. Current Location"}</dt>
+            <dd className="mono"><Money value={Math.abs(data.net_benefit_vs_anchor_usd)} /></dd>
+          </div>
+        </dl>
+      )}
       {/* PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): disclosure only —
           this scenario is one canonical representative of N raw search/enumeration
           iterations of the same route (canonical_production_view.py's optimizer_scenarios

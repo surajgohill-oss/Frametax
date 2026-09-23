@@ -286,7 +286,10 @@ test("selectSixSlots (Single Jurisdiction): five unique jurisdiction winners pop
   assert.equal(slots[0].structure_id, "anchor");
   assert.deepEqual(leading.map((s) => s.primary_jurisdiction), ["CA-ON", "CA-MB", "IT", "GR"]);
   assert.equal(slot6.primary_jurisdiction, "NZ");
-  assert.deepEqual(dropdownOptions.map((s) => s.primary_jurisdiction), ["NZ", "FR"]);
+  // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the dropdown's own default
+  // option already represents whichever winner is in slot 6 ("— NZ —") — NZ
+  // must not also appear a second time inside the selectable optgroup list.
+  assert.deepEqual(dropdownOptions.map((s) => s.primary_jurisdiction), ["FR"]);
   const jurisdictions = slots.map((s) => s.primary_jurisdiction);
   assert.equal(new Set(jurisdictions).size, jurisdictions.length, "no jurisdiction repeats across the six headline slots");
 });
@@ -297,17 +300,22 @@ test("selectSixSlots (Single Jurisdiction): slot-6 dropdown contains every remai
     structure({ structure_id: `w-${jur}`, primary_jurisdiction: jur, npc_with_adjustments_usd: 10 + i }),
   );
   const allocated = allocatedOf([anchor, ...winners], [anchor, ...winners]);
-  const { anchor: slot1, leading, dropdownOptions } = selectSixSlots(allocated, MODE_NORMAL, null);
-  // Slots 1-5 (anchor + the top four) must never reappear in the dropdown
-  // — the dropdown replaces ONLY slot 6, so it is scoped to every
-  // remaining candidate AFTER rank 4, which by construction includes the
-  // current slot 6 itself (the same "current item also selectable"
-  // contract the pre-existing Other Scenarios control already used).
-  const shownInSlots1to5 = new Set([slot1.primary_jurisdiction, ...leading.map((s) => s.primary_jurisdiction)]);
-  for (const opt of dropdownOptions) assert.equal(shownInSlots1to5.has(opt.primary_jurisdiction), false);
+  const { anchor: slot1, leading, slot6, dropdownOptions } = selectSixSlots(allocated, MODE_NORMAL, null);
+  // Slots 1-6 (anchor + the top four + slot 6 itself) must never reappear
+  // in the dropdown's optgroup list — slot 6's own current winner is
+  // already represented by the control's own default "— <label> —" option
+  // (see Workspace.jsx's <select>), so listing it again in the optgroup
+  // would be a real duplicate (two selectable rows for the same
+  // jurisdiction), not "the current item also selectable" — the Optimizer
+  // branch already excludes its own slot6 id for exactly this reason; this
+  // mirrors that.
+  const shownOutsideDropdown = new Set([
+    slot1.primary_jurisdiction, ...leading.map((s) => s.primary_jurisdiction), slot6.primary_jurisdiction,
+  ]);
+  for (const opt of dropdownOptions) assert.equal(shownOutsideDropdown.has(opt.primary_jurisdiction), false);
   const dropdownJurisdictions = dropdownOptions.map((s) => s.primary_jurisdiction);
   assert.equal(new Set(dropdownJurisdictions).size, dropdownJurisdictions.length, "no duplicate jurisdictions in the dropdown");
-  assert.deepEqual(dropdownJurisdictions, ["NZ", "FR", "AU"]);
+  assert.deepEqual(dropdownJurisdictions, ["FR", "AU"]);
 });
 
 test("selectSixSlots: a stored slot-6 override selects that candidate instead of the default rank-5", () => {

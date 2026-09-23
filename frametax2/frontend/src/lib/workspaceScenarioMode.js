@@ -43,9 +43,21 @@ export function familiesForMode(mode) {
 // jurisdiction).
 function _singleJurisdictionCandidates(allocated) {
   const byJurisdiction = allocated?.best_per_jurisdiction || {};
+  // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): explicit economic_identity
+  // tie-break — two different jurisdictions' winners landing on the exact
+  // same NPC is real but rare; without a deterministic second key, JS sort
+  // stability would fall back to Object.values() insertion order (the
+  // backend dict's own key order), which is a real ordering but not one this
+  // module defends or documents. economic_identity is unique per structure,
+  // so this guarantees a fully deterministic order across re-renders and
+  // re-fetches, never re-deriving or recomputing NPC itself.
   return Object.values(byJurisdiction)
     .filter(Boolean)
-    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
+    .sort((a, b) => {
+      const npcDiff = (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity);
+      if (npcDiff !== 0) return npcDiff;
+      return String(a.economic_identity ?? "").localeCompare(String(b.economic_identity ?? ""));
+    });
 }
 
 // GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22) — ROOT CAUSE (supersedes the
@@ -168,9 +180,19 @@ export function selectSixSlots(allocated, mode, slot6Id) {
       (s) => !anchor || s.structure_id !== anchor.structure_id,
     );
     const leading = pool.slice(0, 4);
-    const dropdownOptions = pool.slice(4);
-    const chosen = slot6Id ? dropdownOptions.find((s) => s.structure_id === slot6Id) : null;
-    const slot6 = chosen || dropdownOptions[0] || null;
+    const remaining = pool.slice(4);
+    const chosen = slot6Id ? remaining.find((s) => s.structure_id === slot6Id) : null;
+    const slot6 = chosen || remaining[0] || null;
+    // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the dropdown's own
+    // default option ("— <current slot 6 label> —", rendered by the caller)
+    // already represents whichever winner occupies slot 6. Without this
+    // exclusion, that same jurisdiction winner ALSO appeared a second time
+    // inside the optgroup list — a real duplicate entry (e.g. two literal
+    // "Ontario" rows), present on every production with more than 5
+    // canonical winners, not just an explicit-override edge case. Mirrors
+    // the Optimizer branch below, which already excludes its own slot6 id.
+    const excludeId = slot6 ? slot6.structure_id : null;
+    const dropdownOptions = remaining.filter((s) => s.structure_id !== excludeId);
     const slots = [anchor, ...leading, slot6].filter(Boolean);
     return {
       anchor, leading, slot6, slots, dropdownOptions,

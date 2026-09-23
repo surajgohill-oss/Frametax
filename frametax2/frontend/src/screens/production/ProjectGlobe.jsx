@@ -199,6 +199,27 @@ export default function ProjectGlobe() {
   // the regression test guarding this exact contract.
   function selectJurisdiction(code) {
     setSelectedJurisdiction(code);
+    // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): Single Jurisdiction mode
+    // resolves the EXACT canonical `best_per_jurisdiction[code]` winner
+    // directly — never `structuresByCode.get(code)[0]` (a lookup built by
+    // iterating admissibleForMode's pool and indexing by every participant
+    // code; for Single Jurisdiction mode's own pool this happens to hold
+    // only that one winner per code today, since every best_per_jurisdiction
+    // entry's own participants is exactly [code] — but resolving via the
+    // shared lookup made the click path depend on that pool-construction
+    // detail rather than stating the real canonical contract explicitly).
+    // Opens the SAME full structure-level Inspector (buildCandidateDetail /
+    // "candidate-structure") every Optimizer card already uses — never the
+    // single-segment "allocation-segment" view, which silently showed only
+    // the FIRST program of a real same-jurisdiction stack (e.g. Ontario's
+    // real OFTTC + OCASE) and omitted structure id/economic identity/total
+    // NPC/delta from Current Location entirely.
+    if (globeMode === MODE_NORMAL) {
+      const winner = allocated?.best_per_jurisdiction?.[code];
+      if (!winner) return;
+      openInspector("candidate-structure", buildCandidateDetail(winner));
+      return;
+    }
     const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
     // LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21): resolveSegmentDetail falls

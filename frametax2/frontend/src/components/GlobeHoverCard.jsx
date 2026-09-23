@@ -20,12 +20,22 @@ import { jurisdictionName } from "../lib/format";
 // as "Up to X%".
 function RecommendedOrAlternativeBody({ hover }) {
   const b = hover.baseIncentive;
-  const pctOfGross = incentivePctOfGross(hover.segmentIncentiveUsd, hover.grossBudgetUsd);
+  // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): "Modeled Incentive" now
+  // reads hover.incentiveUsd (the whole structure's real total across every
+  // segment — the same figure NPC below is already derived from) rather
+  // than hover.segmentIncentiveUsd (only the FIRST segment's own
+  // contribution, e.g. just OFTTC's share of a real OFTTC+OCASE stack) —
+  // the prior figure silently understated a same-jurisdiction program
+  // stack's real modeled incentive and disagreed with the NPC shown right
+  // below it. "Program" now discloses every real stacked program
+  // (programDisplayNames), never only the first.
+  const pctOfGross = incentivePctOfGross(hover.incentiveUsd, hover.grossBudgetUsd);
+  const programLine = hover.programDisplayNames?.length ? hover.programDisplayNames.join(" + ") : (b ? b.programLabel : null);
   return (
     <>
       <div className="hover-field">
         <div className="text-tertiary small">Program</div>
-        <div className="small">{b ? b.programLabel : "Not available"}</div>
+        <div className="small">{programLine || "Not available"}</div>
       </div>
       <div className="hover-field">
         <div className="text-tertiary small">Maximum Incentive</div>
@@ -33,7 +43,7 @@ function RecommendedOrAlternativeBody({ hover }) {
       </div>
       <div className="hover-field">
         <div className="text-tertiary small">Modeled Incentive</div>
-        <div className="small">{hover.segmentIncentiveUsd != null ? formatFullUsd(hover.segmentIncentiveUsd) : "Not available"}</div>
+        <div className="small">{hover.incentiveUsd != null ? formatFullUsd(hover.incentiveUsd) : "Not available"}</div>
       </div>
       <div className="hover-field">
         <div className="text-tertiary small">NPC</div>

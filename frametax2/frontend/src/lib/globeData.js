@@ -260,10 +260,29 @@ export function countryCode(jurisdictionCode) {
 
 // Countries whose sub-national jurisdictions are the real production
 // decision unit — a producer shoots in Georgia or British Columbia, not in
-// "the United States". For these, the Globe renders admin-1 polygons
-// (public/geo/admin1-us-ca.geojson) and the country-level polygon is
-// suppressed entirely, so status is never averaged across 50 states.
-export const SUBNATIONAL_COUNTRIES = new Set(["US", "CA"]);
+// "the United States". For US/CA specifically, the Globe also renders real
+// admin-1 polygons (public/geo/admin1-us-ca.geojson) and the country-level
+// polygon is suppressed entirely (Globe3D's own SUBNATIONAL_COUNTRY_ISOS —
+// a separate, geometry-loading-time constant), so status is never averaged
+// across 50 states.
+//
+// SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): AU added — confirmed live
+// (all four acceptance productions) that best_per_jurisdiction genuinely
+// carries a country-level "AU" winner AND real distinct "AU-NSW"/"AU-QLD"/
+// "AU-SA" winners simultaneously, all four coexisting. Before this,
+// globeKey() folded all four onto the single "AU" bucket — buildCountryStatuses'
+// upsert() kept only whichever had the highest STATUS_RANK as `best`, so the
+// other three real winners had no marker, no hover, and no click target
+// anywhere on the Globe (only reachable via the side list's own admissibleForMode
+// pool, which never collapses). No admin1 geojson exists for Australian
+// states (unlike US/CA) — the AU country polygon is NOT dropped from the
+// world set and keeps rendering its own real "AU" winner's colour; AU-NSW/
+// AU-QLD/AU-SA get their own real, already-defined JURISDICTION_COORDS
+// marker points (Sydney/Brisbane/Adelaide) with no additional polygon
+// subdivision, which is the documented, acceptable degradation ("polygon/
+// highlight layer where matching geometry exists") — never a reason to
+// collapse their marker/hover/click identity back into the country's.
+export const SUBNATIONAL_COUNTRIES = new Set(["US", "CA", "AU"]);
 
 // Jurisdiction codes with no admin-1 polygon of their own but a real
 // country-level polygon in the world set — Natural Earth models Puerto
@@ -544,6 +563,14 @@ export function buildCandidateDetail(structure) {
     recommendation_status: structure.recommendation_status ?? undefined,
     recommendation_reason: structure.recommendation_reason ?? undefined,
     is_recommended: structure.is_recommended ?? undefined,
+    // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the Jurisdictions-layer
+    // counterpart to savings_vs_current_usd above — every real
+    // best_per_jurisdiction winner (except the anchor itself, which is null)
+    // already carries this real, backend-computed delta from Current
+    // Location (canonical_production_view.py). Read verbatim, never
+    // re-derived client-side (positive = saves, negative = costs more, 0 =
+    // neutral — same sign convention the Optimizer field above uses).
+    net_benefit_vs_anchor_usd: structure.net_benefit_vs_anchor_usd ?? undefined,
   };
 }
 
@@ -604,6 +631,21 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
           isBandCeiling: !!seg.is_band_ceiling,
         }
       : null;
+    // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): `resolveSegmentDetail`
+    // above finds only the FIRST segment for this code — for a real
+    // same-jurisdiction program stack (e.g. Ontario OFTTC + OCASE, two
+    // segments both carrying jurisdiction_code "CA-ON"), `baseIncentive`
+    // silently disclosed only the first program, never the stack. The
+    // backend already serves the complete, real program list for a
+    // multi-program structure (`program_display_names`, populated only when
+    // more than one program stacks) — read verbatim, falling back to the
+    // single-program label (`program_display_name`, then baseIncentive's
+    // own resolved label) for the ordinary one-program case. No client-side
+    // segment aggregation, no re-derivation.
+    const programDisplayNames = (structure?.program_display_names?.length ? structure.program_display_names
+      : structure?.program_display_name ? [structure.program_display_name]
+      : baseIncentive ? [baseIncentive.programLabel]
+      : []);
     byIso.set(iso, {
       isoA2: iso,
       jurisdictionCode: code,
@@ -626,6 +668,7 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
       segmentIncentiveUsd: seg?.claims_incentive ? seg.incentive_ceiling_usd ?? null : null,
       grossBudgetUsd: structure?.gross_budget_usd ?? grossBudgetUsd ?? null,
       baseIncentive,
+      programDisplayNames,
       // Real backend text (production_discovery.py's own reason string) —
       // only ever set for Excluded jurisdictions sourced from a discovery
       // examination (see buildCountryStatuses branch 2). Never fabricated;
