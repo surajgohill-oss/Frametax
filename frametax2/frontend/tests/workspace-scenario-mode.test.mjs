@@ -76,8 +76,23 @@ function optimizerCandidatesOf(entries) {
     .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
 }
 
+// GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): mirrors the real
+// backend annotation contract (canonical_production_view.py's
+// _annotate_optimizer_scenario) — every optimizer_scenarios fixture entry
+// gets a recommendation_status; entries default to RECOMMENDED (is_recommended:
+// true) unless the fixture explicitly overrides recommendation_status, so
+// existing fixtures that never cared about recommendation status keep
+// behaving as "this is a real, executable, rank-ordered scenario" by default.
+function _annotate(s) {
+  const status = s.recommendation_status || "RECOMMENDED";
+  return { ...s, recommendation_status: status, is_recommended: status === "RECOMMENDED" };
+}
+
 function allocatedOf(structures, bpjEntries, optimizerEntries, optimizerScenarios) {
   const candidates = optimizerEntries ?? optimizerCandidatesOf(structures);
+  const scenarios = (optimizerScenarios ?? candidates).map(_annotate);
+  const recommended = scenarios.filter((s) => s.is_recommended);
+  const evaluated = scenarios.filter((s) => !s.is_recommended);
   return {
     structures,
     ranking: [],
@@ -88,8 +103,20 @@ function allocatedOf(structures, bpjEntries, optimizerEntries, optimizerScenario
     // scenario projection equals the candidate pool by default — the real
     // backend grouping/collapse logic is pinned separately against live
     // data in test_canonical_production_view.py.
-    optimizer_scenarios: optimizerScenarios ?? candidates,
-    producer_optimizer_options: optimizerScenarios ?? candidates,
+    optimizer_scenarios: scenarios,
+    optimizer_scenarios_total: scenarios.length,
+    optimizer_executable_total: scenarios.length,
+    // GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the complete,
+    // never-filtered collection split by recommendation status — never a
+    // threshold-filtered narrower pool. See workspaceScenarioMode.js's own
+    // header comment for the full regression this replaces.
+    recommended_optimizer_options: recommended,
+    recommended_optimizer_options_total: recommended.length,
+    evaluated_optimizer_alternatives: evaluated,
+    evaluated_optimizer_alternatives_total: evaluated.length,
+    optimizer_opportunities_requiring_facts: [],
+    optimizer_opportunities_requiring_facts_total: 0,
+    producer_optimizer_options: recommended,
   };
 }
 
@@ -133,39 +160,45 @@ test("admissibleForMode (Single Jurisdiction): ordered by canonical NPC ascendin
   assert.deepEqual(admissible.map((s) => s.structure_id), ["b", "c", "a"]);
 });
 
-// The producer mode must read only the material producer projection. The two
-// exhaustive collections remain present and intentionally differ here.
-test("admissibleForMode (Optimizer): reads producer_optimizer_options, never either exhaustive optimizer collection", () => {
+// GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the producer mode
+// reads the COMPLETE optimizer_scenarios collection (recommended + evaluated
+// alternatives, never threshold-filtered) — see this module's own header
+// comment for the full regression this replaces
+// (CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md: the prior
+// producer_optimizer_options-only wiring made every real production's
+// Optimizer surface empty).
+test("admissibleForMode (Optimizer): reads the complete optimizer_scenarios collection (recommended ++ evaluated alternatives), never either raw exhaustive collection directly", () => {
   const rawA = structure({ structure_id: "raw-a", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-a", npc_with_adjustments_usd: 1 });
   const rawB = structure({ structure_id: "raw-b", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-b", npc_with_adjustments_usd: 2 });
   const rawC = structure({ structure_id: "raw-c", classification: "HYBRID_ANCHOR_COMPONENT", economic_identity: "econ-c", npc_with_adjustments_usd: 3 });
-  const scenarioRep = { ...rawA, structure_id: "scenario-rep", raw_variant_count: 3, raw_variant_structure_ids: ["raw-a", "raw-b", "raw-c"] };
-  const producerRep = { ...scenarioRep, structure_id: "producer-rep", savings_vs_current_usd: 100_000.01 };
+  const scenarioRep = { ...rawA, structure_id: "scenario-rep", raw_variant_count: 3, raw_variant_structure_ids: ["raw-a", "raw-b", "raw-c"], practicality_tier: "PRACTICAL_HYBRID", savings_vs_current_usd: 100_000.01, recommendation_status: "RECOMMENDED" };
   const allocated = {
     structures: [rawA, rawB, rawC], ranking: [], best_per_jurisdiction: {},
     optimizer_candidates: [rawA, rawB, rawC],
     optimizer_scenarios: [scenarioRep],
-    producer_optimizer_options: [producerRep],
+    recommended_optimizer_options: [scenarioRep],
+    evaluated_optimizer_alternatives: [],
+    optimizer_opportunities_requiring_facts: [],
   };
   const admissible = admissibleForMode(allocated, MODE_OPTIMIZER);
-  assert.deepEqual(admissible.map((s) => s.structure_id), ["producer-rep"], "must resolve only through the material producer projection");
+  assert.deepEqual(admissible.map((s) => s.structure_id), ["scenario-rep"], "must resolve through the complete optimizer_scenarios-derived projection");
   assert.equal(admissible[0].raw_variant_count, 3);
 });
 
-test("admissibleForMode (Optimizer): only the backend-admitted bilateral practical/formal rows render; exhaustive advanced rows stay hidden", () => {
+test("admissibleForMode (Optimizer): EVERY canonical family renders when executable — 3+-jurisdiction (Advanced) rows are NEVER hidden, the exact regression the audit found", () => {
   const structures = [
     structure({ structure_id: "stack", classification: "STACKED_PROGRAMS", npc_with_adjustments_usd: 2 }),
-    structure({ structure_id: "hybrid", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 3 }),
-    structure({ structure_id: "treaty", classification: "OFFICIAL_COPRODUCTION", npc_with_adjustments_usd: 4 }),
-    structure({ structure_id: "combined", classification: "COMBINED_COPRO_HYBRID_STACK", npc_with_adjustments_usd: 5 }),
-    structure({ structure_id: "multilateral", classification: "MULTI_PRINCIPAL_MULTILATERAL", npc_with_adjustments_usd: 6 }),
+    structure({ structure_id: "hybrid", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 3, practicality_tier: "PRACTICAL_HYBRID" }),
+    structure({ structure_id: "treaty", classification: "OFFICIAL_COPRODUCTION", npc_with_adjustments_usd: 4, practicality_tier: "FORMAL_COPRODUCTION" }),
+    structure({ structure_id: "combined", classification: "COMBINED_COPRO_HYBRID_STACK", npc_with_adjustments_usd: 5, practicality_tier: "ADVANCED_MULTI_JURISDICTION" }),
+    structure({ structure_id: "multilateral", classification: "MULTI_PRINCIPAL_MULTILATERAL", npc_with_adjustments_usd: 6, practicality_tier: "ADVANCED_MULTI_JURISDICTION" }),
   ];
   const allocated = allocatedOf(structures, []);
-  allocated.producer_optimizer_options = structures.filter((s) => ["hybrid", "treaty"].includes(s.structure_id));
   const admissible = admissibleForMode(allocated, MODE_OPTIMIZER);
   assert.deepEqual(
     admissible.map((s) => s.structure_id).sort(),
-    ["hybrid", "treaty"],
+    ["combined", "hybrid", "multilateral", "treaty"],
+    "every optimizer-family, executable structure must render — STACKED_PROGRAMS (Jurisdictions-only) is correctly the sole exclusion",
   );
 });
 
@@ -287,32 +320,42 @@ test("selectSixSlots: a stored slot-6 override selects that candidate instead of
   assert.equal(slot6.structure_id, "hybrid-f");
 });
 
-// PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): canonical_production_
-// view.py now serves `producer_optimizer_options` PRE-SORTED Practical ->
-// Formal (savings descending, then NPC ascending) — admissibleForMode/selectSixSlots
-// consume that order verbatim, with no client-side re-sort. This fixture
-// mirrors that real served shape (Practical first, then Formal) and proves
-// Workspace's headline cards/dropdown correctly inherit it: Practical
-// scenarios fill the leading slots first, Formal scenarios only appear once
-// Practical is exhausted, and every remaining scenario (of either type) stays
-// reachable in the dropdown.
-test("selectSixSlots (Optimizer): Practical options fill the leading slots before Formal options, matching backend order", () => {
+// GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): canonical_production_
+// view.py serves the complete optimizer_scenarios collection PRE-SORTED
+// Practical -> Formal -> Advanced (NPC ascending within tier); the RECOMMENDED
+// subset preserves that same relative order (workspaceScenarioMode.js's own
+// _sortRecommended re-derives it explicitly: tier, then savings descending,
+// then NPC ascending, then identity — equivalent for a fixed baseline).
+// Slots 2-5 fill from RECOMMENDED options ONLY, Practical before Formal;
+// an EVALUATED ALTERNATIVE (not recommended) must never occupy a leading
+// slot even if it would otherwise sort earlier by raw NPC — the exact
+// "do not silently promote evaluated alternatives" contract.
+test("selectSixSlots (Optimizer): Practical recommended options fill the leading slots before Formal, and a non-recommended alternative is never promoted into a leading slot", () => {
   const anchor = structure({ structure_id: "anchor", is_baseline: true, npc_with_adjustments_usd: 1 });
-  // 3 Practical hybrids followed by 2 qualified bilateral formal co-productions.
+  // 3 Practical hybrids followed by 2 qualified bilateral formal co-productions — all RECOMMENDED.
   const practical = ["p1", "p2", "p3"].map((id, i) => structure({
     structure_id: id, classification: "HYBRID_ANCHOR_COMPONENT", participants: ["GR", `X${i}`],
     npc_with_adjustments_usd: 100 + i, practicality_tier: "PRACTICAL_HYBRID", participant_count: 2,
+    savings_vs_current_usd: 500_000 - i, recommendation_status: "RECOMMENDED",
   }));
   const formal = ["f1", "f2"].map((id, i) => structure({
     structure_id: id, classification: "OFFICIAL_COPRODUCTION", participants: ["GR", "FR"],
-    npc_with_adjustments_usd: 10 + i, producer_optimizer_option_type: "FORMAL_COPRODUCTION", participant_count: 2,
+    npc_with_adjustments_usd: 10 + i, practicality_tier: "FORMAL_COPRODUCTION", participant_count: 2,
+    savings_vs_current_usd: 300_000 - i, recommendation_status: "RECOMMENDED",
   }));
-  const preSorted = [...practical, ...formal];
-  const allocated = { structures: [anchor, ...preSorted], ranking: [], best_per_jurisdiction: {}, optimizer_scenarios: preSorted, producer_optimizer_options: preSorted };
-  const { leading, slot6, dropdownOptions } = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  // A cheaper-NPC PRACTICAL alternative that is NOT recommended (e.g. below
+  // threshold) — must stay out of the leading slots despite its low NPC.
+  const notRecommended = structure({
+    structure_id: "cheap-not-recommended", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["GR", "ZZ"],
+    npc_with_adjustments_usd: 1, practicality_tier: "PRACTICAL_HYBRID", participant_count: 2,
+    savings_vs_current_usd: 50_000, recommendation_status: "EVALUATED_ALTERNATIVE",
+  });
+  const allocated = allocatedOf([anchor, ...practical, ...formal, notRecommended], [], null, [...practical, ...formal, notRecommended]);
+  const { leading, slot6, dropdownOptions, dropdownEvaluatedAlternatives } = selectSixSlots(allocated, MODE_OPTIMIZER, null);
   assert.deepEqual(leading.map((s) => s.structure_id), ["p1", "p2", "p3", "f1"]);
   assert.equal(slot6.structure_id, "f2");
-  assert.deepEqual(dropdownOptions.map((s) => s.structure_id), ["f2"]);
+  assert.deepEqual(dropdownOptions.map((s) => s.structure_id), []);
+  assert.deepEqual(dropdownEvaluatedAlternatives.map((s) => s.structure_id), ["cheap-not-recommended"], "the non-recommended alternative remains reachable, just never promoted into a leading slot");
 });
 
 test("selectSixSlots: fewer than six real distinct jurisdiction winners is a valid, honest result — never backfilled with a duplicate", () => {

@@ -532,6 +532,18 @@ export function buildCandidateDetail(structure) {
     // had a grouping pass applied to it; the Inspector shows the disclosure line only
     // when this is a real number greater than 1, never a fabricated "1 variant".
     raw_variant_count: structure.raw_variant_count ?? undefined,
+    // GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): present only on an
+    // optimizer_scenarios entry (see canonical_production_view.py's
+    // _annotate_optimizer_scenario) — the Inspector's own "recommendation vs
+    // evaluated-alternative status and reason" and "exact savings/cost delta"
+    // requirement. Absent (undefined) for a Jurisdictions-layer (best_per_jurisdiction)
+    // structure, which carries no recommendation concept.
+    jurisdiction_count: structure.jurisdiction_count ?? undefined,
+    savings_vs_current_usd: structure.savings_vs_current_usd ?? undefined,
+    recommendation_threshold_usd: structure.recommendation_threshold_usd ?? undefined,
+    recommendation_status: structure.recommendation_status ?? undefined,
+    recommendation_reason: structure.recommendation_reason ?? undefined,
+    is_recommended: structure.is_recommended ?? undefined,
   };
 }
 

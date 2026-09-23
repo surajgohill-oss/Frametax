@@ -23,8 +23,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
 from app.services.canonical_production_view import (
+    MIN_PRODUCER_SAVINGS_3PLUS_USD,
     MIN_PRODUCER_SAVINGS_USD,
-    _build_producer_optimizer_projection,
+    REC_STATUS_BASELINE_UNRESOLVED,
+    REC_STATUS_COSTS_MORE,
+    REC_STATUS_EVALUATED_ALTERNATIVE,
+    REC_STATUS_NEUTRAL,
+    REC_STATUS_RECOMMENDED,
+    _annotate_optimizer_scenario,
     _economic_jurisdictions,
     _single_jurisdiction_winners,
     build_production_and_structures,
@@ -58,44 +64,67 @@ def _projection_candidate(identifier: str, *, npc: float, participants=None, cla
     }
 
 
-def test_producer_optimizer_materiality_and_fail_closed_contract():
-    baseline = {"npc_with_adjustments_usd": 1_000_000.0}
-    exact = _projection_candidate("exact", npc=900_000.0)
-    above = _projection_candidate("above", npc=899_999.99, component_allocations=[{
-        "component": "vfx", "jurisdiction_code": "CA-MB", "program_slug": "vfx-credit",
-    }])
-    three = _projection_candidate("three", npc=700_000.0, participants=["GR", "CA-MB", "IT"])
-    conditional = _projection_candidate("conditional", npc=700_000.0, candidate_status="QUALIFICATION_UNRESOLVED")
-    options, excluded, baseline_npc = _build_producer_optimizer_projection(
-        [exact, above, three, conditional], baseline,
-    )
+# GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): _build_producer_optimizer_projection
+# (a HARD FILTER that dropped every below-threshold and every 3+-jurisdiction structure from
+# the served collection -- CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md found this
+# made producer_optimizer_options_total 0 for all four real productions) is replaced by
+# _annotate_optimizer_scenario, which annotates ONE entry at a time and never removes it from
+# whatever collection the caller builds. These tests exercise the threshold/status contract
+# directly ($100K for <=2 jurisdictions, $200K for 3+, COSTS_MORE/NEUTRAL/EVALUATED_ALTERNATIVE/
+# BASELINE_UNRESOLVED for everything that isn't RECOMMENDED) with every input still visible.
+
+def test_annotate_optimizer_scenario_two_jurisdiction_threshold_is_strict():
     assert MIN_PRODUCER_SAVINGS_USD == 100_000.0
-    assert [o["structure_id"] for o in options] == ["above"]
-    assert options[0]["savings_vs_current_usd"] == pytest.approx(100_000.01)
-    assert baseline_npc == 1_000_000.0
-    assert excluded == {
-        "SAVINGS_NOT_ABOVE_100K": 1,
-        "NOT_BILATERAL": 1,
-        "NOT_FULLY_PRICED_EXECUTABLE": 1,
-    }
-    no_baseline, missing, baseline_npc = _build_producer_optimizer_projection([above], None)
-    assert no_baseline == []
-    assert missing == {"MISSING_CANONICAL_BASELINE": 1}
-    assert baseline_npc is None
+    baseline_npc = 1_000_000.0
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=900_000.0), baseline_npc)
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=899_999.99), baseline_npc)
+    assert exact["savings_vs_current_usd"] == pytest.approx(100_000.0)
+    assert exact["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert exact["is_recommended"] is False
+    assert above["savings_vs_current_usd"] == pytest.approx(100_000.01)
+    assert above["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert above["is_recommended"] is True
+    assert above["recommendation_threshold_usd"] == 100_000.0
 
 
-def test_producer_optimizer_deduplicates_only_identical_decisions_and_keeps_distinct_components():
-    baseline = {"npc_with_adjustments_usd": 1_000_000.0}
-    post_best = _projection_candidate("post-best", npc=700_000.0)
-    post_duplicate = _projection_candidate("post-duplicate", npc=710_000.0)
-    music = _projection_candidate("music", npc=720_000.0, component_allocations=[{
-        "component": "music", "jurisdiction_code": "CA-MB", "program_slug": "post-credit",
-    }])
-    options, excluded, _ = _build_producer_optimizer_projection(
-        [post_duplicate, music, post_best], baseline,
+def test_annotate_optimizer_scenario_three_plus_jurisdiction_uses_the_200k_threshold():
+    assert MIN_PRODUCER_SAVINGS_3PLUS_USD == 200_000.0
+    baseline_npc = 1_000_000.0
+    three_below = _annotate_optimizer_scenario(
+        _projection_candidate("three-below", npc=850_000.0, participants=["GR", "CA-MB", "IT"]), baseline_npc,
     )
-    assert [o["structure_id"] for o in options] == ["post-best", "music"]
-    assert excluded == {"DUPLICATE_PRODUCER_DECISION": 1}
+    three_above = _annotate_optimizer_scenario(
+        _projection_candidate("three-above", npc=799_999.0, participants=["GR", "CA-MB", "IT"]), baseline_npc,
+    )
+    assert three_below["jurisdiction_count"] == 3
+    assert three_below["savings_vs_current_usd"] == pytest.approx(150_000.0)
+    assert three_below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert three_above["savings_vs_current_usd"] == pytest.approx(200_001.0)
+    assert three_above["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert three_above["recommendation_threshold_usd"] == 200_000.0
+
+
+def test_annotate_optimizer_scenario_negative_and_zero_savings_labeled_and_still_visible():
+    baseline_npc = 1_000_000.0
+    costs_more = _annotate_optimizer_scenario(_projection_candidate("costly", npc=1_200_000.0), baseline_npc)
+    neutral = _annotate_optimizer_scenario(_projection_candidate("neutral", npc=1_000_000.0), baseline_npc)
+    assert costs_more["savings_vs_current_usd"] == pytest.approx(-200_000.0)
+    assert costs_more["recommendation_status"] == REC_STATUS_COSTS_MORE
+    assert costs_more["is_recommended"] is False
+    assert neutral["savings_vs_current_usd"] == 0.0
+    assert neutral["recommendation_status"] == REC_STATUS_NEUTRAL
+    # Neither annotation removes any field the entry already carried -- the whole
+    # candidate remains visible/reconstructable, never replaced by a bare exclusion reason.
+    assert costs_more["structure_id"] == "costly"
+    assert neutral["structure_id"] == "neutral"
+
+
+def test_annotate_optimizer_scenario_fails_closed_on_missing_baseline_without_inventing_savings():
+    entry = _annotate_optimizer_scenario(_projection_candidate("x", npc=700_000.0), None)
+    assert entry["savings_vs_current_usd"] is None
+    assert entry["recommendation_status"] == REC_STATUS_BASELINE_UNRESOLVED
+    assert entry["is_recommended"] is False
+    assert entry["structure_id"] == "x", "the candidate itself must remain visible even with an unresolved baseline"
 
 
 def test_single_jurisdiction_winners_allow_local_stack_and_reject_cross_jurisdiction():
@@ -119,25 +148,88 @@ async def db():
         yield session
 
 
+# ACCEPTED_OPTIMIZER_SCENARIO_TOTALS (CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md):
+# these four counts must never shrink because of a served-contract/annotation change --
+# only a real discovery/pricing change (never made by this pass) may move them.
+_ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 171,   # Little Utopia
+    "4355ae88-a636-4c18-af60-ad73b2646124": 267,   # Bad Hombres
+    FVD_PROJECT_ID: 411,                            # F#K Valentine's Day
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 541,   # Lips Like Sugar
+}
+
+
 async def test_current_producer_projection_is_complete_and_preserves_exhaustive_optimizer(db: AsyncSession):
+    """The regression this pass fixes: `optimizer_scenarios` must remain the COMPLETE,
+    never-threshold-filtered collection (same total as before the regression, for every
+    real production), recommended/evaluated-alternative/opportunities-requiring-facts must
+    partition it exactly (nothing silently dropped), and the recommended subset -- when
+    non-empty -- must actually satisfy the threshold it claims. A zero recommended count is
+    honest and allowed; it must never make the underlying collection disappear."""
     for project_id in CURRENT_ACCEPTANCE_PROJECT_IDS:
         view = await build_production_and_structures(db, project_id)
         allocated = view["structures"]["allocated_structures"]
         assert allocated["optimizer_candidates_total"] == len(allocated["optimizer_candidates"])
         assert allocated["optimizer_scenarios_total"] == len(allocated["optimizer_scenarios"])
-        assert (
-            allocated["producer_optimizer_options_total"]
-            + sum(allocated["producer_optimizer_excluded_counts"].values())
-            == allocated["optimizer_scenarios_total"]
+        assert allocated["optimizer_scenarios_total"] == _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL[project_id], (
+            f"{project_id}: accepted optimizer_scenarios_total must not change"
         )
+        assert allocated["optimizer_executable_total"] == allocated["optimizer_scenarios_total"]
+        assert (
+            allocated["recommended_optimizer_options_total"] + allocated["evaluated_optimizer_alternatives_total"]
+            == allocated["optimizer_scenarios_total"]
+        ), f"{project_id}: recommended + evaluated alternatives must exactly partition the complete collection"
+        assert len(allocated["recommended_optimizer_options"]) == allocated["recommended_optimizer_options_total"]
+        assert len(allocated["evaluated_optimizer_alternatives"]) == allocated["evaluated_optimizer_alternatives_total"]
+        assert sum(allocated["optimizer_recommendation_status_counts"].values()) == allocated["optimizer_scenarios_total"]
+        # producer_optimizer_options is a backward-compatible ALIAS for the recommended
+        # subset -- never a second, independently-derived, narrower collection.
+        assert allocated["producer_optimizer_options"] == allocated["recommended_optimizer_options"]
+        assert allocated["producer_optimizer_options_total"] == allocated["recommended_optimizer_options_total"]
+
         assert len(allocated["best_per_jurisdiction"]) == len(set(allocated["best_per_jurisdiction"]))
         for code, winner in allocated["best_per_jurisdiction"].items():
             assert winner["candidate_status"] == "PRICED"
             assert winner["is_fully_priced"] is True
             assert _economic_jurisdictions(winner) == {code}
-        for option in allocated["producer_optimizer_options"]:
-            assert option["savings_vs_current_usd"] > MIN_PRODUCER_SAVINGS_USD
-            assert option["producer_optimizer_jurisdiction_count"] == 2
+
+        for option in allocated["recommended_optimizer_options"]:
+            assert option["recommendation_status"] == "RECOMMENDED"
+            assert option["is_recommended"] is True
+            threshold = MIN_PRODUCER_SAVINGS_USD if option["jurisdiction_count"] <= 2 else MIN_PRODUCER_SAVINGS_3PLUS_USD
+            assert option["recommendation_threshold_usd"] == threshold
+            assert option["savings_vs_current_usd"] > threshold
+        for alt in allocated["evaluated_optimizer_alternatives"]:
+            assert alt["recommendation_status"] != "RECOMMENDED"
+            assert alt["is_recommended"] is False
+
+        # Real, disclosed co-production/multilateral opportunities remain visible, separately,
+        # and are never counted in the executable total.
+        for opp in allocated["optimizer_opportunities_requiring_facts"]:
+            assert opp["classification"] == "CONDITIONAL_USER_FACT_REQUIRED"
+        assert allocated["optimizer_opportunities_requiring_facts_total"] == len(
+            allocated["optimizer_opportunities_requiring_facts"]
+        )
+
+
+async def test_co_pro_opportunity_status_and_conditional_user_fact_required_classification_are_the_same_rows(db: AsyncSession):
+    """CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md Phase 1A open item, resolved:
+    structural_classification.classify_structure() maps candidate_status ==
+    'CO_PRO_OPPORTUNITY' directly to CLASS_CONDITIONAL_USER_FACT_REQUIRED before any
+    structure_type check -- confirmed here against real, live acceptance-database rows
+    (F#K Valentine's Day has 27: 25 bilateral treaty pairs + Eurimages + European
+    Convention), never assumed interchangeable."""
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    allocated = view["structures"]["allocated_structures"]
+    opportunities = allocated["optimizer_opportunities_requiring_facts"]
+    assert len(opportunities) == 27, "FVD: 25 bilateral + Eurimages + European Convention opportunities"
+    for opp in opportunities:
+        assert opp["classification"] == "CONDITIONAL_USER_FACT_REQUIRED"
+        assert opp["candidate_status"] == "CO_PRO_OPPORTUNITY"
+        assert opp["is_fully_priced"] is not True, "an opportunity requiring facts is never executable"
+    names = {opp.get("label") or "" for opp in opportunities}
+    assert any("Eurimages" in n for n in names), "the real Eurimages multilateral opportunity must be present"
+    assert any("European Convention" in n for n in names), "the real European Convention multilateral opportunity must be present"
 
 
 async def test_unknown_project_returns_not_found(db: AsyncSession):

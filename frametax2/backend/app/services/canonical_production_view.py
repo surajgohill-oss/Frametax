@@ -71,11 +71,30 @@ RETENTION_POLICY_NOTE = (
     "the bounded decision set is a detailed row. Counts are exact (retained rows + aggregate groups)."
 )
 
-# Producer-facing optimizer projection.  The exhaustive optimizer collections remain
-# untouched for auditability; ordinary UI surfaces receive only executable, bilateral
-# decisions that improve the production's own persisted current-location NPC by more
-# than this amount.
+# GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): recommendation thresholds.
+# CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md (audited at 88a0b96) found the
+# prior pass's producer_optimizer_options was a HARD INCLUSION FILTER -- it removed
+# every below-threshold and every 3+-jurisdiction structure from the served collection
+# entirely, so producer_optimizer_options_total was 0 for all four real productions
+# (every 2-jurisdiction candidate's real savings happened to be <=$100K in every one of
+# them, and every 3+-jurisdiction candidate was excluded categorically regardless of its
+# real savings -- Little Utopia alone had 66 real, priced, executable structures saving
+# more than $200,000 that were made invisible this way). The controlling contract is
+# explicit: "Recommendation thresholds affect priority, not visibility." These
+# thresholds are therefore now used ONLY to ANNOTATE every entry of the complete,
+# never-filtered `optimizer_scenarios` collection (see _annotate_optimizer_scenario
+# below) -- never to drop a row from what is served.
 MIN_PRODUCER_SAVINGS_USD = 100_000.0
+#: Three-or-more-jurisdiction structures carry real additional coordination/legal
+#: overhead (per the controlling product contract) -- a materially higher savings bar
+#: before being flagged "recommended", never a different visibility rule.
+MIN_PRODUCER_SAVINGS_3PLUS_USD = 200_000.0
+
+REC_STATUS_RECOMMENDED = "RECOMMENDED"
+REC_STATUS_EVALUATED_ALTERNATIVE = "EVALUATED_ALTERNATIVE"
+REC_STATUS_NEUTRAL = "NEUTRAL"
+REC_STATUS_COSTS_MORE = "COSTS_MORE"
+REC_STATUS_BASELINE_UNRESOLVED = "BASELINE_UNRESOLVED"
 
 
 def _economic_jurisdictions(entry: dict) -> set[str]:
@@ -118,101 +137,41 @@ def _single_jurisdiction_winners(entries: list[dict], identity_by_structure: dic
     return winners
 
 
-def _producer_decision_key(entry: dict) -> tuple:
-    routes = {
-        (
-            row.get("component") or row.get("category"),
-            row.get("jurisdiction_code"),
-            row.get("program_slug"),
-        )
-        for row in (entry.get("component_allocations") or [])
-    }
-    return (
-        entry.get("primary_jurisdiction"),
-        tuple(sorted(routes, key=lambda r: tuple(v or "" for v in r))),
-        entry.get("treaty_slug") if entry.get("classification") == "OFFICIAL_COPRODUCTION" else None,
+def _annotate_optimizer_scenario(entry: dict, baseline_npc: float | None) -> dict:
+    """Annotate ONE already-canonical, already-executable `optimizer_scenarios` entry
+    with its recommendation status -- never a filter, never a second identity, never a
+    second dedup pass (optimizer_scenarios is already one row per economic_identity).
+    jurisdiction_count reuses the same `participant_count` `_practicality_tier` already
+    computes (confirmed empirically identical to a component-allocations-derived count
+    across all 1,390 real optimizer_scenarios entries in the acceptance database --
+    CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md), so this never introduces a
+    second, potentially-disagreeing jurisdiction-count definition."""
+    jurisdiction_count = entry.get("participant_count") or len(set(entry.get("participants") or []))
+    threshold = MIN_PRODUCER_SAVINGS_USD if jurisdiction_count <= 2 else MIN_PRODUCER_SAVINGS_3PLUS_USD
+    candidate_npc = entry.get("npc_with_adjustments_usd")
+    savings = (
+        float(baseline_npc) - float(candidate_npc)
+        if baseline_npc is not None and candidate_npc is not None else None
     )
-
-
-def _build_producer_optimizer_projection(
-    optimizer_scenarios: list[dict], baseline_entry: dict | None,
-) -> tuple[list[dict], dict[str, int], float | None]:
-    """Filter exhaustive scenarios into practical, material producer decisions."""
-    baseline_npc = (baseline_entry or {}).get("npc_with_adjustments_usd")
-    excluded: dict[str, int] = {}
-
-    def reject(reason: str) -> None:
-        excluded[reason] = excluded.get(reason, 0) + 1
-
-    if baseline_npc is None:
-        if optimizer_scenarios:
-            excluded["MISSING_CANONICAL_BASELINE"] = len(optimizer_scenarios)
-        return [], excluded, None
-
-    candidates: list[dict] = []
-    for entry in optimizer_scenarios:
-        classification = entry.get("classification")
-        jurisdictions = _economic_jurisdictions(entry)
-        candidate_npc = entry.get("npc_with_adjustments_usd")
-        if entry.get("candidate_status") != "PRICED" or not entry.get("is_fully_priced") or candidate_npc is None:
-            reject("NOT_FULLY_PRICED_EXECUTABLE")
-            continue
-        if len(jurisdictions) != 2:
-            reject("NOT_BILATERAL")
-            continue
-        if classification == "HYBRID_ANCHOR_COMPONENT":
-            option_type = "PRACTICAL_HYBRID"
-            routes = entry.get("component_allocations") or []
-            if not routes or any(
-                not row.get("component") or not row.get("jurisdiction_code") or not row.get("program_slug")
-                for row in routes
-            ):
-                reject("INCOMPLETE_CANONICAL_IDENTITY")
-                continue
-        elif classification == "OFFICIAL_COPRODUCTION":
-            option_type = "FORMAL_COPRODUCTION"
-            if (
-                not entry.get("treaty_slug")
-                or entry.get("treaty_resolution_state") != "ELIGIBLE"
-                or entry.get("treaty_disqualification_reasons")
-                or (entry.get("treaty_cultural_test_required") and not entry.get("treaty_cultural_test_resolved"))
-                or entry.get("personnel_gate_state") not in (None, "QUALIFIES", "NOT_APPLICABLE")
-            ):
-                reject("FORMAL_COPRODUCTION_NOT_FULLY_QUALIFIED")
-                continue
-        else:
-            reject("UNSUPPORTED_PRODUCER_STRUCTURE")
-            continue
-        if not entry.get("structure_id") or not entry.get("economic_identity") or not entry.get("primary_jurisdiction"):
-            reject("INCOMPLETE_CANONICAL_IDENTITY")
-            continue
-        savings = float(baseline_npc) - float(candidate_npc)
-        if savings <= MIN_PRODUCER_SAVINGS_USD:
-            reject("SAVINGS_NOT_ABOVE_100K")
-            continue
-        candidates.append({
-            **entry,
-            "producer_optimizer_baseline_npc_usd": float(baseline_npc),
-            "producer_optimizer_candidate_npc_usd": float(candidate_npc),
-            "savings_vs_current_usd": savings,
-            "producer_optimizer_jurisdiction_count": 2,
-            "producer_optimizer_option_type": option_type,
-        })
-
-    candidates.sort(key=lambda e: (
-        0 if e["producer_optimizer_option_type"] == "PRACTICAL_HYBRID" else 1,
-        -e["savings_vs_current_usd"],
-        e["producer_optimizer_candidate_npc_usd"],
-        e.get("economic_identity") or "",
-    ))
-    unique: dict[tuple, dict] = {}
-    for entry in candidates:
-        key = _producer_decision_key(entry)
-        if key in unique:
-            reject("DUPLICATE_PRODUCER_DECISION")
-            continue
-        unique[key] = entry
-    return list(unique.values()), excluded, float(baseline_npc)
+    if savings is None:
+        status, reason = REC_STATUS_BASELINE_UNRESOLVED, "MISSING_BASELINE_OR_CANDIDATE_NPC"
+    elif savings > threshold:
+        status, reason = REC_STATUS_RECOMMENDED, "SAVINGS_ABOVE_THRESHOLD"
+    elif savings < 0:
+        status, reason = REC_STATUS_COSTS_MORE, "NEGATIVE_SAVINGS"
+    elif savings == 0:
+        status, reason = REC_STATUS_NEUTRAL, "ZERO_SAVINGS"
+    else:
+        status, reason = REC_STATUS_EVALUATED_ALTERNATIVE, "SAVINGS_BELOW_THRESHOLD"
+    return {
+        **entry,
+        "jurisdiction_count": jurisdiction_count,
+        "savings_vs_current_usd": savings,
+        "recommendation_threshold_usd": threshold,
+        "is_recommended": status == REC_STATUS_RECOMMENDED,
+        "recommendation_status": status,
+        "recommendation_reason": reason,
+    }
 
 #: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
 #: PART C / leading conditional recommendation) -- the qualification
@@ -2049,22 +2008,51 @@ async def build_production_and_structures(
         TIER_ADVANCED: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_ADVANCED),
     }
 
+    # GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): restores the complete,
+    # never-filtered optimizer_scenarios contract the audit specified. `optimizer_scenarios`
+    # itself is REASSIGNED here to the same rows, same order, same count -- every entry
+    # gains a recommendation annotation, none is dropped. `_baseline_entry` (the
+    # canonical Current Location/anchor) is resolved once; if it cannot be resolved,
+    # every entry fails closed into BASELINE_UNRESOLVED (never a fabricated savings
+    # figure) rather than the collection disappearing.
     _baseline_entry = next((e for e in structure_entries if e.get("is_baseline")), None)
-    (
-        producer_optimizer_options,
-        producer_optimizer_excluded_counts,
-        producer_optimizer_baseline_npc_usd,
-    ) = _build_producer_optimizer_projection(optimizer_scenarios, _baseline_entry)
-    producer_optimizer_options_total = len(producer_optimizer_options)
+    _baseline_npc = (_baseline_entry or {}).get("npc_with_adjustments_usd")
+    optimizer_scenarios = [_annotate_optimizer_scenario(e, _baseline_npc) for e in optimizer_scenarios]
+    producer_optimizer_baseline_npc_usd = float(_baseline_npc) if _baseline_npc is not None else None
+
+    recommended_optimizer_options = [e for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_RECOMMENDED]
+    evaluated_optimizer_alternatives = [e for e in optimizer_scenarios if e["recommendation_status"] != REC_STATUS_RECOMMENDED]
+    # Unresolved co-production/multilateral opportunities (candidate_status ==
+    # CO_PRO_OPPORTUNITY, classification == CONDITIONAL_USER_FACT_REQUIRED -- confirmed
+    # the SAME rows: structural_classification.classify_structure() maps
+    # candidate_status == "CO_PRO_OPPORTUNITY" directly to CLASS_CONDITIONAL_USER_FACT_REQUIRED,
+    # before any structure_type check -- CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md
+    # Phase 1A). These are never priced/executable and never enter optimizer_scenarios
+    # (which is already scoped to PRICED candidates only) -- served as a separate,
+    # clearly-labeled, non-executable collection so a real, disclosed "needs a real
+    # ownership-split fact" opportunity is visible without ever being presented as a
+    # leading/executable structure.
+    optimizer_opportunities_requiring_facts = [
+        e for e in structure_entries if e.get("classification") == "CONDITIONAL_USER_FACT_REQUIRED"
+    ]
+
+    producer_optimizer_options = recommended_optimizer_options  # backward-compatible alias; not the sole read surface
+    producer_optimizer_options_total = len(recommended_optimizer_options)
     producer_optimizer_options_by_type = {
-        TIER_PRACTICAL: sum(
-            1 for e in producer_optimizer_options
-            if e["producer_optimizer_option_type"] == TIER_PRACTICAL
-        ),
-        TIER_FORMAL: sum(
-            1 for e in producer_optimizer_options
-            if e["producer_optimizer_option_type"] == TIER_FORMAL
-        ),
+        TIER_PRACTICAL: sum(1 for e in recommended_optimizer_options if e["practicality_tier"] == TIER_PRACTICAL),
+        TIER_FORMAL: sum(1 for e in recommended_optimizer_options if e["practicality_tier"] == TIER_FORMAL),
+        TIER_ADVANCED: sum(1 for e in recommended_optimizer_options if e["practicality_tier"] == TIER_ADVANCED),
+    }
+    optimizer_executable_total = optimizer_scenarios_total
+    optimizer_recommended_total = len(recommended_optimizer_options)
+    optimizer_evaluated_alternatives_total = len(evaluated_optimizer_alternatives)
+    optimizer_opportunities_requiring_facts_total = len(optimizer_opportunities_requiring_facts)
+    optimizer_recommendation_status_counts = {
+        REC_STATUS_RECOMMENDED: optimizer_recommended_total,
+        REC_STATUS_EVALUATED_ALTERNATIVE: sum(1 for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE),
+        REC_STATUS_NEUTRAL: sum(1 for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_NEUTRAL),
+        REC_STATUS_COSTS_MORE: sum(1 for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_COSTS_MORE),
+        REC_STATUS_BASELINE_UNRESOLVED: sum(1 for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_BASELINE_UNRESOLVED),
     }
 
     # ── Bounded candidate page ────────────────────────────────────────────────────────────
@@ -2185,9 +2173,17 @@ async def build_production_and_structures(
             "optimizer_candidates": optimizer_candidates,
             "optimizer_candidates_total": optimizer_candidates_total,
             "optimizer_candidates_by_family": optimizer_candidates_by_family,
-            # PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): the ONE canonical
-            # producer-facing projection every UI surface must read from -- see the comment
-            # above `_scenario_topology_key`'s construction for the full grouping contract.
+            # PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): the ONE canonical,
+            # COMPLETE, NEVER THRESHOLD-FILTERED producer-facing projection every UI surface
+            # must read from -- see the comment above `_scenario_topology_key`'s construction
+            # for the full grouping contract. Every entry carries a recommendation
+            # annotation (jurisdiction_count/savings_vs_current_usd/recommendation_threshold_usd/
+            # is_recommended/recommendation_status/recommendation_reason -- see
+            # _annotate_optimizer_scenario) but NONE is ever dropped from this array:
+            # GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22) restores this after
+            # CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md found the prior pass's
+            # producer_optimizer_options had become the sole thing the frontend read, and
+            # was empty for all four real productions.
             "optimizer_scenarios": optimizer_scenarios,
             "optimizer_scenarios_total": optimizer_scenarios_total,
             "optimizer_scenarios_by_family": optimizer_scenarios_by_family,
@@ -2196,12 +2192,36 @@ async def build_production_and_structures(
             # co-productions / A advanced" disclosure every optimizer-consuming surface
             # must show instead of the raw iteration count.
             "optimizer_scenarios_by_tier": optimizer_scenarios_by_tier,
-            # Practical producer projection.  Exhaustive optimizer_candidates/
-            # optimizer_scenarios above remain unchanged as audit evidence.
+            # Recommended (threshold-passing) subset of the SAME complete optimizer_scenarios
+            # collection above -- a priority annotation split out for convenience, never a
+            # narrower served universe. 2-jurisdiction: savings > $100,000. 3+-jurisdiction:
+            # savings > $200,000 (controlling product contract, ordering policy).
+            "recommended_optimizer_options": recommended_optimizer_options,
+            "recommended_optimizer_options_total": optimizer_recommended_total,
+            # Every other executable (PRICED) optimizer_scenarios entry: positive
+            # below-threshold savings (EVALUATED_ALTERNATIVE), zero savings (NEUTRAL),
+            # negative savings (COSTS_MORE), or an unresolved baseline (BASELINE_UNRESOLVED).
+            # Real, visible, never hidden -- "Recommendation thresholds affect priority, not
+            # visibility."
+            "evaluated_optimizer_alternatives": evaluated_optimizer_alternatives,
+            "evaluated_optimizer_alternatives_total": optimizer_evaluated_alternatives_total,
+            # Real, disclosed co-production/multilateral opportunities a registered treaty
+            # or multilateral framework makes possible, but which cannot be priced without a
+            # real ownership-split/cultural-test fact not yet on file for this project. Never
+            # executable, never included in any of the counts above, never eligible to become
+            # the leading/selected structure.
+            "optimizer_opportunities_requiring_facts": optimizer_opportunities_requiring_facts,
+            "optimizer_opportunities_requiring_facts_total": optimizer_opportunities_requiring_facts_total,
+            # Exact counts every surface should render its disclosure copy from, rather than
+            # taking len() of a served array client-side.
+            "optimizer_executable_total": optimizer_executable_total,
+            "optimizer_recommendation_status_counts": optimizer_recommendation_status_counts,
+            # Practical producer projection -- BACKWARD-COMPATIBLE ALIAS for
+            # recommended_optimizer_options ONLY (never a second, independently-filtered
+            # collection). No UI surface may treat this as the sole admissible Optimizer pool.
             "producer_optimizer_options": producer_optimizer_options,
             "producer_optimizer_options_total": producer_optimizer_options_total,
             "producer_optimizer_options_by_type": producer_optimizer_options_by_type,
-            "producer_optimizer_excluded_counts": producer_optimizer_excluded_counts,
             "producer_optimizer_baseline_npc_usd": producer_optimizer_baseline_npc_usd,
             "retention": {
                 "policy": {

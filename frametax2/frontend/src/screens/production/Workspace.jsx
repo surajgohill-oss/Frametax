@@ -243,6 +243,27 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
             <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>
           </div>
           <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
+          {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22), Phase 4: an Optimizer-
+              mode card (recommended OR evaluated alternative — this field is only ever
+              present on optimizer_scenarios entries) always shows its exact delta from
+              Current Location, never a bare status word with no number. */}
+          {structure.recommendation_status && structure.savings_vs_current_usd != null && (
+            <div
+              className="wsx-row"
+              style={{
+                color: structure.recommendation_status === "COSTS_MORE" ? "var(--red)"
+                  : structure.recommendation_status === "NEUTRAL" ? "var(--text-tertiary)"
+                  : "var(--jade)",
+              }}
+            >
+              <span>
+                {structure.recommendation_status === "COSTS_MORE" ? "Costs more than Current Location"
+                  : structure.recommendation_status === "NEUTRAL" ? "Same as Current Location"
+                  : "Saves vs. Current Location"}
+              </span>
+              <span><Money value={Math.abs(structure.savings_vs_current_usd)} bare /></span>
+            </div>
+          )}
           <div className="wsx-range">
             <u style={{ left: 0, width: `${pct(qualifiedSpend, gross)}%` }} />
             <i style={{ left: `${pct(qualifiedSpend, gross)}%`, right: 0 }} />
@@ -421,10 +442,11 @@ export default function Workspace() {
   // mode-filtered) + the top four mode-admissible scenarios + slot 6.
   const projectId = data?.production?.project_id ?? null;
   const slot6Override = getSlot6Selection(projectId, workspaceMode);
-  const { cols, dropdownOptions: overflow } = useMemo(
+  const { cols, dropdownOptions: overflow, dropdownEvaluatedAlternatives, dropdownOpportunities } = useMemo(
     () => {
-      const { slots, dropdownOptions } = selectSixSlots(allocated, workspaceMode, slot6Override);
-      return { cols: slots, dropdownOptions };
+      const { slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps } =
+        selectSixSlots(allocated, workspaceMode, slot6Override);
+      return { cols: slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps };
     },
     [allocated, workspaceMode, slot6Override],
   );
@@ -599,26 +621,31 @@ export default function Workspace() {
                 <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
               </div>
             </div>
-            {/* PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): a
-                truthful count of the DISTINCT producer-facing optimizer
-                scenarios this mode's rack/dropdown/Globe surfaces draw from
-                — `allocated.producer_optimizer_options_total`
-                (canonical_production_view.py), never the raw search-
-                iteration count (`optimizer_candidates_total`, kept available
-                for audit/debug evidence only), the exhaustive canonical
-                scenario count (`optimizer_scenarios_total`), or the length of
-                whatever happens to render.
-                WORKSPACE_RESPONSIVE_CONTROL/RACK_CLOSEOUT (2026-09-23): now
-                its own grid item (.wsx-scenario-count, no inline
+            {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22):
+                CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md found the
+                prior "N practical optimizer options · each saves more than
+                $100K" copy read `producer_optimizer_options_total` ALONE —
+                which was 0 for all four real productions once that field
+                became a hard filter, so this disclosure silently vanished
+                (`!= null` still passed, `total` was just 0) everywhere. The
+                complete, never-filtered executable total is shown first,
+                with recommended/evaluated-alternative counts as sub-detail
+                so a truthful "0 recommended" is still legible next to a
+                real, nonzero executable total — never the reverse.
+                WORKSPACE_RESPONSIVE_CONTROL/RACK_CLOSEOUT (2026-09-23): its
+                own grid item (.wsx-scenario-count, no inline
                 whiteSpace:"nowrap") so it lays out on its own row and can
                 wrap instead of ever sharing a line with Lanes/Map/Split or
-                Other Scenarios. Compact producer copy; the 0-value Formal
-                tier is omitted rather than printed as "0 formal". */}
-            {workspaceMode === MODE_OPTIMIZER && allocated?.producer_optimizer_options_total != null && (() => {
-              const total = allocated.producer_optimizer_options_total;
+                Other Scenarios. */}
+            {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_executable_total != null && (() => {
+              const executableTotal = allocated.optimizer_executable_total;
+              const recommendedTotal = allocated.recommended_optimizer_options_total ?? 0;
+              const evaluatedTotal = allocated.evaluated_optimizer_alternatives_total ?? 0;
+              const opportunitiesTotal = allocated.optimizer_opportunities_requiring_facts_total ?? 0;
               return (
                 <span className="wsx-scenario-count">
-                  {total} practical optimizer option{total === 1 ? "" : "s"} · each saves more than $100K
+                  {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} recommended · {evaluatedTotal} alternative{evaluatedTotal === 1 ? "" : "s"}
+                  {opportunitiesTotal > 0 ? ` · ${opportunitiesTotal} need more facts` : ""}
                 </span>
               );
             })()}
@@ -633,8 +660,18 @@ export default function Workspace() {
                 already generated but that don't currently occupy a visible
                 lane, WITHIN the active scenario mode; it swaps slot 6's
                 contents, it never creates a new structure and never
-                reruns the optimizer. */}
-            {mode !== "map" && overflow.length > 0 ? (
+                reruns the optimizer.
+                GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): in
+                Optimizer mode, remaining recommended options, evaluated
+                alternatives, and Needs-More-Facts opportunities are three
+                separately labeled <optgroup> sections — never merged into
+                one undifferentiated list, and Needs More Facts options are
+                rendered disabled (never selectable as slot 6 / leading —
+                see selectSixSlots' own slot6Candidates, which already
+                excludes them; disabled here is belt-and-suspenders so a
+                stray option can never be chosen even if this markup is
+                ever copied elsewhere). */}
+            {mode !== "map" && (overflow.length > 0 || (dropdownEvaluatedAlternatives?.length > 0) || (dropdownOpportunities?.length > 0)) ? (
               <div className="wsx-other-scenarios">
                 <label htmlFor="wsx-swap">Other scenarios</label>
                 <select
@@ -644,9 +681,32 @@ export default function Workspace() {
                   onChange={(e) => setSlot6Selection(projectId, workspaceMode, e.target.value)}
                 >
                   <option value="">— {(() => { const last = cols[cols.length - 1]; return last ? scenarioOptionLabel(last) : "—"; })()} —</option>
-                  {overflow.map((s) => (
-                    <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}</option>
-                  ))}
+                  {overflow.length > 0 && (
+                    <optgroup label={workspaceMode === MODE_OPTIMIZER ? "Recommended" : "Other scenarios"}>
+                      {overflow.map((s) => (
+                        <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {workspaceMode === MODE_OPTIMIZER && dropdownEvaluatedAlternatives?.length > 0 && (
+                    <optgroup label="Evaluated Alternatives">
+                      {dropdownEvaluatedAlternatives.map((s) => (
+                        <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {workspaceMode === MODE_OPTIMIZER && dropdownOpportunities?.length > 0 && (
+                    // Never routed through scenarioOptionLabel/buildScenarioLabel — both are
+                    // built for PRICED, component-routed structures; an unresolved co-production/
+                    // multilateral opportunity has no component_allocations. The backend's own
+                    // already-humanized `label` (e.g. "Greece — Eurimages multilateral
+                    // co-production opportunity") is the real, accurate producer-facing text.
+                    <optgroup label="Needs More Facts">
+                      {dropdownOpportunities.map((s) => (
+                        <option key={s.structure_id} value="" disabled>{s.label || "Needs more facts"}</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
             ) : <div aria-hidden="true" className="wsx-other-scenarios-spacer" />}

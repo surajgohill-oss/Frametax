@@ -14,12 +14,18 @@ import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../.
 
 // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 2: Optimizer
 // mode's side list used to render one flat, undifferentiated list. The
-// backend already partitions `producer_optimizer_options` into these two
-// producer-facing types, in this exact order — this is the fixed section order every
+// backend already partitions `optimizer_scenarios` into these three real
+// tiers, in this exact order (canonical_production_view.py's own
+// PRODUCER_PRACTICALITY_TIER) — this is the fixed section order every
 // optimizer-consuming surface renders them in, never re-derived.
+// GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22) restores the
+// Advanced Multi-Jurisdiction section 88a0b96 removed (the same commit that
+// pointed this list at producer_optimizer_options, which was empty for all
+// four real productions — CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md).
 const TIER_SECTIONS = [
   { tier: "PRACTICAL_HYBRID", heading: "Practical Hybrids" },
   { tier: "FORMAL_COPRODUCTION", heading: "Formal Co-Productions" },
+  { tier: "ADVANCED_MULTI_JURISDICTION", heading: "Advanced Multi-Jurisdiction" },
 ];
 
 // Project Globe — this production's structures and their routing on the
@@ -291,10 +297,14 @@ export default function ProjectGlobe() {
               producer-option prefix. Single Jurisdiction mode is
               unaffected — s.label unchanged there. */}
           <div className="row-title small">
+            {globeMode === MODE_OPTIMIZER && s.recommendation_status === "RECOMMENDED" ? "★ " : ""}
             {globeMode === MODE_OPTIMIZER ? buildScenarioLabel(s) : s.label}
           </div>
           <div className="row-sub">
             {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
+            {globeMode === MODE_OPTIMIZER && s.savings_vs_current_usd != null && (
+              <> · {s.recommendation_status === "COSTS_MORE" ? "costs " : "saves "}<Money value={Math.abs(s.savings_vs_current_usd)} bare /></>
+            )}
           </div>
         </div>
       </div>
@@ -331,13 +341,15 @@ export default function ProjectGlobe() {
         )}
         <div className="sc-jurlist">
           {globeMode === MODE_OPTIMIZER && visibleStructures.length === 0 && (
-            <p className="empty-state">No practical optimizer options currently save more than $100K.</p>
+            <p className="empty-state">No executable optimizer structures for this production yet.</p>
           )}
           {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 1:
               this list used to re-sort `visibleStructures` by `rankById` in
-              EVERY mode, including Optimizer. `allocated.producer_optimizer_options`
-              (canonical_production_view.py) already arrives pre-sorted
-              Practical -> Formal, savings descending and NPC ascending —
+              EVERY mode, including Optimizer. `admissibleForMode()` (the
+              recommended + evaluated-alternative union over the complete,
+              never-filtered `optimizer_scenarios` — GLOBE_WORKSPACE_CANONICAL_
+              WIRING_COMPLETE, 2026-09-22) already arrives pre-sorted
+              Practical -> Formal -> Advanced, ascending NPC within each tier —
               `rankById` (built from `allocated.ranking`, the SINGLE combined
               overall ranking, which only the baseline/comparable candidates
               ever populate) has no relationship to that tier partition and
@@ -348,16 +360,19 @@ export default function ProjectGlobe() {
               now renders `visibleStructures` verbatim, in the exact order the
               backend served it. */}
           {globeMode === MODE_OPTIMIZER ? (
-            /* ROOT DEFECT 2: Optimizer mode now renders the genuine
-               sections, in this exact order, each with its own real count —
-               never one flattened, undifferentiated list. Section boundaries
-               are detected from the already-tier-sorted array itself (no
-               re-sort, no re-grouping — a section is exactly a contiguous
-               run of the same practicality_tier). A tier with zero real
-               scenarios renders no section at all (never a fabricated empty
-               header). */
+            /* ROOT DEFECT 2: Optimizer mode renders the three genuine
+               practicality-tier sections, in this exact order, each with its
+               own real count — never one flattened, undifferentiated list.
+               Section boundaries are detected from the already-tier-sorted
+               array itself (no re-sort, no re-grouping — a section is
+               exactly a contiguous run of the same practicality_tier). A
+               tier with zero real scenarios renders no section at all
+               (never a fabricated empty header). Each section mixes
+               recommended and evaluated-alternative entries (both are real,
+               executable, visible structures — recommendation_status is a
+               priority annotation on the chip, not a second filter here). */
             TIER_SECTIONS.map(({ tier, heading }) => {
-              const tierStructures = visibleStructures.filter((s) => s.producer_optimizer_option_type === tier);
+              const tierStructures = visibleStructures.filter((s) => s.practicality_tier === tier);
               if (tierStructures.length === 0) return null;
               return (
                 <div key={tier} className="sc-jurlist-section">
@@ -422,7 +437,7 @@ export default function ProjectGlobe() {
               no arc, and the caption then read as a rendering failure. */}
           {globeMode === MODE_OPTIMIZER
             ? visibleStructures.length === 0
-              ? "No practical bilateral optimizer option currently clears the $100K savings threshold."
+              ? "No executable optimizer structures for this production yet."
               : arcs.length > 0
               ? "Showing the recommended structure's production routing only."
               : "The recommended structure is single-jurisdiction — no routing to show."

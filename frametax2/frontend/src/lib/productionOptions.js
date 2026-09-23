@@ -6,6 +6,16 @@
 // economics, no new ranking, nothing recalculated. Kept in a plain .js
 // module (not the .jsx component) so it can be unit-tested directly, the
 // same separation globeFit.js/globeData.js already use.
+//
+// Does NOT import workspaceScenarioMode.js's optimizerProjection() —
+// workspaceScenarioMode.js itself imports isBaselineStructure from THIS
+// module, so importing back would be a circular dependency. Reads the
+// same `recommended_optimizer_options` (falling back to the
+// `producer_optimizer_options` backward-compatible alias) field directly
+// instead — the identical data optimizerProjection() reads, just without
+// its re-sort (selectMaxPotentialCard only needs the first entry, and the
+// backend already serves recommended_optimizer_options pre-sorted
+// Practical -> Formal -> Advanced, NPC ascending).
 
 export const CLASSIFICATIONS = {
   current: { key: "current", label: "Current / Base Production", accent: "gold" },
@@ -182,8 +192,8 @@ function _rankOrNpcOrder(allocated) {
 // this specific production.
 export function selectMaxPotentialCard(allocated, excludeIds) {
   if (!allocated?.structures) return null;
-  const practical = (allocated.producer_optimizer_options || [])
-    .find((s) => !excludeIds.has(s.structure_id));
+  const recommended = allocated.recommended_optimizer_options || allocated.producer_optimizer_options || [];
+  const practical = recommended.find((s) => !excludeIds.has(s.structure_id));
   if (practical) {
     return { structure: practical, isOpportunity: false, isProducerOptimizer: true, potentialUsd: null, fundCount: 0, fundNames: [] };
   }

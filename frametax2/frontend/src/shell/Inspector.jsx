@@ -433,6 +433,35 @@ function StructureDetailInspector({ data }) {
         <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
+      {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the exact savings/cost
+          delta and recommendation-vs-evaluated-alternative status, when this structure
+          carries one (only optimizer_scenarios entries do — a Jurisdictions-layer
+          winner has no recommendation concept). Never a bare status word with no
+          number; a genuinely missing baseline says so explicitly rather than showing
+          a blank. */}
+      {data.recommendation_status && (
+        <dl className="kv-list" style={{ marginTop: -4, marginBottom: 8 }}>
+          <div>
+            <dt>{data.recommendation_status === "COSTS_MORE" ? "Costs more than Current Location"
+              : data.recommendation_status === "NEUTRAL" ? "Same as Current Location"
+              : data.recommendation_status === "BASELINE_UNRESOLVED" ? "Savings vs. Current Location"
+              : "Saves vs. Current Location"}</dt>
+            <dd className="mono">
+              {data.recommendation_status === "BASELINE_UNRESOLVED" || data.savings_vs_current_usd == null
+                ? "Not available from source data"
+                : <Money value={Math.abs(data.savings_vs_current_usd)} />}
+            </dd>
+          </div>
+          <div>
+            <dt>Recommendation</dt>
+            <dd>
+              {data.is_recommended
+                ? `Recommended — saves more than ${data.recommendation_threshold_usd != null ? `$${Math.round(data.recommendation_threshold_usd / 1000)}K` : "the threshold"} (${data.jurisdiction_count ?? "?"} jurisdiction${data.jurisdiction_count === 1 ? "" : "s"})`
+                : `Evaluated Alternative — ${humanizeToken(data.recommendation_status)}`}
+            </dd>
+          </div>
+        </dl>
+      )}
       {/* PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): disclosure only —
           this scenario is one canonical representative of N raw search/enumeration
           iterations of the same route (canonical_production_view.py's optimizer_scenarios
