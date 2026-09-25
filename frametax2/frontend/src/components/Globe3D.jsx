@@ -902,8 +902,33 @@ export default function Globe3D({
   // Mutable snapshot the polygon/point accessors read from — the accessors
   // are handed to three-globe once (stable identities), and re-assigning
   // them is how a selection/status change repaints without a remount.
-  const liveRef = useRef({ polygonColors: null, selectedIso: null, hoveredIso: null, illuminatedIsos: null, primaryIlluminatedIso: null, pulsingIsos: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null });
+  const liveRef = useRef({ polygonColors: null, selectedIso: null, hoveredIso: null, illuminatedIsos: null, primaryIlluminatedIso: null, pulsingIsos: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null, onPointClick: null, onPointHover: null });
   const [failed, setFailed] = useState(false);
+
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — ROOT CAUSE (confirmed
+  // live): the hit-target factory below (`.htmlElement((d) => {...})`) is
+  // configured ONCE, inside the mount-only effect (`}, []`) a few hundred
+  // lines down — its `addEventListener("click", ...)` closure captured
+  // `onPointClick`/`onPointHover` from that FIRST render forever, exactly
+  // the same staleness liveRef already exists to solve for the paint
+  // accessors above. Confirmed live: mounting Project Globe in Single
+  // Jurisdiction mode, then switching to Optimizer (same mounted Globe3D
+  // instance, no remount) and clicking a marker opened a Single
+  // Jurisdiction "best_per_jurisdiction" Inspector instead of the
+  // Optimizer structure actually rendered on screen — the click handler
+  // was still running the FIRST render's `selectJurisdiction` closure, with
+  // that render's stale `globeMode`. This pre-dates the Optimizer pass
+  // (the same staleness always affected `structuresByCode`/`allocated` too)
+  // but is now much more visibly wrong, since the two modes' click
+  // resolutions are completely different Inspector views. Fixed the same
+  // way as every other reactive value here: kept current in liveRef by a
+  // dedicated effect (below, right after this ref's declaration point in
+  // the render body), read through liveRef.current at click/hover time
+  // instead of the closed-over prop.
+  useEffect(() => {
+    liveRef.current.onPointClick = onPointClick;
+    liveRef.current.onPointHover = onPointHover;
+  }, [onPointClick, onPointHover]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -1658,21 +1683,23 @@ export default function Globe3D({
         // jurisdiction click win over the backdrop so selection always
         // transfers in one click, same as when no Inspector is open yet.
         el.style.zIndex = "45";
-        if (onPointClick) {
-          el.addEventListener("click", (ev) => { ev.stopPropagation(); onPointClick(d); });
-          el.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); onPointClick(d); } });
-        }
-        if (onPointHover) {
-          // PHASE 3A FINAL CLOSEOUT: the hover card now anchors near the
-          // hovered jurisdiction instead of sitting fixed at the panel's
-          // top-left, so a second argument — this hit-target's own
-          // viewport-relative box (the same box the marker itself occupies
-          // on screen) — is passed through. The caller converts it to a
-          // position relative to its own canvas container; Globe3D has no
-          // reason to know that container's identity.
-          el.addEventListener("mouseenter", () => onPointHover(d, el.getBoundingClientRect()));
-          el.addEventListener("mouseleave", () => onPointHover(null));
-        }
+        // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): reads liveRef.current
+        // at CLICK/HOVER time, never the closed-over `onPointClick`/
+        // `onPointHover` props directly — this factory runs inside the
+        // mount-only effect (`}, []` far below), so a direct reference would
+        // be permanently stale after the very first render (see this
+        // component's liveRef declaration for the full root-cause trace).
+        el.addEventListener("click", (ev) => { ev.stopPropagation(); liveRef.current.onPointClick?.(d); });
+        el.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); liveRef.current.onPointClick?.(d); } });
+        // PHASE 3A FINAL CLOSEOUT: the hover card now anchors near the
+        // hovered jurisdiction instead of sitting fixed at the panel's
+        // top-left, so a second argument — this hit-target's own
+        // viewport-relative box (the same box the marker itself occupies
+        // on screen) — is passed through. The caller converts it to a
+        // position relative to its own canvas container; Globe3D has no
+        // reason to know that container's identity.
+        el.addEventListener("mouseenter", () => liveRef.current.onPointHover?.(d, el.getBoundingClientRect()));
+        el.addEventListener("mouseleave", () => liveRef.current.onPointHover?.(null));
         return el;
       });
 

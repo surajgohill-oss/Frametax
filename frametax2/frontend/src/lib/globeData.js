@@ -17,7 +17,7 @@ import { programDisplay } from "./programNames.js";
 // different family dominates the bounded page (GD-4). Reusing this module
 // is also what makes Workspace and Globe share one mode vocabulary instead
 // of two independently-maintained ones.
-import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER } from "./workspaceScenarioMode.js";
+import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "./workspaceScenarioMode.js";
 
 // Great-circle angular separation (degrees) between two {lat, lng} points —
 // used only to size the Optimizer Overlay's auto-framing distance to the
@@ -198,6 +198,58 @@ export const STATUS_FULL_LABEL = Object.fromEntries(
 export const PULSE_TIERS = new Set(
   Object.entries(GLOBE_SEMANTIC).filter(([, v]) => v.pulse).map(([k]) => k),
 );
+
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer mode's own
+// recommendation-status vocabulary — the SAME four approved hex tokens as
+// GLOBE_SEMANTIC (never a new colour), but DIFFERENT label text, because the
+// two modes describe genuinely different producer decisions. Single
+// Jurisdiction's "Alternatives"/"Excluded" describe a per-jurisdiction
+// choropleth verdict; Optimizer's gold/jade/silver/amber describe a
+// structure's real recommendation_status (RECOMMENDED vs a real Evaluated
+// Alternative vs a Needs-More-Facts opportunity) — conflating the two
+// vocabularies was the exact defect this pass fixes (a structure's Optimizer
+// colour must never be read from GLOBE_SEMANTIC/STATUS_LABEL). `red` is
+// declared for completeness/agreement with the Inspector and is never
+// actually reachable through the admissible Optimizer pool today —
+// recommended_optimizer_options/evaluated_optimizer_alternatives are both
+// is_fully_priced=true by construction, so a blocked/rejected candidate is
+// never part of this rendered set (see workspaceScenarioMode.js's
+// optimizerProjection) — it exists here only so a future surface that DOES
+// need to show one can agree with this same definition rather than invent
+// its own. Reuses the app's own approved --red token value (tokens.css)
+// since GLOBE_SEMANTIC's hexes are fixed (non-theme) values consumed
+// directly by the WebGL layer, which cannot read a CSS custom property.
+export const OPTIMIZER_SEMANTIC = {
+  gold: { label: "Best Recommendation", hex: GLOBE_SEMANTIC.gold.hex, pulse: true },
+  jade: { label: "Other Recommended", hex: GLOBE_SEMANTIC.jade.hex, pulse: false },
+  silver: { label: "Evaluated Alternative", hex: GLOBE_SEMANTIC.silver.hex, pulse: false },
+  amber: { label: "Needs More Facts", hex: GLOBE_SEMANTIC.amber.hex, pulse: false },
+  red: { label: "Blocked / Rejected", hex: "#9C3C31", pulse: false },
+};
+export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
+  Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.hex]),
+);
+export const OPTIMIZER_STATUS_LABEL = Object.fromEntries(
+  Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.label]),
+);
+
+// The four canonical Optimizer structural families, real backend
+// `classification` values (structural_classification.py) mapped to the
+// exact producer-facing names the controlling product contract specifies.
+// This is a STRUCTURAL-FAMILY label — orthogonal to and never a substitute
+// for recommendation status (gold/jade/silver/amber above). Every one of
+// the four acceptance productions' real optimizer_scenarios is currently
+// 100% HYBRID_ANCHOR_COMPONENT (confirmed live, 2026-09-25) — the other
+// three are real, defined families with zero live instances today, not
+// unreachable dead code; a future production with a real bilateral treaty
+// match would populate OFFICIAL_COPRODUCTION/COMBINED_COPRO_HYBRID_STACK/
+// MULTI_PRINCIPAL_MULTILATERAL through this identical map.
+export const OPTIMIZER_FAMILY_LABEL = {
+  HYBRID_ANCHOR_COMPONENT: "Practical Hybrid",
+  OFFICIAL_COPRODUCTION: "Official Co-production",
+  COMBINED_COPRO_HYBRID_STACK: "Combined/Advanced Structure",
+  MULTI_PRINCIPAL_MULTILATERAL: "Multilateral",
+};
 
 // Untouched landmass — jurisdictions this production has no opinion about.
 // It carries no semantic state (it is the absence of one), so it has no entry
@@ -574,6 +626,36 @@ export function buildCandidateDetail(structure) {
   };
 }
 
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): the Needs-More-Facts
+// counterpart to buildCandidateDetail — a real, disclosed treaty/framework
+// opportunity (optimizer_opportunities_requiring_facts) is structurally
+// different enough (never priced, no component_allocations/segments, no
+// recommendation_status) that reusing buildCandidateDetail would either omit
+// its real treaty identity or silently show a stack of null economics rows.
+// Reads every field verbatim from the backend's own served opportunity
+// object (canonical_production_view.py) — no client-side inference of which
+// facts are missing; `blockers` and `reason` are the backend's own real,
+// already-written disclosure text.
+export function buildOpportunityDetail(structure) {
+  if (!structure) return null;
+  return {
+    structure_id: structure.structure_id,
+    economic_identity: structure.economic_identity ?? null,
+    label: structure.label ?? null,
+    treaty_slug: structure.treaty_slug ?? null,
+    primary_jurisdiction: structure.primary_jurisdiction ?? null,
+    participants: structure.participants || [],
+    coproduction_partners: structure.coproduction_partners || [],
+    relationship_types: structure.relationship_types || [],
+    candidate_status: structure.candidate_status ?? null,
+    is_fully_priced: !!structure.is_fully_priced,
+    reason: structure.reason ?? null,
+    blockers: structure.blockers || [],
+    warnings: structure.warnings || [],
+    conditional_programs: structure.conditional_programs || [],
+  };
+}
+
 // Per-country hover payload — read verbatim from the best (highest-state)
 // structure touching that country. Countries with no participating
 // structure (Excluded, from discovery only) carry state + jurisdiction
@@ -718,6 +800,28 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
 // the destination jurisdiction's share of the structure's own routed
 // spend. When a leg's segment isn't present in the data, its arc falls
 // back to a fixed mid-width rather than inventing a weight.
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): the ONE shared derivation of
+// a structure's real Optimizer recommendation-status colour slot — gold only
+// for the single best/leading recommendation (recommended[0] of
+// optimizerProjection's own deterministic tier -> savings -> NPC -> identity
+// ordering), jade for every other RECOMMENDED structure, silver for a real
+// Evaluated Alternative. Used identically by buildOptimizerPathway's
+// markers/arcs and the Full Project Globe list's side-list dot, so a
+// structure's colour can never disagree between the two surfaces (the
+// "marker, route, side-list dot, hover badge, Inspector status, and legend
+// must agree" contract). Never reads `structureTier`/rankById — that
+// derivation is for the Single Jurisdiction/general overall ranking, which
+// leaves every Optimizer structure at a uniform "jade" (rank is never
+// populated for this family) and has no relationship to recommendation
+// status at all.
+export function optimizerStructureStatus(allocated, structure) {
+  const { recommended } = optimizerProjection(allocated);
+  const bestRecommendedId = recommended[0]?.structure_id ?? null;
+  if (structure.structure_id === bestRecommendedId) return "gold";
+  if (structure.recommendation_status === "RECOMMENDED") return "jade";
+  return "silver";
+}
+
 export function buildOptimizerPathway(allocated, leadingStructureId) {
   // FVD_GLOBE_RENDERER_CORRECTION (2026-09-21) — CONFIRMED LIVE ROOT CAUSE:
   // this used to resolve via activeStructure(allocated, leadingStructureId,
@@ -762,21 +866,41 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
   );
   const maxQpe = Math.max(1, ...ordered.map((c) => qpeByCode.get(c) || 0));
 
-  // The primary shoot reads Recommended; every downstream routed/
-  // co-production leg reads Optimized alternative — a production hierarchy,
-  // not a flat chain. No new state is introduced for overlay mode.
-  const points = ordered.map((code, i) => {
-    const status = i === 0 ? "gold" : "jade";
-    return {
-      lat: JURISDICTION_COORDS[code].lat, lng: JURISDICTION_COORDS[code].lng,
-      tier: status, name: code, id: code, iso: globeKey(code), color: STATUS_HEX[status],
-      role: roleFor(structure, code), qpeUsd: qpeByCode.get(code) ?? null,
-    };
-  });
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — ROOT CAUSE: every point
+  // used to read status from ITS OWN POSITION in the routing chain (i===0
+  // -> gold, everything else -> jade) — "never derive colour from list
+  // position alone" (the exact rule the prior Single Jurisdiction pass
+  // already enforced for that layer) was being violated here from day one.
+  // Position in the chain is a GEOGRAPHIC distinction (primary shoot vs a
+  // routed leg — still carried via `role`, unchanged below); it is not a
+  // RECOMMENDATION-STATUS distinction. The one selected structure shown at a
+  // time has exactly ONE real status, and every point/leg in its own routing
+  // chain now shares that SAME real status (see optimizerStructureStatus
+  // below), never a per-point split.
+  const structureStatus = optimizerStructureStatus(allocated, structure);
+  const structureDetail = buildCandidateDetail(structure);
+  const familyLabel = OPTIMIZER_FAMILY_LABEL[structure.classification] ?? null;
 
-  // Directional arcs: each leg's color runs origin-hue -> destination-hue
-  // (three-globe renders a two-stop arcColor array as a gradient along the
-  // arc), so flow direction reads without inventing arrowhead geometry.
+  const points = ordered.map((code) => ({
+    lat: JURISDICTION_COORDS[code].lat, lng: JURISDICTION_COORDS[code].lng,
+    tier: structureStatus, name: code, id: code, iso: globeKey(code), color: OPTIMIZER_STATUS_HEX[structureStatus],
+    role: roleFor(structure, code), qpeUsd: qpeByCode.get(code) ?? null,
+    // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): hover/Inspector parity —
+    // every point in this ONE structure's routing chain carries the SAME
+    // real structure-level detail (buildCandidateDetail — the identical
+    // shared adapter the Inspector already uses, no re-derivation) plus the
+    // status/family labels the hover card and legend must agree with.
+    mode: "optimizer",
+    optimizerStatus: structureStatus,
+    optimizerStatusLabel: OPTIMIZER_STATUS_LABEL[structureStatus],
+    familyLabel,
+    structureDetail,
+  }));
+
+  // Every leg shares the structure's own single real status colour (see
+  // above) — a solid-colour arc, not the old origin/destination gradient
+  // (which encoded chain position, the same colour-by-position defect).
+  const arcHex = OPTIMIZER_STATUS_HEX[structureStatus];
   const arcs = [];
   for (let i = 0; i < ordered.length - 1; i++) {
     const a = JURISDICTION_COORDS[ordered[i]];
@@ -790,8 +914,8 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
     const strokeWidth = destQpe != null ? 0.55 + 1.4 * (destQpe / maxQpe) : 0.85;
     arcs.push({
       startLat: a.lat, startLng: a.lng, endLat: b.lat, endLng: b.lng,
-      tier: "gold", strokeWidth,
-      color: [STATUS_HEX[i === 0 ? "gold" : "jade"], STATUS_HEX.jade],
+      tier: structureStatus, strokeWidth,
+      color: [arcHex, arcHex],
       // startCode/endCode: additive, real jurisdiction-code fields (three-
       // globe's arc layer reads only the start/end Lat/Lng + color/
       // strokeWidth keys above and ignores unknown properties — verified

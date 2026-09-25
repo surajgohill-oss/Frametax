@@ -210,10 +210,19 @@ test("the restored Globe legend carries exactly the four current states, no lega
   assert.match(src, /GLOBE_SEMANTIC/, "legend must import the canonical semantic table");
   assert.ok(!/#[0-9a-fA-F]{3,6}/.test(src), "legend must not hardcode a hex colour of its own");
   // Exactly the four current slot keys — no fifth, no legacy category name.
-  const orderMatch = /order\s*=\s*\[([^\]]+)\]/.exec(src);
-  assert.ok(orderMatch, "legend must declare an explicit state order");
-  const slots = orderMatch[1].split(",").map((s) => s.trim().replace(/["']/g, ""));
-  assert.deepEqual(slots.sort(), ["amber", "gold", "jade", "silver"]);
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): `order` is now a
+  // mode-conditional ternary (Single Jurisdiction's existing order vs
+  // Optimizer's own order, per the controlling contract's explicit
+  // Gold/Jade/Silver/Amber sequence) — both branches must still be exactly
+  // the same four canonical slot keys, just declared as two arrays now
+  // instead of one.
+  const orderMatches = [...src.matchAll(/\[([^\]]+)\]/g)]
+    .map((m) => m[1].split(",").map((s) => s.trim().replace(/["']/g, "")))
+    .filter((slots) => slots.length === 4 && slots.every((s) => ["gold", "jade", "amber", "silver"].includes(s)));
+  assert.ok(orderMatches.length >= 2, "legend must declare an explicit state order for both Single Jurisdiction and Optimizer modes");
+  for (const slots of orderMatches) {
+    assert.deepEqual([...slots].sort(), ["amber", "gold", "jade", "silver"]);
+  }
   for (const legacy of [
     "no known incentive", "qualified", "conditional", "evaluated",
     "not evaluated", "candidate jurisdiction",
@@ -228,7 +237,10 @@ test("the legend is scoped to Project Globe only, is vertical, and never interce
   const mounters = ["screens/production/Overview.jsx", "screens/production/Workspace.jsx"]
     .filter((f) => stripComments(read(f)).includes("GlobeLegend"));
   assert.deepEqual(mounters, [], `GlobeLegend must not be mounted outside Project Globe: ${mounters.join(", ")}`);
-  assert.match(read("screens/production/ProjectGlobe.jsx"), /<GlobeLegend\s*\/>/);
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): now passed `mode` so it
+  // can render Optimizer's own recommendation-status vocabulary instead of
+  // Single Jurisdiction's — still self-closing, still no other props.
+  assert.match(read("screens/production/ProjectGlobe.jsx"), /<GlobeLegend mode=\{globeMode\} \/>/);
   // PHASE 3B GLOBE CLOSEOUT: the old "stay tiny, single row" rule is
   // explicitly reversed — the legend was found too small to read and is
   // rebuilt as a larger vertical stack. What must still hold: readable but

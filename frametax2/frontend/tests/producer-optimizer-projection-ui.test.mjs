@@ -78,7 +78,18 @@ test("the Optimizer projection stays COMPLETE (never threshold-filtered) even wh
   ));
 });
 
-test("producer optimizer keeps the six-card contract: leading slots fill from RECOMMENDED only, never padded with evaluated alternatives", () => {
+test("producer optimizer keeps the six-card contract: fewer than five recommended options backfill slots 2-6 from Evaluated Alternatives, never leaving a short rack when real executable options exist", () => {
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): this test previously pinned
+  // the OPPOSITE contract ("never padded with evaluated alternatives") — that
+  // was the confirmed live defect (F#K Valentine's Day has exactly 4 real
+  // recommended options; Workspace showed only 4 Optimizer cards instead of
+  // Current Location + 5). The controlling product contract is explicit:
+  // "Slots 2-6: first five executable Optimizer options, recommended first...
+  // if fewer than five recommendations exist, fill remaining slots with the
+  // best Evaluated Alternatives, visibly labeled as alternatives." Recommended
+  // options still always sort before evaluated ones (recPool before evalPool
+  // in the combined pool) — an evaluated alternative only ever fills a slot
+  // once every real recommended option is already placed.
   const anchor = { ...candidate("anchor", 1_000_000), is_baseline: true, structure_type: "single_country" };
   const recommended = Array.from({ length: 3 }, (_, i) => candidate(`rec-${i + 1}`, 600_000 + i));
   const alternative = candidate("alt-cheap", 1, { recommendation_status: "EVALUATED_ALTERNATIVE", is_recommended: false });
@@ -91,14 +102,41 @@ test("producer optimizer keeps the six-card contract: leading slots fill from RE
     producer_optimizer_options: recommended,
   };
   const result = selectSixSlots(allocated, MODE_OPTIMIZER, null);
-  // Only 3 real recommended options exist -- an honest, shorter rack (anchor + 3),
-  // never backfilled with the evaluated alternative to reach 6.
-  assert.deepEqual(result.slots.map((s) => s.structure_id), ["anchor", "rec-1", "rec-2", "rec-3"]);
+  // 3 recommended + 1 evaluated = 4 total executable options -- all 4 fill the
+  // leading slots (recommended first), slot 6 is honestly null (nothing left).
+  assert.deepEqual(result.slots.map((s) => s.structure_id), ["anchor", "rec-1", "rec-2", "rec-3", "alt-cheap"]);
   assert.equal(result.slot6, null);
   assert.deepEqual(result.dropdownOptions, []);
-  assert.deepEqual(result.dropdownEvaluatedAlternatives.map((s) => s.structure_id), ["alt-cheap"], (
-    "the evaluated alternative remains reachable via the dropdown's own labeled section, never silently dropped"
+  assert.deepEqual(result.dropdownEvaluatedAlternatives, [], (
+    "alt-cheap already occupies a leading slot -- it must not also appear in the dropdown's Evaluated Alternatives section (no duplicate reachability)"
   ));
+});
+
+test("producer optimizer six-card contract: exactly five executable options (fewer than four recommended) still fill all five leading+slot6 positions, recommended first", () => {
+  // A second, distinct shape from the test above: exactly enough executable
+  // options to fill every one of the five Optimizer slots (2-6), with
+  // recommended options short of four -- confirms leading itself (not just
+  // slot 6) backfills from evaluated alternatives, and slot 6 IS reachable
+  // (not null) once there are enough combined options.
+  const anchor = { ...candidate("anchor", 1_000_000), is_baseline: true, structure_type: "single_country" };
+  const recommended = Array.from({ length: 2 }, (_, i) => candidate(`rec-${i + 1}`, 600_000 + i));
+  const evaluated = Array.from({ length: 3 }, (_, i) => candidate(`eval-${i + 1}`, 700_000 + i, { recommendation_status: "EVALUATED_ALTERNATIVE", is_recommended: false }));
+  const allocated = {
+    structures: [anchor], best_per_jurisdiction: {},
+    optimizer_scenarios: [...recommended, ...evaluated],
+    recommended_optimizer_options: recommended,
+    evaluated_optimizer_alternatives: evaluated,
+    optimizer_opportunities_requiring_facts: [],
+    producer_optimizer_options: recommended,
+  };
+  const result = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  assert.deepEqual(result.leading.map((s) => s.structure_id), ["rec-1", "rec-2", "eval-1", "eval-2"], (
+    "both recommended options fill first, then evaluated alternatives backfill the remaining leading slots"
+  ));
+  assert.equal(result.slot6.structure_id, "eval-3");
+  assert.deepEqual(result.slots.map((s) => s.structure_id), ["anchor", "rec-1", "rec-2", "eval-1", "eval-2", "eval-3"]);
+  assert.deepEqual(result.dropdownOptions, []);
+  assert.deepEqual(result.dropdownEvaluatedAlternatives, [], "every evaluated alternative is already placed -- none left over for the dropdown");
 });
 
 test("producer optimizer six-card contract with enough recommended options: slots 2-6 fill from the first five recommended, dropdown carries the remainder plus evaluated alternatives separately", () => {
@@ -134,8 +172,20 @@ test("Workspace, Overview, and Full Globe are wired to the canonical, COMPLETE o
   assert.match(workspaceSource, /selectSixSlots/);
   assert.match(overviewSource, /IncentiveIntelligence/);
   assert.match(globeSource, /admissibleForMode/);
-  // The exact regression this rewrite fixes: Advanced Multi-Jurisdiction must
-  // be back as a real Full Globe section, never removed.
-  assert.match(globeSource, /ADVANCED_MULTI_JURISDICTION/);
-  assert.match(globeSource, /Advanced Multi-Jurisdiction/);
+  // The exact regression this test guards against: a 3+-jurisdiction
+  // (Advanced Multi-Jurisdiction practicality tier) structure must never be
+  // silently excluded from the Full Globe's rendered set. OPTIMIZER_GLOBE_
+  // WORKSPACE_WIRING (2026-09-25) removed the OLD practicality-tier SECTION
+  // HEADINGS (confirmed live: a threshold dimension, not a real structural
+  // family — see ProjectGlobe.jsx's own OPTIMIZER_SECTIONS comment) but the
+  // underlying completeness guarantee is unchanged and still real: every
+  // executable structure, at ANY jurisdiction count/tier, still reaches
+  // optimizerProj.recommended/evaluated (data-level completeness is pinned
+  // separately and still passing — workspace-scenario-mode.test.mjs's
+  // "EVERY canonical family renders when executable — 3+-jurisdiction
+  // (Advanced) rows are NEVER hidden"). At the UI level: the section render
+  // must read optimizerProj's arrays directly, with no jurisdiction-count or
+  // practicality_tier filter anywhere in this file.
+  assert.match(globeSource, /optimizerProj\?\.\[key\]/, "sections must read the complete optimizerProj arrays directly");
+  assert.doesNotMatch(globeSource, /practicality_tier/, "ProjectGlobe.jsx must never filter/section by practicality_tier again — that was the threshold-as-family conflation this pass fixed");
 });

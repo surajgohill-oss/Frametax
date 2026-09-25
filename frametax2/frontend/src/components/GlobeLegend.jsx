@@ -1,4 +1,5 @@
-import { GLOBE_SEMANTIC } from "../lib/globeData";
+import { GLOBE_SEMANTIC, OPTIMIZER_SEMANTIC } from "../lib/globeData";
+import { MODE_OPTIMIZER } from "../lib/workspaceScenarioMode";
 
 // ── Four-state Globe legend — top-left, chrome-free (Phase 3B closeout) ──
 //
@@ -28,14 +29,29 @@ import { GLOBE_SEMANTIC } from "../lib/globeData";
 // Uses `fullLabel` (the same long form hover already uses — "Co-Production
 // Opportunities", not the compact chip's old "Co-Pro Opportunities") since a
 // vertical stack has the width to spell it out.
-export default function GlobeLegend({ className = "" }) {
-  const order = ["gold", "jade", "amber", "silver"];
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer mode describes a
+// genuinely different producer decision than Single Jurisdiction's
+// per-country choropleth verdict — "best/leading recommendation for this
+// production" (gold) is not the same claim as "Recommended" (a jurisdiction
+// touched by the production's rank-1 structure), and Optimizer's silver
+// means a real Evaluated Alternative, never Single Jurisdiction's silver
+// "Excluded". Reusing GLOBE_SEMANTIC's labels for Optimizer mode would be
+// exactly the "family/legend conflation" the controlling contract forbids.
+// Same four approved hex tokens (OPTIMIZER_SEMANTIC reads them straight from
+// GLOBE_SEMANTIC — never a new colour), Optimizer's own label text, in the
+// exact order the controlling contract lists them (Gold/Jade/Silver/Amber).
+// `mode` defaults to Single Jurisdiction's existing four-state legend,
+// completely unchanged from before this pass.
+export default function GlobeLegend({ className = "", mode }) {
+  const isOptimizer = mode === MODE_OPTIMIZER;
+  const order = isOptimizer ? ["gold", "jade", "silver", "amber"] : ["gold", "jade", "amber", "silver"];
+  const semantic = isOptimizer ? OPTIMIZER_SEMANTIC : GLOBE_SEMANTIC;
   return (
-    <div className={`globe-legend-vertical ${className}`.trim()} role="note" aria-label="Globe status key">
+    <div className={`globe-legend-vertical ${className}`.trim()} role="note" aria-label={isOptimizer ? "Optimizer status key" : "Globe status key"}>
       {order.map((slot) => (
         <span key={slot} className="glv-item">
-          <span className="glv-dot" style={{ background: GLOBE_SEMANTIC[slot].hex }} aria-hidden="true" />
-          {GLOBE_SEMANTIC[slot].fullLabel}
+          <span className="glv-dot" style={{ background: semantic[slot].hex }} aria-hidden="true" />
+          {isOptimizer ? semantic[slot].label : semantic[slot].fullLabel}
         </span>
       ))}
     </div>

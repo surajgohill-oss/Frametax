@@ -530,6 +530,59 @@ function StructureDetailInspector({ data }) {
   );
 }
 
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): the Needs-More-Facts
+// counterpart to StructureDetailInspector — data is buildOpportunityDetail's
+// shape (globeData.js), never buildCandidateDetail's (a real disclosed
+// treaty/framework opportunity has no NPC/QPE/incentive to show; showing a
+// stack of "Not priced" economics rows here would misrepresent it as
+// something that WAS evaluated and came up empty, rather than something
+// that cannot be priced yet). Every field is read verbatim from the
+// backend's own served opportunity object — never a client-side guess at
+// which facts are missing.
+function OptimizerOpportunityInspector({ data }) {
+  return (
+    <>
+      <p className="inspector-eyebrow">Needs More Facts · Co-Production Opportunity</p>
+      <h3>{data.label || "Co-production opportunity"}</h3>
+      {data.economic_identity && (
+        <p className="text-tertiary small" style={{ margin: "2px 0 8px", wordBreak: "break-all" }}>
+          {data.economic_identity.slice(0, 16)}…
+        </p>
+      )}
+      <dl className="kv-list">
+        <div><dt>Treaty / framework</dt><dd>{data.treaty_slug ? humanizeToken(data.treaty_slug) : "Not available from source data"}</dd></div>
+        <div>
+          <dt>Participating jurisdictions</dt>
+          <dd>
+            {data.coproduction_partners?.length
+              ? data.coproduction_partners.map((p) => p.jurisdiction_display_name || jurisdictionName(p.jurisdiction_code)).join(", ")
+              : (data.participants || []).map(jurisdictionName).join(", ") || "Not available from source data"}
+          </dd>
+        </div>
+        <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : "Not executable — needs facts"}</dd></div>
+      </dl>
+      {data.reason && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why this needs more facts</p>
+          <p className="text-secondary small" style={{ margin: "4px 0" }}>{data.reason}</p>
+        </div>
+      )}
+      {data.blockers?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Unresolved facts</p>
+          {data.blockers.map((b, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{b}</p>)}
+        </div>
+      )}
+      {data.warnings?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Warnings</p>
+          {data.warnings.map((w, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{w}</p>)}
+        </div>
+      )}
+    </>
+  );
+}
+
 function JurisdictionInspector({ data }) {
   return (
     <>
@@ -559,6 +612,7 @@ const RENDERERS = {
   "allocation-assignment": AllocationAssignmentInspector,
   "structure-recommendation": StructureRecommendationInspector,
   "candidate-structure": StructureDetailInspector,
+  "optimizer-opportunity": OptimizerOpportunityInspector,
 };
 
 // Shared inspector body — the selected item's detail. Used by BOTH the

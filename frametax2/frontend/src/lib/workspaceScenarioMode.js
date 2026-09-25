@@ -201,20 +201,44 @@ export function selectSixSlots(allocated, mode, slot6Id) {
   }
 
   const { recommended, evaluated, opportunities } = optimizerProjection(allocated);
-  const pool = recommended.filter((s) => !anchor || s.structure_id !== anchor.structure_id);
-  const leading = pool.slice(0, 4);
-  const remainingRecommended = pool.slice(4);
-  // Default (no explicit slot6Id): the fifth RECOMMENDED option only — never
-  // automatically promoted from evaluated alternatives ("do not silently
-  // promote evaluated alternatives as recommendations"). An explicit
-  // producer choice (slot6Id) MAY still select an evaluated alternative —
-  // that is a deliberate producer action, not an automatic promotion.
-  const slot6Candidates = [...remainingRecommended, ...evaluated]; // opportunities are never slot-6-eligible
-  const chosen = slot6Id ? slot6Candidates.find((s) => s.structure_id === slot6Id) : null;
-  const slot6 = chosen || remainingRecommended[0] || null;
-  const excludeId = slot6 ? slot6.structure_id : null;
-  const dropdownOptions = remainingRecommended.filter((s) => s.structure_id !== excludeId);
-  const dropdownEvaluatedAlternatives = evaluated.filter((s) => s.structure_id !== excludeId);
+  const recPool = recommended.filter((s) => !anchor || s.structure_id !== anchor.structure_id);
+  const evalPool = evaluated.filter((s) => !anchor || s.structure_id !== anchor.structure_id);
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — ROOT CAUSE (confirmed
+  // live against F#K Valentine's Day: exactly 4 real recommended options):
+  // slots 2-6 (five cards) used to fill ONLY from `recPool.slice(0,4)` for
+  // the leading four, with slot 6 defaulting to `remainingRecommended[0] ||
+  // null` — NEVER falling back to an evaluated alternative when recPool had
+  // fewer than 5 entries. FVD's 4 recommended options filled the leading
+  // four exactly, leaving `remainingRecommended` empty and slot 6 null —
+  // Workspace showed only 4 Optimizer cards (Current Location + 4), not the
+  // controlling contract's required Current Location + 5. The controlling
+  // contract is explicit: "Slots 2-6: first five executable Optimizer
+  // options, recommended first... if fewer than five recommendations exist,
+  // fill remaining slots with the best Evaluated Alternatives." `combined`
+  // below is exactly that — recPool (already recommended-first via
+  // _sortRecommended) followed by evalPool (already ordered via
+  // _sortEvaluatedAlternatives) — so slicing the first five ALWAYS prefers
+  // every real recommended option before ever reaching an evaluated one,
+  // and naturally generalizes to any recommended count (not just the FVD=4
+  // case): 66/107/112 recommended (LU/BH/LLS) still fill all five leading
+  // slots from recPool alone, unchanged from before.
+  const combined = [...recPool, ...evalPool];
+  const leading = combined.slice(0, 4);
+  const remaining = combined.slice(4);
+  // An explicit producer choice (slot6Id) may select ANY remaining
+  // executable option, recommended or evaluated — that is a deliberate
+  // producer action, never an automatic promotion. Opportunities are never
+  // slot-6-eligible (see dropdownOpportunities below — visible, disabled).
+  const chosen = slot6Id ? remaining.find((s) => s.structure_id === slot6Id) : null;
+  const slot6 = chosen || remaining[0] || null;
+  // Dropdown sections must remain genuinely distinct — track which of
+  // `leading`/`slot6` came from recPool vs evalPool so "Remaining
+  // Recommended" never lists an evaluated alternative and vice versa; never
+  // make an evaluated alternative appear recommended anywhere in this
+  // contract, including the dropdown's own section membership.
+  const usedIds = new Set([...leading, slot6].filter(Boolean).map((s) => s.structure_id));
+  const dropdownOptions = recPool.filter((s) => !usedIds.has(s.structure_id));
+  const dropdownEvaluatedAlternatives = evalPool.filter((s) => !usedIds.has(s.structure_id));
   const slots = [anchor, ...leading, slot6].filter(Boolean);
   return {
     anchor, leading, slot6, slots,

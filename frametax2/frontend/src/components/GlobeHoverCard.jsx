@@ -90,6 +90,66 @@ function CoProductionBody({ hover }) {
   );
 }
 
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer-mode hover is
+// STRUCTURE-level, not jurisdiction-level — every marker currently on
+// screen belongs to the SAME ONE selected structure (buildOptimizerPathway
+// renders exactly one at a time), so hovering ANY of its markers shows that
+// whole structure's real summary: recommendation status, structural family,
+// this marker's own role in the routing chain, every participant, the
+// complete program stack (component -> jurisdiction -> program, QPE,
+// incentive), total incentive, NPC, and the exact SAVES/NEUTRAL/COSTS MORE
+// delta with its threshold reason. Every figure reads verbatim from
+// `hover.structureDetail` — the SAME buildCandidateDetail() shape the
+// Inspector already uses for this exact structure — never re-derived here.
+function OptimizerStructureBody({ hover }) {
+  const d = hover.structureDetail;
+  if (!d) return <div className="hover-field"><div className="small">Not available from source data</div></div>;
+  const deltaLabel = d.recommendation_status === "COSTS_MORE" ? "Costs more than Current Location"
+    : d.recommendation_status === "NEUTRAL" ? "Same as Current Location"
+    : d.recommendation_status === "BASELINE_UNRESOLVED" ? "Savings vs. Current Location"
+    : "Saves vs. Current Location";
+  return (
+    <>
+      {hover.role && (
+        <div className="hover-field">
+          <div className="text-tertiary small">Role</div>
+          <div className="small">{hover.role}</div>
+        </div>
+      )}
+      <div className="hover-field">
+        <div className="text-tertiary small">Participants</div>
+        <div className="small">{(d.participants || []).map(jurisdictionName).join(", ") || "Not available"}</div>
+      </div>
+      <div className="hover-field">
+        <div className="text-tertiary small">Programs</div>
+        <div className="small">
+          {d.components?.length
+            ? d.components.map((c) => `${jurisdictionName(c.code)}${c.program_slug ? ` · ${c.program_slug.replace(/_/g, " ")}` : ""}`).join("; ")
+            : "Not available from source data"}
+        </div>
+      </div>
+      <div className="hover-field">
+        <div className="text-tertiary small">Total incentive</div>
+        <div className="small">{d.incentive_usd != null ? formatFullUsd(d.incentive_usd) : "Not available"}</div>
+      </div>
+      <div className="hover-field">
+        <div className="text-tertiary small">NPC</div>
+        <div className="small">{d.npc_usd != null ? formatFullUsd(d.npc_usd) : "Not priced"}</div>
+      </div>
+      {d.recommendation_status && (
+        <div className="hover-field">
+          <div className="text-tertiary small">{deltaLabel}</div>
+          <div className="small">
+            {d.recommendation_status === "BASELINE_UNRESOLVED" || d.savings_vs_current_usd == null
+              ? "Not available from source data"
+              : formatFullUsd(Math.abs(d.savings_vs_current_usd))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // Excluded: one line answering "why isn't this an option" — the backend's
 // own real discovery-examination reason, truncated to its first sentence
 // and stripped of raw snake_case tokens (see globeHoverFormat.js's
@@ -129,11 +189,24 @@ function hoverCardStyle(hoverRect, canvasEl) {
 // `.globe-screen-canvas` or Overview's `.ovxg-globe-wrap` — either works,
 // both are just the nearest positioned ancestor).
 export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer-mode points
+  // carry no `jurisdictionName`/`fullStatusLabel` (those are the Single
+  // Jurisdiction per-country hover contract, built by buildCountryHoverData)
+  // — the title is the structure's own real label, and the status line is
+  // its real recommendation-status text (optimizerStatusLabel — "Best
+  // Recommendation"/"Other Recommended"/"Evaluated Alternative" — the SAME
+  // vocabulary the legend, side-list dot, and Inspector all agree with).
+  const isOptimizer = hover.mode === "optimizer";
   return (
     <div className="globe-tooltip" style={hoverCardStyle(hoverRect, canvasRef.current)}>
-      <strong>{hover.jurisdictionName}</strong>
-      <div className="text-tertiary small" style={{ marginBottom: 6 }}>{hover.fullStatusLabel}</div>
-      {hover.status === "silver" ? (
+      <strong>{isOptimizer ? (hover.structureDetail?.label || hover.name) : hover.jurisdictionName}</strong>
+      <div className="text-tertiary small" style={{ marginBottom: 6 }}>
+        {isOptimizer ? hover.optimizerStatusLabel : hover.fullStatusLabel}
+        {isOptimizer && hover.familyLabel ? ` · ${hover.familyLabel}` : ""}
+      </div>
+      {isOptimizer ? (
+        <OptimizerStructureBody hover={hover} />
+      ) : hover.status === "silver" ? (
         <ExcludedBody hover={hover} />
       ) : hover.status === "amber" ? (
         <CoProductionBody hover={hover} />

@@ -7,7 +7,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, buildScenarioLabel, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
@@ -29,6 +29,7 @@ const INSPECT_KIND_LABEL = {
   candidate: "Candidate",
   jurisdiction: "Jurisdiction",
   account: "Account",
+  "optimizer-opportunity": "Opportunity",
 };
 
 // Workspace — the approved artifact "rack" layout
@@ -175,13 +176,38 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // selection the Hero/BudgetRail already use), and every other priced-
   // but-unranked structure reads "ALTERNATIVE" — never the bare
   // qualification word "PRICED" standing in for a role it isn't.
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): an Optimizer-family
+  // structure (identified the same way the savings-delta row below already
+  // does — recommendation_status is only ever present on optimizer_scenarios
+  // entries, never on a Jurisdictions-layer best_per_jurisdiction winner)
+  // now reads its badge from the real recommendation_status field, never
+  // from rank/position. This card can now legitimately hold an Evaluated
+  // Alternative in a leading/slot-6 position (selectSixSlots backfills slots
+  // 2-6 from evaluated alternatives once real recommended options run out —
+  // see workspaceScenarioMode.js) — the controlling contract is explicit:
+  // "Never make an evaluated alternative appear recommended." Before this,
+  // EVERY Optimizer card fell through to the generic rank/BEST PRICED/
+  // ALTERNATIVE badge (rank is only ever populated for the Single
+  // Jurisdiction-family overall ranking, so every Optimizer card read
+  // "ALTERNATIVE" regardless of its real recommendation status) — a real
+  // conflation between Single Jurisdiction's generic priced-but-unranked
+  // badge and Optimizer's own recommendation-status vocabulary. Single
+  // Jurisdiction cards (recommendation_status always absent) are completely
+  // unaffected — same rank/BEST PRICED/ALTERNATIVE/DRAFT badge as before.
   const badge = isLeading
     ? "◈ LEADING"
     : isAnchor
       ? "◆ ANCHOR"
       : priced
-        ? (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : (isBestPriced ? "BEST PRICED" : "ALTERNATIVE"))
+        ? (structure.recommendation_status
+            ? (structure.recommendation_status === "RECOMMENDED" ? "RECOMMENDED" : "EVALUATED ALTERNATIVE")
+            : (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : (isBestPriced ? "BEST PRICED" : "ALTERNATIVE")))
         : "DRAFT";
+  // Structural family — real backend `classification`, never a substitute
+  // for the recommendation-status badge above. Only ever present on an
+  // Optimizer-family structure (OPTIMIZER_FAMILY_LABEL has no Single
+  // Jurisdiction entries), so this renders nothing extra for those cards.
+  const familyLabel = OPTIMIZER_FAMILY_LABEL[structure.classification] ?? null;
 
   // Compact card identity (flag + full jurisdiction name + "Up to X%") —
   // the approved Workspace format. See compactScenarioIdentity in
@@ -230,7 +256,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
       <div className="wsx-lh">
         <div className="wsx-lh-id">
           <div className="wsx-nm">{flags ? `${flags} ${name}` : name}</div>
-          <div className="wsx-lb">{subtitle}</div>
+          <div className="wsx-lb">{familyLabel ? [subtitle, familyLabel].filter(Boolean).join(" · ") : subtitle}</div>
         </div>
         <span className="wsx-badge">{badge}</span>
       </div>

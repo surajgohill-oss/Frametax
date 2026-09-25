@@ -68,10 +68,31 @@ export function AppStateProvider({ children }) {
   // canonical family mapping this mode drives.
   const [workspaceModeByProject, setWorkspaceModeByProject] = useState({});
   const workspaceMode = (projectId && workspaceModeByProject[projectId]) || MODE_NORMAL;
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): "switching between Single
+  // Jurisdiction and Optimizer must clear incompatible selections without
+  // changing either layer's source data." selectedJurisdiction/inspector/
+  // leadingStructureId are shared, cross-mode scalars (unlike workspaceMode/
+  // slot6, already per-project-and-mode above) — a jurisdiction code
+  // selected in Single Jurisdiction mode stayed set after switching to
+  // Optimizer (a stray "selected" highlight with no real Optimizer
+  // selection behind it); a leadingStructureId set by an Optimizer card
+  // click (selectStructure) could resolve, via activeStructure()'s generic
+  // allocated.structures lookup, to that same Optimizer structure while
+  // rendering Single Jurisdiction's own treaty-arc section — a real,
+  // mode-incompatible structure reference. Only fires on an ACTUAL mode
+  // change (never on first mount for a project, and never redundantly on an
+  // unrelated re-render) and never touches either mode's own served source
+  // data — this is client-side selection state only, the same boundary
+  // CODEX_FG-001's project-change reset already respects.
   const setWorkspaceMode = useCallback((mode) => {
     if (!projectId) return;
+    if (mode !== workspaceMode) {
+      setInspector(null);
+      setSelectedJurisdiction(null);
+      setLeadingStructureIdRaw(null);
+    }
     setWorkspaceModeByProject((prev) => ({ ...prev, [projectId]: mode }));
-  }, [projectId]);
+  }, [projectId, workspaceMode]);
 
   // Slot 6's producer-chosen override, stored per (project, mode) so
   // switching modes restores each mode's own prior choice instead of

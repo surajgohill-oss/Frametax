@@ -149,51 +149,75 @@ test("ProjectGlobe.jsx no longer re-sorts visibleStructures by rankById in Optim
   const ternaryMatch = src.match(/globeMode === MODE_OPTIMIZER \? \(([\s\S]*?)\) : \(([\s\S]*?)\)\s*\}\s*<\/div>/);
   assert.ok(ternaryMatch, "ProjectGlobe.jsx must branch the jurlist rendering on globeMode === MODE_OPTIMIZER");
   const [, optimizerBranch, singleJurisdictionBranch] = ternaryMatch;
-  assert.match(optimizerBranch, /TIER_SECTIONS\.map/, "Optimizer branch must render via TIER_SECTIONS");
-  assert.match(optimizerBranch, /visibleStructures\.filter/, "Optimizer branch must filter visibleStructures per tier, not re-sort it");
-  assert.doesNotMatch(optimizerBranch, /\.sort\(/, "Optimizer mode must render visibleStructures verbatim, never re-sorted");
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): the Optimizer branch now
+  // renders via OPTIMIZER_SECTIONS.map (Recommended/Evaluated Alternatives)
+  // plus a trailing Needs More Facts block, superseding TIER_SECTIONS — the
+  // real, still-load-bearing invariant this test protects (never re-sort
+  // the already-ordered optimizerProj arrays) is unchanged.
+  assert.match(optimizerBranch, /OPTIMIZER_SECTIONS\.map/, "Optimizer branch must render via OPTIMIZER_SECTIONS");
+  assert.match(optimizerBranch, /optimizerProj\?\.\[key\]/, "Optimizer branch must read each section straight from optimizerProj, never re-filter/re-derive it");
+  assert.doesNotMatch(optimizerBranch, /\.sort\(/, "Optimizer mode must render optimizerProj's own arrays verbatim, never re-sorted");
   assert.match(singleJurisdictionBranch, /\[\.\.\.visibleStructures\]\s*\n?\s*\.sort\(\(a, b\) => \(rankById\.get\(a\.structure_id\)\?\.rank/, "the rankById sort must still exist for Single Jurisdiction mode, unchanged");
 });
 
 // ── 2. Full Globe renders three genuine sections, correctly counted ────
 
-test("ProjectGlobe.jsx defines the three tier sections in the required order and renders each with its own real count", () => {
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): SUPERSEDES the prior
+// practicality-tier section test — confirmed live across all four
+// acceptance productions that PRACTICAL_HYBRID/FORMAL_COPRODUCTION/
+// ADVANCED_MULTI_JURISDICTION was a threshold dimension (2 vs 3+
+// jurisdictions) within the SAME structural family, not real families, and
+// "Advanced Multi-Jurisdiction" as a section heading misrepresented hundreds
+// of same-family structures as a different, more complex one. The
+// controlling contract's own section boundaries (Recommended / Evaluated
+// Alternatives / Needs More Facts) are pinned here instead; structural
+// family now shows per-row via OPTIMIZER_FAMILY_LABEL (see globeData.js).
+test("ProjectGlobe.jsx defines the three Optimizer sections in the required order and renders each with its own real count", () => {
   const src = stripComments(read("screens/production/ProjectGlobe.jsx"));
-  assert.match(src, /PRACTICAL_HYBRID.*Practical Hybrids/s);
-  assert.match(src, /FORMAL_COPRODUCTION.*Formal Co-Productions/s);
-  assert.match(src, /ADVANCED_MULTI_JURISDICTION.*Advanced Multi-Jurisdiction/s);
-  // Order: Practical must appear before Formal, which must appear before Advanced.
-  const practicalIdx = src.indexOf("PRACTICAL_HYBRID");
-  const formalIdx = src.indexOf("FORMAL_COPRODUCTION");
-  const advancedIdx = src.indexOf("ADVANCED_MULTI_JURISDICTION");
-  assert.ok(practicalIdx < formalIdx && formalIdx < advancedIdx, "sections must be declared Practical -> Formal -> Advanced");
-  // A tier with zero real scenarios must render no section at all.
-  assert.match(src, /if \(tierStructures\.length === 0\) return null;/);
+  assert.match(src, /key: "recommended", heading: "Recommended"/);
+  assert.match(src, /key: "evaluated", heading: "Evaluated Alternatives"/);
+  assert.match(src, /Needs More Facts/);
+  // Order: Recommended must appear before Evaluated Alternatives, which
+  // must appear before the trailing Needs More Facts block.
+  const recIdx = src.indexOf('key: "recommended"');
+  const evalIdx = src.indexOf('key: "evaluated"');
+  const factsIdx = src.lastIndexOf("Needs More Facts");
+  assert.ok(recIdx < evalIdx && evalIdx < factsIdx, "sections must be declared Recommended -> Evaluated Alternatives -> Needs More Facts");
+  // A section with zero real entries must render no header at all.
+  assert.match(src, /if \(sectionStructures\.length === 0\) return null;/);
+  assert.match(src, /optimizerProj\?\.opportunities\?\.length > 0/, "Needs More Facts must only render when real opportunities exist");
 });
 
-test("section partitioning algorithm: a tier-pre-sorted scenario list groups into contiguous runs matching each tier's real count, never re-grouped by economics", () => {
-  // Mirrors the exact partition ProjectGlobe.jsx's TIER_SECTIONS.map(...)
-  // performs: filter the already-sorted array by tier, never re-sort.
-  const TIER_SECTIONS = [
-    { tier: "PRACTICAL_HYBRID", heading: "Practical Hybrids" },
-    { tier: "FORMAL_COPRODUCTION", heading: "Formal Co-Productions" },
-    { tier: "ADVANCED_MULTI_JURISDICTION", heading: "Advanced Multi-Jurisdiction" },
+test("section partitioning algorithm: recommended-then-evaluated combined pool groups into its own real, disjoint sections, never re-grouped by economics", () => {
+  // Mirrors the exact grouping ProjectGlobe.jsx's OPTIMIZER_SECTIONS.map(...)
+  // performs: read straight off optimizerProj's own recommended/evaluated
+  // arrays (already real, disjoint, backend-ordered collections), never
+  // re-filter/re-sort by NPC or any other economic figure.
+  const OPTIMIZER_SECTIONS = [
+    { key: "recommended", heading: "Recommended" },
+    { key: "evaluated", heading: "Evaluated Alternatives" },
   ];
-  const scenarios = [
-    { structure_id: "p1", practicality_tier: "PRACTICAL_HYBRID", npc_with_adjustments_usd: 100 },
-    { structure_id: "p2", practicality_tier: "PRACTICAL_HYBRID", npc_with_adjustments_usd: 200 },
-    { structure_id: "a1", practicality_tier: "ADVANCED_MULTI_JURISDICTION", npc_with_adjustments_usd: 50 },
-    { structure_id: "a2", practicality_tier: "ADVANCED_MULTI_JURISDICTION", npc_with_adjustments_usd: 60 },
-    { structure_id: "a3", practicality_tier: "ADVANCED_MULTI_JURISDICTION", npc_with_adjustments_usd: 70 },
-  ];
-  const sections = TIER_SECTIONS.map(({ tier, heading }) => ({
-    heading, structures: scenarios.filter((s) => s.practicality_tier === tier),
+  const optimizerProj = {
+    recommended: [
+      { structure_id: "r1", npc_with_adjustments_usd: 100 },
+      { structure_id: "r2", npc_with_adjustments_usd: 200 },
+    ],
+    evaluated: [
+      { structure_id: "e1", npc_with_adjustments_usd: 50 },
+      { structure_id: "e2", npc_with_adjustments_usd: 60 },
+      { structure_id: "e3", npc_with_adjustments_usd: 70 },
+    ],
+    opportunities: [],
+  };
+  const sections = OPTIMIZER_SECTIONS.map(({ key, heading }) => ({
+    heading, structures: optimizerProj[key] || [],
   })).filter((s) => s.structures.length > 0);
-  assert.deepEqual(sections.map((s) => s.heading), ["Practical Hybrids", "Advanced Multi-Jurisdiction"], "Formal must be omitted entirely when it has zero real scenarios");
+  assert.deepEqual(sections.map((s) => s.heading), ["Recommended", "Evaluated Alternatives"]);
   assert.equal(sections[0].structures.length, 2);
   assert.equal(sections[1].structures.length, 3);
-  // Never re-sorted by NPC across the whole set -- a1 (NPC 50, cheapest
-  // overall) must NOT appear before p1/p2 despite its lower NPC, because
-  // it belongs to a later tier.
-  assert.deepEqual(sections[0].structures.map((s) => s.structure_id), ["p1", "p2"]);
+  // Never re-sorted by NPC across the whole set -- e1 (NPC 50, cheapest
+  // overall) must NOT appear before r1/r2 despite its lower NPC, because it
+  // is a real Evaluated Alternative, never promoted ahead of a Recommended
+  // option.
+  assert.deepEqual(sections[0].structures.map((s) => s.structure_id), ["r1", "r2"]);
 });

@@ -5,27 +5,39 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, resolveSegmentDetail, buildCandidateDetail } from "../../lib/globeData";
-import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER } from "../../lib/workspaceScenarioMode";
+import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL } from "../../lib/globeData";
+import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken, buildScenarioLabel } from "../../lib/format";
 import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../../lib/globeCategoryDiff";
 
-// OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 2: Optimizer
-// mode's side list used to render one flat, undifferentiated list. The
-// backend already partitions `optimizer_scenarios` into these three real
-// tiers, in this exact order (canonical_production_view.py's own
-// PRODUCER_PRACTICALITY_TIER) — this is the fixed section order every
-// optimizer-consuming surface renders them in, never re-derived.
-// GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22) restores the
-// Advanced Multi-Jurisdiction section 88a0b96 removed (the same commit that
-// pointed this list at producer_optimizer_options, which was empty for all
-// four real productions — CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md).
-const TIER_SECTIONS = [
-  { tier: "PRACTICAL_HYBRID", heading: "Practical Hybrids" },
-  { tier: "FORMAL_COPRODUCTION", heading: "Formal Co-Productions" },
-  { tier: "ADVANCED_MULTI_JURISDICTION", heading: "Advanced Multi-Jurisdiction" },
+// OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — SUPERSEDES the prior
+// tier-based grouping below (kept only as history in git, not in this file):
+// the previous section boundaries were `practicality_tier`
+// (PRACTICAL_HYBRID/FORMAL_COPRODUCTION/ADVANCED_MULTI_JURISDICTION) —
+// confirmed live across all four acceptance productions to be a THRESHOLD
+// dimension (2 vs 3+ jurisdictions), not a structural family: every single
+// real optimizer_scenarios entry in all four productions has the SAME
+// `classification` (HYBRID_ANCHOR_COMPONENT); `practicality_tier` only ever
+// varies within that one family. Headings like "Advanced Multi-Jurisdiction"
+// therefore read as if hundreds of structures were a DIFFERENT, more complex
+// family, when they were the identical family at a higher jurisdiction
+// count — "do not use family as a substitute for recommendation status" (and
+// the inverse: don't use a threshold-tier heading as a substitute for real
+// structural family either). The controlling contract is explicit:
+// Recommended / Evaluated Alternatives / Needs More Facts are the three
+// section boundaries (matching Workspace's own "Other scenarios" dropdown
+// sections) — structural family (HYBRID_ANCHOR_COMPONENT -> "Practical
+// Hybrid", etc.) is shown per-row instead, via OPTIMIZER_FAMILY_LABEL,
+// never as a section heading. Needs More Facts is real, disclosed,
+// non-executable content that the PRIOR list never showed here at all
+// (visibleStructures excluded optimizer_opportunities_requiring_facts
+// entirely) — it now renders as its own trailing section, per the
+// controlling contract's "shown separately after executable structures".
+const OPTIMIZER_SECTIONS = [
+  { key: "recommended", heading: "Recommended" },
+  { key: "evaluated", heading: "Evaluated Alternatives" },
 ];
 
 // Project Globe — this production's structures and their routing on the
@@ -108,6 +120,18 @@ export default function ProjectGlobe() {
   // changed the Globe's own colouring/routing but never the list beside it.
   const visibleStructures = useMemo(
     () => admissibleForMode(allocated, globeMode),
+    [allocated, globeMode],
+  );
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): the SAME shared Optimizer
+  // adapter Workspace's own six-slot dropdown reads (never a second,
+  // independently-filtered grouping) — recommended/evaluated (both already
+  // real, executable, priced) plus opportunities (real, disclosed, never
+  // executable, never priced). `visibleStructures` above stays the
+  // recommended+evaluated union for the existing empty-state/caption checks;
+  // this is the SAME union, just pre-split into its own real sections for
+  // the list render below.
+  const optimizerProj = useMemo(
+    () => (globeMode === MODE_OPTIMIZER ? optimizerProjection(allocated) : null),
     [allocated, globeMode],
   );
 
@@ -220,16 +244,25 @@ export default function ProjectGlobe() {
       openInspector("candidate-structure", buildCandidateDetail(winner));
       return;
     }
-    const s = (structuresByCode.get(code) || [])[0];
+    // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): every marker currently
+    // on screen in Optimizer mode belongs to the SAME ONE selected/leading
+    // structure (buildOptimizerPathway renders exactly one structure's own
+    // routing chain at a time — "render only the selected structure's
+    // markers/arcs at one time"). Clicking ANY of its own markers must
+    // re-open THAT SAME structure's Inspector — never
+    // `structuresByCode.get(code)[0]`, which indexes the WHOLE admissible
+    // pool by participant code and could resolve to a DIFFERENT structure
+    // that merely happens to also touch this jurisdiction (the exact
+    // "arbitrary structure rather than the exact canonical winner" defect
+    // the Single Jurisdiction pass fixed for MODE_NORMAL above — the
+    // Optimizer pathway has the identical failure mode). Resolves via the
+    // SAME pool/fallback buildOptimizerPathway itself uses, so a marker
+    // click can never disagree with what the Globe is already showing.
+    const { recommended, evaluated } = optimizerProjection(allocated);
+    const optimizerPool = [...recommended, ...evaluated];
+    const s = (leadingStructureId && optimizerPool.find((c) => c.structure_id === leadingStructureId)) || optimizerPool[0] || null;
     if (!s) return;
-    // LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21): resolveSegmentDetail falls
-    // back to component_allocations for the generic structural generator's
-    // families (every Optimizer candidate), which never populate `segments`
-    // at all — confirmed live: this previously opened NO Inspector for any
-    // Optimizer jurisdiction (segments empty AND recommendation null).
-    const seg = resolveSegmentDetail(s, code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
-    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+    openInspector("candidate-structure", buildCandidateDetail(s));
   }
 
   // Candidate cards already have their own exact structure in hand —
@@ -293,14 +326,19 @@ export default function ProjectGlobe() {
         key={s.structure_id}
         onClick={() => selectStructure(s)}
       >
-        {/* Inline colour from the Globe's own STATUS_HEX, not the
-            ".dot" CSS class — that class pulls from unrelated
-            app-wide --gold/--jade/--silver/--amber tokens (a
-            different palette used by every other tier dot in the
-            app), which meant this card's dot and the Globe's own
-            fill for the same jurisdiction never actually matched
-            colours despite sharing a category name. */}
-        <span className="dot" style={{ background: STATUS_HEX[structureTier(s, rankById)] }} />
+        {/* OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer rows now
+            colour from optimizerStructureStatus (the SAME real
+            recommendation-status derivation the Globe's own markers/arcs
+            use), never structureTier/STATUS_HEX — that derivation reads
+            `rankById`, which is only ever populated for the Single
+            Jurisdiction-family overall ranking, so every Optimizer
+            structure fell through to a uniform "jade" regardless of its
+            real recommendation status. Single Jurisdiction rows are
+            unaffected — same structureTier/STATUS_HEX as before. */}
+        <span
+          className="dot"
+          style={{ background: globeMode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_HEX[optimizerStructureStatus(allocated, s)] : STATUS_HEX[structureTier(s, rankById)] }}
+        />
         <div>
           {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT
               DEFECT 3/4: `s.label` is the backend's own free-text label,
@@ -318,15 +356,44 @@ export default function ProjectGlobe() {
               producer-option prefix. Single Jurisdiction mode is
               unaffected — s.label unchanged there. */}
           <div className="row-title small">
-            {globeMode === MODE_OPTIMIZER && s.recommendation_status === "RECOMMENDED" ? "★ " : ""}
             {globeMode === MODE_OPTIMIZER ? buildScenarioLabel(s) : s.label}
           </div>
           <div className="row-sub">
+            {/* OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): structural
+                family — real classification, shown per-row via
+                OPTIMIZER_FAMILY_LABEL, never as the section heading (see
+                OPTIMIZER_SECTIONS above) and never a substitute for the
+                section's own recommendation-status grouping. */}
+            {globeMode === MODE_OPTIMIZER && OPTIMIZER_FAMILY_LABEL[s.classification] && (
+              <>{OPTIMIZER_FAMILY_LABEL[s.classification]} · </>
+            )}
             {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
             {globeMode === MODE_OPTIMIZER && s.savings_vs_current_usd != null && (
               <> · {s.recommendation_status === "COSTS_MORE" ? "costs " : "saves "}<Money value={Math.abs(s.savings_vs_current_usd)} bare /></>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): a Needs-More-Facts
+  // opportunity is never executable/selectable as the leading structure (the
+  // controlling contract is explicit) — clicking one opens its own read-only
+  // Inspector (buildOpportunityDetail / "optimizer-opportunity") describing
+  // the real treaty/framework and its unresolved facts, and never touches
+  // selectedJurisdiction/leadingStructureId/the Globe scene at all.
+  function selectOpportunity(s) {
+    openInspector("optimizer-opportunity", buildOpportunityDetail(s));
+  }
+
+  function renderOpportunityChip(s) {
+    return (
+      <div className="portfolio-chip" key={s.structure_id} onClick={() => selectOpportunity(s)}>
+        <span className="dot" style={{ background: OPTIMIZER_STATUS_HEX.amber }} />
+        <div>
+          <div className="row-title small">{s.label}</div>
+          <div className="row-sub">Needs more facts · not yet executable</div>
         </div>
       </div>
     );
@@ -364,46 +431,50 @@ export default function ProjectGlobe() {
           {globeMode === MODE_OPTIMIZER && visibleStructures.length === 0 && (
             <p className="empty-state">No executable optimizer structures for this production yet.</p>
           )}
-          {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 1:
-              this list used to re-sort `visibleStructures` by `rankById` in
-              EVERY mode, including Optimizer. `admissibleForMode()` (the
-              recommended + evaluated-alternative union over the complete,
-              never-filtered `optimizer_scenarios` — GLOBE_WORKSPACE_CANONICAL_
-              WIRING_COMPLETE, 2026-09-22) already arrives pre-sorted
-              Practical -> Formal -> Advanced, ascending NPC within each tier —
-              `rankById` (built from `allocated.ranking`, the SINGLE combined
-              overall ranking, which only the baseline/comparable candidates
-              ever populate) has no relationship to that tier partition and
-              re-sorting by it risked silently interleaving/breaking the tier
-              order the whole point of this pass is to preserve. Rank-first
-              ordering is still correct and unchanged for Single Jurisdiction
-              mode (real per-jurisdiction ranks exist there); Optimizer mode
-              now renders `visibleStructures` verbatim, in the exact order the
-              backend served it. */}
+          {/* OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 1
+              (still applies): `rankById` (built from `allocated.ranking`, the
+              SINGLE combined overall ranking, which only the baseline/
+              comparable candidates ever populate) has no relationship to the
+              Optimizer projection's own ordering — re-sorting by it risks
+              silently breaking the recommended-first order the whole point
+              of this list is to preserve. Rank-first ordering is still
+              correct and unchanged for Single Jurisdiction mode (real
+              per-jurisdiction ranks exist there). */}
           {globeMode === MODE_OPTIMIZER ? (
-            /* ROOT DEFECT 2: Optimizer mode renders the three genuine
-               practicality-tier sections, in this exact order, each with its
-               own real count — never one flattened, undifferentiated list.
-               Section boundaries are detected from the already-tier-sorted
-               array itself (no re-sort, no re-grouping — a section is
-               exactly a contiguous run of the same practicality_tier). A
-               tier with zero real scenarios renders no section at all
-               (never a fabricated empty header). Each section mixes
-               recommended and evaluated-alternative entries (both are real,
-               executable, visible structures — recommendation_status is a
-               priority annotation on the chip, not a second filter here). */
-            TIER_SECTIONS.map(({ tier, heading }) => {
-              const tierStructures = visibleStructures.filter((s) => s.practicality_tier === tier);
-              if (tierStructures.length === 0) return null;
-              return (
-                <div key={tier} className="sc-jurlist-section">
+            /* OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): three genuine
+               recommendation-status sections, in this exact order, each with
+               its own real count, plus a trailing Needs More Facts section —
+               never one flattened, undifferentiated list, and never a
+               structural-family heading standing in for recommendation
+               status (see OPTIMIZER_SECTIONS above for the full root-cause
+               narrative). A section with zero real entries renders no header
+               at all (never a fabricated empty one). Every executable option
+               appears in exactly one of Recommended/Evaluated Alternatives —
+               optimizerProj.recommended/evaluated are already disjoint,
+               real, backend-served collections (never a second client-side
+               filter/re-derivation). */
+            <>
+              {OPTIMIZER_SECTIONS.map(({ key, heading }) => {
+                const sectionStructures = optimizerProj?.[key] || [];
+                if (sectionStructures.length === 0) return null;
+                return (
+                  <div key={key} className="sc-jurlist-section">
+                    <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
+                      {heading} ({sectionStructures.length})
+                    </p>
+                    {sectionStructures.map((s) => renderStructureChip(s))}
+                  </div>
+                );
+              })}
+              {optimizerProj?.opportunities?.length > 0 && (
+                <div key="opportunities" className="sc-jurlist-section">
                   <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
-                    {heading} ({tierStructures.length})
+                    Needs More Facts ({optimizerProj.opportunities.length})
                   </p>
-                  {tierStructures.map((s) => renderStructureChip(s))}
+                  {optimizerProj.opportunities.map((s) => renderOpportunityChip(s))}
                 </div>
-              );
-            })
+              )}
+            </>
           ) : (
             [...visibleStructures]
               .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity))
@@ -413,7 +484,7 @@ export default function ProjectGlobe() {
       </div>
 
       <div className="globe-screen-canvas" style={{ position: "relative" }} ref={canvasRef}>
-        <GlobeLegend />
+        <GlobeLegend mode={globeMode} />
         <Globe3D
           points={points}
           arcs={arcs}

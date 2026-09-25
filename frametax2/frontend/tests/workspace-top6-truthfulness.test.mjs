@@ -316,7 +316,13 @@ test("bestPricedCandidate (imported from the same module the Hero uses) drives t
   // byte-exact to the July 30 freeze) — same function, same single source
   // every caller shares, different file.
   const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail \} from "\.\.\/\.\.\/lib\/globeData";/);
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): the globeData import line
+  // grew a new symbol (OPTIMIZER_FAMILY_LABEL) -- the real intent this test
+  // pins is narrower than the whole line's exact text: bestPricedCandidate
+  // specifically must never be bundled back into it.
+  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail,[^}]*\} from "\.\.\/\.\.\/lib\/globeData";/);
+  const globeDataImportLine = src.match(/import \{[^}]*\} from "\.\.\/\.\.\/lib\/globeData";/)[0];
+  assert.doesNotMatch(globeDataImportLine, /bestPricedCandidate/, "bestPricedCandidate must stay imported from its own module, never re-bundled into globeData.js's import");
   assert.match(src, /import \{ bestPricedCandidate \} from "\.\.\/\.\.\/lib\/bestPricedCandidate";/);
 });
 
