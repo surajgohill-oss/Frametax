@@ -197,6 +197,33 @@ export function selectMaxPotentialCard(allocated, excludeIds) {
   if (practical) {
     return { structure: practical, isOpportunity: false, isProducerOptimizer: true, potentialUsd: null, fundCount: 0, fundNames: [] };
   }
+
+  // No canonical recommended-optimizer candidate exists — fall back to a
+  // real, disclosed conditional_programs opportunity (the Manitoba shape:
+  // a structure carrying genuine per-project fund caps, e.g. Canada Media
+  // Fund/Telefilm). Ranked by summed disclosed cap to surface the
+  // strongest real opportunity, but per the regression fixed above, the
+  // cap sum itself is NEVER shown as a dollar figure — only the real,
+  // disclosed fund count/names are.
+  const withPrograms = allocated.structures
+    .filter((s) => !excludeIds.has(s.structure_id) && (s.conditional_programs || []).length > 0)
+    .map((s) => ({
+      structure: s,
+      capSum: s.conditional_programs.reduce((sum, p) => sum + (p.documented_cap_usd || 0), 0),
+    }))
+    .sort((a, b) => b.capSum - a.capSum);
+  if (withPrograms.length > 0) {
+    const best = withPrograms[0].structure;
+    return {
+      structure: best,
+      isOpportunity: true,
+      isProducerOptimizer: false,
+      potentialUsd: null,
+      fundCount: best.conditional_programs.length,
+      fundNames: best.conditional_programs.map((p) => p.program_name),
+    };
+  }
+
   return null;
 }
 
