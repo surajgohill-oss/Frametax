@@ -10,7 +10,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyStructure, selectTopOptions, isDirectlyComparable, CLASSIFICATIONS } from "../src/lib/productionOptions.js";
+import { classifyStructure, selectTopOptions, isDirectlyComparable, CLASSIFICATIONS, qpeOf, resolveGrossBudget } from "../src/lib/productionOptions.js";
 
 function structure(overrides) {
   return {
@@ -138,4 +138,108 @@ test("selectTopOptions: with no treaty candidate available, the sixth slot falls
   const options = selectTopOptions({ structures: six, ranking });
   assert.equal(options.length, 6);
   assert.equal(options[5].structure_id, "n5");
+});
+
+// ── OAD-001 — qpeOf: segment-first / component-allocation-fallback ───────
+// precedence, matching Workspace ScenarioCard's own qualifiedSpendRaw
+// (screens/production/Workspace.jsx) exactly. An Optimizer-family structure
+// legitimately carries segments: [] and only populates component_allocations
+// — that must read as the real component-allocation sum, never as zero.
+
+test("qpeOf: populated segments sum qpe_usd", () => {
+  const s = structure({
+    segments: [{ qpe_usd: 100 }, { qpe_usd: 250 }],
+    component_allocations: [],
+  });
+  assert.equal(qpeOf(s), 350);
+});
+
+test("qpeOf: empty segments plus populated component allocations sum allocated_usd", () => {
+  const s = structure({
+    segments: [],
+    component_allocations: [{ allocated_usd: 4_302_827 }, { allocated_usd: 9_068 }, { allocated_usd: 52_500 }],
+  });
+  assert.equal(qpeOf(s), 4_364_395);
+});
+
+test("qpeOf: populated segments AND populated component allocations — segments win, never summed together", () => {
+  const s = structure({
+    segments: [{ qpe_usd: 100 }],
+    component_allocations: [{ allocated_usd: 999_999 }],
+  });
+  assert.equal(qpeOf(s), 100, "must read only the segment sum — never 100 + 999999, and never the component-allocation value");
+});
+
+test("qpeOf: neither segments nor component allocations present — zero, never fabricated", () => {
+  const s = structure({ segments: [], component_allocations: [] });
+  assert.equal(qpeOf(s), 0);
+  const sUndefinedComponents = structure({ segments: [] });
+  delete sUndefinedComponents.component_allocations;
+  assert.equal(qpeOf(sUndefinedComponents), 0, "a structure that carries neither field at all must still read as 0, not throw or return NaN");
+});
+
+// ── OAD-002 — resolveGrossBudget: structure value wins, project-wide value
+// is the fallback ONLY when the structure's own is genuinely absent. ──────
+
+test("resolveGrossBudget: populated structure.gross_budget_usd wins over the project fallback", () => {
+  assert.equal(resolveGrossBudget({ gross_budget_usd: 1_000_000 }, 9_999_999), 1_000_000);
+});
+
+test("resolveGrossBudget: null structure gross falls back to the project-wide gross budget", () => {
+  assert.equal(resolveGrossBudget({ gross_budget_usd: null }, 4_364_393), 4_364_393);
+});
+
+test("resolveGrossBudget: both absent resolves to null (caller renders '—')", () => {
+  assert.equal(resolveGrossBudget({ gross_budget_usd: null }, null), null);
+  assert.equal(resolveGrossBudget({ gross_budget_usd: undefined }, undefined), null);
+});
+
+// ── Four-project independent oracle (OAD-001 + OAD-002) ───────────────────
+// Expected values are hand-transcribed from the governing Codex audit
+// (docs/validation/CODEX_OVERVIEW_ADAPTER_AND_INGESTION_GATE_DELTA.md),
+// never derived from qpeOf/resolveGrossBudget themselves — an independent
+// oracle, not a tautology against the implementation under test.
+test("OAD-001/OAD-002 four-project independent oracle: exact gross budget and QPE for each production's canonical OPTIMIZED structure", () => {
+  const cases = [
+    {
+      name: "The Little Utopia",
+      grossBudgetUsd: 4_364_393,
+      componentAllocations: [{ allocated_usd: 4_302_827 }, { allocated_usd: 9_068 }, { allocated_usd: 52_500 }],
+      expectedGross: 4_364_393,
+      expectedQpe: 4_364_395,
+    },
+    {
+      name: "Bad Hombres",
+      grossBudgetUsd: 2_482_023,
+      componentAllocations: [{ allocated_usd: 2_369_065 }, { allocated_usd: 5_000 }, { allocated_usd: 107_958 }],
+      expectedGross: 2_482_023,
+      expectedQpe: 2_482_023,
+    },
+    {
+      name: "F#K Valentine's Day",
+      grossBudgetUsd: 4_517_687,
+      componentAllocations: [{ allocated_usd: 4_497_487 }, { allocated_usd: 10_200 }, { allocated_usd: 10_000 }],
+      expectedGross: 4_517_687,
+      expectedQpe: 4_517_687,
+    },
+    {
+      name: "Lips Like Sugar",
+      grossBudgetUsd: 11_983_654,
+      componentAllocations: [{ allocated_usd: 11_736_880 }, { allocated_usd: 206_774 }, { allocated_usd: 40_000 }],
+      expectedGross: 11_983_654,
+      expectedQpe: 11_983_654,
+    },
+  ];
+  for (const c of cases) {
+    // The canonical OPTIMIZED structure: gross_budget_usd is null (a
+    // routing/component structure, not a top-level production record),
+    // segments is legitimately empty, component_allocations is populated.
+    const optimizedStructure = structure({
+      gross_budget_usd: null,
+      segments: [],
+      component_allocations: c.componentAllocations,
+    });
+    assert.equal(qpeOf(optimizedStructure), c.expectedQpe, `${c.name}: QPE`);
+    assert.equal(resolveGrossBudget(optimizedStructure, c.grossBudgetUsd), c.expectedGross, `${c.name}: gross budget`);
+  }
 });

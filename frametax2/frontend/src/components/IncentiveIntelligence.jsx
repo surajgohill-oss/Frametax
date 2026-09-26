@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Money, scenarioDisplay, buildScenarioLabel, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
-import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, qpeOf, isBaselineStructure } from "../lib/productionOptions";
+import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, qpeOf, resolveGrossBudget, isBaselineStructure } from "../lib/productionOptions";
 import { postJurisdictionPreference, beginEvaluation } from "../api";
 
 // Batched producer-control closeout (2026-09-03), Batch 6: the fact_key
@@ -37,7 +37,7 @@ const OPTIMIZER_CLASSIFICATIONS = new Set([
   "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
 ]);
 
-function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPreferenceSaved }) {
+function OptionCard({ structure, cardIndex, baseNpc, grossBudgetUsd, onClick, projectId, onPreferenceSaved }) {
   const classification = classifyStructure(structure);
   // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 3: an
   // optimizer-classified Optimized card (Card 4) used scenarioDisplay's
@@ -160,7 +160,10 @@ function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPrefe
           <div className="ii-metric">
             <span className="ii-metric-label">Gross Budget</span>
             <span className="ii-metric-value mono">
-              {structure.gross_budget_usd != null ? <Money value={structure.gross_budget_usd} bare /> : "—"}
+              {(() => {
+                const gross = resolveGrossBudget(structure, grossBudgetUsd);
+                return gross != null ? <Money value={gross} bare /> : "—";
+              })()}
             </span>
           </div>
           <div className="ii-metric">
@@ -273,7 +276,7 @@ function ExcludedJurisdictions({ facts, projectId, onPreferenceSaved }) {
   );
 }
 
-export default function IncentiveIntelligence({ allocated, onSelect, projectId, onPreferenceSaved, facts }) {
+export default function IncentiveIntelligence({ allocated, onSelect, projectId, onPreferenceSaved, facts, grossBudgetUsd }) {
   const options = selectAnchorLeadingOptimized(allocated);
   const baseline = allocated?.structures?.find(isBaselineStructure);
   const baseNpc = baseline?.npc_with_adjustments_usd ?? null;
@@ -291,6 +294,7 @@ export default function IncentiveIntelligence({ allocated, onSelect, projectId, 
               structure={s}
               cardIndex={i}
               baseNpc={baseNpc}
+              grossBudgetUsd={grossBudgetUsd}
               onClick={onSelect ? () => onSelect(s) : undefined}
               projectId={projectId}
               onPreferenceSaved={onPreferenceSaved}

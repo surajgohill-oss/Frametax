@@ -234,6 +234,7 @@ export default function Overview() {
             projectId={projectId}
             onPreferenceSaved={refetch}
             facts={facts}
+            grossBudgetUsd={data?.production?.gross_budget_usd ?? null}
           />
         </div>
 

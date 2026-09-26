@@ -112,8 +112,27 @@ export function selectTopOptions(allocated) {
   return options.slice(0, 6);
 }
 
+// OAD-001: every Optimizer-family structure (built by the structural
+// generator) carries segments: [] and only populates component_allocations
+// — this silently displayed "Optimized Qualified Spend $0" on Overview's
+// OPTIMIZED card, not a real zero. Same canonical segment-first/component-
+// allocation-fallback precedence Workspace's ScenarioCard already uses
+// (screens/production/Workspace.jsx's qualifiedSpendRaw) — never both
+// summed together (they are alternate representations, not additive).
 export function qpeOf(structure) {
-  return structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
+  return structure.segments?.length
+    ? structure.segments.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0)
+    : (structure.component_allocations || []).reduce((sum, ca) => sum + (ca.allocated_usd || 0), 0);
+}
+
+// OAD-002: an Optimizer-family structure carries gross_budget_usd: null (it's
+// a routing/component structure, not a top-level production record) — the
+// real, already-served project-wide production.gross_budget_usd is the
+// correct fallback for display, never a derivation from QPE/incentive/NPC.
+// The structure's own value always wins when genuinely populated; render
+// "—" (the caller's job, not this function's) only when both are absent.
+export function resolveGrossBudget(structure, projectGrossBudgetUsd) {
+  return structure.gross_budget_usd ?? projectGrossBudgetUsd ?? null;
 }
 
 // CineGlobe Overview Top Four (final adversarial repair pass, 2026-09-03).

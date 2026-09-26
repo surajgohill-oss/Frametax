@@ -159,7 +159,13 @@ test("IncentiveIntelligence.jsx (Overview's Top Structures) uses full-precision 
   const wsSrc = read("screens/production/Workspace.jsx");
   assert.doesNotMatch(iiSrc, /CompactMoney/, "CompactMoney is for Today's dense grid, not scenario cards");
   assert.match(iiSrc, /import \{[^}]*\bMoney\b[^}]*\}\s*from\s*"\.\.\/lib\/format"/);
-  assert.match(iiSrc, /<Money value=\{structure\.gross_budget_usd\}/);
+  // OAD-002: gross budget now resolves through resolveGrossBudget() (structure
+  // value, falling back to the project-wide gross only when genuinely absent)
+  // rather than reading structure.gross_budget_usd bare — still full-precision
+  // Money, never CompactMoney; the resolver call is asserted separately in
+  // overview-options.test.mjs.
+  assert.match(iiSrc, /<Money value=\{gross\}/);
+  assert.match(iiSrc, /resolveGrossBudget\(structure, grossBudgetUsd\)/);
   assert.match(iiSrc, /<Money value=\{npc\}/);
   // Both scenario surfaces must share the SAME formatter — never two
   // independently-maintained money presentations for the same concept.
