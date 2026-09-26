@@ -586,6 +586,7 @@ export function buildCandidateDetail(structure) {
     classification: structure.classification ?? null,
     label: structure.label ?? null,
     primary_jurisdiction: structure.primary_jurisdiction ?? null,
+    jurisdiction_display_name: structure.jurisdiction_display_name ?? null,
     participants: structure.participants || [],
     program_slugs: structure.program_slugs || [],
     is_fully_priced: !!structure.is_fully_priced,

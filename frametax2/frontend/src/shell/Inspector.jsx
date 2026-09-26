@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useAppState } from "../state/AppState";
-import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, programDisplay } from "../lib/format";
+import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
 // Final Global Discovery phase: the "Requirements & Timing" section of a
 // jurisdiction segment — extends the existing AllocationSegmentInspector
@@ -427,7 +427,7 @@ function StructureDetailInspector({ data }) {
         </p>
       )}
       <dl className="kv-list">
-        <div><dt>Participants</dt><dd>{(data.participants || []).map(jurisdictionName).join(", ") || "—"}</dd></div>
+        <div><dt>Participants</dt><dd>{(data.participants || []).map((code) => bestJurisdictionName(code, data)).join(", ") || "—"}</dd></div>
         <div><dt>Total incentive</dt><dd className="mono"><Money value={data.incentive_usd} /></dd></div>
         <div><dt>Total QPE</dt><dd className="mono"><Money value={data.qpe_usd} /></dd></div>
         <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>
