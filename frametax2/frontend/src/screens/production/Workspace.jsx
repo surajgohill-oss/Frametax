@@ -4,12 +4,12 @@ import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, compactScenarioIdentity, buildScenarioLabel, normalizeTrivialVariance, hasAdministrativeAllocationRisk } from "../../lib/format";
+import { Money, compactScenarioIdentity, buildScenarioLabel, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
-import { isBaselineStructure } from "../../lib/productionOptions";
+import { isBaselineStructure, qpeOf } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
@@ -127,24 +127,19 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // spend from its own per-segment QPE, incentive and NPC from its own
   // priced fields. No production-level or prototype figure is shown.
   const gross = structure.gross_budget_usd ?? grossBudget;
-  // LOCAL_GLOBE_WIRING_CLOSEOUT (2026-09-21): every Optimizer-family
-  // structure (built by the structural generator) carries segments: [] and
-  // only populates component_allocations — confirmed live this silently
-  // displayed "Qualified spend $0" on every Optimizer scenario card
-  // (Lanes/Split), not a real zero. Sums the same real served field
-  // (allocated_usd, the routed/qualified spend per component) this line
-  // already sums for segments' qpe_usd — no new derivation, just the other
-  // real field name this structure type actually carries.
-  const qualifiedSpendRaw = structure.segments?.length
-    ? structure.segments.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0)
-    : (structure.component_allocations || []).reduce((sum, ca) => sum + (ca.allocated_usd || 0), 0);
-  // Segment QPE is summed from the same real leaf accounts the production's
-  // Gross budget is drawn from; when a structure excludes nothing, that sum
-  // can land a few dollars off the source document's own stated Grand Total
-  // (Gross budget) — economically immaterial rounding noise, not additional
-  // or double-counted spend. Normalized via the shared global rule rather
-  // than surfaced to producers (see normalizeTrivialVariance in lib/format).
-  const qualifiedSpend = normalizeTrivialVariance(qualifiedSpendRaw, gross);
+  // GW-OI-001: qualifiedSpend now renders the exact result of the shared
+  // qpeOf() adapter (productionOptions.js) — the same segment-first/
+  // component-allocation-fallback precedence Overview's IncentiveIntelligence
+  // uses. Previously this was computed locally (a duplicate of qpeOf's own
+  // logic) and then passed through normalizeTrivialVariance(qualifiedSpendRaw,
+  // gross), which silently collapsed a canonical QPE within $5 of gross to
+  // gross itself — for Little Utopia this replaced the real, correct
+  // component-allocation sum $4,364,395 with $4,364,393, while Overview and
+  // Inspector (which never normalized) correctly showed $4,364,395. A $2
+  // source-authored variance between allocated QPE and declared gross is
+  // real canonical data, not rounding noise to be hidden — never normalized
+  // away here.
+  const qualifiedSpend = qpeOf(structure);
   const npc = structure.npc_with_adjustments_usd;
 
   const laneClass = (isLeading || isAnchor) ? "anchor" : priced ? "" : "draft";
