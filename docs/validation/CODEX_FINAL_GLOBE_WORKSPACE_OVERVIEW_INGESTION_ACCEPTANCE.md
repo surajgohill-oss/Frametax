@@ -4,9 +4,11 @@ Date: 2026-09-26
 
 Mode: independent read-only acceptance
 
-Verdict: **CINEGLOBE_FINAL_ACCEPTANCE_INCOMPLETE**
+Final delta verification: 2026-09-29 at `8304c70ec5d8c83f71405e3b82422e9f68f770b7`
 
-The bounded Overview repair is correct and the locked four-budget ingestion gate is current-valid. Final cross-surface acceptance is nevertheless blocked by one independently reproduced display contradiction: Little Utopia's optimized Workspace card replaces the canonical `$4,364,395` QPE with the `$4,364,393` gross budget, while Overview, the Workspace Inspector, component allocations, and the local API all retain `$4,364,395`.
+Verdict: **CINEGLOBE_GLOBE_WORKSPACE_OVERVIEW_INGESTION_ACCEPTED**
+
+The bounded Overview repair is correct, the locked four-budget ingestion gate is current-valid, and the last independently reproduced cross-surface contradiction is closed. Commit `8304c70e` removes Workspace's gross-normalization override and consumes the shared `qpeOf()` adapter. Little Utopia now renders canonical QPE `$4,364,395` in both Lanes and Split while preserving gross budget `$4,364,393`; Overview, Workspace cards, Inspector, component allocations, and the local API agree.
 
 ## 1. Starting and remote-integrity gate
 
@@ -66,13 +68,13 @@ Canonical backend source for every row is `GET /api/v1/cineglobe/projects/{proje
 | Overview | Bad Hombres | `da3b394b…` / `bb142bd7…` | Exact five required values; exact route MB `$2,369,065`, NL music `$5,000`, Italy post `$107,958` | PASS |
 | Overview | FVD | `dbcf5bda…` / `f8bced42…` | Exact five required values; exact route MB `$4,497,487`, NL music `$10,200`, Italy VFX `$10,000` | PASS |
 | Overview | Lips Like Sugar | `601a8a8f…` / `1e6c80a5…` | Exact five required values; exact route MB `$11,736,880`, NL music `$206,774`, Italy VFX `$40,000` | PASS |
-| Workspace Lanes card | Little Utopia | `559a49ce…` / `89f54327…` | Card shows QPE `$4,364,393`; local API allocations and Inspector total `$4,364,395` | **FAIL** |
+| Workspace Lanes card | Little Utopia | `559a49ce…` / `89f54327…` | Card and Inspector show QPE `$4,364,395`; gross remains `$4,364,393` | PASS |
 | Workspace Lanes card | Bad Hombres | `da3b394b…` / `bb142bd7…` | Gross/QPE/incentive/NPC/savings and route agree | PASS |
 | Workspace Lanes card | FVD | `dbcf5bda…` / `f8bced42…` | Gross/QPE/incentive/NPC/savings and route agree | PASS |
 | Workspace Lanes card | Lips Like Sugar | `601a8a8f…` / `1e6c80a5…` | Gross/QPE/incentive/NPC/savings and route agree | PASS |
 | Workspace Inspector | All four | Locked identities above | Exact identities, participants, program stack, component routes, incentive, QPE, NPC, savings | PASS |
 | Workspace Map | All four | Locked structures above | Optimizer mode retained; canonical participant markers/routes rendered. Existing accepted Map interaction evidence reused because the remediation did not touch Globe/Workspace owners. | PASS (regression) |
-| Workspace Split | All four | Locked structures above | Exact optimizer cards, route, Map, mode/selection retained; Little Utopia card repeats the Lanes QPE defect | **FAIL for LU; PASS other three** |
+| Workspace Split | All four | Locked structures above | Exact optimizer cards, route, Map, mode/selection retained; Little Utopia preserves QPE `$4,364,395` distinct from gross `$4,364,393` | PASS |
 | Full Project Globe | All four | Locked structures above | Direct local traversal switched Normal to Optimizer; exact optimized route label, NPC/savings, and CA-MB/CA-NL/IT markers rendered | PASS |
 | Globe hover | All four | Locked structures above | Prior independent direct-hover matrix in `CODEX_FINAL_GLOBE_WORKSPACE_ACCEPTANCE.md`; renderer/hover owners are outside the five-file remediation diff, and the current Globe regression retained exact structure/route/markers | PASS (frozen evidence + regression) |
 | Normal/Optimizer and Lanes/Map/Split controls | All four | N/A | Direct local interactions succeeded; state did not leak across navigations | PASS |
@@ -84,9 +86,9 @@ Canonical backend source for every row is `GET /api/v1/cineglobe/projects/{proje
 - Backend log: every observed canonical project-state request for all four project IDs returned `200 OK`; no failed canonical API request occurred during the run.
 - Rendered data came from `127.0.0.1:8010`; no mock/demo payload was used.
 
-## 6. Confirmed remaining defect
+## 6. Resolved final defect
 
-### GW-OI-001 — Workspace silently normalizes canonical QPE to gross budget
+### GW-OI-001 — Workspace silently normalized canonical QPE to gross budget — RESOLVED
 
 **Evidence**
 
@@ -99,13 +101,18 @@ For Little Utopia structure `559a49ce…`:
 
 **Root cause**
 
-`frametax2/frontend/src/screens/production/Workspace.jsx:138-147` correctly sums the component allocations, then passes the result through `normalizeTrivialVariance(qualifiedSpendRaw, gross)`. `frametax2/frontend/src/lib/format.jsx:80-82` replaces any value within `$5` of the reference with the reference. Little Utopia's source-authored `$2` leaf-sum variance therefore becomes the gross budget only on Workspace cards. This is a duplicate display calculation and directly violates the zero-cross-surface-contradiction and no-alternate-QPE-calculation acceptance conditions.
+In the pre-fix code, `frametax2/frontend/src/screens/production/Workspace.jsx:138-147` correctly summed the component allocations, then passed the result through `normalizeTrivialVariance(qualifiedSpendRaw, gross)`. `frametax2/frontend/src/lib/format.jsx:80-82` replaces any value within `$5` of the reference with the reference. Little Utopia's source-authored `$2` leaf-sum variance therefore became the gross budget only on Workspace cards. That was a duplicate display calculation and directly violated the zero-cross-surface-contradiction and no-alternate-QPE-calculation acceptance conditions.
 
-**Smallest repair boundary**
+**Implemented repair and independent delta verification**
 
-- `frametax2/frontend/src/screens/production/Workspace.jsx:ScenarioCard`: consume the shared canonical representation adapter `qpeOf(structure)` and do not normalize QPE to gross.
-- Add a focused Workspace-card oracle with Little Utopia's literal gross `$4,364,393` and QPE `$4,364,395`; assert Lanes and Split keep the QPE unchanged.
-- No backend, database, optimizer, parser, or economic calculation change is indicated.
+- Commit `8304c70ec5d8c83f71405e3b82422e9f68f770b7` changes only `Workspace.jsx` and the new focused regression test.
+- `Workspace.jsx:ScenarioCard` now consumes the shared canonical representation adapter `qpeOf(structure)` and does not normalize QPE to gross.
+- Independent focused tests: 57 passed, 0 failed, including the literal Little Utopia gross/QPE distinction and all four projects' QPE values.
+- Independent local browser: Little Utopia Lanes and Split both show gross `$4,364,393`, QPE `$4,364,395`, incentive `$1,825,390`, NPC `$2,539,003`, and savings `$1,252,331`.
+- Independent Inspector: identity `89f543279d132bce…`, QPE `$4,364,395`, and component QPE `$4,302,827 + $9,068 + $52,500` agree exactly.
+- Bad Hombres, FVD, and Lips Like Sugar remain `$2,482,023`, `$4,517,687`, and `$11,983,654` respectively in live Workspace Optimizer cards.
+- No browser console errors or warnings; all observed canonical state requests returned `200 OK`.
+- No backend, database, optimizer, parser, or economic calculation changed.
 
 ## 7. Current ingestion/parser acceptance gate
 
@@ -139,10 +146,10 @@ The repository gate script was inspected but not executed against the shared dat
 
 ## 8. Ownership and final verdict
 
-Overview, Workspace, Inspector, and Globe all read the canonical served project state. The remediation did not create a second economic engine and did not alter backend economics. However, Workspace retains a second QPE presentation rule (`normalizeTrivialVariance`) that changes a canonical economic value on Lanes/Split cards. Thus the required zero duplicate display-calculation and zero cross-surface-contradiction gates are not met.
+Overview, Workspace, Inspector, and Globe all read the canonical served project state. The final remediation removes Workspace's second QPE presentation rule and reuses the shared `qpeOf()` adapter. It does not create a second economic engine or alter backend economics. The required zero duplicate display-calculation and zero cross-surface-contradiction gates are met.
 
 - OAD-001: PASS
 - OAD-002: PASS
 - Ingestion gate: CURRENT_VALID
-- Remaining defects: 1 (`GW-OI-001`)
-- Final token: **CINEGLOBE_FINAL_ACCEPTANCE_INCOMPLETE**
+- Remaining defects: 0
+- Final token: **CINEGLOBE_GLOBE_WORKSPACE_OVERVIEW_INGESTION_ACCEPTED**
