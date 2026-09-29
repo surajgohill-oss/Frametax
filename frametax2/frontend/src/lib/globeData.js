@@ -616,6 +616,15 @@ export function buildCandidateDetail(structure) {
     incentive_usd: structure.selected_incentive_usd ?? null,
     qpe_usd: totalQpe,
     npc_usd: structure.npc_with_adjustments_usd ?? null,
+    // LU Mauritius economics reconciliation: floor/ceiling are the real,
+    // distinct values canonical_production_view.py now aggregates from
+    // per-segment pricing (previously both silently equaled
+    // selected_incentive_usd). null on any row predating that fix.
+    incentive_floor_usd: structure.total_incentive_floor_usd ?? null,
+    incentive_ceiling_usd: structure.total_incentive_ceiling_usd ?? null,
+    ceiling_requires_confirmation: !!structure.ceiling_requires_confirmation,
+    npc_floor_usd: structure.npc_floor_usd ?? null,
+    npc_ceiling_usd: structure.npc_ceiling_usd ?? null,
     blockers: structure.blockers || [],
     warnings: structure.warnings || [],
     components,

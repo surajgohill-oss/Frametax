@@ -68,32 +68,42 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 #: program qualifies 100% of deployed contingency spend, per its
 #: existing, unchanged qualification doctrine — not a new assumption).
 #:
-#: Canonical Budget Parser Remediation (2026-09-04): these two figures
-#: were updated because "3200 PRODUCTION SOUND" ($69,532) is no longer
-#: miscategorized into the POST-scoped "sound" category (see
-#: CURRENT_NPC_USD's own comment below for the full mechanism) — the
-#: same $90,339.30 marginal delta this docstring already documented is
-#: UNCHANGED by that fix (it affects both the 100% and 0% scenarios
-#: identically, so it cancels out of the delta); only the absolute
-#: NPC/incentive levels shifted.
-ACCEPTED_NPC_USD = 3_700_994.00
-ACCEPTED_INCENTIVE_USD = 663_399.00
+#: LU Mauritius economics reconciliation (canonical-1.94.0): both figures
+#: updated to the fully-corrected 100%-utilization scenario, independently
+#: reconstructed line-by-line in test_lu_mauritius_economics_
+#: reconciliation.py from the 44 real budget lines against MU_EDB_RULES
+#: (never copied from this file, never from any previously-asserted
+#: number). Three confirmed, independently-verified defects repaired:
+#: (1) 16 of Little Utopia's persisted budget_line_items.spend_category
+#: values diverged from app.data.little_utopia_real_budget.
+#: LITTLE_UTOPIA_REAL_SPEND_CATEGORY's already-evidenced classification
+#: (12 non-zero lines sat in "miscellaneous", 2 in
+#: "general_administration" -- neither has any Mauritius rule) --
+#: repaired via scripts/repair_little_utopia_spend_categories.py, an
+#: idempotent, budget-document/account-code-keyed data correction. (2)
+#: MU_EDB_RULES had no rule at all for the PRODUCTION_SOUND category
+#: (split from BTL_CREW_LABOR with no jurisdiction back-fill) -- added,
+#: citing the same already-VERIFIED EDB labor authority ("all cast and
+#: crew labor without qualification"). (3) Little Utopia's real 100%
+#: contingency-utilization election existed only in the legacy demo
+#: module, never as a canonical ProjectFact for the real project --
+#: backfilled by the same idempotent script. QPE $1,910,199.00 ->
+#: $4,355,327.00.
+ACCEPTED_NPC_USD = 3_057_794.90
+ACCEPTED_INCENTIVE_USD = 1_306_598.10
 ACCEPTED_GROSS_BUDGET_USD = 4_364_393.00
 ACCEPTED_LEAF_SUM_USD = 4_364_395.00
 
-#: Production Page Integrity Closeout (migration 0071): the CURRENT
-#: canonical figures — Little Utopia's stale beta 100% contingency-
-#: utilization election (migration 0068, "recovered_demo_state"
-#: provenance) was removed as a project-name-branched default that never
-#: reflected a real producer decision. With no election on file,
-#: derive_qualification_register's own existing, unchanged
-#: GREY_AREA_REQUIRES_AUTHORITY doctrine applies to the reserve — never
-#: silently assumed 0% or 100%. Reproduces the SAME figures as an
-#: explicit 0% election (the reserve is excluded from qualifying QPE
-#: either way); the distinction from a genuine 0% election is that this
-#: state carries no election at all, not a resolved one.
-CURRENT_NPC_USD = 3_791_333.30  # ITEM 4 REPAIR (budget classification): Little Utopia's real "1400 CAST" ($136,115) and "1100 SCRIPT" ($5,050) accounts were classified `miscellaneous` because the rule table could not read the source document's own account-code department convention. Mauritius' EDB-2020-QPE-List explicitly qualifies atl_cast and atl_writer (program_spend_rules.MU_EDB_RULES, VERIFIED tier), so $141,165 of statutorily-qualifying labour was excluded from QPE. QPE $1,838,566 -> $1,979,731; incentive $551,569.80 -> $593,919.30 (30%); NPC $3,812,823.20 -> $3,770,473.70. Baseline IDENTITY (MU / mu_edb_incentive) is unchanged -- only the contaminated QPE is repaired. Canonical Budget Parser Remediation (2026-09-04): the real "3200 PRODUCTION SOUND" account ($69,532) was previously misclassified into the POST-scoped "sound" category, whose ONLY Mauritius EDB-2020 citation is "Post production services (picture and sound)" -- a rule that never covered production-phase sound work. Correctly splitting production sound into its own category (never eligible under that citation) moved this $69,532 from certain QPE to GREY_AREA_REQUIRES_AUTHORITY (uncertain, pending real authority evidence) -- incentive $593,919.30 -> $573,059.70 (rate-30%); NPC $3,770,473.70 -> $3,791,333.30. This is a genuine correction (less overclaiming), not a regression.
-CURRENT_INCENTIVE_USD = 573_059.70
+#: LU Mauritius economics reconciliation (canonical-1.94.0): Little
+#: Utopia's real 100% contingency-utilization election is now correctly
+#: persisted as an ordinary ProjectFact row (never a code-level default,
+#: never a project-id/title branch -- ordinary generic fact lookup, same
+#: mechanism any production's own election would use), so the CURRENT
+#: (live, persisted-default) figures and the ACCEPTED (100%-scenario)
+#: figures above are now the same real number -- the persisted state IS
+#: the correct state, not a hypothetical override of it.
+CURRENT_NPC_USD = ACCEPTED_NPC_USD
+CURRENT_INCENTIVE_USD = ACCEPTED_INCENTIVE_USD
 
 
 @pytest.fixture
@@ -137,13 +147,14 @@ async def test_little_utopia_canonical_npc_reproduced_from_generic_inputs(db: As
     Canonical calculators (derive_qualification_register ->
     derive_account_allocation -> price_allocated_structure), driven purely
     from generic persisted project evidence, must reproduce the CURRENT
-    Little Utopia baseline economics to the cent — as of Production Page
-    Integrity Closeout (migration 0071), that means no persisted
-    contingency election at all (inputs.contingency_expected_utilization_pct
-    is None), not the retired 100% beta default.
+    Little Utopia baseline economics to the cent — as of the LU Mauritius
+    economics reconciliation (canonical-1.94.0), that means the real,
+    persisted 100% contingency-utilization ProjectFact
+    (inputs.contingency_expected_utilization_pct == 100.0), not an absent
+    fact and not a code-level default.
     """
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
-    assert inputs.contingency_expected_utilization_pct is None
+    assert inputs.contingency_expected_utilization_pct == 100.0
 
     register = derive_qualification_register(
         inputs.budget_lines,
@@ -191,20 +202,30 @@ async def test_little_utopia_canonical_npc_reproduced_from_generic_inputs(db: As
     assert round(pricing.npc_verified_usd, 2) == CURRENT_NPC_USD
 
 
-async def test_little_utopia_contingency_election_has_no_stale_default(db: AsyncSession):
-    """Production Page Integrity Closeout (migration 0071) acceptance proof.
+async def test_little_utopia_contingency_election_is_a_real_persisted_fact_not_a_code_default(db: AsyncSession):
+    """LU Mauritius economics reconciliation (canonical-1.94.0) supersedes
+    the migration-0071 state this test previously locked in.
 
-    Little Utopia's migration-0068 beta 100% expected-contingency-
-    utilization election (a stale "recovered_demo_state" default, never a
-    real producer decision) is gone. The generic
-    canonical_project_economics.build_project_economic_inputs seam reads
-    whatever is actually persisted — nothing here, currently — and never
-    substitutes a Mauritius or Little-Utopia-specific default anywhere in
-    the calculators themselves. Confirms the current, honest state is
-    reproduced FOR THE CORRECT REASON (no fact on file), not merely that
-    a number matches."""
+    Migration-0068's ORIGINAL defect was a stale 100% default living only
+    in the legacy demo module (app.demo.little_utopia_state), disconnected
+    from the real database-backed project — exactly a
+    PERSISTED_PROJECT_DATA_DEFECT / EXISTS_BUT_DISCONNECTED case. Migration
+    0071 "fixed" it by deleting the fact outright rather than migrating it,
+    which correctly removed the disconnected demo-only default but also
+    threw away Little Utopia's own real, documented 100%-expected-
+    utilization election (LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT
+    in little_utopia_real_budget.py, itself never disputed) — silently
+    greying out the entire $301,131.00 real contingency reserve.
+
+    The correct fix (this version) is neither a stale code-level default
+    NOR an absent fact: it is the SAME real project election, persisted as
+    an ordinary ProjectFact row (scripts/repair_little_utopia_spend_
+    categories.py — idempotent, keyed on (project_id, fact_key), the same
+    generic mechanism any production's own contingency election would use).
+    Confirms the fact is real, non-default, AND that no calculator gained a
+    project-id/title branch to get there."""
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
-    assert inputs.contingency_expected_utilization_pct is None
+    assert inputs.contingency_expected_utilization_pct == 100.0
 
     import inspect
 
@@ -230,16 +251,18 @@ async def test_little_utopia_contingency_election_has_no_stale_default(db: Async
 
 
 async def test_zero_percent_utilization_would_exclude_the_full_reserve(db: AsyncSession):
-    """Little Utopia Economic Reconciliation (2026-08-30): restored to its
-    original intent after the real classifier gap (see ACCEPTED_NPC_USD's
-    own docstring above — "Contigency", missing the 'n', defeated
-    contingency detection) was fixed centrally. Reconciliation proof,
-    opposite direction from the 100%-utilization figures above: an
-    explicit 0% election (not Little Utopia's own real 100% election, a
-    hypothetical override proving the mechanism is genuinely bidirectional
-    and generic) excludes the full $301,131.00 reserve, dropping
-    incentive/NPC by exactly the real marginal amount Mauritius's own EDB
-    program's existing, unchanged doctrine yields for that swing."""
+    """Reconciliation proof, opposite direction from the 100%-utilization
+    figures above: an explicit 0% election (not Little Utopia's own real
+    100% election, a hypothetical override proving the mechanism is
+    genuinely bidirectional and generic) excludes the full $301,131.00
+    reserve, dropping incentive/NPC by exactly the real marginal amount
+    Mauritius's own EDB program's existing, unchanged doctrine yields for
+    that swing. This delta ($90,339.30 = $301,131.00 x 30%) is invariant
+    across the LU Mauritius economics reconciliation (canonical-1.94.0) —
+    the spend_category/production_sound/contingency-fact fixes each affect
+    the 100% and 0% scenarios identically, so they cancel out of the
+    delta; only the absolute NPC/incentive levels (ACCEPTED_NPC_USD/
+    ACCEPTED_INCENTIVE_USD above) shifted."""
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
 
     spec = StructureSpec(

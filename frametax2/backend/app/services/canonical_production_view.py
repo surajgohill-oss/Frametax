@@ -378,6 +378,44 @@ def _structure_classification(
     return _classify_structure(trace, structure_type, is_priced)
 
 
+def _aggregate_segment_incentive_floor_ceiling(trace: dict) -> tuple[float | None, float | None, bool]:
+    """LU Mauritius economics reconciliation: canonical_evaluation.py
+    already prices and persists genuinely distinct per-segment
+    incentive_floor_usd/incentive_ceiling_usd (and
+    ceiling_requires_confirmation) inside calculation_trace_json["segments"]
+    (allocation_pricing.py's SegmentEconomics) — but nothing previously
+    aggregated them to a structure-level total, so the served
+    total_incentive_floor_usd/total_incentive_ceiling_usd fields silently
+    repeated selected_incentive_usd for both, collapsing a real, materially
+    different modeled ceiling (e.g. Mauritius's discretionary "up to 40%"
+    band) into the confirmed/selected floor. Sums the REAL per-segment
+    values the pricing kernel already computed — never a new derivation.
+    Returns (None, None, False) for any row persisted before this
+    per-segment enrichment existed (graceful degradation, same established
+    pattern as selected_incentive_usd above)."""
+    segments = trace.get("segments") or []
+    if not segments:
+        return None, None, False
+    floor_total = 0.0
+    ceiling_total = 0.0
+    any_requires_confirmation = False
+    saw_any_value = False
+    for seg in segments:
+        f = seg.get("incentive_floor_usd")
+        c = seg.get("incentive_ceiling_usd")
+        if f is not None:
+            floor_total += float(f)
+            saw_any_value = True
+        if c is not None:
+            ceiling_total += float(c)
+            saw_any_value = True
+        if seg.get("ceiling_requires_confirmation"):
+            any_requires_confirmation = True
+    if not saw_any_value:
+        return None, None, False
+    return round(floor_total, 2), round(ceiling_total, 2), any_requires_confirmation
+
+
 def _empty_structure_entry(
     structure, result, jurisdiction_code_by_id: dict[str, str],
     jurisdiction_name_by_code: dict[str, str] | None = None,
@@ -575,6 +613,8 @@ def _empty_structure_entry(
         if _c and _c not in _participant_codes:
             _participant_codes.append(_c)
 
+    _seg_floor, _seg_ceiling, _ceiling_requires_confirmation = _aggregate_segment_incentive_floor_ceiling(trace)
+
     return {
         "structure_id": str(structure.id),
         "structure_type": structure_type,
@@ -651,9 +691,15 @@ def _empty_structure_entry(
         ],
         "blockers": [] if is_priced else [trace.get("reason")] if trace.get("reason") else [],
         "gross_budget_usd": trace.get("gross_budget_usd"),
-        "total_incentive_floor_usd": selected_incentive_usd,
-        "total_incentive_ceiling_usd": selected_incentive_usd,
+        # LU Mauritius economics reconciliation: floor and ceiling are the
+        # REAL, distinct per-segment values aggregated above — never
+        # collapsed to selected_incentive_usd. Falls back to
+        # selected_incentive_usd only for rows persisted before segment-
+        # level floor/ceiling existed (graceful degradation).
+        "total_incentive_floor_usd": _seg_floor if _seg_floor is not None else selected_incentive_usd,
+        "total_incentive_ceiling_usd": _seg_ceiling if _seg_ceiling is not None else selected_incentive_usd,
         "selected_incentive_usd": selected_incentive_usd,
+        "ceiling_requires_confirmation": _ceiling_requires_confirmation,
         # Task 3 (canonical pricing path + discovery repair) — read the
         # REAL per-adjustment fields canonical_evaluation.py now persists
         # (calculation_trace_json["adjustments"]) instead of hardcoding
@@ -673,6 +719,26 @@ def _empty_structure_entry(
             float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
         ),
         "npc_conservative_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
+        # LU Mauritius economics reconciliation: the counterfactual NPC at
+        # the floor rate and at the (unconfirmed) ceiling rate. Adjustments
+        # (travel/fx/local-cost/financing/implementation deltas already
+        # baked into npc_with_adjustments_usd) are structural, not
+        # incentive-rate dependent, so swapping only the incentive
+        # component reconstructs each counterfactual without re-deriving
+        # anything the pricing kernel didn't already compute:
+        #   NPC_x = npc_with_adjustments_usd + selected_incentive_usd - incentive_x
+        # None when the segment-level floor/ceiling aggregate above is
+        # unavailable (pre-enrichment rows) or NPC itself is unpriced.
+        "npc_floor_usd": (
+            round(float(result.risk_adjusted_net_cost_usd) + selected_incentive_usd - _seg_floor, 2)
+            if (result.risk_adjusted_net_cost_usd is not None and selected_incentive_usd is not None and _seg_floor is not None)
+            else None
+        ),
+        "npc_ceiling_usd": (
+            round(float(result.risk_adjusted_net_cost_usd) + selected_incentive_usd - _seg_ceiling, 2)
+            if (result.risk_adjusted_net_cost_usd is not None and selected_incentive_usd is not None and _seg_ceiling is not None)
+            else None
+        ),
         # Existing Optimizer/Stacker Reconnection, Task B (treaty/co-pro):
         # populated for a treaty_coproduction structure
         # (canonical_treaty_bridge.CoproOpportunity, wired in

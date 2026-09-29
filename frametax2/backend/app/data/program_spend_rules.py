@@ -595,6 +595,24 @@ MU_EDB_RULES: tuple[SpendRule, ...] = (
     _mu("btl_crew_labor", True, _MU_LABOR_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
     _mu("btl_resident_labor", True, _MU_LABOR_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
     _mu("btl_nonresident_labor", True, _MU_LABOR_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
+    # LU Mauritius economics reconciliation: PRODUCTION_SOUND (Codex
+    # BPI-003) was split out of BTL_CREW_LABOR to keep shoot-phase sound
+    # crew distinct from post-phase sound work (its own doctrine comment:
+    # "physically tied to the shoot ... never collapsed into the POST
+    # sound category"), but no jurisdiction anywhere in this codebase ever
+    # received a rule for the new category, so it fell through to
+    # GREY_AREA_REQUIRES_AUTHORITY by simple omission, not a considered
+    # exclusion — a prior session correctly recognized production_sound is
+    # NOT covered by the POST-scoped "Post production services (picture
+    # and sound)" citation (it isn't post-production work) but never added
+    # the rule under the citation that DOES apply. _MU_LABOR_NOTE's own
+    # text is a blanket, craft-unqualified statement ("all cast and crew
+    # labor without qualification ... no ... distinction appears anywhere
+    # in the category list") -- production sound crew wages, being crew
+    # labor incurred during principal photography, fall within that same
+    # already-VERIFIED, already-cited authority, same citation, no new
+    # source needed.
+    _mu("production_sound", True, _MU_LABOR_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
     # Employer payroll contributions are a direct component of the same
     # labor cost the QPE list names (same citation).
     _mu("payroll_fringes", True, _MU_LABOR_NOTE, "VERIFIED", "EDB-2020-QPE-List"),

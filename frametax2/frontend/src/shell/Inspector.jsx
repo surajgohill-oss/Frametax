@@ -431,6 +431,19 @@ function StructureDetailInspector({ data }) {
         <div><dt>Total incentive</dt><dd className="mono"><Money value={data.incentive_usd} /></dd></div>
         <div><dt>Total QPE</dt><dd className="mono"><Money value={data.qpe_usd} /></dd></div>
         <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>
+        {/* LU Mauritius economics reconciliation: a discretionary rate
+            ceiling (e.g. Mauritius "up to 40%") that has not been
+            production-specifically confirmed prices at the floor. Show the
+            distinct potential ceiling incentive/NPC alongside it, never
+            collapsed into the selected value, only when they genuinely
+            differ and the ceiling is real but unconfirmed. */}
+        {data.ceiling_requires_confirmation && data.incentive_ceiling_usd != null
+          && data.incentive_ceiling_usd !== data.incentive_floor_usd && (
+          <>
+            <div><dt>Potential ceiling incentive</dt><dd className="mono"><Money value={data.incentive_ceiling_usd} /> <span className="text-tertiary small">(requires confirmation)</span></dd></div>
+            <div><dt>Potential ceiling NPC</dt><dd className="mono"><Money value={data.npc_ceiling_usd} /></dd></div>
+          </>
+        )}
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
       {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the exact savings/cost
