@@ -691,6 +691,32 @@ def _empty_structure_entry(
         ],
         "blockers": [] if is_priced else [trace.get("reason")] if trace.get("reason") else [],
         "gross_budget_usd": trace.get("gross_budget_usd"),
+        # Multi-program QPE reconciliation: canonical_evaluation.py's
+        # multi_program stack path already computes both the sum of each
+        # stacked program's own reusable claim base (total_claim_bases_usd
+        # -- e.g. Ontario OPSTC + OCASE both claiming against the SAME
+        # underlying QPE, legitimately double-counted for per-program
+        # disclosure) and the TRUE exact union of qualifying line IDs
+        # (total_qualifying_spend_usd -- overlapping lines counted once).
+        # Neither was ever served before this fix, so every consumer
+        # (Overview/Workspace/Globe/Inspector/hero) fell back to summing
+        # segments[].qpe_usd -- which equals total_claim_bases_usd, the
+        # WRONG, doubled figure, for any structure whose stacked programs
+        # share a spend base. "qpe_usd" is the one authoritative field
+        # every consumer should read: the real total_qualifying_spend_usd
+        # when this structure is a reconciled multi-program stack, else
+        # the segment/component-allocation sum (correct by construction
+        # for every other structure type, where segments route to
+        # disjoint jurisdictions and never overlap).
+        "total_claim_bases_usd": trace.get("total_claim_bases_usd"),
+        "total_qualifying_spend_usd": trace.get("total_qualifying_spend_usd"),
+        "qpe_usd": (
+            trace.get("total_qualifying_spend_usd")
+            if trace.get("total_qualifying_spend_usd") is not None
+            else sum((seg.get("qpe_usd") or 0.0) for seg in (trace.get("segments") or []))
+            if trace.get("segments")
+            else sum((ca.get("allocated_usd") or 0.0) for ca in (trace.get("component_allocations") or []))
+        ),
         # LU Mauritius economics reconciliation: floor and ceiling are the
         # REAL, distinct per-segment values aggregated above — never
         # collapsed to selected_incentive_usd. Falls back to

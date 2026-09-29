@@ -17,6 +17,8 @@
 // backend already serves recommended_optimizer_options pre-sorted
 // Practical -> Formal -> Advanced, NPC ascending).
 
+import { hasAdministrativeAllocationRisk, hasUnconfirmedStackingDeduction } from "./allocationRisk.js";
+
 export const CLASSIFICATIONS = {
   current: { key: "current", label: "Current / Base Production", accent: "gold" },
   relocation: { key: "relocation", label: "Full Relocation", accent: "jade" },
@@ -119,7 +121,18 @@ export function selectTopOptions(allocated) {
 // allocation-fallback precedence Workspace's ScenarioCard already uses
 // (screens/production/Workspace.jsx's qualifiedSpendRaw) — never both
 // summed together (they are alternate representations, not additive).
+// Multi-program QPE reconciliation: a stacked-program structure (e.g.
+// Ontario OPSTC + OCASE, both claiming against the SAME underlying QPE)
+// serves segments[].qpe_usd PER PROGRAM for disclosure — summing them (the
+// old behavior below) silently doubles the real unique qualifying spend.
+// canonical_production_view.py now serves the exact, real, already-
+// reconciled union as structure.qpe_usd whenever it differs from a plain
+// per-segment sum being correct; that real backend value always wins here.
+// Falls back to the existing segment/component-allocation sum ONLY for a
+// row persisted before this field existed — same graceful-degradation
+// precedent used throughout the served view.
 export function qpeOf(structure) {
+  if (typeof structure.qpe_usd === "number") return structure.qpe_usd;
   return structure.segments?.length
     ? structure.segments.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0)
     : (structure.component_allocations || []).reduce((sum, ca) => sum + (ca.allocated_usd || 0), 0);
@@ -298,10 +311,45 @@ export function selectAnchorLeadingOptimized(allocated) {
 // selectAnchorLeadingOptimized had no real baseline to put there (the
 // `isBaselineStructure` check below is the actual authority, cardIndex
 // is only a hint consistent with it by construction).
+// Runtime wiring remediation (unresolved-calculation promotion): the bare
+// "LEADING" fallback below previously applied unconditionally to ANY
+// non-baseline, non-opportunity/optimizer card — including a structure
+// whose incentive is not yet confirmed, via ANY of three real, distinct,
+// backend-disclosed unresolved-calculation states:
+//   1. hasAdministrativeAllocationRisk — an award authority's own
+//      discretion, a competitive/capacity-limited allocation, or a
+//      mandatory preapproval step (the SAME generic detector Workspace/
+//      IncentiveIntelligence already use for the "requires confirmation"
+//      caption).
+//   2. structure.legal_review_required — a hard statutory VIOLATION/
+//      mutual-exclusivity finding on a multi-program stack
+//      (canonical_stack_bridge.py's MultiProgramStackResult.legal_
+//      review_required, served verbatim by canonical_production_view.py).
+//   3. hasUnconfirmedStackingDeduction — a GENUINELY DIFFERENT disclosure
+//      from #2 despite the similar name: a real statutory stacking-
+//      deduction rule was found between two stacked programs but could
+//      not be applied by the reused spend_reduction calculator, so the
+//      served adjusted_incentive_usd is not confirmed net of it. A live
+//      production's real Ontario OFTTC+OCASE stack served exactly this
+//      state with legal_review_required=FALSE (state 2 does not cover
+//      it) alongside a confident "LEADING"/"Top Priced" badge — caught
+//      only by matching the disclosure's own prose, since no dedicated
+//      boolean field exists for it.
+// ANCHOR and OPTIMIZED are untouched — a baseline's ANCHOR status is a
+// factual "this is the production's own current base" designation, never
+// a confidence/recommendation claim (Little Utopia's own Mauritius
+// baseline carries real administrative risk and is still honestly
+// ANCHOR), and OPTIMIZED's existing selection criteria are a separate,
+// already-established contract this fix does not reopen.
 export function cardStatus(structure, cardIndex) {
   if (structure.__isOpportunity) return "OPTIMIZED";
   if (cardIndex === 0 && isBaselineStructure(structure)) return "ANCHOR";
   if (structure.__isProducerOptimizer) return "OPTIMIZED";
+  if (
+    hasAdministrativeAllocationRisk(structure)
+    || structure.legal_review_required
+    || hasUnconfirmedStackingDeduction(structure)
+  ) return "CONDITIONAL";
   return "LEADING";
 }
 

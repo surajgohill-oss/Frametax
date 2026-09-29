@@ -10,7 +10,7 @@ import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
-import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
+import { MODE_NORMAL, MODE_OPTIMIZER, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
@@ -369,6 +369,12 @@ export default function Workspace() {
   const { data, error, loading, refetch } = useCineGlobe(routeProjectId);
   const location = useLocation();
   const navTab = location.state?.tab;
+  // "See all N" mode preservation (Overview.jsx's OptimizerCategorySummary
+  // onOpenComplete): a URL query param, not navigation state, specifically
+  // so a direct reload/bookmark of this exact URL also restores the
+  // requested Single Jurisdiction / Optimizer mode — never silently
+  // reverting to whatever workspaceMode last happened to be in memory.
+  const requestedMode = resolveRequestedWorkspaceMode(location.search);
 
   const [mode, setMode] = useState(navTab === "map" || navTab === "split" ? navTab : "lanes");
   const [qOpen, setQOpen] = useState(navTab === "inputs" || navTab === "recommendations");
@@ -396,6 +402,15 @@ export default function Workspace() {
     selectedJurisdiction, setSelectedJurisdiction,
     workspaceMode, setWorkspaceMode, getSlot6Selection, setSlot6Selection,
   } = useAppState();
+
+  // "See all N" mode preservation: apply the requested mode from the URL
+  // once (on mount / whenever the param itself changes — e.g. following a
+  // second "See all" link without unmounting Workspace). Never applied
+  // when the param is absent, so a plain /workspace visit or a manual
+  // Single Jurisdiction / Optimizer click is never overridden.
+  useEffect(() => {
+    if (requestedMode) setWorkspaceMode(requestedMode);
+  }, [requestedMode, setWorkspaceMode]);
 
   // Phase C write-through for "Set as Leading": persists to the real
   // Project row so the choice survives a reload/restart, in addition to

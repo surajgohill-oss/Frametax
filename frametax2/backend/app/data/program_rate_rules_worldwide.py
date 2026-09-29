@@ -1371,6 +1371,47 @@ ON_OCASE_DOCTRINE = register(DoctrineRecord(
             tier_id="on-ocase-flat-18",
             rate=0.18,
             is_band_ceiling=False,
+            # Runtime wiring remediation (OCASE rate-base defect): the
+            # citation's own text is explicit -- "18% of the eligible
+            # Ontario labour expenditures... with respect to eligible
+            # computer animation and special effects activities" -- a
+            # component-basis rate (real VFX/animation LABOUR only), never
+            # the segment's whole QPE. Without this condition, the tier had
+            # no basis restriction at all and priced 18% against the ENTIRE
+            # Ontario QPE (a live production's OCASE stack served
+            # $729,755.28 -- 18% of the full $4,063,264 base -- instead of
+            # 18% of its own real, traced VFX-category spend). Reuses the
+            # SAME generic component-basis derivation mechanism already
+            # established for ca_federal_pstc/ca_bc_dave/etc.
+            # (allocation_pricing.py's own pre-pass over
+            # component_basis_spend_categories): the real dollar amount is
+            # traced from this segment's own AccountAllocation lines
+            # classified under the "vfx" SpendCategory (the same
+            # classification every other jurisdiction's VFX department
+            # spend already receives -- see program_spend_rules.py) --
+            # never a producer-supplied fact, never invented labour
+            # amounts. A production with no VFX-classified spend routed to
+            # Ontario correctly derives $0 basis, not the full QPE.
+            conditions=(
+                RateCondition(
+                    condition_id="on-ocase-vfx-labour-only-base",
+                    description="Rate applies to eligible computer animation "
+                                "and special effects LABOUR expenditure "
+                                "specifically -- a real, exactly-traced basis "
+                                "derived from this segment's own VFX-category "
+                                "AccountAllocation lines, never the segment's "
+                                "total QPE.",
+                    quote="18% of the eligible Ontario labour expenditures "
+                          "incurred by a qualifying corporation with respect "
+                          "to eligible computer animation and special "
+                          "effects activities (ontariocreates.ca)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="on_ocase_qualifying_vfx_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=("vfx",),
+                ),
+            ),
         ),
     ),
 ))

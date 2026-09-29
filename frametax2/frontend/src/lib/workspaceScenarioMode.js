@@ -29,6 +29,24 @@ export function familiesForMode(mode) {
   return mode === MODE_OPTIMIZER ? OPTIMIZER_FAMILIES : NORMAL_FAMILIES;
 }
 
+// "See all N" mode preservation: the one shared parsing/construction
+// contract for the workspace `?mode=` URL query param, used by both
+// Overview.jsx (building the "See all" link from its own coverage
+// section) and Workspace.jsx (reading it back on mount). A URL query
+// param, never React Router navigation state, specifically because it
+// must survive a direct reload/bookmark of the destination URL. Returns
+// null for anything else (absent, mistyped, or a value neither mode
+// uses) — the caller then leaves whatever mode is already in memory
+// alone, never silently defaulting to Single Jurisdiction.
+export function resolveRequestedWorkspaceMode(search) {
+  const raw = new URLSearchParams(search).get("mode");
+  return raw === MODE_OPTIMIZER || raw === MODE_NORMAL ? raw : null;
+}
+
+export function workspaceUrlForMode(projectId, mode) {
+  return `/projects/${projectId}/workspace?mode=${mode === MODE_OPTIMIZER ? MODE_OPTIMIZER : MODE_NORMAL}`;
+}
+
 // WORKSPACE_CANONICAL_JURISDICTION_WINNERS (2026-09-21) — ROOT CAUSE:
 // Single Jurisdiction mode's admissible pool used to be reconstructed
 // client-side from `allocated.structures` -- the bounded, OVERALL-rank-

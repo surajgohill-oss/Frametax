@@ -155,14 +155,66 @@ test("cardStatus: only a canonical producer optimizer (or disclosed opportunity)
   assert.equal(cardStatus(opportunity, 2), "OPTIMIZED", "an opportunity flag always reads OPTIMIZED regardless of position");
 });
 
-test("cardStatus never returns N/A, NO INCENTIVE, or any value outside the four-word vocabulary", () => {
+test("cardStatus never returns N/A, NO INCENTIVE, or any value outside the vocabulary", () => {
   const cases = [
     cardStatus(structure({ is_baseline: true }), 0),
     cardStatus(structure({}), 1),
     cardStatus(structure({}), 2),
     cardStatus(structure({}), 3),
   ];
-  for (const s of cases) assert.ok(["ANCHOR", "LEADING", "OPTIMIZED"].includes(s), `unexpected status: ${s}`);
+  for (const s of cases) assert.ok(["ANCHOR", "LEADING", "OPTIMIZED", "CONDITIONAL"].includes(s), `unexpected status: ${s}`);
+});
+
+// ── Runtime wiring remediation: an unconfirmed-calculation structure can
+// never claim LEADING — the exact live defect (Ontario's OPSTC+OCASE
+// stack served "Discretionary/preapproval required" right next to a
+// "LEADING"/"Top Priced" badge). ─────────────────────────────────────────
+
+test("cardStatus: a non-baseline structure with a disclosed administrative/allocation risk is CONDITIONAL, never LEADING", () => {
+  const risky = structure({
+    warnings: ["Administrative/allocation risk: award authority discretion applies; a preapproval step is required before this incentive is confirmed."],
+  });
+  assert.equal(cardStatus(risky, 1), "CONDITIONAL");
+  assert.equal(cardStatus(risky, 2), "CONDITIONAL");
+  assert.equal(cardStatus(risky, 3), "CONDITIONAL");
+});
+
+test("cardStatus: the SAME structure with no disclosed risk is the ordinary LEADING fallback — the gate is data-driven, not a blanket downgrade", () => {
+  const clean = structure({ warnings: [] });
+  assert.equal(cardStatus(clean, 1), "LEADING");
+});
+
+test("cardStatus: structure.legal_review_required (a hard statutory violation finding) is CONDITIONAL, never LEADING", () => {
+  const stackPendingReview = structure({ warnings: [], legal_review_required: true });
+  assert.equal(cardStatus(stackPendingReview, 1), "CONDITIONAL");
+});
+
+test("cardStatus: legal_review_required=false (or absent) never falsely triggers CONDITIONAL", () => {
+  assert.equal(cardStatus(structure({ warnings: [], legal_review_required: false }), 1), "LEADING");
+  assert.equal(cardStatus(structure({ warnings: [] }), 1), "LEADING");
+});
+
+test("cardStatus: an unconfirmed stacking-deduction disclosure is CONDITIONAL, never LEADING — the THIRD, distinct live defect (Ontario's real OFTTC+OCASE stack served legal_review_required=FALSE alongside this exact prose warning and a confident 'LEADING' badge)", () => {
+  const stackWithUnconfirmedDeduction = structure({
+    legal_review_required: false,
+    warnings: [
+      "Statutory rule found (OCASE may be claimed in addition to OFTTC on the same production's eligible computer animation/VFX labour expenditure.) but the reused spend_reduction calculator only recognizes grant/regional_fund/discretionary_fund program types as the reducing side; neither on_ofttc nor ontario_computer_animation_and_special_effects_tax_credit_ocase is typed that way, so no reduction was applied for this pair. This combination's adjusted_incentive_usd is therefore not confirmed net of this statutory deduction — legal/economic review required before this combination is treated as fully priced.",
+    ],
+  });
+  assert.equal(cardStatus(stackWithUnconfirmedDeduction, 1), "CONDITIONAL");
+});
+
+test("cardStatus: an administrative-risk baseline card stays honestly ANCHOR — a factual designation, never a confidence claim (Little Utopia's own Mauritius baseline carries this exact real risk)", () => {
+  const riskyBaseline = structure({
+    is_baseline: true,
+    warnings: ["Administrative/allocation risk: award authority discretion applies."],
+  });
+  assert.equal(cardStatus(riskyBaseline, 0), "ANCHOR");
+});
+
+test("cardStatus: an unrelated warning string never falsely triggers CONDITIONAL — the detector is keyed to the real backend disclosure prefix, never a generic 'warning present' check", () => {
+  const s = structure({ warnings: ["Some other, unrelated disclosure entirely."] });
+  assert.equal(cardStatus(s, 1), "LEADING");
 });
 
 // ── A long statutory program name can never occupy the compact

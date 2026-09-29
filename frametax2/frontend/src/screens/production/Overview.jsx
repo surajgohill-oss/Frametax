@@ -12,6 +12,7 @@ import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
 import OptimizerCategorySummary from "../../components/OptimizerCategorySummary";
+import { workspaceUrlForMode } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 // FXStrip: an earlier batch removed the full-width strip from this
 // position because it demoted the Globe and broke the approved
@@ -246,7 +247,17 @@ export default function Overview() {
           <OptimizerCategorySummary
             allocated={allocated}
             mode={globeMode}
-            onOpenComplete={() => navigate(`/projects/${projectId}/workspace`)}
+            // "See all N" mode preservation: OptimizerCategorySummary
+            // calls onOpenComplete({mode}) with which coverage section
+            // ("optimizer" or "normal") the click came from — this was
+            // previously discarded, so "See all" from Optimizer coverage
+            // opened Workspace in whatever mode it last happened to be in
+            // (usually Single Jurisdiction), not the coverage the user was
+            // actually looking at. Encoded as a URL query param (not React
+            // Router navigation state) specifically so a direct reload of
+            // the destination URL also restores the requested mode —
+            // Workspace.jsx reads this once on mount.
+            onOpenComplete={(opts) => navigate(workspaceUrlForMode(projectId, opts?.mode))}
           />
         </div>
 

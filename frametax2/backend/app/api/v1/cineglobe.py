@@ -26,6 +26,7 @@ from dataclasses import asdict
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1370,7 +1371,22 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
     # stay honest empty shapes; no generic evidence-graph/recommendation
     # engine exists yet for any project outside the LU demo state.
     sections = await build_generic_pkg_and_economics(db, project_id)
-    return {
+    # State endpoint performance fix: for a large production (FVD, Lips
+    # Like Sugar) this payload is 20+ MB of already-plain JSON-native
+    # dicts/lists/floats/strings (canonical_production_view.py never
+    # returns a UUID/Decimal/datetime object here). Returning a bare dict
+    # from a FastAPI route runs it through jsonable_encoder() -- a
+    # recursive, per-value isinstance/BaseModel/dataclass/Enum check
+    # designed for arbitrary response types -- before Starlette's
+    # JSONResponse ever calls json.dumps(). Profiled directly: the ENTIRE
+    # evaluate+build+serialize pipeline for FVD took 1.28s end to end,
+    # of which json.dumps() itself was 0.09s; the identical payload took
+    # 19.8s over HTTP, and jsonable_encoder was the only other step in the
+    # request path. Returning an already-constructed JSONResponse here
+    # makes FastAPI skip jsonable_encoder entirely (it returns a `Response`
+    # instance unmodified), restoring the real ~1-2s cost with no change
+    # to what is served -- same dict, same keys, same values.
+    return JSONResponse(content={
         "production": view["production"],
         "pkg": sections.get("pkg", EMPTY_PKG),
         "recommendations": EMPTY_RECOMMENDATIONS,
@@ -1379,4 +1395,4 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
         "economics": sections.get("economics", EMPTY_ECONOMICS),
         "people": sections.get("people", EMPTY_PEOPLE),
         "facts": sections.get("facts", EMPTY_FACTS),
-    }
+    })

@@ -25,7 +25,9 @@ import {
   NORMAL_FAMILIES,
   OPTIMIZER_FAMILIES,
   admissibleForMode,
+  resolveRequestedWorkspaceMode,
   selectSixSlots,
+  workspaceUrlForMode,
 } from "../src/lib/workspaceScenarioMode.js";
 
 function structure(overrides) {
@@ -406,4 +408,50 @@ test("family constants are the exact canonical values, never inferred/renamed", 
   assert.deepEqual(OPTIMIZER_FAMILIES, [
     "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
   ]);
+});
+
+// ── "See all N" mode preservation (behavioral, not source-regex) ─────────
+//
+// Overview's Optimizer/Single-Jurisdiction category coverage sections each
+// call onOpenComplete({mode}) — Overview.jsx previously discarded this
+// argument entirely and always opened Workspace in whatever mode was last
+// in memory. workspaceUrlForMode/resolveRequestedWorkspaceMode are the one
+// shared contract both ends use: a URL query param (not React Router
+// navigation state), so a direct reload of the destination URL also
+// restores the requested mode — never silently reverting to Single
+// Jurisdiction.
+
+test("workspaceUrlForMode: Optimizer coverage's See all opens Workspace in Optimizer mode", () => {
+  assert.equal(workspaceUrlForMode("proj-1", MODE_OPTIMIZER), "/projects/proj-1/workspace?mode=optimizer");
+});
+
+test("workspaceUrlForMode: Single Jurisdiction coverage's See all opens Workspace in Single Jurisdiction mode", () => {
+  assert.equal(workspaceUrlForMode("proj-1", MODE_NORMAL), "/projects/proj-1/workspace?mode=normal");
+});
+
+test("workspaceUrlForMode: an absent/unrecognized mode never silently opens a THIRD, undocumented mode — falls back to Single Jurisdiction", () => {
+  assert.equal(workspaceUrlForMode("proj-1", undefined), "/projects/proj-1/workspace?mode=normal");
+  assert.equal(workspaceUrlForMode("proj-1", "garbage"), "/projects/proj-1/workspace?mode=normal");
+});
+
+test("resolveRequestedWorkspaceMode: reads ?mode=optimizer back out of a real location.search string", () => {
+  assert.equal(resolveRequestedWorkspaceMode("?mode=optimizer"), MODE_OPTIMIZER);
+});
+
+test("resolveRequestedWorkspaceMode: reads ?mode=normal back out of a real location.search string", () => {
+  assert.equal(resolveRequestedWorkspaceMode("?mode=normal"), MODE_NORMAL);
+});
+
+test("resolveRequestedWorkspaceMode: a direct reload/bookmark of the exact destination URL round-trips through workspaceUrlForMode unchanged", () => {
+  for (const mode of [MODE_OPTIMIZER, MODE_NORMAL]) {
+    const url = workspaceUrlForMode("proj-1", mode);
+    const search = url.slice(url.indexOf("?"));
+    assert.equal(resolveRequestedWorkspaceMode(search), mode, `${url} must resolve back to ${mode} on a fresh page load`);
+  }
+});
+
+test("resolveRequestedWorkspaceMode: no param, an empty string, or an unrelated query never fabricates a mode", () => {
+  assert.equal(resolveRequestedWorkspaceMode(""), null);
+  assert.equal(resolveRequestedWorkspaceMode("?tab=map"), null);
+  assert.equal(resolveRequestedWorkspaceMode("?mode=garbage"), null);
 });

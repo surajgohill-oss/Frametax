@@ -173,7 +173,7 @@ test("buildOptimizerPathway: every point's structureDetail is the exact buildCan
     assert.equal(point.mode, "optimizer");
     assert.equal(point.optimizerStatus, "gold");
     assert.equal(point.optimizerStatusLabel, OPTIMIZER_SEMANTIC.gold.label);
-    assert.equal(point.familyLabel, "Practical Hybrid");
+    assert.equal(point.familyLabel, "Hybrid Anchor + Component");
   }
 });
 
