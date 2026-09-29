@@ -115,3 +115,42 @@ export function buildScenarioLabel(structure) {
   }
   return base;
 }
+
+// GW-OI-004: same compact-money rounding rule CompactMoney (format.jsx)
+// uses ($X.XM / $XK / $X), reimplemented as a plain string here (this
+// module is pure .js — no JSX — see its own header comment) rather than
+// importing the JSX component back, and rather than inventing a second,
+// differently-rounded convention for the same concept.
+function compactAmount(usd) {
+  if (usd == null) return null;
+  const abs = Math.abs(usd);
+  if (abs >= 1_000_000) return `$${(usd / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `$${(usd / 1_000).toFixed(0)}K`;
+  return `$${Math.round(usd).toLocaleString()}`;
+}
+
+// GW-OI-004: a multi-party route in the Workspace "Other Scenarios"
+// dropdown showed the routed jurisdictions/components (via
+// buildScenarioLabel above) but never the allocated amount driving each
+// leg — hundreds of routes read as visually indistinguishable permutations
+// with no way to see why each additional jurisdiction is present. Appends
+// each real component_allocations amount to its own leg, plus the real
+// principal-production amount, using the SAME component_allocations rows
+// buildScenarioLabel already reads (never a second/invented allocation
+// source). Falls back to buildScenarioLabel's own plain output when no
+// component_allocations exist (Single Jurisdiction winners, principal-only
+// structures) — never fabricates an amount.
+export function buildRouteOptionDetail(structure) {
+  const base = buildScenarioLabel(structure);
+  const rows = structure.component_allocations || [];
+  if (!rows.length) return base;
+  const principal = rows.find((r) => !r.component || r.component === "principal_production");
+  const routedLegs = rows.filter((r) => r.component && r.component !== "principal_production");
+  if (!routedLegs.length) return base;
+  const principalAmt = compactAmount(principal?.allocated_usd);
+  const legAmts = routedLegs
+    .map((r) => compactAmount(r.allocated_usd))
+    .filter(Boolean);
+  const amountSuffix = [principalAmt, ...legAmts].filter(Boolean).join(" · ");
+  return amountSuffix ? `${base} (${amountSuffix})` : base;
+}

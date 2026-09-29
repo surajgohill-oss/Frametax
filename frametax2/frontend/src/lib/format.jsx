@@ -445,7 +445,7 @@ export function compactScenarioIdentity(structure) {
 // (lib/scenarioLabel.js — independently unit-testable with plain node,
 // same reason lib/incentiveRate.js is separate — see that file's own
 // header comment) and is re-exported here for existing callers.
-export { buildScenarioLabel } from "./scenarioLabel.js";
+export { buildScenarioLabel, buildRouteOptionDetail } from "./scenarioLabel.js";
 
 // Real AccountQualification.state values -> plain-language label + tier.
 export function accountStateLabel(state) {

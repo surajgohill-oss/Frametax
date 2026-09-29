@@ -304,3 +304,127 @@ export function cardStatus(structure, cardIndex) {
   if (structure.__isProducerOptimizer) return "OPTIMIZED";
   return "LEADING";
 }
+
+// GW-OI-002/003: Overview's four/six "Featured" cards were the ONLY
+// optimizer-universe presentation — a real producer had no way to see that
+// e.g. Little Utopia has 171 executable optimizer scenarios (66
+// Recommended, 105 Evaluated Alternatives) and 25 real Official
+// Co-production opportunities still needing facts, or that
+// OFFICIAL_COPRODUCTION/COMBINED_COPRO_HYBRID_STACK/
+// MULTI_PRINCIPAL_MULTILATERAL are real, defined families genuinely at
+// zero for this production (never fabricated, never silently omitted).
+// Sources EXCLUSIVELY existing served aggregate fields
+// (optimizer_scenarios_by_family/_by_tier, the recommended/evaluated/
+// needs-more-facts totals, top_by_structural_family for a real
+// representative) — no new economics, no re-derivation, no recomputed
+// counts; this is a pure presentation adapter over data the backend
+// already serves.
+export const OPTIMIZER_FAMILIES = [
+  "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
+];
+export const PRACTICALITY_TIERS = ["PRACTICAL_HYBRID", "FORMAL_COPRODUCTION", "ADVANCED_MULTI_JURISDICTION"];
+
+export function buildOptimizerCategorySummary(allocated) {
+  if (!allocated) return null;
+  const byFamily = allocated.optimizer_scenarios_by_family || {};
+  const byTier = allocated.optimizer_scenarios_by_tier || {};
+  const topByFamily = allocated.top_by_structural_family || {};
+  const families = OPTIMIZER_FAMILIES.map((key) => ({
+    key,
+    executableCount: byFamily[key] ?? 0,
+    // top_by_structural_family[key] is the backend's own real ranked
+    // representative list for this family (never re-ranked here) — the
+    // first entry is the single best real representative, or null when
+    // the family is genuinely empty for this production.
+    representative: (topByFamily[key] || [])[0] || null,
+  }));
+  const tiers = PRACTICALITY_TIERS.map((key) => ({ key, executableCount: byTier[key] ?? 0 }));
+  return {
+    families,
+    tiers,
+    executableTotal: allocated.optimizer_executable_total ?? 0,
+    recommendedTotal: allocated.recommended_optimizer_options_total ?? 0,
+    evaluatedTotal: allocated.evaluated_optimizer_alternatives_total ?? 0,
+    needsMoreFactsTotal: allocated.optimizer_opportunities_requiring_facts_total ?? 0,
+  };
+}
+
+// Single Jurisdiction mode's own category picture — far simpler (no
+// family/tier axes; every winner is by construction the single best
+// executable candidate for its own jurisdiction) but the same principle:
+// the real winner count/uniqueness, sourced from the existing served
+// best_per_jurisdiction projection, never re-derived from the bounded
+// structures[] page.
+// GW-OI-005: exact-NPC ties are not automatically the same economic
+// outcome. A same-NPC group of routes must be classified, never blindly
+// collapsed on NPC alone (a materially different QPE/incentive/status pair
+// sharing the same final NPC is a coincidence, not a duplicate) and never
+// left as an undifferentiated wall of visually-identical rows either (a
+// group that genuinely shares every economic figure is presentation
+// noise, not N different producer decisions). Sources only the structure's
+// own already-served fields (qpeOf's existing canonical precedence,
+// selected_incentive_usd, npc_with_adjustments_usd, recommendation_status,
+// candidate_status) — never a new economic derivation, never touches
+// economic_identity itself.
+function economicSignature(structure) {
+  return [
+    structure.npc_with_adjustments_usd ?? "",
+    qpeOf(structure),
+    structure.selected_incentive_usd ?? "",
+    structure.recommendation_status ?? "",
+    structure.candidate_status ?? "",
+  ].join("|");
+}
+
+export function classifyRouteTies(structures) {
+  const byNpc = new Map();
+  for (const s of structures || []) {
+    const npc = s.npc_with_adjustments_usd;
+    if (npc == null) continue;
+    if (!byNpc.has(npc)) byNpc.set(npc, []);
+    byNpc.get(npc).push(s);
+  }
+  const groups = [];
+  for (const [npc, members] of byNpc) {
+    if (members.length < 2) continue; // not a tie at all
+    const bySignature = new Map();
+    for (const s of members) {
+      const sig = economicSignature(s);
+      if (!bySignature.has(sig)) bySignature.set(sig, []);
+      bySignature.get(sig).push(s);
+    }
+    const signatureGroups = [...bySignature.values()];
+    // A stable, deterministic representative/order for compact surfaces —
+    // never structure_id or enumeration order: economic_identity is the
+    // one field guaranteed both present and stable per real distinct route.
+    for (const sg of signatureGroups) sg.sort((a, b) => String(a.economic_identity || "").localeCompare(String(b.economic_identity || "")));
+    if (signatureGroups.length === 1) {
+      groups.push({ type: "EQUIVALENT_ROUTE_VARIANTS", npc, members: signatureGroups[0], representative: signatureGroups[0][0] });
+    } else {
+      groups.push({
+        type: "NPC_ONLY_TIE",
+        npc,
+        members,
+        // Each distinct real economic outcome sharing this NPC, in the
+        // same stable order — an NPC-only tie never collapses these. Each
+        // variant carries its OWN full member list (a variant can itself
+        // contain more than one economically-identical route), so a
+        // consumer collapsing equivalent variants within an NPC tie has
+        // every real structure_id to mark, never just the representative.
+        variants: signatureGroups.map((sg) => ({ representative: sg[0], members: sg, equivalentCount: sg.length })),
+      });
+    }
+  }
+  return groups;
+}
+
+export function buildSingleJurisdictionCategorySummary(allocated) {
+  if (!allocated) return null;
+  const winners = Object.values(allocated.best_per_jurisdiction || {}).filter(Boolean);
+  const stackedProgramCount = (allocated.top_by_structural_family?.STACKED_PROGRAMS || []).length;
+  return {
+    winnerCount: winners.length,
+    uniqueJurisdictionCount: new Set(winners.map((w) => w.primary_jurisdiction)).size,
+    stackedProgramCount,
+  };
+}

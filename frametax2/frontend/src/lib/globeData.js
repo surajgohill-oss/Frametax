@@ -237,18 +237,40 @@ export const OPTIMIZER_STATUS_LABEL = Object.fromEntries(
 // `classification` values (structural_classification.py) mapped to the
 // exact producer-facing names the controlling product contract specifies.
 // This is a STRUCTURAL-FAMILY label — orthogonal to and never a substitute
-// for recommendation status (gold/jade/silver/amber above). Every one of
-// the four acceptance productions' real optimizer_scenarios is currently
-// 100% HYBRID_ANCHOR_COMPONENT (confirmed live, 2026-09-25) — the other
-// three are real, defined families with zero live instances today, not
-// unreachable dead code; a future production with a real bilateral treaty
-// match would populate OFFICIAL_COPRODUCTION/COMBINED_COPRO_HYBRID_STACK/
-// MULTI_PRINCIPAL_MULTILATERAL through this identical map.
+// for recommendation status (gold/jade/silver/amber above) OR for
+// practicality tier (PRACTICALITY_TIER_LABEL below — a separate axis).
+// GW-OI-002: HYBRID_ANCHOR_COMPONENT previously mapped to "Practical
+// Hybrid", which reads as a practicality-tier claim ("Practical") even
+// though structural family and tier are independent — confirmed live, a
+// real 3-jurisdiction ADVANCED_MULTI_JURISDICTION-tier scenario displayed
+// both "Advanced · 3 jurisdictions" (headline, real tier) and "Hybrid ·
+// Practical Hybrid" (subtitle, family) side by side, self-contradicting.
+// Renamed to a tier-neutral family name; the real practicality_tier is
+// now always shown alongside it (see PRACTICALITY_TIER_LABEL/callers).
+// Every one of the four acceptance productions' real optimizer_scenarios
+// is currently 100% HYBRID_ANCHOR_COMPONENT (confirmed live, 2026-09-25)
+// — the other three are real, defined families with zero live instances
+// today, not unreachable dead code; a future production with a real
+// bilateral treaty match would populate OFFICIAL_COPRODUCTION/
+// COMBINED_COPRO_HYBRID_STACK/MULTI_PRINCIPAL_MULTILATERAL through this
+// identical map.
 export const OPTIMIZER_FAMILY_LABEL = {
-  HYBRID_ANCHOR_COMPONENT: "Practical Hybrid",
+  HYBRID_ANCHOR_COMPONENT: "Hybrid Anchor + Component",
   OFFICIAL_COPRODUCTION: "Official Co-production",
   COMBINED_COPRO_HYBRID_STACK: "Combined/Advanced Structure",
   MULTI_PRINCIPAL_MULTILATERAL: "Multilateral",
+};
+
+// GW-OI-002: practicality tier (structure.practicality_tier) is a SECOND,
+// independent axis from structural family above — never conflated. Every
+// optimizer-classified structure carries one of these three real backend
+// values; callers display family and tier together (e.g. "Hybrid Anchor +
+// Component · Advanced Multi-Jurisdiction"), never family alone standing
+// in for tier.
+export const PRACTICALITY_TIER_LABEL = {
+  PRACTICAL_HYBRID: "Practical Hybrid",
+  FORMAL_COPRODUCTION: "Formal Co-production",
+  ADVANCED_MULTI_JURISDICTION: "Advanced Multi-Jurisdiction",
 };
 
 // Untouched landmass — jurisdictions this production has no opinion about.

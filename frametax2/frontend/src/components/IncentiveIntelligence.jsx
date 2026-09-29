@@ -283,7 +283,17 @@ export default function IncentiveIntelligence({ allocated, onSelect, projectId, 
 
   return (
     <section className="ovx-sec ii-section">
-      <div className="oh"><b>Top Structures</b><span className="n">{options.length}</span></div>
+      {/* GW-OI-003: renamed from "Top Structures" — this panel is always
+          exactly Anchor + up to 3 alternatives, a compact FEATURED working
+          set, never the complete optimizer/jurisdiction universe. The
+          honest complete category/status picture lives in
+          OptimizerCategorySummary, rendered alongside this panel on
+          Overview. */}
+      <div className="oh">
+        <b>Featured Structures</b>
+        <span className="n">{options.length}</span>
+        <span className="ii-featured-note">Featured — not the complete optimizer universe</span>
+      </div>
       {options.length === 0 ? (
         <p className="empty-state">No priced production structures available yet for this production.</p>
       ) : (

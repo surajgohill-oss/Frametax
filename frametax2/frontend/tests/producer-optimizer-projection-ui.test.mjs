@@ -186,6 +186,17 @@ test("Workspace, Overview, and Full Globe are wired to the canonical, COMPLETE o
   // (Advanced) rows are NEVER hidden"). At the UI level: the section render
   // must read optimizerProj's arrays directly, with no jurisdiction-count or
   // practicality_tier filter anywhere in this file.
+  // GW-OI-002 (2026-09-29): family and tier are independent axes and must
+  // both be shown per the current product contract — practicality_tier is
+  // now legitimately read for DISPLAY (a PRACTICALITY_TIER_LABEL lookup
+  // alongside the family label on each row), which is a different thing
+  // from the original defect this test protects against: SECTIONING/
+  // FILTERING the rendered set by tier (OPTIMIZER_SECTIONS must stay
+  // status-only, and no row may be included/excluded based on tier).
   assert.match(globeSource, /optimizerProj\?\.\[key\]/, "sections must read the complete optimizerProj arrays directly");
-  assert.doesNotMatch(globeSource, /practicality_tier/, "ProjectGlobe.jsx must never filter/section by practicality_tier again — that was the threshold-as-family conflation this pass fixed");
+  const sectionsBlockMatch = globeSource.match(/const OPTIMIZER_SECTIONS[\s\S]*?\];/);
+  assert.ok(sectionsBlockMatch, "OPTIMIZER_SECTIONS constant must exist");
+  assert.doesNotMatch(sectionsBlockMatch[0], /practicality_tier/, "OPTIMIZER_SECTIONS must remain keyed by recommendation status only, never re-conflated with tier");
+  assert.doesNotMatch(globeSource, /\.filter\([^)]*practicality_tier/, "ProjectGlobe.jsx must never FILTER by practicality_tier — display only");
+  assert.match(globeSource, /PRACTICALITY_TIER_LABEL\[s\.practicality_tier\]/, "tier must be shown as its own independent display field alongside family, never a filter/section key");
 });

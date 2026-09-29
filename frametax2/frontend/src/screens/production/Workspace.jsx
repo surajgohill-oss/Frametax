@@ -4,12 +4,12 @@ import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, compactScenarioIdentity, buildScenarioLabel, hasAdministrativeAllocationRisk } from "../../lib/format";
+import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDetail, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
-import { isBaselineStructure, qpeOf } from "../../lib/productionOptions";
+import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
@@ -101,7 +101,14 @@ const OPTIMIZER_CLASSIFICATIONS = new Set([
 // unchanged.
 function scenarioOptionLabel(structure) {
   if (OPTIMIZER_CLASSIFICATIONS.has(structure.classification)) {
-    return buildScenarioLabel(structure);
+    // GW-OI-004: the dropdown specifically (never the card headline, which
+    // keeps buildScenarioLabel's existing compact form) also discloses the
+    // real practicality tier and each leg's allocated amount — hundreds of
+    // routes previously read as indistinguishable permutations with no way
+    // to see why each additional jurisdiction/component is present.
+    const tier = PRACTICALITY_TIER_LABEL[structure.practicality_tier];
+    const detail = buildRouteOptionDetail(structure);
+    return tier && structure.practicality_tier !== "ADVANCED_MULTI_JURISDICTION" ? `${tier} · ${detail}` : detail;
   }
   const { flags, name, programLabel } = compactScenarioIdentity(structure);
   const label = flags ? `${flags} ${name}` : name;
@@ -202,7 +209,12 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // for the recommendation-status badge above. Only ever present on an
   // Optimizer-family structure (OPTIMIZER_FAMILY_LABEL has no Single
   // Jurisdiction entries), so this renders nothing extra for those cards.
+  // GW-OI-002: practicality tier is a SEPARATE real backend field
+  // (practicality_tier) — always shown alongside family, never implied by
+  // it (family "Hybrid Anchor + Component" says nothing about whether this
+  // specific scenario is Practical/Formal/Advanced tier).
   const familyLabel = OPTIMIZER_FAMILY_LABEL[structure.classification] ?? null;
+  const tierLabel = PRACTICALITY_TIER_LABEL[structure.practicality_tier] ?? null;
 
   // Compact card identity (flag + full jurisdiction name + "Up to X%") —
   // the approved Workspace format. See compactScenarioIdentity in
@@ -251,7 +263,11 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
       <div className="wsx-lh">
         <div className="wsx-lh-id">
           <div className="wsx-nm">{flags ? `${flags} ${name}` : name}</div>
-          <div className="wsx-lb">{familyLabel ? [subtitle, familyLabel].filter(Boolean).join(" · ") : subtitle}</div>
+          {/* GW-OI-002: an Optimizer-classified structure shows its real
+              family and tier (two independent axes) instead of the
+              generic single-jurisdiction subtitle — never "Practical
+              Hybrid" standing in for a different real tier. */}
+          <div className="wsx-lb">{familyLabel ? [familyLabel, tierLabel].filter(Boolean).join(" · ") : subtitle}</div>
         </div>
         <span className="wsx-badge">{badge}</span>
       </div>
@@ -472,6 +488,38 @@ export default function Workspace() {
     [allocated, workspaceMode, slot6Override],
   );
 
+  // GW-OI-005: the Evaluated Alternatives dropdown group is where hundreds
+  // of routes sharing an exact-NPC coincidence live — classifyRouteTies
+  // (productionOptions.js) groups them honestly: a group that shares every
+  // real economic figure (not just NPC) collapses to one representative
+  // option + "N equivalent route variants" rather than N visually
+  // indistinguishable rows; a group that merely ties on NPC while differing
+  // in QPE/incentive/status stays fully separate, each labeled "NPC tie" —
+  // never silently merged. Every real route/economic_identity remains
+  // selectable; nothing is deleted from the underlying list.
+  const dropdownEvaluatedAlternativesGrouped = useMemo(() => {
+    const list = dropdownEvaluatedAlternatives || [];
+    const tieGroups = classifyRouteTies(list);
+    const collapsedIds = new Set();
+    const entries = [];
+    for (const g of tieGroups) {
+      if (g.type === "EQUIVALENT_ROUTE_VARIANTS") {
+        for (const m of g.members) collapsedIds.add(m.structure_id);
+        entries.push({ structure: g.representative, suffix: g.members.length > 1 ? ` (+${g.members.length - 1} equivalent route variant${g.members.length - 1 === 1 ? "" : "s"})` : "" });
+      } else {
+        for (const v of g.variants) {
+          for (const m of v.members) collapsedIds.add(m.structure_id);
+          const equivSuffix = v.equivalentCount > 1 ? ` +${v.equivalentCount - 1} equivalent` : "";
+          entries.push({ structure: v.representative, suffix: ` (NPC tie${equivSuffix})` });
+        }
+      }
+    }
+    for (const s of list) {
+      if (!collapsedIds.has(s.structure_id)) entries.push({ structure: s, suffix: "" });
+    }
+    return entries;
+  }, [dropdownEvaluatedAlternatives]);
+
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
@@ -671,15 +719,31 @@ export default function Workspace() {
                 whiteSpace:"nowrap") so it lays out on its own row and can
                 wrap instead of ever sharing a line with Lanes/Map/Split or
                 Other Scenarios. */}
+            {/* GW-OI-003: "Showing N of M" — the six-card rack is a compact
+                FEATURED working set, never the complete optimizer/
+                jurisdiction universe; this makes that explicit for both
+                modes (previously Single Jurisdiction mode showed no count
+                at all, and Optimizer mode's own count line never stated
+                how many of the total were actually visible in the rack). */}
             {workspaceMode === MODE_OPTIMIZER && allocated?.optimizer_executable_total != null && (() => {
               const executableTotal = allocated.optimizer_executable_total;
               const recommendedTotal = allocated.recommended_optimizer_options_total ?? 0;
               const evaluatedTotal = allocated.evaluated_optimizer_alternatives_total ?? 0;
               const opportunitiesTotal = allocated.optimizer_opportunities_requiring_facts_total ?? 0;
+              const shownCount = cols.length;
               return (
                 <span className="wsx-scenario-count">
-                  {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} recommended · {evaluatedTotal} alternative{evaluatedTotal === 1 ? "" : "s"}
+                  Showing {shownCount} of {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} recommended · {evaluatedTotal} alternative{evaluatedTotal === 1 ? "" : "s"}
                   {opportunitiesTotal > 0 ? ` · ${opportunitiesTotal} need more facts` : ""}
+                </span>
+              );
+            })()}
+            {workspaceMode === MODE_NORMAL && allocated?.best_per_jurisdiction && (() => {
+              const winnerTotal = Object.values(allocated.best_per_jurisdiction).filter(Boolean).length;
+              const shownCount = cols.length;
+              return (
+                <span className="wsx-scenario-count">
+                  Showing {shownCount} of {winnerTotal} jurisdiction winner{winnerTotal === 1 ? "" : "s"}
                 </span>
               );
             })()}
@@ -722,10 +786,10 @@ export default function Workspace() {
                       ))}
                     </optgroup>
                   )}
-                  {workspaceMode === MODE_OPTIMIZER && dropdownEvaluatedAlternatives?.length > 0 && (
+                  {workspaceMode === MODE_OPTIMIZER && dropdownEvaluatedAlternativesGrouped.length > 0 && (
                     <optgroup label="Evaluated Alternatives">
-                      {dropdownEvaluatedAlternatives.map((s) => (
-                        <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}</option>
+                      {dropdownEvaluatedAlternativesGrouped.map(({ structure: s, suffix }) => (
+                        <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}{suffix}</option>
                       ))}
                     </optgroup>
                   )}

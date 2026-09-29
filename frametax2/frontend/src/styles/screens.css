@@ -917,6 +917,24 @@
 .ovx-sheetrow .mono { color: var(--text-primary); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .ovx-sheetrow b { color: var(--text-primary); font-weight: 600; }
 .ovx-sheetrow.click { cursor: pointer; }
+
+/* GW-OI-002/003: Overview's honest category/status coverage panel —
+   reuses .ovx-sec/.oh (section card + header) unchanged; only the row
+   vocabulary below is new. */
+.ii-category-summary .cat-group { margin-top: 9px; }
+.ii-category-summary .cat-group:first-of-type { margin-top: 3px; }
+.ii-category-summary .cat-group-title { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 4px; }
+.ii-category-summary .cat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 4px 0; border-top: 0.5px dashed var(--hairline); font-size: 12.5px; color: var(--text-secondary); }
+.ii-category-summary .cat-group .cat-row:first-of-type { border-top: none; }
+.ii-category-summary .cat-row-rep { flex-direction: column; align-items: stretch; gap: 2px; }
+.ii-category-summary .cat-row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ii-category-summary .cat-label { color: var(--text-secondary); }
+.ii-category-summary .cat-count { color: var(--text-primary); font-size: 12px; }
+.ii-category-summary .cat-count-zero { color: var(--text-tertiary); }
+.ii-category-summary .cat-rep-line { font-size: 11.5px; color: var(--text-tertiary); padding-left: 2px; }
+.ii-category-summary .cat-rep-npc { color: var(--text-secondary); }
+.ii-category-summary .cat-empty { color: var(--text-tertiary); font-style: italic; }
+.ii-featured-note { font-size: 10.5px; color: var(--text-tertiary); font-style: italic; }
 .ovx-sheetrow.click:hover { color: var(--text-primary); }
 
 .ovx-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }

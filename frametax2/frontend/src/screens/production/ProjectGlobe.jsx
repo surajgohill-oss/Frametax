@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL } from "../../lib/globeData";
+import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -363,11 +363,21 @@ export default function ProjectGlobe() {
                 family — real classification, shown per-row via
                 OPTIMIZER_FAMILY_LABEL, never as the section heading (see
                 OPTIMIZER_SECTIONS above) and never a substitute for the
-                section's own recommendation-status grouping. */}
-            {globeMode === MODE_OPTIMIZER && OPTIMIZER_FAMILY_LABEL[s.classification] && (
-              <>{OPTIMIZER_FAMILY_LABEL[s.classification]} · </>
+                section's own recommendation-status grouping.
+                GW-OI-002: practicality tier is a second, independent real
+                backend field (practicality_tier) — shown alongside family,
+                never implied by it. Replaces the generic structure_type
+                token here (e.g. "hybrid"), which named the same structural
+                family a second time in different words and never
+                disclosed tier at all. Single Jurisdiction mode (s below is
+                a best_per_jurisdiction winner, no classification/tier)
+                keeps its existing structure_type token unchanged. */}
+            {globeMode === MODE_OPTIMIZER && OPTIMIZER_FAMILY_LABEL[s.classification] ? (
+              <>{OPTIMIZER_FAMILY_LABEL[s.classification]}{PRACTICALITY_TIER_LABEL[s.practicality_tier] ? ` · ${PRACTICALITY_TIER_LABEL[s.practicality_tier]}` : ""} · </>
+            ) : (
+              <>{humanizeToken(s.structure_type)} · </>
             )}
-            {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
+            {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
             {globeMode === MODE_OPTIMIZER && s.savings_vs_current_usd != null && (
               <> · {s.recommendation_status === "COSTS_MORE" ? "costs " : "saves "}<Money value={Math.abs(s.savings_vs_current_usd)} bare /></>
             )}

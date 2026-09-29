@@ -11,6 +11,7 @@ import { isBaselineStructure, rankOrNpcOrder } from "../../lib/productionOptions
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
+import OptimizerCategorySummary from "../../components/OptimizerCategorySummary";
 import FXStrip from "../../components/FXStrip";
 // FXStrip: an earlier batch removed the full-width strip from this
 // position because it demoted the Globe and broke the approved
@@ -235,6 +236,17 @@ export default function Overview() {
             onPreferenceSaved={refetch}
             facts={facts}
             grossBudgetUsd={data?.production?.gross_budget_usd ?? null}
+          />
+
+          {/* GW-OI-003: honest category/status coverage, mode-aware with
+              the embedded Globe's own Single Jurisdiction / Optimizer
+              toggle above — the exact gap the governing audit found
+              ("switching the embedded Globe... does not make Top
+              Structures mode-aware or category-complete"). */}
+          <OptimizerCategorySummary
+            allocated={allocated}
+            mode={globeMode}
+            onOpenComplete={() => navigate(`/projects/${projectId}/workspace`)}
           />
         </div>
 
