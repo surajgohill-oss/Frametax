@@ -157,15 +157,18 @@ test("Lips Like Sugar fixture: a structure routed through its own anchor (Califo
   assert.equal(pathway.points[0].id, "US-CA");
 });
 
-// 7. Selecting a second scenario changes renderer props.
-test("selecting a second, materially different structure changes buildGlobeView's actual renderer props (points/arcs/polygonColors), not just its signature", () => {
+// 7. Selecting a second scenario changes its emphasized route without
+// hiding the complete categorized universe behind it.
+test("selecting a second, materially different structure changes the emphasized route while complete-universe points/polygons remain visible", () => {
   const hybridA = structure({ structure_id: "x-a", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "CA-MB", participants: ["CA-MB", "CA-NL"] });
   const hybridB = structure({ structure_id: "x-b", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid", primary_jurisdiction: "GR", participants: ["GR", "RO"] });
   const allocated = allocatedOf({ structures: [hybridA, hybridB] });
   const viewA = buildGlobeView(allocated, new Map(), { mode: MODE_OPTIMIZER, leadingStructureId: "x-a" });
   const viewB = buildGlobeView(allocated, new Map(), { mode: MODE_OPTIMIZER, leadingStructureId: "x-b" });
-  assert.notDeepEqual(viewA.points.map((p) => p.id), viewB.points.map((p) => p.id));
-  assert.notDeepEqual([...viewA.polygonColors.keys()], [...viewB.polygonColors.keys()]);
+  assert.deepEqual(viewA.points.map((p) => p.id).sort(), viewB.points.map((p) => p.id).sort());
+  assert.deepEqual([...viewA.polygonColors.keys()].sort(), [...viewB.polygonColors.keys()].sort());
+  assert.notDeepEqual(viewA.arcs.map((a) => `${a.startCode}->${a.endCode}`), viewB.arcs.map((a) => `${a.startCode}->${a.endCode}`));
+  assert.notEqual(viewA.sceneSignature.structureId, viewB.sceneSignature.structureId);
 });
 
 // 8. Full-page and embedded paths match.

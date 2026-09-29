@@ -45,6 +45,7 @@ import path from "node:path";
 
 import {
   buildOptimizerPathway,
+  buildGlobeView,
   optimizerStructureStatus,
   buildCandidateDetail,
   OPTIMIZER_SEMANTIC,
@@ -79,7 +80,7 @@ function candidate(id, npc = 700_000, overrides = {}) {
   };
 }
 
-function allocatedOf({ recommended = [], evaluated = [], opportunities = [] }) {
+function allocatedOf({ recommended = [], evaluated = [], opportunities = [], rejectionUniverse = null }) {
   return {
     structures: [],
     ranking: [],
@@ -91,8 +92,54 @@ function allocatedOf({ recommended = [], evaluated = [], opportunities = [] }) {
     optimizer_opportunities_requiring_facts: opportunities,
     optimizer_opportunities_requiring_facts_total: opportunities.length,
     optimizer_executable_total: recommended.length + evaluated.length,
+    rejection_universe: rejectionUniverse,
   };
 }
+
+test("optimizerProjection and Globe expose the complete five-category universe without making rejected rows executable", () => {
+  const recommended = [candidate("best", 500_000, { participants: ["GR"], primary_jurisdiction: "GR" })];
+  const evaluated = [candidate("eval", 800_000, {
+    participants: ["IT"], primary_jurisdiction: "IT",
+    recommendation_status: "EVALUATED_ALTERNATIVE", is_recommended: false,
+  })];
+  const opportunities = [{
+    structure_id: "opp", label: "Australia opportunity", candidate_status: "CO_PRO_OPPORTUNITY",
+    participants: ["AU"], primary_jurisdiction: "AU", reason: "Partner facts required",
+  }];
+  const rejectionUniverse = {
+    total_count: 3,
+    by_disposition: { CO_PRO_OPPORTUNITY: 1, RULE_REJECTED: 2 },
+    first_page: { results: [
+      opportunities[0],
+      { structure_id: "rej-1", name: "Georgia rejected", candidate_status: "RULE_REJECTED", participants: ["US-GA"], primary_jurisdiction: "US-GA", reason: "Threshold not met" },
+      { structure_id: "rej-2", name: "New York rejected", candidate_status: "RULE_REJECTED", participants: ["US-NY"], primary_jurisdiction: "US-NY", reason: "Stack prohibited" },
+    ] },
+  };
+  const allocated = allocatedOf({ recommended, evaluated, opportunities, rejectionUniverse });
+  const projection = optimizerProjection(allocated);
+  assert.deepEqual(projection.rejected.map((s) => s.structure_id), ["rej-1", "rej-2"]);
+  assert.equal(projection.rejectedTotal, 2);
+  assert.deepEqual(admissibleForMode(allocated, MODE_OPTIMIZER).map((s) => s.structure_id), ["best", "eval"], "blocked rows must remain non-executable");
+
+  const view = buildGlobeView(allocated, new Map(), { mode: MODE_OPTIMIZER });
+  assert.equal(view.categoryByIso.get("GR"), "gold");
+  assert.equal(view.categoryByIso.get("IT"), "silver");
+  assert.equal(view.categoryByIso.get("AU"), "amber");
+  assert.equal(view.categoryByIso.get("US-GA"), "red");
+  assert.equal(view.categoryByIso.get("US-NY"), "red");
+  assert.ok(view.points.some((p) => p.tier === "red" && p.sourceStructure?.structure_id === "rej-1"));
+  assert.ok(view.points.some((p) => p.tier === "amber" && p.sourceStructure?.structure_id === "opp"));
+});
+
+test("Full Project Globe renders and inspects retained Blocked / Rejected rows with aggregate-count disclosure", () => {
+  const globeSource = readSrc("screens/production/ProjectGlobe.jsx");
+  const inspectorSource = readSrc("shell/Inspector.jsx");
+  assert.match(globeSource, /Blocked \/ Rejected \(\{optimizerProj\.rejectedTotal\}\)/);
+  assert.match(globeSource, /optimizerProj\.rejected\.map\(\(s\) => renderRejectedChip\(s\)\)/);
+  assert.match(globeSource, /additional candidates are preserved in canonical aggregate counts/);
+  assert.match(globeSource, /openInspector\("optimizer-rejection", buildRejectedDetail\(s\)\)/);
+  assert.match(inspectorSource, /"optimizer-rejection": OptimizerRejectionInspector/);
+});
 
 // 2. Every executable option is reachable exactly once — no overlap between
 // the Full Globe list's own sections and no gap in the Workspace fixed-card

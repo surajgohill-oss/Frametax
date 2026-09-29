@@ -431,11 +431,14 @@ export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
   // examination's own real `reason` string for Excluded jurisdictions (see
   // branch 2 below), so hover can state WHY without a second, invented
   // explanation.
+  const optimizerRank = { gold: 5, jade: 4, silver: 3, amber: 2, red: 1 };
+  const statusRank = mode === MODE_OPTIMIZER ? optimizerRank : STATUS_RANK;
+  const statusHex = mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_HEX : STATUS_HEX;
   const upsert = (iso, status, jurisdictionCode, structure, meta = null) => {
     const cur = byIso.get(iso);
-    if (!cur || STATUS_RANK[status] > STATUS_RANK[cur.status]) {
+    if (!cur || (statusRank[status] ?? 0) > (statusRank[cur.status] ?? 0)) {
       byIso.set(iso, {
-        status, hex: STATUS_HEX[status],
+        status, hex: statusHex[status],
         jurisdictionCodes: cur ? cur.jurisdictionCodes.add(jurisdictionCode) : new Set([jurisdictionCode]),
         best: { structure, code: jurisdictionCode },
         meta,
@@ -452,10 +455,26 @@ export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
   //    into one country verdict. `pool` (not `allocated.structures`) is the
   //    canonical mode-admissible set — see the function comment above.
   for (const s of pool) {
-    const tier = structureTier(s, rankById);
+    const tier = mode === MODE_OPTIMIZER ? optimizerStructureStatus(allocated, s) : structureTier(s, rankById);
     for (const code of s.participants) {
       upsert(globeKey(code), tier, code, s);
     }
+  }
+
+  // Optimizer mode is a complete categorized decision universe, not merely
+  // the executable subset. These two classes remain non-executable; this
+  // only makes their already-served, real jurisdiction identity visible.
+  if (mode === MODE_OPTIMIZER) {
+    const { opportunities, rejected } = optimizerProjection(allocated);
+    for (const s of opportunities) {
+      const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction].filter(Boolean);
+      for (const code of codes) upsert(globeKey(code), "amber", code, s, { reason: s.reason || null });
+    }
+    for (const s of rejected) {
+      const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction].filter(Boolean);
+      for (const code of codes) upsert(globeKey(code), "red", code, s, { reason: s.reason || null });
+    }
+    return byIso;
   }
 
   // 2. Discovery-examined jurisdictions with no participating structure —
@@ -688,6 +707,22 @@ export function buildOpportunityDetail(structure) {
   };
 }
 
+// Bounded rejection rows carry identity and a canonical reason, but no
+// priceable economics. Keep their Inspector contract explicit rather than
+// feeding them through the priced-candidate adapter and displaying zeroes.
+export function buildRejectedDetail(structure) {
+  if (!structure) return null;
+  return {
+    structure_id: structure.structure_id,
+    label: structure.label ?? structure.name ?? null,
+    primary_jurisdiction: structure.primary_jurisdiction ?? null,
+    participants: structure.participants || [],
+    candidate_status: structure.candidate_status ?? null,
+    rejection_reason_class: structure.rejection_reason_class ?? null,
+    reason: structure.reason ?? null,
+  };
+}
+
 // Per-country hover payload — read verbatim from the best (highest-state)
 // structure touching that country. Countries with no participating
 // structure (Excluded, from discovery only) carry state + jurisdiction
@@ -723,7 +758,7 @@ export function buildOpportunityDetail(structure) {
 // `structure.gross_budget_usd ?? productionGross` chain Workspace.jsx's
 // ScenarioCard already uses (see format.jsx-era comment there); never a
 // second, independently-derived figure.
-export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
+export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MODE_NORMAL) {
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
     const { structure, code } = entry.best;
@@ -765,11 +800,11 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
       jurisdictionCode: code,
       jurisdictionName: JURISDICTION_COORDS[code]?.name || code,
       status: entry.status,
-      statusLabel: STATUS_LABEL[entry.status],
+      statusLabel: mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_LABEL[entry.status] : STATUS_LABEL[entry.status],
       // Long form for the hover card ("Co-Production Opportunities"); the
       // legend keeps the compact STATUS_LABEL ("Co-Pro Opportunities").
-      fullStatusLabel: STATUS_FULL_LABEL[entry.status],
-      semanticState: GLOBE_SEMANTIC[entry.status]?.state ?? null,
+      fullStatusLabel: mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_LABEL[entry.status] : STATUS_FULL_LABEL[entry.status],
+      semanticState: mode === MODE_OPTIMIZER ? entry.status : GLOBE_SEMANTIC[entry.status]?.state ?? null,
       hex: entry.hex,
       incentiveUsd: structure?.is_fully_priced ? structure.selected_incentive_usd : null,
       npcUsd: structure?.is_fully_priced ? structure.npc_with_adjustments_usd : null,
@@ -814,7 +849,7 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
         entry.fixtureRelated?.primary ?? structure?.primary_jurisdiction ?? null,
       role: roleFor(structure, code),
       structureId: structure?.structure_id ?? null,
-      structureLabel: structure?.label ?? null,
+      structureLabel: structure?.label ?? structure?.name ?? null,
     });
   }
   return byIso;
@@ -1020,6 +1055,7 @@ export function sceneSignature(mode, structure, points, arcs, polygonColors = nu
   const polygonCodes = polygonColors ? [...polygonColors.keys()].sort() : [];
   return {
     mode,
+    structureId: structure?.structure_id ?? null,
     economicIdentity: structure?.economic_identity ?? null,
     classification: structure?.classification ?? null,
     markerCodes,
@@ -1047,7 +1083,7 @@ export function buildGlobeView(
     points: [], arcs: [], polygonColors: new Map(), selectedIso: null,
     selectedLat: null, selectedLng: null, focusLat: null, focusLng: null, focusDistance: null,
     hoverByIso: new Map(), structuresByCode: new Map(),
-    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0 }, categoryByIso: new Map(),
+    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0, red: 0 }, categoryByIso: new Map(),
     sceneSignature: sceneSignature(mode, null, [], []),
   };
   if (!allocated) return empty;
@@ -1066,7 +1102,7 @@ export function buildGlobeView(
   // Presentation only: nothing here touches the backend response, the
   // optimizer, or any persisted record.
   if (isFixtureActive()) applyFixtureStates(statuses);
-  const hoverByIso = buildCountryHoverData(statuses, grossBudgetUsd);
+  const hoverByIso = buildCountryHoverData(statuses, grossBudgetUsd, mode);
   // Phase 3B Batch 1: the category-diff engine's input — plain iso->status
   // ("gold"/"jade"/"amber"/"silver") map, cheap to derive here since
   // `statuses` already carries it. No animation, no rendering — see
@@ -1098,26 +1134,32 @@ export function buildGlobeView(
   // fixture badge and the regression checks can assert the distribution
   // (notably "exactly one Recommended") against the rendered truth rather than
   // against a hardcoded expectation.
-  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0 };
+  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0, red: 0 };
   for (const [, entry] of statuses) {
     if (stateCounts[entry.status] != null) stateCounts[entry.status] += 1;
   }
 
   if (mode === "optimizer") {
     const pathway = buildOptimizerPathway(allocated, leadingStructureId);
-    // Overlay isolation: ONLY the active structure's jurisdictions are
-    // filled. Everything else falls back to neutral graphite, so the mode
-    // reads as one production structure rather than a second choropleth.
+    // The full categorized universe remains visible as one marker/polygon
+    // per real jurisdiction. The selected structure's exact route is then
+    // overlaid and emphasized without suppressing every other category.
+    const universePoints = buildCountryPoints(statuses, hoverByIso, selectedIso);
+    const selectedCodes = new Set(pathway.points.map((p) => p.id));
+    const points = [
+      ...universePoints.filter((p) => !selectedCodes.has(p.jurisdictionCode || p.id)),
+      ...pathway.points,
+    ];
     return {
-      points: pathway.points, arcs: pathway.arcs,
-      polygonColors: pathway.participantColors, selectedIso,
+      points, arcs: pathway.arcs,
+      polygonColors, selectedIso,
       selectedLat: selectedCoord?.lat ?? null, selectedLng: selectedCoord?.lng ?? null,
       // With no explicit selection, frame the active structure itself.
       focusLat: selectedCoord?.lat ?? pathway.focusLat,
       focusLng: selectedCoord?.lng ?? pathway.focusLng,
       focusDistance: pathway.focusDistance,
       hoverByIso, structuresByCode, stateCounts, categoryByIso,
-      sceneSignature: sceneSignature(mode, pathway.structure, pathway.points, pathway.arcs, pathway.participantColors),
+      sceneSignature: sceneSignature(mode, pathway.structure, points, pathway.arcs, polygonColors),
     };
   }
 
@@ -1199,6 +1241,7 @@ export function buildCountryPoints(statuses, hoverData, selectedIso) {
     points.push({
       lat: coord.lat, lng: coord.lng, id: iso, iso, name: hover?.jurisdictionName || code,
       tier: entry.status, color: entry.hex, selected: iso === selectedIso,
+      sourceStructure: entry.best.structure,
       ...hover,
     });
   }

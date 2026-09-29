@@ -84,11 +84,34 @@ RETENTION_POLICY_NOTE = (
 # thresholds are therefore now used ONLY to ANNOTATE every entry of the complete,
 # never-filtered `optimizer_scenarios` collection (see _annotate_optimizer_scenario
 # below) -- never to drop a row from what is served.
-MIN_PRODUCER_SAVINGS_USD = 100_000.0
-#: Three-or-more-jurisdiction structures carry real additional coordination/legal
-#: overhead (per the controlling product contract) -- a materially higher savings bar
-#: before being flagged "recommended", never a different visibility rule.
-MIN_PRODUCER_SAVINGS_3PLUS_USD = 200_000.0
+#
+# MATERIALITY_RECOMMENDATION_POLICY (2026-09-29): an explicit, internal CineGlobe
+# product decision, not an incentive-program rule or a legal proposition -- a
+# producer's own bar for how much a structure must save before the added
+# coordination/legal complexity of an additional jurisdiction is "worth it," set
+# by product ownership, not sourced from or contingent on any external authority.
+# Replaces the prior flat two-tier rule ($100K for <=2 jurisdictions, a flat $200K
+# for EVERY 3+-jurisdiction structure regardless of how many more there were) with
+# a formula that scales per added jurisdiction:
+#     additional_jurisdictions = max(0, jurisdiction_count - 1)
+#     recommendation_threshold_usd = 100_000 * additional_jurisdictions
+# Recommended when savings_vs_current_usd >= recommendation_threshold_usd (>=, not
+# strictly >, per the policy's own definition -- exactly-at-threshold now
+# qualifies, where the prior rule's strict `>` excluded it). A 1-jurisdiction
+# candidate (no jurisdiction beyond the anchor's own single-jurisdiction baseline)
+# has threshold $0 -- any non-negative savings recommends it, never a $100K bar for
+# zero added complexity. This is a RECOMMENDATION-STATUS policy only: it never
+# removes, suppresses, invalidates, or alters the economics of any structure, and
+# it is applied by the SAME never-filtered annotation pass as the rule it replaces.
+MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD = 100_000.0
+
+
+def materiality_recommendation_threshold_usd(jurisdiction_count: int | None) -> float:
+    """The one canonical implementation of the materiality product policy --
+    never re-derived inline, so the formula can never silently diverge between
+    the annotation pass and a test/consumer that wants to reproduce it."""
+    additional_jurisdictions = max(0, (jurisdiction_count or 0) - 1)
+    return MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD * additional_jurisdictions
 
 REC_STATUS_RECOMMENDED = "RECOMMENDED"
 REC_STATUS_EVALUATED_ALTERNATIVE = "EVALUATED_ALTERNATIVE"
@@ -147,7 +170,7 @@ def _annotate_optimizer_scenario(entry: dict, baseline_npc: float | None) -> dic
     CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md), so this never introduces a
     second, potentially-disagreeing jurisdiction-count definition."""
     jurisdiction_count = entry.get("participant_count") or len(set(entry.get("participants") or []))
-    threshold = MIN_PRODUCER_SAVINGS_USD if jurisdiction_count <= 2 else MIN_PRODUCER_SAVINGS_3PLUS_USD
+    threshold = materiality_recommendation_threshold_usd(jurisdiction_count)
     candidate_npc = entry.get("npc_with_adjustments_usd")
     savings = (
         float(baseline_npc) - float(candidate_npc)
@@ -155,8 +178,8 @@ def _annotate_optimizer_scenario(entry: dict, baseline_npc: float | None) -> dic
     )
     if savings is None:
         status, reason = REC_STATUS_BASELINE_UNRESOLVED, "MISSING_BASELINE_OR_CANDIDATE_NPC"
-    elif savings > threshold:
-        status, reason = REC_STATUS_RECOMMENDED, "SAVINGS_ABOVE_THRESHOLD"
+    elif savings >= threshold:
+        status, reason = REC_STATUS_RECOMMENDED, "SAVINGS_MEETS_OR_EXCEEDS_THRESHOLD"
     elif savings < 0:
         status, reason = REC_STATUS_COSTS_MORE, "NEGATIVE_SAVINGS"
     elif savings == 0:

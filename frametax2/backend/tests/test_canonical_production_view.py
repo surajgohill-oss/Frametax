@@ -23,8 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
 from app.services.canonical_production_view import (
-    MIN_PRODUCER_SAVINGS_3PLUS_USD,
-    MIN_PRODUCER_SAVINGS_USD,
+    materiality_recommendation_threshold_usd,
     REC_STATUS_BASELINE_UNRESOLVED,
     REC_STATUS_COSTS_MORE,
     REC_STATUS_EVALUATED_ALTERNATIVE,
@@ -70,38 +69,100 @@ def _projection_candidate(identifier: str, *, npc: float, participants=None, cla
 # made producer_optimizer_options_total 0 for all four real productions) is replaced by
 # _annotate_optimizer_scenario, which annotates ONE entry at a time and never removes it from
 # whatever collection the caller builds. These tests exercise the threshold/status contract
-# directly ($100K for <=2 jurisdictions, $200K for 3+, COSTS_MORE/NEUTRAL/EVALUATED_ALTERNATIVE/
-# BASELINE_UNRESOLVED for everything that isn't RECOMMENDED) with every input still visible.
+# directly with every input still visible.
+#
+# MATERIALITY_RECOMMENDATION_POLICY (2026-09-29): the prior flat two-tier rule ($100K for
+# <=2 jurisdictions, a flat $200K for EVERY 3+-jurisdiction structure regardless of how many
+# more there were) is replaced by a formula that scales per added jurisdiction:
+#     additional_jurisdictions = max(0, jurisdiction_count - 1)
+#     recommendation_threshold_usd = 100_000 * additional_jurisdictions
+# Recommended when savings_vs_current_usd >= threshold (>=, not strictly >, per the policy's
+# own definition -- exactly-at-threshold now qualifies). An internal CineGlobe product
+# decision, not an incentive-program rule; it affects recommendation status only and never
+# removes, suppresses, or alters the economics of any structure -- see
+# materiality_recommendation_threshold_usd's own docstring.
 
-def test_annotate_optimizer_scenario_two_jurisdiction_threshold_is_strict():
-    assert MIN_PRODUCER_SAVINGS_USD == 100_000.0
+def test_materiality_recommendation_threshold_usd_formula_for_1_2_3_4_jurisdictions():
+    assert materiality_recommendation_threshold_usd(1) == 0.0
+    assert materiality_recommendation_threshold_usd(2) == 100_000.0
+    assert materiality_recommendation_threshold_usd(3) == 200_000.0
+    assert materiality_recommendation_threshold_usd(4) == 300_000.0
+
+
+def test_materiality_recommendation_threshold_usd_never_goes_negative_for_a_degenerate_count():
+    assert materiality_recommendation_threshold_usd(0) == 0.0
+    assert materiality_recommendation_threshold_usd(None) == 0.0
+
+
+def test_annotate_optimizer_scenario_two_jurisdiction_exact_boundary():
     baseline_npc = 1_000_000.0
-    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=900_000.0), baseline_npc)
-    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=899_999.99), baseline_npc)
-    assert exact["savings_vs_current_usd"] == pytest.approx(100_000.0)
-    assert exact["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
-    assert exact["is_recommended"] is False
+    threshold = materiality_recommendation_threshold_usd(2)
+    assert threshold == 100_000.0
+    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=900_000.01), baseline_npc)   # savings $99,999.99
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=900_000.00), baseline_npc)   # savings $100,000.00
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=899_999.99), baseline_npc)   # savings $100,000.01
+    assert below["savings_vs_current_usd"] == pytest.approx(99_999.99)
+    assert below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert below["is_recommended"] is False
+    # >= means the exact boundary now qualifies as RECOMMENDED (the prior strict `>` rule excluded it).
+    assert exact["savings_vs_current_usd"] == pytest.approx(100_000.00)
+    assert exact["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert exact["is_recommended"] is True
     assert above["savings_vs_current_usd"] == pytest.approx(100_000.01)
     assert above["recommendation_status"] == REC_STATUS_RECOMMENDED
     assert above["is_recommended"] is True
     assert above["recommendation_threshold_usd"] == 100_000.0
 
 
-def test_annotate_optimizer_scenario_three_plus_jurisdiction_uses_the_200k_threshold():
-    assert MIN_PRODUCER_SAVINGS_3PLUS_USD == 200_000.0
+def test_annotate_optimizer_scenario_three_jurisdiction_exact_boundary():
     baseline_npc = 1_000_000.0
-    three_below = _annotate_optimizer_scenario(
-        _projection_candidate("three-below", npc=850_000.0, participants=["GR", "CA-MB", "IT"]), baseline_npc,
-    )
-    three_above = _annotate_optimizer_scenario(
-        _projection_candidate("three-above", npc=799_999.0, participants=["GR", "CA-MB", "IT"]), baseline_npc,
-    )
-    assert three_below["jurisdiction_count"] == 3
-    assert three_below["savings_vs_current_usd"] == pytest.approx(150_000.0)
-    assert three_below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
-    assert three_above["savings_vs_current_usd"] == pytest.approx(200_001.0)
-    assert three_above["recommendation_status"] == REC_STATUS_RECOMMENDED
-    assert three_above["recommendation_threshold_usd"] == 200_000.0
+    threshold = materiality_recommendation_threshold_usd(3)
+    assert threshold == 200_000.0
+    participants = ["GR", "CA-MB", "IT"]
+    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=800_000.01, participants=participants), baseline_npc)
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=800_000.00, participants=participants), baseline_npc)
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=799_999.99, participants=participants), baseline_npc)
+    assert below["jurisdiction_count"] == 3
+    assert below["savings_vs_current_usd"] == pytest.approx(199_999.99)
+    assert below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert exact["savings_vs_current_usd"] == pytest.approx(200_000.00)
+    assert exact["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert above["savings_vs_current_usd"] == pytest.approx(200_000.01)
+    assert above["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert above["recommendation_threshold_usd"] == 200_000.0
+
+
+def test_annotate_optimizer_scenario_four_jurisdiction_exact_boundary():
+    baseline_npc = 1_000_000.0
+    threshold = materiality_recommendation_threshold_usd(4)
+    assert threshold == 300_000.0
+    participants = ["GR", "CA-MB", "IT", "US-NY"]
+    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=700_000.01, participants=participants), baseline_npc)
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=700_000.00, participants=participants), baseline_npc)
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=699_999.99, participants=participants), baseline_npc)
+    assert below["jurisdiction_count"] == 4
+    assert below["savings_vs_current_usd"] == pytest.approx(299_999.99)
+    assert below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert exact["savings_vs_current_usd"] == pytest.approx(300_000.00)
+    assert exact["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert above["savings_vs_current_usd"] == pytest.approx(300_000.01)
+    assert above["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert above["recommendation_threshold_usd"] == 300_000.0
+
+
+def test_annotate_optimizer_scenario_single_jurisdiction_has_zero_threshold():
+    # No jurisdiction beyond the anchor's own single-jurisdiction baseline -> $0
+    # threshold: any non-negative savings recommends it, never a $100K bar for
+    # zero added complexity.
+    baseline_npc = 1_000_000.0
+    assert materiality_recommendation_threshold_usd(1) == 0.0
+    zero_savings = _annotate_optimizer_scenario(_projection_candidate("same", npc=1_000_000.0, participants=["GR"]), baseline_npc)
+    tiny_savings = _annotate_optimizer_scenario(_projection_candidate("tiny", npc=999_999.99, participants=["GR"]), baseline_npc)
+    assert zero_savings["jurisdiction_count"] == 1
+    assert zero_savings["savings_vs_current_usd"] == pytest.approx(0.0)
+    assert zero_savings["recommendation_status"] == REC_STATUS_RECOMMENDED  # 0 >= 0
+    assert tiny_savings["savings_vs_current_usd"] == pytest.approx(0.01)
+    assert tiny_savings["recommendation_status"] == REC_STATUS_RECOMMENDED
 
 
 def test_annotate_optimizer_scenario_negative_and_zero_savings_labeled_and_still_visible():
@@ -196,9 +257,9 @@ async def test_current_producer_projection_is_complete_and_preserves_exhaustive_
         for option in allocated["recommended_optimizer_options"]:
             assert option["recommendation_status"] == "RECOMMENDED"
             assert option["is_recommended"] is True
-            threshold = MIN_PRODUCER_SAVINGS_USD if option["jurisdiction_count"] <= 2 else MIN_PRODUCER_SAVINGS_3PLUS_USD
+            threshold = materiality_recommendation_threshold_usd(option["jurisdiction_count"])
             assert option["recommendation_threshold_usd"] == threshold
-            assert option["savings_vs_current_usd"] > threshold
+            assert option["savings_vs_current_usd"] >= threshold
         for alt in allocated["evaluated_optimizer_alternatives"]:
             assert alt["recommendation_status"] != "RECOMMENDED"
             assert alt["is_recommended"] is False

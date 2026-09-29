@@ -44,7 +44,12 @@ import { MODE_OPTIMIZER } from "../lib/workspaceScenarioMode";
 // completely unchanged from before this pass.
 export default function GlobeLegend({ className = "", mode }) {
   const isOptimizer = mode === MODE_OPTIMIZER;
-  const order = isOptimizer ? ["gold", "jade", "silver", "amber"] : ["gold", "jade", "amber", "silver"];
+  // Complete Globe optimizer universe: "red" (Blocked/Rejected) is now a
+  // genuinely reachable category (rejection_universe's retained rows,
+  // wired into ProjectGlobe.jsx's own list) — previously declared in
+  // OPTIMIZER_SEMANTIC "for completeness" but never actually shown
+  // anywhere, including this legend.
+  const order = isOptimizer ? ["gold", "jade", "silver", "amber", "red"] : ["gold", "jade", "amber", "silver"];
   const semantic = isOptimizer ? OPTIMIZER_SEMANTIC : GLOBE_SEMANTIC;
   return (
     <div className={`globe-legend-vertical ${className}`.trim()} role="note" aria-label={isOptimizer ? "Optimizer status key" : "Globe status key"}>

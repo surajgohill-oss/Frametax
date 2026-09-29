@@ -596,6 +596,29 @@ function OptimizerOpportunityInspector({ data }) {
   );
 }
 
+function OptimizerRejectionInspector({ data }) {
+  return (
+    <>
+      <p className="inspector-eyebrow">Blocked / Rejected Optimizer Structure</p>
+      <h3>{data.label || "Blocked optimizer structure"}</h3>
+      <dl className="kv-list">
+        <div>
+          <dt>Participating jurisdictions</dt>
+          <dd>{(data.participants || []).map(jurisdictionName).join(", ") || jurisdictionName(data.primary_jurisdiction) || "Not available from source data"}</dd>
+        </div>
+        <div><dt>Status</dt><dd>{data.candidate_status ? humanizeToken(data.candidate_status) : "Blocked / Rejected"}</dd></div>
+        <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
+      </dl>
+      {data.reason && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why it was blocked</p>
+          <p className="text-secondary small" style={{ margin: "4px 0" }}>{data.reason}</p>
+        </div>
+      )}
+    </>
+  );
+}
+
 function JurisdictionInspector({ data }) {
   return (
     <>
@@ -626,6 +649,7 @@ const RENDERERS = {
   "structure-recommendation": StructureRecommendationInspector,
   "candidate-structure": StructureDetailInspector,
   "optimizer-opportunity": OptimizerOpportunityInspector,
+  "optimizer-rejection": OptimizerRejectionInspector,
 };
 
 // Shared inspector body — the selected item's detail. Used by BOTH the

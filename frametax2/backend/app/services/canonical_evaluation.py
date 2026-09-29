@@ -9385,6 +9385,17 @@ def _unpriced_entry_columns() -> list:
         func.coalesce(trace["is_baseline"], jsonb_false).label("is_baseline"),
         func.coalesce(trace["relocation_cost_normalized"], jsonb_false).label("relocation_cost_normalized"),
         trace["reason"].label("reason"),
+        # Complete Globe optimizer universe (RED/Blocked-Rejected category):
+        # every generated candidate is routed to a real jurisdiction BEFORE
+        # rejection/pricing failure -- this was already present in every
+        # rejected row's own trace_json, just never selected, so a RED
+        # candidate could never be plotted on the Globe (no coordinates to
+        # resolve) even though its real jurisdiction identity was never
+        # actually lost. Never fabricated: a genuinely jurisdiction-less
+        # trace (should not occur in practice) serves null, same as every
+        # other optional field here.
+        trace["primary_jurisdiction"].label("primary_jurisdiction"),
+        trace["participants"].label("participants"),
     ]
 
 
@@ -9402,6 +9413,10 @@ def _unpriced_entry(row) -> dict:
         "is_baseline": row.is_baseline,
         "relocation_cost_normalized": row.relocation_cost_normalized,
         "reason": row.reason,
+        "primary_jurisdiction": row.primary_jurisdiction,
+        "participants": row.participants if row.participants else (
+            [row.primary_jurisdiction] if row.primary_jurisdiction else []
+        ),
     }
 
 

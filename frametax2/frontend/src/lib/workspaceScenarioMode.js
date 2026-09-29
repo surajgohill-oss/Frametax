@@ -146,14 +146,33 @@ export function optimizerProjection(allocated) {
   const recommended = _sortRecommended(allocated?.recommended_optimizer_options || allocated?.producer_optimizer_options || []);
   const evaluated = _sortEvaluatedAlternatives(allocated?.evaluated_optimizer_alternatives || []);
   const opportunities = allocated?.optimizer_opportunities_requiring_facts || [];
+  // Complete Globe optimizer universe (RED / Blocked-Rejected): the
+  // retained-row page of rejection_universe (canonical_evaluation.py's
+  // bounded unpriceable_page -- every candidate beyond this bounded page
+  // is COUNTED, never individually loaded, per PROJECT_RULES.md's
+  // PERSISTENCE CARDINALITY RULE), excluding CO_PRO_OPPORTUNITY rows --
+  // those are real, disclosed Needs-More-Facts opportunities, already
+  // served (and rendered) as `opportunities` above; counting them again
+  // here would double-count the exact same real candidates under two
+  // different colours. Only ever ADDITIVE to this projection's existing
+  // fields -- Overview/Workspace never read `rejected`/`rejectedTotal`,
+  // so their existing Featured/working-subset contracts are unchanged.
+  const rejectionUniverse = allocated?.rejection_universe || null;
+  const rejected = (rejectionUniverse?.first_page?.results || [])
+    .filter((r) => r.candidate_status !== "CO_PRO_OPPORTUNITY");
+  const coProOpportunityCount = rejectionUniverse?.by_disposition?.CO_PRO_OPPORTUNITY ?? 0;
+  const rejectedTotal = Math.max(0, (rejectionUniverse?.total_count ?? rejected.length) - coProOpportunityCount);
   return {
     recommended,
     evaluated,
     opportunities,
+    rejected,
     executableTotal: allocated?.optimizer_executable_total ?? allocated?.optimizer_scenarios_total ?? (recommended.length + evaluated.length),
     recommendedTotal: allocated?.recommended_optimizer_options_total ?? recommended.length,
     evaluatedTotal: allocated?.evaluated_optimizer_alternatives_total ?? evaluated.length,
     opportunitiesTotal: allocated?.optimizer_opportunities_requiring_facts_total ?? opportunities.length,
+    rejectedTotal,
+    rejectedShownCount: rejected.length,
   };
 }
 

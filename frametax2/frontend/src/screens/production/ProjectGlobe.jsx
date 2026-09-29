@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
+import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -409,6 +409,26 @@ export default function ProjectGlobe() {
     );
   }
 
+  function selectRejected(s) {
+    const code = s.primary_jurisdiction || s.participants?.[0] || null;
+    if (code) setSelectedJurisdiction(code);
+    openInspector("optimizer-rejection", buildRejectedDetail(s));
+  }
+
+  function renderRejectedChip(s) {
+    return (
+      <div className="portfolio-chip" key={s.structure_id} onClick={() => selectRejected(s)}>
+        <span className="dot" style={{ background: OPTIMIZER_STATUS_HEX.red }} />
+        <div>
+          <div className="row-title small">{s.name || s.label || "Blocked optimizer structure"}</div>
+          <div className="row-sub">
+            Blocked / Rejected{s.rejection_reason_class ? ` · ${humanizeToken(s.rejection_reason_class)}` : ""}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="globe-screen">
       <div className="globe-screen-context">
@@ -484,6 +504,19 @@ export default function ProjectGlobe() {
                   {optimizerProj.opportunities.map((s) => renderOpportunityChip(s))}
                 </div>
               )}
+              {(optimizerProj?.rejectedTotal ?? 0) > 0 && (
+                <div key="rejected" className="sc-jurlist-section">
+                  <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
+                    Blocked / Rejected ({optimizerProj.rejectedTotal})
+                  </p>
+                  {optimizerProj.rejected.map((s) => renderRejectedChip(s))}
+                  {optimizerProj.rejectedShownCount < optimizerProj.rejectedTotal && (
+                    <p className="text-tertiary small" style={{ margin: "6px 0" }}>
+                      Showing {optimizerProj.rejectedShownCount} retained details; {optimizerProj.rejectedTotal - optimizerProj.rejectedShownCount} additional candidates are preserved in canonical aggregate counts.
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           ) : (
             [...visibleStructures]
@@ -519,7 +552,13 @@ export default function ProjectGlobe() {
           // covering the right var(--inspector-width)=400px of the canvas.
           // Bias camera framing left so a selected country stays clear of it.
           obscuredRightPx={inspector ? 400 : 0}
-          onPointClick={(pt) => selectJurisdiction(pt.jurisdictionCode || pt.id)}
+          onPointClick={(pt) => {
+            if (globeMode === MODE_OPTIMIZER && pt.sourceStructure) {
+              if (pt.tier === "red") selectRejected(pt.sourceStructure);
+              else if (pt.tier === "amber") selectOpportunity(pt.sourceStructure);
+              else selectStructure(pt.sourceStructure);
+            } else selectJurisdiction(pt.jurisdictionCode || pt.id);
+          }}
           onPointHover={(pt, rect) => { setHover(pt); setHoverRect(pt ? rect : null); }}
         />
         {/* Lightweight economic-summary card (Phase 3A final closeout —
@@ -541,8 +580,8 @@ export default function ProjectGlobe() {
             ? visibleStructures.length === 0
               ? "No executable optimizer structures for this production yet."
               : arcs.length > 0
-              ? "Showing the recommended structure's production routing only."
-              : "The recommended structure is single-jurisdiction — no routing to show."
+              ? "All optimizer categories are visible; the selected structure's route is emphasized."
+              : "All optimizer categories are visible; the selected structure is single-jurisdiction."
             : arcs.length > 0
               ? "Dashed routes mark this production's real multi-jurisdiction structures."
               : "No multi-jurisdiction structure is currently priced for this production."}

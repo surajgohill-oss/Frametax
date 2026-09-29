@@ -4,6 +4,10 @@
 
 This repository has already completed broad worldwide incentive research. Co-production, stacking, component-routing, and optimizer work must begin from the current canonical knowledge and must not restart jurisdiction research by default.
 
+### External authority versus product policy
+
+External program authority and CineGlobe product policy are separate control planes. A product-owner rule about presentation, prioritization, recommendation materiality, or workflow does not require a government citation when it is explicitly identified as internal product policy. Such a rule may classify or order already-computed results, but it must not alter jurisdiction eligibility, QPE, incentive economics, candidate generation, or legal/authority conclusions. Once the product owner clarifies that distinction, implementation must proceed on the clarified scope rather than repeatedly reopening the same authority objection.
+
 ### Required workflow
 
 1. Search the canonical runtime registries, tests, capability ledger, and Git history before using external research.

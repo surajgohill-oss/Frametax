@@ -166,8 +166,9 @@ test("switching mode changes buildGlobeView's sceneSignature (Single vs Optimize
   assert.equal(singleSig.classification, null, "Single mode has no single active structure — this is itself part of what distinguishes the two signatures");
 });
 
-// 7. Changing Optimizer selection changes the renderer scene signature.
-test("selecting a second, materially different Optimizer structure changes buildGlobeView's sceneSignature", () => {
+// 7. Changing Optimizer selection changes the selected-route identity/arcs;
+// the complete categorized universe of markers intentionally stays visible.
+test("selecting a second, materially different Optimizer structure changes the selected route without hiding universe markers", () => {
   const hybridA = structure({
     structure_id: "hy-a", classification: "HYBRID_ANCHOR_COMPONENT", structure_type: "hybrid",
     primary_jurisdiction: MB, participants: [MB, NL], npc_with_adjustments_usd: 2_800_000,
@@ -179,8 +180,9 @@ test("selecting a second, materially different Optimizer structure changes build
   const allocated = allocatedOf({ structures: [hybridA, hybridB] });
   const sigA = buildGlobeView(allocated, new Map(), { mode: MODE_OPTIMIZER, leadingStructureId: "hy-a" }).sceneSignature;
   const sigB = buildGlobeView(allocated, new Map(), { mode: MODE_OPTIMIZER, leadingStructureId: "hy-b" }).sceneSignature;
-  assert.notDeepEqual(sigA.markerCodes, sigB.markerCodes);
+  assert.deepEqual(sigA.markerCodes, sigB.markerCodes);
   assert.notDeepEqual(sigA.arcEndpoints, sigB.arcEndpoints);
+  assert.notEqual(sigA.structureId, sigB.structureId);
 });
 
 // 8. Full-page and embedded Globes use the same scene-data contract.
