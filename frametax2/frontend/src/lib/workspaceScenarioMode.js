@@ -125,13 +125,22 @@ function _sortRecommended(list) {
   });
 }
 
-// Evaluated-alternative ordering (controlling product contract): positive savings below
-// threshold, then neutral, then costs-more, then NPC ascending with a stable identity
+// Evaluated-alternative ordering (controlling product contract, extended by the
+// CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT item 9): positive savings
+// below threshold, then neutral, then costs-more; within the same status, a
+// non-dominated candidate ranks before a dominated one (item 4's dominance_status,
+// served verbatim -- never re-derived here), then higher net benefit
+// (savings_vs_current_usd descending), then NPC ascending, with a stable identity
 // tie-break.
 function _sortEvaluatedAlternatives(list) {
   return [...list].sort((a, b) => {
     const rankDiff = (_EVAL_STATUS_RANK[a.recommendation_status] ?? 9) - (_EVAL_STATUS_RANK[b.recommendation_status] ?? 9);
     if (rankDiff !== 0) return rankDiff;
+    const aDominated = a.dominance_status === "DOMINATED" ? 1 : 0;
+    const bDominated = b.dominance_status === "DOMINATED" ? 1 : 0;
+    if (aDominated !== bDominated) return aDominated - bDominated;
+    const savingsDiff = (b.savings_vs_current_usd ?? -Infinity) - (a.savings_vs_current_usd ?? -Infinity);
+    if (savingsDiff !== 0) return savingsDiff;
     const npcDiff = _npcOf(a) - _npcOf(b);
     if (npcDiff !== 0) return npcDiff;
     return (a.economic_identity || "").localeCompare(b.economic_identity || "");

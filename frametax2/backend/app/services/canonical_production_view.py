@@ -103,7 +103,18 @@ RETENTION_POLICY_NOTE = (
 # zero added complexity. This is a RECOMMENDATION-STATUS policy only: it never
 # removes, suppresses, invalidates, or alters the economics of any structure, and
 # it is applied by the SAME never-filtered annotation pass as the rule it replaces.
-MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD = 100_000.0
+#
+# CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 6:
+# the raw dollar constant itself now lives in app/services/materiality_policy.py
+# (a tiny, dependency-free leaf module) and is re-exported here unchanged, so
+# every existing import of MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD
+# from this module keeps working -- structural_archetype_generator.py's own
+# internal disclosure-only materiality_recommended field now imports the SAME
+# constant directly from materiality_policy.py instead of a second, independent
+# `100_000.0` literal that could silently drift from this one. See that module's
+# own docstring for why the constant, not this module's served-view function, is
+# what moved.
+from app.services.materiality_policy import MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD  # noqa: E402
 
 
 def materiality_recommendation_threshold_usd(jurisdiction_count: int | None) -> float:
@@ -183,6 +194,86 @@ def _best_entry_by_participant_set(entries: list[dict]) -> dict[frozenset, dict]
     return best
 
 
+def _qualification_rank(entry: dict) -> int:
+    """Coarse qualification strength ranking for dominance comparison (item 4's
+    "equal or stronger qualification status"): 2 = admits RECOMMENDED (QUALIFIES /
+    NOT_APPLICABLE), 1 = admits pricing only (a real, disclosed, still-unresolved gap
+    -- CURABLE_GAP/USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED/
+    RULE_DATA_INCOMPLETE), 0 = anything else (hard-fail or absent). Reuses the SAME
+    two canonical sets canonical_evaluation.py already defines and this module
+    already imports -- never a third, independently-defined qualification hierarchy."""
+    state = (entry.get("role_qualification") or {}).get("state")
+    if state in _QUALIFICATION_ADMITS_RECOMMENDED:
+        return 2
+    if state in _QUALIFICATION_ADMITS_PRICING:
+        return 1
+    return 0
+
+
+def _compute_dominance(universe: list[dict]) -> dict[str, dict]:
+    """MATERIALITY_RECOMMENDATION_POLICY item 4 (strict economic dominance): a
+    candidate cannot be Recommended when an executable, LOWER-COMPLEXITY structure
+    (a strict subset of its jurisdictions/components -- never an equal or larger
+    set, and never a structure that merely happens to be cheaper via an unrelated
+    route) achieves an equal-or-lower final adjusted NPC, with equal-or-stronger
+    qualification and no greater unresolved implementation risk. Computed ONCE over
+    the full priced universe (never limited to optimizer-family candidates -- a
+    plain single-jurisdiction full-relocation structure is a valid, and often the
+    MOST common, real dominator of a needlessly complex hybrid that adds no genuine
+    economic benefit over it) so a dominator never needs to itself be an "optimizer
+    scenario" to count. A dominated candidate is never removed or hidden -- see the
+    caller, which only ever downgrades its RECOMMENDED eligibility, matching item 8's
+    "Dominated candidates remain visible as Evaluated Alternatives.\""""
+    candidates = [
+        e for e in universe
+        if e.get("candidate_status") == "PRICED" and e.get("is_fully_priced")
+        and e.get("npc_with_adjustments_usd") is not None and e.get("participants")
+    ]
+    result: dict[str, dict] = {}
+    for x in candidates:
+        x_participants = frozenset(x["participants"])
+        x_npc = x["npc_with_adjustments_usd"]
+        x_qual = _qualification_rank(x)
+        x_risk = bool(x.get("administrative_allocation_risk"))
+        best_dominator = None
+        for y in candidates:
+            if y["structure_id"] == x["structure_id"]:
+                continue
+            y_participants = frozenset(y["participants"])
+            if not (y_participants < x_participants):  # strict subset only
+                continue
+            if y["npc_with_adjustments_usd"] > x_npc:
+                continue
+            if _qualification_rank(y) < x_qual:
+                continue
+            if bool(y.get("administrative_allocation_risk")) and not x_risk:
+                continue
+            if best_dominator is None or y["npc_with_adjustments_usd"] < best_dominator["npc_with_adjustments_usd"]:
+                best_dominator = y
+        if best_dominator is not None:
+            result[x["structure_id"]] = {
+                "dominance_status": "DOMINATED",
+                "dominated_by_structure_id": best_dominator["structure_id"],
+                "dominated_by_economic_identity": best_dominator.get("economic_identity"),
+                "npc_difference_usd": round(x_npc - best_dominator["npc_with_adjustments_usd"], 2),
+                "dominance_reason": (
+                    "A lower-complexity executable structure "
+                    f"({best_dominator.get('label') or best_dominator['structure_id']}) achieves an "
+                    "equal-or-lower net production cost with equal-or-stronger qualification and no "
+                    "greater unresolved implementation risk."
+                ),
+            }
+        else:
+            result[x["structure_id"]] = {
+                "dominance_status": "NOT_DOMINATED",
+                "dominated_by_structure_id": None,
+                "dominated_by_economic_identity": None,
+                "npc_difference_usd": None,
+                "dominance_reason": None,
+            }
+    return result
+
+
 def _marginal_jurisdiction_materiality(
     entry: dict, participant_set_index: dict[frozenset, dict],
 ) -> tuple[bool, str | None]:
@@ -195,39 +286,50 @@ def _marginal_jurisdiction_materiality(
     music/VFX pattern this policy item exists to close). A single-jurisdiction entry
     (nothing to remove) always passes -- there is no added jurisdiction to test.
     Returns (passes, failure_reason); failure_reason is None when passes is True.
-    FAILS CLOSED: if no priced sibling exists for a reduced participant set (the parent
-    structure was never generated/priced), the marginal benefit of that jurisdiction is
-    UNVERIFIABLE and the candidate cannot be certified materially independent -- this
-    never silently defaults to "passes".
 
-    SCOPE NOTE (2026-09-30, confirmed live against all four acceptance productions):
-    the caller (_annotate_optimizer_scenario) only invokes this for exactly
-    2-jurisdiction candidates. A 2-jurisdiction candidate's "remove one jurisdiction"
-    parent is always a plain single-jurisdiction structure, and every jurisdiction that
-    appears anywhere as a primary/component target is guaranteed to have one priced
-    (_single_jurisdiction_winners / the branch-and-bound search always prices the
-    single-jurisdiction baseline for each touched jurisdiction) -- so the fail-closed
-    path above is only ever real signal for 2-jurisdiction candidates, never an
-    artifact of incomplete search coverage. For 3+-jurisdiction candidates, confirmed
-    live that EVERY real Bad Hombres (111/111) and Lips Like Sugar (137/137)
-    aggregate-threshold-eligible candidate is a 3-or-4-jurisdiction structure whose
-    "remove one jurisdiction" (n-1)-jurisdiction sibling was never independently
-    generated/priced by the branch-and-bound search (PERSISTENCE CARDINALITY RULE
-    bounds what the search retains/prices; it does not price every subset of every
-    combination it explores) -- enforcing this function fail-closed at 3+ jurisdictions
-    today would zero out every real recommendation across two of the four productions
-    on an architectural search-coverage gap, not a genuine finding that those
-    structures are marginally immaterial. That is a distinct, larger piece of work
-    (generating/pricing every (n-1)-jurisdiction subset a 3+-jurisdiction candidate
-    could be compared against) explicitly deferred, not silently dropped -- see the
-    call site's own comment."""
+    CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 2
+    completion: this now checks EVERY non-principal jurisdiction in the entry's own
+    participant set, for any jurisdiction count (the prior pass's SCOPE NOTE
+    restricting this to exactly 2 jurisdictions -- see 4925a72 -- is resolved, not
+    just relaxed). Two sources, checked in order per jurisdiction:
+
+    1. `entry["marginal_jurisdiction_benefits_usd"]` -- the real, canonically-
+       repriced marginal benefit canonical_evaluation.py's counterfactual reprice
+       computes ONCE at generation time for every non-principal component actually
+       in an `ordinary_component_hybrid` candidate (removes that one component,
+       returns its real AccountAllocation lines to the principal component, reprices
+       through the SAME generate_structural_candidate + _hybrid_structure_
+       normalization the candidate itself was priced with). This is the primary,
+       always-correct source whenever present, for 2- AND 3+-jurisdiction hybrids
+       alike -- it never depends on some OTHER candidate having been independently
+       generated and priced.
+    2. `participant_set_index` sibling lookup (the prior pass's only mechanism) --
+       used ONLY as a fallback for jurisdictions the pre-computed dict does not
+       cover (a structure family that does not yet compute it, e.g. co-production/
+       stack, or a row persisted before this enrichment existed).
+
+    FAILS CLOSED: if neither source has a real answer for one of this entry's
+    jurisdictions, that jurisdiction's marginal benefit is UNVERIFIABLE and the
+    candidate cannot be certified materially independent -- this never silently
+    defaults to "passes"."""
     participants = frozenset(entry.get("participants") or [])
     if len(participants) <= 1:
         return True, None
     candidate_npc = entry.get("npc_with_adjustments_usd")
     if candidate_npc is None:
         return False, "MISSING_CANDIDATE_NPC_FOR_MARGINAL_CHECK"
+    precomputed = entry.get("marginal_jurisdiction_benefits_usd")
+    primary_jurisdiction = entry.get("primary_jurisdiction")
     for jurisdiction in sorted(participants):
+        if jurisdiction == primary_jurisdiction:
+            continue
+        if precomputed is not None and jurisdiction in precomputed:
+            marginal_improvement = precomputed[jurisdiction]
+            if marginal_improvement is None:
+                return False, f"JURISDICTION_{jurisdiction}_MARGINAL_BENEFIT_UNCOMPUTED"
+            if marginal_improvement < MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD:
+                return False, f"JURISDICTION_{jurisdiction}_MARGINAL_BENEFIT_BELOW_THRESHOLD"
+            continue
         parent_participants = participants - {jurisdiction}
         parent = participant_set_index.get(parent_participants) if parent_participants else None
         if parent is None:
@@ -243,6 +345,7 @@ def _marginal_jurisdiction_materiality(
 
 def _annotate_optimizer_scenario(
     entry: dict, baseline_npc: float | None, participant_set_index: dict[frozenset, dict] | None = None,
+    dominance_by_id: dict[str, dict] | None = None,
 ) -> dict:
     """Annotate ONE already-canonical, already-executable `optimizer_scenarios` entry
     with its recommendation status -- never a filter, never a second identity, never a
@@ -253,11 +356,13 @@ def _annotate_optimizer_scenario(
     CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md), so this never introduces a
     second, potentially-disagreeing jurisdiction-count definition.
 
-    A candidate reaches RECOMMENDED only when BOTH the aggregate savings-vs-baseline
-    threshold (this function's original check) AND the marginal per-added-jurisdiction
-    threshold (_marginal_jurisdiction_materiality, item 6 of the economic comparability
-    policy) are satisfied -- the aggregate check alone cannot recommend a structure whose
-    individual jurisdictions are not each independently worth their own complexity."""
+    A candidate reaches RECOMMENDED only when the aggregate savings-vs-baseline
+    threshold (this function's original check), the marginal per-added-jurisdiction
+    threshold (_marginal_jurisdiction_materiality, item 6), AND strict economic
+    non-dominance (_compute_dominance, item 4) are ALL satisfied -- the aggregate
+    check alone cannot recommend a structure whose individual jurisdictions are not
+    each independently worth their own complexity, or that a genuinely simpler
+    executable structure already beats outright."""
     jurisdiction_count = entry.get("participant_count") or len(set(entry.get("participants") or []))
     threshold = materiality_recommendation_threshold_usd(jurisdiction_count)
     candidate_npc = entry.get("npc_with_adjustments_usd")
@@ -268,30 +373,35 @@ def _annotate_optimizer_scenario(
     if savings is None:
         status, reason = REC_STATUS_BASELINE_UNRESOLVED, "MISSING_BASELINE_OR_CANDIDATE_NPC"
     elif savings >= threshold:
-        # Marginal-per-jurisdiction enforcement (item 6) is scoped to exactly 2
-        # jurisdictions -- see _marginal_jurisdiction_materiality's own "SCOPE NOTE" for
-        # why: a 2-jurisdiction candidate's single-jurisdiction parent is always priced,
-        # so a fail-closed result there is real signal. A 3+-jurisdiction candidate's
-        # (n-1)-jurisdiction sibling is frequently never generated by the search
-        # (confirmed live: 100% of Bad Hombres' and Lips Like Sugar's real aggregate-
-        # eligible candidates are 3+ jurisdictions with no priced (n-1) sibling), so
-        # enforcing fail-closed there today would reject every real recommendation on a
-        # search-coverage gap rather than a genuine immateriality finding -- deferred,
-        # not silently dropped.
-        if jurisdiction_count == 2:
-            marginal_ok, marginal_reason = _marginal_jurisdiction_materiality(entry, participant_set_index or {})
-        else:
-            marginal_ok, marginal_reason = True, None
-        if marginal_ok:
+        # CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 2
+        # completion: marginal-per-jurisdiction enforcement now applies at every
+        # jurisdiction count. The prior pass (4925a72) scoped this to exactly 2
+        # jurisdictions because its only mechanism (a sibling-candidate lookup) almost
+        # never found a priced parent for a 3+-jurisdiction candidate's (n-1)-
+        # jurisdiction subset. _marginal_jurisdiction_materiality now reads a real,
+        # per-candidate, canonically-repriced marginal benefit computed once at
+        # generation time (see canonical_evaluation.py's counterfactual reprice),
+        # falling back to the sibling lookup only where that data is absent -- so this
+        # is no longer scoped by jurisdiction count.
+        marginal_ok, marginal_reason = _marginal_jurisdiction_materiality(entry, participant_set_index or {})
+        _dominance = (dominance_by_id or {}).get(entry.get("structure_id"))
+        _is_dominated = bool(_dominance) and _dominance.get("dominance_status") == "DOMINATED"
+        if marginal_ok and not _is_dominated:
             status, reason = REC_STATUS_RECOMMENDED, "SAVINGS_MEETS_OR_EXCEEDS_THRESHOLD"
-        else:
+        elif not marginal_ok:
             status, reason = REC_STATUS_EVALUATED_ALTERNATIVE, marginal_reason
+        else:
+            status, reason = REC_STATUS_EVALUATED_ALTERNATIVE, "DOMINATED_BY_LOWER_COMPLEXITY_STRUCTURE"
     elif savings < 0:
         status, reason = REC_STATUS_COSTS_MORE, "NEGATIVE_SAVINGS"
     elif savings == 0:
         status, reason = REC_STATUS_NEUTRAL, "ZERO_SAVINGS"
     else:
         status, reason = REC_STATUS_EVALUATED_ALTERNATIVE, "SAVINGS_BELOW_THRESHOLD"
+    _dominance_fields = (dominance_by_id or {}).get(entry.get("structure_id")) or {
+        "dominance_status": None, "dominated_by_structure_id": None,
+        "dominated_by_economic_identity": None, "npc_difference_usd": None, "dominance_reason": None,
+    }
     return {
         **entry,
         "jurisdiction_count": jurisdiction_count,
@@ -300,6 +410,7 @@ def _annotate_optimizer_scenario(
         "is_recommended": status == REC_STATUS_RECOMMENDED,
         "recommendation_status": status,
         "recommendation_reason": reason,
+        **_dominance_fields,
     }
 
 #: Codex final P0 (GLOBAL_INCENTIVE_FINAL_REMAINING_ITEMS_CODEX.csv,
@@ -869,6 +980,16 @@ def _empty_structure_entry(
         "financing_cost_usd": (trace.get("adjustments") or {}).get("financing_cost_usd", 0.0),
         "implementation_cost_usd": (trace.get("adjustments") or {}).get("implementation_cost_usd", 0.0),
         "total_adjustments_usd": (trace.get("adjustments") or {}).get("total_adjustments_usd", 0.0),
+        # CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30),
+        # item 2 completion: the real, canonically-repriced marginal benefit of
+        # each non-principal jurisdiction in a hybrid, computed once at
+        # generation time (canonical_evaluation.py's counterfactual reprice) --
+        # never re-derived or re-estimated here. Absent (None, not {}) for any
+        # structure family that does not yet compute it (single-jurisdiction,
+        # co-production, stack, or a row persisted before this enrichment) --
+        # _marginal_jurisdiction_materiality's own fallback distinguishes "no
+        # data yet" from "empty dict, no non-principal jurisdictions to check".
+        "marginal_jurisdiction_benefits_usd": trace.get("marginal_jurisdiction_benefits_usd"),
         "npc_verified_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
         "npc_with_adjustments_usd": (
             float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
@@ -2249,8 +2370,14 @@ async def build_production_and_structures(
     # (single-jurisdiction, hybrid, stack, co-production) regardless of optimizer-family
     # membership, so it is the correct and complete source for this lookup.
     _participant_set_index = _best_entry_by_participant_set(_priced_entries)
+    # Item 4 (strict economic dominance): computed once over the SAME full priced
+    # universe -- a dominator does not need to be an optimizer-family candidate
+    # itself (a plain single-jurisdiction full relocation routinely dominates a
+    # needlessly complex hybrid that adds no genuine economic benefit over it).
+    _dominance_by_id = _compute_dominance(_priced_entries)
     optimizer_scenarios = [
-        _annotate_optimizer_scenario(e, _baseline_npc, _participant_set_index) for e in optimizer_scenarios
+        _annotate_optimizer_scenario(e, _baseline_npc, _participant_set_index, _dominance_by_id)
+        for e in optimizer_scenarios
     ]
     producer_optimizer_baseline_npc_usd = float(_baseline_npc) if _baseline_npc is not None else None
 

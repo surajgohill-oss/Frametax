@@ -150,7 +150,13 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   const qualifiedSpend = qpeOf(structure);
   const npc = structure.npc_with_adjustments_usd;
 
-  const laneClass = (isLeading || isAnchor) ? "anchor" : priced ? "" : "draft";
+  // CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 8:
+  // an Evaluated Alternative shown in a six-card slot (backfilled when its tier
+  // has fewer than two Recommended candidates) is a real, producer-selectable
+  // reference structure -- visually muted (existing `.reference` styling token),
+  // never conflated with "not yet priced" (`.draft`) or Leading/Anchor.
+  const isReference = priced && !isLeading && !isAnchor && structure.recommendation_status === "EVALUATED_ALTERNATIVE";
+  const laneClass = (isLeading || isAnchor) ? "anchor" : isReference ? "reference" : priced ? "" : "draft";
   // Workspace Top-6/Data Truthfulness: "Set as leading"/LEADING is a
   // PRODUCER SELECTION, never CineGlobe's own ranked recommendation —
   // it must never borrow the "①" glyph, which implies canonical rank #1
@@ -197,13 +203,32 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // badge and Optimizer's own recommendation-status vocabulary. Single
   // Jurisdiction cards (recommendation_status always absent) are completely
   // unaffected — same rank/BEST PRICED/ALTERNATIVE/DRAFT badge as before.
+  // CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 8:
+  // a reference card's BADGE stays short (matching the existing RECOMMENDED/
+  // ALTERNATIVE/BEST PRICED badge-length convention -- card dimensions are never
+  // changed by this pass) while the applicable specific reason (below the
+  // recommendation hurdle, dominated by a simpler structure, or an added
+  // jurisdiction's marginal shortfall) renders as its own explanatory row further
+  // down the card (see referenceExplanationText below) -- never the bare,
+  // ambiguous "EVALUATED ALTERNATIVE" this previously showed, and never silently
+  // reading as Recommended/Leading.
+  const referenceExplanationText = (reason) => {
+    if (reason === "DOMINATED_BY_LOWER_COMPLEXITY_STRUCTURE") return "Dominated by a simpler structure";
+    if (typeof reason === "string" && reason.startsWith("JURISDICTION_") && reason.endsWith("_MARGINAL_BENEFIT_BELOW_THRESHOLD")) {
+      return "Added jurisdiction below the $100,000 marginal hurdle";
+    }
+    if (typeof reason === "string" && reason.startsWith("NO_PRICED_PARENT_WITHOUT_")) {
+      return "Marginal benefit unverified — no priced comparison available";
+    }
+    return "Reference — below recommendation hurdle";
+  };
   const badge = isLeading
     ? "◈ LEADING"
     : isAnchor
       ? "◆ ANCHOR"
       : priced
         ? (structure.recommendation_status
-            ? (structure.recommendation_status === "RECOMMENDED" ? "RECOMMENDED" : "EVALUATED ALTERNATIVE")
+            ? (structure.recommendation_status === "RECOMMENDED" ? "RECOMMENDED" : "REFERENCE")
             : (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : (isBestPriced ? "BEST PRICED" : "ALTERNATIVE")))
         : "DRAFT";
   // Structural family — real backend `classification`, never a substitute
@@ -300,6 +325,23 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
                   : "Saves vs. Current Location"}
               </span>
               <span><Money value={Math.abs(structure.savings_vs_current_usd)} bare /></span>
+            </div>
+          )}
+          {/* CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30),
+              item 8: a reference card must disclose WHY it sits below the
+              recommendation hurdle -- the applicable one of dominance (which
+              simpler structure and by how much) or a specific added-jurisdiction's
+              marginal shortfall against the same $100,000 threshold every other
+              card already discloses via recommendation_threshold_usd. Read
+              verbatim from already-served fields; nothing computed here. This
+              row (not the badge) carries the specific reason text, so the badge
+              itself stays short and never breaks the existing card layout. */}
+          {isReference && (
+            <div className="wsx-row" style={{ color: "var(--text-tertiary)" }}>
+              <span>{referenceExplanationText(structure.recommendation_reason)}</span>
+              {structure.dominance_status === "DOMINATED" && structure.npc_difference_usd != null && (
+                <span><Money value={structure.npc_difference_usd} bare /> higher NPC</span>
+              )}
             </div>
           )}
           <div className="wsx-range">

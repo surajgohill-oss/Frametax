@@ -1170,6 +1170,14 @@
 .wsx-lane:hover { transform: translateY(-1px); }
 .wsx-lane.anchor { border-color: var(--text-primary); border-width: 1.5px; border-top-width: 3px; border-top-color: var(--oxblood); background: color-mix(in srgb, var(--surface-1) 96%, var(--text-primary) 4%); }
 .wsx-lane.draft { border-style: dashed; border-color: var(--blue); }
+/* CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 8:
+   an Evaluated Alternative occupying a six-card slot (backfilled when a tier has
+   fewer than two Recommended candidates) must read as visibly distinct from a
+   real Recommended card -- muted via existing tokens only, never a new color
+   scale, never implying it is "worse quality" (draft/dashed styling), just
+   below-threshold/dominated. */
+.wsx-lane.reference { opacity: 0.74; }
+.wsx-lane.reference .wsx-badge { color: var(--text-tertiary); border-color: var(--hairline-strong); background: transparent; }
 .wsx-lh { padding: 14px 18px 10px; border-bottom: 0.5px solid var(--hairline); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; min-height: 70px; box-sizing: border-box; }
 .wsx-lh-id { min-width: 0; }
 /* overflow-wrap: break-word — a long unbreakable optimizer component-

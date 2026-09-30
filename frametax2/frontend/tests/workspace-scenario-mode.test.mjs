@@ -25,6 +25,7 @@ import {
   NORMAL_FAMILIES,
   OPTIMIZER_FAMILIES,
   admissibleForMode,
+  optimizerProjection,
   resolveRequestedWorkspaceMode,
   selectSixSlots,
   workspaceUrlForMode,
@@ -506,4 +507,24 @@ test("resolveRequestedWorkspaceMode: no param, an empty string, or an unrelated 
   assert.equal(resolveRequestedWorkspaceMode(""), null);
   assert.equal(resolveRequestedWorkspaceMode("?tab=map"), null);
   assert.equal(resolveRequestedWorkspaceMode("?mode=garbage"), null);
+});
+
+// CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 9:
+// within the same recommendation_status rank, a non-dominated evaluated alternative
+// must sort before a dominated one -- dominance_status is served verbatim by the
+// backend (item 4), never re-derived client-side.
+test("optimizerProjection: non-dominated evaluated alternatives sort before dominated ones at the same status rank", () => {
+  const dominated = structure({
+    structure_id: "dominated", classification: "HYBRID_ANCHOR_COMPONENT",
+    recommendation_status: "EVALUATED_ALTERNATIVE", dominance_status: "DOMINATED",
+    savings_vs_current_usd: 500_000, npc_with_adjustments_usd: 700_000,
+  });
+  const notDominated = structure({
+    structure_id: "not-dominated", classification: "HYBRID_ANCHOR_COMPONENT",
+    recommendation_status: "EVALUATED_ALTERNATIVE", dominance_status: "NOT_DOMINATED",
+    savings_vs_current_usd: 400_000, npc_with_adjustments_usd: 750_000,
+  });
+  const allocated = allocatedOf([dominated, notDominated], [], [dominated, notDominated], [dominated, notDominated]);
+  const { evaluated } = optimizerProjection(allocated);
+  assert.deepEqual(evaluated.map((s) => s.structure_id), ["not-dominated", "dominated"]);
 });

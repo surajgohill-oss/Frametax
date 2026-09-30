@@ -51,6 +51,7 @@ from app.calculators.allocation_pricing import price_segment, SegmentEconomics
 from app.calculators.apply_stacking_adjustments import StackingAdjustment, apply_stacking_adjustments
 from app.calculators.canonical_stack_bridge import load_named_pair_rule
 from app.calculators.production_allocation import AccountAllocation
+from app.services.materiality_policy import MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD
 from app.data.authority_coverage_registry import economic_block_for_program
 from app.data.executable_jurisdiction_registry import _REGISTRY as _DOCTRINE_REGISTRY
 
@@ -493,7 +494,9 @@ def generate_structural_candidate(
     # actually adjusted-more-expensive must not look like an improvement
     # here either).
     incremental = round(anchor_npc_usd - npc_with_adjustments, 2) if anchor_npc_usd is not None else None
-    materiality = (incremental is not None and incremental >= 100_000.0)
+    materiality = (
+        incremental is not None and incremental >= MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD
+    )
 
     # NUM-002: derived from EVERY component program (not just guaranteed
     # ones -- a selective_upside/fund_overlay component contributing $0/$0

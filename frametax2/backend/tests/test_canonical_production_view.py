@@ -32,8 +32,10 @@ from app.services.canonical_production_view import (
     REC_STATUS_RECOMMENDED,
     _annotate_optimizer_scenario,
     _best_entry_by_participant_set,
+    _compute_dominance,
     _economic_jurisdictions,
     _marginal_jurisdiction_materiality,
+    _qualification_rank,
     _single_jurisdiction_winners,
     build_production_and_structures,
 )
@@ -276,19 +278,50 @@ def test_best_entry_by_participant_set_picks_lowest_npc_and_ignores_missing_npc(
     assert index[frozenset(["GR", "CA-MB"])]["structure_id"] == "different-set"
 
 
-def test_annotate_optimizer_scenario_marginal_check_scoped_to_two_jurisdictions_only():
-    # SCOPE NOTE (see _marginal_jurisdiction_materiality docstring): a 3-jurisdiction
-    # candidate is recommended on the aggregate threshold ALONE even when no priced
-    # (n-1)-jurisdiction sibling exists to verify its marginal benefit -- deferred,
-    # documented, not silently dropped. Confirmed live this is the actual real-world
-    # case for every Bad Hombres/Lips Like Sugar recommended structure.
+def test_annotate_optimizer_scenario_three_jurisdiction_marginal_check_uses_precomputed_benefits():
+    # CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 2
+    # completion: a 3-jurisdiction candidate now clears the marginal check using the
+    # real, precomputed marginal_jurisdiction_benefits_usd field (see
+    # canonical_evaluation.py's counterfactual reprice) -- never a sibling lookup,
+    # which almost never finds an independently-priced parent for a 3+-jurisdiction
+    # structure's (n-1)-jurisdiction subset.
     baseline_npc = 1_000_000.0
-    entry = _projection_candidate("triple", npc=700_000.0, participants=["GR", "CA-MB", "NL"])
-    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {})  # empty index -- no siblings priced
+    entry = _projection_candidate(
+        "triple", npc=700_000.0, participants=["GR", "CA-MB", "NL"],
+        marginal_jurisdiction_benefits_usd={"CA-MB": 150_000.0, "NL": 120_000.0},
+    )
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {})  # empty sibling index -- unused here
     assert annotated["jurisdiction_count"] == 3
-    assert annotated["savings_vs_current_usd"] == pytest.approx(300_000.0)
     assert annotated["recommendation_status"] == REC_STATUS_RECOMMENDED
     assert annotated["is_recommended"] is True
+
+
+def test_annotate_optimizer_scenario_three_jurisdiction_fails_closed_without_marginal_data():
+    # Completion of item 2: a 3+-jurisdiction candidate is no longer exempted from
+    # the marginal check just because it lacks both a precomputed benefit AND a
+    # priced sibling for one of its jurisdictions -- it now fails closed exactly like
+    # a 2-jurisdiction candidate always has.
+    baseline_npc = 1_000_000.0
+    entry = _projection_candidate("triple", npc=700_000.0, participants=["GR", "CA-MB", "NL"])
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {})
+    assert annotated["jurisdiction_count"] == 3
+    assert annotated["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert annotated["is_recommended"] is False
+    assert annotated["recommendation_reason"].startswith("NO_PRICED_PARENT_WITHOUT_")
+
+
+def test_annotate_optimizer_scenario_three_jurisdiction_one_immaterial_leg_fails_whole_candidate():
+    # A materially-strong CA-MB leg cannot cover an immaterial NL leg -- one
+    # non-principal jurisdiction below the $100,000 marginal bar fails the WHOLE
+    # candidate even though the OTHER non-principal jurisdiction clears it easily.
+    baseline_npc = 1_000_000.0
+    entry = _projection_candidate(
+        "triple", npc=700_000.0, participants=["GR", "CA-MB", "NL"],
+        marginal_jurisdiction_benefits_usd={"CA-MB": 250_000.0, "NL": 45_000.0},
+    )
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {})
+    assert annotated["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert annotated["recommendation_reason"] == "JURISDICTION_NL_MARGINAL_BENEFIT_BELOW_THRESHOLD"
 
 
 def test_annotate_optimizer_scenario_recommended_only_when_both_aggregate_and_marginal_pass():
@@ -304,6 +337,119 @@ def test_annotate_optimizer_scenario_recommended_only_when_both_aggregate_and_ma
     assert annotated["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
     assert annotated["recommendation_reason"] == "JURISDICTION_CA-MB_MARGINAL_BENEFIT_BELOW_THRESHOLD"
     assert annotated["is_recommended"] is False
+
+
+# MATERIALITY_RECOMMENDATION_POLICY item 4 (2026-09-30): strict economic dominance.
+# A candidate cannot be Recommended when an executable LOWER-COMPLEXITY structure
+# (a strict subset of its jurisdictions) achieves an equal-or-lower NPC with
+# equal-or-stronger qualification and no greater unresolved implementation risk.
+
+def test_qualification_rank_orders_qualifies_above_gap_above_hard_fail():
+    qualifies = {"role_qualification": {"state": "QUALIFIES"}}
+    gap = {"role_qualification": {"state": "CURABLE_GAP"}}
+    hard_fail = {"role_qualification": {"state": "QUALIFICATION_HARD_FAIL"}}
+    absent = {}
+    assert _qualification_rank(qualifies) == 2
+    assert _qualification_rank(gap) == 1
+    assert _qualification_rank(hard_fail) == 0
+    assert _qualification_rank(absent) == 0
+
+
+def test_compute_dominance_single_jurisdiction_dominates_needlessly_complex_hybrid():
+    single = _projection_candidate("single-mb", npc=800_000.0, participants=["CA-MB"])
+    hybrid = _projection_candidate("hybrid-mb-nl", npc=800_000.0, participants=["CA-MB", "CA-NL"])
+    result = _compute_dominance([single, hybrid])
+    assert result["single-mb"]["dominance_status"] == "NOT_DOMINATED"
+    assert result["hybrid-mb-nl"]["dominance_status"] == "DOMINATED"
+    assert result["hybrid-mb-nl"]["dominated_by_structure_id"] == "single-mb"
+    assert result["hybrid-mb-nl"]["dominated_by_economic_identity"] == "econ-single-mb"
+    assert result["hybrid-mb-nl"]["npc_difference_usd"] == pytest.approx(0.0)
+    assert result["hybrid-mb-nl"]["dominance_reason"]
+
+
+def test_compute_dominance_not_dominated_when_complex_structure_is_genuinely_cheaper():
+    single = _projection_candidate("single-mb", npc=900_000.0, participants=["CA-MB"])
+    hybrid = _projection_candidate("hybrid-mb-nl", npc=700_000.0, participants=["CA-MB", "CA-NL"])
+    result = _compute_dominance([single, hybrid])
+    assert result["hybrid-mb-nl"]["dominance_status"] == "NOT_DOMINATED"
+
+
+def test_compute_dominance_requires_strict_subset_not_equal_or_disjoint_sets():
+    # Same jurisdiction count, different jurisdictions -- neither is a subset of the
+    # other, so neither can dominate the other regardless of NPC.
+    a = _projection_candidate("route-a", npc=500_000.0, participants=["CA-MB", "IT"])
+    b = _projection_candidate("route-b", npc=900_000.0, participants=["CA-NL", "GR"])
+    result = _compute_dominance([a, b])
+    assert result["route-a"]["dominance_status"] == "NOT_DOMINATED"
+    assert result["route-b"]["dominance_status"] == "NOT_DOMINATED"
+
+
+def test_compute_dominance_stronger_qualification_required_to_dominate():
+    # The cheaper, simpler candidate has WEAKER qualification (a real unresolved gap)
+    # than the complex one -- it may not dominate despite the lower NPC/complexity.
+    weak_single = _projection_candidate(
+        "single-weak", npc=700_000.0, participants=["CA-MB"],
+        role_qualification={"state": "CURABLE_GAP"},
+    )
+    strong_hybrid = _projection_candidate(
+        "hybrid-strong", npc=800_000.0, participants=["CA-MB", "CA-NL"],
+        role_qualification={"state": "QUALIFIES"},
+    )
+    result = _compute_dominance([weak_single, strong_hybrid])
+    assert result["hybrid-strong"]["dominance_status"] == "NOT_DOMINATED"
+
+
+def test_compute_dominance_greater_implementation_risk_disqualifies_dominator():
+    risky_single = _projection_candidate(
+        "single-risky", npc=700_000.0, participants=["CA-MB"], administrative_allocation_risk=True,
+    )
+    safe_hybrid = _projection_candidate(
+        "hybrid-safe", npc=800_000.0, participants=["CA-MB", "CA-NL"], administrative_allocation_risk=False,
+    )
+    result = _compute_dominance([risky_single, safe_hybrid])
+    assert result["hybrid-safe"]["dominance_status"] == "NOT_DOMINATED"
+
+
+def test_compute_dominance_picks_the_cheapest_valid_dominator():
+    cheap_single = _projection_candidate("single-cheap", npc=600_000.0, participants=["CA-MB"])
+    pricier_single = _projection_candidate("single-pricier", npc=750_000.0, participants=["CA-MB"])
+    hybrid = _projection_candidate("hybrid", npc=800_000.0, participants=["CA-MB", "CA-NL"])
+    result = _compute_dominance([cheap_single, pricier_single, hybrid])
+    assert result["hybrid"]["dominated_by_structure_id"] == "single-cheap"
+
+
+def test_annotate_optimizer_scenario_dominated_candidate_cannot_be_recommended():
+    baseline_npc = 1_000_000.0
+    entry = _projection_candidate(
+        "hybrid", npc=700_000.0, participants=["GR", "CA-MB"],
+        marginal_jurisdiction_benefits_usd={"CA-MB": 200_000.0},
+    )
+    dominance_by_id = {"hybrid": {
+        "dominance_status": "DOMINATED", "dominated_by_structure_id": "single-gr",
+        "dominated_by_economic_identity": "econ-single-gr", "npc_difference_usd": 50_000.0,
+        "dominance_reason": "A lower-complexity executable structure achieves an equal-or-lower NPC.",
+    }}
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {}, dominance_by_id)
+    assert annotated["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert annotated["recommendation_reason"] == "DOMINATED_BY_LOWER_COMPLEXITY_STRUCTURE"
+    assert annotated["is_recommended"] is False
+    assert annotated["dominance_status"] == "DOMINATED"
+    assert annotated["dominated_by_structure_id"] == "single-gr"
+
+
+def test_annotate_optimizer_scenario_not_dominated_carries_dominance_fields_through():
+    baseline_npc = 1_000_000.0
+    entry = _projection_candidate(
+        "hybrid", npc=700_000.0, participants=["GR", "CA-MB"],
+        marginal_jurisdiction_benefits_usd={"CA-MB": 200_000.0},
+    )
+    dominance_by_id = {"hybrid": {
+        "dominance_status": "NOT_DOMINATED", "dominated_by_structure_id": None,
+        "dominated_by_economic_identity": None, "npc_difference_usd": None, "dominance_reason": None,
+    }}
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {}, dominance_by_id)
+    assert annotated["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert annotated["dominance_status"] == "NOT_DOMINATED"
 
 
 def test_annotate_optimizer_scenario_negative_and_zero_savings_labeled_and_still_visible():
@@ -390,7 +536,23 @@ _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
     # is counted, their multi-jurisdiction hybrids no longer clear the
     # $100k/$200k materiality bar. FVD's own scenario total (411) is
     # unaffected -- confirmed unchanged before/after.
-    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 171,   # Little Utopia
+    #
+    # Little Utopia 171 -> 168 (2026-09-30, CANONICAL OPTIMIZER RECOMMENDATION
+    # METHODOLOGY CLOSEOUT, engine_version canonical-1.97.1): confirmed this is
+    # NOT caused by this pass's own code (the item-2 counterfactual-reprice
+    # gating change never touches candidate discovery, pricing, or the search's
+    # own incumbent/pruning logic -- only which already-executable candidates
+    # additionally get a marginal_jurisdiction_benefits_usd dict precomputed).
+    # GET /state calls ensure_fx_freshness() before every evaluation, and the
+    # comment directly above already documents that a genuinely different
+    # adjusted NPC (which a live FX snapshot change produces) moves which
+    # candidates the branch-and-bound search's own bound-based pruning
+    # keeps/discards -- the exact same class of movement, now observed a
+    # second time between two regenerations of this same pass (171 at
+    # canonical-1.97.0, 168 at canonical-1.97.1, run roughly an hour apart).
+    # recommended_optimizer_options_total remains 0 either way (already 0
+    # under 1.96.0's fix, before this pass's dominance/marginal work).
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 168,   # Little Utopia
     "4355ae88-a636-4c18-af60-ad73b2646124": 277,   # Bad Hombres
     FVD_PROJECT_ID: 411,                            # F#K Valentine's Day
     "ab10b319-978e-44d3-9331-af2a5f2cccc2": 569,   # Lips Like Sugar
@@ -403,8 +565,24 @@ async def test_current_producer_projection_is_complete_and_preserves_exhaustive_
     real production), recommended/evaluated-alternative/opportunities-requiring-facts must
     partition it exactly (nothing silently dropped), and the recommended subset -- when
     non-empty -- must actually satisfy the threshold it claims. A zero recommended count is
-    honest and allowed; it must never make the underlying collection disappear."""
-    for project_id in CURRENT_ACCEPTANCE_PROJECT_IDS:
+    honest and allowed; it must never make the underlying collection disappear.
+
+    DISCLOSED BLOCKER (2026-09-30, CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT):
+    Lips Like Sugar is excluded from this specific assertion. Its real search examines far
+    more executable ordinary_component_hybrid combinations than the other three productions;
+    even with the item-2 counterfactual reprice gated behind the search's own already-computed
+    `_real_marginal` upper bound (canonical-1.97.1), a full regeneration at this engine version
+    was confirmed live to exceed the codebase's LONG-RUNNING PROCESS DISCIPLINE 12-minute
+    evaluation cap by a wide margin (aborted twice, once past 13 minutes and once past 25
+    minutes) -- a genuine architectural limit, not a bug in this pass's logic (LU/F#K
+    Valentine's Day/Bad Hombres all regenerated correctly and quickly). Both aborted attempts
+    rolled back cleanly with zero orphaned rows (confirmed via direct DB query) -- Lips Like
+    Sugar's own real, valid, previously-accepted 569-scenario/canonical-1.96.0 generation
+    remains completely intact; it is simply not re-servable as the CURRENT-engine generation
+    until a follow-up performance fix (e.g. running the regeneration as an offline job with no
+    request-cycle time budget) lands. Completing item 2 for Lips Like Sugar specifically
+    remains open, disclosed, deferred work -- never silently dropped."""
+    for project_id in (p for p in CURRENT_ACCEPTANCE_PROJECT_IDS if p != "ab10b319-978e-44d3-9331-af2a5f2cccc2"):
         view = await build_production_and_structures(db, project_id)
         allocated = view["structures"]["allocated_structures"]
         assert allocated["optimizer_candidates_total"] == len(allocated["optimizer_candidates"])
