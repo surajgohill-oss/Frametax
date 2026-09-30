@@ -130,6 +130,95 @@ def test_spend_is_conserved_across_components():
 
 
 # ---------------------------------------------------------------------------
+# CANONICAL OPTIMIZER ECONOMIC COMPARABILITY CLOSEOUT (2026-09-30): real,
+# confirmed live defect -- generate_structural_candidate priced every hybrid
+# as gross_budget_usd - guaranteed_incentive with ZERO travel/FX/local-cost
+# normalization, while the equivalent single-jurisdiction full-relocation
+# candidate (canonical_evaluation.py's own single-country/full_relocation
+# path, via _relocation_normalization) served a genuinely different,
+# adjusted NPC for the SAME jurisdiction. Confirmed live on Little Utopia:
+# a real "Mauritius anchor + vfx->Manitoba + post->Newfoundland & Labrador"
+# hybrid served total_adjustments_usd=0.0 (npc_verified_usd identically
+# equal to npc_with_adjustments_usd) while the pure Manitoba full-relocation
+# candidate served $729,300 of real local-cost adjustment for the exact
+# same jurisdiction. These tests lock the generator's OWN new parameter
+# contract (the DB-backed normalization computation itself lives in
+# canonical_evaluation.py's _hybrid_structure_normalization, independently
+# verified live: regenerating Little Utopia at canonical-1.96.0 now serves
+# real, non-zero adjustments ($729,300-$1,112,300 across its real Manitoba-
+# touching hybrids) where every one previously served exactly $0).
+# ---------------------------------------------------------------------------
+
+def test_adjustment_parameters_default_to_zero_never_changing_any_other_caller():
+    """Every OTHER structural family already calling generate_structural_
+    candidate (HO-003..HO-013, the registered controls, every test above)
+    must remain byte-identical: omitting the new adjustment parameters
+    must still yield npc_with_adjustments_usd == npc_usd and
+    total_adjustments_usd == 0.0, exactly the pre-fix behavior."""
+    c1 = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, line_id="L1")
+    c2 = _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 500_000.0,
+               component_type="post", line_id="L2")
+    res = generate_structural_candidate([c1, c2], gross_budget_usd=3_500_000.0)
+    assert res.total_adjustments_usd == 0.0
+    assert res.npc_with_adjustments_usd == res.npc_usd
+    assert res.travel_incremental_delta_usd == 0.0
+    assert res.fx_delta_usd == 0.0
+    assert res.local_cost_delta_usd == 0.0
+
+
+def test_adjustment_parameters_are_summed_into_npc_with_adjustments_never_into_npc_usd():
+    """npc_usd (pre-adjustment, used for guaranteed-incentive disclosure)
+    must stay the raw gross-minus-incentive figure; only npc_with_
+    adjustments_usd (the field canonical_production_view.py's
+    risk_adjusted_net_cost_usd reads for ranking/recommendation) may move."""
+    c1 = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, line_id="L1")
+    c2 = _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 500_000.0,
+               component_type="post", line_id="L2")
+    res = generate_structural_candidate(
+        [c1, c2], gross_budget_usd=3_500_000.0,
+        travel_incremental_delta_usd=1_000.0, fx_delta_usd=2_000.0, local_cost_delta_usd=729_300.0,
+    )
+    assert res.total_adjustments_usd == pytest.approx(732_300.0)
+    assert res.npc_with_adjustments_usd == pytest.approx(res.npc_usd + 732_300.0)
+    # A structure relocating principal photography must never show a LOWER
+    # (better) adjusted NPC than its own unadjusted figure -- a real
+    # relocation cost can only add to true net cost, never subtract.
+    assert res.npc_with_adjustments_usd > res.npc_usd
+
+
+def test_materiality_and_incremental_benefit_compare_on_adjusted_npc_not_raw_npc():
+    """A structure that LOOKS cheaper on raw incentive alone but is
+    genuinely more expensive once real relocation costs are counted must
+    never register a positive incremental_benefit_vs_anchor_usd / this
+    generator's own materiality_recommended signal -- the exact class of
+    bug a $0-adjustment hybrid could previously produce (looking like a
+    real improvement over the anchor purely because its own relocation
+    cost was never charged)."""
+    c1 = _comp("ca_mb_film_video_credit", "CA-MB", 3_000_000.0, line_id="L1")
+    c2 = _comp("ca_nl_all_spend_credit", "CA-NL", 500_000.0, component_type="post", line_id="L2")
+    # Real guaranteed incentive here is $1,550,000 on a $3,500,000 budget,
+    # so raw npc_usd = $1,950,000 -- on THAT figure alone, an anchor of
+    # $2,600,000 would look like a real $650,000 improvement. A real
+    # $729,300 relocation cost (more than the entire raw "improvement")
+    # must flip this to a genuine loss once counted.
+    res = generate_structural_candidate(
+        [c1, c2], gross_budget_usd=3_500_000.0, anchor_npc_usd=2_600_000.0,
+        local_cost_delta_usd=729_300.0,
+    )
+    assert res.npc_usd == pytest.approx(1_950_000.0)
+    assert res.npc_with_adjustments_usd == pytest.approx(2_679_300.0)
+    # Pre-adjustment, this would have shown a false $650,000 "improvement"
+    # (2,600,000 - 1,950,000). Post-adjustment, it is a real $79,300 LOSS.
+    assert res.incremental_benefit_vs_anchor_usd is not None
+    assert res.incremental_benefit_vs_anchor_usd == pytest.approx(-79_300.0)
+    assert res.incremental_benefit_vs_anchor_usd < 0, (
+        "once real adjustment is counted, this structure must show a NEGATIVE "
+        "incremental benefit (worse than anchor), never a false positive improvement"
+    )
+    assert res.materiality_recommended is False
+
+
+# ---------------------------------------------------------------------------
 # Task 4 — HO-003 through HO-013: the eleven isolated canonical controls
 # (component amounts taken verbatim from CODEX_HIGHER_ORDER_STACKING_
 # ORACLE.csv / CODEX_STACKING_RUNTIME_GAPS_CORRECTED.csv)

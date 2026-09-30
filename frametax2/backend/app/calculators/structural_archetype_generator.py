@@ -117,10 +117,23 @@ class StructuralCandidateResult:
     total_guaranteed_incentive_usd: float
     total_conditional_incentive_usd: float
     gross_budget_usd: float
-    npc_usd: float | None            # gross - guaranteed only; None if not executable
+    npc_usd: float | None            # gross - guaranteed only (pre-adjustment); None if not executable
     anchor_npc_usd: float | None
     incremental_benefit_vs_anchor_usd: float | None
     materiality_recommended: bool | None   # incremental benefit >= $100,000
+    # CANONICAL OPTIMIZER ECONOMIC COMPARABILITY CLOSEOUT (2026-09-30): real
+    # travel/FX/local-cost normalization, threaded in by the caller (which
+    # has the full ProjectEconomicInputs context this generic generator
+    # deliberately does not depend on) via generate_structural_candidate's
+    # own new parameters -- never computed inside this function, which stays
+    # calculator-agnostic. Defaults to 0.0/npc_usd for any caller that does
+    # not pass them, so every OTHER structural family this generator already
+    # serves is byte-identical unless it opts in.
+    travel_incremental_delta_usd: float = 0.0
+    fx_delta_usd: float = 0.0
+    local_cost_delta_usd: float = 0.0
+    total_adjustments_usd: float = 0.0
+    npc_with_adjustments_usd: float | None = None
     disclosed_limitations: tuple[str, ...] = ()
     # NUM-002 (optimizer audit defect remediation, 2026-09-18): True when
     # ANY component program in this structure carries a real discretionary/
@@ -268,6 +281,9 @@ def generate_structural_candidate(
     components: list[StructuralComponent],
     gross_budget_usd: float,
     anchor_npc_usd: float | None = None,
+    travel_incremental_delta_usd: float = 0.0,
+    fx_delta_usd: float = 0.0,
+    local_cost_delta_usd: float = 0.0,
 ) -> StructuralCandidateResult:
     """The one generic entry point. Never a per-archetype function --
     every one of the twelve corrected Codex archetypes is just a
@@ -458,7 +474,25 @@ def generate_structural_candidate(
         total_guaranteed = round(sum(ce.guaranteed_incentive_usd for ce in guaranteed_econ), 2)
     total_conditional = round(sum(ce.conditional_incentive_usd for ce in comp_econ), 2)
     npc = round(gross_budget_usd - total_guaranteed, 2)
-    incremental = round(anchor_npc_usd - npc, 2) if anchor_npc_usd is not None else None
+    _total_adjustments = round(
+        (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0) + (local_cost_delta_usd or 0.0), 2,
+    )
+    npc_with_adjustments = round(npc + _total_adjustments, 2)
+    # CANONICAL OPTIMIZER ECONOMIC COMPARABILITY CLOSEOUT (2026-09-30):
+    # `materiality_recommended` here is this function's OWN disclosure-only
+    # field (feeds the branch-and-bound search's incumbent tracking, never
+    # a filter -- every examined structure is still persisted regardless of
+    # this value). It is NOT the canonical recommendation decision; that is
+    # centralized in canonical_production_view.py's single
+    # materiality_recommendation_threshold_usd(), which this pass fixed to
+    # read genuinely adjusted NPC (previously identical to unadjusted for
+    # every hybrid, since this generator served $0 adjustments for all of
+    # them). Compared on ADJUSTED NPC now, not raw, so this internal search
+    # signal never disagrees with the served recommendation in the
+    # direction that matters (an unadjusted-cheaper structure that is
+    # actually adjusted-more-expensive must not look like an improvement
+    # here either).
+    incremental = round(anchor_npc_usd - npc_with_adjustments, 2) if anchor_npc_usd is not None else None
     materiality = (incremental is not None and incremental >= 100_000.0)
 
     # NUM-002: derived from EVERY component program (not just guaranteed
@@ -486,6 +520,11 @@ def generate_structural_candidate(
         total_conditional_incentive_usd=total_conditional,
         gross_budget_usd=gross_budget_usd, npc_usd=npc, anchor_npc_usd=anchor_npc_usd,
         incremental_benefit_vs_anchor_usd=incremental, materiality_recommended=materiality,
+        travel_incremental_delta_usd=travel_incremental_delta_usd or 0.0,
+        fx_delta_usd=fx_delta_usd or 0.0,
+        local_cost_delta_usd=local_cost_delta_usd or 0.0,
+        total_adjustments_usd=_total_adjustments,
+        npc_with_adjustments_usd=npc_with_adjustments,
         disclosed_limitations=tuple(selective_zero_notes) + tuple(disclosed_limitations),
         administrative_allocation_risk=bool(_admin_risk_reasons),
         administrative_allocation_risk_reasons=tuple(_admin_risk_reasons),

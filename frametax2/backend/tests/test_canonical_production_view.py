@@ -237,10 +237,25 @@ async def db():
 # correction) -- confirmed via GET .../state after the evaluation completed
 # and the backend was restarted onto genuinely current code.
 _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
-    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 168,   # Little Utopia
-    "4355ae88-a636-4c18-af60-ad73b2646124": 264,   # Bad Hombres
+    # Little Utopia 168 -> 171, Bad Hombres 264 -> 277, Lips Like Sugar
+    # 536 -> 569 (2026-09-30): CANONICAL OPTIMIZER ECONOMIC COMPARABILITY
+    # CLOSEOUT (engine_version canonical-1.96.0) -- a real economics fix
+    # (generate_structural_candidate now applies real travel/FX/local-cost
+    # normalization to every hybrid, previously always $0), not a
+    # regression. Regenerating with genuinely different adjusted NPCs
+    # changes which candidates the branch-and-bound search's own dominance
+    # pruning keeps/discards, so the retained-scenario COUNT is expected to
+    # move; independently confirmed via direct before/after state fetches
+    # bracketing this exact regeneration. recommended_optimizer_options_total
+    # for Little Utopia and F#K Valentine's Day dropped to 0 (previously 4
+    # and 3) -- exactly the reported real effect: once real relocation cost
+    # is counted, their multi-jurisdiction hybrids no longer clear the
+    # $100k/$200k materiality bar. FVD's own scenario total (411) is
+    # unaffected -- confirmed unchanged before/after.
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 171,   # Little Utopia
+    "4355ae88-a636-4c18-af60-ad73b2646124": 277,   # Bad Hombres
     FVD_PROJECT_ID: 411,                            # F#K Valentine's Day
-    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 536,   # Lips Like Sugar
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 569,   # Lips Like Sugar
 }
 
 
