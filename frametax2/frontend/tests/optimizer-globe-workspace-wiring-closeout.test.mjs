@@ -224,6 +224,56 @@ test("buildOptimizerPathway: every point's structureDetail is the exact buildCan
   }
 });
 
+// GLOBE INTERACTION AND RESPONSIVE LAYOUT CORRECTION (2026-09-30) — real,
+// independently-confirmed live defect: ProjectGlobe.jsx's click handler has
+// always branched on `pt.sourceStructure` (the same field its own red/amber
+// point paths set), but the selected route's own points never carried it —
+// only `structureDetail`. `pt.sourceStructure` was therefore always
+// undefined for the exact selected route, so `globeMode === MODE_OPTIMIZER
+// && pt.sourceStructure` was always false and every click silently fell
+// through to `selectJurisdiction(pt.jurisdictionCode || pt.id)`, a
+// DIFFERENT, possibly unrelated jurisdiction-level winner.
+test("buildOptimizerPathway: every point carries explicit sourceStructure/jurisdictionCode/structureId — the SAME exact-identity fields ProjectGlobe.jsx and Workspace.jsx both resolve clicks from", () => {
+  const s = candidate("s1", 725_000, { participants: ["GR", "CA-MB"], primary_jurisdiction: "GR" });
+  const allocated = allocatedOf({ recommended: [s] });
+  const pathway = buildOptimizerPathway(allocated, "s1");
+  assert.equal(pathway.points.length, 2);
+  for (const point of pathway.points) {
+    assert.equal(point.sourceStructure, s, "must be the exact same structure object, never a re-lookup by jurisdiction code");
+    assert.equal(point.structureId, "s1");
+    assert.ok(["GR", "CA-MB"].includes(point.jurisdictionCode));
+  }
+});
+
+// Truthful HUD + aggregated-vs-exact hover semantics: buildGlobeView's
+// Optimizer branch mixes the full categorized-universe markers (one per
+// real jurisdiction, aggregated status — buildCountryPoints already stamps
+// `sourceStructure` on EVERY one of these too, so that field alone can
+// never distinguish "aggregated" from "exact route") with the selected
+// route's own exact points. Confirmed live: Little Utopia renders 96-99
+// universe markers alongside its 2-node selected route, and the HUD text
+// "168 total scenarios" on that canvas implied every one of the 168 had its
+// own marker. `isAggregatedUniverseMarker` is the real, explicit signal.
+test("buildGlobeView (Optimizer): universe markers are explicitly flagged as aggregated (never mistaken for the exact route) and exclude the route's own jurisdictions", () => {
+  const routeStructure = candidate("route", 500_000, { participants: ["GR", "CA-MB"], primary_jurisdiction: "GR" });
+  const other = candidate("other", 900_000, {
+    participants: ["IT"], primary_jurisdiction: "IT",
+    recommendation_status: "EVALUATED_ALTERNATIVE", is_recommended: false,
+  });
+  const allocated = allocatedOf({ recommended: [routeStructure], evaluated: [other] });
+  const view = buildGlobeView(allocated, new Map(), { mode: MODE_OPTIMIZER, leadingStructureId: "route" });
+
+  const routePoints = view.points.filter((p) => p.mode === "optimizer");
+  const universePoints = view.points.filter((p) => p.isAggregatedUniverseMarker);
+  assert.equal(routePoints.length, 2, "the selected route's own 2 points");
+  assert.deepEqual(new Set(routePoints.map((p) => p.jurisdictionCode)), new Set(["GR", "CA-MB"]));
+  assert.ok(universePoints.length >= 1, "the wider categorized universe (e.g. IT) must still be present");
+  assert.ok(!universePoints.some((p) => ["GR", "CA-MB"].includes(p.jurisdictionCode)), "a jurisdiction the selected route already covers must not ALSO appear as a separate aggregated marker");
+  for (const p of universePoints) {
+    assert.equal(p.selectedRouteUsesJurisdiction, false, "true by construction — a jurisdiction the route uses renders its exact-route point instead, never both");
+  }
+});
+
 // 10. Optimizer's legend vocabulary is genuinely different from Single
 // Jurisdiction's, not a relabeled copy — confirms GlobeLegend.jsx actually
 // branches (not just that Single Jurisdiction's own labels stay free of

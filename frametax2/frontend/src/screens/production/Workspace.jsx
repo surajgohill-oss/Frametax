@@ -366,11 +366,11 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
 // Jurisdiction: the count of real priced best_per_jurisdiction winners).
 // `nArcsInRoute` keeps its real meaning but is labeled unambiguously as
 // belonging to the one selected route on screen, never the total universe.
-function GlobeChrome({ productionName, nScenarios, nArcsInRoute }) {
+function GlobeChrome({ productionName, nScenarios, nMarkers, nArcsInRoute }) {
   return (
     <div className="wsx-g-hud">
       <b>Project globe · {productionName}</b>
-      {nScenarios} total scenario{nScenarios === 1 ? "" : "s"} · {nArcsInRoute} leg{nArcsInRoute === 1 ? "" : "s"} in this route
+      {nScenarios} executable structure{nScenarios === 1 ? "" : "s"} total · {nMarkers} jurisdiction marker{nMarkers === 1 ? "" : "s"} shown · selected route: {nArcsInRoute} leg{nArcsInRoute === 1 ? "" : "s"}
     </div>
   );
 }
@@ -589,6 +589,23 @@ export default function Workspace() {
   const canonicalScenarioTotal = workspaceMode === MODE_OPTIMIZER
     ? optimizerProjection(allocated).executableTotal
     : Object.keys(allocated?.best_per_jurisdiction || {}).length;
+  // Truthful HUD (2026-09-30): `points` mixes the full categorized-universe
+  // markers (one per real jurisdiction, aggregated status) with the
+  // selected route's own exact-structure markers (sourceStructure set) —
+  // confirmed live, e.g. Little Utopia renders 99 universe markers
+  // alongside its 2-node selected route. Reporting only `canonicalScenarioTotal`
+  // ("168 scenarios") on a canvas showing 99 dots plus one 2-leg route
+  // implied every structure had its own marker. Counted separately so the
+  // HUD never conflates "how many executable structures exist" with "how
+  // many markers are actually drawn."
+  // Every point (universe AND exact-route) carries `sourceStructure` (see
+  // globeData.js's buildCountryPoints), so that field alone can't
+  // distinguish them -- `isAggregatedUniverseMarker` is the real signal.
+  // In Single Jurisdiction mode there is no route/universe split at all, so
+  // every point is correctly counted as a marker.
+  const globeMarkerCount = workspaceMode === MODE_OPTIMIZER
+    ? points.filter((p) => p.isAggregatedUniverseMarker).length
+    : points.length;
 
   const bestPriced = bestPricedCandidate(allocated);
   const dynamicFxStructure = leadingStructure || bestPriced || cols[1] || cols[0];
@@ -629,20 +646,19 @@ export default function Workspace() {
       openInspector("candidate-structure", buildCandidateDetail(winner));
       return;
     }
-    // OPTIMIZER_GLOBE_WORKSPACE_WIRING exact-identity fix (2026-09-30):
-    // `structuresByCode.get(code)[0]` picks the FIRST structure touching
-    // this jurisdiction across the whole production, which is not
-    // necessarily the ONE structure whose routing is actually rendered on
-    // screen right now (buildOptimizerPathway draws exactly one structure's
-    // pathway at a time). Every point buildGlobeView produces already
-    // carries `structureDetail` for the exact structure it belongs to
-    // (globeData.js) — resolve the raw structure via ITS structure_id
-    // instead of re-deriving from the jurisdiction code, so a click always
-    // opens the displayed structure, never an unrelated same-jurisdiction
-    // winner.
-    const targetId = pt.structureDetail?.structure_id;
-    const s = (targetId && allocated?.structures?.find((x) => x.structure_id === targetId))
-      || (structuresByCode.get(code) || [])[0];
+    // EXACT-IDENTITY FIX (2026-09-30): `structuresByCode.get(code)[0]` picks
+    // the FIRST structure touching this jurisdiction across the whole
+    // production — not necessarily the ONE structure whose routing is
+    // actually rendered on screen right now (buildOptimizerPathway draws
+    // exactly one structure's pathway at a time). Every point belonging to
+    // that exact rendered route now carries `sourceStructure` directly
+    // (globeData.js) — the SAME field name/shape ProjectGlobe.jsx's own
+    // click handler resolves exact identity from, so the two screens can
+    // never disagree about which structure a click on the displayed route
+    // opens. A universe/aggregated-jurisdiction marker carries no
+    // `sourceStructure` and correctly falls back to the jurisdiction-level
+    // winner below.
+    const s = pt.sourceStructure || (structuresByCode.get(code) || [])[0];
     if (!s) return;
     const seg = resolveSegmentDetail(s, code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
@@ -894,15 +910,25 @@ export default function Workspace() {
           {mode === "map" && (
             <div className="wsx-mapv">
               <div className="lcol wsx-map-econ">
-                {leadingStructure && (
+                {/* BLANK-MAP-PANEL FIX (2026-09-30): this rendered nothing
+                    at all whenever no producer-set Leading structure
+                    existed — the common default case — leaving the fixed
+                    360/300px economics column empty beside the Globe.
+                    Falls back to the SAME canonical, already-computed
+                    dynamicFxStructure chain the FX strip above uses
+                    (Leading -> bestPriced -> top mode-admissible scenario
+                    -> Current Location) — never a second, independently
+                    reranked selection, and never blank while any real
+                    structure exists. */}
+                {dynamicFxStructure && (
                   <ScenarioCard
-                    key={leadingStructure.structure_id}
-                    structure={leadingStructure}
-                    tier={structureTier(leadingStructure, rankById)}
-                    rank={rankById.get(leadingStructure.structure_id)}
+                    key={dynamicFxStructure.structure_id}
+                    structure={dynamicFxStructure}
+                    tier={structureTier(dynamicFxStructure, rankById)}
+                    rank={rankById.get(dynamicFxStructure.structure_id)}
                     grossBudget={production.gross_budget_usd}
-                    isLeading={leadingStructure.structure_id === leadingId}
-                    isBestPriced={leadingStructure.structure_id === bestPricedStructureId}
+                    isLeading={dynamicFxStructure.structure_id === leadingId}
+                    isBestPriced={dynamicFxStructure.structure_id === bestPricedStructureId}
                     onSetLeading={handleSetLeading}
                     onInspect={handleSelectStructure}
                     onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}
@@ -928,7 +954,7 @@ export default function Workspace() {
                     onPointClick={handleGlobeClick}
                     onPointHover={(pt, rect) => { setGlobeHover(pt); setGlobeHoverRect(pt ? rect : null); }}
                   />
-                  <GlobeChrome productionName={production.production_name} nScenarios={canonicalScenarioTotal} nArcsInRoute={arcs.length} />
+                  <GlobeChrome productionName={production.production_name} nScenarios={canonicalScenarioTotal} nMarkers={globeMarkerCount} nArcsInRoute={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
                     <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
                     <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
@@ -980,7 +1006,7 @@ export default function Workspace() {
                     onPointClick={handleGlobeClick}
                     onPointHover={(pt, rect) => { setGlobeHover(pt); setGlobeHoverRect(pt ? rect : null); }}
                   />
-                  <GlobeChrome productionName={production.production_name} nScenarios={canonicalScenarioTotal} nArcsInRoute={arcs.length} />
+                  <GlobeChrome productionName={production.production_name} nScenarios={canonicalScenarioTotal} nMarkers={globeMarkerCount} nArcsInRoute={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
                     <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
                     <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>

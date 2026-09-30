@@ -165,6 +165,36 @@ function ExcludedBody({ hover }) {
   );
 }
 
+// Aggregated jurisdiction marker (Optimizer mode's "complete categorized
+// universe" layer): NEVER an exact scenario — explicit disclosure so it is
+// never mistaken for the selected route's own structure-level detail. Shows
+// the real represented-structure count where determinable (structuresByCode
+// grouping, same data every other consumer reads) and states plainly that
+// the selected route does not use this jurisdiction (true by construction —
+// a jurisdiction the route DOES use renders its exact-route marker instead).
+function AggregatedUniverseBody({ hover }) {
+  return (
+    <>
+      <div className="hover-field">
+        <div className="text-tertiary small">This marker</div>
+        <div className="small">Jurisdiction status summary — not the selected route</div>
+      </div>
+      <div className="hover-field">
+        <div className="text-tertiary small">Best represented category</div>
+        <div className="small">{hover.fullStatusLabel || "Not available"}</div>
+      </div>
+      <div className="hover-field">
+        <div className="text-tertiary small">Executable structures represented</div>
+        <div className="small">{hover.representedStructureCount != null ? hover.representedStructureCount : "Not determinable"}</div>
+      </div>
+      <div className="hover-field">
+        <div className="text-tertiary small">Used by selected route</div>
+        <div className="small">{hover.selectedRouteUsesJurisdiction ? "Yes" : "No"}</div>
+      </div>
+    </>
+  );
+}
+
 // Anchors the hover card near the hovered marker's own on-screen box
 // (Globe3D passes it through unmodified from the CSS2D hit-target's
 // getBoundingClientRect()) rather than a fixed panel corner. Clamped to stay
@@ -197,6 +227,7 @@ export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
   // Recommendation"/"Other Recommended"/"Evaluated Alternative" — the SAME
   // vocabulary the legend, side-list dot, and Inspector all agree with).
   const isOptimizer = hover.mode === "optimizer";
+  const isAggregated = !!hover.isAggregatedUniverseMarker;
   return (
     <div className="globe-tooltip" style={hoverCardStyle(hoverRect, canvasRef.current)}>
       <strong>{isOptimizer ? (hover.structureDetail?.label || hover.name) : hover.jurisdictionName}</strong>
@@ -204,7 +235,9 @@ export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
         {isOptimizer ? hover.optimizerStatusLabel : hover.fullStatusLabel}
         {isOptimizer && hover.familyLabel ? ` · ${hover.familyLabel}` : ""}
       </div>
-      {isOptimizer ? (
+      {isAggregated ? (
+        <AggregatedUniverseBody hover={hover} />
+      ) : isOptimizer ? (
         <OptimizerStructureBody hover={hover} />
       ) : hover.status === "silver" ? (
         <ExcludedBody hover={hover} />

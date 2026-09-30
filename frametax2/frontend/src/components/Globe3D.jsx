@@ -1663,12 +1663,27 @@ export default function Globe3D({
       })
       .htmlElement((d) => {
         const el = document.createElement("div");
-        el.className = "globe-hit-target";
+        // SELECTED-ROUTE EMPHASIS (2026-09-30): an exact selected-route
+        // point (buildOptimizerPathway's own `mode: "optimizer"` marker) is
+        // a materially different, more important target than an aggregated
+        // universe marker sharing the same 28px footprint and z-index — a
+        // real user could not tell them apart, and the invisible route
+        // marker was no easier to actually hit. Bigger box + higher
+        // z-index makes the selected route physically easier to hover/click
+        // than the background universe, not just conceptually distinct.
+        const isExactRoute = !d.isAggregatedUniverseMarker && d.mode === "optimizer";
+        el.className = isExactRoute ? "globe-hit-target globe-hit-target--route" : "globe-hit-target";
         el.setAttribute("role", "button");
         el.setAttribute("tabindex", "0");
-        el.setAttribute("aria-label", d.name || d.id || "jurisdiction marker");
-        el.style.width = "28px";
-        el.style.height = "28px";
+        el.setAttribute(
+          "aria-label",
+          isExactRoute
+            ? `${d.structureDetail?.label || d.name || d.id} — selected route`
+            : (d.name || d.id || "jurisdiction marker"),
+        );
+        const size = isExactRoute ? 40 : 28;
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
         el.style.cursor = "pointer";
         el.style.pointerEvents = "auto";
         // RUNTIME BUG (found live 2026-07-28): the app-level floating
@@ -1682,7 +1697,9 @@ export default function Globe3D({
         // it was silently consumed one layer up. z-index above 40 lets a
         // jurisdiction click win over the backdrop so selection always
         // transfers in one click, same as when no Inspector is open yet.
-        el.style.zIndex = "45";
+        // Exact-route markers sit one layer above the universe markers so
+        // an overlapping route point always wins the hit test.
+        el.style.zIndex = isExactRoute ? "46" : "45";
         // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): reads liveRef.current
         // at CLICK/HOVER time, never the closed-over `onPointClick`/
         // `onPointHover` props directly — this factory runs inside the
@@ -1700,6 +1717,14 @@ export default function Globe3D({
         // reason to know that container's identity.
         el.addEventListener("mouseenter", () => liveRef.current.onPointHover?.(d, el.getBoundingClientRect()));
         el.addEventListener("mouseleave", () => liveRef.current.onPointHover?.(null));
+        // REAL HOVER INTERACTION fix (2026-09-30): mouseenter/mouseleave
+        // alone give a mouse user a hover card but leave keyboard users
+        // (tab-focus, the same navigation path the existing tabindex/keydown
+        // handlers already support for activation) with no equivalent way
+        // to see the same information — focus/blur mirror hover exactly so
+        // the card is reachable without a pointer at all.
+        el.addEventListener("focus", () => liveRef.current.onPointHover?.(d, el.getBoundingClientRect()));
+        el.addEventListener("blur", () => liveRef.current.onPointHover?.(null));
         return el;
       });
 

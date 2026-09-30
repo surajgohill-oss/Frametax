@@ -1230,6 +1230,16 @@
 .wsx-mapv .mcol { position: relative; min-width: 0; }
 .wsx-mapv .mcol .wsx-globe { margin: 0; max-width: none; height: 100%; border-radius: 0; box-shadow: none; }
 @media (max-width: 1150px) { .wsx-mapv { grid-template-columns: 300px minmax(0, 1fr); } }
+/* RESPONSIVE-MAP-LAYOUT FIX (2026-09-30): below 860px, a fixed 300/360px
+   economics column compresses the Globe into an unusably narrow sliver
+   beside it (confirmed live at 1280x720 with a narrower effective panel
+   width, and at true narrow/mobile widths). Reflow to a vertical stack —
+   economics card on top, Globe full-width below — instead of shrinking
+   the Globe's own column further. */
+@media (max-width: 860px) {
+  .wsx-mapv { grid-template-columns: 1fr; grid-template-rows: auto minmax(360px, 1fr); }
+  .wsx-mapv .lcol { border-right: none; border-bottom: 0.5px solid var(--hairline); max-height: 260px; }
+}
 
 /* ================= Today — company command center (tdy-) =================
    Built from the app's established vocabulary (.ovx-sec cards, .oh

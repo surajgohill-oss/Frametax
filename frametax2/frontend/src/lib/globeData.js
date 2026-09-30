@@ -962,6 +962,18 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
     optimizerStatusLabel: OPTIMIZER_STATUS_LABEL[structureStatus],
     familyLabel,
     structureDetail,
+    // EXACT-IDENTITY FIX (2026-09-30): ProjectGlobe.jsx's click handler has
+    // always branched on `pt.sourceStructure` (the same field name its own
+    // red/amber point paths already set) -- this point never carried it,
+    // so `globeMode === MODE_OPTIMIZER && pt.sourceStructure` was always
+    // false for the exact selected route and every click silently fell
+    // through to `selectJurisdiction(pt.jurisdictionCode || pt.id)`, a
+    // DIFFERENT (possibly unrelated) jurisdiction-level winner. Every
+    // consumer (Workspace.jsx, ProjectGlobe.jsx) must resolve exact
+    // identity from THESE fields, never a jurisdiction-code relookup.
+    sourceStructure: structure,
+    jurisdictionCode: code,
+    structureId: structure.structure_id,
   }));
 
   // Every leg shares the structure's own single real status colour (see
@@ -1146,8 +1158,32 @@ export function buildGlobeView(
     // overlaid and emphasized without suppressing every other category.
     const universePoints = buildCountryPoints(statuses, hoverByIso, selectedIso);
     const selectedCodes = new Set(pathway.points.map((p) => p.id));
+    // HOVER SEMANTICS FIX (2026-09-30): a universe marker and a selected-
+    // route marker previously carried the same shape (both even have
+    // `sourceStructure` -- buildCountryPoints already sets it to that
+    // jurisdiction's own best_per_jurisdiction winner), so nothing told
+    // GlobeHoverCard "this dot is an aggregated per-jurisdiction status,
+    // not the exact structure on the selected route." `isAggregatedUniverseMarker`
+    // plus a real represented-structure count (from the same structuresByCode
+    // grouping every other consumer already reads) let the hover card say so
+    // explicitly, never presenting an aggregated marker as if it were one
+    // exact scenario. By construction, any point remaining here is NOT part
+    // of the selected route (its jurisdiction's route point replaced it below).
+    const representedCountByCode = new Map();
+    for (const s of pool) {
+      for (const code of s.participants) {
+        representedCountByCode.set(code, (representedCountByCode.get(code) || 0) + 1);
+      }
+    }
     const points = [
-      ...universePoints.filter((p) => !selectedCodes.has(p.jurisdictionCode || p.id)),
+      ...universePoints
+        .filter((p) => !selectedCodes.has(p.jurisdictionCode || p.id))
+        .map((p) => ({
+          ...p,
+          isAggregatedUniverseMarker: true,
+          representedStructureCount: representedCountByCode.get(p.jurisdictionCode || p.id) ?? null,
+          selectedRouteUsesJurisdiction: false,
+        })),
       ...pathway.points,
     ];
     return {
