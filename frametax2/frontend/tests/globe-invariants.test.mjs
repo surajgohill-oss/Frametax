@@ -216,12 +216,30 @@ test("the restored Globe legend carries exactly the four current states, no lega
   // Gold/Jade/Silver/Amber sequence) — both branches must still be exactly
   // the same four canonical slot keys, just declared as two arrays now
   // instead of one.
+  //
+  // Complete Globe Optimizer Universe (2026-09-29, already committed at
+  // this branch's HEAD before this session): Optimizer mode's own order
+  // gained a genuine fifth state, "red" (Blocked/Rejected -- previously
+  // declared in OPTIMIZER_SEMANTIC but never actually reachable/rendered
+  // anywhere, including this legend; now wired into ProjectGlobe.jsx's own
+  // list). Single Jurisdiction's order is untouched at exactly four states.
+  // This test's own assertion was never updated for that already-committed
+  // change and started failing the moment this pass ran it -- corrected
+  // here to accept BOTH the four-state Single Jurisdiction order and the
+  // five-state (including "red") Optimizer order, never a stray count.
   const orderMatches = [...src.matchAll(/\[([^\]]+)\]/g)]
     .map((m) => m[1].split(",").map((s) => s.trim().replace(/["']/g, "")))
-    .filter((slots) => slots.length === 4 && slots.every((s) => ["gold", "jade", "amber", "silver"].includes(s)));
+    .filter((slots) =>
+      (slots.length === 4 && slots.every((s) => ["gold", "jade", "amber", "silver"].includes(s))) ||
+      (slots.length === 5 && slots.every((s) => ["gold", "jade", "amber", "silver", "red"].includes(s))));
   assert.ok(orderMatches.length >= 2, "legend must declare an explicit state order for both Single Jurisdiction and Optimizer modes");
   for (const slots of orderMatches) {
-    assert.deepEqual([...slots].sort(), ["amber", "gold", "jade", "silver"]);
+    const sorted = [...slots].sort();
+    assert.ok(
+      JSON.stringify(sorted) === JSON.stringify(["amber", "gold", "jade", "silver"]) ||
+      JSON.stringify(sorted) === JSON.stringify(["amber", "gold", "jade", "red", "silver"]),
+      `unexpected legend order set: ${sorted.join(",")}`,
+    );
   }
   for (const legacy of [
     "no known incentive", "qualified", "conditional", "evaluated",

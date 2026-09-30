@@ -40,7 +40,30 @@ export const getLegal = () => request("/legal");
 // (app/api/v1/cineglobe.py::get_project_state) behind useCineGlobe(projectId).
 // Little Utopia's own project_id returns byte-identical data to the 8 calls
 // above; any other project returns the canonical, generic adapter's data.
-export const getProjectState = (projectId) => request(`/projects/${projectId}/state`);
+//
+// Per-project single-flight (2026-09-30): a route transition mounts more
+// than one consumer of useCineGlobe(projectId) for the SAME project within
+// the same tick (e.g. a screen and a layout wrapper, or React StrictMode's
+// dev-only double-mount) — each previously issued its OWN GET .../state
+// call, and this endpoint can invoke canonical evaluation server-side, so
+// two identical concurrent requests meant genuinely duplicated backend
+// work, not just wasted bandwidth. Concurrent callers for the same
+// projectId now share the ONE in-flight promise; the entry is cleared the
+// moment it settles (success or failure), so a LATER call — in particular
+// an explicit refetch() after a mutation — always issues a fresh request
+// rather than replaying a stale result. This never caches a resolved
+// value across time, only collapses requests that are genuinely
+// simultaneous.
+const _projectStateInFlight = new Map();
+export function getProjectState(projectId) {
+  const existing = _projectStateInFlight.get(projectId);
+  if (existing) return existing;
+  const promise = request(`/projects/${projectId}/state`).finally(() => {
+    _projectStateInFlight.delete(projectId);
+  });
+  _projectStateInFlight.set(projectId, promise);
+  return promise;
+}
 export const checkConstraints = () => request("/constraints/check");
 export const postScenario = (kind, targetJurisdiction) =>
   request("/scenarios", {

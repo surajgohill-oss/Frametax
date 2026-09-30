@@ -53,10 +53,14 @@ def _classification_rules_digest() -> str:
     return digest.hexdigest()[:12]
 
 
-#: Bumped to 1.3.0: source-account ATL/BTL semantics, finance/bridge/banking
-#: as finance costs, and a residuals reserve as its own obligation rather
-#: than contingency or a guild's ATL fee.
-BUDGET_PARSER_VERSION = f"budget-1.3.0+rules.{_classification_rules_digest()}"
+#: Bumped to 1.4.0: `_register()`'s rebate-exclusion guard now captures the
+#: producer's own stated incentive/rebate estimate line (e.g. "EDB Rebate at
+#: 35%", "Greek Estimate Cash Rebate (40%)") onto BudgetParseResult.source_
+#: incentive_estimates instead of silently discarding it -- still never
+#: counted as spend/QPE, but no longer invisible to project-evidence
+#: reconciliation. Output-affecting (a new field is populated for real
+#: existing budgets), so already-routed BudgetDocuments must be re-parsed.
+BUDGET_PARSER_VERSION = f"budget-1.4.0+rules.{_classification_rules_digest()}"
 
 
 @dataclass
@@ -74,6 +78,25 @@ class ParsedLineItem:
 
 
 @dataclass
+class SourceIncentiveEstimate:
+    """A producer's own stated incentive/rebate estimate line (e.g. 'EDB
+    Rebate at 35%', 'Greek Estimate Cash Rebate (40%)') as it appears in the
+    source budget. Captured separately from `line_items` -- it is real
+    project evidence, but per `_REBATE_EXCLUSION_RE`'s own doctrine it must
+    never enter spend/QPE totals as if it were a cost. Before this field
+    existed, `_register()`'s rebate-exclusion guard discarded these lines
+    entirely once excluded from spend, so the production's own stated
+    incentive estimate was invisible everywhere downstream -- confirmed live
+    on both Little Utopia ("9001 EDB Rebate at 35%", $1,275,411) and F#K
+    Valentine's Day ("8004 Greek Estimate Cash Rebate (40%)", $518,804)."""
+
+    account_code: str | None
+    description: str
+    amount_usd: float
+    page_ref: int | None = None
+
+
+@dataclass
 class BudgetParseResult:
     filename: str
     currency_code: str
@@ -82,6 +105,7 @@ class BudgetParseResult:
     line_items: list[ParsedLineItem]
     parse_warnings: list[str] = field(default_factory=list)
     line_count: int = 0
+    source_incentive_estimates: list[SourceIncentiveEstimate] = field(default_factory=list)
 
 
 _AMOUNT_RE = re.compile(r"[\$£€]?\s*([\d,]+(?:\.\d{0,2})?)\s*([KkMm]?)")
@@ -443,6 +467,7 @@ def _parse_film_budget(
     _acct_seen: dict[str, int] = {}  # acct_code -> count (for dedup of shared codes)
     grand_total: float | None = None
     warnings: list[str] = []
+    incentive_estimates: list[SourceIncentiveEstimate] = []
 
     top_sheet_pages = [
         p for p in pages if ("Acct#" in p and "Category Description" in p) or ("Description\nTotal\n" in p)
@@ -457,6 +482,16 @@ def _parse_film_budget(
 
         def _register(acct: str, desc: str, amt: float, page_ref: int | None) -> None:
             if _REBATE_EXCLUSION_RE.search(desc):
+                # Never counted as spend (see _REBATE_EXCLUSION_RE's own
+                # doctrine comment) -- but the producer's own stated
+                # incentive/rebate estimate is real project evidence, not
+                # noise, so it is captured on its own list rather than
+                # silently thrown away.
+                incentive_estimates.append(
+                    SourceIncentiveEstimate(
+                        account_code=acct, description=desc, amount_usd=amt, page_ref=page_ref
+                    )
+                )
                 return  # rebate/credit/net-total — never counted as spend
             n = _acct_seen.get(acct, 0) + 1
             _acct_seen[acct] = n
@@ -622,6 +657,7 @@ def _parse_film_budget(
         line_items=items,
         parse_warnings=warnings,
         line_count=len(items),
+        source_incentive_estimates=incentive_estimates,
     )
 
 

@@ -172,6 +172,9 @@ async def _route_budget(
         budget_doc.total_budget_raw = classified.total_budget_raw
         budget_doc.extraction_status = "extracted"
         budget_doc.parser_version = BUDGET_PARSER_VERSION
+        budget_doc.source_incentive_estimates = [
+            vars(e) for e in classified.source_incentive_estimates
+        ] or None
         await session.execute(
             sa_delete(BudgetLineItem).where(BudgetLineItem.budget_document_id == budget_doc.id)
         )
@@ -187,6 +190,9 @@ async def _route_budget(
             extraction_status="extracted",
             document_version_id=version.id,
             parser_version=BUDGET_PARSER_VERSION,
+            source_incentive_estimates=[
+                vars(e) for e in classified.source_incentive_estimates
+            ] or None,
         )
         session.add(budget_doc)
     await session.flush()

@@ -2406,6 +2406,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     total_budget_usd = None
     currency_code = None
     filename = None
+    source_incentive_estimates: list[dict] = []
     # STALE-STATE PREVENTION (item 8). ENGINE_VERSION alone is NOT a
     # freshness filter: a rule or pricing-source change now invalidates the
     # fingerprint on its own, so several superseded generations legitimately
@@ -2486,6 +2487,12 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         currency_code = budget_doc.currency_code
         if total_budget_usd is None and budget_doc.total_budget_raw is not None:
             total_budget_usd = float(budget_doc.total_budget_raw)
+        # Project-evidence reconciliation: the producer's own stated
+        # incentive/rebate estimate line (e.g. "EDB Rebate at 35%"), never
+        # counted as spend/QPE (see _REBATE_EXCLUSION_RE) but real project
+        # evidence that must not be silently invisible -- see
+        # budget_parser.SourceIncentiveEstimate and migration 0078.
+        source_incentive_estimates = list(budget_doc.source_incentive_estimates or [])
         line_items_for_breakdown = (await session.execute(
             select(BudgetLineItem).where(BudgetLineItem.budget_document_id == budget_doc.id)
         )).scalars().all()
@@ -2543,6 +2550,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
             "non_labor_usd": round(non_labor_total, 2) if line_items_for_breakdown else None,
             "totals_by_spend_category_usd": totals_by_spend_category,
             "totals_by_department_usd": totals_by_department,
+            "source_incentive_estimates": source_incentive_estimates,
             "opportunity_hints": [],
             # Drill-down (Section 7): real line identity, never dropped —
             # account code parsed from the SAME leading-code convention
@@ -2680,6 +2688,53 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         "answers": {f.fact_key: f.value for f in fact_rows},
         "answerable": {},
     }
+
+    # Program-version safeguard: CineGlobe's only California rate doctrine
+    # (US_CA_DOCTRINE, program_slug "ca_film_30") is Program 4.0, whose own
+    # provenance states it is effective only for "taxable years beginning
+    # on or after 2025-01-01" (AB 1138, verbatim). A production holding a
+    # real, dated Credit Allocation Letter from BEFORE that date (e.g.
+    # Lips Like Sugar's signed Program 3.0 letter #8-053, dated 2023-03-06)
+    # was never under Program 4.0 at all -- CineGlobe has no verified
+    # Program 3.0 rate schedule to substitute, so the correct, honest
+    # behavior is disclosure, never a silent reprice: the canonical
+    # calculated incentive (necessarily computed on Program 4.0 rates,
+    # since that is the only doctrine this engine has) must never be
+    # presented as if it reconciles against, confirms, or supersedes the
+    # production's own real reserved allocation under its own program
+    # version. Keyed on jurisdiction + fact pattern, not any one
+    # production's name -- applies to any current or future California
+    # production carrying a dated allocation letter this way.
+    allocation_date = facts["answers"].get("ca_allocation_letter_date")
+    home_jurisdiction_code = None
+    if allocation_date and project.home_jurisdiction_id:
+        home_jurisdiction_code = await session.scalar(
+            select(Jurisdiction.code).where(Jurisdiction.id == project.home_jurisdiction_id)
+        )
+    if allocation_date and home_jurisdiction_code == "US-CA":
+        _CA_PROGRAM_4_EFFECTIVE_DATE = "2025-01-01"
+        if allocation_date < _CA_PROGRAM_4_EFFECTIVE_DATE:
+            facts["program_version_cautions"] = [{
+                "jurisdiction_code": "US-CA",
+                "fact_key": "ca_allocation_letter_date",
+                "allocation_date": allocation_date,
+                "allocation_program_version": facts["answers"].get("ca_allocation_program_version"),
+                "canonical_doctrine_program_version": "California Film & Television Tax Credit Program 4.0",
+                "canonical_doctrine_effective_date": _CA_PROGRAM_4_EFFECTIVE_DATE,
+                "warning": (
+                    "This production's real Credit Allocation Letter predates California "
+                    "Program 4.0's effective date. CineGlobe has no verified Program 3.0 rate "
+                    "schedule, so its canonical calculated incentive necessarily uses Program "
+                    "4.0 rates and must never be treated as confirming, reconciling against, "
+                    "or repricing this production's own reserved allocation under its actual "
+                    "program version -- the reserved allocation stands as its own authoritative "
+                    "evidence, separate from the canonical calculation."
+                ),
+            }]
+        else:
+            facts["program_version_cautions"] = []
+    else:
+        facts["program_version_cautions"] = []
 
     # ── production requirements: real SA-1 ProductionRequirement rows,
     # disclosed as their own real requirement_key/normalized_value pairs

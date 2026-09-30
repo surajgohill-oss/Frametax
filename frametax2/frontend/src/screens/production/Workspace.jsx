@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
@@ -7,10 +7,11 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDetail, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
+import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
-import { MODE_NORMAL, MODE_OPTIMIZER, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
+import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
@@ -355,11 +356,21 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
 // designed; the states are learned by hovering (which names the state) and
 // by opening one (which explains it). The HUD stays because it is context
 // about the production, not an explanation of the instrument itself.
-function GlobeChrome({ productionName, nScenarios, nArcs }) {
+// Canonical-totals fix (2026-09-30): this HUD used to report
+// `allocated.structures.length` (the bounded ~100-row RETAINED detail page,
+// per PROJECT_RULES' PERSISTENCE CARDINALITY RULE -- never the true total)
+// as "N scenarios", and the CURRENTLY SELECTED route's own leg count as if
+// it were the number of available structure routes ("N structure routes").
+// `nScenarios` is now the real canonical total for the active mode
+// (Optimizer: optimizerProjection(allocated).executableTotal; Single
+// Jurisdiction: the count of real priced best_per_jurisdiction winners).
+// `nArcsInRoute` keeps its real meaning but is labeled unambiguously as
+// belonging to the one selected route on screen, never the total universe.
+function GlobeChrome({ productionName, nScenarios, nArcsInRoute }) {
   return (
     <div className="wsx-g-hud">
       <b>Project globe · {productionName}</b>
-      {nScenarios} scenario{nScenarios === 1 ? "" : "s"} · {nArcs} structure route{nArcs === 1 ? "" : "s"}
+      {nScenarios} total scenario{nScenarios === 1 ? "" : "s"} · {nArcsInRoute} leg{nArcsInRoute === 1 ? "" : "s"} in this route
     </div>
   );
 }
@@ -396,6 +407,13 @@ export default function Workspace() {
   // Jurisdiction / "Jurisdictions"; MODE_OPTIMIZER === "Optimizer Overlay"),
   // so this is the one project-scoped mode Workspace and Globe share.
   const [globeHover, setGlobeHover] = useState(null);
+  // Shared-hover-card fix (2026-09-30): Map/Split used to render their own
+  // shallow ad-hoc tooltip (jurisdictionName/statusLabel/role only) instead
+  // of the same GlobeHoverCard Overview.jsx and ProjectGlobe.jsx already
+  // use — same pattern as those two screens: hoverRect anchors the card
+  // near the hovered marker, canvasRef is the nearest positioned ancestor.
+  const [globeHoverRect, setGlobeHoverRect] = useState(null);
+  const globeCanvasRef = useRef(null);
   const {
     openInspector, inspector, closeInspector, setDocked,
     leadingStructureId, setLeadingStructureId,
@@ -494,11 +512,11 @@ export default function Workspace() {
   // mode-filtered) + the top four mode-admissible scenarios + slot 6.
   const projectId = data?.production?.project_id ?? null;
   const slot6Override = getSlot6Selection(projectId, workspaceMode);
-  const { cols, dropdownOptions: overflow, dropdownEvaluatedAlternatives, dropdownOpportunities } = useMemo(
+  const { cols, dropdownOptions: overflow, dropdownEvaluatedAlternatives, dropdownOpportunities, tiedStructureIds } = useMemo(
     () => {
-      const { slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps } =
+      const { slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps, tiedStructureIds: ties } =
         selectSixSlots(allocated, workspaceMode, slot6Override);
-      return { cols: slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps };
+      return { cols: slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps, tiedStructureIds: ties || {} };
     },
     [allocated, workspaceMode, slot6Override],
   );
@@ -565,6 +583,13 @@ export default function Workspace() {
   // then (4) Current Location itself (cols[0], the production's own
   // anchor), which always exists. `dynamicFxStructureKind` distinguishes
   // all four states for FXStrip's own tag text — never re-derived there.
+  // Canonical Globe/HUD scenario total for the active mode — never the
+  // bounded allocated.structures.length retained-page count (see
+  // GlobeChrome's own comment above).
+  const canonicalScenarioTotal = workspaceMode === MODE_OPTIMIZER
+    ? optimizerProjection(allocated).executableTotal
+    : Object.keys(allocated?.best_per_jurisdiction || {}).length;
+
   const bestPriced = bestPricedCandidate(allocated);
   const dynamicFxStructure = leadingStructure || bestPriced || cols[1] || cols[0];
   const dynamicFxIsLeading = !!leadingStructure;
@@ -604,7 +629,20 @@ export default function Workspace() {
       openInspector("candidate-structure", buildCandidateDetail(winner));
       return;
     }
-    const s = (structuresByCode.get(code) || [])[0];
+    // OPTIMIZER_GLOBE_WORKSPACE_WIRING exact-identity fix (2026-09-30):
+    // `structuresByCode.get(code)[0]` picks the FIRST structure touching
+    // this jurisdiction across the whole production, which is not
+    // necessarily the ONE structure whose routing is actually rendered on
+    // screen right now (buildOptimizerPathway draws exactly one structure's
+    // pathway at a time). Every point buildGlobeView produces already
+    // carries `structureDetail` for the exact structure it belongs to
+    // (globeData.js) — resolve the raw structure via ITS structure_id
+    // instead of re-deriving from the jurisdiction code, so a click always
+    // opens the displayed structure, never an unrelated same-jurisdiction
+    // winner.
+    const targetId = pt.structureDetail?.structure_id;
+    const s = (targetId && allocated?.structures?.find((x) => x.structure_id === targetId))
+      || (structuresByCode.get(code) || [])[0];
     if (!s) return;
     const seg = resolveSegmentDetail(s, code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
@@ -873,7 +911,7 @@ export default function Workspace() {
                 )}
               </div>
               <div className="mcol">
-                <div className="wsx-globe dark-panel wsx-globe-chrome">
+                <div className="wsx-globe dark-panel wsx-globe-chrome" ref={globeCanvasRef}>
                   <Globe3D
                     points={points}
                     arcs={arcs}
@@ -888,19 +926,15 @@ export default function Workspace() {
                     focusLng={focusLng}
                     focusDistance={focusDistance}
                     onPointClick={handleGlobeClick}
-                    onPointHover={setGlobeHover}
+                    onPointHover={(pt, rect) => { setGlobeHover(pt); setGlobeHoverRect(pt ? rect : null); }}
                   />
-                  <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+                  <GlobeChrome productionName={production.production_name} nScenarios={canonicalScenarioTotal} nArcsInRoute={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
                     <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
                     <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
                   </div>
                   {globeHover && (
-                    <div className="globe-tooltip">
-                      <strong>{globeHover.jurisdictionName}</strong>
-                      <div className="text-tertiary small">{globeHover.statusLabel}</div>
-                      {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
-                    </div>
+                    <GlobeHoverCard hover={globeHover} hoverRect={globeHoverRect} canvasRef={globeCanvasRef} />
                   )}
                 </div>
               </div>
@@ -929,7 +963,7 @@ export default function Workspace() {
                 </div>
               </div>
               <div className="mcol">
-                <div className="wsx-globe dark-panel wsx-globe-chrome">
+                <div className="wsx-globe dark-panel wsx-globe-chrome" ref={globeCanvasRef}>
                   <Globe3D
                     points={points}
                     arcs={arcs}
@@ -944,19 +978,15 @@ export default function Workspace() {
           focusLng={focusLng}
           focusDistance={focusDistance}
                     onPointClick={handleGlobeClick}
-                    onPointHover={setGlobeHover}
+                    onPointHover={(pt, rect) => { setGlobeHover(pt); setGlobeHoverRect(pt ? rect : null); }}
                   />
-                  <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+                  <GlobeChrome productionName={production.production_name} nScenarios={canonicalScenarioTotal} nArcsInRoute={arcs.length} />
                   <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
                     <button className={workspaceMode === MODE_NORMAL ? "active" : ""} onClick={() => setWorkspaceMode(MODE_NORMAL)}>Single Jurisdiction</button>
                     <button className={workspaceMode === MODE_OPTIMIZER ? "active" : ""} onClick={() => setWorkspaceMode(MODE_OPTIMIZER)}>Optimizer</button>
                   </div>
                   {globeHover && (
-                    <div className="globe-tooltip">
-                      <strong>{globeHover.jurisdictionName}</strong>
-                      <div className="text-tertiary small">{globeHover.statusLabel}</div>
-                      {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
-                    </div>
+                    <GlobeHoverCard hover={globeHover} hoverRect={globeHoverRect} canvasRef={globeCanvasRef} />
                   )}
                 </div>
               </div>

@@ -38,6 +38,11 @@ class BudgetDocument(Base):
     # is honestly NULL, never backfilled with a guessed version. Mirrors
     # screenplay_structural_parser.PARSER_VERSION's own convention.
     parser_version: Mapped[str | None] = mapped_column(String(40))
+    # The producer's own stated incentive/rebate estimate line(s) (e.g. "EDB
+    # Rebate at 35%"), excluded from spend/QPE by _REBATE_EXCLUSION_RE but
+    # captured here as real project evidence -- see budget_parser.py's
+    # SourceIncentiveEstimate and migration 0078 for the full history.
+    source_incentive_estimates: Mapped[list | None] = mapped_column(JSONB)
 
     # Additive Phase B link into the universal Document/DocumentVersion
     # layer. Nullable — this rich typed table is preserved as-is; a

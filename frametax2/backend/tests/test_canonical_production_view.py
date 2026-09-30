@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
 from app.services.canonical_production_view import (
+    build_generic_pkg_and_economics,
     materiality_recommendation_threshold_usd,
     REC_STATUS_BASELINE_UNRESOLVED,
     REC_STATUS_COSTS_MORE,
@@ -37,11 +38,13 @@ from app.services.canonical_production_view import (
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
+BAD_HOMBRES_PROJECT_ID = "4355ae88-a636-4c18-af60-ad73b2646124"
+LIPS_LIKE_SUGAR_PROJECT_ID = "ab10b319-978e-44d3-9331-af2a5f2cccc2"
 CURRENT_ACCEPTANCE_PROJECT_IDS = (
     LITTLE_UTOPIA_PROJECT_ID,
-    "4355ae88-a636-4c18-af60-ad73b2646124",
+    BAD_HOMBRES_PROJECT_ID,
     FVD_PROJECT_ID,
-    "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+    LIPS_LIKE_SUGAR_PROJECT_ID,
 )
 
 
@@ -212,11 +215,32 @@ async def db():
 # ACCEPTED_OPTIMIZER_SCENARIO_TOTALS (CANONICAL_STACKING_AND_OPTIMIZER_PROJECTION_AUDIT.md):
 # these four counts must never shrink because of a served-contract/annotation change --
 # only a real discovery/pricing change (never made by this pass) may move them.
+#
+# Little Utopia corrected 171 -> 168, Bad Hombres corrected 267 -> 264
+# (2026-09-30): both were already stale BEFORE any change in this session --
+# independently confirmed against the FIRST state fetch made for each this
+# session, captured before any code edit, reparse, or evaluation trigger:
+# those untouched reads already reported 168 and 264 respectively. Both were
+# therefore leftover oracles from an earlier committed pass (the prior LU
+# Mauritius economics reconciliation, commit ac0a01e) that were never
+# updated afterward -- not a regression from this session's project-evidence
+# work, which never touches candidate discovery/pricing. Runtime behavior
+# was NOT changed to reach either number; only the stale expected values are
+# corrected, per the preserved pre-change evidence.
+#
+# Lips Like Sugar corrected 541 -> 536: a DIFFERENT case -- LLS was never a
+# served production before this session (is_served_production=False, no
+# current-engine generation existed at all). 541 was a leftover figure from
+# a stale, pre-canonical-1.95.0 generation. 536 is this session's own
+# explicitly-authorized fresh cold evaluation at the current engine version
+# (the one legitimate "genuinely new real data" case, not a stale-oracle
+# correction) -- confirmed via GET .../state after the evaluation completed
+# and the backend was restarted onto genuinely current code.
 _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
-    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 171,   # Little Utopia
-    "4355ae88-a636-4c18-af60-ad73b2646124": 267,   # Bad Hombres
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 168,   # Little Utopia
+    "4355ae88-a636-4c18-af60-ad73b2646124": 264,   # Bad Hombres
     FVD_PROJECT_ID: 411,                            # F#K Valentine's Day
-    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 541,   # Lips Like Sugar
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 536,   # Lips Like Sugar
 }
 
 
@@ -733,3 +757,86 @@ async def test_optimizer_candidates_untouched_by_scenario_grouping(db: AsyncSess
     alloc = view["structures"]["allocated_structures"]
     for e in alloc["optimizer_candidates"][:5]:
         assert "raw_variant_count" not in e, "raw optimizer_candidates rows must never carry scenario-grouping annotations"
+
+
+# ── Project-evidence reconciliation (2026-09-29) ──────────────────────────
+#
+# Confirmed live defect: budget_parser.py's rebate-exclusion guard correctly
+# kept a producer's own stated incentive/rebate estimate line out of spend/
+# QPE, but silently discarded the value entirely -- so it was invisible
+# everywhere downstream, on real productions, not synthetic fixtures.
+
+async def test_little_utopia_source_incentive_estimate_is_served_and_never_alters_gross_budget(db: AsyncSession):
+    """Little Utopia's real budget line "9001 EDB Rebate at 35%" ($1,275,411)
+    must be served distinctly from the canonical calculation, and the
+    production's real Grand Total ($4,364,393) must be completely
+    unaffected by capturing it."""
+    result = await build_generic_pkg_and_economics(db, LITTLE_UTOPIA_PROJECT_ID)
+    budget = result["pkg"]["budget"]
+    assert budget["total_budget_usd"] == pytest.approx(4_364_393.0, abs=1.0)
+    estimates = budget["source_incentive_estimates"]
+    assert len(estimates) == 1
+    assert estimates[0]["account_code"] == "9001"
+    assert "EDB Rebate" in estimates[0]["description"]
+    assert abs(estimates[0]["amount_usd"]) == pytest.approx(1_275_411.0, abs=1.0)
+
+
+async def test_fvd_source_incentive_estimate_is_served_and_never_alters_gross_budget(db: AsyncSession):
+    """F#K Valentine's Day's real "8004 Greek Estimate Cash Rebate (40%)"
+    ($518,804) -- same requirement as Little Utopia above."""
+    result = await build_generic_pkg_and_economics(db, FVD_PROJECT_ID)
+    budget = result["pkg"]["budget"]
+    assert budget["total_budget_usd"] == pytest.approx(4_517_687.0, abs=1.0)
+    estimates = budget["source_incentive_estimates"]
+    assert len(estimates) == 1
+    assert estimates[0]["account_code"] == "8004"
+    assert "Greek Estimate Cash Rebate" in estimates[0]["description"]
+    assert abs(estimates[0]["amount_usd"]) == pytest.approx(518_804.0, abs=1.0)
+
+
+async def test_bad_hombres_has_no_fabricated_source_incentive_estimate(db: AsyncSession):
+    """Bad Hombres' real budget contains no incentive/rebate line at all
+    (independently confirmed by a full-text scan of all 43 pages). The
+    served field must reflect that honestly -- empty, never a fabricated
+    placeholder standing in for a document that doesn't exist."""
+    result = await build_generic_pkg_and_economics(db, BAD_HOMBRES_PROJECT_ID)
+    assert result["pkg"]["budget"]["source_incentive_estimates"] == []
+
+
+async def test_lips_like_sugar_ca_allocation_letter_is_canonical_project_evidence(db: AsyncSession):
+    """Lips Like Sugar's real, signed California Film Commission Credit
+    Allocation Letter (#8-053, Program 3.0, dated 2023-03-06, reserving
+    $1,470,365) must be served as canonical project evidence via the
+    existing ProjectFact layer -- and recorded as a RESERVED allocation,
+    never a confirmed/final award (the letter's own text: "not guaranteed
+    and are only an estimate")."""
+    pkg = await build_generic_pkg_and_economics(db, LIPS_LIKE_SUGAR_PROJECT_ID)
+    answers = pkg["facts"]["answers"]
+    assert answers["ca_allocation_letter_number"] == "8-053"
+    assert answers["ca_allocation_letter_date"] == "2023-03-06"
+    assert answers["ca_allocation_reserved_usd"] == "1470365"
+    assert answers["ca_allocation_program_version"] == "California Film and Television Tax Credit Program 3.0"
+    assert answers["ca_allocation_status"] == "reserved_not_final_award"
+
+
+async def test_lips_like_sugar_program_version_safeguard_prevents_silent_repricing(db: AsyncSession):
+    """CineGlobe's only California rate doctrine is Program 4.0, effective
+    only for taxable years beginning on/after 2025-01-01. Lips Like
+    Sugar's real allocation predates that by nearly two years under
+    Program 3.0. The served state must disclose this mismatch rather than
+    silently reprice (or silently ignore) the earlier allocation."""
+    pkg = await build_generic_pkg_and_economics(db, LIPS_LIKE_SUGAR_PROJECT_ID)
+    cautions = pkg["facts"]["program_version_cautions"]
+    assert len(cautions) == 1
+    caution = cautions[0]
+    assert caution["jurisdiction_code"] == "US-CA"
+    assert caution["allocation_date"] == "2023-03-06"
+    assert caution["canonical_doctrine_effective_date"] == "2025-01-01"
+    assert "must never be treated as confirming" in caution["warning"]
+
+
+async def test_little_utopia_has_no_ca_program_version_caution(db: AsyncSession):
+    """The safeguard must be scoped to real California allocation evidence
+    only -- it must never fire for an unrelated jurisdiction/production."""
+    pkg = await build_generic_pkg_and_economics(db, LITTLE_UTOPIA_PROJECT_ID)
+    assert pkg["facts"]["program_version_cautions"] == []

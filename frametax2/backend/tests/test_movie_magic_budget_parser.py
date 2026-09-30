@@ -321,6 +321,23 @@ class TestRebateAndGroupSubtotalExclusion:
                            "Total Above-The-Line", "Total Below-The-Line", "Grand Total"):
             assert forbidden not in descriptions
 
+    def test_rebate_line_captured_as_source_incentive_estimate_not_discarded(self):
+        """Project-evidence reconciliation defect (2026-09-29): excluding a
+        rebate line from spend/QPE (test_rebate_line_excluded, above)
+        previously meant the producer's own stated incentive estimate was
+        thrown away ENTIRELY -- confirmed live on Little Utopia's real
+        "9001 EDB Rebate at 35%" ($1,275,411) and F#K Valentine's Day's
+        real "8004 Greek Estimate Cash Rebate (40%)" ($518,804), both
+        invisible everywhere downstream before this fix. It must still
+        never appear in line_items (that invariant is unchanged)."""
+        text, pages = _full_text_and_pages()
+        result = parse_budget_from_text(text, filename="test.pdf", pages=pages)
+        assert len(result.source_incentive_estimates) == 1
+        estimate = result.source_incentive_estimates[0]
+        assert estimate.account_code == "9001"
+        assert estimate.description == "EDB Rebate at 35%"
+        assert estimate.amount_usd != 0
+
 
 class TestTaxIncentiveNettingLineExclusion:
     """Fresh Project Economic Fidelity: a producer's own projected-
@@ -352,6 +369,18 @@ class TestTaxIncentiveNettingLineExclusion:
         result = parse_budget_from_text(text, filename="test.pdf", pages=pages)
         total = sum(li.amount_usd for li in result.line_items)
         assert total == pytest.approx(468_248.0, abs=0.01)
+
+    def test_tax_incentive_netting_line_captured_as_source_incentive_estimate(self):
+        """Same capture requirement as the EDB rebate case above -- real
+        regression confirmed live on Lips Like Sugar's actual budget,
+        which carries exactly this "9998 Tax Incentive 25%* BTL (No Disc)"
+        line for -$1,503,074."""
+        text, pages = self._text_and_pages()
+        result = parse_budget_from_text(text, filename="test.pdf", pages=pages)
+        assert len(result.source_incentive_estimates) == 1
+        estimate = result.source_incentive_estimates[0]
+        assert estimate.account_code == "9998"
+        assert "Tax Incentive" in estimate.description
 
 
 class TestExactReconciliation:

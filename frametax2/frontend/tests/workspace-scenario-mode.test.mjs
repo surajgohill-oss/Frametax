@@ -330,17 +330,19 @@ test("selectSixSlots: a stored slot-6 override selects that candidate instead of
   assert.equal(slot6.structure_id, "hybrid-f");
 });
 
-// GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): canonical_production_
-// view.py serves the complete optimizer_scenarios collection PRE-SORTED
-// Practical -> Formal -> Advanced (NPC ascending within tier); the RECOMMENDED
-// subset preserves that same relative order (workspaceScenarioMode.js's own
-// _sortRecommended re-derives it explicitly: tier, then savings descending,
-// then NPC ascending, then identity — equivalent for a fixed baseline).
-// Slots 2-5 fill from RECOMMENDED options ONLY, Practical before Formal;
-// an EVALUATED ALTERNATIVE (not recommended) must never occupy a leading
-// slot even if it would otherwise sort earlier by raw NPC — the exact
-// "do not silently promote evaluated alternatives" contract.
-test("selectSixSlots (Optimizer): Practical recommended options fill the leading slots before Formal, and a non-recommended alternative is never promoted into a leading slot", () => {
+// REPRESENTATIVE SIX-CARD RACK (2026-09-30, supersedes GLOBE_WORKSPACE_
+// CANONICAL_WIRING_COMPLETE's "Practical before Formal, slice first four"
+// contract below): a rack filled purely by overall rank could show five
+// near-duplicate Practical routes and zero Advanced ones — technically
+// correct, not representative. Slots 2-3 are now the best two executable
+// Practical structures, slots 4-5 the best two executable Advanced/complex
+// structures (Formal + Advanced tiers), slot 6 the single highest-ranked
+// remaining executable structure of either kind. An EVALUATED ALTERNATIVE
+// (not recommended) must still never occupy a leading slot while a
+// RECOMMENDED option remains available for that slot/category — the
+// "do not silently promote evaluated alternatives" contract is unchanged,
+// just applied per-category instead of to one flat top-four slice.
+test("selectSixSlots (Optimizer): two Practical + two Advanced fill the leading slots (representative rack), and a non-recommended alternative is never promoted into a leading slot", () => {
   const anchor = structure({ structure_id: "anchor", is_baseline: true, npc_with_adjustments_usd: 1 });
   // 3 Practical hybrids followed by 2 qualified bilateral formal co-productions — all RECOMMENDED.
   const practical = ["p1", "p2", "p3"].map((id, i) => structure({
@@ -362,10 +364,60 @@ test("selectSixSlots (Optimizer): Practical recommended options fill the leading
   });
   const allocated = allocatedOf([anchor, ...practical, ...formal, notRecommended], [], null, [...practical, ...formal, notRecommended]);
   const { leading, slot6, dropdownOptions, dropdownEvaluatedAlternatives } = selectSixSlots(allocated, MODE_OPTIMIZER, null);
-  assert.deepEqual(leading.map((s) => s.structure_id), ["p1", "p2", "p3", "f1"]);
-  assert.equal(slot6.structure_id, "f2");
+  // Representative spread: best 2 Practical (p1, p2), best 2 Advanced (f1, f2) —
+  // p3 (a THIRD Practical) is deliberately NOT in the leading four despite
+  // outranking f2 overall, so Advanced is never crowded out by an abundance
+  // of Practical options.
+  assert.deepEqual(leading.map((s) => s.structure_id), ["p1", "p2", "f1", "f2"]);
+  // The single highest-ranked remaining executable structure (p3, a real
+  // RECOMMENDED option) — never the non-recommended alternative, even
+  // though nothing else recommended remains for its own category.
+  assert.equal(slot6.structure_id, "p3");
   assert.deepEqual(dropdownOptions.map((s) => s.structure_id), []);
   assert.deepEqual(dropdownEvaluatedAlternatives.map((s) => s.structure_id), ["cheap-not-recommended"], "the non-recommended alternative remains reachable, just never promoted into a leading slot");
+});
+
+test("selectSixSlots (Optimizer): a category short of two candidates backfills from the best remaining executable candidates, never fabricated", () => {
+  const anchor = structure({ structure_id: "anchor", is_baseline: true, npc_with_adjustments_usd: 1 });
+  // Only ONE Practical candidate exists; four Advanced candidates exist.
+  const practical = [structure({
+    structure_id: "p1", classification: "HYBRID_ANCHOR_COMPONENT", participants: ["GR", "X0"],
+    npc_with_adjustments_usd: 100, practicality_tier: "PRACTICAL_HYBRID", participant_count: 2,
+    savings_vs_current_usd: 500_000, recommendation_status: "RECOMMENDED",
+  })];
+  const advanced = ["a1", "a2", "a3", "a4"].map((id, i) => structure({
+    structure_id: id, classification: "ADVANCED_MULTILATERAL", participants: ["GR", "FR", `Y${i}`],
+    npc_with_adjustments_usd: 10 + i, practicality_tier: "ADVANCED_MULTI_JURISDICTION", participant_count: 3,
+    savings_vs_current_usd: 400_000 - i, recommendation_status: "RECOMMENDED",
+  }));
+  const allocated = allocatedOf([anchor, ...practical, ...advanced], [], null, [...practical, ...advanced]);
+  const { leading, slot6 } = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  // The single missing Practical slot backfills from the best remaining
+  // executable candidate overall (a3, the next-best Advanced option) —
+  // the rack still has 4 real leading structures, never fabricated, never
+  // shrunk just because one category ran short.
+  assert.deepEqual(leading.map((s) => s.structure_id), ["p1", "a1", "a2", "a3"]);
+  assert.equal(slot6.structure_id, "a4");
+});
+
+test("selectSixSlots (Optimizer): tiedStructureIds flags two different shown routes sharing the same NPC, never a false single-winner precision", () => {
+  const anchor = structure({ structure_id: "anchor", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const practical = ["p1", "p2"].map((id, i) => structure({
+    structure_id: id, classification: "HYBRID_ANCHOR_COMPONENT", participants: ["GR", `X${i}`],
+    // p1 and p2 are a genuine NPC tie — two different real routes, identical economics.
+    npc_with_adjustments_usd: 100, practicality_tier: "PRACTICAL_HYBRID", participant_count: 2,
+    savings_vs_current_usd: 500_000 - i, recommendation_status: "RECOMMENDED",
+  }));
+  const advanced = ["f1", "f2"].map((id, i) => structure({
+    structure_id: id, classification: "OFFICIAL_COPRODUCTION", participants: ["GR", "FR"],
+    npc_with_adjustments_usd: 300 + i, practicality_tier: "FORMAL_COPRODUCTION", participant_count: 2,
+    savings_vs_current_usd: 300_000 - i, recommendation_status: "RECOMMENDED",
+  }));
+  const allocated = allocatedOf([anchor, ...practical, ...advanced], [], null, [...practical, ...advanced]);
+  const { tiedStructureIds } = selectSixSlots(allocated, MODE_OPTIMIZER, null);
+  assert.deepEqual(tiedStructureIds.p1, ["p2"]);
+  assert.deepEqual(tiedStructureIds.p2, ["p1"]);
+  assert.equal(tiedStructureIds.f1, undefined, "f1/f2 have distinct NPCs and must not be flagged as tied");
 });
 
 test("selectSixSlots: fewer than six real distinct jurisdiction winners is a valid, honest result — never backfilled with a duplicate", () => {

@@ -240,28 +240,52 @@ export function selectSixSlots(allocated, mode, slot6Id) {
   const { recommended, evaluated, opportunities } = optimizerProjection(allocated);
   const recPool = recommended.filter((s) => !anchor || s.structure_id !== anchor.structure_id);
   const evalPool = evaluated.filter((s) => !anchor || s.structure_id !== anchor.structure_id);
-  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — ROOT CAUSE (confirmed
-  // live against F#K Valentine's Day: exactly 4 real recommended options):
-  // slots 2-6 (five cards) used to fill ONLY from `recPool.slice(0,4)` for
-  // the leading four, with slot 6 defaulting to `remainingRecommended[0] ||
-  // null` — NEVER falling back to an evaluated alternative when recPool had
-  // fewer than 5 entries. FVD's 4 recommended options filled the leading
-  // four exactly, leaving `remainingRecommended` empty and slot 6 null —
-  // Workspace showed only 4 Optimizer cards (Current Location + 4), not the
-  // controlling contract's required Current Location + 5. The controlling
-  // contract is explicit: "Slots 2-6: first five executable Optimizer
-  // options, recommended first... if fewer than five recommendations exist,
-  // fill remaining slots with the best Evaluated Alternatives." `combined`
-  // below is exactly that — recPool (already recommended-first via
-  // _sortRecommended) followed by evalPool (already ordered via
-  // _sortEvaluatedAlternatives) — so slicing the first five ALWAYS prefers
-  // every real recommended option before ever reaching an evaluated one,
-  // and naturally generalizes to any recommended count (not just the FVD=4
-  // case): 66/107/112 recommended (LU/BH/LLS) still fill all five leading
-  // slots from recPool alone, unchanged from before.
+  // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25), superseded by the
+  // REPRESENTATIVE-RACK contract below (2026-09-30): `combined` is
+  // recPool (already recommended-first via _sortRecommended) followed by
+  // evalPool (already ordered via _sortEvaluatedAlternatives) — recommended
+  // always precedes evaluated for a given practicality tier. `_byTier`
+  // partitions it into Practical (PRACTICAL_HYBRID) vs Advanced (everything
+  // else — FORMAL_COPRODUCTION and ADVANCED_MULTI_JURISDICTION) without
+  // re-sorting, so within-tier order is unchanged.
+  //
+  // REPRESENTATIVE SIX-CARD RACK (2026-09-30): a rack built purely by
+  // overall rank (the prior behavior) could show five near-duplicate
+  // Practical routes and zero Advanced ones whenever Practical happened to
+  // dominate the ranking — technically correct, not representative. The
+  // rack now guarantees a spread: slots 2-3 are the best two executable
+  // Practical structures, slots 4-5 the best two executable Advanced/
+  // complex structures, slot 6 the single highest-ranked remaining
+  // executable structure of either kind. If one category has fewer than
+  // two candidates, its empty slot(s) backfill from the best remaining
+  // executable candidates overall (never fabricated — a genuinely shorter
+  // rack, e.g. one category empty entirely, is still a valid, honest
+  // result). Needs-More-Facts and Blocked/Rejected can never occupy an
+  // executable slot, matching the existing contract above them.
   const combined = [...recPool, ...evalPool];
-  const leading = combined.slice(0, 4);
-  const remaining = combined.slice(4);
+  const isPractical = (s) => s.practicality_tier === "PRACTICAL_HYBRID";
+  const practicalPool = combined.filter(isPractical);
+  const advancedPool = combined.filter((s) => !isPractical(s));
+  const usedForCategories = new Set();
+  const takeN = (pool, n) => {
+    const picked = [];
+    for (const s of pool) {
+      if (picked.length >= n) break;
+      if (usedForCategories.has(s.structure_id)) continue;
+      picked.push(s);
+      usedForCategories.add(s.structure_id);
+    }
+    return picked;
+  };
+  const practicalSlots = takeN(practicalPool, 2);
+  const advancedSlots = takeN(advancedPool, 2);
+  // Backfill: a category short of 2 candidates never shrinks the rack on
+  // its own — the best remaining executable candidates (of EITHER tier,
+  // already-used ones excluded) fill in, up to 4 total leading slots.
+  const backfillTarget = 4 - (practicalSlots.length + advancedSlots.length);
+  const backfill = backfillTarget > 0 ? takeN(combined, backfillTarget) : [];
+  const leading = [...practicalSlots, ...advancedSlots, ...backfill];
+  const remaining = combined.filter((s) => !usedForCategories.has(s.structure_id));
   // An explicit producer choice (slot6Id) may select ANY remaining
   // executable option, recommended or evaluated — that is a deliberate
   // producer action, never an automatic promotion. Opportunities are never
@@ -277,9 +301,32 @@ export function selectSixSlots(allocated, mode, slot6Id) {
   const dropdownOptions = recPool.filter((s) => !usedIds.has(s.structure_id));
   const dropdownEvaluatedAlternatives = evalPool.filter((s) => !usedIds.has(s.structure_id));
   const slots = [anchor, ...leading, slot6].filter(Boolean);
+  // Tie disclosure (representative-rack contract): two DIFFERENT real
+  // routes shown side by side with the same NPC would otherwise read as
+  // "these jurisdictions are ranked" when they are actually economically
+  // tied — false precision. Scenarios are already deduplicated by
+  // economic_identity (see this module's own header comment), so any
+  // group of >= 2 here is a genuine cross-route NPC tie, never a
+  // duplicate. Keyed by structure_id -> the sibling structure_ids sharing
+  // its NPC among the six shown cards only (never the full pool — a rare
+  // background NPC coincidence three pages deep in the dropdown is not
+  // this contract's concern).
+  const tieGroupsByNpc = new Map();
+  for (const s of [...leading, slot6].filter(Boolean)) {
+    const npc = _npcOf(s);
+    if (!Number.isFinite(npc)) continue;
+    if (!tieGroupsByNpc.has(npc)) tieGroupsByNpc.set(npc, []);
+    tieGroupsByNpc.get(npc).push(s.structure_id);
+  }
+  const tiedStructureIds = {};
+  for (const ids of tieGroupsByNpc.values()) {
+    if (ids.length < 2) continue;
+    for (const id of ids) tiedStructureIds[id] = ids.filter((x) => x !== id);
+  }
   return {
     anchor, leading, slot6, slots,
     dropdownOptions, dropdownEvaluatedAlternatives,
     dropdownOpportunities: opportunities,
+    tiedStructureIds,
   };
 }

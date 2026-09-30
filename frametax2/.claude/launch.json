@@ -4,13 +4,13 @@
     {
       "name": "backend",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/Suraj/cineglobe-frametax/frametax2/backend && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8010 --reload"],
+      "runtimeArgs": ["-c", "cd /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend && source .venv/bin/activate && DATABASE_URL=postgresql+psycopg://frametax:frametax@localhost:5432/frametax2_claude_optimizer_acceptance_20260919 CURRENT_ORGANIZATION_ID=11381771-5b1c-4980-9117-e3e47a4cb354 uvicorn app.main:app --host 127.0.0.1 --port 8010"],
       "port": 8010
     },
     {
       "name": "frontend",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/Suraj/cineglobe-frametax/frametax2/frontend && npm run dev"],
+      "runtimeArgs": ["-c", "cd /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/frontend && npm run dev"],
       "port": 5173
     }
   ]
