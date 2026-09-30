@@ -31,7 +31,9 @@ from app.services.canonical_production_view import (
     REC_STATUS_NEUTRAL,
     REC_STATUS_RECOMMENDED,
     _annotate_optimizer_scenario,
+    _best_entry_by_participant_set,
     _economic_jurisdictions,
+    _marginal_jurisdiction_materiality,
     _single_jurisdiction_winners,
     build_production_and_structures,
 )
@@ -97,13 +99,27 @@ def test_materiality_recommendation_threshold_usd_never_goes_negative_for_a_dege
     assert materiality_recommendation_threshold_usd(None) == 0.0
 
 
+def _sibling_index(*pairs):
+    """Build a participant_set_index (frozenset(participants) -> synthetic PRICED
+    sibling entry) for tests that need to isolate the aggregate-savings-vs-baseline
+    boundary from the marginal per-added-jurisdiction check -- every synthetic sibling
+    here is priced comfortably above the threshold so the boundary tests exercise
+    exactly one dimension at a time."""
+    return {frozenset(participants): {"npc_with_adjustments_usd": npc} for participants, npc in pairs}
+
+
 def test_annotate_optimizer_scenario_two_jurisdiction_exact_boundary():
     baseline_npc = 1_000_000.0
     threshold = materiality_recommendation_threshold_usd(2)
     assert threshold == 100_000.0
-    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=900_000.01), baseline_npc)   # savings $99,999.99
-    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=900_000.00), baseline_npc)   # savings $100,000.00
-    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=899_999.99), baseline_npc)   # savings $100,000.01
+    # Marginal-jurisdiction siblings (single-jurisdiction parents with CA-MB/GR removed)
+    # priced so removing either jurisdiction costs exactly (exact) or more than
+    # (above) $100,000 -- isolates the aggregate-vs-baseline boundary under test from
+    # the separate marginal-per-jurisdiction check (see the dedicated marginal tests below).
+    index = _sibling_index((["GR"], 1_000_000.0), (["CA-MB"], 1_000_000.0))
+    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=900_000.01), baseline_npc, index)   # savings $99,999.99
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=900_000.00), baseline_npc, index)   # savings $100,000.00
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=899_999.99), baseline_npc, index)   # savings $100,000.01
     assert below["savings_vs_current_usd"] == pytest.approx(99_999.99)
     assert below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
     assert below["is_recommended"] is False
@@ -122,9 +138,12 @@ def test_annotate_optimizer_scenario_three_jurisdiction_exact_boundary():
     threshold = materiality_recommendation_threshold_usd(3)
     assert threshold == 200_000.0
     participants = ["GR", "CA-MB", "IT"]
-    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=800_000.01, participants=participants), baseline_npc)
-    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=800_000.00, participants=participants), baseline_npc)
-    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=799_999.99, participants=participants), baseline_npc)
+    index = _sibling_index(
+        (["CA-MB", "IT"], 900_000.0), (["GR", "IT"], 900_000.0), (["GR", "CA-MB"], 900_000.0),
+    )
+    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=800_000.01, participants=participants), baseline_npc, index)
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=800_000.00, participants=participants), baseline_npc, index)
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=799_999.99, participants=participants), baseline_npc, index)
     assert below["jurisdiction_count"] == 3
     assert below["savings_vs_current_usd"] == pytest.approx(199_999.99)
     assert below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
@@ -140,9 +159,15 @@ def test_annotate_optimizer_scenario_four_jurisdiction_exact_boundary():
     threshold = materiality_recommendation_threshold_usd(4)
     assert threshold == 300_000.0
     participants = ["GR", "CA-MB", "IT", "US-NY"]
-    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=700_000.01, participants=participants), baseline_npc)
-    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=700_000.00, participants=participants), baseline_npc)
-    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=699_999.99, participants=participants), baseline_npc)
+    index = _sibling_index(
+        (["CA-MB", "IT", "US-NY"], 800_000.0),
+        (["GR", "IT", "US-NY"], 800_000.0),
+        (["GR", "CA-MB", "US-NY"], 800_000.0),
+        (["GR", "CA-MB", "IT"], 800_000.0),
+    )
+    below = _annotate_optimizer_scenario(_projection_candidate("below", npc=700_000.01, participants=participants), baseline_npc, index)
+    exact = _annotate_optimizer_scenario(_projection_candidate("exact", npc=700_000.00, participants=participants), baseline_npc, index)
+    above = _annotate_optimizer_scenario(_projection_candidate("above", npc=699_999.99, participants=participants), baseline_npc, index)
     assert below["jurisdiction_count"] == 4
     assert below["savings_vs_current_usd"] == pytest.approx(299_999.99)
     assert below["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
@@ -166,6 +191,119 @@ def test_annotate_optimizer_scenario_single_jurisdiction_has_zero_threshold():
     assert zero_savings["recommendation_status"] == REC_STATUS_RECOMMENDED  # 0 >= 0
     assert tiny_savings["savings_vs_current_usd"] == pytest.approx(0.01)
     assert tiny_savings["recommendation_status"] == REC_STATUS_RECOMMENDED
+
+
+# MATERIALITY_RECOMMENDATION_POLICY item 6 (2026-09-30): the aggregate
+# savings-vs-baseline threshold alone lets a large single-jurisdiction relocation
+# subsidize an immaterial additional jurisdiction (e.g. a $729,300 Manitoba
+# relocation "covering" a $1,010-worse-than-Manitoba-only music/VFX hybrid). Every
+# jurisdiction ADDED beyond a single-jurisdiction structure must independently clear
+# $100,000 versus the best valid parent structure with that jurisdiction removed.
+# These tests exercise _marginal_jurisdiction_materiality directly.
+
+def test_marginal_jurisdiction_materiality_single_jurisdiction_always_passes():
+    entry = _projection_candidate("solo", npc=900_000.0, participants=["GR"])
+    ok, reason = _marginal_jurisdiction_materiality(entry, {})
+    assert ok is True
+    assert reason is None
+
+
+def test_marginal_jurisdiction_materiality_exact_100000_boundary_passes():
+    # Parent (GR only) prices at $1,000,000; candidate (GR+CA-MB) prices at $900,000 --
+    # exactly $100,000 marginal improvement from adding CA-MB. >=, not >, qualifies. The
+    # CA-MB-only parent is priced far above the candidate too, so the symmetric
+    # "removing GR" check is not the constraint this test is isolating.
+    entry = _projection_candidate("hybrid", npc=900_000.0, participants=["GR", "CA-MB"])
+    index = _sibling_index((["GR"], 1_000_000.0), (["CA-MB"], 2_000_000.0))
+    ok, reason = _marginal_jurisdiction_materiality(entry, index)
+    assert ok is True
+    assert reason is None
+
+
+def test_marginal_jurisdiction_materiality_99999_99_below_boundary_fails():
+    # Same setup, one cent short of the $100,000 marginal bar.
+    entry = _projection_candidate("hybrid", npc=900_000.01, participants=["GR", "CA-MB"])
+    index = _sibling_index((["GR"], 1_000_000.0), (["CA-MB"], 2_000_000.0))
+    ok, reason = _marginal_jurisdiction_materiality(entry, index)
+    assert ok is False
+    assert reason == "JURISDICTION_CA-MB_MARGINAL_BENEFIT_BELOW_THRESHOLD"
+
+
+def test_marginal_jurisdiction_materiality_fails_closed_when_parent_never_priced():
+    # No sibling exists for the reduced participant set at all -- the marginal benefit
+    # of CA-MB is UNVERIFIABLE and must never silently default to "passes."
+    entry = _projection_candidate("hybrid", npc=500_000.0, participants=["GR", "CA-MB"])
+    ok, reason = _marginal_jurisdiction_materiality(entry, {})
+    assert ok is False
+    assert reason == "NO_PRICED_PARENT_WITHOUT_CA-MB"
+
+
+def test_marginal_jurisdiction_materiality_requires_every_added_jurisdiction_independently():
+    # Three jurisdictions: GR (anchor) + CA-MB (materially worth it) + a music/VFX-style
+    # NL addition that does NOT independently clear $100,000 versus the GR+CA-MB parent.
+    # The whole structure must fail even though the CA-MB leg alone would pass.
+    entry = _projection_candidate("stack", npc=650_000.0, participants=["GR", "CA-MB", "NL"])
+    index = _sibling_index(
+        (["CA-MB", "NL"], 1_000_000.0),  # removing GR: huge improvement, not the failing leg
+        (["GR", "NL"], 1_000_000.0),     # removing CA-MB: huge improvement, not the failing leg
+        (["GR", "CA-MB"], 700_000.0),    # removing NL: only $50,000 improvement -- fails
+    )
+    ok, reason = _marginal_jurisdiction_materiality(entry, index)
+    assert ok is False
+    assert reason == "JURISDICTION_NL_MARGINAL_BENEFIT_BELOW_THRESHOLD"
+
+
+def test_marginal_jurisdiction_materiality_is_invariant_to_participant_list_order():
+    index = _sibling_index((["GR"], 1_000_000.0), (["CA-MB"], 2_000_000.0))
+    forward = _projection_candidate("a", npc=900_000.0, participants=["GR", "CA-MB"])
+    reversed_ = _projection_candidate("b", npc=900_000.0, participants=["CA-MB", "GR"])
+    ok_forward, _ = _marginal_jurisdiction_materiality(forward, index)
+    ok_reversed, _ = _marginal_jurisdiction_materiality(reversed_, index)
+    assert ok_forward is True
+    assert ok_reversed is True
+
+
+def test_best_entry_by_participant_set_picks_lowest_npc_and_ignores_missing_npc():
+    entries = [
+        {"participants": ["GR"], "npc_with_adjustments_usd": 900_000.0, "structure_id": "worse"},
+        {"participants": ["GR"], "npc_with_adjustments_usd": 800_000.0, "structure_id": "better"},
+        {"participants": ["GR"], "npc_with_adjustments_usd": None, "structure_id": "unpriced"},
+        {"participants": ["CA-MB", "GR"], "npc_with_adjustments_usd": 500_000.0, "structure_id": "different-set"},
+    ]
+    index = _best_entry_by_participant_set(entries)
+    assert index[frozenset(["GR"])]["structure_id"] == "better"
+    # Participant order in the key is irrelevant -- {"GR","CA-MB"} == {"CA-MB","GR"}.
+    assert index[frozenset(["GR", "CA-MB"])]["structure_id"] == "different-set"
+
+
+def test_annotate_optimizer_scenario_marginal_check_scoped_to_two_jurisdictions_only():
+    # SCOPE NOTE (see _marginal_jurisdiction_materiality docstring): a 3-jurisdiction
+    # candidate is recommended on the aggregate threshold ALONE even when no priced
+    # (n-1)-jurisdiction sibling exists to verify its marginal benefit -- deferred,
+    # documented, not silently dropped. Confirmed live this is the actual real-world
+    # case for every Bad Hombres/Lips Like Sugar recommended structure.
+    baseline_npc = 1_000_000.0
+    entry = _projection_candidate("triple", npc=700_000.0, participants=["GR", "CA-MB", "NL"])
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, {})  # empty index -- no siblings priced
+    assert annotated["jurisdiction_count"] == 3
+    assert annotated["savings_vs_current_usd"] == pytest.approx(300_000.0)
+    assert annotated["recommendation_status"] == REC_STATUS_RECOMMENDED
+    assert annotated["is_recommended"] is True
+
+
+def test_annotate_optimizer_scenario_recommended_only_when_both_aggregate_and_marginal_pass():
+    # Aggregate savings clears the $100K/jurisdiction threshold (baseline $1,000,000 ->
+    # candidate $700,000 = $300,000 saved for 2 jurisdictions, well above the $100,000
+    # bar) but the marginal check fails because the best GR-only parent is only
+    # $50,000 more expensive than the hybrid -- CA-MB is not independently worth adding.
+    baseline_npc = 1_000_000.0
+    entry = _projection_candidate("hybrid", npc=700_000.0, participants=["GR", "CA-MB"])
+    index = _sibling_index((["GR"], 750_000.0))
+    annotated = _annotate_optimizer_scenario(entry, baseline_npc, index)
+    assert annotated["savings_vs_current_usd"] == pytest.approx(300_000.0)
+    assert annotated["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE
+    assert annotated["recommendation_reason"] == "JURISDICTION_CA-MB_MARGINAL_BENEFIT_BELOW_THRESHOLD"
+    assert annotated["is_recommended"] is False
 
 
 def test_annotate_optimizer_scenario_negative_and_zero_savings_labeled_and_still_visible():
