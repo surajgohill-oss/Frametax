@@ -1173,6 +1173,7 @@ def _relocation_normalization(
 
 def _hybrid_structure_normalization(
     inputs: "ProjectEconomicInputs", anchor_code: str, components: list,
+    cache: dict[tuple, tuple[float, float, float]] | None = None,
 ) -> tuple[float, float, float]:
     """CANONICAL OPTIMIZER ECONOMIC COMPARABILITY CLOSEOUT (2026-09-30):
     generate_structural_candidate() priced every hybrid/component/stack
@@ -1202,16 +1203,51 @@ def _hybrid_structure_normalization(
         compute_local_cost_normalization,
     )
 
+    _cache_key = None
+    if cache is not None:
+        from app.services import _lls_profile_sink as _prof
+        _prof.tick("normalization_calls_total")
+        _cache_key = (
+            inputs.jurisdiction_code, anchor_code,
+            tuple(sorted(
+                (c.jurisdiction_code, c.component_type, round(c.allocated_usd, 2)) for c in components
+            )),
+        )
+        _cached = cache.get(_cache_key)
+        if _cached is not None:
+            _prof.tick("normalization_cache_hit")
+            return _cached
+        _prof.tick("normalization_cache_miss")
+
     total_travel = total_fx = total_local_cost = 0.0
     home_code = inputs.jurisdiction_code
     principal_code = next(
         (c.jurisdiction_code for c in components if c.component_type == "principal_production"),
         anchor_code,
     )
+
+    # LLS anchor-cardinality repair (2026-10-01): the structure's normalization
+    # is a sum of independent per-LEG calculations. Each leg is cached under
+    # every real input that affects it (production home via `inputs`, which is
+    # constant for the cache's lifetime and recorded in the key by its home
+    # jurisdiction; principal jurisdiction; routed jurisdiction; allocated
+    # amount) and the structure total is assembled from the legs in the SAME
+    # order and with the SAME float accumulation as the uncached computation,
+    # so a cached assembly is bit-identical to a fresh one.
+    def _leg(key, compute):
+        if cache is None:
+            return compute()
+        hit = cache.get(key)
+        if hit is None:
+            hit = compute()
+            cache[key] = hit
+        return hit
+
     if principal_code != home_code:
-        _travel, _fx, _local = _relocation_normalization(
-            inputs, principal_code,
-            next((c.allocated_usd for c in components if c.jurisdiction_code == principal_code), 0.0),
+        _principal_alloc = next((c.allocated_usd for c in components if c.jurisdiction_code == principal_code), 0.0)
+        _travel, _fx, _local = _leg(
+            ("leg_principal", home_code, principal_code, round(_principal_alloc, 2)),
+            lambda: tuple(_relocation_normalization(inputs, principal_code, _principal_alloc)),
         )
         total_travel += _travel or 0.0
         total_fx += _fx or 0.0
@@ -1221,11 +1257,22 @@ def _hybrid_structure_normalization(
             continue
         if c.jurisdiction_code == home_code:
             continue
-        local_cost = compute_local_cost_normalization(c.jurisdiction_code, principal_code, c.allocated_usd)
-        fx = compute_fx_normalization(c.jurisdiction_code, FXInputs(), local_cost_basis_usd=c.allocated_usd)
-        total_local_cost += local_cost.incremental_delta_usd or 0.0
-        total_fx += fx.delta_usd or 0.0
-    return round(total_travel, 2), round(total_fx, 2), round(total_local_cost, 2)
+
+        def _routed_leg(c=c):
+            local_cost = compute_local_cost_normalization(c.jurisdiction_code, principal_code, c.allocated_usd)
+            fx = compute_fx_normalization(c.jurisdiction_code, FXInputs(), local_cost_basis_usd=c.allocated_usd)
+            return (local_cost.incremental_delta_usd or 0.0, fx.delta_usd or 0.0)
+
+        _leg_local, _leg_fx = _leg(
+            ("leg_routed", home_code, principal_code, c.jurisdiction_code, round(c.allocated_usd, 2)),
+            _routed_leg,
+        )
+        total_local_cost += _leg_local
+        total_fx += _leg_fx
+    _result = (round(total_travel, 2), round(total_fx, 2), round(total_local_cost, 2))
+    if cache is not None:
+        cache[_cache_key] = _result
+    return _result
 
 
 _SPEND_CATEGORY_DISTINGUISHING_PROGRAM_CACHE: dict[tuple[str, str], bool] = {}
@@ -1286,9 +1333,68 @@ def _program_distinguishes_spend_category(program_slug: str, spend_category: str
     return found
 
 
+def _build_hybrid_route(
+    inputs: "ProjectEconomicInputs", anchor_code: str, anchor_program_slug: str | None,
+    subset: tuple, jur_codes: list[str] | tuple, program_for_jur: dict[str, str],
+) -> tuple["StructureSpec", list]:
+    """Builds the structure spec and priced-component inputs for ONE hybrid route (anchor + the
+    `subset` components routed to `jur_codes`, each under `program_for_jur`). The single owner of
+    this construction: the search's per-combination pricing and the lazy marginal-jurisdiction
+    enrichment of retained candidates both call it, so a reconstruction from the compact
+    descriptor can never diverge from what was priced."""
+    from app.calculators.structural_archetype_generator import StructuralComponent as _HybridComponent
+
+    comp_by_jur = dict(zip(jur_codes, subset))
+    spec = StructureSpec(
+        structure_id=(
+            "CANON-HYBRID-BB-" + anchor_code + "-" + "-".join(
+                f"{c}={jur}:{program_for_jur[jur]}"
+                for jur, c in sorted(comp_by_jur.items(), key=lambda t: t[1])
+            )
+        ),
+        structure_type="hybrid",
+        label=(
+            f"{anchor_code} ({anchor_program_slug}) + " + " + ".join(
+                f"{c}->{jc} ({program_for_jur[jc]})"
+                for jc, c in sorted(comp_by_jur.items())
+            )
+        ),
+        primary_jurisdiction=anchor_code,
+        participants=tuple(dict.fromkeys([anchor_code] + list(jur_codes))),
+        incentive_programs=program_for_jur,
+        component_routes={c: jc for jc, c in comp_by_jur.items()},
+    )
+    from app.services import _lls_profile_sink as _prof
+    with _prof.timed("allocation_derivation"):
+        alloc = derive_account_allocation(
+            lines=inputs.budget_lines,
+            spend_category_by_code=inputs.spend_category_by_code,
+            spec=spec,
+            stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+        )
+    allocations_by_jur: dict[str, list] = {}
+    for a in alloc.assignments:
+        allocations_by_jur.setdefault(a.jurisdiction_code, []).append(a)
+    components = []
+    for jur_code, accts in sorted(allocations_by_jur.items()):
+        program_slug = program_for_jur.get(jur_code)
+        if not program_slug:
+            continue
+        component_type = "principal_production" if jur_code == anchor_code else comp_by_jur.get(jur_code, "component")
+        components.append(_HybridComponent(
+            component_type=component_type, jurisdiction_code=jur_code, program_slug=program_slug,
+            allocations=tuple(accts), spend_category_by_code=inputs.spend_category_by_code,
+            offshore_payroll_accounts=inputs.offshore_payroll_accounts, production_type=inputs.production_type,
+            evidenced_requirement_facts=inputs.evidenced_program_facts, amount_facts=inputs.amount_facts,
+        ))
+    return spec, components
+
+
 def _hybrid_marginal_jurisdiction_benefits(
     components: list, anchor_code: str, gross_budget_usd: float,
     inputs: "ProjectEconomicInputs", candidate_npc_with_adjustments_usd: float | None,
+    normalization_cache: dict | None = None, pricing_cache: dict | None = None,
+    component_cache: dict | None = None,
 ) -> dict[str, float]:
     """CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 2
     completion: the bounded canonical counterfactual comparison, extracted into its
@@ -1334,13 +1440,16 @@ def _hybrid_marginal_jurisdiction_benefits(
         if not cf_components:
             continue
         try:
-            cf_travel, cf_fx, cf_local = _hybrid_structure_normalization(inputs, anchor_code, cf_components)
+            cf_travel, cf_fx, cf_local = _hybrid_structure_normalization(
+                inputs, anchor_code, cf_components, cache=normalization_cache,
+            )
         except Exception:
             cf_travel, cf_fx, cf_local = 0.0, 0.0, 0.0
         try:
             cf_result = _generate_hybrid_candidate(
                 cf_components, gross_budget_usd=gross_budget_usd, anchor_npc_usd=None,
                 travel_incremental_delta_usd=cf_travel, fx_delta_usd=cf_fx, local_cost_delta_usd=cf_local,
+                _cache=pricing_cache, _component_cache=component_cache,
             )
         except Exception:
             continue
@@ -1416,6 +1525,149 @@ async def _best_first_bound_search(lists: list[list[float]], try_combination) ->
                 nxt_bound = sum(lists[m][nxt_t[m]] for m in range(len(lists)))
                 heapq.heappush(heap, (-nxt_bound, nxt_t))
     return best_value, visited_count, None
+
+
+class _SharedBoundSequence:
+    """LLS-SPECIFIC PERFORMANCE REPAIR (2026-10-01) -- the anchor-cardinality
+    repair. CONFIRMED ROOT CAUSE (from the authorized instrumented profiling
+    run): Lips Like Sugar has 78 candidate anchor jurisdictions; each ran an
+    INDEPENDENT `_best_first_bound_search` over its own `_hy_naive_lists` --
+    anchors 1-9 alone visited ~90,000 index-tuples in ~611s with the search
+    never reaching real pruning (the naive bound stayed loose), projecting to
+    ~5,300s for all 78 -- while the underlying `lists` (one sorted-descending
+    naive-incentive list per movable-component role, built ONCE from
+    `_hy_component_all_targets` BEFORE the anchor loop -- see that
+    construction's own comment) is itself 100% ANCHOR-INDEPENDENT. The only
+    anchor-specific input to `_full_lists` is a SMALL exclusion filter
+    (`_hy_provably_illegal_with_anchor`/`_hy_same_jurisdiction_distinct_cost_
+    allowed`), which only ever removes targets sharing the anchor's OWN
+    authority scope -- for the large majority of (anchor, subset) pairs this
+    changes nothing, so many anchors share byte-identical `_full_lists`.
+
+    `_best_first_bound_search`'s heap-traversal ORDER (which index-tuple is
+    visited 1st, 2nd, 3rd, ...) is a pure function of `lists` alone -- the
+    real (anchor-dependent) pricing from `try_combination` only affects WHEN
+    a given anchor's OWN search is allowed to stop early (`bound <=
+    best_value`), never WHICH tuple comes next. This class factors exactly
+    that invariant: it lazily computes and MEMOIZES the shared traversal
+    order (heap pops, in order, with each tuple's bound) ONCE per distinct
+    `lists` identity (reused by every anchor sharing that `_full_lists`
+    shape), while leaving each anchor's own `try_combination` call, its own
+    `best_value` tracking, and its own early-stop condition completely
+    independent and untouched -- BYTE-IDENTICAL semantics to calling
+    `_best_first_bound_search(lists, try_combination)` fresh per anchor
+    (proven in tests/test_structural_archetype_generator.py), because the
+    set of tuples visited and the order they are visited in are identical;
+    only the (pure, side-effect-free) heap bookkeeping is shared rather than
+    redone. Never a global/cross-anchor cutoff: nothing here ever prevents a
+    LATER anchor from visiting a tuple an EARLIER anchor stopped before
+    reaching -- the shared sequence is only ever EXTENDED, never truncated,
+    and each anchor independently decides how far into it to go.
+    """
+
+    __slots__ = ("lists", "heap", "visited", "order")
+
+    def __init__(self, lists: list[list[float]]):
+        self.lists = lists
+        start = tuple([0] * len(lists))
+        self.heap: list[tuple[float, tuple[int, ...]]] = [(-sum(lst[0] for lst in lists), start)]
+        self.visited: set[tuple[int, ...]] = {start}
+        self.order: list[tuple[float, tuple[int, ...]]] = []  # (bound, idx), in visit order
+
+    def node(self, pos: int) -> tuple[float, tuple[int, ...]] | None:
+        """Returns the (bound, idx) at traversal position `pos` (0-based),
+        extending the shared heap exploration as needed. None once the
+        heap has genuinely exhausted (the complete candidate space for
+        this `lists` was visited) -- mirrors `_best_first_bound_search`'s
+        own exhaustion return exactly."""
+        while len(self.order) <= pos:
+            if not self.heap:
+                return None
+            neg_bound, idx = heapq.heappop(self.heap)
+            bound = -neg_bound
+            self.order.append((bound, idx))
+            for k in range(len(self.lists)):
+                nxt = list(idx)
+                nxt[k] += 1
+                nxt_t = tuple(nxt)
+                if nxt_t not in self.visited and nxt_t[k] < len(self.lists[k]):
+                    self.visited.add(nxt_t)
+                    nxt_bound = sum(self.lists[m][nxt_t[m]] for m in range(len(self.lists)))
+                    heapq.heappush(self.heap, (-nxt_bound, nxt_t))
+        return self.order[pos]
+
+
+def _sequence_key_for_lists(subset: tuple, full_lists: list[list]) -> tuple:
+    """Canonical, hashable identity for a `_full_lists` shape -- the SAME
+    (subset, per-role ordered (jurisdiction_code, program_slug) tuple)
+    shape that produces byte-identical `lists` bound values, regardless of
+    which anchor's filter produced it. Two anchors land on the same key
+    exactly when their exclusion filters removed the same (empty, usually)
+    set of targets for this subset -- never a false collision, since the
+    key includes every target's own identity in order."""
+    return (subset, tuple(tuple((t.jurisdiction_code, t.program_slug) for t in lst) for lst in full_lists))
+
+
+def _anchor_exclusion_flags(
+    shared_lists: list[list], anchor_code: str, same_jurisdiction_allowed, provably_illegal,
+) -> list[list[bool]]:
+    """Per-anchor exclusion flags over the anchor-independent target lists
+    (True = this anchor must never route that target). A target is kept iff
+    (it is not in the anchor's own jurisdiction OR a registered same-cost-
+    prohibited/distinct-costs-allowed pair permits it) AND it is not
+    provably illegal with the anchor. Exactly the complement of the filter
+    this search applied before target lists were shared across anchors."""
+    return [
+        [
+            not (
+                (t.jurisdiction_code != anchor_code
+                 or same_jurisdiction_allowed(t.program_slug, t.jurisdiction_code))
+                and not provably_illegal(t.program_slug, t.jurisdiction_code)
+            )
+            for t in lst
+        ]
+        for lst in shared_lists
+    ]
+
+
+async def _best_first_bound_search_shared(
+    lists: list[list[float]], try_combination, sequence: "_SharedBoundSequence",
+    skip=None,
+) -> tuple[float, int, float | None]:
+    """The anchor-facing entry point: IDENTICAL stopping semantics and
+    return contract to `_best_first_bound_search` (reuses its own exact
+    `bound <= best_value` early-stop proof and `None`-on-exhaustion
+    contract), but walks a SHARED, externally-memoized traversal sequence
+    (`sequence`, a `_SharedBoundSequence` keyed by `_sequence_key_for_lists`
+    at the call site) instead of building its own heap from scratch. Each
+    call starts its own `best_value`/`visited_count` fresh (per-anchor
+    state is NEVER shared) and only extends `sequence` -- it can graze an
+    already-explored prefix other anchors already paid for, and it can
+    extend `sequence` further for anchors that come after it; it never
+    skips a tuple an identical, non-shared search would have visited."""
+    if not lists or any(not lst for lst in lists):
+        return float("-inf"), 0, None
+    best_value = float("-inf")
+    visited_count = 0
+    pos = 0
+    while True:
+        node = sequence.node(pos)
+        if node is None:
+            return best_value, visited_count, None
+        bound, idx = node
+        if skip is not None and skip(idx):
+            # Anchor-specific exclusion (self-jurisdiction / provably illegal):
+            # behaves exactly as if the tuple were absent from this anchor's
+            # list -- not counted visited, never triggers the stop bound.
+            pos += 1
+            continue
+        if bound <= best_value:
+            return best_value, visited_count, bound
+        visited_count += 1
+        real_value = await try_combination(idx, best_value)
+        if real_value is not None and real_value > best_value:
+            best_value = real_value
+        pos += 1
 
 
 @functools.lru_cache(maxsize=None)
@@ -3983,6 +4235,22 @@ class _BulkEvaluationWriter:
         # ANALYZE happen exactly once, at the first commit that persisted rows.
         self._finalized = False
         self._analyze_due = False
+        self._marginal_enricher = None
+
+    def set_marginal_enricher(self, fn) -> None:
+        """Registers the ONE callable that enriches a retained candidate's deferred marginal-jurisdiction
+        disclosure from its compact descriptor (see _finalize_retention)."""
+        self._marginal_enricher = fn
+
+    def _enrich_retained(self, result) -> None:
+        descriptor = result.__dict__.pop("_lazy_marginal", None)
+        if descriptor is None or self._marginal_enricher is None:
+            return
+        from app.services import _lls_profile_sink as _prof
+        _prof.tick("marginal_enriched")
+        with _prof.timed("marginal_enrichment"):
+            trace = result.calculation_trace_json
+            trace["marginal_jurisdiction_benefits_usd"] = self._marginal_enricher(descriptor)
 
     # ------------------------------------------------------------------ add
     @staticmethod
@@ -4037,7 +4305,9 @@ class _BulkEvaluationWriter:
                 # the candidate is a plain physical row (counted once, in persisted rows).
                 self._persist_now(None, obj)
                 return
-            self._route(structure, obj)
+            from app.services import _lls_profile_sink as _prof
+            with _prof.timed("retention_aggregation"):
+                self._route(structure, obj)
         else:
             self._session.add(obj)
 
@@ -4079,6 +4349,8 @@ class _BulkEvaluationWriter:
             )
             self._generation.setdefault("input_fingerprint", result.input_fingerprint)
             self._generation.setdefault("engine_version", result.engine_version)
+            # computed once, here; reused by retention lanes, aggregation, proofs and persistence
+            result.economic_identity = held.identity
             for dropped in self._retention.consider(held):
                 self._aggregate_held(dropped)
             return
@@ -4135,6 +4407,7 @@ class _BulkEvaluationWriter:
         for held in to_aggregate:
             self._aggregate_held(held)
         for held in retained:
+            self._enrich_retained(held.result)
             self._persist_now(held.structure, held.result)
 
     def _assert_accounting(self) -> None:
@@ -4246,6 +4519,9 @@ class _BulkEvaluationWriter:
         if not (self._structures or self._results):
             return
         started = time.monotonic()
+        from app.services import _lls_profile_sink as _prof
+        _drain_t0 = _prof.elapsed() if _prof.ENABLED else 0.0
+        _drain_rows = len(self._structures) + len(self._results)
         # Any other pending ORM state (none is expected, but flush() used to
         # carry it) goes first, in the same transaction.
         await self._session.flush()
@@ -4259,6 +4535,8 @@ class _BulkEvaluationWriter:
             self.results_written += len(results)
         self.chunks += 1
         self.drain_seconds += time.monotonic() - started
+        if _prof.ENABLED:
+            _prof.record_drain(_drain_t0, _prof.elapsed(), _drain_rows)
 
     async def _bulk_insert(self, model, objs) -> None:
         keys = [attr.key for attr in sa_inspect(model).column_attrs]
@@ -4281,8 +4559,9 @@ class _BulkEvaluationWriter:
                 )
                 self._generation.setdefault("input_fingerprint", values.get("input_fingerprint"))
                 self._generation.setdefault("engine_version", values.get("engine_version"))
-                if priced:
-                    # deterministic equal-NPC tie-breaker, PRICED rows only
+                if priced and values.get("economic_identity") is None:
+                    # deterministic equal-NPC tie-breaker, PRICED rows only (rows that bypassed
+                    # bounded retention, e.g. the legacy full-enumeration control, compute it here)
                     values["economic_identity"] = canonical_economic_identity(values.get("structure_type"), trace)
             groups.setdefault(frozenset(values), []).append(values)
         for rows in groups.values():
@@ -6598,7 +6877,61 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     def _hy_component_type_for(jur_code: str, comp_by_jur: dict[str, str]) -> str:
         return comp_by_jur.get(jur_code, "component")
 
+    # LLS-SPECIFIC PERFORMANCE REPAIR (2026-09-30, same CANONICAL OPTIMIZER
+    # RECOMMENDATION METHODOLOGY CLOSEOUT pass): profiled directly (cProfile,
+    # 100s sample) -- generate_structural_candidate (59,561 calls, 61.7s
+    # cumulative) and _hybrid_structure_normalization (59,562 calls, 34.2s
+    # cumulative) together account for the overwhelming majority of Lips Like
+    # Sugar's evaluation time, driven almost entirely by the item-2
+    # counterfactual reprice (_hybrid_marginal_jurisdiction_benefits, firing
+    # on ~95% of examined combinations for this production specifically,
+    # unlike Bad Hombres where the real_marginal upper-bound gate already
+    # filters almost everything). Both functions are pure (deterministic over
+    # their real inputs, no side effects), and the SAME exact component
+    # shape genuinely recurs across different outer combinations once a
+    # counterfactual removes a component -- confirmed by this cache's real
+    # hit rate on live Lips Like Sugar data. Caching ACROSS anchors (declared
+    # once here, before the anchor loop, never reset per-anchor) is safe:
+    # both functions' own cache keys already include every value that could
+    # otherwise make two calls with the "same" components disagree (anchor_
+    # code for normalization; the three adjustment deltas for pricing) --
+    # see each function's own cache-key construction. Never a parallel
+    # calculator, never an approximation: a cache hit returns the EXACT same
+    # result a fresh computation would, proven by the key constructed from
+    # every input the computation actually depends on.
+    _hy_normalization_cache: dict[tuple, tuple[float, float, float]] = {}
+    _hy_pricing_cache: dict[tuple, "StructuralCandidateResult"] = {}
+    _hy_component_pricing_cache: dict[tuple, object] = {}
+    # LLS-SPECIFIC PERFORMANCE REPAIR (2026-10-01): the shared best-first
+    # traversal-order cache (see _SharedBoundSequence's own docstring for
+    # the full root-cause/correctness argument) -- keyed by
+    # _sequence_key_for_lists(subset, _full_lists), scoped to this one
+    # evaluate_project call exactly like the two caches above.
+    _hy_sequence_cache: dict[tuple, "_SharedBoundSequence"] = {}
+
+    def _hy_enrich_marginal(descriptor: tuple) -> dict[str, float]:
+        """Lazy marginal-jurisdiction enrichment for ONE retained candidate, from its compact
+        primitive descriptor (same route builder + same counterfactual function the eager path used)."""
+        (_d_anchor, _d_anchor_prog, _d_subset, _d_jurs, _d_progs, _d_npc) = descriptor
+        _d_spec, _d_components = _build_hybrid_route(
+            inputs, _d_anchor, _d_anchor_prog, _d_subset, list(_d_jurs), dict(_d_progs),
+        )
+        return _hybrid_marginal_jurisdiction_benefits(
+            _d_components, _d_anchor, inputs.gross_budget_usd, inputs, _d_npc,
+            normalization_cache=_hy_normalization_cache, pricing_cache=_hy_pricing_cache,
+            component_cache=_hy_component_pricing_cache,
+        )
+
+    session.set_marginal_enricher(_hy_enrich_marginal)
+
+    from app.services import _lls_profile_sink as _prof
+    _prof.set_phase(f"hybrid search: {len(_hy_anchor_candidates)} anchor(s) to examine")
+    _prof.tick("hy_anchor_count", len(_hy_anchor_candidates))
+    _hy_anchor_idx = 0
+
     for _anchor_code, _anchor_program_slug in sorted(_hy_anchor_candidates.items()):
+        _hy_anchor_idx += 1
+        _prof.set_phase(f"anchor {_hy_anchor_idx}/{len(_hy_anchor_candidates)}: {_anchor_code}")
         _hy_anchor_incentive = next(
             (c.selected_incentive_usd for c in priced_by_code.get(_anchor_code, [])
              if c.program_slug == _anchor_program_slug),
@@ -6649,21 +6982,63 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             return rule is not None and rule["rule_type"] == "same_cost_prohibited_distinct_costs_allowed"
 
         _hy_movable = sorted(k for k, v in component_spend.items() if v > 0)
+        _prof.tick("hy_movable_count_per_anchor")
+        _prof.tick("hy_subset_loops_entered", 0)  # ensure the key exists even if r-range is empty
         for _r in range(2, len(_hy_movable) + 1):
             for _subset in itertools.combinations(_hy_movable, _r):
+                _prof.tick("hy_subset_loops_entered")
+                _prof.set_phase(f"anchor {_hy_anchor_idx}/{len(_hy_anchor_candidates)} {_anchor_code}: r={_r} subset={_subset}")
+                # LLS-SPECIFIC PERFORMANCE REPAIR (2026-10-01), refined
+                # after the first shared-sequence attempt measured a near-
+                # 0% hit rate on real LLS data: `_hy_component_all_targets`
+                # is built from the SAME `priced_by_code` universe as the
+                # anchor candidates themselves, so almost every anchor
+                # appears SOMEWHERE in the unfiltered target lists -- the
+                # anchor-specific filter this block used to apply (self-
+                # jurisdiction exclusion + _hy_provably_illegal_with_anchor)
+                # therefore made `_full_lists` subtly DIFFERENT for nearly
+                # every anchor (each excludes a different entry), so the
+                # exact-identity sequence cache below almost never shared
+                # anything. Traversal now runs over `_hy_shared_lists`, the
+                # UNFILTERED per-role target lists -- identical across ALL
+                # anchors for a given subset, so one shared traversal order
+                # covers every anchor. The anchor's own exclusions
+                # (self-jurisdiction, same-jurisdiction distinct-cost
+                # exception, provably-illegal pairs) are applied as a cheap
+                # per-tuple skip INSIDE the walk (no pricing): a skipped
+                # tuple is not counted visited and never triggers this
+                # anchor's stop bound, i.e. it behaves exactly as if absent
+                # from this anchor's filtered list. `_full_lists` is that
+                # filtered view, retained only for accounting/reconstruction
+                # so persisted visited/dominated/stopping-bound fields are
+                # unchanged.
+                _hy_shared_lists = [_hy_component_all_targets.get(c, []) for c in _subset]
+                # Per-anchor exclusion flags (cheap, no pricing): exactly the
+                # old filter's complement. `_full_lists` remains this anchor's
+                # own filtered view, used ONLY for accounting/reconstruction
+                # (total space, candidate lists) so persisted proof fields are
+                # byte-identical to the pre-sharing behavior.
+                _hy_excluded_flags = _anchor_exclusion_flags(
+                    _hy_shared_lists, _anchor_code,
+                    _hy_same_jurisdiction_distinct_cost_allowed, _hy_provably_illegal_with_anchor,
+                )
                 _full_lists = [
-                    [
-                        t for t in _hy_component_all_targets.get(c, [])
-                        if (
-                            t.jurisdiction_code != _anchor_code
-                            or _hy_same_jurisdiction_distinct_cost_allowed(t.program_slug, t.jurisdiction_code)
-                        )
-                        and not _hy_provably_illegal_with_anchor(t.program_slug, t.jurisdiction_code)
-                    ]
-                    for c in _subset
+                    [t for t, ex in zip(lst, flags) if not ex]
+                    for lst, flags in zip(_hy_shared_lists, _hy_excluded_flags)
                 ]
                 if any(not lst for lst in _full_lists):
                     continue
+
+                # Anchors with NO exclusion in this subset walk the shared,
+                # unfiltered lists (one traversal serves every such anchor).
+                # An anchor WITH exclusions walks its own filtered lists
+                # (sequence still shared among anchors whose filtered lists
+                # coincide): skipping excluded tuples inside the shared walk
+                # was measured to be unbounded for anchors whose excluded
+                # targets dominate the top of the order.
+                _hy_walk_lists = (
+                    _hy_shared_lists if not any(any(f) for f in _hy_excluded_flags) else _full_lists
+                )
 
                 # FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT (2026-09-18):
                 # a genuine best-first branch-and-bound over the COMPLETE
@@ -6696,7 +7071,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 async def _hy_try_combination(_idx: tuple[int, ...], _current_best: float) -> float | None:
                     nonlocal _hy_incumbent_structure_id, _hy_incumbent_jurisdiction_codes
                     nonlocal _hy_incumbent_program_slugs, _hy_examined_count, _hy_rejected_count
-                    _cands = [_full_lists[_k][_idx[_k]] for _k in range(len(_full_lists))]
+                    _cands = [_hy_walk_lists[_k][_idx[_k]] for _k in range(len(_hy_walk_lists))]
                     _jur_codes = [c.jurisdiction_code for c in _cands]
                     if len(set(_jur_codes)) != len(_jur_codes):
                         return None
@@ -6705,55 +7080,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     if _anchor_program_slug:
                         _hy_program_for_jur[_anchor_code] = _anchor_program_slug
 
-                    _hy_spec = StructureSpec(
-                        structure_id=(
-                            "CANON-HYBRID-BB-" + _anchor_code + "-" + "-".join(
-                                f"{c}={jur}:{_hy_program_for_jur[jur]}"
-                                for jur, c in sorted(_comp_by_jur.items(), key=lambda t: t[1])
-                            )
-                        ),
-                        structure_type="hybrid",
-                        label=(
-                            f"{_anchor_code} ({_anchor_program_slug}) + " + " + ".join(
-                                f"{c}->{jc} ({_hy_program_for_jur[jc]})"
-                                for jc, c in sorted(_comp_by_jur.items())
-                            )
-                        ),
-                        primary_jurisdiction=_anchor_code,
-                        participants=tuple(dict.fromkeys([_anchor_code] + _jur_codes)),
-                        incentive_programs=_hy_program_for_jur,
-                        component_routes={c: jc for jc, c in _comp_by_jur.items()},
+                    _hy_spec, _hy_components = _build_hybrid_route(
+                        inputs, _anchor_code, _anchor_program_slug, _subset, _jur_codes, _hy_program_for_jur,
                     )
-                    _hy_alloc = derive_account_allocation(
-                        lines=inputs.budget_lines,
-                        spend_category_by_code=inputs.spend_category_by_code,
-                        spec=_hy_spec,
-                        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
-                    )
-                    _hy_allocations_by_jur: dict[str, list] = {}
-                    for _a in _hy_alloc.assignments:
-                        _hy_allocations_by_jur.setdefault(_a.jurisdiction_code, []).append(_a)
-
-                    _hy_components = []
-                    for _jur_code, _accts in sorted(_hy_allocations_by_jur.items()):
-                        _program_slug = _hy_program_for_jur.get(_jur_code)
-                        if not _program_slug:
-                            continue
-                        _component_type = (
-                            "principal_production" if _jur_code == _anchor_code
-                            else _hy_component_type_for(_jur_code, _comp_by_jur)
-                        )
-                        _hy_components.append(_HybridComponent(
-                            component_type=_component_type,
-                            jurisdiction_code=_jur_code,
-                            program_slug=_program_slug,
-                            allocations=tuple(_accts),
-                            spend_category_by_code=inputs.spend_category_by_code,
-                            offshore_payroll_accounts=inputs.offshore_payroll_accounts,
-                            production_type=inputs.production_type,
-                            evidenced_requirement_facts=inputs.evidenced_program_facts,
-                            amount_facts=inputs.amount_facts,
-                        ))
 
                     if len(_hy_components) < 2:
                         return None
@@ -6767,9 +7096,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     # would silently starve every other structural family's
                     # own discovery running in the same evaluation).
                     try:
-                        _hy_travel, _hy_fx, _hy_local_cost = _hybrid_structure_normalization(
-                            inputs, _anchor_code, _hy_components,
-                        )
+                        with _prof.timed("normalization"):
+                            _hy_travel, _hy_fx, _hy_local_cost = _hybrid_structure_normalization(
+                                inputs, _anchor_code, _hy_components, cache=_hy_normalization_cache,
+                            )
                     except Exception:
                         _hy_travel, _hy_fx, _hy_local_cost = 0.0, 0.0, 0.0
                     _hy_result = _generate_hybrid_candidate(
@@ -6778,13 +7108,17 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         travel_incremental_delta_usd=_hy_travel,
                         fx_delta_usd=_hy_fx,
                         local_cost_delta_usd=_hy_local_cost,
+                        _cache=_hy_pricing_cache, _component_cache=_hy_component_pricing_cache,
                     )
                     if _hy_result.structure_id in _hy_seen_structure_ids:
                         return None
                     _hy_seen_structure_ids.add(_hy_result.structure_id)
                     _hy_examined_count += 1
+                    _prof.tick("hy_examined_total")
+                    _prof.maybe_print(10.0)
                     _real_marginal: float | None = None
-                    _hy_marginal_jurisdiction_benefits_usd: dict[str, float] = {}
+                    _hy_marginal_jurisdiction_benefits_usd: dict[str, float] | None = {}
+                    _hy_lazy_marginal: tuple | None = None
                     if _hy_result.executable:
                         _hy_status, _hy_rejection_class = STATUS_PRICED, None
                         # Compare like with like: the search's naive bound is
@@ -6818,11 +7152,25 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         # counterfactual for these candidates is therefore never a
                         # correctness gap for RECOMMENDED-eligibility purposes -- such a
                         # candidate was never going to be marginally material regardless.
+                        # LAZY ENRICHMENT (LLS closeout, 2026-10-01): the per-jurisdiction
+                        # marginal benefit is disclosure/recommendation detail read ONLY by
+                        # canonical_production_view's _marginal_jurisdiction_materiality for
+                        # SERVED (retained) rows. It does not feed incentive/NPC, status,
+                        # economic identity, retention ranking, dominance or accounting. So
+                        # it is no longer repriced for every enumerated combination: a
+                        # compact primitive descriptor rides on the result and the bounded-
+                        # retention owner (_BulkEvaluationWriter) enriches only the FINAL
+                        # retained candidates. A not-yet-enriched trace carries None, which
+                        # the view treats as "no precomputed data" (its fail-closed sibling
+                        # fallback), never as a passing empty dict.
                         if _real_marginal >= MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD:
-                            _hy_marginal_jurisdiction_benefits_usd = _hybrid_marginal_jurisdiction_benefits(
-                                _hy_components, _anchor_code, inputs.gross_budget_usd, inputs,
+                            _hy_marginal_jurisdiction_benefits_usd = None
+                            _hy_lazy_marginal = (
+                                _anchor_code, _anchor_program_slug, tuple(_subset), tuple(_jur_codes),
+                                tuple(sorted(_hy_program_for_jur.items())),
                                 _hy_result.npc_with_adjustments_usd,
                             )
+                            _prof.tick("marginal_deferred")
                         if _real_marginal > _current_best:
                             # Reconstruction data: the SPECIFIC real, priced
                             # structure that establishes the incumbent bound
@@ -6863,7 +7211,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                         is_official_coproduction=False,
                         coproduction_treaty=None,
                     ))
-                    session.add(StructureCalculationResult(
+                    _hy_scr = StructureCalculationResult(
                         id=uuid.uuid4(), structure_id=_hy_structure_id, engine_version=ENGINE_VERSION,
                         total_budget_usd=inputs.gross_budget_usd,
                         total_incentive_value_usd=(
@@ -6959,13 +7307,31 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             ],
                         },
                         input_fingerprint=fingerprint,
-                    ))
+                    )
+                    if _hy_lazy_marginal is not None:
+                        _hy_scr._lazy_marginal = _hy_lazy_marginal
+                    session.add(_hy_scr)
                     await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
                     return _real_marginal
 
-                _hy_naive_lists = [[t.selected_incentive_usd for t in full] for full in _full_lists]
-                _best_found, _hy_visited_count, _hy_stopping_bound = await _best_first_bound_search(
-                    _hy_naive_lists, _hy_try_combination,
+                _hy_naive_lists = [[t.selected_incentive_usd for t in full] for full in _hy_walk_lists]
+                # LLS-SPECIFIC PERFORMANCE REPAIR (2026-10-01): share the
+                # anchor-independent traversal order across anchors whose
+                # _full_lists for this subset are identical (the common
+                # case -- see _SharedBoundSequence). Never a cross-anchor
+                # cutoff: _best_first_bound_search_shared starts best_value
+                # fresh at -inf for THIS anchor and stops only on THIS
+                # anchor's own bound, identical to the unshared function.
+                _hy_seq_key = _sequence_key_for_lists(_subset, _hy_walk_lists)
+                _hy_sequence = _hy_sequence_cache.get(_hy_seq_key)
+                if _hy_sequence is None:
+                    _hy_sequence = _SharedBoundSequence(_hy_naive_lists)
+                    _hy_sequence_cache[_hy_seq_key] = _hy_sequence
+                    _prof.tick("hy_sequence_cache_miss")
+                else:
+                    _prof.tick("hy_sequence_cache_hit")
+                _best_found, _hy_visited_count, _hy_stopping_bound = await _best_first_bound_search_shared(
+                    _hy_naive_lists, _hy_try_combination, _hy_sequence,
                 )
                 _incumbent_structure_id = _hy_incumbent_structure_id
                 _incumbent_jurisdiction_codes = _hy_incumbent_jurisdiction_codes

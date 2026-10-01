@@ -240,6 +240,391 @@ def test_best_first_bound_search_matches_brute_force_enumeration():
     asyncio.run(main())
 
 
+# ---------------------------------------------------------------------------
+# LLS-SPECIFIC PERFORMANCE REPAIR (2026-10-01) -- the anchor-cardinality
+# repair. _SharedBoundSequence/_best_first_bound_search_shared factor the
+# anchor-INDEPENDENT traversal order (a pure function of `lists` alone,
+# confirmed by the profiling run: `lists` is built once from
+# _hy_component_all_targets BEFORE the anchor loop) out of the per-anchor
+# best-first search, while leaving every anchor's own independent
+# `try_combination`/`best_value`/stopping condition completely untouched --
+# never a global/cross-anchor cutoff. Every test below proves exact
+# equivalence to the UNSHARED `_best_first_bound_search`, including when
+# multiple "anchors" (independent callers, independent value functions)
+# interleave on the SAME shared sequence.
+# ---------------------------------------------------------------------------
+
+def test_shared_bound_sequence_single_caller_matches_unshared_search():
+    """One caller consuming a fresh _SharedBoundSequence must return the
+    EXACT SAME (best, visited, bound) triple _best_first_bound_search
+    itself returns for the same (lists, try_combination) -- the shared
+    path is never an approximation of the unshared one."""
+    import asyncio
+    import random
+
+    from app.services.canonical_evaluation import (
+        _SharedBoundSequence,
+        _best_first_bound_search,
+        _best_first_bound_search_shared,
+    )
+
+    rng = random.Random(20261001)
+
+    async def run_case(lists):
+        async def try_combo(idx, current_best):
+            return sum(lists[k][idx[k]] for k in range(len(lists)))
+
+        unshared = await _best_first_bound_search(lists, try_combo)
+        sequence = _SharedBoundSequence(lists)
+        shared = await _best_first_bound_search_shared(lists, try_combo, sequence)
+        assert shared == unshared, (lists, shared, unshared)
+
+    async def main():
+        fixed_cases = [
+            [[5.0]],
+            [[3.0, 1.0], [4.0, 2.0]],
+            [[10.0, 10.0, 5.0], [8.0, 3.0], [7.0, 7.0, 1.0]],
+            [[-1.0, -5.0], [-2.0, -8.0]],
+        ]
+        for case in fixed_cases:
+            await run_case(case)
+        for _ in range(40):
+            n_lists = rng.randint(1, 4)
+            lists = [
+                sorted((round(rng.uniform(-50, 100), 2) for _ in range(rng.randint(1, 6))), reverse=True)
+                for _ in range(n_lists)
+            ]
+            await run_case(lists)
+
+    asyncio.run(main())
+
+
+def test_shared_bound_sequence_multiple_anchors_each_match_their_own_unshared_search():
+    """The real shape of the repair: MULTIPLE independent 'anchors' (each
+    with its own real-value function -- simulating each anchor's own
+    anchor-specific principal pricing/normalization) share ONE
+    _SharedBoundSequence. Every anchor must get the IDENTICAL (best,
+    visited, bound) it would have gotten from its own completely
+    independent, unshared _best_first_bound_search call -- proving sharing
+    the traversal order never changes any anchor's own answer, including
+    the required case of 'a candidate whose best result changes by
+    anchor' (the three anchor value functions below deliberately rank the
+    SAME lists differently)."""
+    import asyncio
+
+    from app.services.canonical_evaluation import (
+        _SharedBoundSequence,
+        _best_first_bound_search,
+        _best_first_bound_search_shared,
+    )
+
+    lists = [[10.0, 8.0, 3.0], [9.0, 6.0, 1.0], [7.0, 5.0, 2.0]]
+
+    # Three distinct anchor "value functions" -- each weights the SAME
+    # underlying targets differently (standing in for each anchor's own
+    # real principal pricing + normalization), so the winning idx-tuple
+    # genuinely differs by anchor.
+    def make_try_combo(weights):
+        async def try_combo(idx, current_best):
+            return sum(weights[k] * lists[k][idx[k]] for k in range(len(lists)))
+        return try_combo
+
+    anchor_weights = [
+        (1.0, 1.0, 1.0),      # anchor A: naive sum
+        (1.0, -2.0, 1.0),     # anchor B: penalizes role 1 heavily -- different winner
+        (0.1, 0.1, 5.0),      # anchor C: role 2 dominates -- yet another winner
+    ]
+
+    async def main():
+        unshared_results = []
+        for weights in anchor_weights:
+            unshared_results.append(await _best_first_bound_search(lists, make_try_combo(weights)))
+
+        sequence = _SharedBoundSequence(lists)
+        shared_results = []
+        for weights in anchor_weights:
+            shared_results.append(
+                await _best_first_bound_search_shared(lists, make_try_combo(weights), sequence),
+            )
+
+        assert shared_results == unshared_results
+        # Confirm this fixture actually exercises "different per-anchor
+        # winner" (best values genuinely differ), not a degenerate case.
+        assert len({round(r[0], 6) for r in unshared_results}) > 1
+
+    asyncio.run(main())
+
+
+def test_shared_bound_sequence_reduces_heap_operations_across_anchors():
+    """Operation-count proof (not wall-clock): when many anchors share the
+    SAME lists, the shared sequence's own heap pop count (len(sequence.
+    order)) must be far smaller than the SUM of each anchor's own visited_
+    count would imply if each ran an independent heap from scratch -- the
+    whole point of the repair. Uses a case with a flat/indecisive value
+    function (no early stopping) so every anchor visits deeply, maximizing
+    how much heap work a naive per-anchor approach would duplicate."""
+    import asyncio
+
+    from app.services.canonical_evaluation import _SharedBoundSequence, _best_first_bound_search_shared
+
+    lists = [[float(10 - i) for i in range(6)] for _ in range(3)]  # 6*6*6 = 216 combinations
+
+    async def try_combo(idx, current_best):
+        # Deliberately returns a value that NEVER beats best_value after
+        # the first call, forcing every anchor to visit the same large
+        # prefix of the sequence before its own bound finally stops it.
+        return 0.0 if current_best > float("-inf") else 1.0
+
+    async def main():
+        sequence = _SharedBoundSequence(lists)
+        total_visited_if_independent = 0
+        for _ in range(10):  # simulate 10 anchors sharing this sequence
+            _, visited, _ = await _best_first_bound_search_shared(lists, try_combo, sequence)
+            total_visited_if_independent += visited
+        # Each of the 10 anchors "visited" close to the full 216-node space
+        # (the degenerate try_combo above never lets the bound stop early
+        # after the first real hit), so a naive unshared approach would do
+        # ~10x that many real heap pops. The SHARED sequence's own heap
+        # only ever pops each node ONCE across all 10 callers.
+        assert total_visited_if_independent > len(sequence.order) * 5, (
+            f"shared heap pops ({len(sequence.order)}) should be far fewer than the "
+            f"{total_visited_if_independent} total (anchor, node) visits across 10 anchors"
+        )
+        assert len(sequence.order) <= 216
+
+    asyncio.run(main())
+
+
+def test_sequence_key_for_lists_distinguishes_and_collapses_correctly():
+    """_sequence_key_for_lists must treat two anchors' _full_lists as the
+    SAME key exactly when every role's target list (in order) is
+    byte-identical, and as DIFFERENT keys the moment any target differs --
+    this is what makes sharing safe (never a false collision) and
+    effective (anchors with identical, unfiltered lists DO share)."""
+    from dataclasses import dataclass
+
+    from app.services.canonical_evaluation import _sequence_key_for_lists
+
+    @dataclass
+    class _T:
+        jurisdiction_code: str
+        program_slug: str
+
+    subset = ("post", "vfx")
+    full_lists_a = [[_T("NZ", "nz_prod_grant"), _T("CA-ON", "on_ocase")], [_T("GB", "uk_avec")]]
+    full_lists_b = [[_T("NZ", "nz_prod_grant"), _T("CA-ON", "on_ocase")], [_T("GB", "uk_avec")]]
+    # Anchor C excludes CA-ON from the "post" role (e.g. because the
+    # anchor IS CA-ON) -- a genuinely different list.
+    full_lists_c = [[_T("NZ", "nz_prod_grant")], [_T("GB", "uk_avec")]]
+
+    key_a = _sequence_key_for_lists(subset, full_lists_a)
+    key_b = _sequence_key_for_lists(subset, full_lists_b)
+    key_c = _sequence_key_for_lists(subset, full_lists_c)
+    assert key_a == key_b, "identical target lists (anchor has no exclusions) must share one key"
+    assert key_a != key_c, "a genuinely different filtered list must never collide with another anchor's key"
+    assert hash(key_a) == hash(key_b)  # usable as a real dict key, not just equal
+
+
+# ---------------------------------------------------------------------------
+# LLS anchor-cardinality repair, correction (2026-10-01): the shared traversal
+# is built from UNFILTERED, anchor-independent lists; each anchor's own
+# exclusions are a cheap per-tuple skip inside the walk. These tests prove the
+# shared+skip walk equals an independent exhaustive filtered search per anchor.
+# ---------------------------------------------------------------------------
+
+def _anchor_exclusion_fixture():
+    from dataclasses import dataclass
+
+    @dataclass(frozen=True)
+    class _T:
+        jurisdiction_code: str
+        program_slug: str
+        value: float
+
+    # Distinct values (no exact ties) per role, sorted descending like the
+    # real `_hy_component_all_targets` lists.
+    roles = [
+        [_T("A", "pa", 100.0), _T("B", "pb", 90.0), _T("C", "pc", 70.0), _T("D", "pd", 40.0)],
+        [_T("B", "pb2", 95.0), _T("A", "pa2", 80.0), _T("D", "pd2", 60.0), _T("C", "pc2", 30.0)],
+        [_T("C", "pc3", 85.0), _T("D", "pd3", 75.0), _T("A", "pa3", 55.0), _T("B", "pb3", 20.0)],
+    ]
+    return roles
+
+
+def _run_shared_and_filtered(roles, anchor, allowed_same, illegal_slugs, weights, sequence):
+    import asyncio
+
+    from app.services.canonical_evaluation import (
+        _anchor_exclusion_flags,
+        _best_first_bound_search,
+        _best_first_bound_search_shared,
+    )
+
+    flags = _anchor_exclusion_flags(
+        roles, anchor, lambda slug, code: (slug, code) in allowed_same, lambda slug, code: slug in illegal_slugs,
+    )
+    filtered = [[t for t, ex in zip(r, f) if not ex] for r, f in zip(roles, flags)]
+    if any(not f for f in filtered):
+        return None
+    naive_shared = [[t.value for t in r] for r in roles]
+    naive_filtered = [[t.value for t in r] for r in filtered]
+
+    def real(cands):
+        # Anchor-specific real value: distinct jurisdictions only, weighted.
+        if len({c.jurisdiction_code for c in cands}) != len(cands):
+            return None
+        return sum(w * c.value for w, c in zip(weights, cands))
+
+    shared_calls = []
+    filtered_calls = []
+
+    async def try_shared(idx, best):
+        cands = [roles[k][idx[k]] for k in range(len(roles))]
+        shared_calls.append(tuple(cands))
+        return real(cands)
+
+    async def try_filtered(idx, best):
+        cands = [filtered[k][idx[k]] for k in range(len(filtered))]
+        filtered_calls.append(tuple(cands))
+        return real(cands)
+
+    async def go():
+        shared = await _best_first_bound_search_shared(
+            naive_shared, try_shared, sequence,
+            skip=lambda idx: any(flags[k][idx[k]] for k in range(len(flags))),
+        )
+        independent = await _best_first_bound_search(naive_filtered, try_filtered)
+        return shared, independent
+
+    shared, independent = asyncio.run(go())
+    return flags, shared, independent, shared_calls, filtered_calls
+
+
+def test_shared_traversal_with_anchor_skip_equals_independent_filtered_search():
+    """Shared unfiltered traversal + per-anchor skip returns the identical
+    (best, visited, stopping bound) and visits the identical combinations as
+    an independent exhaustive search over that anchor's own filtered lists,
+    for anchors whose best result differs, with self-exclusion, a
+    same-jurisdiction distinct-cost exception, and provably-illegal pairs."""
+    from app.services.canonical_evaluation import _SharedBoundSequence
+
+    roles = _anchor_exclusion_fixture()
+    sequence = _SharedBoundSequence([[t.value for t in r] for r in roles])
+    cases = [
+        # anchor, allowed same-jurisdiction (slug, code), illegal slugs, weights
+        ("A", set(), set(), (1.0, 1.0, 1.0)),
+        ("B", set(), {"pd2"}, (1.0, -0.5, 1.0)),
+        ("C", {("pc2", "C")}, set(), (0.2, 0.2, 3.0)),   # same-jurisdiction exception retained
+        ("D", set(), {"pa", "pc3"}, (2.0, 1.0, 0.1)),
+        ("Z", set(), set(), (1.0, 1.0, 1.0)),           # anchor not among targets: nothing excluded
+    ]
+    winners = set()
+    for anchor, allowed, illegal, weights in cases:
+        out = _run_shared_and_filtered(roles, anchor, allowed, illegal, weights, sequence)
+        assert out is not None, anchor
+        flags, shared, independent, shared_calls, filtered_calls = out
+        assert shared == independent, (anchor, shared, independent)
+        # Same combinations evaluated (excluded tuples never reach pricing),
+        # in the same order.
+        shared_real = [c for c in shared_calls]
+        assert shared_real == filtered_calls, anchor
+        winners.add(round(shared[0], 6))
+    assert len(winners) > 1, "fixture must make the best result change by anchor"
+
+
+def test_anchor_self_exclusion_never_changes_shared_sequence_key_and_skips_before_pricing():
+    from app.services.canonical_evaluation import _SharedBoundSequence, _sequence_key_for_lists
+
+    roles = _anchor_exclusion_fixture()
+    subset = ("post", "vfx", "music")
+    keys = {_sequence_key_for_lists(subset, roles) for _anchor in ("A", "B", "C", "D")}
+    assert len(keys) == 1, "key is built from unfiltered lists, so every anchor shares one key"
+
+    sequence = _SharedBoundSequence([[t.value for t in r] for r in roles])
+    for anchor in ("A", "B", "C", "D"):
+        out = _run_shared_and_filtered(roles, anchor, set(), set(), (1.0, 1.0, 1.0), sequence)
+        _, _, _, shared_calls, _ = out
+        for cands in shared_calls:
+            assert all(c.jurisdiction_code != anchor for c in cands), (
+                "an excluded (anchor-self) target reached the pricing callback", anchor, cands,
+            )
+
+
+def test_anchor_exclusion_flags_same_jurisdiction_exception_and_illegal_pairs():
+    from app.services.canonical_evaluation import _anchor_exclusion_flags
+
+    roles = _anchor_exclusion_fixture()
+    flags = _anchor_exclusion_flags(roles, "A", lambda s, c: False, lambda s, c: False)
+    assert [f for f in flags[0]] == [True, False, False, False]  # own jurisdiction excluded
+    # Registered distinct-cost exception keeps the same-jurisdiction target.
+    flags = _anchor_exclusion_flags(roles, "A", lambda s, c: (s, c) == ("pa", "A"), lambda s, c: False)
+    assert flags[0][0] is False
+    # Provably-illegal pairs are excluded even when not the anchor's jurisdiction,
+    # and also override a same-jurisdiction exception.
+    flags = _anchor_exclusion_flags(roles, "A", lambda s, c: True, lambda s, c: s == "pa")
+    assert flags[0][0] is True and flags[0][1] is False
+
+
+def test_shared_traversal_operation_counts_show_cross_anchor_reuse():
+    """Operation counts (not wall clock): 12 anchors over one subset. A
+    shared sequence pops each heap node once; independent per-anchor heaps
+    pop (visited + skipped-equivalents) separately for every anchor."""
+    import heapq
+
+    from app.services.canonical_evaluation import _SharedBoundSequence
+
+    roles = [[float(30 - i) for i in range(7)] for _ in range(3)]
+    anchors = [f"J{i}" for i in range(12)]
+
+    # Independent baseline: count real heap pops of the unshared search per anchor.
+    def unshared_pops(lists, stop_after):
+        start = tuple([0] * len(lists))
+        heap = [(-sum(l[0] for l in lists), start)]
+        seen = {start}
+        pops = 0
+        while heap and pops < stop_after:
+            nb, idx = heapq.heappop(heap)
+            pops += 1
+            for k in range(len(lists)):
+                n = list(idx)
+                n[k] += 1
+                nt = tuple(n)
+                if nt not in seen and nt[k] < len(lists[k]):
+                    seen.add(nt)
+                    heapq.heappush(heap, (-sum(lists[m][nt[m]] for m in range(len(lists))), nt))
+        return pops
+
+    depth_per_anchor = 150
+    independent_total = sum(unshared_pops(roles, depth_per_anchor) for _ in anchors)
+
+    import asyncio
+
+    from app.services.canonical_evaluation import _best_first_bound_search_shared
+
+    sequence = _SharedBoundSequence(roles)
+
+    async def go():
+        calls = 0
+
+        async def bounded(idx, best):
+            nonlocal calls
+            calls += 1
+            return None
+
+        for _ in anchors:
+            await _best_first_bound_search_shared(roles, bounded, sequence, skip=None)
+        return calls
+
+    # `bounded` returns None for everything, so each anchor walks the whole
+    # space (343 nodes) -- the shared sequence must still pop only 343 total.
+    total_visits = asyncio.run(go())
+    assert len(sequence.order) == 343
+    assert total_visits == 343 * len(anchors)
+    assert len(sequence.order) * len(anchors) == total_visits
+    assert independent_total >= depth_per_anchor * len(anchors)
+    assert len(sequence.order) < independent_total / 4, (len(sequence.order), independent_total)
+
+
 def test_integrated_partner_component_search_matches_brute_force_enumeration():
     """FINAL_OPTIMIZER_BACKEND_COMPLETENESS_CLOSEOUT integrated-search
     deterministic control (2026-09-18, operator directive): the

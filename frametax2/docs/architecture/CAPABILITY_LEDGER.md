@@ -3906,3 +3906,24 @@ One concrete wiring defect found and fixed via a bounded, real-API-driven self-a
 **Not attempted, per explicit scope boundary:** any research/rates/eligibility/discovery/ranking change; Globe/frontend visuals; a new DB column for `structural_classification` (persisted inside existing JSONB fields instead, proportionate to this bounded pass); HO-001..HO-013/six-registered-control re-verification (unaffected -- no discovery/ranking/pricing logic changed this pass); DB-connected semantic validator; reinvestment/in-kind (still shelved); base Globe UI wiring (still not started).
 
 Final status returned: `GLOBE_DATA_CONTRACT_REMEDIATED`.
+
+
+## LLS_ANCHOR_CARDINALITY_OPTIMIZER_REPAIR (2026-10-01)
+
+**Status: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`, `ENGINE_VERSION = canonical-1.98.0` (unchanged).** Independent UI/runtime acceptance remains pending with Codex.
+
+**Defect:** Lips Like Sugar (78 candidate anchors) was stale on canonical-1.96.0 and could not complete a cold evaluation inside the 720 s ceiling (four timed-out attempts: 9, 23 and 54 of 78 anchors reached). Profiling showed every anchor repeating the full component search, with per-combination pricing, normalization, a per-jurisdiction counterfactual reprice and allocation-object retention dominating. Global-winner anchor pruning was prohibited and not used: every anchor still produces its own best/reference alternatives.
+
+**Repair (all in existing owners; no rate/QPE/eligibility/retention-limit/policy change):**
+- Shared best-first traversal (`_SharedBoundSequence`): anchors with identical target lists share one heap traversal order; each anchor keeps its own `try_combination`, incumbent and stopping bound. Anchors with exclusions walk their own filtered lists (an in-walk skip was measured unbounded).
+- Intrinsic pricing cache (`generate_structural_candidate`): structure pricing is cached independent of travel/FX/local-cost deltas and anchor NPC, which are applied fresh per call (`_derive_for_call`). Cached results drop component objects (`_slim`/`_reattach`) so the cache never retains allocation rows (the cause of multi-minute stalls). Per-component pricing memo keyed by exactly the six allocation fields `price_segment` consumes. Fast `__dict__` result cloning.
+- Per-leg normalization cache assembled in the original order (bit-identical totals).
+- Lazy marginal-jurisdiction enrichment: `marginal_jurisdiction_benefits_usd` is read only by `canonical_production_view._marginal_jurisdiction_materiality` for served rows (not NPC, status, identity, ranking, dominance or accounting). A compact primitive descriptor now rides on the result and `_BulkEvaluationWriter` enriches only final retained candidates; `_build_hybrid_route` is the single owner of route reconstruction. Aggregated representatives carry `null` for this field.
+- Canonical economic identity computed once per PRICED candidate and reused at persistence.
+- Default-disabled diagnostic sink `_lls_profile_sink.py` (counters, phase timers, drain records, RSS) retained with tests; the throwaway profiling driver was removed.
+
+**Equivalence/operation-count evidence (synthetic, no real production):** cached == uncached exactly (dataclass equality) across executable, threshold-rejected, selective-upside and double-claim structures x five anchor/delta cases, and equal to the pre-change HEAD generator on all 20 cases; per-leg == whole-structure normalization; eager vs lazy marginal enrichment yield identical retained rows/identities/ordinals/aggregate groups, with enricher calls only for retained rows; identity computed once and byte-identical; writer accounting and proof references exact with drain instrumentation on. LLS counters: 715,497 marginal reprices deferred, 380 performed (0.05%).
+
+**Final cold evaluation (LLS, isolated DB `frametax2_claude_optimizer_acceptance_20260919`):** completed in **348.2 s** (limit 720 s). 78/78 anchors examined, 725,656 combinations; 726,408 candidates generated = 1,036 persisted details + 725,372 aggregated (5,379 groups); 724,746 priced, 1,662 unpriced, 675 retained priced; 312 dominance proofs, 0 unresolved references; 0 duplicate economic identities; ordinals 1..1,036 contiguous; one fingerprint; a second `evaluate_project` call returned `EVALUATION_REUSED` (idempotent). Time split: intrinsic pricing 98 s, retention/aggregation 81 s, allocation derivation 65 s, normalization 11 s, DB drain 4.2 s (26 drains, 2,072 rows), enrichment 0.3 s.
+
+**Four-project version matrix (current generations):** Little Utopia canonical-1.98.0 (111,394 generated / 554 persisted); F#K Valentine's Day canonical-1.98.0 (621,420 / 1,034); Bad Hombres canonical-1.98.0 (7,284 / 489); Lips Like Sugar canonical-1.98.0 (726,408 / 1,036).

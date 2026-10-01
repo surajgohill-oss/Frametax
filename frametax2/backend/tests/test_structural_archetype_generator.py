@@ -635,6 +635,13 @@ def test_duplicate_economic_routes_collapse_to_one_canonical_structure():
 # generate_structural_candidate this whole module already tests.
 # ---------------------------------------------------------------------------
 
+def _structure_entries(cache: dict) -> list:
+    """Structure-level normalization cache entries (per-leg entries, keyed with a
+    leading "leg_*" tag, are excluded)."""
+    return [k for k in cache if not str(k[0]).startswith("leg_")]
+
+
+
 def _economic_inputs(**overrides):
     from app.services.canonical_project_economics import ProjectEconomicInputs
 
@@ -724,6 +731,138 @@ def test_hybrid_marginal_jurisdiction_benefits_removed_spend_is_returned_to_prin
 
 
 # ---------------------------------------------------------------------------
+# LLS-SPECIFIC PERFORMANCE REPAIR (2026-09-30) -- _hybrid_structure_
+# normalization's optional `cache` and _hybrid_marginal_jurisdiction_
+# benefits' pass-through normalization_cache/pricing_cache. Each test shares
+# ONE cache dict across two calls to prove cached and uncached paths can
+# never diverge.
+# ---------------------------------------------------------------------------
+
+def test_hybrid_structure_normalization_cache_hit_matches_uncached_result():
+    from app.services.canonical_evaluation import _hybrid_structure_normalization
+
+    anchor = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="principal_production", line_id="HSN1-GA")
+    post_nz = _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 500_000.0,
+                     component_type="post", line_id="HSN1-NZ")
+    components = [anchor, post_nz]
+    inputs = _economic_inputs(jurisdiction_code="US-GA", gross_budget_usd=3_500_000.0)
+    uncached = _hybrid_structure_normalization(inputs, "US-GA", components)
+
+    cache: dict = {}
+    first = _hybrid_structure_normalization(inputs, "US-GA", components, cache=cache)
+    assert len(_structure_entries(cache)) == 1
+    second = _hybrid_structure_normalization(inputs, "US-GA", components, cache=cache)
+    assert len(_structure_entries(cache)) == 1, "an identical second call must be a cache HIT, never a second store"
+    assert first == uncached == second
+
+
+def test_hybrid_structure_normalization_cache_distinguishes_different_anchors():
+    """The SAME components normalized against two DIFFERENT anchor
+    jurisdictions must never collide -- the anchor drives which component is
+    treated as the relocated principal and which legs get incremental-only
+    treatment, a real difference in which real dollars apply."""
+    from app.services.canonical_evaluation import _hybrid_structure_normalization
+
+    ga = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="principal_production", line_id="HSN2-GA")
+    ny = _comp("ny_state_film", "US-NY", 500_000.0, component_type="post", line_id="HSN2-NY")
+    inputs = _economic_inputs(jurisdiction_code="GR", gross_budget_usd=3_500_000.0)
+    cache: dict = {}
+    as_ga_anchor = _hybrid_structure_normalization(inputs, "US-GA", [ga, ny], cache=cache)
+    as_ny_anchor = _hybrid_structure_normalization(inputs, "US-NY", [ga, ny], cache=cache)
+    # len(cache) == 2 is the real correctness proof here (no key collision
+    # between two different anchors) -- the two real normalized totals
+    # happening to coincide numerically for this particular GA/NY pair is
+    # not itself a bug; what would BE a bug is serving one anchor's cached
+    # result for the other's genuinely different key.
+    assert len(_structure_entries(cache)) == 2, "different anchor_code must occupy distinct cache entries"
+    assert cache[("GR", "US-GA", (("US-GA", "principal_production", 3_000_000.0), ("US-NY", "post", 500_000.0)))] == as_ga_anchor
+    assert cache[("GR", "US-NY", (("US-GA", "principal_production", 3_000_000.0), ("US-NY", "post", 500_000.0)))] == as_ny_anchor
+
+
+def test_hybrid_structure_normalization_cache_distinguishes_different_component_types_same_jurisdiction_program_amount():
+    """The exact same (jurisdiction_code, allocated_usd) pair but a different
+    component_type must never collide -- component_type decides which
+    component is treated as the relocated principal (principal_production)
+    versus an incremental-only leg, a real difference in which normalization
+    branch runs."""
+    from app.services.canonical_evaluation import _hybrid_structure_normalization
+
+    inputs = _economic_inputs(jurisdiction_code="GR", gross_budget_usd=3_500_000.0)
+    as_principal = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="principal_production", line_id="HSN3-A")
+    as_post = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="post", line_id="HSN3-B")
+    cache: dict = {}
+    result_principal = _hybrid_structure_normalization(inputs, "US-GA", [as_principal], cache=cache)
+    result_post = _hybrid_structure_normalization(inputs, "US-GA", [as_post], cache=cache)
+    assert len(_structure_entries(cache)) == 2, "different component_type for the same jurisdiction/amount must be distinct entries"
+
+
+def test_hybrid_marginal_jurisdiction_benefits_with_shared_caches_matches_uncached():
+    """The full counterfactual pass, run once with fresh normalization_cache/
+    pricing_cache dicts and once with none at all, must return identical
+    marginal benefits -- the caches are a pure speed optimization, never an
+    approximation of the real counterfactual reprice."""
+    from app.services.canonical_evaluation import _hybrid_marginal_jurisdiction_benefits
+
+    anchor = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="principal_production", line_id="MJBC-GA")
+    post_nz = _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 500_000.0,
+                     component_type="post", line_id="MJBC-NZ")
+    vfx_on = _comp("ontario_computer_animation_and_special_effects_tax_credit_ocase", "CA-ON", 300_000.0,
+                    component_type="vfx", line_id="MJBC-ON", spend_category="vfx")
+    components = [anchor, post_nz, vfx_on]
+    inputs = _economic_inputs(jurisdiction_code="US-GA", gross_budget_usd=3_800_000.0)
+    candidate = generate_structural_candidate(components, gross_budget_usd=3_800_000.0)
+    assert candidate.executable, candidate.rejection_reason
+
+    uncached = _hybrid_marginal_jurisdiction_benefits(
+        components, "US-GA", 3_800_000.0, inputs, candidate.npc_with_adjustments_usd,
+    )
+    norm_cache: dict = {}
+    price_cache: dict = {}
+    cached = _hybrid_marginal_jurisdiction_benefits(
+        components, "US-GA", 3_800_000.0, inputs, candidate.npc_with_adjustments_usd,
+        normalization_cache=norm_cache, pricing_cache=price_cache,
+    )
+    assert cached == uncached
+    assert len(norm_cache) >= 1 and len(price_cache) >= 1, "the cached call must actually have populated both caches"
+
+
+def test_hybrid_marginal_jurisdiction_benefits_reuses_pricing_cache_across_repeated_calls():
+    """Two outer combinations that happen to produce the SAME counterfactual
+    (same component removed, same remaining shape) must share cache entries
+    -- this is the real speedup LLS's own profile showed (the same removed-
+    component shape recurring across different outer branch-and-bound
+    combinations) -- while still returning the exact same real benefits both
+    times."""
+    from app.services.canonical_evaluation import _hybrid_marginal_jurisdiction_benefits
+
+    anchor = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="principal_production", line_id="MJBR-GA")
+    post_nz = _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 500_000.0,
+                     component_type="post", line_id="MJBR-NZ")
+    components = [anchor, post_nz]
+    inputs = _economic_inputs(jurisdiction_code="US-GA", gross_budget_usd=3_500_000.0)
+    candidate = generate_structural_candidate(components, gross_budget_usd=3_500_000.0)
+    assert candidate.executable, candidate.rejection_reason
+
+    norm_cache: dict = {}
+    price_cache: dict = {}
+    first = _hybrid_marginal_jurisdiction_benefits(
+        components, "US-GA", 3_500_000.0, inputs, candidate.npc_with_adjustments_usd,
+        normalization_cache=norm_cache, pricing_cache=price_cache,
+    )
+    norm_size_after_first = len(norm_cache)
+    price_size_after_first = len(price_cache)
+    # A second, independent outer combination that removes the exact same
+    # component from the exact same remaining shape -- a real recurrence.
+    second = _hybrid_marginal_jurisdiction_benefits(
+        [anchor, post_nz], "US-GA", 3_500_000.0, inputs, candidate.npc_with_adjustments_usd,
+        normalization_cache=norm_cache, pricing_cache=price_cache,
+    )
+    assert second == first
+    assert len(norm_cache) == norm_size_after_first, "the identical counterfactual must be a cache HIT, never a second store"
+    assert len(price_cache) == price_size_after_first
+
+
+# ---------------------------------------------------------------------------
 # COMPONENT-BUNDLE CORRECTION (2026-09-30): _program_distinguishes_spend_category
 # (canonical_evaluation.py) -- the signal deciding whether a bundle member (e.g.
 # "vfx") is exposed as its own independently-routable movable component.
@@ -770,3 +909,313 @@ def test_program_distinguishes_spend_category_ignores_exclude_complement_conditi
     assert _program_distinguishes_spend_category("us_or_opif", "sound") is False
     # The real, non-excluded payroll side IS a specific, legitimate match.
     assert _program_distinguishes_spend_category("us_or_opif", "atl_writer") is True
+
+
+# ---------------------------------------------------------------------------
+# LLS-SPECIFIC PERFORMANCE REPAIR (2026-09-30) -- generate_structural_
+# candidate's optional `_cache` memoization. Every test below shares a SINGLE
+# dict across two calls to prove the cached path can never diverge from a
+# fresh, uncached computation -- the resume task's own correctness mandate
+# ("cached and uncached paths must return identical economics... prove that
+# it cannot remove a materially distinct economic result").
+# ---------------------------------------------------------------------------
+
+def test_cache_hit_returns_identical_economics_to_an_uncached_call():
+    """Calling twice with byte-identical inputs, once through a shared cache
+    and once with no cache at all, must produce the same executable state,
+    component economics, and NPC -- a cache hit is never an approximation.
+    uk_avec + ie_section_481 (the real, confirmed-executable HO012 pair) is
+    used rather than ca_federal_cptc/on_ofttc -- the latter does not clear
+    its own real $1,000,000 QPE threshold at these amounts and was never
+    actually exercising the cache-store path at all."""
+    c1 = _comp("uk_avec", "GB", 2_500_000.0, line_id="CACHE1-GB")
+    c2 = _comp("ie_section_481", "IE", 2_500_000.0, line_id="CACHE1-IE", component_type="vfx")
+    uncached = generate_structural_candidate([c1, c2], gross_budget_usd=5_000_000.0)
+    assert uncached.executable is True, uncached.rejection_reason
+
+    cache: dict = {}
+    first = generate_structural_candidate([c1, c2], gross_budget_usd=5_000_000.0, _cache=cache)
+    assert len(cache) == 1, "a cache miss must populate exactly one entry"
+    second = generate_structural_candidate([c1, c2], gross_budget_usd=5_000_000.0, _cache=cache)
+    assert len(cache) == 1, "an identical second call must be a cache HIT, never a second store"
+
+    for res in (first, second):
+        assert res.executable == uncached.executable
+        assert res.total_guaranteed_incentive_usd == pytest.approx(uncached.total_guaranteed_incentive_usd)
+        assert res.npc_usd == pytest.approx(uncached.npc_usd)
+        assert res.component_economics == uncached.component_economics
+
+
+def test_cache_distinguishes_different_adjustment_deltas_for_the_same_structure():
+    """The exact same components, priced with two DIFFERENT travel/FX/local-
+    cost adjustment totals, must never collide on the same cache entry --
+    the adjusted NPC is real money that depends on the adjustment inputs."""
+    c1 = _comp("uk_avec", "GB", 2_500_000.0, line_id="CACHE2-GB")
+    c2 = _comp("ie_section_481", "IE", 2_500_000.0, line_id="CACHE2-IE", component_type="vfx")
+    cache: dict = {}
+    low_adj = generate_structural_candidate(
+        [c1, c2], gross_budget_usd=5_000_000.0,
+        travel_incremental_delta_usd=10_000.0, _cache=cache,
+    )
+    high_adj = generate_structural_candidate(
+        [c1, c2], gross_budget_usd=5_000_000.0,
+        travel_incremental_delta_usd=250_000.0, _cache=cache,
+    )
+    assert low_adj.executable is True and high_adj.executable is True
+    assert len(cache) == 1, "adjustment deltas are applied fresh per call; one intrinsic entry serves both"
+    assert low_adj.npc_with_adjustments_usd != pytest.approx(high_adj.npc_with_adjustments_usd)
+    assert high_adj.npc_with_adjustments_usd == pytest.approx(low_adj.npc_with_adjustments_usd + 240_000.0)
+
+
+def test_cache_distinguishes_different_component_allocations():
+    """The same two jurisdictions/programs but a materially different
+    allocated amount on one component must never collide -- structure_id
+    already encodes line_ids, which (with the production's own fixed budget)
+    determine the real allocated dollars; two different line_ids/amounts for
+    the same jurisdiction+program are a genuinely different structure."""
+    c1 = _comp("uk_avec", "GB", 2_500_000.0, line_id="CACHE3-GB")
+    c2_small = _comp("ie_section_481", "IE", 1_000_000.0, line_id="CACHE3-IE-SMALL", component_type="vfx")
+    c2_large = _comp("ie_section_481", "IE", 2_500_000.0, line_id="CACHE3-IE-LARGE", component_type="vfx")
+    cache: dict = {}
+    small = generate_structural_candidate([c1, c2_small], gross_budget_usd=3_500_000.0, _cache=cache)
+    large = generate_structural_candidate([c1, c2_large], gross_budget_usd=5_000_000.0, _cache=cache)
+    assert small.executable is True and large.executable is True
+    assert len(cache) == 2
+    assert small.total_allocated_usd != pytest.approx(large.total_allocated_usd)
+    assert small.npc_usd != pytest.approx(large.npc_usd)
+
+
+def test_cache_hit_recomputes_anchor_relative_fields_fresh_per_call_never_stale():
+    """anchor_npc_usd is deliberately excluded from the cache key -- it must
+    be recomputed correctly for EACH call's own anchor, never served from
+    whichever anchor happened to populate the cache entry first."""
+    c1 = _comp("uk_avec", "GB", 2_500_000.0, line_id="CACHE4-GB")
+    c2 = _comp("ie_section_481", "IE", 2_500_000.0, line_id="CACHE4-IE", component_type="vfx")
+    cache: dict = {}
+    first = generate_structural_candidate(
+        [c1, c2], gross_budget_usd=5_000_000.0, anchor_npc_usd=2_000_000.0, _cache=cache,
+    )
+    second = generate_structural_candidate(
+        [c1, c2], gross_budget_usd=5_000_000.0, anchor_npc_usd=5_000_000.0, _cache=cache,
+    )
+    assert first.executable is True and second.executable is True
+    assert len(cache) == 1, "same structure/deltas, different anchor only -- still one cache entry"
+    assert first.anchor_npc_usd == pytest.approx(2_000_000.0)
+    assert second.anchor_npc_usd == pytest.approx(5_000_000.0)
+    assert first.incremental_benefit_vs_anchor_usd != pytest.approx(second.incremental_benefit_vs_anchor_usd)
+    assert first.incremental_benefit_vs_anchor_usd == pytest.approx(
+        2_000_000.0 - first.npc_with_adjustments_usd,
+    )
+    assert second.incremental_benefit_vs_anchor_usd == pytest.approx(
+        5_000_000.0 - second.npc_with_adjustments_usd,
+    )
+
+
+def test_two_independent_caches_never_share_entries():
+    """Caches are plain local dicts the caller owns -- two separate cache
+    instances (standing in for two separate evaluate_project invocations)
+    must never see each other's entries."""
+    c1 = _comp("uk_avec", "GB", 2_500_000.0, line_id="CACHE5-GB")
+    c2 = _comp("ie_section_481", "IE", 2_500_000.0, line_id="CACHE5-IE", component_type="vfx")
+    cache_a: dict = {}
+    cache_b: dict = {}
+    res_a = generate_structural_candidate([c1, c2], gross_budget_usd=5_000_000.0, _cache=cache_a)
+    assert res_a.executable is True
+    assert len(cache_a) == 1
+    assert len(cache_b) == 0, "a second, independent cache must start and stay empty until its own call"
+    generate_structural_candidate([c1, c2], gross_budget_usd=5_000_000.0, _cache=cache_b)
+    assert len(cache_b) == 1
+    assert set(cache_a.keys()) == set(cache_b.keys()), "same inputs still produce the same key independently"
+
+
+def test_cache_key_pairs_component_type_with_its_own_jurisdiction_never_a_positional_collision():
+    """CONFIRMED DEFECT, fixed same pass: component_type is not cosmetic --
+    when a component's own program fails to resolve a rate, component_type
+    in ("selective_upside", "fund_overlay") keeps the WHOLE structure
+    executable (that one component silently contributes $0/$0, disclosed);
+    any OTHER component_type rejects the entire structure. The exact same
+    (jurisdiction_code, program_slug, line_id) pair -- us_ny_post_production_
+    credit in US-NY at $400,000, genuinely below its real $1,000,000
+    statutory minimum (see test_registered_control_5b_ny_post_below_real_
+    threshold_rejects above, the real confirmed-failing case this test
+    reuses verbatim) -- must NOT collide in the cache merely because
+    _structure_id() itself does not encode component_type."""
+    principal = _comp("ny_state_film", "US-NY", 3_000_000.0, line_id="CACHE6-PRINCIPAL")
+    below_threshold_post = _comp(
+        "us_ny_post_production_credit", "US-NY", 400_000.0,
+        line_id="CACHE6-POST", component_type="post",
+    )
+    below_threshold_upside = _comp(
+        "us_ny_post_production_credit", "US-NY", 400_000.0,
+        line_id="CACHE6-POST", component_type="selective_upside",
+    )
+    # NOTE ON CACHE SIZE: a REJECTED structure returns via an early `return`
+    # inside the pricing loop, before the function ever reaches its own
+    # cache-store statement -- only an EXECUTABLE result is ever written to
+    # the cache (a correct, if conservative, behavior: a key that was never
+    # stored can never be wrongly read back). The real risk this test
+    # guards is the reverse: an EXECUTABLE result cached under a key that a
+    # later, genuinely-different (different component_type) REJECTED call
+    # could collide with and wrongly read back as a false cache HIT.
+    cache: dict = {}
+    as_post = generate_structural_candidate(
+        [principal, below_threshold_post], gross_budget_usd=3_400_000.0, _cache=cache,
+    )
+    assert as_post.executable is False, "reused from the real confirmed-failing control -- must still reject"
+    assert len(cache) == 1, "a rejected intrinsic result is now cached too (anchor NPC is applied fresh per call)"
+    as_upside = generate_structural_candidate(
+        [principal, below_threshold_upside], gross_budget_usd=3_400_000.0, _cache=cache,
+    )
+    assert as_upside.executable is True, (
+        "selective_upside must stay executable (that component contributes $0/$0)"
+    )
+    assert len(cache) == 2, "the executable selective_upside result is cached under its own (component_type-distinct) key"
+    upside_econ = next(
+        ce for ce in as_upside.component_economics
+        if ce.component.program_slug == "us_ny_post_production_credit"
+    )
+    assert upside_econ.guaranteed_incentive_usd == 0.0
+    assert upside_econ.conditional_incentive_usd == 0.0
+
+    # Reverse call order -- the real collision risk: the EXECUTABLE
+    # selective_upside call caches first; the genuinely-different REJECTED
+    # "post" call, with the SAME jurisdiction/program/line_id, must not read
+    # back that cached executable=True result as a false hit.
+    cache_reverse: dict = {}
+    as_upside_first = generate_structural_candidate(
+        [principal, below_threshold_upside], gross_budget_usd=3_400_000.0, _cache=cache_reverse,
+    )
+    assert as_upside_first.executable is True
+    assert len(cache_reverse) == 1
+    as_post_second = generate_structural_candidate(
+        [principal, below_threshold_post], gross_budget_usd=3_400_000.0, _cache=cache_reverse,
+    )
+    assert as_post_second.executable is False, (
+        "a cache collision in this order would have wrongly inherited executable=True from selective_upside"
+    )
+    assert len(cache_reverse) == 2, "the rejected 'post' call is cached under its own component_type-distinct key"
+
+
+def test_cache_result_objects_are_frozen_and_cannot_leak_mutable_state_across_candidates():
+    """StructuralCandidateResult is a frozen dataclass of only tuple/str/
+    float/bool/None fields -- a cache hit can never hand two different
+    candidates a shared, later-mutated object. Proven directly: attempting
+    to reassign a field on a real cached result must raise."""
+    import dataclasses
+    c1 = _comp("uk_avec", "GB", 2_500_000.0, line_id="CACHE7-GB")
+    c2 = _comp("ie_section_481", "IE", 2_500_000.0, line_id="CACHE7-IE", component_type="vfx")
+    cache: dict = {}
+    result = generate_structural_candidate([c1, c2], gross_budget_usd=5_000_000.0, _cache=cache)
+    assert result.executable is True
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        result.npc_usd = 0.0  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# LLS anchor-cardinality repair, round 2 (2026-10-01): intrinsic pricing is
+# cached independently of anchor-relative adjustments; per-leg normalization.
+# ---------------------------------------------------------------------------
+
+def _intrinsic_fixtures():
+    ok_a = _comp("uk_avec", "GB", 2_500_000.0, line_id="INT-GB")
+    ok_b = _comp("ie_section_481", "IE", 2_500_000.0, line_id="INT-IE", component_type="vfx")
+    principal = _comp("ny_state_film", "US-NY", 3_000_000.0, line_id="INT-NY-P")
+    low_post = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="INT-NY-POST", component_type="post")
+    low_upside = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="INT-NY-POST", component_type="selective_upside")
+    dup_a = _comp("uk_avec", "GB", 1_000_000.0, line_id="INT-DUP")
+    dup_b = _comp("ie_section_481", "IE", 1_000_000.0, line_id="INT-DUP", component_type="vfx")
+    return [
+        ([ok_a, ok_b], 5_000_000.0),                       # executable
+        ([principal, low_post], 3_400_000.0),              # rejected: threshold
+        ([principal, low_upside], 3_400_000.0),            # executable, selective $0/$0 disclosed
+        ([dup_a, dup_b], 2_000_000.0),                     # rejected: same-cost double claim
+    ]
+
+
+_ANCHOR_AND_DELTA_CASES = [
+    (None, 0.0, 0.0, 0.0),
+    (2_000_000.0, 0.0, 0.0, 0.0),
+    (5_000_000.0, 10_000.0, 5_000.0, 2_500.0),
+    (5_000_000.0, 250_000.0, 0.0, 0.0),
+    (3_000_000.0, 0.0, -7_000.5, 120_000.0),
+]
+
+
+def test_intrinsic_cache_plus_fresh_adjustments_equals_uncached_result_exactly():
+    """For executable, threshold-rejected, selective-upside and double-claim structures, every
+    (anchor NPC, travel, FX, local-cost) combination served through ONE shared intrinsic cache (and a
+    shared component cache) is exactly equal -- every field, dataclass equality -- to the original
+    uncached computation. Covers identity, warnings/limitations, incentives, QPE, executability."""
+    cache: dict = {}
+    comp_cache: dict = {}
+    for components, gross in _intrinsic_fixtures():
+        for anchor, travel, fx, local in _ANCHOR_AND_DELTA_CASES:
+            kwargs = dict(
+                gross_budget_usd=gross, anchor_npc_usd=anchor, travel_incremental_delta_usd=travel,
+                fx_delta_usd=fx, local_cost_delta_usd=local,
+            )
+            fresh = generate_structural_candidate(components, **kwargs)
+            cached = generate_structural_candidate(components, _cache=cache, _component_cache=comp_cache, **kwargs)
+            assert cached == fresh, (components[0].program_slug, kwargs)
+            again = generate_structural_candidate(components, _cache=cache, _component_cache=comp_cache, **kwargs)
+            assert again == fresh
+            for f in ("structure_id", "executable", "rejection_reason", "disclosed_limitations",
+                      "total_guaranteed_incentive_usd", "total_conditional_incentive_usd",
+                      "total_allocated_usd", "administrative_allocation_risk"):
+                assert getattr(cached, f) == getattr(fresh, f), f
+    assert len(cache) == len(_intrinsic_fixtures()), "one intrinsic entry per structure, however many anchors/deltas"
+    assert comp_cache, "component pricing cache must have been populated"
+
+
+def test_intrinsic_cache_never_leaks_stale_npc_or_materiality_across_anchors_and_deltas():
+    components, gross = _intrinsic_fixtures()[0]
+    cache: dict = {}
+    seen = {}
+    for anchor, travel, fx, local in _ANCHOR_AND_DELTA_CASES:
+        r = generate_structural_candidate(
+            components, gross_budget_usd=gross, anchor_npc_usd=anchor, travel_incremental_delta_usd=travel,
+            fx_delta_usd=fx, local_cost_delta_usd=local, _cache=cache,
+        )
+        adj = round(travel + fx + local, 2)
+        assert r.npc_with_adjustments_usd == round(r.npc_usd + adj, 2)
+        assert r.total_adjustments_usd == adj
+        assert r.anchor_npc_usd == anchor
+        if anchor is None:
+            assert r.incremental_benefit_vs_anchor_usd is None and r.materiality_recommended is False
+        else:
+            assert r.incremental_benefit_vs_anchor_usd == round(anchor - r.npc_with_adjustments_usd, 2)
+            assert r.materiality_recommended == (r.incremental_benefit_vs_anchor_usd >= 100_000.0)
+        seen[(anchor, travel, fx, local)] = r.materiality_recommended
+    assert True in seen.values() and False in seen.values(), "fixture must flip materiality across calls"
+    assert len(cache) == 1
+
+
+def test_per_leg_normalization_equals_complete_structure_normalization_and_reuses_legs():
+    from app.services.canonical_evaluation import _hybrid_structure_normalization
+
+    inputs = _economic_inputs(jurisdiction_code="GR", gross_budget_usd=4_000_000.0)
+    principal = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, component_type="principal_production", line_id="LEG-GA")
+    nz = _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 500_000.0,
+               component_type="post", line_id="LEG-NZ")
+    ie = _comp("ie_section_481", "IE", 400_000.0, component_type="vfx", line_id="LEG-IE")
+    structure_a = [principal, nz, ie]
+    structure_b = [principal, nz]                       # shares the principal leg and the NZ leg
+
+    uncached_a = _hybrid_structure_normalization(inputs, "US-GA", structure_a)
+    uncached_b = _hybrid_structure_normalization(inputs, "US-GA", structure_b)
+    cache: dict = {}
+    assert _hybrid_structure_normalization(inputs, "US-GA", structure_a, cache=cache) == uncached_a
+    legs_after_a = [k for k in cache if str(k[0]).startswith("leg_")]
+    assert legs_after_a, "legs must be cached individually"
+    assert _hybrid_structure_normalization(inputs, "US-GA", structure_b, cache=cache) == uncached_b
+    legs_after_b = [k for k in cache if str(k[0]).startswith("leg_")]
+    assert legs_after_b == legs_after_a, "structure B's legs were all already cached by structure A"
+    # a different principal/anchor never reuses another anchor's legs
+    other = _hybrid_structure_normalization(inputs, "NZ", [
+        _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 3_000_000.0,
+              component_type="principal_production", line_id="LEG-NZP"), ie,
+    ], cache=cache)
+    assert other == _hybrid_structure_normalization(inputs, "NZ", [
+        _comp("new_zealand_screen_production_grant_—_international_post_vfx", "NZ", 3_000_000.0,
+              component_type="principal_production", line_id="LEG-NZP"), ie,
+    ])

@@ -44,7 +44,8 @@ program_slug) pair. The generator:
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
+import functools
+from dataclasses import dataclass, field, replace as _dataclass_replace
 from itertools import combinations
 
 from app.calculators.allocation_pricing import price_segment, SegmentEconomics
@@ -77,11 +78,23 @@ class StructuralComponent:
     evidenced_requirement_facts: frozenset[str] = frozenset()
     amount_facts: dict[str, float] = field(default_factory=dict)
 
-    @property
+    @functools.cached_property
     def allocated_usd(self) -> float:
         return round(sum(a.amount_usd for a in self.allocations), 2)
 
-    @property
+    @functools.cached_property
+    def pricing_key(self) -> tuple:
+        """Exactly the allocation fields price_segment consumes (via _segment_lines:
+        account_code, description, amount_usd, spend_category, line_id, and
+        jurisdiction_code for the line_id fallback), in allocation order (the
+        downstream sort is stable, so order is part of the input). Primitive
+        tuples only -- the cache never retains allocation objects."""
+        return tuple(
+            (a.account_code, a.description, a.amount_usd, a.spend_category, a.line_id, a.jurisdiction_code)
+            for a in self.allocations
+        )
+
+    @functools.cached_property
     def line_ids(self) -> frozenset[str]:
         return frozenset(a.line_id for a in self.allocations if a.line_id)
 
@@ -278,17 +291,16 @@ def _price_component(component: StructuralComponent) -> SegmentEconomics:
     )
 
 
-def generate_structural_candidate(
+def _generate_structural_candidate_uncached(
     components: list[StructuralComponent],
     gross_budget_usd: float,
     anchor_npc_usd: float | None = None,
     travel_incremental_delta_usd: float = 0.0,
     fx_delta_usd: float = 0.0,
     local_cost_delta_usd: float = 0.0,
+    _component_cache: dict[tuple, SegmentEconomics] | None = None,
 ) -> StructuralCandidateResult:
-    """The one generic entry point. Never a per-archetype function --
-    every one of the twelve corrected Codex archetypes is just a
-    different SHAPE of `components` passed to this same code."""
+    """Full (uncached) structural pricing -- see generate_structural_candidate."""
     structure_id = _structure_id(components)
     component_types = tuple(c.component_type for c in components)
     program_slugs = tuple(c.program_slug for c in components)
@@ -358,7 +370,7 @@ def generate_structural_candidate(
     comp_econ: list[ComponentEconomics] = []
     selective_zero_notes: list[str] = []
     for c in components:
-        seg = _price_component(c)
+        seg = _price_component_cached(c, _component_cache)
         if not seg.executable:
             if c.component_type in ("selective_upside", "fund_overlay"):
                 selective_zero_notes.append(
@@ -534,4 +546,142 @@ def generate_structural_candidate(
         raw_component_incentives_usd=raw_component_incentives_usd,
         stacking_adjustments=stacking_adjustments,
         post_adjustment_component_incentives_usd=post_adjustment_component_incentives_usd,
+    )
+
+
+def _price_component_cached(
+    component: StructuralComponent, cache: dict[tuple, SegmentEconomics] | None,
+) -> SegmentEconomics:
+    """Per-component pricing memo (LLS anchor-cardinality repair, 2026-10-01).
+    price_segment's result depends only on (jurisdiction, program, the exact
+    allocation set) plus production-level inputs that are constant for the
+    lifetime of one cache (one evaluate_project call); the component's
+    structural ROLE (component_type) does not enter it -- role only matters
+    to the caller's own executable/selective handling, which stays outside
+    this cache. A hit returns the identical (frozen) SegmentEconomics a fresh
+    call would."""
+    if cache is None:
+        return _price_component(component)
+    key = (component.jurisdiction_code, component.program_slug, component.production_type,
+           component.pricing_key)
+    hit = cache.get(key)
+    if hit is None:
+        hit = _price_component(component)
+        cache[key] = hit
+    return hit
+
+
+def _fast_replace(obj, **changes):
+    """dataclasses.replace equivalent for these plain (non-slots) frozen dataclasses:
+    clones __dict__ and applies `changes`. dataclasses.replace re-runs __init__ and
+    field validation and measured ~25us per call on the hot cached-derive path
+    (millions of calls per evaluation); this is ~2us and yields an equal object."""
+    new = object.__new__(type(obj))
+    new.__dict__.update(obj.__dict__)
+    new.__dict__.update(changes)
+    return new
+
+
+def _slim(base: StructuralCandidateResult) -> StructuralCandidateResult:
+    """Cache form of an intrinsic result: component objects (which carry every
+    allocation row) are dropped so a large cache never retains one allocation
+    set per examined combination. _reattach restores the CALLER's components."""
+    if not base.component_economics:
+        return base
+    return _fast_replace(
+        base, component_economics=tuple(_fast_replace(ce, component=None) for ce in base.component_economics),
+    )
+
+
+def _reattach(base: StructuralCandidateResult, components: list[StructuralComponent]) -> StructuralCandidateResult:
+    if not base.component_economics:
+        return base
+    return _fast_replace(base, component_economics=tuple(
+        _fast_replace(ce, component=c) for ce, c in zip(base.component_economics, components)
+    ))
+
+
+def _derive_for_call(
+    base: StructuralCandidateResult, anchor_npc_usd: float | None,
+    travel_incremental_delta_usd: float, fx_delta_usd: float, local_cost_delta_usd: float,
+) -> StructuralCandidateResult:
+    """Derives the result for THIS call from an intrinsic result (priced with
+    zero adjustments and no anchor). PROVEN dependency split, read directly
+    from _generate_structural_candidate_uncached: travel/FX/local-cost deltas
+    and anchor NPC feed ONLY the fields set below (the three delta fields,
+    total_adjustments_usd, npc_with_adjustments_usd, anchor_npc_usd,
+    incremental_benefit_vs_anchor_usd, materiality_recommended) -- every
+    rejection path ignores the deltas entirely (it never sets them) and only
+    echoes anchor_npc_usd; eligibility, incentives, component economics,
+    stacking adjustments, limitations, QPE/allocated totals and structural
+    identity are independent of all four inputs. Every anchor-relative field
+    is recomputed fresh per call, never reused."""
+    if not base.executable:
+        return _fast_replace(base, anchor_npc_usd=anchor_npc_usd)
+    total_adjustments = round(
+        (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0) + (local_cost_delta_usd or 0.0), 2,
+    )
+    npc_with_adjustments = round(base.npc_usd + total_adjustments, 2)
+    incremental = round(anchor_npc_usd - npc_with_adjustments, 2) if anchor_npc_usd is not None else None
+    materiality = (
+        incremental is not None and incremental >= MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD
+    )
+    return _fast_replace(
+        base, anchor_npc_usd=anchor_npc_usd,
+        incremental_benefit_vs_anchor_usd=incremental, materiality_recommended=materiality,
+        travel_incremental_delta_usd=travel_incremental_delta_usd or 0.0,
+        fx_delta_usd=fx_delta_usd or 0.0,
+        local_cost_delta_usd=local_cost_delta_usd or 0.0,
+        total_adjustments_usd=total_adjustments, npc_with_adjustments_usd=npc_with_adjustments,
+    )
+
+
+def generate_structural_candidate(
+    components: list[StructuralComponent],
+    gross_budget_usd: float,
+    anchor_npc_usd: float | None = None,
+    travel_incremental_delta_usd: float = 0.0,
+    fx_delta_usd: float = 0.0,
+    local_cost_delta_usd: float = 0.0,
+    _cache: dict[tuple, "StructuralCandidateResult"] | None = None,
+    _component_cache: dict[tuple, SegmentEconomics] | None = None,
+) -> StructuralCandidateResult:
+    """The one generic entry point. Never a per-archetype function --
+    every one of the twelve corrected Codex archetypes is just a
+    different SHAPE of `components` passed to this same code.
+
+    LLS performance repair: `_cache`, when provided, memoizes the INTRINSIC
+    structural pricing (executability, rejection, incentives, component
+    economics, stacking, limitations, QPE) keyed by structure identity +
+    component roles + exact allocated spend -- deliberately EXCLUDING the
+    anchor-relative inputs (travel/FX/local-cost deltas, anchor NPC), which
+    are applied fresh to a copy for every call via _derive_for_call (see its
+    proof). `_component_cache` memoizes per-component price_segment results.
+    Both default to None, which preserves the original uncached behavior
+    exactly. A cache hit is byte-identical to a fresh computation."""
+    if _cache is None:
+        return _generate_structural_candidate_uncached(
+            components, gross_budget_usd, anchor_npc_usd, travel_incremental_delta_usd,
+            fx_delta_usd, local_cost_delta_usd, _component_cache,
+        )
+    from app.services import _lls_profile_sink as _prof
+    _prof.tick("pricing_calls_total")
+    key = (
+        _structure_id(components),
+        tuple((c.jurisdiction_code, c.program_slug, c.component_type, c.allocated_usd) for c in components),
+    )
+    base = _cache.get(key)
+    if base is None:
+        with _prof.timed("intrinsic_pricing"):
+            base = _generate_structural_candidate_uncached(
+                components, gross_budget_usd, None, 0.0, 0.0, 0.0, _component_cache,
+            )
+        _cache[key] = _slim(base)
+        _prof.tick("pricing_cache_miss_executable" if base.executable else "pricing_cache_miss_rejected")
+        _prof.maybe_print(10.0)
+    else:
+        _prof.tick("pricing_cache_hit")
+        base = _reattach(base, components)
+    return _derive_for_call(
+        base, anchor_npc_usd, travel_incremental_delta_usd, fx_delta_usd, local_cost_delta_usd,
     )
