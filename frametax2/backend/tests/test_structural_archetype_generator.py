@@ -721,3 +721,52 @@ def test_hybrid_marginal_jurisdiction_benefits_removed_spend_is_returned_to_prin
     # already-tested pricing contract); this test only proves the counterfactual
     # repricing actually ran to completion for the real removed component.
     assert benefits["NZ"] == benefits["NZ"]  # not NaN
+
+
+# ---------------------------------------------------------------------------
+# COMPONENT-BUNDLE CORRECTION (2026-09-30): _program_distinguishes_spend_category
+# (canonical_evaluation.py) -- the signal deciding whether a bundle member (e.g.
+# "vfx") is exposed as its own independently-routable movable component.
+# ---------------------------------------------------------------------------
+
+def test_program_distinguishes_spend_category_true_for_a_real_component_basis_program():
+    from app.services.canonical_evaluation import _program_distinguishes_spend_category
+
+    # Ontario OCASE's real rate doctrine restricts its tier to
+    # component_basis_spend_categories=("vfx",) -- a genuine, specific
+    # distinguishing treatment.
+    assert _program_distinguishes_spend_category(
+        "ontario_computer_animation_and_special_effects_tax_credit_ocase", "vfx",
+    ) is True
+
+
+def test_program_distinguishes_spend_category_false_for_an_unrelated_category():
+    from app.services.canonical_evaluation import _program_distinguishes_spend_category
+
+    assert _program_distinguishes_spend_category(
+        "ontario_computer_animation_and_special_effects_tax_credit_ocase", "music",
+    ) is False
+
+
+def test_program_distinguishes_spend_category_false_for_unknown_program():
+    from app.services.canonical_evaluation import _program_distinguishes_spend_category
+
+    assert _program_distinguishes_spend_category("not_a_real_program_slug", "vfx") is False
+
+
+def test_program_distinguishes_spend_category_ignores_exclude_complement_conditions():
+    """Bug fix (same pass, same day): a component_basis_spend_categories_exclude=True
+    condition matches "every category NOT in this tuple" -- a broad, generic
+    "everything else" complement bucket (e.g. us_or_opif's real payroll/non-payroll
+    split), never a SPECIFIC carve-out for the category under test. Confirmed live
+    this previously made "post" (via its real "post_production"/"sound" categories,
+    legitimately absent from that payroll tuple) look specifically distinguished by
+    Oregon's generic non-payroll bucket, reintroducing the exact over-fragmentation/
+    combinatorial-blowup the bundle correction exists to remove (Little Utopia's
+    evaluation hung past a minute before this fix; completed in ~100s after)."""
+    from app.services.canonical_evaluation import _program_distinguishes_spend_category
+
+    assert _program_distinguishes_spend_category("us_or_opif", "post_production") is False
+    assert _program_distinguishes_spend_category("us_or_opif", "sound") is False
+    # The real, non-excluded payroll side IS a specific, legitimate match.
+    assert _program_distinguishes_spend_category("us_or_opif", "atl_writer") is True

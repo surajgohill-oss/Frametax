@@ -552,9 +552,31 @@ _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
     # canonical-1.97.0, 168 at canonical-1.97.1, run roughly an hour apart).
     # recommended_optimizer_options_total remains 0 either way (already 0
     # under 1.96.0's fix, before this pass's dominance/marginal work).
-    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 168,   # Little Utopia
+    #
+    # Little Utopia 168 -> 339, F#K Valentine's Day 411 -> 590 (2026-09-30,
+    # CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT, engine_version
+    # canonical-1.98.0, COMPONENT-BUNDLE CORRECTION): a real, intended
+    # discovery-coverage increase, not a regression or a bug. Both
+    # productions have Ontario (CA-ON) OCASE as a real candidate target, and
+    # OCASE is the canonical example of a program whose rate doctrine
+    # specifically distinguishes "vfx" spend
+    # (_program_distinguishes_spend_category) -- per the correction's own
+    # explicit instruction ("preserve individually routed post, VFX and
+    # music scenarios when they are real and materially distinct"), the
+    # search now generates BOTH the bundle-only route (POST_VFX_PACKAGE
+    # routed together) AND the bundle-plus-split route (POST_VFX_PACKAGE for
+    # the remaining post spend, "vfx" independently routed to its own best
+    # target, e.g. CA-ON/OCASE) as two separate, materially distinct,
+    # genuinely different real scenarios -- roughly doubling the scenario
+    # count for a production where this split is live. Bad Hombres is
+    # unaffected (277, unchanged) -- confirmed its own real candidate
+    # universe does not make OCASE (or an equivalent vfx-distinguishing
+    # program) a live target. recommended_optimizer_options_total remains 0
+    # for all three (unchanged) -- this is a visibility/completeness
+    # correction, never a recommendation-economics change.
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 339,   # Little Utopia
     "4355ae88-a636-4c18-af60-ad73b2646124": 277,   # Bad Hombres
-    FVD_PROJECT_ID: 411,                            # F#K Valentine's Day
+    FVD_PROJECT_ID: 590,                            # F#K Valentine's Day
     "ab10b319-978e-44d3-9331-af2a5f2cccc2": 569,   # Lips Like Sugar
 }
 

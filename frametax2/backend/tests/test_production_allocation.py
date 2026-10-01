@@ -7,11 +7,14 @@ import pytest
 
 from app.calculators.production_allocation import (
     AssignmentKind,
+    COMPONENT_BUNDLE_MEMBERS,
     MOVABLE_COMPONENTS,
     NON_PARTICIPANT_STATED_LOCATION,
     StructureSpec,
+    component_bundle_for,
     component_for,
     derive_account_allocation,
+    spend_categories_for_component,
 )
 from app.calculators.qualification_derivation import BudgetLine
 from app.data.little_utopia_real_budget import (
@@ -268,3 +271,95 @@ def test_subtotal_header_and_real_spend_line_sharing_a_code_are_not_conflated():
     # neither line is dropped in favor of the other
     amounts = sorted(a.amount_usd for a in result.assignments)
     assert amounts == [25_000.0, 200_000.0]
+
+
+# ---------------------------------------------------------------------------
+# COMPONENT-BUNDLE CORRECTION (2026-09-30): post+vfx bundle into
+# POST_VFX_PACKAGE by default; music remains its own bundle; a bundle member
+# is independently routable (in ADDITION to its bundle) only when a real
+# destination program specifically distinguishes its spend category.
+# ---------------------------------------------------------------------------
+
+def test_component_bundle_for_groups_post_and_vfx_music_separate():
+    assert component_bundle_for("post") == "post_vfx_package"
+    assert component_bundle_for("vfx") == "post_vfx_package"
+    assert component_bundle_for("music") == "music_package"
+
+
+def test_component_bundle_for_is_identity_for_unregistered_components():
+    assert component_bundle_for("overhead") == "overhead"
+    assert component_bundle_for("principal_photography") == "principal_photography"
+
+
+def test_component_bundle_members_matches_bundle_for_both_directions():
+    for bundle, members in COMPONENT_BUNDLE_MEMBERS.items():
+        for member in members:
+            assert component_bundle_for(member) == bundle
+
+
+def test_spend_categories_for_component_returns_real_categories_never_the_label():
+    # "post" the component label is never itself a real spend_category --
+    # its real categories are "post_production" and "sound".
+    assert set(spend_categories_for_component("post")) == {"post_production", "sound"}
+    # "vfx" and "music" happen to share their literal string with their own
+    # single spend category -- confirmed, not assumed.
+    assert spend_categories_for_component("vfx") == ("vfx",)
+    assert spend_categories_for_component("music") == ("music",)
+
+
+def test_spend_categories_for_component_empty_for_unregistered_component():
+    assert spend_categories_for_component("nonexistent_component") == ()
+
+
+def test_derive_account_allocation_routes_bundle_key_for_all_member_lines():
+    """A component_routes entry keyed by the BUNDLE ("post_vfx_package")
+    routes every line whose own fine-grained component is a bundle member
+    (post OR vfx) -- never requiring the caller to name each member
+    individually."""
+    lines = [
+        BudgetLine(account_code="4100", description="EDITORIAL", amount_usd=50_000.0,
+                   spend_category="post_production"),
+        BudgetLine(account_code="4200", description="VFX VENDOR", amount_usd=30_000.0,
+                   spend_category="vfx"),
+    ]
+    result = derive_account_allocation(
+        lines=lines, spend_category_by_code={},
+        spec=_baseline_spec(
+            participants=("MU", "CA-ON"),
+            incentive_programs={"MU": "mu_edb_incentive", "CA-ON": "on_ofttc"},
+            component_routes={"post_vfx_package": "CA-ON"},
+        ),
+    )
+    assert result.conserves
+    jurisdictions = {a.account_code: a.jurisdiction_code for a in result.assignments}
+    assert jurisdictions["4100"] == "CA-ON"
+    assert jurisdictions["4200"] == "CA-ON"
+    # the real, fine-grained component is still recorded on each line --
+    # bundling is a routing decision, never a relabeling of the real spend.
+    components = {a.account_code: a.component for a in result.assignments}
+    assert components["4100"] == "post"
+    assert components["4200"] == "vfx"
+
+
+def test_derive_account_allocation_fine_grained_route_overrides_bundle_for_that_member_only():
+    """A combination naming BOTH the bundle and one specific member splits
+    that member out to its own target while the bundle continues to cover
+    the rest -- never a parallel allocation mechanism, never double-routing."""
+    lines = [
+        BudgetLine(account_code="4100", description="EDITORIAL", amount_usd=50_000.0,
+                   spend_category="post_production"),
+        BudgetLine(account_code="4200", description="VFX VENDOR", amount_usd=30_000.0,
+                   spend_category="vfx"),
+    ]
+    result = derive_account_allocation(
+        lines=lines, spend_category_by_code={},
+        spec=_baseline_spec(
+            participants=("MU", "CA-ON", "CA-NL"),
+            incentive_programs={"MU": "mu_edb_incentive", "CA-ON": "on_ofttc", "CA-NL": "ca_nl_all_spend_credit"},
+            component_routes={"post_vfx_package": "CA-ON", "vfx": "CA-NL"},
+        ),
+    )
+    assert result.conserves
+    jurisdictions = {a.account_code: a.jurisdiction_code for a in result.assignments}
+    assert jurisdictions["4100"] == "CA-ON"  # post stays with the bundle route
+    assert jurisdictions["4200"] == "CA-NL"  # vfx independently split out

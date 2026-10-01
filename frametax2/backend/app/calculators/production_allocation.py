@@ -103,6 +103,62 @@ _DEFAULT_COMPONENT = "principal_photography"  # btl_* and anything unmapped
 # hint uses (VFX / music / sound / post). These may be routed.
 MOVABLE_COMPONENTS = frozenset({"post", "vfx", "music"})
 
+# CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY -- COMPONENT-BUNDLE
+# CORRECTION (2026-09-30): the ordinary_component_hybrid search previously
+# treated "post", "vfx" and "music" as three fully independent movable
+# slots, so it explored every combination of routing each SEPARATELY to a
+# (possibly different) jurisdiction -- confirmed to over-fragment real
+# operational decisions (a real production does not send a $10,000 VFX
+# line to one country and its $500,000 post-production package to another
+# as its DEFAULT plan) and to needlessly multiply the combinatorial search
+# space this session's own long-running-evaluation cap depends on.
+# POST_VFX_PACKAGE bundles "post" and "vfx" (editorial/post, VFX,
+# animation, sound post, and other operationally-connected post-pipeline
+# work) into ONE default movable unit; MUSIC_PACKAGE is "music" alone (a
+# separately commissioned, separately vendor-contracted discipline in
+# practice, never merged with post/VFX by default). canonical_evaluation.py
+# generates and prices bundle-level hybrid candidates by default, and adds
+# a fine-grained member (e.g. "vfx" alone) as an ADDITIONAL, independently
+# routable slot ONLY when a real destination program's own rate doctrine
+# specifically distinguishes that member's spend category (see
+# _program_distinguishes_spend_category) -- never merely because separate
+# spend-category labels exist in the budget.
+COMPONENT_BUNDLE_MEMBERS: dict[str, frozenset[str]] = {
+    "post_vfx_package": frozenset({"post", "vfx"}),
+    "music_package": frozenset({"music"}),
+}
+_COMPONENT_TO_BUNDLE: dict[str, str] = {
+    member: bundle for bundle, members in COMPONENT_BUNDLE_MEMBERS.items() for member in members
+}
+
+
+def component_bundle_for(component: str) -> str:
+    """The canonical operational bundle a movable component belongs to.
+    A component with no registered bundle (never true for post/vfx/music,
+    the only members of MOVABLE_COMPONENTS today) maps to itself, so this
+    is always safe to call on any component_for() output."""
+    return _COMPONENT_TO_BUNDLE.get(component, component)
+
+
+_SPEND_CATEGORIES_BY_COMPONENT: dict[str, tuple[str, ...]] = {}
+for _cat, _comp in COMPONENT_BY_SPEND_CATEGORY.items():
+    _SPEND_CATEGORIES_BY_COMPONENT.setdefault(_comp, ())
+    _SPEND_CATEGORIES_BY_COMPONENT[_comp] = _SPEND_CATEGORIES_BY_COMPONENT[_comp] + (_cat,)
+del _cat, _comp
+
+
+def spend_categories_for_component(component: str) -> tuple[str, ...]:
+    """The real, registered spend_category values that classify to this
+    component (e.g. "post" <- ("post_production", "sound")) -- the
+    component label itself ("post") is a location-routing TAG, never
+    itself a spend_category, and must never be compared directly against
+    a RateCondition's component_basis_spend_categories tuple (that field
+    is scoped to the real SpendCategory vocabulary). "vfx" and "music"
+    happen to share their literal string with their own single spend
+    category -- a coincidence of this registry's naming, not a rule to
+    rely on for any other component."""
+    return _SPEND_CATEGORIES_BY_COMPONENT.get(component, ())
+
 # Components physically tied to where the camera rolls.
 LOCATION_BOUND_COMPONENTS = frozenset({"principal_photography", "travel_and_living"})
 
@@ -380,9 +436,21 @@ def derive_account_allocation(
             ))
             continue
 
-        # 3. component route
-        if component in spec.component_routes:
-            jur = spec.component_routes[component]
+        # 3. component route -- checks the account's own fine-grained component
+        # first (e.g. "vfx" routed independently), falling back to its canonical
+        # operational BUNDLE (e.g. "post_vfx_package") when the fine-grained key
+        # itself is not a direct route. This is what lets a hybrid route a bundle
+        # of post+vfx together as ONE default decision while still allowing a
+        # specific member (vfx) to be pulled out and routed independently when a
+        # real destination program justifies the split -- see
+        # component_bundle_for's own docstring for the full rationale.
+        _route_component = (
+            component if component in spec.component_routes
+            else component_bundle_for(component) if component_bundle_for(component) in spec.component_routes
+            else None
+        )
+        if _route_component is not None:
+            jur = spec.component_routes[_route_component]
             if jur not in spec.participants:
                 unallocated.append(line.account_code)
                 notes.append(
@@ -391,7 +459,7 @@ def derive_account_allocation(
                 )
                 continue
             provenance = routing_rationales.get(
-                component,
+                _route_component,
                 f"Component '{component}' is routed to {jur} by this structure.",
             )
             overrides_stated = line.account_code in stated_outside_accounts
