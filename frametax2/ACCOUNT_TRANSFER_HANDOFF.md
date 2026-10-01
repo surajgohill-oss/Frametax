@@ -443,3 +443,33 @@ Verification-only pass. No CineGlobe functionality was implemented or modified i
 - On a genuine timeout, identify the exact last active test from the run's own output and re-run only that one test for root cause. Never restart the entire suite automatically.
 
 **Globe implementation readiness: YES.** Repository, runtime, and every connector actually required for CineGlobe development (GitHub, Git, filesystem, Browser MCP, Playwright MCP) are confirmed working. Google Drive is connected and can retrieve the original script source material if needed. Figma and Perplexity are not required by this project and their absence/inactivity does not block Globe work.
+
+
+---
+
+## CURRENT STATUS — Optimizer Globe wiring (2026-10-01) — supersedes any older Globe status above
+
+**Branch / SHAs:** `claude/global-optimizer-remediation`; Globe task started at `e67c4f0` (backend optimizer closeout: LLS performance + `canonical-1.99.0`); final SHA = tip commit titled `fix: reconcile optimizer globe status and hover wiring` (see `git log -1`). Worktree: `/Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2` (git root is its parent — normal).
+
+**Database:** `frametax2_claude_optimizer_acceptance_20260919` only. **Frozen generations:** all four productions (Little Utopia, F#K Valentine's Day, Bad Hombres, Lips Like Sugar) are current on `canonical-1.99.0`, one fingerprint each, second evaluation returns `EVALUATION_REUSED`.
+
+**Backend optimizer / performance work (done, do not redo):** shared best-first traversal, intrinsic pricing/leg-normalization/component caches, lazy marginal-jurisdiction enrichment in the bounded-retention writer, proven-upper-bound marginal disclosure, engine bumped to 1.99.0, LLS cold evaluation 333 s. Details in `docs/architecture/CAPABILITY_LEDGER.md` (sections LLS_ANCHOR_CARDINALITY_OPTIMIZER_REPAIR and OPTIMIZER_GLOBE_STATUS_AND_HOVER_WIRING_RECONCILIATION).
+
+**Globe wiring root causes and repairs (frontend only):** (1) `IN`/`PE`/`CA-SK`/`KZ` had no coordinates → no marker/hover/click (Saskatchewan was the observed case); (2) three-globe index-keyed hit-targets/beacons kept stale datum → factories now recreated on every marker change; (3) `setPointOfView` never called → back-face hit-boxes intercepted front hovers; route markers (40px) covered neighbours → uniform 24px boxes, nearest-centre hover/click, hover card `pointer-events:none`; (4) route markers overwrote the jurisdiction's category → now keep it; (5) dominated search aggregates and aggregated rule-rejected permutations were shown as "Rejected (525,882)"/red → now excluded from markers/cards and disclosed as summarized search space; blocked jurisdictions now state the canonical disposition (award/rate confirmation, authority insufficient, eligibility conditions, selective, superseded, prohibited, ...).
+
+**Scenario-category contract:** gold best recommendation, jade other recommended, silver evaluated alternative, amber needs more facts, red genuinely blocked; strongest status per jurisdiction wins (recommended > evaluated > needs facts > blocked); recommended + evaluated = executable total; needs-facts and blocked are separate non-executable sections; summarized search space is counted, not listed.
+
+**Four-project verification (local browser = implementation evidence only):** markers LU 103 (78/5/20), FVD 104 (77/9/18), BH 103 (77/6/20), LLS 103 (78/5/20); every marker hover verified 103/104/103/103; lists LU 339/25/25, FVD 595/27/24, BH 280/25/25, LLS 585/25/24 (evaluated / needs facts / blocked); selection changes route + identity in each project; no console errors.
+
+**Focused tests run:** `frontend/tests/globe-identity-and-status-reconciliation.test.mjs` (new) plus the affected Globe/optimizer/workspace/overview/scenario frontend test files — 276 pass, 0 fail (`node --test`). No global suite, no backend suite.
+
+**Still required / remaining:** independent Codex Globe acceptance audit (INDEPENDENT UI COMPLETION GATE — protected preview, every production and surface individually: Project Globe, Workspace Map, Workspace Split). Dense central-Europe markers overlap at default zoom (nearest-centre resolution; zoom to separate). Workspace/reference-card formatting and project-evidence reconciliation are separate later workstreams.
+
+**Runtime startup (exact):**
+- Backend: `cd frametax2/backend && source .venv/bin/activate && DATABASE_URL=postgresql+psycopg://frametax:frametax@localhost:5432/frametax2_claude_optimizer_acceptance_20260919 CURRENT_ORGANIZATION_ID=11381771-5b1c-4980-9117-e3e47a4cb354 uvicorn app.main:app --host 127.0.0.1 --port 8010` (health: `http://127.0.0.1:8010/health`).
+- Frontend: `cd frametax2/frontend && npm run dev -- --host 127.0.0.1 --port 5173`; open **`http://localhost:5173`** (not `127.0.0.1` — backend CORS allows only the `localhost` origin). Routes: `/projects/<id>/globe`, `/projects/<id>/workspace`. Project ids: LU `fa5cade5-0669-4816-bfe6-72146f8d3bae`, FVD `6c6f1c13-2d49-4bbc-bafb-2a12efa93112`, BH `4355ae88-a636-4c18-af60-ad73b2646124`, LLS `ab10b319-978e-44d3-9331-af2a5f2cccc2`. Browser-pane note: the Globe only renders frames while the pane is visible — wake it with a screenshot before DOM checks.
+
+**Known untracked runtime logs (never commit):** `/Users/Suraj/cineglobe-claude-global-optimizer-remediation/.backend_gd_wire.log` and `.frontend_gd_wire.log` (repository root).
+
+**Explicit next action for a new account/session:** (1) Do NOT regenerate the four projects, do NOT restart authority research, do NOT re-audit optimizer economics during this UI task; reuse the existing frozen payloads. (2) Codex performs the next independent Globe acceptance audit against this commit. (3) Only then, as separate later workstreams: Workspace/reference-card formatting and project-evidence reconciliation.
+

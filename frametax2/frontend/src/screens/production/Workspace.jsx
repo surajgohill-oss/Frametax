@@ -8,7 +8,7 @@ import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDet
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
@@ -652,7 +652,7 @@ export default function Workspace() {
   // In Single Jurisdiction mode there is no route/universe split at all, so
   // every point is correctly counted as a marker.
   const globeMarkerCount = workspaceMode === MODE_OPTIMIZER
-    ? points.filter((p) => p.isAggregatedUniverseMarker).length
+    ? points.length // every Optimizer marker is a jurisdiction marker (route jurisdictions keep their own marker)
     : points.length;
 
   const bestPriced = bestPricedCandidate(allocated);
@@ -708,6 +708,11 @@ export default function Workspace() {
     // winner below.
     const s = pt.sourceStructure || (structuresByCode.get(code) || [])[0];
     if (!s) return;
+    // GLOBE_WIRING_REMEDIATION (2026-10-01): a Needs-More-Facts / blocked
+    // jurisdiction marker opens ITS OWN canonical row (opportunity /
+    // blocked-with-reason Inspector), never an empty/foreign segment view.
+    if (pt.tier === "amber") { openInspector("optimizer-opportunity", buildOpportunityDetail(s)); return; }
+    if (pt.tier === "red") { openInspector("optimizer-rejection", buildRejectedDetail(s)); return; }
     const seg = resolveSegmentDetail(s, code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);

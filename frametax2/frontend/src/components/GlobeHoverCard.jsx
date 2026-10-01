@@ -1,4 +1,5 @@
 import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJurisdictions } from "../lib/globeHoverFormat";
+import { shortBlockerReason } from "../lib/blockerDisposition";
 import { jurisdictionName } from "../lib/format";
 
 // Overview Globe hover data parity: extracted verbatim from
@@ -165,32 +166,96 @@ function ExcludedBody({ hover }) {
   );
 }
 
-// Aggregated jurisdiction marker (Optimizer mode's "complete categorized
-// universe" layer): NEVER an exact scenario — explicit disclosure so it is
-// never mistaken for the selected route's own structure-level detail. Shows
-// the real represented-structure count where determinable (structuresByCode
-// grouping, same data every other consumer reads) and states plainly that
-// the selected route does not use this jurisdiction (true by construction —
-// a jurisdiction the route DOES use renders its exact-route marker instead).
-function AggregatedUniverseBody({ hover }) {
+// GLOBE_WIRING_REMEDIATION (2026-10-01): the Optimizer-mode jurisdiction
+// record. Every visible Optimizer marker (route or not) states ITS OWN
+// jurisdiction's identity and strongest canonical category, the best
+// associated structure with NPC/savings when priced, how many structures it
+// represents per category, and -- when nothing priced exists -- the exact
+// canonical blocker disposition and the engine's own reason. Never a generic
+// "blocked", never blank when canonical data exists.
+function CategoryCounts({ counts }) {
+  if (!counts) return null;
+  const parts = [
+    counts.recommended ? `${counts.recommended} recommended` : null,
+    counts.evaluated ? `${counts.evaluated} evaluated` : null,
+    counts.needsFacts ? `${counts.needsFacts} needs facts` : null,
+    counts.blocked ? `${counts.blocked} blocked` : null,
+  ].filter(Boolean);
+  return (
+    <div className="hover-field">
+      <div className="text-tertiary small">Structures represented</div>
+      <div className="small">{parts.length ? parts.join(" · ") : "None"}</div>
+    </div>
+  );
+}
+
+function JurisdictionRecordBody({ hover }) {
+  const priced = hover.npcUsd != null;
+  const reason = shortBlockerReason(hover.blockerReason || hover.excludedReason);
   return (
     <>
       <div className="hover-field">
-        <div className="text-tertiary small">This marker</div>
-        <div className="small">Jurisdiction status summary — not the selected route</div>
+        <div className="text-tertiary small">Best associated structure</div>
+        <div className="small">{hover.structureLabel || "Not available"}</div>
       </div>
+      {priced ? (
+        <>
+          <div className="hover-field">
+            <div className="text-tertiary small">NPC</div>
+            <div className="small">{formatFullUsd(hover.npcUsd)}</div>
+          </div>
+          {hover.savingsUsd != null && (
+            <div className="hover-field">
+              <div className="text-tertiary small">{hover.savingsUsd >= 0 ? "Saves vs. Current Location" : "Costs more than Current Location"}</div>
+              <div className="small">{formatFullUsd(Math.abs(hover.savingsUsd))}</div>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {hover.blockerLabel && (
+            <div className="hover-field">
+              <div className="text-tertiary small">Why not priced</div>
+              <div className="small">{hover.blockerLabel}</div>
+            </div>
+          )}
+          <div className="hover-field">
+            <div className="text-tertiary small">{hover.status === "amber" ? "Facts needed" : "Canonical reason"}</div>
+            <div className="small">{reason || "Not priced — see Inspector"}</div>
+          </div>
+        </>
+      )}
+      <CategoryCounts counts={hover.categoryCounts} />
+    </>
+  );
+}
+
+// Aggregated (non-route) marker: the jurisdiction record plus an explicit
+// note that it is a status summary, not the selected route.
+function AggregatedUniverseBody({ hover }) {
+  return (
+    <>
+      <JurisdictionRecordBody hover={hover} />
       <div className="hover-field">
-        <div className="text-tertiary small">Best represented category</div>
-        <div className="small">{hover.fullStatusLabel || "Not available"}</div>
+        <div className="text-tertiary small">Selected route</div>
+        <div className="small">Does not use this jurisdiction</div>
       </div>
+    </>
+  );
+}
+
+// A jurisdiction on the selected route: its own record first (identity/
+// category never overwritten by the route), then the route's own role and
+// structure summary.
+function RouteJurisdictionBody({ hover }) {
+  return (
+    <>
+      <JurisdictionRecordBody hover={hover} />
       <div className="hover-field">
-        <div className="text-tertiary small">Executable structures represented</div>
-        <div className="small">{hover.representedStructureCount != null ? hover.representedStructureCount : "Not determinable"}</div>
+        <div className="text-tertiary small">Selected route</div>
+        <div className="small">{hover.role || "Participating jurisdiction"}</div>
       </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Used by selected route</div>
-        <div className="small">{hover.selectedRouteUsesJurisdiction ? "Yes" : "No"}</div>
-      </div>
+      <OptimizerStructureBody hover={hover} />
     </>
   );
 }
@@ -226,19 +291,20 @@ export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
   // its real recommendation-status text (optimizerStatusLabel — "Best
   // Recommendation"/"Other Recommended"/"Evaluated Alternative" — the SAME
   // vocabulary the legend, side-list dot, and Inspector all agree with).
-  const isOptimizer = hover.mode === "optimizer";
+  const isOptimizer = hover.mode === "optimizer" || hover.isAggregatedUniverseMarker;
   const isAggregated = !!hover.isAggregatedUniverseMarker;
+  const isRoute = isOptimizer && !isAggregated;
   return (
-    <div className="globe-tooltip" style={hoverCardStyle(hoverRect, canvasRef.current)}>
-      <strong>{isOptimizer ? (hover.structureDetail?.label || hover.name) : hover.jurisdictionName}</strong>
+    <div className="globe-tooltip" role="status" data-hover-iso={hover.iso || hover.isoA2 || ""} style={{ ...hoverCardStyle(hoverRect, canvasRef.current), pointerEvents: "none" }}>
+      <strong>{hover.jurisdictionName || hover.name}</strong>
       <div className="text-tertiary small" style={{ marginBottom: 6 }}>
-        {isOptimizer ? hover.optimizerStatusLabel : hover.fullStatusLabel}
-        {isOptimizer && hover.familyLabel ? ` · ${hover.familyLabel}` : ""}
+        {hover.fullStatusLabel || hover.optimizerStatusLabel}
+        {isRoute && hover.familyLabel ? ` · ${hover.familyLabel}` : ""}
       </div>
       {isAggregated ? (
         <AggregatedUniverseBody hover={hover} />
-      ) : isOptimizer ? (
-        <OptimizerStructureBody hover={hover} />
+      ) : isRoute ? (
+        <RouteJurisdictionBody hover={hover} />
       ) : hover.status === "silver" ? (
         <ExcludedBody hover={hover} />
       ) : hover.status === "amber" ? (

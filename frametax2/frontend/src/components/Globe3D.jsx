@@ -1659,7 +1659,12 @@ export default function Globe3D({
       // clipped markers). display:none makes them inert AND zero-size, so both
       // the interaction and the measurement become well-defined.
       .htmlElementVisibilityModifier((el, isVisible) => {
-        el.style.display = isVisible ? "" : "none";
+        // visibility/pointer-events, NOT display: CSS2DRenderer rewrites
+        // `display` on every render pass (it would silently undo a
+        // display:none set here), but never touches these.
+        el.style.visibility = isVisible ? "" : "hidden";
+        el.style.pointerEvents = isVisible ? "auto" : "none";
+        el.dataset.behind = isVisible ? "0" : "1";
       })
       .htmlElement((d) => {
         const el = document.createElement("div");
@@ -1675,13 +1680,27 @@ export default function Globe3D({
         el.className = isExactRoute ? "globe-hit-target globe-hit-target--route" : "globe-hit-target";
         el.setAttribute("role", "button");
         el.setAttribute("tabindex", "0");
+        // GLOBE_WIRING_REMEDIATION (2026-10-01): every marker names ITS OWN
+        // jurisdiction and strongest category (never the selected structure);
+        // data-* attributes expose the exact identity this element was built
+        // from so a deterministic check can compare DOM <-> datum.
+        const markerName = d.jurisdictionName || d.name || d.id || "jurisdiction marker";
+        const markerStatus = d.fullStatusLabel || d.optimizerStatusLabel || "";
         el.setAttribute(
           "aria-label",
-          isExactRoute
-            ? `${d.structureDetail?.label || d.name || d.id} — selected route`
-            : (d.name || d.id || "jurisdiction marker"),
+          `${markerName}${markerStatus ? ` — ${markerStatus}` : ""}${isExactRoute ? " — on selected route" : ""}`,
         );
-        const size = isExactRoute ? 40 : 28;
+        el.dataset.iso = d.iso || d.id || "";
+        el.dataset.code = d.jurisdictionCode || "";
+        el.dataset.status = d.tier || "";
+        el.dataset.name = markerName;
+        // GLOBE_WIRING_REMEDIATION (2026-10-01): ONE uniform hit-box size for every
+        // marker. Route markers used to be 40px at a higher z-index, so a route
+        // marker (e.g. Manitoba) physically covered its neighbours (Saskatchewan,
+        // Alberta, ...) and intercepted THEIR pointer hover/click -- confirmed
+        // with elementFromPoint on the live Globe. Route emphasis is now purely
+        // visual (outline below) and never enlarges the interactive area.
+        const size = 24;
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.style.cursor = "pointer";
@@ -1699,14 +1718,27 @@ export default function Globe3D({
         // transfers in one click, same as when no Inspector is open yet.
         // Exact-route markers sit one layer above the universe markers so
         // an overlapping route point always wins the hit test.
-        el.style.zIndex = isExactRoute ? "46" : "45";
+        el.style.zIndex = "45";
+        if (isExactRoute) { el.style.borderRadius = "50%"; el.style.boxShadow = "0 0 0 2px rgba(255,255,255,0.55)"; }
         // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): reads liveRef.current
         // at CLICK/HOVER time, never the closed-over `onPointClick`/
         // `onPointHover` props directly — this factory runs inside the
         // mount-only effect (`}, []` far below), so a direct reference would
         // be permanently stale after the very first render (see this
         // component's liveRef declaration for the full root-cause trace).
-        el.addEventListener("click", (ev) => { ev.stopPropagation(); liveRef.current.onPointClick?.(d); });
+        el.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          // Click resolves exactly like hover: the nearest-centre marker under the pointer.
+          const stack = (document.elementsFromPoint ? document.elementsFromPoint(ev.clientX, ev.clientY) : [])
+            .filter((n) => n?.classList?.contains("globe-hit-target") && n.__globeDatum);
+          let target = el; let bestDist = Infinity;
+          for (const n of stack) {
+            const r = n.getBoundingClientRect();
+            const dist = Math.hypot(ev.clientX - (r.left + r.width / 2), ev.clientY - (r.top + r.height / 2));
+            if (dist < bestDist) { bestDist = dist; target = n; }
+          }
+          liveRef.current.onPointClick?.(target.__globeDatum || d);
+        });
         el.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); liveRef.current.onPointClick?.(d); } });
         // PHASE 3A FINAL CLOSEOUT: the hover card now anchors near the
         // hovered jurisdiction instead of sitting fixed at the panel's
@@ -1715,8 +1747,27 @@ export default function Globe3D({
         // on screen) — is passed through. The caller converts it to a
         // position relative to its own canvas container; Globe3D has no
         // reason to know that container's identity.
-        el.addEventListener("mouseenter", () => liveRef.current.onPointHover?.(d, el.getBoundingClientRect()));
-        el.addEventListener("mouseleave", () => liveRef.current.onPointHover?.(null));
+        el.__globeDatum = d;
+        // Pointer hover resolves to the marker whose CENTRE is nearest the
+        // pointer among every hit-box under it, so overlapping boxes in dense
+        // regions can never show a neighbour's data. mouseenter/mousemove both
+        // re-resolve; the card is replaced (never reused) when the target changes.
+        const resolveHover = (ev) => {
+          const stack = (document.elementsFromPoint ? document.elementsFromPoint(ev.clientX, ev.clientY) : [])
+            .filter((n) => n?.classList?.contains("globe-hit-target") && n.__globeDatum);
+          let best = el; let bestDist = Infinity;
+          for (const n of stack) {
+            const r = n.getBoundingClientRect();
+            const dist = Math.hypot(ev.clientX - (r.left + r.width / 2), ev.clientY - (r.top + r.height / 2));
+            if (dist < bestDist) { bestDist = dist; best = n; }
+          }
+          if (liveRef.current.hoverTargetEl === best) return;
+          liveRef.current.hoverTargetEl = best;
+          liveRef.current.onPointHover?.(best.__globeDatum, best.getBoundingClientRect());
+        };
+        el.addEventListener("mouseenter", resolveHover);
+        el.addEventListener("mousemove", resolveHover);
+        el.addEventListener("mouseleave", () => { liveRef.current.hoverTargetEl = null; liveRef.current.onPointHover?.(null); });
         // REAL HOVER INTERACTION fix (2026-09-30): mouseenter/mouseleave
         // alone give a mouse user a hover card but leave keyboard users
         // (tab-focus, the same navigation path the existing tabindex/keydown
@@ -1975,6 +2026,23 @@ export default function Globe3D({
     let frameId;
     const animate = () => {
       const elapsed = (performance.now() - ambientT0) / 1000;
+      // GLOBE_WIRING_REMEDIATION (2026-10-01): three-globe only hides html
+      // hit-targets on the FAR side of the globe once the host gives it the
+      // camera via setPointOfView(); this component never did (despite the
+      // comment on htmlElementVisibilityModifier), so every back-facing
+      // marker kept a live hit-box PROJECTED OVER THE FRONT of the globe and
+      // could intercept pointer hover/click meant for a front jurisdiction
+      // (wrong hover; confirmed with elementsFromPoint). Re-run only when the
+      // camera actually moved (or markers were recreated: povKey reset).
+      const povGlobe = globeRef.current;
+      if (povGlobe) {
+        const cp = camera.position;
+        const povKey = `${cp.x.toFixed(2)},${cp.y.toFixed(2)},${cp.z.toFixed(2)}`;
+        if (stateRef.current.povKey !== povKey) {
+          stateRef.current.povKey = povKey;
+          povGlobe.setPointOfView(camera);
+        }
+      }
       if (stateRef.current.ambientMotion) {
         // 1. Specular drift — rotates the pre-filtered studio radiance map,
         //    so the strip light's highlight slides across the sphere even
@@ -2285,6 +2353,30 @@ export default function Globe3D({
     liveRef.current.pointRadius = pointRadius;
     const globe = globeRef.current;
     if (globe) {
+      // GLOBE_IDENTITY_REMEDIATION (2026-10-01) -- ROOT CAUSE of stale/
+      // overwritten marker identity (wrong hover, wrong click target, stale
+      // beacon colour after a selection change): three-globe's html-element
+      // and custom-object layers key their scene objects by ARRAY INDEX, and
+      // call the element/object factory only when an index is first created
+      // (onUpdateObj only repositions). The factories below close over the
+      // datum `d` of that first call, so when `points` changes (different
+      // selected structure => different marker list/order) an existing
+      // element silently kept the PREVIOUS marker's datum -- its listeners,
+      // aria-label and beacon colour -- while being moved to the new
+      // marker's coordinates. Supplying a fresh factory identity makes
+      // three-globe clear and recreate every object from the CURRENT datum.
+      // The base factories are captured once so wrappers never nest. Any
+      // hover card for a now-recreated element is closed (no mouseleave fires
+      // for a destroyed element).
+      const st = stateRef.current;
+      if (!st.baseHtmlElement) st.baseHtmlElement = globe.htmlElement();
+      if (!st.baseCustomThreeObject) st.baseCustomThreeObject = globe.customThreeObject();
+      const baseHtml = st.baseHtmlElement;
+      const baseBeacon = st.baseCustomThreeObject;
+      globe.htmlElement((d) => baseHtml(d));
+      globe.customThreeObject((d) => baseBeacon(d));
+      liveRef.current.onPointHover?.(null);
+      st.povKey = null; // force a point-of-view refresh so recreated markers get back-face visibility
       globe.pointsData(points);
       globe.htmlElementsData(points);
       globe.arcsData(arcs);
@@ -2322,6 +2414,10 @@ export default function Globe3D({
   const illuminatedKey = illuminatedIsos && illuminatedIsos.length ? illuminatedIsos.join(",") : "";
   useEffect(() => {
     const illuminatedSet = illuminatedIsos && illuminatedIsos.length ? new Set(illuminatedIsos) : null;
+    // The parent cleared the hover (Inspector opened, route changed, ...): forget the
+    // remembered hover target so the SAME marker can show its card again on the next
+    // pointer event (hover target memo must never outlive the card it describes).
+    if (!hoveredIso) liveRef.current.hoverTargetEl = null;
     if (
       liveRef.current.hoveredIso === hoveredIso
       && liveRef.current.primaryIlluminatedIso === primaryIlluminatedIso

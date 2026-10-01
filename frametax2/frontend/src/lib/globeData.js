@@ -1,4 +1,5 @@
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
+import { classifyBlocker } from "./blockerDisposition.js";
 import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
 // Reused, not re-derived: the SAME program-name + rate presentation
 // scenarioDisplay() already uses for structure cards across Overview,
@@ -421,9 +422,78 @@ function roleFor(structure, code) {
 // `top_by_structural_family`. Defaults to MODE_NORMAL so any pre-existing
 // 2-arg caller keeps the single-canonical-winner behavior, never the old
 // bounded-page one.
+// GLOBE_WIRING_REMEDIATION (2026-10-01): the ONE canonical Optimizer Globe
+// jurisdiction universe. Strongest producer-facing status wins per globe key:
+// recommended (gold = best, jade = other) > evaluated alternative (silver) >
+// needs more facts (amber) > genuinely blocked (red). A blocked row can
+// therefore never downgrade a jurisdiction that also has an evaluated or
+// recommended structure. DOMINATED_WITH_PROOF search-summary rows never create
+// an entry (they only increment `summarizedDominated` on an entry that already
+// exists for real reasons). Each entry carries its own exact identity (the
+// code of the best associated structure, the full per-category counts, and the
+// canonical blocker disposition when nothing priced exists) so hover, click
+// and Inspector all read the same per-jurisdiction record.
+export const OPTIMIZER_STATUS_PRECEDENCE = { gold: 5, jade: 4, silver: 3, amber: 2, red: 1 };
+
+export function buildOptimizerUniverse(allocated) {
+  const byIso = new Map();
+  if (!allocated) return byIso;
+  const { recommended, evaluated, opportunities, rejected } = optimizerProjection(allocated);
+  const bestRecommendedId = recommended[0]?.structure_id ?? null;
+  const entryFor = (iso) => {
+    let e = byIso.get(iso);
+    if (!e) {
+      e = {
+        status: null, hex: null, jurisdictionCodes: new Set(), best: null, meta: null,
+        counts: { recommended: 0, evaluated: 0, needsFacts: 0, blocked: 0 }, summarizedDominated: 0,
+        bestByStatus: {},
+      };
+      byIso.set(iso, e);
+    }
+    return e;
+  };
+  const place = (code, status, structure, meta, countKey) => {
+    if (!code) return;
+    const e = entryFor(globeKey(code));
+    e.jurisdictionCodes.add(code);
+    e.counts[countKey] += 1;
+    if (!e.bestByStatus[status]) e.bestByStatus[status] = { structure, code, meta };
+    if (!e.status || OPTIMIZER_STATUS_PRECEDENCE[status] > OPTIMIZER_STATUS_PRECEDENCE[e.status]) {
+      e.status = status;
+      e.hex = OPTIMIZER_STATUS_HEX[status];
+      e.best = { structure, code };
+      e.meta = meta;
+    }
+  };
+  for (const s of [...recommended, ...evaluated]) {
+    const status = s.structure_id === bestRecommendedId ? "gold" : s.recommendation_status === "RECOMMENDED" ? "jade" : "silver";
+    for (const code of s.participants || []) place(code, status, s, null, status === "silver" ? "evaluated" : "recommended");
+  }
+  for (const s of opportunities) {
+    const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
+    for (const code of codes) place(code, "amber", s, { reason: s.reason || null }, "needsFacts");
+  }
+  for (const s of rejected) {
+    if (s.candidate_status === "DOMINATED_WITH_PROOF") continue; // defensive: never a blocked marker
+    const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
+    const blocker = classifyBlocker(s);
+    for (const code of codes) place(code, "red", s, { reason: s.reason || null, blocker }, "blocked");
+  }
+  // Search-summary rows: disclosure only, never a marker/category.
+  for (const r of allocated?.rejection_universe?.first_page?.results || []) {
+    if (r.candidate_status !== "DOMINATED_WITH_PROOF") continue;
+    for (const code of r.participants || []) {
+      const e = byIso.get(globeKey(code));
+      if (e) e.summarizedDominated += 1;
+    }
+  }
+  return byIso;
+}
+
 export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
   const byIso = new Map(); // iso2 -> { status, hex, jurisdictionCodes:Set, best:{structure,code} }
   if (!allocated) return byIso;
+  if (mode === MODE_OPTIMIZER) return buildOptimizerUniverse(allocated);
   const pool = admissibleForMode(allocated, mode);
 
   // `meta` carries presentation-only extras that aren't part of the
@@ -459,22 +529,6 @@ export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
     for (const code of s.participants) {
       upsert(globeKey(code), tier, code, s);
     }
-  }
-
-  // Optimizer mode is a complete categorized decision universe, not merely
-  // the executable subset. These two classes remain non-executable; this
-  // only makes their already-served, real jurisdiction identity visible.
-  if (mode === MODE_OPTIMIZER) {
-    const { opportunities, rejected } = optimizerProjection(allocated);
-    for (const s of opportunities) {
-      const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction].filter(Boolean);
-      for (const code of codes) upsert(globeKey(code), "amber", code, s, { reason: s.reason || null });
-    }
-    for (const s of rejected) {
-      const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction].filter(Boolean);
-      for (const code of codes) upsert(globeKey(code), "red", code, s, { reason: s.reason || null });
-    }
-    return byIso;
   }
 
   // 2. Discovery-examined jurisdictions with no participating structure —
@@ -720,6 +774,11 @@ export function buildRejectedDetail(structure) {
     candidate_status: structure.candidate_status ?? null,
     rejection_reason_class: structure.rejection_reason_class ?? null,
     reason: structure.reason ?? null,
+    // Canonical blocker disposition (blockerDisposition.js): award/rate
+    // confirmation, authority insufficient, eligibility conditions,
+    // selective, superseded, prohibited combination, ... -- never one
+    // unexplained "blocked".
+    blocker: (({ kind, label }) => ({ kind, label }))(classifyBlocker(structure)),
   };
 }
 
@@ -758,6 +817,13 @@ export function buildRejectedDetail(structure) {
 // `structure.gross_budget_usd ?? productionGross` chain Workspace.jsx's
 // ScenarioCard already uses (see format.jsx-era comment there); never a
 // second, independently-derived figure.
+// Backend row names embed raw jurisdiction codes ("Full relocation to CA-SK");
+// show the producer-facing name instead (only for codes this app knows).
+function humanizeJurisdictionCodes(label) {
+  if (!label) return label;
+  return String(label).replace(/\b[A-Z]{2}(?:-[A-Z0-9]{2,3})?\b/g, (m) => JURISDICTION_COORDS[m]?.name || m);
+}
+
 export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MODE_NORMAL) {
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
@@ -849,7 +915,18 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
         entry.fixtureRelated?.primary ?? structure?.primary_jurisdiction ?? null,
       role: roleFor(structure, code),
       structureId: structure?.structure_id ?? null,
-      structureLabel: structure?.label ?? structure?.name ?? null,
+      structureLabel: humanizeJurisdictionCodes(structure?.label ?? structure?.name ?? null),
+      // GLOBE_WIRING_REMEDIATION (2026-10-01): this jurisdiction's OWN
+      // canonical record (Optimizer mode) -- per-category structure counts,
+      // the best associated structure's savings, and, when nothing priced
+      // exists, the canonical blocker disposition + the engine's own reason.
+      // Single Jurisdiction mode leaves these null (unchanged contract).
+      categoryCounts: entry.counts ?? null,
+      summarizedDominated: entry.summarizedDominated ?? 0,
+      savingsUsd: structure?.is_fully_priced ? (structure.savings_vs_current_usd ?? null) : null,
+      blockerLabel: entry.meta?.blocker?.label ?? null,
+      blockerKind: entry.meta?.blocker?.kind ?? null,
+      blockerReason: entry.meta?.blocker?.reason ?? (mode === MODE_OPTIMIZER ? (entry.meta?.reason ?? null) : null),
     });
   }
   return byIso;
@@ -1157,35 +1234,41 @@ export function buildGlobeView(
     // per real jurisdiction. The selected structure's exact route is then
     // overlaid and emphasized without suppressing every other category.
     const universePoints = buildCountryPoints(statuses, hoverByIso, selectedIso);
-    const selectedCodes = new Set(pathway.points.map((p) => p.id));
-    // HOVER SEMANTICS FIX (2026-09-30): a universe marker and a selected-
-    // route marker previously carried the same shape (both even have
-    // `sourceStructure` -- buildCountryPoints already sets it to that
-    // jurisdiction's own best_per_jurisdiction winner), so nothing told
-    // GlobeHoverCard "this dot is an aggregated per-jurisdiction status,
-    // not the exact structure on the selected route." `isAggregatedUniverseMarker`
-    // plus a real represented-structure count (from the same structuresByCode
-    // grouping every other consumer already reads) let the hover card say so
-    // explicitly, never presenting an aggregated marker as if it were one
-    // exact scenario. By construction, any point remaining here is NOT part
-    // of the selected route (its jurisdiction's route point replaced it below).
+    const routePointByIso = new Map(pathway.points.map((p) => [p.iso, p]));
+    // HOVER SEMANTICS (2026-09-30) + GLOBE_WIRING_REMEDIATION (2026-10-01):
+    // EVERY visible marker is the jurisdiction's own universe marker -- its
+    // identity, strongest category and hover come from that jurisdiction's
+    // canonical record, never from the selected structure. A jurisdiction the
+    // selected route uses keeps its underlying category (tier/colour) and is
+    // additionally flagged as part of the route (emphasis + the route's own
+    // structure detail), so selection can never overwrite a category.
     const representedCountByCode = new Map();
     for (const s of pool) {
       for (const code of s.participants) {
         representedCountByCode.set(code, (representedCountByCode.get(code) || 0) + 1);
       }
     }
-    const points = [
-      ...universePoints
-        .filter((p) => !selectedCodes.has(p.jurisdictionCode || p.id))
-        .map((p) => ({
-          ...p,
-          isAggregatedUniverseMarker: true,
-          representedStructureCount: representedCountByCode.get(p.jurisdictionCode || p.id) ?? null,
-          selectedRouteUsesJurisdiction: false,
-        })),
-      ...pathway.points,
-    ];
+    const points = universePoints.map((p) => {
+      const code = p.jurisdictionCode || p.id;
+      const route = routePointByIso.get(p.iso);
+      const represented = representedCountByCode.get(code) ?? null;
+      if (!route) {
+        return { ...p, isAggregatedUniverseMarker: true, representedStructureCount: represented, selectedRouteUsesJurisdiction: false };
+      }
+      return {
+        ...p,
+        isAggregatedUniverseMarker: false, representedStructureCount: represented, selectedRouteUsesJurisdiction: true,
+        mode: "optimizer", optimizerStatus: route.optimizerStatus, optimizerStatusLabel: route.optimizerStatusLabel,
+        familyLabel: route.familyLabel, structureDetail: route.structureDetail, role: route.role, qpeUsd: route.qpeUsd,
+        sourceStructure: route.sourceStructure, structureId: route.structureId, jurisdictionCode: code,
+        routeJurisdictionCode: route.jurisdictionCode,
+      };
+    });
+    // Route legs whose jurisdiction somehow has no universe entry (cannot happen for a
+    // served executable structure) are still shown, never dropped.
+    for (const [iso, route] of routePointByIso) {
+      if (!universePoints.some((p) => p.iso === iso)) points.push(route);
+    }
     return {
       points, arcs: pathway.arcs,
       polygonColors, selectedIso,

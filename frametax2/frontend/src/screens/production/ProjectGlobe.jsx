@@ -7,6 +7,7 @@ import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
+import { classifyBlocker } from "../../lib/blockerDisposition";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken, buildScenarioLabel } from "../../lib/format";
@@ -422,7 +423,7 @@ export default function ProjectGlobe() {
         <div>
           <div className="row-title small">{s.name || s.label || "Blocked optimizer structure"}</div>
           <div className="row-sub">
-            Blocked / Rejected{s.rejection_reason_class ? ` · ${humanizeToken(s.rejection_reason_class)}` : ""}
+            {classifyBlocker(s).label}{s.rejection_reason_class ? ` · ${humanizeToken(s.rejection_reason_class)}` : ""}
           </div>
         </div>
       </div>
@@ -504,6 +505,17 @@ export default function ProjectGlobe() {
                   {optimizerProj.opportunities.map((s) => renderOpportunityChip(s))}
                 </div>
               )}
+              {/* GLOBE_WIRING_REMEDIATION (2026-10-01): dominated-search aggregates and
+                  aggregated rule-rejected permutations are internal search
+                  accounting, not producer-facing structures: exactly counted,
+                  disclosed once here, never listed as blocked cards or markers. */}
+              {((optimizerProj?.dominatedSearchTotal ?? 0) > 0 || (optimizerProj?.summarizedRuleRejectedTotal ?? 0) > 0) && (
+                <p className="text-tertiary small" style={{ margin: "10px 0 4px" }} data-testid="summarized-search-space">
+                  Summarized search space (not individual structures):{" "}
+                  {optimizerProj.dominatedSearchTotal.toLocaleString()} dominated search aggregates ·{" "}
+                  {optimizerProj.summarizedRuleRejectedTotal.toLocaleString()} rule-rejected permutations — preserved in canonical aggregate counts.
+                </p>
+              )}
               {(optimizerProj?.rejectedTotal ?? 0) > 0 && (
                 <div key="rejected" className="sc-jurlist-section">
                   <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
@@ -557,6 +569,10 @@ export default function ProjectGlobe() {
               if (pt.tier === "red") selectRejected(pt.sourceStructure);
               else if (pt.tier === "amber") selectOpportunity(pt.sourceStructure);
               else selectStructure(pt.sourceStructure);
+              // The selection highlight follows the CLICKED marker's own
+              // jurisdiction (the card helpers above frame the structure's
+              // routed destination, which can be a different jurisdiction).
+              setSelectedJurisdiction(pt.jurisdictionCode || pt.id);
             } else selectJurisdiction(pt.jurisdictionCode || pt.id);
           }}
           onPointHover={(pt, rect) => { setHover(pt); setHoverRect(pt ? rect : null); }}

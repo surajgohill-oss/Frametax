@@ -607,6 +607,7 @@ function OptimizerRejectionInspector({ data }) {
           <dd>{(data.participants || []).map(jurisdictionName).join(", ") || jurisdictionName(data.primary_jurisdiction) || "Not available from source data"}</dd>
         </div>
         <div><dt>Status</dt><dd>{data.candidate_status ? humanizeToken(data.candidate_status) : "Blocked / Rejected"}</dd></div>
+        {data.blocker?.label && <div><dt>Blocker</dt><dd>{data.blocker.label}</dd></div>}
         <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
       </dl>
       {data.reason && (

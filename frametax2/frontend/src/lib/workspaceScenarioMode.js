@@ -167,10 +167,27 @@ export function optimizerProjection(allocated) {
   // fields -- Overview/Workspace never read `rejected`/`rejectedTotal`,
   // so their existing Featured/working-subset contracts are unchanged.
   const rejectionUniverse = allocated?.rejection_universe || null;
-  const rejected = (rejectionUniverse?.first_page?.results || [])
-    .filter((r) => r.candidate_status !== "CO_PRO_OPPORTUNITY");
-  const coProOpportunityCount = rejectionUniverse?.by_disposition?.CO_PRO_OPPORTUNITY ?? 0;
-  const rejectedTotal = Math.max(0, (rejectionUniverse?.total_count ?? rejected.length) - coProOpportunityCount);
+  // GLOBE_WIRING_REMEDIATION (2026-10-01): `DOMINATED_WITH_PROOF` rows are
+  // INTERNAL SEARCH-ACCOUNTING AGGREGATES ("<anchor> + post_vfx_package/vfx
+  // hybrid search (N proven dominated)"), not blocked territories and not
+  // individual producer structures: they never create a red marker or a
+  // blocked card. Likewise the (usually huge) RULE_REJECTED population is a
+  // set of aggregated permutations. Both stay exactly counted below
+  // (`dominatedSearchTotal`, `summarizedRuleRejectedTotal`) and are
+  // disclosed as summarized search space, never as blocked structures.
+  const pageRows = rejectionUniverse?.first_page?.results || [];
+  const rejected = pageRows.filter((r) => r.candidate_status !== "CO_PRO_OPPORTUNITY" && r.candidate_status !== "DOMINATED_WITH_PROOF");
+  const byDisp = rejectionUniverse?.by_disposition || {};
+  const coProOpportunityCount = byDisp.CO_PRO_OPPORTUNITY ?? 0;
+  const dominatedSearchTotal = byDisp.DOMINATED_WITH_PROOF ?? 0;
+  const shownRuleRejected = rejected.filter((r) => r.candidate_status === "RULE_REJECTED").length;
+  const summarizedRuleRejectedTotal = Math.max(0, (byDisp.RULE_REJECTED ?? 0) - shownRuleRejected);
+  const retainedBlockingTotal = Object.entries(byDisp)
+    .filter(([k]) => !["CO_PRO_OPPORTUNITY", "DOMINATED_WITH_PROOF", "RULE_REJECTED"].includes(k))
+    .reduce((acc, [, n]) => acc + (Number(n) || 0), 0);
+  const rejectedTotal = rejectionUniverse
+    ? Math.max(rejected.length, retainedBlockingTotal + shownRuleRejected)
+    : rejected.length;
   return {
     recommended,
     evaluated,
@@ -182,6 +199,8 @@ export function optimizerProjection(allocated) {
     opportunitiesTotal: allocated?.optimizer_opportunities_requiring_facts_total ?? opportunities.length,
     rejectedTotal,
     rejectedShownCount: rejected.length,
+    dominatedSearchTotal,
+    summarizedRuleRejectedTotal,
   };
 }
 
