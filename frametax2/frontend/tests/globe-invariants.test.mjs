@@ -159,14 +159,14 @@ test("no legacy database-state wording survives in any semantic label", async ()
     "Alternatives",
     "Co-Pro Opportunities",
     "Excluded",
-    "Recommended",
+    "Leading Jurisdiction",
   ]);
 });
 
 test("hover/detail surfaces get the long form of Co-Pro Opportunities", async () => {
   const { STATUS_FULL_LABEL } = await import("../src/lib/globeData.js");
   assert.equal(STATUS_FULL_LABEL.amber, "Co-Production Opportunities");
-  assert.equal(STATUS_FULL_LABEL.gold, "Recommended");
+  assert.equal(STATUS_FULL_LABEL.gold, "Leading Jurisdiction");
   assert.equal(STATUS_FULL_LABEL.jade, "Alternatives");
   assert.equal(STATUS_FULL_LABEL.silver, "Excluded");
 });

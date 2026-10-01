@@ -207,7 +207,7 @@ test("Globe3D hit targets: back-face hiding is wired, hit-boxes are uniform and 
   assert.match(src, /povGlobe\.setPointOfView\(camera\)/);
   // CSS2DRenderer rewrites `display` every pass, so visibility/pointer-events carry the hiding
   assert.match(src, /el\.style\.visibility = isVisible \? "" : "hidden"/);
-  assert.match(src, /el\.style\.pointerEvents = isVisible \? "auto" : "none"/);
+  assert.match(src, /el\.style\.pointerEvents = isVisible && el\.dataset\.fallback === "1" \? "auto" : "none"/);
   // one hit-box size, one z-index: a route marker must not cover its neighbours
   assert.match(src, /const size = 24;/);
   assert.doesNotMatch(src, /isExactRoute \? 40 : 28/);

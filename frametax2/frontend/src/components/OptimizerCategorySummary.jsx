@@ -77,9 +77,9 @@ export default function OptimizerCategorySummary({ allocated, mode, onOpenComple
       </div>
 
       <div className="cat-group">
-        <div className="cat-group-title">By recommendation status</div>
-        <div className="cat-row"><span className="badge gold">Recommended</span><span className="cat-count mono">{summary.recommendedTotal}</span></div>
-        <div className="cat-row"><span className="badge silver">Evaluated Alternative</span><span className="cat-count mono">{summary.evaluatedTotal}</span></div>
+        <div className="cat-group-title">By alternative status</div>
+        <div className="cat-row"><span className="badge gold">Leading / Strong Alternative</span><span className="cat-count mono">{summary.recommendedTotal}</span></div>
+        <div className="cat-row"><span className="badge silver">Reference Alternative</span><span className="cat-count mono">{summary.evaluatedTotal}</span></div>
         <div className="cat-row"><span className="badge amber">Needs More Facts</span><span className="cat-count mono">{summary.needsMoreFactsTotal}</span></div>
       </div>
 

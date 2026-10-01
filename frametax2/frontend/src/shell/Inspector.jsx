@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { alternativeLabel } from "../lib/alternativeLabels";
 import { useAppState } from "../state/AppState";
 import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
@@ -466,11 +467,11 @@ function StructureDetailInspector({ data }) {
             </dd>
           </div>
           <div>
-            <dt>Recommendation</dt>
+            <dt>Alternative status</dt>
             <dd>
               {data.is_recommended
-                ? `Recommended — saves more than ${data.recommendation_threshold_usd != null ? `$${Math.round(data.recommendation_threshold_usd / 1000)}K` : "the threshold"} (${data.jurisdiction_count ?? "?"} jurisdiction${data.jurisdiction_count === 1 ? "" : "s"})`
-                : `Evaluated Alternative — ${humanizeToken(data.recommendation_status)}`}
+                ? `Leading / Strong Alternative — saves more than ${data.recommendation_threshold_usd != null ? `$${Math.round(data.recommendation_threshold_usd / 1000)}K` : "the threshold"} (${data.jurisdiction_count ?? "?"} jurisdiction${data.jurisdiction_count === 1 ? "" : "s"})`
+                : `${alternativeLabel({ recommendation_status: data.recommendation_status, savings_vs_current_usd: data.savings_vs_current_usd })} — ${humanizeToken(data.recommendation_status)}`}
             </dd>
           </div>
         </dl>
@@ -599,14 +600,14 @@ function OptimizerOpportunityInspector({ data }) {
 function OptimizerRejectionInspector({ data }) {
   return (
     <>
-      <p className="inspector-eyebrow">Blocked / Rejected Optimizer Structure</p>
+      <p className="inspector-eyebrow">Unavailable Optimizer Structure</p>
       <h3>{data.label || "Blocked optimizer structure"}</h3>
       <dl className="kv-list">
         <div>
           <dt>Participating jurisdictions</dt>
           <dd>{(data.participants || []).map(jurisdictionName).join(", ") || jurisdictionName(data.primary_jurisdiction) || "Not available from source data"}</dd>
         </div>
-        <div><dt>Status</dt><dd>{data.candidate_status ? humanizeToken(data.candidate_status) : "Blocked / Rejected"}</dd></div>
+        <div><dt>Status</dt><dd>{data.candidate_status ? humanizeToken(data.candidate_status) : "Unavailable"}</dd></div>
         {data.blocker?.label && <div><dt>Blocker</dt><dd>{data.blocker.label}</dd></div>}
         <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
       </dl>

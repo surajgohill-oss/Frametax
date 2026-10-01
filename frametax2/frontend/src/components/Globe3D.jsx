@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { buildPolygonIndex, polygonIsoSet, resolvePolygonTarget } from "../lib/globePicking";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
@@ -1663,7 +1664,7 @@ export default function Globe3D({
         // `display` on every render pass (it would silently undo a
         // display:none set here), but never touches these.
         el.style.visibility = isVisible ? "" : "hidden";
-        el.style.pointerEvents = isVisible ? "auto" : "none";
+        el.style.pointerEvents = isVisible && el.dataset.fallback === "1" ? "auto" : "none";
         el.dataset.behind = isVisible ? "0" : "1";
       })
       .htmlElement((d) => {
@@ -1704,7 +1705,12 @@ export default function Globe3D({
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.style.cursor = "pointer";
-        el.style.pointerEvents = "auto";
+        // JURISDICTION_POLYGON_INTERACTION: a marker is a pointer target ONLY when its
+        // jurisdiction has no polygon geometry (data-fallback="1"); otherwise pointer
+        // hover/click come from the polygon and the marker stays keyboard-focusable only.
+        const fallback = !liveRef.current.polygonIsoSet || !liveRef.current.polygonIsoSet.has(d.iso);
+        el.dataset.fallback = fallback ? "1" : "0";
+        el.style.pointerEvents = fallback ? "auto" : "none";
         // RUNTIME BUG (found live 2026-07-28): the app-level floating
         // Inspector's ".inspector-backdrop" is a fixed, full-viewport,
         // z-index:40 layer. These hit-targets had no z-index (auto), so once
@@ -1950,6 +1956,11 @@ export default function Globe3D({
       const features = geo.features || [];
       globe.polygonsData(features);
       liveRef.current.geoIsoSet = new Set(features.map((f) => isoOfFeature(f)).filter(Boolean));
+      // Jurisdiction-wide interaction: hover/click resolve by polygon containment
+      // (see the pointer handlers below); markers fall back only where no polygon exists.
+      liveRef.current.polygonIndex = buildPolygonIndex(features, isoOfFeature);
+      liveRef.current.polygonIsoSet = polygonIsoSet(liveRef.current.polygonIndex);
+      stateRef.current.refreshMarkers?.();
       globe.pointColor(globe.pointColor()).pointAltitude(globe.pointAltitude()).pointRadius(globe.pointRadius());
       globe.ringsData(points.filter(isRingEligible));
       globe.customLayerData(points.filter(isSmallJurisdiction));
@@ -2246,6 +2257,77 @@ export default function Globe3D({
     const clearHover = () => onPointHover && onPointHover(null);
     mount.addEventListener("mouseleave", clearHover);
 
+    // ── Jurisdiction polygon interaction (central) ─────────────────────
+    // three-globe's polygon layer has no pointer callbacks, so the pointer ray
+    // is intersected with the globe sphere, converted to lat/lng, and resolved
+    // against the loaded country/state/province polygons (lib/globePicking.js).
+    // Dense marker proximity plays no part. Fallback markers (no polygon) keep
+    // their own handlers and are skipped here.
+    const pickRay = new THREE.Raycaster();
+    const pickPolygonTarget = (ev) => {
+      if (ev.target?.closest?.('.globe-hit-target[data-fallback="1"]')) return { fallback: true };
+      const g = globeRef.current;
+      const idx = liveRef.current.polygonIndex;
+      if (!g || !idx) return null;
+      const box = renderer.domElement.getBoundingClientRect();
+      if (!box.width || !box.height) return null;
+      const ndc = new THREE.Vector2(((ev.clientX - box.left) / box.width) * 2 - 1, -((ev.clientY - box.top) / box.height) * 2 + 1);
+      pickRay.setFromCamera(ndc, camera);
+      const R = g.getGlobeRadius();
+      const o = pickRay.ray.origin, d = pickRay.ray.direction;
+      const b = o.dot(d), c = o.dot(o) - R * R, disc = b * b - c;
+      if (disc < 0) return null;
+      const t = -b - Math.sqrt(disc);
+      if (t < 0) return null;
+      const hit = o.clone().addScaledVector(d, t);
+      const { lat, lng } = g.toGeoCoords({ x: hit.x, y: hit.y, z: hit.z });
+      return { datum: resolvePolygonTarget(idx, lat, lng, liveRef.current.pointByIso || new Map()) };
+    };
+    // DEV-only diagnostic (same disclosure pattern as __cineGlobeSceneSignature): projects a
+    // lat/lng to client coordinates so a live check can aim a pointer at a jurisdiction INTERIOR.
+    if (import.meta.env.DEV) {
+      window.__cineGlobeProbe = {
+        project: (lat, lng) => {
+          const g = globeRef.current;
+          if (!g) return null;
+          const c = g.getCoords(lat, lng, 0);
+          const w = new THREE.Vector3(c.x, c.y, c.z);
+          const v = w.clone().project(camera);
+          const b = renderer.domElement.getBoundingClientRect();
+          const R = g.getGlobeRadius();
+          return { x: b.left + ((v.x + 1) / 2) * b.width, y: b.top + ((1 - v.y) / 2) * b.height, front: w.dot(camera.position) > R * R };
+        },
+      };
+    }
+    let hoverRaf = 0;
+    const onPolygonMove = (ev) => {
+      if (hoverRaf) return;
+      const cx = ev.clientX, cy = ev.clientY, target = ev.target;
+      hoverRaf = requestAnimationFrame(() => {
+        hoverRaf = 0;
+        const res = pickPolygonTarget({ clientX: cx, clientY: cy, target });
+        if (!res || res.fallback) return;
+        const datum = res.datum;
+        mount.style.cursor = datum ? "pointer" : "";
+        const iso = datum ? datum.iso : null;
+        if (iso === liveRef.current.lastPolyIso) return;
+        liveRef.current.lastPolyIso = iso;
+        liveRef.current.onPointHover?.(datum || null, datum ? { left: cx, top: cy, width: 0, height: 0 } : undefined);
+      });
+    };
+    let downAt = null;
+    const onPolygonDown = (ev) => { downAt = { x: ev.clientX, y: ev.clientY }; };
+    const onPolygonClick = (ev) => {
+      if (downAt && Math.hypot(ev.clientX - downAt.x, ev.clientY - downAt.y) > 5) return; // a drag, not a click
+      const res = pickPolygonTarget(ev);
+      if (res && !res.fallback && res.datum) liveRef.current.onPointClick?.(res.datum);
+    };
+    const onPolygonLeave = () => { liveRef.current.lastPolyIso = null; mount.style.cursor = ""; };
+    mount.addEventListener("pointermove", onPolygonMove);
+    mount.addEventListener("pointerdown", onPolygonDown);
+    mount.addEventListener("click", onPolygonClick);
+    mount.addEventListener("mouseleave", onPolygonLeave);
+
     // ── Live theme response ────────────────────────────────────────────
     // Recolours the existing scene in place. Deliberately NOT a remount:
     // rebuilding on every theme switch would drop and recreate the WebGL
@@ -2305,6 +2387,11 @@ export default function Globe3D({
       if (stateRef.current.offsetTweenCancel) stateRef.current.offsetTweenCancel();
       if (stateRef.current.fitTweenCancel) stateRef.current.fitTweenCancel();
       mount.removeEventListener("mouseleave", clearHover);
+      mount.removeEventListener("pointermove", onPolygonMove);
+      mount.removeEventListener("pointerdown", onPolygonDown);
+      mount.removeEventListener("click", onPolygonClick);
+      mount.removeEventListener("mouseleave", onPolygonLeave);
+      if (hoverRaf) cancelAnimationFrame(hoverRaf);
       resizeObserver.disconnect();
       controls.removeEventListener("start", onControlStart);
       controls.dispose();
@@ -2373,6 +2460,15 @@ export default function Globe3D({
       if (!st.baseCustomThreeObject) st.baseCustomThreeObject = globe.customThreeObject();
       const baseHtml = st.baseHtmlElement;
       const baseBeacon = st.baseCustomThreeObject;
+      liveRef.current.pointByIso = new Map((points || []).map((p) => [p.iso, p]));
+      st.refreshMarkers = () => {
+        const g = globeRef.current;
+        if (!g) return;
+        st.povKey = null;
+        g.htmlElement((d) => baseHtml(d));
+        g.htmlElementsData(liveRef.current.lastPoints || []);
+      };
+      liveRef.current.lastPoints = points;
       globe.htmlElement((d) => baseHtml(d));
       globe.customThreeObject((d) => baseBeacon(d));
       liveRef.current.onPointHover?.(null);
@@ -2417,7 +2513,7 @@ export default function Globe3D({
     // The parent cleared the hover (Inspector opened, route changed, ...): forget the
     // remembered hover target so the SAME marker can show its card again on the next
     // pointer event (hover target memo must never outlive the card it describes).
-    if (!hoveredIso) liveRef.current.hoverTargetEl = null;
+    if (!hoveredIso) { liveRef.current.hoverTargetEl = null; liveRef.current.lastPolyIso = null; }
     if (
       liveRef.current.hoveredIso === hoveredIso
       && liveRef.current.primaryIlluminatedIso === primaryIlluminatedIso

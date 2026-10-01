@@ -134,7 +134,7 @@ test("optimizerProjection and Globe expose the complete five-category universe w
 test("Full Project Globe renders and inspects retained Blocked / Rejected rows with aggregate-count disclosure", () => {
   const globeSource = readSrc("screens/production/ProjectGlobe.jsx");
   const inspectorSource = readSrc("shell/Inspector.jsx");
-  assert.match(globeSource, /Blocked \/ Rejected \(\{optimizerProj\.rejectedTotal\}\)/);
+  assert.match(globeSource, /Unavailable \(\{optimizerProj\.rejectedTotal\}\)/);
   assert.match(globeSource, /optimizerProj\.rejected\.map\(\(s\) => renderRejectedChip\(s\)\)/);
   assert.match(globeSource, /additional candidates are preserved in canonical aggregate counts/);
   assert.match(globeSource, /openInspector\("optimizer-rejection", buildRejectedDetail\(s\)\)/);

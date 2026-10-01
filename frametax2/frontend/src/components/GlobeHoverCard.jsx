@@ -176,10 +176,10 @@ function ExcludedBody({ hover }) {
 function CategoryCounts({ counts }) {
   if (!counts) return null;
   const parts = [
-    counts.recommended ? `${counts.recommended} recommended` : null,
-    counts.evaluated ? `${counts.evaluated} evaluated` : null,
+    counts.recommended ? `${counts.recommended} leading/strong` : null,
+    counts.evaluated ? `${counts.evaluated} reference` : null,
     counts.needsFacts ? `${counts.needsFacts} needs facts` : null,
-    counts.blocked ? `${counts.blocked} blocked` : null,
+    counts.blocked ? `${counts.blocked} unavailable` : null,
   ].filter(Boolean);
   return (
     <div className="hover-field">

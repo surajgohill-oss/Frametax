@@ -473,3 +473,15 @@ Verification-only pass. No CineGlobe functionality was implemented or modified i
 
 **Explicit next action for a new account/session:** (1) Do NOT regenerate the four projects, do NOT restart authority research, do NOT re-audit optimizer economics during this UI task; reuse the existing frozen payloads. (2) Codex performs the next independent Globe acceptance audit against this commit. (3) Only then, as separate later workstreams: Workspace/reference-card formatting and project-evidence reconciliation.
 
+---
+
+## UPDATE (2026-10-01, after `9a2f990`) — alternative terminology and polygon interaction
+
+Start `9a2f99068885a0096a03619adaddfe9fc5da1a65`; final SHA = tip commit titled `fix: use alternative terminology and jurisdiction-wide Globe interaction`. Frontend only; backend generation is still `canonical-1.99.0` (not rerun), database `frametax2_claude_optimizer_acceptance_20260919`.
+
+- **Terminology:** `lib/alternativeLabels.js` — LEADING / STRONG ALTERNATIVE (canonical `RECOMMENDED`, first vs later), COST-SAVING REFERENCE, REFERENCE ALTERNATIVE, NEEDS MORE FACTS, UNAVAILABLE. Zero qualifying structures -> zero Leading/Strong, all references kept. No backend field renamed.
+- **Interaction:** hover/click resolve by polygon containment centrally in `Globe3D` (`lib/globePicking.js`); markers are pointer targets only where no polygon exists; keyboard focus unchanged.
+- **Verification:** full frontend suite 349/349; live matrix across all four projects + Workspace Map recorded in the ledger section OPTIMIZER_ALTERNATIVE_TERMINOLOGY_AND_POLYGON_INTERACTION. Dev-only `window.__cineGlobeProbe` helps aim at polygon interiors; its synthetic `pointerdown` raises harmless `setPointerCapture` console errors.
+- **Still required:** independent Codex Globe acceptance (Project Globe, Workspace Map, Workspace Split individually). Do NOT regenerate projects, restart authority research or re-audit economics. Workspace card formatting and project-evidence reconciliation remain separate later workstreams.
+- **Runtime:** unchanged (backend `uvicorn app.main:app --host 127.0.0.1 --port 8010` with the DB above; frontend `npm run dev -- --host 127.0.0.1 --port 5173`, open `http://localhost:5173`). Untracked runtime logs still never committed: `.backend_gd_wire.log`, `.frontend_gd_wire.log` (repository root).
+

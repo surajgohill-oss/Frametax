@@ -172,7 +172,7 @@ export function activeStructure(allocated, leadingStructureId, extraPool = null)
 // Same four slots, same hex, same `state` keys, same logic — a wording pass
 // only, per this batch's explicit "do not change semantic logic" instruction.
 export const GLOBE_SEMANTIC = {
-  gold: { state: "recommended", label: "Recommended", fullLabel: "Recommended", hex: "#e6d3a8", pulse: true },
+  gold: { state: "recommended", label: "Leading Jurisdiction", fullLabel: "Leading Jurisdiction", hex: "#e6d3a8", pulse: true },
   jade: { state: "alternative", label: "Alternatives", fullLabel: "Alternatives", hex: "#4cbd97", pulse: false },
   amber: { state: "unlockable", label: "Co-Pro Opportunities", fullLabel: "Co-Production Opportunities", hex: "#d48a49", pulse: false },
   // Desaturated slate — deliberately the DIMMEST of the four, sitting just
@@ -221,11 +221,11 @@ export const PULSE_TIERS = new Set(
 // since GLOBE_SEMANTIC's hexes are fixed (non-theme) values consumed
 // directly by the WebGL layer, which cannot read a CSS custom property.
 export const OPTIMIZER_SEMANTIC = {
-  gold: { label: "Best Recommendation", hex: GLOBE_SEMANTIC.gold.hex, pulse: true },
-  jade: { label: "Other Recommended", hex: GLOBE_SEMANTIC.jade.hex, pulse: false },
-  silver: { label: "Evaluated Alternative", hex: GLOBE_SEMANTIC.silver.hex, pulse: false },
+  gold: { label: "Leading Alternative", hex: GLOBE_SEMANTIC.gold.hex, pulse: true },
+  jade: { label: "Strong Alternative", hex: GLOBE_SEMANTIC.jade.hex, pulse: false },
+  silver: { label: "Reference Alternative", hex: GLOBE_SEMANTIC.silver.hex, pulse: false },
   amber: { label: "Needs More Facts", hex: GLOBE_SEMANTIC.amber.hex, pulse: false },
-  red: { label: "Blocked / Rejected", hex: "#9C3C31", pulse: false },
+  red: { label: "Unavailable", hex: "#9C3C31", pulse: false },
 };
 export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
   Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.hex]),

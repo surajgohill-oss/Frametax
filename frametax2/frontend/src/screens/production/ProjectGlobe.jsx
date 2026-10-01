@@ -8,6 +8,7 @@ import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { classifyBlocker } from "../../lib/blockerDisposition";
+import { alternativeLabel } from "../../lib/alternativeLabels";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken, buildScenarioLabel } from "../../lib/format";
@@ -37,8 +38,8 @@ import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../.
 // entirely) — it now renders as its own trailing section, per the
 // controlling contract's "shown separately after executable structures".
 const OPTIMIZER_SECTIONS = [
-  { key: "recommended", heading: "Recommended" },
-  { key: "evaluated", heading: "Evaluated Alternatives" },
+  { key: "recommended", heading: "Leading / Strong Alternatives" },
+  { key: "evaluated", heading: "Reference Alternatives" },
 ];
 
 // Project Globe — this production's structures and their routing on the
@@ -382,6 +383,7 @@ export default function ProjectGlobe() {
             {globeMode === MODE_OPTIMIZER && s.savings_vs_current_usd != null && (
               <> · {s.recommendation_status === "COSTS_MORE" ? "costs " : "saves "}<Money value={Math.abs(s.savings_vs_current_usd)} bare /></>
             )}
+            {globeMode === MODE_OPTIMIZER && <> · {alternativeLabel(s, optimizerProj?.recommended?.[0]?.structure_id ?? null)}</>}
           </div>
         </div>
       </div>
@@ -519,7 +521,7 @@ export default function ProjectGlobe() {
               {(optimizerProj?.rejectedTotal ?? 0) > 0 && (
                 <div key="rejected" className="sc-jurlist-section">
                   <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
-                    Blocked / Rejected ({optimizerProj.rejectedTotal})
+                    Unavailable ({optimizerProj.rejectedTotal})
                   </p>
                   {optimizerProj.rejected.map((s) => renderRejectedChip(s))}
                   {optimizerProj.rejectedShownCount < optimizerProj.rejectedTotal && (

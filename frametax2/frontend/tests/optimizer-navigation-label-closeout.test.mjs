@@ -174,8 +174,8 @@ test("ProjectGlobe.jsx no longer re-sorts visibleStructures by rankById in Optim
 // family now shows per-row via OPTIMIZER_FAMILY_LABEL (see globeData.js).
 test("ProjectGlobe.jsx defines the three Optimizer sections in the required order and renders each with its own real count", () => {
   const src = stripComments(read("screens/production/ProjectGlobe.jsx"));
-  assert.match(src, /key: "recommended", heading: "Recommended"/);
-  assert.match(src, /key: "evaluated", heading: "Evaluated Alternatives"/);
+  assert.match(src, /key: "recommended", heading: "Leading \/ Strong Alternatives"/);
+  assert.match(src, /key: "evaluated", heading: "Reference Alternatives"/);
   assert.match(src, /Needs More Facts/);
   // Order: Recommended must appear before Evaluated Alternatives, which
   // must appear before the trailing Needs More Facts block.
@@ -194,8 +194,8 @@ test("section partitioning algorithm: recommended-then-evaluated combined pool g
   // arrays (already real, disjoint, backend-ordered collections), never
   // re-filter/re-sort by NPC or any other economic figure.
   const OPTIMIZER_SECTIONS = [
-    { key: "recommended", heading: "Recommended" },
-    { key: "evaluated", heading: "Evaluated Alternatives" },
+    { key: "recommended", heading: "Leading / Strong Alternatives" },
+    { key: "evaluated", heading: "Reference Alternatives" },
   ];
   const optimizerProj = {
     recommended: [
@@ -212,7 +212,7 @@ test("section partitioning algorithm: recommended-then-evaluated combined pool g
   const sections = OPTIMIZER_SECTIONS.map(({ key, heading }) => ({
     heading, structures: optimizerProj[key] || [],
   })).filter((s) => s.structures.length > 0);
-  assert.deepEqual(sections.map((s) => s.heading), ["Recommended", "Evaluated Alternatives"]);
+  assert.deepEqual(sections.map((s) => s.heading), ["Leading / Strong Alternatives", "Reference Alternatives"]);
   assert.equal(sections[0].structures.length, 2);
   assert.equal(sections[1].structures.length, 3);
   // Never re-sorted by NPC across the whole set -- e1 (NPC 50, cheapest

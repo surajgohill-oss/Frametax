@@ -139,7 +139,7 @@ export function tierBadgeClass(tier) {
 
 export function tierLabel(tier) {
   switch (tier) {
-    case "gold": return "Best current recommendation";
+    case "gold": return "Leading alternative";
     case "jade": return "Strong alternative";
     case "silver": return "Viable alternative";
     case "amber": return "Conditional / authority-dependent";

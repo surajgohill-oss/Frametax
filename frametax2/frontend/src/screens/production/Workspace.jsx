@@ -8,6 +8,7 @@ import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDet
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
+import { alternativeLabel } from "../../lib/alternativeLabels";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
@@ -123,7 +124,7 @@ function scenarioOptionLabel(structure) {
 // and Overview — one FX engine, not two. See FXStrip.jsx's own header
 // comment for the full contract.
 
-function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPriced, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPriced, optimizerLeadingId = null, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   // 2x2 anchor/scenario composition (item 7): the canonical anchor/
   // current-production structure — isBaselineStructure/is_baseline,
@@ -226,7 +227,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
     if (typeof reason === "string" && reason.startsWith("NO_PRICED_PARENT_WITHOUT_")) {
       return "Marginal benefit unverified — no priced comparison available";
     }
-    return "Reference — below recommendation hurdle";
+    return "Reference alternative — below the leading-alternative hurdle";
   };
   const badge = isLeading
     ? "◈ LEADING"
@@ -234,7 +235,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
       ? "◆ ANCHOR"
       : priced
         ? (structure.recommendation_status
-            ? (structure.recommendation_status === "RECOMMENDED" ? "RECOMMENDED" : "REFERENCE")
+            ? alternativeLabel(structure, optimizerLeadingId)
             : (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : (isBestPriced ? "BEST PRICED" : "ALTERNATIVE")))
         : "DRAFT";
   // Structural family — real backend `classification`, never a substitute
@@ -634,6 +635,8 @@ export default function Workspace() {
   // Canonical Globe/HUD scenario total for the active mode — never the
   // bounded allocated.structures.length retained-page count (see
   // GlobeChrome's own comment above).
+  // First canonical RECOMMENDED option (null when none passes the hurdle) -- drives LEADING vs STRONG ALTERNATIVE.
+  const optimizerLeadingId = optimizerProjection(allocated).recommended[0]?.structure_id ?? null;
   const canonicalScenarioTotal = workspaceMode === MODE_OPTIMIZER
     ? optimizerProjection(allocated).executableTotal
     : Object.keys(allocated?.best_per_jurisdiction || {}).length;
@@ -855,7 +858,7 @@ export default function Workspace() {
               const shownCount = cols.length;
               return (
                 <span className="wsx-scenario-count">
-                  Showing {shownCount} of {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} recommended · {evaluatedTotal} alternative{evaluatedTotal === 1 ? "" : "s"}
+                  Showing {shownCount} of {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} leading/strong alternative{recommendedTotal === 1 ? "" : "s"} · {evaluatedTotal} reference alternative{evaluatedTotal === 1 ? "" : "s"}
                   {opportunitiesTotal > 0 ? ` · ${opportunitiesTotal} need more facts` : ""}
                 </span>
               );
@@ -902,14 +905,14 @@ export default function Workspace() {
                 >
                   <option value="">— {(() => { const last = cols[cols.length - 1]; return last ? scenarioOptionLabel(last) : "—"; })()} —</option>
                   {overflow.length > 0 && (
-                    <optgroup label={workspaceMode === MODE_OPTIMIZER ? "Recommended" : "Other scenarios"}>
+                    <optgroup label={workspaceMode === MODE_OPTIMIZER ? "Leading / Strong Alternatives" : "Other scenarios"}>
                       {overflow.map((s) => (
                         <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}</option>
                       ))}
                     </optgroup>
                   )}
                   {workspaceMode === MODE_OPTIMIZER && dropdownEvaluatedAlternativesGrouped.length > 0 && (
-                    <optgroup label="Evaluated Alternatives">
+                    <optgroup label="Reference Alternatives">
                       {dropdownEvaluatedAlternativesGrouped.map(({ structure: s, suffix }) => (
                         <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}{suffix}</option>
                       ))}
@@ -936,6 +939,7 @@ export default function Workspace() {
             <div className="wsx-rack">
               {cols.map((s) => (
                 <ScenarioCard
+                  optimizerLeadingId={optimizerLeadingId}
                   key={s.structure_id}
                   structure={s}
                   tier={structureTier(s, rankById)}
@@ -975,6 +979,7 @@ export default function Workspace() {
                     structure exists. */}
                 {dynamicFxStructure && (
                   <ScenarioCard
+                  optimizerLeadingId={optimizerLeadingId}
                     key={dynamicFxStructure.structure_id}
                     structure={dynamicFxStructure}
                     tier={structureTier(dynamicFxStructure, rankById)}
@@ -1026,6 +1031,7 @@ export default function Workspace() {
                 <div className="wsx-rack">
                   {cols.map((s) => (
                     <ScenarioCard
+                  optimizerLeadingId={optimizerLeadingId}
                       key={s.structure_id}
                       structure={s}
                       tier={structureTier(s, rankById)}
