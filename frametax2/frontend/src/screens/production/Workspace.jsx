@@ -217,6 +217,12 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
     if (typeof reason === "string" && reason.startsWith("JURISDICTION_") && reason.endsWith("_MARGINAL_BENEFIT_BELOW_THRESHOLD")) {
       return "Added jurisdiction below the $100,000 marginal hurdle";
     }
+    if (typeof reason === "string" && reason.startsWith("JURISDICTION_") && reason.endsWith("_MARGINAL_BENEFIT_BELOW_THRESHOLD_PROVEN_UPPER_BOUND")) {
+      return "Added jurisdiction proven below the $100,000 marginal hurdle (upper bound)";
+    }
+    if (typeof reason === "string" && reason.startsWith("JURISDICTION_") && reason.endsWith("_MARGINAL_BENEFIT_UNCOMPUTED")) {
+      return "Marginal benefit unverified — exact comparison could not be computed";
+    }
     if (typeof reason === "string" && reason.startsWith("NO_PRICED_PARENT_WITHOUT_")) {
       return "Marginal benefit unverified — no priced comparison available";
     }

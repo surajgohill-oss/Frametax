@@ -319,6 +319,7 @@ def _marginal_jurisdiction_materiality(
     if candidate_npc is None:
         return False, "MISSING_CANDIDATE_NPC_FOR_MARGINAL_CHECK"
     precomputed = entry.get("marginal_jurisdiction_benefits_usd")
+    proven_bounds = entry.get("marginal_jurisdiction_bounds_usd") or {}
     primary_jurisdiction = entry.get("primary_jurisdiction")
     for jurisdiction in sorted(participants):
         if jurisdiction == primary_jurisdiction:
@@ -330,6 +331,14 @@ def _marginal_jurisdiction_materiality(
             if marginal_improvement < MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD:
                 return False, f"JURISDICTION_{jurisdiction}_MARGINAL_BENEFIT_BELOW_THRESHOLD"
             continue
+        bound = proven_bounds.get(jurisdiction)
+        if bound is not None:
+            # An UPPER BOUND, not an exact benefit: the engine proved this jurisdiction's marginal
+            # benefit cannot exceed `bound`. Only a bound below the hurdle is usable (it proves the
+            # shortfall); a bound at/above the hurdle proves nothing and falls through to the
+            # sibling lookup / fail-closed path below.
+            if bound < MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD:
+                return False, f"JURISDICTION_{jurisdiction}_MARGINAL_BENEFIT_BELOW_THRESHOLD_PROVEN_UPPER_BOUND"
         parent_participants = participants - {jurisdiction}
         parent = participant_set_index.get(parent_participants) if parent_participants else None
         if parent is None:
@@ -990,6 +999,7 @@ def _empty_structure_entry(
         # _marginal_jurisdiction_materiality's own fallback distinguishes "no
         # data yet" from "empty dict, no non-principal jurisdictions to check".
         "marginal_jurisdiction_benefits_usd": trace.get("marginal_jurisdiction_benefits_usd"),
+        "marginal_jurisdiction_bounds_usd": trace.get("marginal_jurisdiction_bounds_usd"),
         "npc_verified_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
         "npc_with_adjustments_usd": (
             float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
