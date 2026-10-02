@@ -612,3 +612,14 @@ Status: Project Globe phase accepted by Claude (the task explicitly asked for Cl
 - **Verification:** backend focused set 151 passed (113 + 38) on the isolated DB with `test_cross_project_fx_isolation_two_real_projects` deselected (needs real projects; cold evaluation is not authorized); `npm test` 393/393.
 - **Runtime:** backend 8010 (needs `CURRENT_ORGANIZATION_ID=11381771-5b1c-4980-9117-e3e47a4cb354` and the acceptance DB `frametax2_claude_optimizer_acceptance_20260919`) and frontend 5173 were left running.
 - **Still open:** desert/snow/underwater capability data; dollar potential for blocked programs; a live executable official co-production instance; independent (Codex/user) acceptance.
+
+## FVD JURISDICTION ACCOUNTING + SAUDI + CONTENT GATES (2026-10-02, from `df5bbe8`)
+
+Status for UI work: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION` (local browser evidence only). Full detail and numbers: `docs/architecture/CAPABILITY_LEDGER.md` (`FVD_JURISDICTION_ACCOUNTING_WATERFALL...`).
+
+- "77" = jurisdictions with at least one priced single-jurisdiction structure = `best_per_jurisdiction` (one representative each; 84 programs). Project Globe says so and cycles the rest.
+- Every examined program row (231) now exits at exactly one stage (served `jurisdiction_accounting.waterfall`); 217 jurisdictions are accounted: 77 executable / 34 needs facts / 2 hard / 104 data incomplete. Previously 17 aggregated rule-rejections and 106 catalog-only codes vanished.
+- Saudi: 60% VERIFIED flat tier, discretionary (B1 ruling) -> amber, confirmed $0, maximum potential $2,220,742.80, 6 unresolved facts incl. script content clearance + filming NOC.
+- Code: `services/jurisdiction_accounting.py`, `services/program_content_gates.py`, `incentive_potential.build_program_maximum_potential`, `jurisdiction_disposition` (min-threshold hard branch, discretionary-award fact key), view wiring in `canonical_production_view.py`; frontend slate state "Data incomplete", hover/Inspector potential + content gates, 59 coordinates.
+- Runtime: backend must be restarted to pick up serving changes (no `--reload`); one process on 8010 with `DATABASE_URL` = acceptance DB and `CURRENT_ORGANIZATION_ID`.
+- Tests: backend 121 focused pass (isolated DB); frontend 396/396. Not run: tests needing the real production projects.

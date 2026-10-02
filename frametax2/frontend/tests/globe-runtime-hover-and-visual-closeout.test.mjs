@@ -44,7 +44,8 @@ test("Project Globe, Workspace Map and Split all mount the same Globe3D with poi
 test("category tokens: brighter, ladder preserved, red is oxblood, only the Leading Alternative pulses", async () => {
   const d = await import("../src/lib/globeData.js");
   const S = d.OPTIMIZER_SEMANTIC;
-  assert.deepEqual(Object.keys(S), ["gold", "jade", "silver", "amber", "red"]);
+  assert.deepEqual(Object.keys(S), ["gold", "jade", "silver", "amber", "red", "slate"]);
+  assert.equal(S.slate.label, "Data incomplete");
   assert.equal(S.gold.label, "Leading Alternative");
   assert.equal(S.red.label, "Unavailable");
   assert.deepEqual(Object.entries(S).filter(([, v]) => v.pulse).map(([k]) => k), ["gold"]);

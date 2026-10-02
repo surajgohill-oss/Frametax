@@ -97,3 +97,48 @@ test("an AMBER executable alternative opens the structure Inspector; only an unp
   const pg = readFileSync(join(SRC, "screens", "production", "ProjectGlobe.jsx"), "utf8");
   assert.match(pg, /pt\.sourceStructure\.is_fully_priced \? selectStructure\(pt\.sourceStructure\) : selectOpportunity/);
 });
+
+// ── JURISDICTION ACCOUNTING (2026-10-02) ─────────────────────────────────────────────────────────────────────────
+test("DATA_INCOMPLETE accounted rows are slate (never red, never amber) and any stronger state of the jurisdiction wins", async () => {
+  const { buildOptimizerUniverse, OPTIMIZER_STATUS_PRECEDENCE } = await import("../src/lib/globeData.js");
+  const row = (code, disposition, extra = {}) => ({
+    structure_id: `accounting:${code}`, candidate_status: "NO_PRICEABLE_PROGRAM_MODEL", rejection_reason_class: "DATA_INCOMPLETE",
+    primary_jurisdiction: code, participants: [code], disposition, reason: "x", ...extra,
+  });
+  const allocated = {
+    optimizer_scenarios: [], rejection_universe: { first_page: { results: [
+      row("BR", "DATA_INCOMPLETE", { missing_facts_reason: "Program/capability data incomplete" }),
+      row("SA", "NEEDS_FACTS", { program_name: "Saudi Film Commission Production Rebate", blocker_detail: { kind: "DISCRETIONARY_AWARD_NOT_CONFIRMED", headline: "h" } }),
+      row("SA", "DATA_INCOMPLETE"),
+    ] }, by_disposition: {} },
+  };
+  const u = buildOptimizerUniverse(allocated);
+  assert.equal(u.get("BR").status, "slate");
+  assert.equal(u.get("SA").status, "amber", "needs-facts outranks data-incomplete for the same jurisdiction");
+  assert.ok(OPTIMIZER_STATUS_PRECEDENCE.slate < OPTIMIZER_STATUS_PRECEDENCE.red);
+});
+
+test("served maximum potential and content gates reach the hover record and the Inspector detail adapters", async () => {
+  const d = await import("../src/lib/globeData.js");
+  const potential = { maximum_supported_incentive_usd: 2220742.8, potential_npc_usd: 2296944.2, confirmed_incentive_floor_usd: 0 };
+  const gates = [{ kind: "SCRIPT_CONTENT_CLEARANCE", status: "NOT_ON_FILE" }];
+  const row = { structure_id: "accounting:SA:sa", primary_jurisdiction: "SA", participants: ["SA"], candidate_status: "RULE_REJECTED",
+    rejection_reason_class: "STATUTORY_CONDITIONS_UNMET", disposition: "NEEDS_FACTS", incentive_potential: potential, content_gates: gates,
+    first_exit_stage: "AUTHORITY_BLOCKED", blocker_detail: { kind: "DISCRETIONARY_AWARD_NOT_CONFIRMED", headline: "h" } };
+  assert.deepEqual(d.buildOpportunityDetail(row).incentive_potential, potential);
+  assert.deepEqual(d.buildRejectedDetail(row).content_gates, gates);
+  assert.equal(d.buildOpportunityDetail(row).first_exit_stage, "AUTHORITY_BLOCKED");
+});
+
+test("Project Globe states one representative per jurisdiction and lists accounted needs-facts / data-incomplete jurisdictions", async () => {
+  const fs = await import("node:fs");
+  const src = fs.readFileSync(new URL("../src/screens/production/ProjectGlobe.jsx", import.meta.url), "utf8");
+  assert.match(src, /one representative structure per jurisdiction/);
+  assert.match(src, /data-testid="needs-facts-jurisdictions"/);
+  assert.match(src, /data-testid="data-incomplete-jurisdictions"/);
+  const insp = fs.readFileSync(new URL("../src/shell/Inspector.jsx", import.meta.url), "utf8");
+  assert.match(insp, /Maximum potential \(not guaranteed\)/);
+  assert.match(insp, /Content, approval and cultural requirements/);
+  const hover = fs.readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
+  assert.match(hover, /data-blocker-potential/);
+});

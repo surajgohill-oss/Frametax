@@ -620,6 +620,57 @@ function StructureDetailInspector({ data }) {
 // which facts are missing.
 // EXACT PROGRAM BLOCKER (2026-10-02): the exact unresolved propositions, the stored value found for each, the
 // guaranteed floor and the stated ceiling, read verbatim from the shared served disposition (no client logic).
+const CONTENT_CATEGORY_LABEL = {
+  CONFIRMED_MANDATORY_ELIGIBILITY_GATE: "Mandatory approval gate",
+  PROJECT_FACT_REQUIRED: "Needs a project fact",
+  ADVISORY_BUSINESS_RISK: "Advisory business risk",
+  MISSING_CANONICAL_DATA: "Canonical data missing",
+};
+
+// Maximum-potential economics (shared contract; never guaranteed), the content / censorship / cultural gates the program
+// names, and any catalog lead -- all served by the one accounting owner for a not-yet-priced jurisdiction.
+function AccountedExtras({ potential, gates, leads }) {
+  const usd = (v) => (v == null ? "—" : `$${Math.round(v).toLocaleString()}`);
+  return (
+    <>
+      {potential && (
+        <div className="inspector-sect" data-testid="program-potential">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Maximum potential (not guaranteed)</p>
+          <dl className="kv-list">
+            <div><dt>Confirmed incentive</dt><dd>{usd(potential.confirmed_incentive_floor_usd)} (guaranteed)</dd></div>
+            <div><dt>Maximum potential incentive</dt><dd>{usd(potential.maximum_supported_incentive_usd)}</dd></div>
+            <div><dt>Potential NPC</dt><dd>{usd(potential.potential_npc_usd)}</dd></div>
+          </dl>
+          {potential.ceiling_basis?.note && <p className="text-tertiary small" style={{ margin: "4px 0" }}>{potential.ceiling_basis.note}</p>}
+        </div>
+      )}
+      {gates?.length > 0 && (
+        <div className="inspector-sect" data-testid="content-gates">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Content, approval and cultural requirements</p>
+          {gates.map((g) => (
+            <p key={g.kind} className="text-secondary small" style={{ margin: "4px 0" }}>
+              <strong>{humanizeToken(g.kind.toLowerCase())}</strong> — {CONTENT_CATEGORY_LABEL[g.category] || g.category}
+              <span className="text-tertiary"> · {g.status === "NOT_ON_FILE" ? "not on file" : g.status.toLowerCase()} · {g.consumed_by_optimizer ? "evaluated by pricing" : "not evaluated by pricing"} · {g.fact_key}</span>
+            </p>
+          ))}
+          <p className="text-tertiary small" style={{ margin: "4px 0" }}>A missing approval keeps the jurisdiction visible as Needs More Facts; only a refused approval is a hard block. General censorship or distribution risk is a business risk, not program ineligibility.</p>
+        </div>
+      )}
+      {leads?.length > 0 && (
+        <div className="inspector-sect" data-testid="catalog-leads">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Catalog leads (unverified)</p>
+          {leads.map((l, i) => (
+            <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>
+              {l.program_name}
+              <span className="text-tertiary">{l.stated_max_rate != null ? ` — catalog rate ${Math.round(l.stated_max_rate * 100)}% (${l.confidence_tier}; not priceable)` : ` — no verified rate (${l.confidence_tier})`}</span>
+            </p>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 function BlockerDetailSection({ detail }) {
   if (!detail) return null;
   return (
@@ -652,7 +703,7 @@ function OptimizerOpportunityInspector({ data }) {
   const isProgramBlock = !!data.blocker_detail;
   return (
     <>
-      <p className="inspector-eyebrow">Needs More Facts · {isProgramBlock ? "Program not yet established" : "Co-Production Opportunity"}</p>
+      <p className="inspector-eyebrow">{data.blocker_detail?.kind === "NO_PROGRAM_MODEL" ? "Program data incomplete · No verified program model" : <>Needs More Facts · {isProgramBlock ? "Program not yet established" : "Co-Production Opportunity"}</>}</p>
       <h3>{isProgramBlock ? (data.program_name || data.label) : (data.label || "Co-production opportunity")}</h3>
       {data.economic_identity && (
         <p className="text-tertiary small" style={{ margin: "2px 0 8px", wordBreak: "break-all" }}>
@@ -669,9 +720,10 @@ function OptimizerOpportunityInspector({ data }) {
               : (data.participants || []).map(jurisdictionName).join(", ") || "Not available from source data"}
           </dd>
         </div>
-        <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : "Not executable — needs facts"}</dd></div>
+        <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : data.blocker_detail?.kind === "NO_PROGRAM_MODEL" ? "Not priced — program data incomplete" : "Not executable — needs facts"}</dd></div>
       </dl>
       <BlockerDetailSection detail={data.blocker_detail} />
+      <AccountedExtras potential={data.incentive_potential} gates={data.content_gates} leads={data.catalog_leads} />
       {data.reason && !isProgramBlock && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why this needs more facts</p>
@@ -709,6 +761,7 @@ function OptimizerRejectionInspector({ data }) {
         <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
       </dl>
       <BlockerDetailSection detail={data.blocker_detail} />
+      <AccountedExtras potential={data.incentive_potential} gates={data.content_gates} leads={data.catalog_leads} />
       {data.reason && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why it was blocked</p>

@@ -196,6 +196,11 @@ EVIDENCED_PREFIX = "evidenced_program_fact:"
 AMOUNT_PREFIX = "amount_fact:"
 
 
+def discretionary_award_fact_key(slug: str) -> str:
+    """Stored (prefixed) ProjectFact key of a producer's confirmation that a discretionary award was granted."""
+    return f"{EVIDENCED_PREFIX}{slug}__discretionary_award_confirmed"
+
+
 def rate_rule_fact_keys(slug: str | None) -> set[str]:
     """Every STORED ProjectFact key (prefixed exactly as the evaluator reads it) the program's RateConditions /
     awarded-rate tiers depend on."""
@@ -276,11 +281,15 @@ RECON_MISSING_CAPABILITY = "MISSING_CAPABILITY"
 RECON_SLATE = "VALID_REFERENCE_ALTERNATIVE"
 
 
+DETAIL_MIN_QPE = "MINIMUM_QUALIFYING_SPEND_NOT_MET"
+
+
 def enrich_row_with_program_detail(row: dict, program_slug: str | None, facts: dict[str, str],
-                                   production_type: str | None = None) -> dict:
+                                   production_type: str | None = None, qpe_usd: float | None = None,
+                                   threshold_unreachable_reason: str | None = None) -> dict:
     """Adds the exact, registry-derived blocker to one already-classified row (mutates and returns it)."""
     from app.data.authority_coverage_registry import get_coverage_status
-    from app.data.program_rate_rules import economic_block_for_program
+    from app.data.program_rate_rules import economic_block_for_program, get_rate_rules
 
     row["program_slug"] = program_slug
     row["program_name"] = _program_label(program_slug) if program_slug else None
@@ -304,7 +313,15 @@ def enrich_row_with_program_detail(row: dict, program_slug: str | None, facts: d
         headline = f"{row['program_name']} is superseded by a current program and must not price as current."
     elif block is not None and block.classification in ("DISPLAY_ONLY_ZERO_GUARANTEED", "NON_GUARANTEED_SELECTIVE"):
         detail = DETAIL_DISCRETIONARY_AWARD
-        unresolved = [p for p in props if p["kind"] == "discretionary_band"] or props
+        unresolved = [p for p in props if p["kind"] == "discretionary_band"] or list(props)
+        if not unresolved:
+            # The rate rule states no condition at all: the only open proposition is the award itself.
+            _k = f"{program_slug}__discretionary_award_confirmed"
+            unresolved = [{
+                "condition_id": "discretionary-award", "kind": "discretionary_award_confirmation",
+                "description": "The program authority must confirm a discretionary award for THIS production, and its rate",
+                "fact_key": _k, "stored_value": facts.get(EVIDENCED_PREFIX + _k), "requirement": "confirmed",
+            }]
         streams = ""
         if rates["stated_floor_rate"] and rates["stated_ceiling_rate"] and rates["stated_floor_rate"] != rates["stated_ceiling_rate"]:
             streams = f" Stated rates: {rates['stated_floor_rate']:.0%} to {rates['stated_ceiling_rate']:.0%}."
@@ -334,6 +351,37 @@ def enrich_row_with_program_detail(row: dict, program_slug: str | None, facts: d
         detail = DETAIL_PROJECT_FACTS_REQUIRED
         unresolved = [p for p in props if p["stored_value"] is None]
         headline = f"{row['program_name']}: its rate rule needs project facts that are not on file."
+    elif cls == "STATUTORY_CONDITIONS_UNMET" and block is None and threshold_unreachable_reason:
+        # Mandatory threshold(s) this production cannot reach even if EVERY project fact were confirmed.
+        detail = DETAIL_MIN_QPE
+        headline = f"{row['program_name']}: {threshold_unreachable_reason}"
+        row["disposition"] = HARD_BLOCK
+        row["blocked_cause"] = CAUSE_LEGAL_INELIGIBILITY
+        row["hard_block_reason"] = headline
+        row["engine_reason"] = row.get("missing_facts_reason")
+        row["missing_facts_reason"] = None
+    elif cls == "STATUTORY_CONDITIONS_UNMET" and block is None and production_type and qpe_usd is not None and any(
+        r.min_qpe_usd is not None for r in get_rate_rules(program_slug)
+    ) and qpe_usd < min(r.min_qpe_usd for r in get_rate_rules(program_slug)
+                        if production_type in (r.production_types or ()) and r.min_qpe_usd is not None):
+        # A mandatory minimum-QPE threshold the production's canonical qualifying spend does not reach: a confirmed
+        # failed gate (the same class the evaluator already treats as hard), with the exact numbers.
+        threshold = min(r.min_qpe_usd for r in get_rate_rules(program_slug)
+                        if production_type in (r.production_types or ()) and r.min_qpe_usd is not None)
+        detail = DETAIL_MIN_QPE
+        headline = (
+            f"{row['program_name']} requires at least ${threshold:,.2f} of qualifying spend; this production's "
+            f"canonical qualifying spend is ${qpe_usd:,.2f}."
+        )
+        row["disposition"] = HARD_BLOCK
+        row["blocked_cause"] = CAUSE_LEGAL_INELIGIBILITY
+        row["hard_block_reason"] = headline
+        row["engine_reason"] = row.get("missing_facts_reason")
+        row["missing_facts_reason"] = None
+    elif cls == "STATUTORY_CONDITIONS_UNMET" and block is None and any(p["stored_value"] is None for p in props):
+        detail = DETAIL_PROJECT_FACTS_REQUIRED
+        unresolved = [p for p in props if p["stored_value"] is None]
+        headline = f"{row['program_name']}: its rate rule needs project facts that are not on file."
     # A program whose RateRule tiers are ALL scoped to other production types (e.g. an animation-only record on a
     # live-action feature) is not applicable to this production: a valid, non-blocking fact, never RED or AMBER.
     from app.data.program_rate_rules import get_rate_rules as _rules
@@ -355,7 +403,7 @@ def enrich_row_with_program_detail(row: dict, program_slug: str | None, facts: d
         row["missing_facts_reason"] = None
         row["hard_block_reason"] = None
     recon = {
-        DETAIL_QUALIFICATION: RECON_HARD, DETAIL_SUPERSEDED: RECON_HARD,
+        DETAIL_QUALIFICATION: RECON_HARD, DETAIL_SUPERSEDED: RECON_HARD, DETAIL_MIN_QPE: RECON_HARD,
         DETAIL_DISCRETIONARY_AWARD: RECON_DISCRETIONARY, DETAIL_AWARD_CEILING_NO_FLOOR: RECON_CEILING_NO_FLOOR,
         DETAIL_PROJECT_FACTS_REQUIRED: RECON_MISSING_FACT, DETAIL_AUTHORITY_EXHAUSTED: RECON_AUTHORITY_EXHAUSTED,
         DETAIL_NO_DEFENSIBLE_RATE: RECON_AUTHORITY_EXHAUSTED,

@@ -228,6 +228,9 @@ export const OPTIMIZER_SEMANTIC = {
   silver: { label: "Reference Alternative", hex: GLOBE_SEMANTIC.silver.hex, pulse: false },
   amber: { label: "Needs More Facts", hex: GLOBE_SEMANTIC.amber.hex, pulse: false },
   red: { label: "Unavailable", hex: "#b5403a", pulse: false },
+  // Program / capability data incomplete: the jurisdiction is accounted (catalog lead only, no verified rate rule), never
+  // silently absent and never presented as an alternative. Deliberately the dimmest, distinct from silver's "Reference".
+  slate: { label: "Data incomplete", hex: "#5d6c80", pulse: false },
 };
 export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
   Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.hex]),
@@ -435,19 +438,19 @@ function roleFor(structure, code) {
 // code of the best associated structure, the full per-category counts, and the
 // canonical blocker disposition when nothing priced exists) so hover, click
 // and Inspector all read the same per-jurisdiction record.
-export const OPTIMIZER_STATUS_PRECEDENCE = { gold: 5, jade: 4, silver: 3, amber: 2, red: 1 };
+export const OPTIMIZER_STATUS_PRECEDENCE = { gold: 5, jade: 4, silver: 3, amber: 2, red: 1, slate: 0.5 };
 
 export function buildOptimizerUniverse(allocated) {
   const byIso = new Map();
   if (!allocated) return byIso;
-  const { recommended, evaluated, opportunities, rejected, needsFactsBlocked } = optimizerProjection(allocated);
+  const { recommended, evaluated, opportunities, rejected, needsFactsBlocked, dataIncompleteRows } = optimizerProjection(allocated);
   const bestRecommendedId = recommended[0]?.structure_id ?? null;
   const entryFor = (iso) => {
     let e = byIso.get(iso);
     if (!e) {
       e = {
         status: null, hex: null, jurisdictionCodes: new Set(), best: null, meta: null,
-        counts: { recommended: 0, evaluated: 0, needsFacts: 0, blocked: 0 }, summarizedDominated: 0,
+        counts: { recommended: 0, evaluated: 0, needsFacts: 0, blocked: 0, dataIncomplete: 0 }, summarizedDominated: 0,
         bestByStatus: {},
       };
       byIso.set(iso, e);
@@ -482,13 +485,19 @@ export function buildOptimizerUniverse(allocated) {
     if (s.candidate_status === "DOMINATED_WITH_PROOF") continue;
     const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
     const blocker = classifyBlocker(s);
-    for (const code of codes) place(code, "amber", s, { reason: s.missing_facts_reason || s.reason || null, blocker, detail: s.blocker_detail || null, program: s.program_name || null }, "needsFacts");
+    for (const code of codes) place(code, "amber", s, { reason: s.missing_facts_reason || s.reason || null, blocker, detail: s.blocker_detail || null, program: s.program_name || null, potential: s.incentive_potential || null, contentGates: s.content_gates || null }, "needsFacts");
   }
   for (const s of rejected) {
     if (s.candidate_status === "DOMINATED_WITH_PROOF") continue; // defensive: never a blocked marker
     const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
     const blocker = classifyBlocker(s);
-    for (const code of codes) place(code, "red", s, { reason: s.hard_block_reason || s.reason || null, blocker, detail: s.blocker_detail || null, program: s.program_name || null }, "blocked");
+    for (const code of codes) place(code, "red", s, { reason: s.hard_block_reason || s.reason || null, blocker, detail: s.blocker_detail || null, program: s.program_name || null, potential: s.incentive_potential || null, contentGates: s.content_gates || null }, "blocked");
+  }
+  // Program/capability data incomplete (catalog lead only): accounted slate jurisdictions -- the dimmest state; any
+  // stronger state of the same jurisdiction wins (precedence), so this never hides a real result.
+  for (const s of dataIncompleteRows || []) {
+    const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
+    for (const code of codes) place(code, "slate", s, { reason: s.missing_facts_reason || s.reason || null, blocker: { kind: "program_data_incomplete", label: "Program data incomplete", reason: null }, detail: s.blocker_detail || null, program: null }, "dataIncomplete");
   }
   // Search-summary rows: disclosure only, never a marker/category.
   for (const r of allocated?.rejection_universe?.first_page?.results || []) {
@@ -785,6 +794,10 @@ export function buildOpportunityDetail(structure) {
     program_name: structure.program_name ?? null,
     missing_facts_reason: structure.missing_facts_reason ?? null,
     blocker_detail: structure.blocker_detail ?? null,
+    incentive_potential: structure.incentive_potential ?? null,
+    content_gates: structure.content_gates ?? null,
+    first_exit_stage: structure.first_exit_stage ?? null,
+    catalog_leads: structure.catalog_leads ?? null,
   };
 }
 
@@ -811,6 +824,11 @@ export function buildRejectedDetail(structure) {
     program_name: structure.program_name ?? null,
     hard_block_reason: structure.hard_block_reason ?? null,
     blocker_detail: structure.blocker_detail ?? null,
+    incentive_potential: structure.incentive_potential ?? null,
+    content_gates: structure.content_gates ?? null,
+    first_exit_stage: structure.first_exit_stage ?? null,
+    catalog_leads: structure.catalog_leads ?? null,
+    missing_facts_reason: structure.missing_facts_reason ?? null,
   };
 }
 
@@ -972,6 +990,8 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
       blockerKind: entry.meta?.blocker?.kind ?? null,
       blockerDetail: entry.meta?.detail ?? null,
       blockerProgram: entry.meta?.program ?? null,
+      blockerPotential: entry.meta?.potential ?? null,
+      blockerContentGates: entry.meta?.contentGates ?? null,
       blockerReason: (entry.meta?.detail?.headline ? entry.meta.reason : null) ?? entry.meta?.blocker?.reason ?? (mode === MODE_OPTIMIZER ? (entry.meta?.reason ?? null) : null),
     });
   }

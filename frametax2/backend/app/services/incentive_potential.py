@@ -329,3 +329,76 @@ def assign_incentive_potential_ranks(scenarios: list[dict]) -> None:
     for e in scenarios:
         e.setdefault("confirmed_financial_rank", None)
         e.setdefault("potential_opportunity_rank", None)
+
+
+# ── PROGRAM-LEVEL MAXIMUM POTENTIAL FOR A PROGRAM WITH NO PRICED SEGMENT (2026-10-02) ─────────────────────────
+# A discretionary / selective-award or ceiling-only program has no persisted priced segment, so the structure-level
+# reader above has nothing to read. The same contract fields are served from the program's OWN stored rate rule:
+# maximum = stated ceiling rate x the canonical qualifying-spend (QPE) the qualification register derives for this
+# production, capped by any stored per-project cap. The confirmed (guaranteed) incentive stays at its canonical
+# value of zero; the maximum is never presented as guaranteed and never enters a confirmed NPC or any ranking by
+# confirmed value. Potential NPC is the production budget less the maximum, BEFORE relocation-cost normalization
+# (stated in ``ceiling_basis.note``) -- a reference figure, not a recommendation.
+METHOD_STATED_CEILING_X_QPE = "STATED_CEILING_RATE_X_CANONICAL_QPE"
+
+
+def build_program_maximum_potential(
+    *,
+    program_name: str,
+    ceiling_rate: float | None,
+    qpe_usd: float | None,
+    gross_budget_usd: float | None,
+    per_project_cap_usd: float | None = None,
+    min_qpe_usd: float | None = None,
+    missing_facts: list[dict] | None = None,
+    guaranteed_floor_usd: float = 0.0,
+) -> dict:
+    """The one served maximum-potential record for a blocked / conditional PROGRAM (not a structure)."""
+    base = {
+        "confirmed_incentive_floor_usd": round(float(guaranteed_floor_usd), 2),
+        "maximum_supported_incentive_usd": None,
+        "potential_upside_usd": None,
+        "confirmed_npc_usd": None,
+        "potential_npc_usd": None,
+        "ceiling_status": CEILING_NOT_ESTABLISHED,
+        "ceiling_missing_facts": list(missing_facts or []),
+        "ceiling_basis": {"method": "NONE", "legs": [], "note": None},
+        "economics_certainty": CERTAINTY_REFERENCE_ONLY,
+    }
+    if ceiling_rate is None or qpe_usd is None or gross_budget_usd is None:
+        base["ceiling_basis"]["note"] = (
+            f"{program_name}: the stored rate rule or the production's qualifying spend does not establish a maximum."
+        )
+        return base
+    if min_qpe_usd is not None and qpe_usd < min_qpe_usd:
+        base["ceiling_basis"]["note"] = (
+            f"{program_name}: qualifying spend ${qpe_usd:,.2f} is below the program's stated minimum "
+            f"${min_qpe_usd:,.2f}; no maximum is available."
+        )
+        return base
+    gross_incentive = float(ceiling_rate) * float(qpe_usd)
+    capped = per_project_cap_usd is not None and gross_incentive > float(per_project_cap_usd)
+    maximum = round(min(gross_incentive, float(per_project_cap_usd)) if per_project_cap_usd is not None else gross_incentive, 2)
+    base.update({
+        "maximum_supported_incentive_usd": maximum,
+        "potential_upside_usd": round(maximum - base["confirmed_incentive_floor_usd"], 2),
+        "potential_npc_usd": round(float(gross_budget_usd) - maximum, 2),
+        "ceiling_status": CEILING_CONDITIONAL,
+        "economics_certainty": CERTAINTY_CONDITIONAL,
+        "ceiling_basis": {
+            "method": METHOD_STATED_CEILING_X_QPE,
+            "legs": [{
+                "program": program_name, "ceiling_rate": float(ceiling_rate), "qpe_usd": round(float(qpe_usd), 2),
+                "per_project_cap_usd": per_project_cap_usd, "cap_applied": bool(capped),
+                "maximum_usd": maximum, "confirmed_floor_usd": base["confirmed_incentive_floor_usd"],
+            }],
+            "note": (
+                f"Maximum = {float(ceiling_rate):.0%} stated ceiling x ${float(qpe_usd):,.2f} canonical qualifying spend"
+                + (f", capped at ${float(per_project_cap_usd):,.2f}" if per_project_cap_usd is not None else ", no stored cap")
+                + f". Potential NPC = ${float(gross_budget_usd):,.2f} production budget less that maximum, before "
+                "relocation-cost normalization. The maximum is NOT guaranteed: the confirmed incentive stays "
+                f"${base['confirmed_incentive_floor_usd']:,.2f} until every listed fact is established."
+            ),
+        },
+    })
+    return base

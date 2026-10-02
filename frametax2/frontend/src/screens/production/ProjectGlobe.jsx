@@ -8,6 +8,7 @@ import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { classifyBlocker } from "../../lib/blockerDisposition";
+import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
 import { alternativeLabel } from "../../lib/alternativeLabels";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -485,6 +486,26 @@ export default function ProjectGlobe() {
     openInspector("optimizer-rejection", buildRejectedDetail(s));
   }
 
+  // Accounted jurisdictions that are not executable (needs facts / data incomplete): one chip per jurisdiction row.
+  function renderAccountedChip(s, status) {
+    const code = s.primary_jurisdiction || s.participants?.[0];
+    return (
+      <div className="portfolio-chip" key={s.structure_id} data-accounted-status={status} onClick={() => {
+        setSelectedJurisdiction(code);
+        if (status === "red") selectRejected(s); else selectOpportunity(s);
+      }}>
+        <span className="dot" style={{ background: OPTIMIZER_STATUS_HEX[status] }} />
+        <div>
+          <div className="row-title small">{JURISDICTION_COORDS[code]?.name || code}{s.program_name ? ` — ${s.program_name}` : ""}</div>
+          <div className="row-sub">
+            {status === "slate" ? "Program data incomplete" : (s.blocker_detail?.kind ? humanizeToken(String(s.blocker_detail.kind).toLowerCase()) : "Needs more facts")}
+            {s.incentive_potential?.maximum_supported_incentive_usd != null && <> · max potential <Money value={s.incentive_potential.maximum_supported_incentive_usd} bare /> (not guaranteed)</>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function renderRejectedChip(s) {
     return (
       <div className="portfolio-chip" key={s.structure_id} onClick={() => selectRejected(s)}>
@@ -527,6 +548,17 @@ export default function ProjectGlobe() {
             showing fixture states — the two will not agree.
           </p>
         )}
+        {globeMode === MODE_OPTIMIZER && allocated?.jurisdiction_accounting?.waterfall && (() => {
+          const w = allocated.jurisdiction_accounting.waterfall.jurisdiction_disposition_counts || {};
+          return (
+            <p className="text-tertiary small" style={{ margin: "6px 0 8px" }} data-testid="globe-representation-note">
+              Showing <strong>one representative structure per jurisdiction</strong> ({w.EXECUTABLE ?? 0} executable). Hover a
+              jurisdiction to preview its top structure; click to lock it, and click again to cycle its other associated
+              structures — all of them stay available. Also accounted: {w.NEEDS_FACTS ?? 0} need more facts · {w.HARD_BLOCK ?? 0} unavailable ·{" "}
+              {w.DATA_INCOMPLETE ?? 0} program data incomplete.
+            </p>
+          );
+        })()}
         <div className="sc-jurlist">
           {globeMode === MODE_OPTIMIZER && visibleStructures.length === 0 && (
             <p className="empty-state">No executable optimizer structures for this production yet.</p>
@@ -574,6 +606,22 @@ export default function ProjectGlobe() {
                   </p>
                   {optimizerProj.opportunities.map((s) => renderOpportunityChip(s))}
                 </div>
+              )}
+              {(optimizerProj?.needsFactsBlocked || []).filter((r) => r.candidate_status !== "DOMINATED_WITH_PROOF").length > 0 && (
+                <div key="needs-facts-jurisdictions" className="sc-jurlist-section" data-testid="needs-facts-jurisdictions">
+                  <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
+                    Jurisdictions needing facts ({optimizerProj.needsFactsBlocked.filter((r) => r.candidate_status !== "DOMINATED_WITH_PROOF").length})
+                  </p>
+                  {optimizerProj.needsFactsBlocked.filter((r) => r.candidate_status !== "DOMINATED_WITH_PROOF").map((s) => renderAccountedChip(s, "amber"))}
+                </div>
+              )}
+              {(optimizerProj?.dataIncompleteRows || []).length > 0 && (
+                <details key="data-incomplete" className="sc-jurlist-section" data-testid="data-incomplete-jurisdictions">
+                  <summary className="inspector-eyebrow" style={{ margin: "10px 0 4px", cursor: "pointer" }}>
+                    Program data incomplete ({optimizerProj.dataIncompleteRows.length})
+                  </summary>
+                  {optimizerProj.dataIncompleteRows.map((s) => renderAccountedChip(s, "slate"))}
+                </details>
               )}
               {/* GLOBE_WIRING_REMEDIATION (2026-10-01): dominated-search aggregates and
                   aggregated rule-rejected permutations are internal search

@@ -270,7 +270,17 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
             <div className="hover-field" data-blocker-detail>
               <div className="text-tertiary small">Guaranteed floor</div>
               <div className="small">{hover.blockerDetail.guaranteed_floor}{hover.blockerDetail.potential_ceiling_rate != null ? ` · ceiling up to ${Math.round(hover.blockerDetail.potential_ceiling_rate * 100)}%` : ""}</div>
-              {(hover.blockerDetail.unresolved_propositions || []).slice(0, 3).map((p) => (
+              {hover.blockerPotential?.maximum_supported_incentive_usd != null && (
+                <div className="small" data-blocker-potential>
+                  Maximum potential {formatFullUsd(hover.blockerPotential.maximum_supported_incentive_usd)} (not guaranteed) · potential NPC {formatFullUsd(hover.blockerPotential.potential_npc_usd)}
+                </div>
+              )}
+              {(hover.blockerContentGates || []).filter((g) => g.status === "NOT_ON_FILE").length > 0 && (
+                <div className="small" data-blocker-content-gates>
+                  Content / approvals not on file: {(hover.blockerContentGates || []).filter((g) => g.status === "NOT_ON_FILE").map((g) => g.kind.toLowerCase().replace(/_/g, " ")).slice(0, 3).join(", ")}
+                </div>
+              )}
+              {(hover.blockerDetail.unresolved_propositions || []).filter((p) => !String(p.kind || "").startsWith("content_gate_")).slice(0, 3).map((p) => (
                 <div className="small" key={p.condition_id} data-blocker-proposition>
                   {p.fact_key ? `${p.fact_key}: ${p.stored_value == null ? "not on file" : p.stored_value}` : p.description}
                 </div>

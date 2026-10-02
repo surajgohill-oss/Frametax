@@ -231,13 +231,16 @@ test("the restored Globe legend carries exactly the four current states, no lega
     .map((m) => m[1].split(",").map((s) => s.trim().replace(/["']/g, "")))
     .filter((slots) =>
       (slots.length === 4 && slots.every((s) => ["gold", "jade", "amber", "silver"].includes(s))) ||
-      (slots.length === 5 && slots.every((s) => ["gold", "jade", "amber", "silver", "red"].includes(s))));
+      (slots.length === 5 && slots.every((s) => ["gold", "jade", "amber", "silver", "red"].includes(s))) ||
+      // + "slate": program/capability data incomplete (accounted jurisdictions), Optimizer mode only
+      (slots.length === 6 && slots.every((s) => ["gold", "jade", "amber", "silver", "red", "slate"].includes(s))));
   assert.ok(orderMatches.length >= 2, "legend must declare an explicit state order for both Single Jurisdiction and Optimizer modes");
   for (const slots of orderMatches) {
     const sorted = [...slots].sort();
     assert.ok(
       JSON.stringify(sorted) === JSON.stringify(["amber", "gold", "jade", "silver"]) ||
-      JSON.stringify(sorted) === JSON.stringify(["amber", "gold", "jade", "red", "silver"]),
+      JSON.stringify(sorted) === JSON.stringify(["amber", "gold", "jade", "red", "silver"]) ||
+      JSON.stringify(sorted) === JSON.stringify(["amber", "gold", "jade", "red", "silver", "slate"]),
       `unexpected legend order set: ${sorted.join(",")}`,
     );
   }

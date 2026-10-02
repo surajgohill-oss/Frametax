@@ -1701,6 +1701,7 @@ async def build_production_and_structures(
     generation_totals = {"total": 0, "priced": 0, "by_disposition": {}, "by_reason": []}
     generation_total_rows = 0
     _blocked = {"disposition": {"HARD_BLOCK": 0, "NEEDS_FACTS": 0}, "causes": {}, "exact": True, "rows": 0}
+    jurisdiction_accounting = None
     rejection_first_page = {
         "limit": UNPRICEABLE_PAGE_DEFAULT_LIMIT, "returned": 0, "has_more": False,
         "next_cursor": None, "order": UNPRICEABLE_PAGE_ORDER, "results": [],
@@ -1742,6 +1743,8 @@ async def build_production_and_structures(
                 _keys: set[str] = set()
                 for _sl in set(_slug_by_id.values()):
                     _keys |= rate_rule_fact_keys(_sl)
+                    if _sl:
+                        _keys.add(f"evidenced_program_fact:{_sl}__discretionary_award_confirmed")
                 _facts = {}
                 if _keys:
                     _facts = {
@@ -1755,6 +1758,27 @@ async def build_production_and_structures(
                 for _r in _blk_rows:
                     enrich_row_with_program_detail(_r, _slug_by_id.get(_r["structure_id"]), _facts, _ptype)
             _blocked = blocked_totals(rejection_first_page.get("results") or [], generation_totals["by_reason"])
+            # JURISDICTION ACCOUNTING: the complete first-exit ledger. Programs that were examined but only exist in
+            # aggregate groups (or were never persisted) are served as accounted rows -- so no jurisdiction vanishes
+            # before the Globe. Retained blocked rows above are NOT duplicated.
+            try:
+                from app.services.canonical_project_economics import _FORMAT_TO_PRODUCTION_TYPE as _F2P
+                from app.services.jurisdiction_accounting import build_jurisdiction_accounting
+                _ptype2 = _F2P.get((project.format or "").lower(), "feature_film")
+                jurisdiction_accounting = await build_jurisdiction_accounting(
+                    session, project, fingerprint, engine_version or ENGINE_VERSION, production_type=_ptype2,
+                    served_blocked_rows=[r for r in (rejection_first_page.get("results") or [])
+                                         if r.get("candidate_status") not in ("CO_PRO_OPPORTUNITY", "DOMINATED_WITH_PROOF")],
+                )
+            except Exception:  # noqa: BLE001 - the ledger is additive; a failure must never break the served view
+                import logging as _lg
+                _lg.getLogger(__name__).exception("jurisdiction accounting failed for %s", project.id)
+                jurisdiction_accounting = None
+            if jurisdiction_accounting:
+                _extra = jurisdiction_accounting["rows"]
+                rejection_first_page["results"] = list(rejection_first_page.get("results") or []) + _extra
+                rejection_first_page["returned"] = len(rejection_first_page["results"])
+                rejection_first_page["accounting_rows"] = len(_extra)
             # Bounded candidate retention (canonical-1.90.0): every candidate outside the retained
             # decision set is counted exactly and served as aggregate GROUPS, never as rows.
             aggregate_groups_first_page = await candidate_groups_page(
@@ -2642,6 +2666,19 @@ async def build_production_and_structures(
                 "aggregates": candidate_aggregates_block(project.id, generation_totals, aggregate_groups_first_page)
                 if generation_total_rows else None,
             } if fingerprint else None,
+            "jurisdiction_accounting": (
+                {k: jurisdiction_accounting[k] for k in ("engine_version", "production_type", "home_jurisdiction",
+                                                         "gross_budget_usd", "programs", "jurisdictions", "waterfall")}
+                | {"best_per_jurisdiction_count": len(best_per_jurisdiction),
+                   "executable_matches_best_per_jurisdiction": (
+                       {j["jurisdiction_code"] for j in jurisdiction_accounting["jurisdictions"] if j["disposition"] == "EXECUTABLE"}
+                       == set(best_per_jurisdiction.keys())),
+                   "representation_note": (
+                       "best_per_jurisdiction shows ONE representative structure per executable jurisdiction (its "
+                       "highest-priority priced structure); every other associated structure stays available "
+                       "(hover / click to cycle). The other jurisdictions are accounted by their first-exit disposition."),
+                   "content_gate_inventory": __import__("app.services.program_content_gates", fromlist=["x"]).content_gate_inventory()}
+            ) if jurisdiction_accounting else None,
             "contingency": {},
             "ranking": page_ranking,
             # Item A (canonical scenario-selection consistency) — see the

@@ -187,7 +187,9 @@ export function optimizerProjection(allocated) {
   // Needs-More-Facts (AMBER) jurisdiction. A row without the field (legacy payload) keeps the
   // established red treatment.
   // NOT_APPLICABLE rows (a program scoped to another production type) are valid facts, neither red nor amber.
-  const rejected = blockedRows.filter((r) => r.disposition !== "NEEDS_FACTS" && r.disposition !== "NOT_APPLICABLE");
+  const rejected = blockedRows.filter((r) => r.disposition !== "NEEDS_FACTS" && r.disposition !== "NOT_APPLICABLE" && r.disposition !== "DATA_INCOMPLETE");
+  // Program / capability data incomplete (catalog lead only): accounted, slate, never red/amber.
+  const dataIncompleteRows = blockedRows.filter((r) => r.disposition === "DATA_INCOMPLETE");
   const needsFactsBlocked = blockedRows.filter((r) => r.disposition === "NEEDS_FACTS");
   const byDisp = rejectionUniverse?.by_disposition || {};
   const coProOpportunityCount = byDisp.CO_PRO_OPPORTUNITY ?? 0;
@@ -212,6 +214,7 @@ export function optimizerProjection(allocated) {
     opportunities,
     rejected,
     needsFactsBlocked,
+    dataIncompleteRows,
     needsFactsBlockedTotal,
     executableTotal: allocated?.optimizer_executable_total ?? allocated?.optimizer_scenarios_total ?? (recommended.length + evaluated.length),
     recommendedTotal: allocated?.recommended_optimizer_options_total ?? recommended.length,
