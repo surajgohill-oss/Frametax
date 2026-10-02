@@ -186,7 +186,8 @@ export function optimizerProjection(allocated) {
   // confirmed prohibition or failed mandatory gate) is RED/Unavailable; everything unresolved is a
   // Needs-More-Facts (AMBER) jurisdiction. A row without the field (legacy payload) keeps the
   // established red treatment.
-  const rejected = blockedRows.filter((r) => r.disposition !== "NEEDS_FACTS");
+  // NOT_APPLICABLE rows (a program scoped to another production type) are valid facts, neither red nor amber.
+  const rejected = blockedRows.filter((r) => r.disposition !== "NEEDS_FACTS" && r.disposition !== "NOT_APPLICABLE");
   const needsFactsBlocked = blockedRows.filter((r) => r.disposition === "NEEDS_FACTS");
   const byDisp = rejectionUniverse?.by_disposition || {};
   const coProOpportunityCount = byDisp.CO_PRO_OPPORTUNITY ?? 0;

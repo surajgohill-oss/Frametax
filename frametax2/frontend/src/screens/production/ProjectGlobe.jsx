@@ -650,8 +650,7 @@ export default function ProjectGlobe() {
             // needs-facts / unavailable Inspector paths below.
             const clickedCode = pt.jurisdictionCode || pt.id;
             const clickedKey = pt.iso || globeKey(clickedCode);
-            const list = structureIndex.get(clickedKey) || [];
-            if (list.length > 0) {
+            const list = structureIndex.get(clickedKey) || [];            if (list.length > 0) {
               const lockedPos = lockedStructure ? list.findIndex((x) => identityOf(x) === identityOf(lockedStructure)) : -1;
               const idx = lockedPos >= 0 && lastClickKeyRef.current === clickedKey ? (lockedPos + 1) % list.length : 0;
               const target = list[idx];
@@ -665,7 +664,7 @@ export default function ProjectGlobe() {
             lastClickKeyRef.current = clickedKey;
             if (globeMode === MODE_OPTIMIZER && pt.sourceStructure) {
               if (pt.tier === "red") selectRejected(pt.sourceStructure);
-              else if (pt.tier === "amber") selectOpportunity(pt.sourceStructure);
+              else if (pt.tier === "amber") (pt.sourceStructure.is_fully_priced ? selectStructure(pt.sourceStructure) : selectOpportunity(pt.sourceStructure));
               else selectStructure(pt.sourceStructure);
               // The selection highlight follows the CLICKED marker's own
               // jurisdiction (the card helpers above frame the structure's

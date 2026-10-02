@@ -732,7 +732,13 @@ export default function Workspace() {
     // GLOBE_WIRING_REMEDIATION (2026-10-01): a Needs-More-Facts / blocked
     // jurisdiction marker opens ITS OWN canonical row (opportunity /
     // blocked-with-reason Inspector), never an empty/foreign segment view.
-    if (pt.tier === "amber") { openInspector("optimizer-opportunity", buildOpportunityDetail(s)); return; }
+    // AMBER now also marks an EXECUTABLE alternative that is conditional on missing location-capability data; that is
+    // a structure (candidate Inspector), never a "co-production opportunity".
+    if (pt.tier === "amber") {
+      if (s.is_fully_priced) openInspector("candidate-structure", buildCandidateDetail(s));
+      else openInspector("optimizer-opportunity", buildOpportunityDetail(s));
+      return;
+    }
     if (pt.tier === "red") { openInspector("optimizer-rejection", buildRejectedDetail(s)); return; }
     const seg = resolveSegmentDetail(s, code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, ...structureStatusDetail(s, optimizerLeadingId), contingencyByAccount });

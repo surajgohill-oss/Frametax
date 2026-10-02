@@ -482,13 +482,13 @@ export function buildOptimizerUniverse(allocated) {
     if (s.candidate_status === "DOMINATED_WITH_PROOF") continue;
     const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
     const blocker = classifyBlocker(s);
-    for (const code of codes) place(code, "amber", s, { reason: s.missing_facts_reason || s.reason || null, blocker }, "needsFacts");
+    for (const code of codes) place(code, "amber", s, { reason: s.missing_facts_reason || s.reason || null, blocker, detail: s.blocker_detail || null, program: s.program_name || null }, "needsFacts");
   }
   for (const s of rejected) {
     if (s.candidate_status === "DOMINATED_WITH_PROOF") continue; // defensive: never a blocked marker
     const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
     const blocker = classifyBlocker(s);
-    for (const code of codes) place(code, "red", s, { reason: s.hard_block_reason || s.reason || null, blocker }, "blocked");
+    for (const code of codes) place(code, "red", s, { reason: s.hard_block_reason || s.reason || null, blocker, detail: s.blocker_detail || null, program: s.program_name || null }, "blocked");
   }
   // Search-summary rows: disclosure only, never a marker/category.
   for (const r of allocated?.rejection_universe?.first_page?.results || []) {
@@ -779,6 +779,12 @@ export function buildOpportunityDetail(structure) {
     blockers: structure.blockers || [],
     warnings: structure.warnings || [],
     conditional_programs: structure.conditional_programs || [],
+    // Exact program blocker (served by the shared disposition owner), when this row is a blocked program.
+    disposition: structure.disposition ?? null,
+    blocked_cause: structure.blocked_cause ?? null,
+    program_name: structure.program_name ?? null,
+    missing_facts_reason: structure.missing_facts_reason ?? null,
+    blocker_detail: structure.blocker_detail ?? null,
   };
 }
 
@@ -800,6 +806,11 @@ export function buildRejectedDetail(structure) {
     // selective, superseded, prohibited combination, ... -- never one
     // unexplained "blocked".
     blocker: (({ kind, label }) => ({ kind, label }))(classifyBlocker(structure)),
+    disposition: structure.disposition ?? null,
+    blocked_cause: structure.blocked_cause ?? null,
+    program_name: structure.program_name ?? null,
+    hard_block_reason: structure.hard_block_reason ?? null,
+    blocker_detail: structure.blocker_detail ?? null,
   };
 }
 
@@ -954,9 +965,14 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
       categoryCounts: entry.counts ?? null,
       summarizedDominated: entry.summarizedDominated ?? 0,
       savingsUsd: structure?.is_fully_priced ? (structure.savings_vs_current_usd ?? null) : null,
-      blockerLabel: entry.meta?.blocker?.label ?? null,
+      // The served exact blocker (shared disposition owner) wins over the engine-text classifier.
+      blockerLabel: entry.meta?.detail?.kind
+        ? String(entry.meta.detail.kind).toLowerCase().replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())
+        : (entry.meta?.blocker?.label ?? null),
       blockerKind: entry.meta?.blocker?.kind ?? null,
-      blockerReason: entry.meta?.blocker?.reason ?? (mode === MODE_OPTIMIZER ? (entry.meta?.reason ?? null) : null),
+      blockerDetail: entry.meta?.detail ?? null,
+      blockerProgram: entry.meta?.program ?? null,
+      blockerReason: (entry.meta?.detail?.headline ? entry.meta.reason : null) ?? entry.meta?.blocker?.reason ?? (mode === MODE_OPTIMIZER ? (entry.meta?.reason ?? null) : null),
     });
   }
   return byIso;

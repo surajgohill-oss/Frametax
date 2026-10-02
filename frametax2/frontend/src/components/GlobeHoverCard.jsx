@@ -235,6 +235,12 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
       )}
       {priced ? (
         <>
+          {hover.status === "amber" && hover.blockerReason && (
+            <div className="hover-field" data-conditional-on>
+              <div className="text-tertiary small">Conditional on</div>
+              <div className="small">{String(hover.blockerReason).replace(/^MISSING_LOCATION_CAPABILITY_DATA:\s*/, "Missing location capability data: ").replace(/_NOT_ASSESSABLE/g, " (not assessable)").replace(/_/g, " ").toLowerCase()}</div>
+            </div>
+          )}
           {hidePotential ? null : hover.incentivePotential ? <PotentialFields pot={hover.incentivePotential} /> : (
             <div className="hover-field">
               <div className="text-tertiary small">NPC</div>
@@ -260,6 +266,17 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
             <div className="text-tertiary small">{hover.status === "amber" ? "Facts needed" : "Canonical reason"}</div>
             <div className="small">{reason || "Not priced — see Inspector"}</div>
           </div>
+          {hover.blockerDetail && (
+            <div className="hover-field" data-blocker-detail>
+              <div className="text-tertiary small">Guaranteed floor</div>
+              <div className="small">{hover.blockerDetail.guaranteed_floor}{hover.blockerDetail.potential_ceiling_rate != null ? ` · ceiling up to ${Math.round(hover.blockerDetail.potential_ceiling_rate * 100)}%` : ""}</div>
+              {(hover.blockerDetail.unresolved_propositions || []).slice(0, 3).map((p) => (
+                <div className="small" key={p.condition_id} data-blocker-proposition>
+                  {p.fact_key ? `${p.fact_key}: ${p.stored_value == null ? "not on file" : p.stored_value}` : p.description}
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
       <CategoryCounts counts={hover.categoryCounts} />

@@ -43,7 +43,9 @@ from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.economic_identity import canonical_economic_identity
-from app.services.jurisdiction_disposition import annotate_rows, blocked_totals
+from app.services.jurisdiction_disposition import (
+    annotate_rows, blocked_totals, enrich_row_with_program_detail, rate_rule_fact_keys,
+)
 from app.services.music_carveout import apply_music_carveout
 from app.services.incentive_potential import (
     assign_incentive_potential_ranks,
@@ -1723,6 +1725,35 @@ async def build_production_and_structures(
             # SHARED JURISDICTION DISPOSITION: every served row carries the one HARD_BLOCK /
             # NEEDS_FACTS classification (services/jurisdiction_disposition.py).
             annotate_rows(rejection_first_page.get("results") or [])
+            # EXACT PROGRAM BLOCKER: join each blocked row to its program (read from the retained trace) and the
+            # project's stored facts, then serve the exact unresolved propositions (registry-derived; no new rules).
+            _blk_rows = [r for r in (rejection_first_page.get("results") or [])
+                         if r.get("candidate_status") not in ("CO_PRO_OPPORTUNITY", "DOMINATED_WITH_PROOF", "RULE_REJECTED")]
+            if _blk_rows:
+                _ids = [r["structure_id"] for r in _blk_rows]
+                _slug_rows = (await session.execute(
+                    select(StructureCalculationResult.structure_id,
+                           StructureCalculationResult.calculation_trace_json["program_slug"].astext)
+                    .where(StructureCalculationResult.structure_id.in_(_ids),
+                           StructureCalculationResult.input_fingerprint == fingerprint,
+                           StructureCalculationResult.engine_version == engine_version)
+                )).all()
+                _slug_by_id = {str(i): sl for i, sl in _slug_rows}
+                _keys: set[str] = set()
+                for _sl in set(_slug_by_id.values()):
+                    _keys |= rate_rule_fact_keys(_sl)
+                _facts = {}
+                if _keys:
+                    _facts = {
+                        k: v for k, v in (await session.execute(
+                            select(ProjectFact.fact_key, ProjectFact.value)
+                            .where(ProjectFact.project_id == project.id, ProjectFact.fact_key.in_(_keys))
+                        )).all()
+                    }
+                from app.services.canonical_project_economics import _FORMAT_TO_PRODUCTION_TYPE
+                _ptype = _FORMAT_TO_PRODUCTION_TYPE.get((project.format or "").lower(), "feature_film")
+                for _r in _blk_rows:
+                    enrich_row_with_program_detail(_r, _slug_by_id.get(_r["structure_id"]), _facts, _ptype)
             _blocked = blocked_totals(rejection_first_page.get("results") or [], generation_totals["by_reason"])
             # Bounded candidate retention (canonical-1.90.0): every candidate outside the retained
             # decision set is counted exactly and served as aggregate GROUPS, never as rows.
@@ -2604,6 +2635,7 @@ async def build_production_and_structures(
                 "by_reason": generation_totals["by_reason"],
                 "by_jurisdiction_disposition": _blocked["disposition"],
                 "by_blocked_cause": _blocked["causes"],
+                "by_reconciliation_class": _blocked.get("reconciliation", {}),
                 "blocked_totals_exact": _blocked["exact"],
                 "first_page": rejection_first_page,
                 "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),

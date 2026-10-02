@@ -153,9 +153,244 @@ def blocked_totals(rows: list[dict], by_reason: list[dict]) -> dict:
     if len(marker_rows) == expected:
         disp = {HARD_BLOCK: 0, NEEDS_FACTS: 0}
         causes = {c: 0 for c in ALL_CAUSES}
+        recon: dict[str, int] = {}
         for r in marker_rows:
             c = r if "disposition" in r else {**r, **classify_jurisdiction_disposition(r)}
-            disp[c["disposition"]] += 1
+            disp[c["disposition"]] = disp.get(c["disposition"], 0) + 1
             causes[c["blocked_cause"]] += 1
-        return {"disposition": disp, "causes": causes, "exact": True, "rows": expected}
+            rc = (c.get("blocker_detail") or {}).get("reconciliation_class")
+            if rc:
+                recon[rc] = recon.get(rc, 0) + 1
+        return {"disposition": disp, "causes": causes, "reconciliation": recon, "exact": True, "rows": expected}
     return {"disposition": disposition_totals(by_reason), "causes": cause_totals(by_reason), "exact": False, "rows": expected}
+
+
+# ── EXACT PROGRAM BLOCKER (2026-10-02) ───────────────────────────────────────────────────────
+# A served blocked row used to carry only the engine's generic sentence. The canonical registries already say
+# precisely WHY a program is not guaranteed: the B1 discretionary ruling / authority-coverage state
+# (economic_block_for_program), the program's own RateRule tiers and RateConditions (with the fact key each one
+# needs), and the project's stored facts. This reads them -- no new rule data, no calculation -- and serves the
+# exact unresolved proposition(s), the stored value found for each, and the stated rate ceiling, so a producer
+# sees "Creative Saskatchewan awards are discretionary", never "authority uncertainty".
+
+DETAIL_DISCRETIONARY_AWARD = "DISCRETIONARY_AWARD_NOT_CONFIRMED"
+DETAIL_AWARD_CEILING_NO_FLOOR = "RATE_CEILING_WITH_NO_GUARANTEED_FLOOR"
+DETAIL_PROJECT_FACTS_REQUIRED = "PROJECT_FACTS_REQUIRED_BY_RATE_RULE"
+DETAIL_AUTHORITY_EXHAUSTED = "AUTHORITY_EXHAUSTED_FAIL_CLOSED"
+DETAIL_NO_DEFENSIBLE_RATE = "NO_DEFENSIBLE_CURRENT_RATE_OR_AWARD_BASIS"
+DETAIL_SUPERSEDED = "PROGRAM_SUPERSEDED"
+DETAIL_QUALIFICATION = "MANDATORY_QUALIFICATION_GATE_FAILED"
+
+
+def _program_label(slug: str | None) -> str:
+    from app.data.executable_jurisdiction_registry import get_doctrine
+
+    doctrine = get_doctrine(slug) if slug else None
+    return (doctrine.program_name if doctrine and doctrine.program_name else (slug or "program").replace("_", " "))
+
+
+#: ProjectFact storage prefixes (canonical_project_economics): a boolean RateCondition fact is stored as
+#: "evidenced_program_fact:<key>", a numeric one as "amount_fact:<key>". Kept as literals only to avoid importing the
+#: heavy evaluator module here; test_jurisdiction_disposition pins them to the canonical constants.
+EVIDENCED_PREFIX = "evidenced_program_fact:"
+AMOUNT_PREFIX = "amount_fact:"
+
+
+def rate_rule_fact_keys(slug: str | None) -> set[str]:
+    """Every STORED ProjectFact key (prefixed exactly as the evaluator reads it) the program's RateConditions /
+    awarded-rate tiers depend on."""
+    from app.data.program_rate_rules import get_rate_rules
+
+    keys: set[str] = set()
+    for rule in get_rate_rules(slug) if slug else ():
+        if getattr(rule, "awarded_rate_fact_key", None):
+            keys.add(AMOUNT_PREFIX + rule.awarded_rate_fact_key)
+        for c in rule.conditions:
+            if c.required_boolean_fact_key:
+                keys.add(EVIDENCED_PREFIX + c.required_boolean_fact_key)
+            if c.amount_fact_key:
+                keys.add(AMOUNT_PREFIX + c.amount_fact_key)
+    return keys
+
+
+def _propositions(slug: str, facts: dict[str, str]) -> tuple[list[dict], list[str]]:
+    from app.data.program_rate_rules import get_rate_rules
+
+    props: list[dict] = []
+    found: list[str] = []
+    for rule in get_rate_rules(slug):
+        if getattr(rule, "awarded_rate_fact_key", None):
+            k = rule.awarded_rate_fact_key
+            props.append({
+                "condition_id": f"{rule.tier_id}-awarded-rate",
+                "description": "The exact rate awarded to THIS production (the statutory figure is a ceiling, not an entitlement)",
+                "kind": "awarded_rate_fact", "fact_key": k, "stored_value": facts.get(AMOUNT_PREFIX + k),
+                "requirement": f"between {rule.awarded_rate_min} and {rule.awarded_rate_max}",
+            })
+        for c in rule.conditions:
+            key = c.required_boolean_fact_key or c.amount_fact_key
+            stored_key = (EVIDENCED_PREFIX + c.required_boolean_fact_key) if c.required_boolean_fact_key else (
+                (AMOUNT_PREFIX + c.amount_fact_key) if c.amount_fact_key else None)
+            stored = facts.get(stored_key) if stored_key else None
+            if key and stored is not None:
+                found.append(f"{key}={stored}")
+            props.append({
+                "condition_id": c.condition_id, "description": c.description, "kind": c.kind,
+                "fact_key": key, "stored_value": stored,
+                "requirement": (
+                    f">= {c.amount_fact_min}" if c.amount_fact_min is not None
+                    else "confirmed" if c.required_boolean_fact_key else None
+                ),
+            })
+    return props, found
+
+
+def _rate_summary(slug: str) -> dict:
+    from app.data.program_rate_rules import get_rate_rules
+    from app.data.executable_jurisdiction_registry import get_doctrine
+
+    rules = get_rate_rules(slug)
+    floors = [r.rate for r in rules if not r.is_band_ceiling]
+    ceilings = [r.rate for r in rules if r.is_band_ceiling]
+    doctrine = get_doctrine(slug)
+    return {
+        "stated_floor_rate": max(floors) if floors else None,
+        "stated_ceiling_rate": max(ceilings) if ceilings else (max(floors) if floors else None),
+        "has_guaranteed_floor_tier": bool(floors),
+        "rate_rule_confidence": rules[0].confidence_tier if rules else None,
+        "program_cap_usd": doctrine.annual_cap_usd if doctrine else None,
+    }
+
+
+NOT_APPLICABLE = "NOT_APPLICABLE"
+
+# Reconciliation classes (runtime/fact-consumption reconciliation of every blocked row).
+RECON_HARD = "GENUINE_HARD_FAILURE"
+RECON_CEILING_NO_FLOOR = "CONDITIONAL_CEILING_NO_VALID_FLOOR"
+RECON_MISSING_FACT = "MISSING_PROJECT_FACT"
+RECON_DISCRETIONARY = "DISCRETIONARY_AWARD_ZERO_GUARANTEED"
+RECON_AUTHORITY_EXHAUSTED = "AUTHORITY_EXHAUSTED_RATERULE_RETAINED"
+RECON_NOT_APPLICABLE = "NOT_APPLICABLE_PRODUCTION_TYPE"
+RECON_DISCONNECTED = "DISCONNECTED_EXISTING_FACT"
+RECON_MISSING_CAPABILITY = "MISSING_CAPABILITY"
+RECON_SLATE = "VALID_REFERENCE_ALTERNATIVE"
+
+
+def enrich_row_with_program_detail(row: dict, program_slug: str | None, facts: dict[str, str],
+                                   production_type: str | None = None) -> dict:
+    """Adds the exact, registry-derived blocker to one already-classified row (mutates and returns it)."""
+    from app.data.authority_coverage_registry import get_coverage_status
+    from app.data.program_rate_rules import economic_block_for_program
+
+    row["program_slug"] = program_slug
+    row["program_name"] = _program_label(program_slug) if program_slug else None
+    if not program_slug:
+        row["blocker_detail"] = None
+        return row
+    block = economic_block_for_program(program_slug)
+    coverage = get_coverage_status(program_slug)
+    rates = _rate_summary(program_slug)
+    props, found = _propositions(program_slug, facts)
+    cls = row.get("rejection_reason_class") or ""
+    status = row.get("candidate_status") or ""
+    detail = None
+    headline = None
+    unresolved: list[dict] = []
+    if status == "QUALIFICATION_HARD_FAIL":
+        detail = DETAIL_QUALIFICATION
+        headline = f"{row['program_name']}: a mandatory qualification gate failed (HARD_FAIL) -- see the role/qualification findings."
+    elif block is not None and block.classification == "SUPERSEDED":
+        detail = DETAIL_SUPERSEDED
+        headline = f"{row['program_name']} is superseded by a current program and must not price as current."
+    elif block is not None and block.classification in ("DISPLAY_ONLY_ZERO_GUARANTEED", "NON_GUARANTEED_SELECTIVE"):
+        detail = DETAIL_DISCRETIONARY_AWARD
+        unresolved = [p for p in props if p["kind"] == "discretionary_band"] or props
+        streams = ""
+        if rates["stated_floor_rate"] and rates["stated_ceiling_rate"] and rates["stated_floor_rate"] != rates["stated_ceiling_rate"]:
+            streams = f" Stated rates: {rates['stated_floor_rate']:.0%} to {rates['stated_ceiling_rate']:.0%}."
+        headline = (
+            f"{row['program_name']} is a discretionary / selective award: whether this production receives an award "
+            f"(and at what rate) is not established, so its guaranteed incentive is zero by the canonical ruling "
+            f"({block.classification}).{streams}"
+        )
+    elif block is not None and block.classification == "FAIL_CLOSED":
+        detail = DETAIL_AUTHORITY_EXHAUSTED
+        headline = (
+            f"{row['program_name']}: the accepted primary authority is exhausted -- it cannot state this program's "
+            f"award or rate basis deterministically, so automatic pricing is off (existing RateRule retained, "
+            f"{rates['rate_rule_confidence']} confidence)."
+        )
+    elif block is not None and block.classification == "UNPRICEABLE_AUTHORITY_INSUFFICIENT":
+        detail = DETAIL_NO_DEFENSIBLE_RATE
+        headline = f"{row['program_name']}: the primary-authority corpus captured no defensible current rate or award basis."
+    elif cls == "PRICING_BLOCKED" and not rates["has_guaranteed_floor_tier"] and rates["stated_ceiling_rate"]:
+        detail = DETAIL_AWARD_CEILING_NO_FLOOR
+        unresolved = props
+        headline = (
+            f"{row['program_name']} states only an 'up to {rates['stated_ceiling_rate']:.0%}' ceiling with no "
+            f"guaranteed floor tier; this production's award/qualifying conditions are not established."
+        )
+    elif cls == "PRICING_BLOCKED" and props:
+        detail = DETAIL_PROJECT_FACTS_REQUIRED
+        unresolved = [p for p in props if p["stored_value"] is None]
+        headline = f"{row['program_name']}: its rate rule needs project facts that are not on file."
+    # A program whose RateRule tiers are ALL scoped to other production types (e.g. an animation-only record on a
+    # live-action feature) is not applicable to this production: a valid, non-blocking fact, never RED or AMBER.
+    from app.data.program_rate_rules import get_rate_rules as _rules
+
+    _prules = _rules(program_slug)
+    if (
+        production_type and _prules and block is None and detail is None
+        and all(production_type not in (r.production_types or ()) for r in _prules)
+    ):
+        detail = "PROGRAM_NOT_APPLICABLE_TO_PRODUCTION_TYPE"
+        applicable = sorted({t for r in _prules for t in (r.production_types or ())})
+        headline = (
+            f"{row['program_name']} applies only to {', '.join(applicable)} productions; this production is "
+            f"{production_type}. Not a blocker for this production."
+        )
+        row["disposition"] = NOT_APPLICABLE
+        row["blocked_cause"] = CAUSE_OTHER
+        row["engine_reason"] = row.get("missing_facts_reason")
+        row["missing_facts_reason"] = None
+        row["hard_block_reason"] = None
+    recon = {
+        DETAIL_QUALIFICATION: RECON_HARD, DETAIL_SUPERSEDED: RECON_HARD,
+        DETAIL_DISCRETIONARY_AWARD: RECON_DISCRETIONARY, DETAIL_AWARD_CEILING_NO_FLOOR: RECON_CEILING_NO_FLOOR,
+        DETAIL_PROJECT_FACTS_REQUIRED: RECON_MISSING_FACT, DETAIL_AUTHORITY_EXHAUSTED: RECON_AUTHORITY_EXHAUSTED,
+        DETAIL_NO_DEFENSIBLE_RATE: RECON_AUTHORITY_EXHAUSTED,
+        "PROGRAM_NOT_APPLICABLE_TO_PRODUCTION_TYPE": RECON_NOT_APPLICABLE,
+    }.get(detail)
+    row["blocker_detail"] = {
+        "reconciliation_class": recon,
+        "kind": detail,
+        "headline": headline,
+        "canonical_disposition": block.classification if block is not None else None,
+        "coverage_state": coverage.state if coverage is not None else None,
+        "unresolved_propositions": unresolved,
+        "stored_facts_found": found,
+        "guaranteed_floor": (
+            "none (canonical ruling: guaranteed value is zero for a discretionary award)"
+            if detail == DETAIL_DISCRETIONARY_AWARD
+            else "none (the RateRule states only an 'up to' ceiling)" if not rates["has_guaranteed_floor_tier"]
+            else f"{rates['stated_floor_rate']:.0%} stated, not priced (blocked above)"
+        ),
+        "potential_ceiling_rate": rates["stated_ceiling_rate"],
+        "ceiling_unlocked_by": [p["condition_id"] for p in unresolved],
+        "stated_rates": rates,
+        "provenance_axis": (
+            f"RateRule confidence {rates['rate_rule_confidence']}"
+            + ("; its structured provenance is incomplete, which is a production-acceptance warning only and is NOT what blocks this program"
+               if rates["rate_rule_confidence"] != "VERIFIED" else "; provenance is not the cause of this disposition")
+        ),
+    }
+    if headline and row.get("disposition") == NEEDS_FACTS:
+        row["engine_reason"] = row.get("missing_facts_reason")
+        row["missing_facts_reason"] = headline
+        if detail == DETAIL_DISCRETIONARY_AWARD:
+            row["blocked_cause"] = CAUSE_MISSING_FACT
+        elif detail == DETAIL_AWARD_CEILING_NO_FLOOR or detail == DETAIL_PROJECT_FACTS_REQUIRED:
+            row["blocked_cause"] = CAUSE_MISSING_FACT
+        elif detail in (DETAIL_AUTHORITY_EXHAUSTED, DETAIL_NO_DEFENSIBLE_RATE):
+            row["blocked_cause"] = CAUSE_AUTHORITY
+    return row

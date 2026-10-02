@@ -52,3 +52,48 @@ test("a blocked row classified NEEDS_FACTS reads NEEDS MORE FACTS, never UNAVAIL
   assert.equal(alternativeLabel({ candidate_status: "FEASIBILITY_REVIEW_REQUIRED", disposition: "NEEDS_FACTS" }), "NEEDS MORE FACTS");
   assert.equal(alternativeLabel({ candidate_status: "FEASIBILITY_REVIEW_REQUIRED", disposition: "HARD_BLOCK" }), "UNAVAILABLE");
 });
+
+// ── exact program blocker (2026-10-02) ───────────────────────────────────────────────────────────
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { optimizerProjection } from "../src/lib/workspaceScenarioMode.js";
+import { buildOpportunityDetail, buildRejectedDetail, buildCountryHoverData } from "../src/lib/globeData.js";
+const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
+
+const detail = { headline: "Creative Saskatchewan is a discretionary award", guaranteed_floor: "none", potential_ceiling_rate: 0.3,
+  unresolved_propositions: [{ condition_id: "c", description: "stream", fact_key: null, stored_value: null }] };
+
+test("the exact blocker detail reaches the universe, hover record and both Inspector detail builders", () => {
+  const sk = row("CA-SK", { disposition: "NEEDS_FACTS", missing_facts_reason: detail.headline, blocker_detail: detail, program_name: "Creative Saskatchewan" });
+  const u = buildOptimizerUniverse(allocated([sk]));
+  const entry = u.get(globeKey("CA-SK"));
+  assert.equal(entry.meta.detail, detail);
+  const hover = buildCountryHoverData(u, 1_000_000, "optimizer").get(globeKey("CA-SK"));
+  assert.equal(hover.blockerDetail, detail);
+  assert.equal(buildOpportunityDetail(sk).blocker_detail, detail);
+  assert.equal(buildRejectedDetail(sk).blocker_detail, detail);
+});
+
+test("NOT_APPLICABLE rows are neither red nor amber", () => {
+  const na = row("CZ", { disposition: "NOT_APPLICABLE", candidate_status: "FEASIBILITY_REVIEW_REQUIRED" });
+  const p = optimizerProjection(allocated([na]));
+  assert.equal(p.rejected.length, 0);
+  assert.equal(p.needsFactsBlocked.length, 0);
+  assert.equal(buildOptimizerUniverse(allocated([na])).size, 0);
+});
+
+test("Inspector and hover render the exact blocker through one section / one block, with no client logic", () => {
+  const insp = readFileSync(join(SRC, "shell", "Inspector.jsx"), "utf8");
+  assert.equal((insp.match(/<BlockerDetailSection detail=\{data\.blocker_detail\}/g) || []).length, 2, "needs-facts and unavailable Inspectors");
+  assert.match(insp, /Unresolved propositions \(what unlocks the ceiling\)/);
+  assert.match(insp, /not on file/);
+  assert.match(readFileSync(join(SRC, "components", "GlobeHoverCard.jsx"), "utf8"), /data-blocker-detail/);
+});
+
+test("an AMBER executable alternative opens the structure Inspector; only an unpriced row opens the needs-facts one", () => {
+  const ws = readFileSync(join(SRC, "screens", "production", "Workspace.jsx"), "utf8");
+  assert.match(ws, /if \(s\.is_fully_priced\) openInspector\("candidate-structure", buildCandidateDetail\(s\)\);\s*else openInspector\("optimizer-opportunity"/);
+  const pg = readFileSync(join(SRC, "screens", "production", "ProjectGlobe.jsx"), "utf8");
+  assert.match(pg, /pt\.sourceStructure\.is_fully_priced \? selectStructure\(pt\.sourceStructure\) : selectOpportunity/);
+});

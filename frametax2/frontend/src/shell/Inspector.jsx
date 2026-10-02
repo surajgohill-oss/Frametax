@@ -618,11 +618,42 @@ function StructureDetailInspector({ data }) {
 // that cannot be priced yet). Every field is read verbatim from the
 // backend's own served opportunity object — never a client-side guess at
 // which facts are missing.
+// EXACT PROGRAM BLOCKER (2026-10-02): the exact unresolved propositions, the stored value found for each, the
+// guaranteed floor and the stated ceiling, read verbatim from the shared served disposition (no client logic).
+function BlockerDetailSection({ detail }) {
+  if (!detail) return null;
+  return (
+    <div className="inspector-sect" data-testid="blocker-detail">
+      <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Exact blocker</p>
+      <p className="text-secondary small" style={{ margin: "4px 0" }}>{detail.headline}</p>
+      <dl className="kv-list">
+        <div><dt>Guaranteed floor</dt><dd>{detail.guaranteed_floor}</dd></div>
+        {detail.potential_ceiling_rate != null && <div><dt>Stated ceiling</dt><dd>up to {Math.round(detail.potential_ceiling_rate * 100)}% of eligible spend</dd></div>}
+        {detail.canonical_disposition && <div><dt>Canonical ruling</dt><dd>{humanizeToken(detail.canonical_disposition)}</dd></div>}
+        <div><dt>Facts on file</dt><dd>{detail.stored_facts_found?.length ? detail.stored_facts_found.join(", ") : "None stored for this production"}</dd></div>
+      </dl>
+      {detail.unresolved_propositions?.length > 0 && (
+        <>
+          <p className="inspector-eyebrow" style={{ marginTop: 8 }}>Unresolved propositions (what unlocks the ceiling)</p>
+          {detail.unresolved_propositions.map((p) => (
+            <p key={p.condition_id} className="text-secondary small" style={{ margin: "4px 0" }}>
+              {p.description}
+              <span className="text-tertiary"> — {p.fact_key ? `${p.fact_key}${p.requirement ? ` (${p.requirement})` : ""}: ${p.stored_value == null ? "not on file" : p.stored_value}` : "authority decision"}</span>
+            </p>
+          ))}
+        </>
+      )}
+      {detail.provenance_axis && <p className="text-tertiary small" style={{ margin: "6px 0" }}>{detail.provenance_axis}</p>}
+    </div>
+  );
+}
+
 function OptimizerOpportunityInspector({ data }) {
+  const isProgramBlock = !!data.blocker_detail;
   return (
     <>
-      <p className="inspector-eyebrow">Needs More Facts · Co-Production Opportunity</p>
-      <h3>{data.label || "Co-production opportunity"}</h3>
+      <p className="inspector-eyebrow">Needs More Facts · {isProgramBlock ? "Program not yet established" : "Co-Production Opportunity"}</p>
+      <h3>{isProgramBlock ? (data.program_name || data.label) : (data.label || "Co-production opportunity")}</h3>
       {data.economic_identity && (
         <p className="text-tertiary small" style={{ margin: "2px 0 8px", wordBreak: "break-all" }}>
           {data.economic_identity.slice(0, 16)}…
@@ -640,7 +671,8 @@ function OptimizerOpportunityInspector({ data }) {
         </div>
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : "Not executable — needs facts"}</dd></div>
       </dl>
-      {data.reason && (
+      <BlockerDetailSection detail={data.blocker_detail} />
+      {data.reason && !isProgramBlock && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why this needs more facts</p>
           <p className="text-secondary small" style={{ margin: "4px 0" }}>{data.reason}</p>
@@ -676,10 +708,11 @@ function OptimizerRejectionInspector({ data }) {
         {data.blocker?.label && <div><dt>Blocker</dt><dd>{data.blocker.label}</dd></div>}
         <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
       </dl>
+      <BlockerDetailSection detail={data.blocker_detail} />
       {data.reason && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why it was blocked</p>
-          <p className="text-secondary small" style={{ margin: "4px 0" }}>{data.reason}</p>
+          <p className="text-secondary small" style={{ margin: "4px 0" }}>{data.hard_block_reason || data.reason}</p>
         </div>
       )}
     </>
