@@ -857,6 +857,10 @@ export default function Globe3D({
   // pre-measurement fallback and as the CSS min-height.
   autoHeight = false,
   polygonColors = null,
+  // STRUCTURE-AWARE GLOBE (2026-10-01): iso -> hex border accent for the jurisdictions of the structure
+  // currently previewed / locked (structural-family axis, independent of the fill's actionability axis).
+  // Null at rest, so no jurisdiction is ever permanently assigned one misleading family.
+  polygonBorders = null,
   selectedIso = null,
   // The jurisdiction currently under the cursor. Drives the hover response
   // (slight brighten + border emphasis) on the polygon itself — the hover
@@ -1198,6 +1202,8 @@ export default function Globe3D({
       // brightened fill alone is ambiguous on a small or fragmented
       // landmass. Ranked BELOW selection (which owns SELECTED_STROKE) and
       // above every resting border.
+      const familyBorder = iso ? liveRef.current.polygonBorders?.get?.(iso) : null;
+      if (familyBorder) return familyBorder;
       if (iso && iso === liveRef.current.hoveredIso) return HOVER_STROKE;
       // PHASE 3B BATCH 2 (objective 5): illuminated related jurisdictions
       // get the same border emphasis as a direct hover — a brightened fill
@@ -1639,11 +1645,13 @@ export default function Globe3D({
       // Optimizer Overlay these arcs ARE the production-routing story, not a
       // decorative line under a second choropleth — they need to read as
       // the primary graphic, arched clearly above the globe surface.
-      .arcAltitude(0.32)
+      .arcAltitude((d) => (typeof d.altitude === "number" ? d.altitude : 0.32))
       .arcStroke((d) => (typeof d.strokeWidth === "number" ? d.strokeWidth : 0.35))
-      .arcDashLength(0.75)
-      .arcDashGap(0.2)
-      .arcDashAnimateTime(2600)
+      // A `solid` arc (an undirected / peer relationship, e.g. official co-production principals) is a
+      // continuous, non-animated line; directed routes keep the established dashed flow.
+      .arcDashLength((d) => (d.solid ? 1 : 0.75))
+      .arcDashGap((d) => (d.solid ? 0 : 0.2))
+      .arcDashAnimateTime((d) => (d.solid ? 0 : 2600))
       .htmlElementsData(points)
       .htmlLat("lat")
       .htmlLng("lng")
@@ -2485,7 +2493,6 @@ export default function Globe3D({
       st.povKey = null; // force a point-of-view refresh so recreated markers get back-face visibility
       globe.pointsData(points);
       globe.htmlElementsData(points);
-      globe.arcsData(arcs);
       globe.pointColor(globe.pointColor()).pointAltitude(globe.pointAltitude()).pointRadius(globe.pointRadius());
       const geoSet = liveRef.current.geoIsoSet;
       if (geoSet) {
@@ -2500,7 +2507,22 @@ export default function Globe3D({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, arcs, pointRadius]);
+  }, [points, pointRadius]);
+
+  // STRUCTURE-AWARE GLOBE (2026-10-01): arcs update on their OWN effect. A hover preview swaps the drawn
+  // routes at pointer speed; routing them through the points effect above would recreate every marker and
+  // clear the hover (its factory-identity reset closes the hover card), looping the preview.
+  useEffect(() => {
+    if (globeRef.current) globeRef.current.arcsData(arcs);
+  }, [arcs]);
+
+  // Family-border repaint (separate from selection so it never re-runs the camera flight).
+  useEffect(() => {
+    liveRef.current.polygonBorders = polygonBorders;
+    const globe = globeRef.current;
+    if (!globe) return;
+    globe.polygonStrokeColor(globe.polygonStrokeColor());
+  }, [polygonBorders]);
 
   // Hover repaint. Separate from the selection effect on purpose: hover
   // changes at pointer speed and must NOT re-run the camera flight, the

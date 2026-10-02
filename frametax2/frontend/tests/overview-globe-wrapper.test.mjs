@@ -90,7 +90,7 @@ test("Overview renders the same canonical GlobeHoverCard component ProjectGlobe.
   assert.match(overviewSrc, /import GlobeHoverCard from "\.\.\/\.\.\/components\/GlobeHoverCard";/);
   assert.match(overviewSrc, /<GlobeHoverCard hover=\{hover\} hoverRect=\{hoverRect\} canvasRef=\{canvasRef\} \/>/);
   assert.match(projectGlobeSrc, /import GlobeHoverCard from "\.\.\/\.\.\/components\/GlobeHoverCard";/);
-  assert.match(projectGlobeSrc, /<GlobeHoverCard hover=\{hover\} hoverRect=\{hoverRect\} canvasRef=\{canvasRef\} \/>/);
+  assert.match(projectGlobeSrc, /<GlobeHoverCard hover=\{hoverWithStory \|\| hover\} hoverRect=\{hoverRect\} canvasRef=\{canvasRef\} \/>/);
 });
 
 test("Overview passes the two-argument (pt, rect) hover handler Globe3D calls, not a truncated single-argument setHover", () => {

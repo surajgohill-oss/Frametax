@@ -154,8 +154,10 @@ test("ProjectGlobe.jsx no longer re-sorts visibleStructures by rankById in Optim
   // plus a trailing Needs More Facts block, superseding TIER_SECTIONS — the
   // real, still-load-bearing invariant this test protects (never re-sort
   // the already-ordered optimizerProj arrays) is unchanged.
-  assert.match(optimizerBranch, /OPTIMIZER_SECTIONS\.map/, "Optimizer branch must render via OPTIMIZER_SECTIONS");
-  assert.match(optimizerBranch, /optimizerProj\?\.\[key\]/, "Optimizer branch must read each section straight from optimizerProj, never re-filter/re-derive it");
+  // STRUCTURE-AWARE GLOBE (2026-10-01): the Optimizer branch now groups the already-ordered
+  // recommended+evaluated pool by ACTUAL canonical structural family (groupByFamily), preserving canonical order.
+  assert.match(optimizerBranch, /groupByFamily\(/, "Optimizer branch must render via groupByFamily");
+  assert.match(optimizerBranch, /optimizerProj\?\.recommended[\s\S]*optimizerProj\?\.evaluated/, "Optimizer branch must read the optimizerProj arrays straight, never re-filter/re-derive them");
   assert.doesNotMatch(optimizerBranch, /\.sort\(/, "Optimizer mode must render optimizerProj's own arrays verbatim, never re-sorted");
   assert.match(singleJurisdictionBranch, /\[\.\.\.visibleStructures\]\s*\n?\s*\.sort\(\(a, b\) => \(rankById\.get\(a\.structure_id\)\?\.rank/, "the rankById sort must still exist for Single Jurisdiction mode, unchanged");
 });
@@ -172,52 +174,26 @@ test("ProjectGlobe.jsx no longer re-sorts visibleStructures by rankById in Optim
 // controlling contract's own section boundaries (Recommended / Evaluated
 // Alternatives / Needs More Facts) are pinned here instead; structural
 // family now shows per-row via OPTIMIZER_FAMILY_LABEL (see globeData.js).
-test("ProjectGlobe.jsx defines the three Optimizer sections in the required order and renders each with its own real count", () => {
+test("ProjectGlobe.jsx groups Optimizer structures by actual structural family, then Needs More Facts, with real counts", () => {
   const src = stripComments(read("screens/production/ProjectGlobe.jsx"));
-  assert.match(src, /key: "recommended", heading: "Leading \/ Strong Alternatives"/);
-  assert.match(src, /key: "evaluated", heading: "Reference Alternatives"/);
+  assert.match(src, /groupByFamily\(\[\.\.\.\(optimizerProj\?\.recommended/);
   assert.match(src, /Needs More Facts/);
-  // Order: Recommended must appear before Evaluated Alternatives, which
-  // must appear before the trailing Needs More Facts block.
-  const recIdx = src.indexOf('key: "recommended"');
-  const evalIdx = src.indexOf('key: "evaluated"');
-  const factsIdx = src.lastIndexOf("Needs More Facts");
-  assert.ok(recIdx < evalIdx && evalIdx < factsIdx, "sections must be declared Recommended -> Evaluated Alternatives -> Needs More Facts");
-  // A section with zero real entries must render no header at all.
-  assert.match(src, /if \(sectionStructures\.length === 0\) return null;/);
+  // A family with zero real entries renders no header (groupByFamily returns only non-empty groups).
   assert.match(src, /optimizerProj\?\.opportunities\?\.length > 0/, "Needs More Facts must only render when real opportunities exist");
+  assert.doesNotMatch(src, /Practical Hybrid<|Advanced Multi-Jurisdiction<|heading: "/, "complexity/practicality are badges, never section headings");
+  const famIdx = src.indexOf("groupByFamily([...(optimizerProj");
+  const factsIdx = src.lastIndexOf("Needs More Facts");
+  assert.ok(famIdx > 0 && famIdx < factsIdx, "family groups render before the trailing Needs More Facts block");
 });
 
-test("section partitioning algorithm: recommended-then-evaluated combined pool groups into its own real, disjoint sections, never re-grouped by economics", () => {
-  // Mirrors the exact grouping ProjectGlobe.jsx's OPTIMIZER_SECTIONS.map(...)
-  // performs: read straight off optimizerProj's own recommended/evaluated
-  // arrays (already real, disjoint, backend-ordered collections), never
-  // re-filter/re-sort by NPC or any other economic figure.
-  const OPTIMIZER_SECTIONS = [
-    { key: "recommended", heading: "Leading / Strong Alternatives" },
-    { key: "evaluated", heading: "Reference Alternatives" },
+test("family grouping keeps canonical order inside each family and never re-sorts by economics", async () => {
+  const { groupByFamily } = await import("../src/lib/globeStructure.js");
+  const mk = (id, cls, participants) => ({ structure_id: id, classification: cls, participants });
+  const pool = [
+    mk("r1", "HYBRID_ANCHOR_COMPONENT", ["MU", "GR"]), mk("r2", "HYBRID_ANCHOR_COMPONENT", ["MU", "GR", "IT"]),
+    mk("e1", "HYBRID_ANCHOR_COMPONENT", ["MU", "ES"]), mk("e2", "STACKED_PROGRAMS", ["CA-ON"]),
   ];
-  const optimizerProj = {
-    recommended: [
-      { structure_id: "r1", npc_with_adjustments_usd: 100 },
-      { structure_id: "r2", npc_with_adjustments_usd: 200 },
-    ],
-    evaluated: [
-      { structure_id: "e1", npc_with_adjustments_usd: 50 },
-      { structure_id: "e2", npc_with_adjustments_usd: 60 },
-      { structure_id: "e3", npc_with_adjustments_usd: 70 },
-    ],
-    opportunities: [],
-  };
-  const sections = OPTIMIZER_SECTIONS.map(({ key, heading }) => ({
-    heading, structures: optimizerProj[key] || [],
-  })).filter((s) => s.structures.length > 0);
-  assert.deepEqual(sections.map((s) => s.heading), ["Leading / Strong Alternatives", "Reference Alternatives"]);
-  assert.equal(sections[0].structures.length, 2);
-  assert.equal(sections[1].structures.length, 3);
-  // Never re-sorted by NPC across the whole set -- e1 (NPC 50, cheapest
-  // overall) must NOT appear before r1/r2 despite its lower NPC, because it
-  // is a real Evaluated Alternative, never promoted ahead of a Recommended
-  // option.
-  assert.deepEqual(sections[0].structures.map((s) => s.structure_id), ["r1", "r2"]);
+  const groups = groupByFamily(pool);
+  assert.deepEqual(groups.map((g) => g.family), ["stack", "hybrid_two_party", "hybrid_multi_party"]);
+  assert.deepEqual(groups.find((g) => g.family === "hybrid_two_party").items.map((s) => s.structure_id), ["r1", "e1"]);
 });

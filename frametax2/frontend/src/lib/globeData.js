@@ -440,7 +440,7 @@ export const OPTIMIZER_STATUS_PRECEDENCE = { gold: 5, jade: 4, silver: 3, amber:
 export function buildOptimizerUniverse(allocated) {
   const byIso = new Map();
   if (!allocated) return byIso;
-  const { recommended, evaluated, opportunities, rejected } = optimizerProjection(allocated);
+  const { recommended, evaluated, opportunities, rejected, needsFactsBlocked } = optimizerProjection(allocated);
   const bestRecommendedId = recommended[0]?.structure_id ?? null;
   const entryFor = (iso) => {
     let e = byIso.get(iso);
@@ -468,18 +468,27 @@ export function buildOptimizerUniverse(allocated) {
     }
   };
   for (const s of [...recommended, ...evaluated]) {
-    const status = s.structure_id === bestRecommendedId ? "gold" : s.recommendation_status === "RECOMMENDED" ? "jade" : "silver";
-    for (const code of s.participants || []) place(code, status, s, null, status === "silver" ? "evaluated" : "recommended");
+    const status = s.structure_id === bestRecommendedId ? "gold" : s.recommendation_status === "RECOMMENDED" ? "jade" : s.actionability === "AMBER" ? "amber" : "silver";
+    const countKey = status === "silver" ? "evaluated" : status === "amber" ? "needsFacts" : "recommended";
+    for (const code of s.participants || []) place(code, status, s, status === "amber" ? { reason: s.actionability_reason || null } : null, countKey);
   }
   for (const s of opportunities) {
     const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
     for (const code of codes) place(code, "amber", s, { reason: s.reason || null }, "needsFacts");
   }
+  // Blocked rows the shared disposition classifies as NEEDS_FACTS (unresolved eligibility, rate/award
+  // confirmation, discretionary awards, authority) are AMBER with their exact reason, never red.
+  for (const s of needsFactsBlocked || []) {
+    if (s.candidate_status === "DOMINATED_WITH_PROOF") continue;
+    const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
+    const blocker = classifyBlocker(s);
+    for (const code of codes) place(code, "amber", s, { reason: s.missing_facts_reason || s.reason || null, blocker }, "needsFacts");
+  }
   for (const s of rejected) {
     if (s.candidate_status === "DOMINATED_WITH_PROOF") continue; // defensive: never a blocked marker
     const codes = s.participants?.length ? s.participants : [s.primary_jurisdiction];
     const blocker = classifyBlocker(s);
-    for (const code of codes) place(code, "red", s, { reason: s.reason || null, blocker }, "blocked");
+    for (const code of codes) place(code, "red", s, { reason: s.hard_block_reason || s.reason || null, blocker }, "blocked");
   }
   // Search-summary rows: disclosure only, never a marker/category.
   for (const r of allocated?.rejection_universe?.first_page?.results || []) {
@@ -984,6 +993,9 @@ export function optimizerStructureStatus(allocated, structure) {
   const bestRecommendedId = recommended[0]?.structure_id ?? null;
   if (structure.structure_id === bestRecommendedId) return "gold";
   if (structure.recommendation_status === "RECOMMENDED") return "jade";
+  // SERVED actionability (production_fit.fit_actionability): a valid executable alternative that is conditional
+  // only because a required location capability has no canonical data is AMBER (missing capability), never red.
+  if (structure.actionability === "AMBER") return "amber";
   return "silver";
 }
 

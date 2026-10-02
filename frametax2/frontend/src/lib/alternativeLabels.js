@@ -36,6 +36,8 @@ export function alternativeLabel(structure, leadingId = null) {
   if (!structure) return ALT.REFERENCE;
   const status = structure.candidate_status;
   if (status === "CO_PRO_OPPORTUNITY") return ALT.NEEDS_FACTS;
+  // SHARED JURISDICTION DISPOSITION: a blocked row the backend classifies NEEDS_FACTS is never "Unavailable".
+  if (structure.disposition === "NEEDS_FACTS") return ALT.NEEDS_FACTS;
   if (UNAVAILABLE_STATUSES.has(status)) return ALT.UNAVAILABLE;
   if (structure.recommendation_status === "RECOMMENDED" || structure.is_recommended === true) {
     return leadingId && structure.structure_id === leadingId ? ALT.LEADING : ALT.STRONG;

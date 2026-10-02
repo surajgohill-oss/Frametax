@@ -205,3 +205,20 @@ def fit_summary(entries: list[dict], unavailable_total: int) -> dict:
         "unavailable": int(unavailable_total),
         "scenario_total": len(entries),
     }
+
+
+def fit_actionability(entry: dict) -> dict:
+    """Globe/producer ACTIONABILITY of a priced scenario (one served definition, 2026-10-01):
+      GREEN  -- canonical RECOMMENDED (cost-saving, material, fit-confirmed);
+      AMBER  -- executable but conditional on MISSING LOCATION-CAPABILITY DATA: a hard physical
+                requirement (desert / snow / underwater ...) no capability profile can affirm or deny.
+                Missing capability records are never a hard blocker and never RED;
+      SLATE  -- every other valid executable alternative (reference, immaterial, neutral, weak-fit,
+                more expensive, or fit-unconfirmed only because no requirements are on file)."""
+    if entry.get("recommendation_status") == "RECOMMENDED":
+        return {"actionability": "GREEN", "actionability_reason": None}
+    reasons = entry.get("production_fit_reasons") or []
+    missing = [r for r in reasons if isinstance(r, str) and r.endswith("_NOT_ASSESSABLE")]
+    if missing and entry.get("production_fit_status") != FIT_WEAK:
+        return {"actionability": "AMBER", "actionability_reason": "MISSING_LOCATION_CAPABILITY_DATA: " + ", ".join(sorted(set(missing)))}
+    return {"actionability": "SLATE", "actionability_reason": None}

@@ -180,7 +180,14 @@ export function optimizerProjection(allocated) {
   // (`dominatedSearchTotal`, `summarizedRuleRejectedTotal`) and are
   // disclosed as summarized search space, never as blocked structures.
   const pageRows = rejectionUniverse?.first_page?.results || [];
-  const rejected = pageRows.filter((r) => r.candidate_status !== "CO_PRO_OPPORTUNITY" && r.candidate_status !== "DOMINATED_WITH_PROOF");
+  const blockedRows = pageRows.filter((r) => r.candidate_status !== "CO_PRO_OPPORTUNITY" && r.candidate_status !== "DOMINATED_WITH_PROOF");
+  // SHARED JURISDICTION DISPOSITION (2026-10-01): the backend serves one HARD_BLOCK / NEEDS_FACTS
+  // classification per blocked row (services/jurisdiction_disposition.py). Only a HARD_BLOCK (a
+  // confirmed prohibition or failed mandatory gate) is RED/Unavailable; everything unresolved is a
+  // Needs-More-Facts (AMBER) jurisdiction. A row without the field (legacy payload) keeps the
+  // established red treatment.
+  const rejected = blockedRows.filter((r) => r.disposition !== "NEEDS_FACTS");
+  const needsFactsBlocked = blockedRows.filter((r) => r.disposition === "NEEDS_FACTS");
   const byDisp = rejectionUniverse?.by_disposition || {};
   const coProOpportunityCount = byDisp.CO_PRO_OPPORTUNITY ?? 0;
   const dominatedSearchTotal = byDisp.DOMINATED_WITH_PROOF ?? 0;
@@ -189,14 +196,22 @@ export function optimizerProjection(allocated) {
   const retainedBlockingTotal = Object.entries(byDisp)
     .filter(([k]) => !["CO_PRO_OPPORTUNITY", "DOMINATED_WITH_PROOF", "RULE_REJECTED"].includes(k))
     .reduce((acc, [, n]) => acc + (Number(n) || 0), 0);
-  const rejectedTotal = rejectionUniverse
-    ? Math.max(rejected.length, retainedBlockingTotal + shownRuleRejected)
-    : rejected.length;
+  const dispositionTotals = rejectionUniverse?.by_jurisdiction_disposition || null;
+  const rejectedTotal = dispositionTotals
+    ? Math.max(rejected.length, Number(dispositionTotals.HARD_BLOCK) || 0)
+    : rejectionUniverse
+      ? Math.max(rejected.length, retainedBlockingTotal + shownRuleRejected)
+      : rejected.length;
+  const needsFactsBlockedTotal = dispositionTotals
+    ? Math.max(needsFactsBlocked.length, Number(dispositionTotals.NEEDS_FACTS) || 0)
+    : needsFactsBlocked.length;
   return {
     recommended,
     evaluated,
     opportunities,
     rejected,
+    needsFactsBlocked,
+    needsFactsBlockedTotal,
     executableTotal: allocated?.optimizer_executable_total ?? allocated?.optimizer_scenarios_total ?? (recommended.length + evaluated.length),
     recommendedTotal: allocated?.recommended_optimizer_options_total ?? recommended.length,
     evaluatedTotal: allocated?.evaluated_optimizer_alternatives_total ?? evaluated.length,
@@ -299,13 +314,22 @@ export function selectSixSlots(allocated, mode, slot6Id) {
   const practicalPool = combined.filter(isPractical);
   const advancedPool = combined.filter((s) => !isPractical(s));
   const usedForCategories = new Set();
+  // CURATED-RACK CONTRACT (2026-10-01): a card is unique by stable economic identity (falling back to
+  // structure_id), so the rack can never show the same economic structure twice, and the pools are
+  // read in served order -- strongest actionable, conditional/potential, then reference alternatives
+  // (including more complex structures) -- so unused stronger-category slots fill with the best
+  // retained references rather than staying empty.
+  const _identityOf = (s) => s.economic_identity || s.structure_id;
+  const usedIdentities = new Set(anchor ? [_identityOf(anchor)] : []);
   const takeN = (pool, n) => {
     const picked = [];
     for (const s of pool) {
       if (picked.length >= n) break;
       if (usedForCategories.has(s.structure_id)) continue;
+      if (usedIdentities.has(_identityOf(s))) continue;
       picked.push(s);
       usedForCategories.add(s.structure_id);
+      usedIdentities.add(_identityOf(s));
     }
     return picked;
   };
@@ -317,7 +341,7 @@ export function selectSixSlots(allocated, mode, slot6Id) {
   const backfillTarget = 4 - (practicalSlots.length + advancedSlots.length);
   const backfill = backfillTarget > 0 ? takeN(combined, backfillTarget) : [];
   const leading = [...practicalSlots, ...advancedSlots, ...backfill];
-  const remaining = combined.filter((s) => !usedForCategories.has(s.structure_id));
+  const remaining = combined.filter((s) => !usedForCategories.has(s.structure_id) && !usedIdentities.has(_identityOf(s)));
   // An explicit producer choice (slot6Id) may select ANY remaining
   // executable option, recommended or evaluated — that is a deliberate
   // producer action, never an automatic promotion. Opportunities are never

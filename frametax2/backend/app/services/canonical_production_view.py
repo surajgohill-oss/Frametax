@@ -43,6 +43,8 @@ from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.economic_identity import canonical_economic_identity
+from app.services.jurisdiction_disposition import annotate_rows, blocked_totals
+from app.services.music_carveout import apply_music_carveout
 from app.services.incentive_potential import (
     assign_incentive_potential_ranks,
     build_incentive_potential,
@@ -120,7 +122,7 @@ RETENTION_POLICY_NOTE = (
 # what moved.
 from app.services.materiality_policy import MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD  # noqa: E402
 from app.services.production_fit import (  # noqa: E402
-    FIT_CONFIRMED_STATUSES, FIT_WEAK, classify_entry_fit, fit_aware_category, fit_priority, fit_summary,
+    FIT_CONFIRMED_STATUSES, FIT_WEAK, classify_entry_fit, fit_actionability, fit_aware_category, fit_priority, fit_summary,
 )
 
 
@@ -1023,6 +1025,8 @@ def _empty_structure_entry(
         # data yet" from "empty dict, no non-principal jurisdictions to check".
         "marginal_jurisdiction_benefits_usd": trace.get("marginal_jurisdiction_benefits_usd"),
         "marginal_jurisdiction_bounds_usd": trace.get("marginal_jurisdiction_bounds_usd"),
+        # MUSIC CARVE-OUT: the evaluator's repriced Music-bundled counterfactual (hybrids only).
+        "music_carveout": trace.get("music_carveout"),
         "npc_verified_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
         "npc_with_adjustments_usd": (
             float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
@@ -1694,6 +1698,7 @@ async def build_production_and_structures(
     rows: list[tuple] = []
     generation_totals = {"total": 0, "priced": 0, "by_disposition": {}, "by_reason": []}
     generation_total_rows = 0
+    _blocked = {"disposition": {"HARD_BLOCK": 0, "NEEDS_FACTS": 0}, "causes": {}, "exact": True, "rows": 0}
     rejection_first_page = {
         "limit": UNPRICEABLE_PAGE_DEFAULT_LIMIT, "returned": 0, "has_more": False,
         "next_cursor": None, "order": UNPRICEABLE_PAGE_ORDER, "results": [],
@@ -1715,6 +1720,10 @@ async def build_production_and_structures(
             rejection_first_page = await unpriceable_page(
                 session, project.id, fingerprint, engine_version=engine_version,
             )
+            # SHARED JURISDICTION DISPOSITION: every served row carries the one HARD_BLOCK /
+            # NEEDS_FACTS classification (services/jurisdiction_disposition.py).
+            annotate_rows(rejection_first_page.get("results") or [])
+            _blocked = blocked_totals(rejection_first_page.get("results") or [], generation_totals["by_reason"])
             # Bounded candidate retention (canonical-1.90.0): every candidate outside the retained
             # decision set is counted exactly and served as aggregate GROUPS, never as rows.
             aggregate_groups_first_page = await candidate_groups_page(
@@ -2445,6 +2454,22 @@ async def build_production_and_structures(
         _annotate_optimizer_scenario(e, _baseline_npc, _participant_set_index, _dominance_by_id)
         for e in optimizer_scenarios
     ]
+    # MUSIC CARVE-OUT: curated-surface projection (services/music_carveout.py). Every split is still
+    # generated/priced/persisted; below-threshold splits move to optimizer_scenarios_music_suppressed
+    # (full entries, preserved) and the totals reconcile.
+    optimizer_scenarios, music_suppressed_scenarios, music_carveout_summary = apply_music_carveout(
+        optimizer_scenarios, float(_baseline_npc) if _baseline_npc is not None else None,
+    )
+    optimizer_scenarios_total = len(optimizer_scenarios)
+    optimizer_scenarios_by_family = {
+        family: sum(1 for e in optimizer_scenarios if e["classification"] == family)
+        for family in sorted(_OPTIMIZER_STRUCTURE_FAMILIES)
+    }
+    optimizer_scenarios_by_tier = {
+        TIER_PRACTICAL: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_PRACTICAL),
+        TIER_FORMAL: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_FORMAL),
+        TIER_ADVANCED: sum(1 for e in optimizer_scenarios if e["practicality_tier"] == TIER_ADVANCED),
+    }
     producer_optimizer_baseline_npc_usd = float(_baseline_npc) if _baseline_npc is not None else None
     # FIT-AWARE PRESENTATION ORDER (2026-10-01), served explicitly and separately from the
     # canonical financial rank: (1) qualified, materially useful, fit-confirmed alternatives;
@@ -2454,6 +2479,7 @@ async def build_production_and_structures(
     for _se in optimizer_scenarios:
         _se["fit_priority"] = fit_priority(_se)
         _se["fit_aware_category"] = fit_aware_category(_se)
+        _se.update(fit_actionability(_se))
     optimizer_scenarios.sort(key=lambda _se: _se["fit_priority"])
     for _i, _se in enumerate(optimizer_scenarios, start=1):
         _se["fit_aware_rank"] = _i
@@ -2576,6 +2602,9 @@ async def build_production_and_structures(
                 "total_count": generation_totals["total"],
                 "by_disposition": generation_totals["by_disposition"],
                 "by_reason": generation_totals["by_reason"],
+                "by_jurisdiction_disposition": _blocked["disposition"],
+                "by_blocked_cause": _blocked["causes"],
+                "blocked_totals_exact": _blocked["exact"],
                 "first_page": rejection_first_page,
                 "results_route": UNPRICEABLE_RESULTS_ROUTE.format(project_id=project.id),
                 "aggregates": candidate_aggregates_block(project.id, generation_totals, aggregate_groups_first_page)
@@ -2631,6 +2660,8 @@ async def build_production_and_structures(
             # was empty for all four real productions.
             "optimizer_scenarios": optimizer_scenarios,
             "optimizer_scenarios_total": optimizer_scenarios_total,
+            "optimizer_scenarios_music_suppressed": music_suppressed_scenarios,
+            "music_carveout": music_carveout_summary,
             "optimizer_scenarios_by_family": optimizer_scenarios_by_family,
             # PRODUCER_OPTIMIZER_PRESENTATION_CORRECTION (2026-09-22): counts for the
             # truthful "N distinct optimized scenarios / P practical / F formal

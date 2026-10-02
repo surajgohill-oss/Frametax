@@ -13,6 +13,10 @@ import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken, buildScenarioLabel } from "../../lib/format";
 import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../../lib/globeCategoryDiff";
+import {
+  FAMILY_META, buildStructureIndex, familyCounts, groupByFamily, identityOf, participantGlobeKeys,
+  principalOf, structureArcs, structureStory, structuralFamilyOf,
+} from "../../lib/globeStructure";
 
 // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — SUPERSEDES the prior
 // tier-based grouping below (kept only as history in git, not in this file):
@@ -37,10 +41,6 @@ import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../.
 // (visibleStructures excluded optimizer_opportunities_requiring_facts
 // entirely) — it now renders as its own trailing section, per the
 // controlling contract's "shown separately after executable structures".
-const OPTIMIZER_SECTIONS = [
-  { key: "recommended", heading: "Leading / Strong Alternatives" },
-  { key: "evaluated", heading: "Reference Alternatives" },
-];
 
 // Project Globe — this production's structures and their routing on the
 // canonical globe. Same live model as the Workspace Map mode, given its own
@@ -82,6 +82,7 @@ export default function ProjectGlobe() {
   // converted to a position relative to canvasRef below at render time.
   const [hoverRect, setHoverRect] = useState(null);
   const canvasRef = useRef(null);
+  const lastClickKeyRef = useRef(null);
   // PHASE 3B BATCH 2 (objective 6) — one-time "unlock pulse" isos, cleared
   // by its own timeout. A plain ref (not state) tracks the pending timeout
   // so a second genuine transition inside the pulse window replaces rather
@@ -190,6 +191,58 @@ export default function ProjectGlobe() {
   // from Project Globe mid-pulse).
   useEffect(() => () => { if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current); }, []);
 
+  // ── STRUCTURE-AWARE GLOBE (2026-10-01) ─────────────────────────────────────────────
+  // Hover PREVIEWS the highest-priority structure (canonical projection order) of the hovered
+  // jurisdiction; click LOCKS it by stable economic identity and further clicks on the same
+  // jurisdiction CYCLE through its other structures. Only the ONE displayed structure's participants,
+  // family border and routes are drawn -- never every route at once.
+  const [lockedIdentity, setLockedIdentity] = useState(null);
+  const [hoverCycle, setHoverCycle] = useState({ key: null, index: 0 });
+  useEffect(() => { setLockedIdentity(null); setHoverCycle({ key: null, index: 0 }); }, [globeMode, projectId]);
+  const structureIndex = useMemo(() => {
+    const idx = buildStructureIndex(visibleStructures);
+    if (globeMode === MODE_OPTIMIZER && optimizerProj) {
+      // Needs-more-facts opportunities (e.g. official co-production candidates) are appended AFTER
+      // every executable structure of a jurisdiction: previewable, never prioritized over them.
+      for (const [key, list] of buildStructureIndex(optimizerProj.opportunities)) {
+        idx.set(key, [...(idx.get(key) || []), ...list]);
+      }
+    }
+    return idx;
+  }, [visibleStructures, optimizerProj, globeMode]);
+  const structureByIdentity = useMemo(() => {
+    const m = new Map();
+    for (const list of structureIndex.values()) for (const st of list) m.set(identityOf(st), st);
+    return m;
+  }, [structureIndex]);
+  const hoverKey = hover ? (hover.iso || hover.isoA2 || null) : null;
+  const hoverList = hoverKey ? (structureIndex.get(hoverKey) || []) : [];
+  const hoverIndex = hoverCycle.key === hoverKey ? Math.min(hoverCycle.index, Math.max(0, hoverList.length - 1)) : 0;
+  const previewStructure = hoverList[hoverIndex] || null;
+  const lockedStructure = lockedIdentity ? structureByIdentity.get(lockedIdentity) || null : null;
+  const displayStructure = previewStructure || lockedStructure;
+  const displayIsLockedOnly = !previewStructure && !!lockedStructure;
+  const structureArcsForDisplay = useMemo(() => (displayStructure ? structureArcs(displayStructure) : []), [displayStructure]);
+  const structureBorders = useMemo(() => {
+    if (!displayStructure) return null;
+    const fam = FAMILY_META[structuralFamilyOf(displayStructure)];
+    const m = new Map();
+    for (const k of participantGlobeKeys(displayStructure)) m.set(k, displayIsLockedOnly ? "#ffffff" : fam.hex);
+    return m;
+  }, [displayStructure, displayIsLockedOnly]);
+  const hoverWithStory = useMemo(() => {
+    if (!hover) return null;
+    if (!previewStructure) return hover;
+    return {
+      ...hover,
+      structureStory: structureStory(previewStructure, {
+        position: hoverIndex + 1, total: hoverList.length, familyCountsForJurisdiction: familyCounts(hoverList),
+        leadingId: optimizerProj?.recommended?.[0]?.structure_id ?? null,
+      }),
+      structureLocked: !!lockedStructure && identityOf(lockedStructure) === identityOf(previewStructure),
+    };
+  }, [hover, previewStructure, hoverIndex, hoverList, lockedStructure, optimizerProj]);
+
   // PHASE 3B BATCH 2 (objective 5) — Co-Production Opportunity hover
   // illumination. Only computed (non-null) while hovering an amber
   // jurisdiction with real related codes; every other hover — Recommended,
@@ -199,6 +252,13 @@ export default function ProjectGlobe() {
   // object identity, so Globe3D's illumination effect doesn't re-fire on
   // every hover-position update within the same country.
   const { illuminatedIsos, primaryIlluminatedIso } = useMemo(() => {
+    if (displayStructure) {
+      // Exact participant highlighting for the previewed / locked structure.
+      return {
+        illuminatedIsos: participantGlobeKeys(displayStructure),
+        primaryIlluminatedIso: principalOf(displayStructure) ? globeKey(principalOf(displayStructure)) : null,
+      };
+    }
     if (!hover || hover.status !== "amber" || !hover.relatedCodes?.length) {
       return { illuminatedIsos: null, primaryIlluminatedIso: null };
     }
@@ -207,7 +267,7 @@ export default function ProjectGlobe() {
       primaryIlluminatedIso: hover.primaryJurisdictionCode ? globeKey(hover.primaryJurisdictionCode) : null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hover?.isoA2, hover?.status]);
+  }, [hover?.isoA2, hover?.status, displayStructure]);
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -296,6 +356,8 @@ export default function ProjectGlobe() {
     // setting it there would only leak into Workspace's separate "Leading"
     // FX badge with no Globe-rendering benefit.
     if (globeMode === MODE_OPTIMIZER) setLeadingStructureId(s.structure_id);
+    // STRUCTURE-AWARE GLOBE: a side-panel selection locks that exact structure (stable identity) on the Globe.
+    setLockedIdentity(identityOf(s));
     // CODEX_FG-002 (2026-09-21): selecting a STRUCTURE (a card) must open
     // that structure's own complete identity — structure ID, economic
     // identity, classification, every participant, the full program stack,
@@ -324,8 +386,11 @@ export default function ProjectGlobe() {
     const active = code && code === selectedJurisdiction;
     return (
       <div
-        className={`portfolio-chip${active ? " active" : ""}`}
+        className={`portfolio-chip${active ? " active" : ""}${lockedIdentity && lockedIdentity === identityOf(s) ? " locked" : ""}`}
         key={s.structure_id}
+        data-structure-identity={identityOf(s)}
+        data-structure-family={structuralFamilyOf(s)}
+        style={{ borderLeft: `3px solid ${FAMILY_META[structuralFamilyOf(s)].hex}` }}
         onClick={() => selectStructure(s)}
       >
         {/* OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer rows now
@@ -397,6 +462,8 @@ export default function ProjectGlobe() {
   // the real treaty/framework and its unresolved facts, and never touches
   // selectedJurisdiction/leadingStructureId/the Globe scene at all.
   function selectOpportunity(s) {
+    // The opportunity's co-production relationship is previewable/lockable on the Globe by stable identity.
+    setLockedIdentity(identityOf(s));
     openInspector("optimizer-opportunity", buildOpportunityDetail(s));
   }
 
@@ -487,18 +554,19 @@ export default function ProjectGlobe() {
                real, backend-served collections (never a second client-side
                filter/re-derivation). */
             <>
-              {OPTIMIZER_SECTIONS.map(({ key, heading }) => {
-                const sectionStructures = optimizerProj?.[key] || [];
-                if (sectionStructures.length === 0) return null;
-                return (
-                  <div key={key} className="sc-jurlist-section">
-                    <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
-                      {heading} ({sectionStructures.length})
-                    </p>
-                    {sectionStructures.map((s) => renderStructureChip(s))}
-                  </div>
-                );
-              })}
+              {/* STRUCTURE-AWARE GLOBE (2026-10-01): grouped by the ACTUAL canonical structural family
+                  (single / stack / two-party hybrid / multi-party hybrid / official co-production /
+                  combined). Practicality tier and recommendation status stay per-row badges, never headings;
+                  canonical projection order (recommended first, then reference alternatives) is preserved
+                  inside each family. */}
+              {groupByFamily([...(optimizerProj?.recommended || []), ...(optimizerProj?.evaluated || [])]).map(({ family, meta, items }) => (
+                <div key={family} className="sc-jurlist-section" data-family-group={family}>
+                  <p className="inspector-eyebrow" style={{ margin: "10px 0 4px", borderLeft: `3px solid ${meta.hex}`, paddingLeft: 6 }}>
+                    {meta.label} ({items.length})
+                  </p>
+                  {items.map((s) => renderStructureChip(s))}
+                </div>
+              ))}
               {optimizerProj?.opportunities?.length > 0 && (
                 <div key="opportunities" className="sc-jurlist-section">
                   <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
@@ -533,9 +601,16 @@ export default function ProjectGlobe() {
               )}
             </>
           ) : (
-            [...visibleStructures]
-              .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity))
-              .map((s) => renderStructureChip(s))
+            groupByFamily(
+              [...visibleStructures].sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity)),
+            ).map(({ family, meta, items }) => (
+              <div key={family} className="sc-jurlist-section" data-family-group={family}>
+                <p className="inspector-eyebrow" style={{ margin: "10px 0 4px", borderLeft: `3px solid ${meta.hex}`, paddingLeft: 6 }}>
+                  {meta.label} ({items.length})
+                </p>
+                {items.map((s) => renderStructureChip(s))}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -544,7 +619,9 @@ export default function ProjectGlobe() {
         <GlobeLegend mode={globeMode} />
         <Globe3D
           points={points}
-          arcs={arcs}
+          // STRUCTURE-AWARE GLOBE: only the previewed / locked structure's topology is drawn (never every route).
+          arcs={structureArcsForDisplay}
+          polygonBorders={structureBorders}
           // The stage owns the height (see --globe-stage-* tokens); 560 is now
           // only the floor. Previously a hardcoded 560 regardless of how much
           // vertical space the page actually had.
@@ -567,6 +644,25 @@ export default function ProjectGlobe() {
           // Bias camera framing left so a selected country stays clear of it.
           obscuredRightPx={inspector ? 400 : 0}
           onPointClick={(pt) => {
+            // STRUCTURE-AWARE GLOBE: a click LOCKS the structure previewed for this jurisdiction (highest
+            // priority first) by stable economic identity; clicking the same jurisdiction again CYCLES
+            // through its other structures. Jurisdictions with no structure keep the established
+            // needs-facts / unavailable Inspector paths below.
+            const clickedCode = pt.jurisdictionCode || pt.id;
+            const clickedKey = pt.iso || globeKey(clickedCode);
+            const list = structureIndex.get(clickedKey) || [];
+            if (list.length > 0) {
+              const lockedPos = lockedStructure ? list.findIndex((x) => identityOf(x) === identityOf(lockedStructure)) : -1;
+              const idx = lockedPos >= 0 && lastClickKeyRef.current === clickedKey ? (lockedPos + 1) % list.length : 0;
+              const target = list[idx];
+              lastClickKeyRef.current = clickedKey;
+              setHoverCycle({ key: clickedKey, index: idx });
+              if (target.is_fully_priced) selectStructure(target); else selectOpportunity(target);
+              setLockedIdentity(identityOf(target));
+              setSelectedJurisdiction(clickedCode);
+              return;
+            }
+            lastClickKeyRef.current = clickedKey;
             if (globeMode === MODE_OPTIMIZER && pt.sourceStructure) {
               if (pt.tier === "red") selectRejected(pt.sourceStructure);
               else if (pt.tier === "amber") selectOpportunity(pt.sourceStructure);
@@ -586,7 +682,7 @@ export default function ProjectGlobe() {
             trace and account-level detail remain Inspector-only — click
             still opens the Inspector; hover never does. */}
         {hover && (
-          <GlobeHoverCard hover={hover} hoverRect={hoverRect} canvasRef={canvasRef} />
+          <GlobeHoverCard hover={hoverWithStory || hover} hoverRect={hoverRect} canvasRef={canvasRef} />
         )}
         <p className="globe-caption small" style={{ borderRadius: "0 0 var(--radius-lg) var(--radius-lg)" }}>
           {/* The overlay caption must describe what is actually on screen. It
@@ -594,15 +690,13 @@ export default function ProjectGlobe() {
               recommended structure is single-jurisdiction there is no routing
               to show — the overlay correctly lights one jurisdiction and draws
               no arc, and the caption then read as a rendering failure. */}
-          {globeMode === MODE_OPTIMIZER
-            ? visibleStructures.length === 0
-              ? "No executable optimizer structures for this production yet."
-              : arcs.length > 0
-              ? "All optimizer categories are visible; the selected structure's route is emphasized."
-              : "All optimizer categories are visible; the selected structure is single-jurisdiction."
-            : arcs.length > 0
-              ? "Dashed routes mark this production's real multi-jurisdiction structures."
-              : "No multi-jurisdiction structure is currently priced for this production."}
+          {visibleStructures.length === 0
+            ? "No executable optimizer structures for this production yet."
+            : displayStructure
+              ? structureArcsForDisplay.length > 0
+                ? `${FAMILY_META[structuralFamilyOf(displayStructure)].label}: its routes and participants are shown. Click to lock; click again to cycle this jurisdiction's structures.`
+                : `${FAMILY_META[structuralFamilyOf(displayStructure)].label}: participants highlighted (no route to draw).`
+              : "Hover a jurisdiction to preview its highest-priority structure; click to lock it."}
         </p>
       </div>
     </div>

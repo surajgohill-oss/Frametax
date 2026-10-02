@@ -67,8 +67,10 @@ test("user-facing surfaces no longer say 'Recommended' for optimizer alternative
   assert.equal(OPTIMIZER_SEMANTIC.silver.label, "Reference Alternative");
   assert.equal(OPTIMIZER_SEMANTIC.red.label, "Unavailable");
   const globe = readSrc("screens/production/ProjectGlobe.jsx");
-  assert.match(globe, /heading: "Leading \/ Strong Alternatives"/);
-  assert.match(globe, /heading: "Reference Alternatives"/);
+  // Structure-aware Globe (2026-10-01): the side panel is grouped by structural family; the status vocabulary
+  // stays on each row through alternativeLabel (never "Recommended").
+  assert.match(globe, /groupByFamily\(/);
+  assert.match(globe, /alternativeLabel\(s, optimizerProj\?\.recommended/);
   const ws = readSrc("screens/production/Workspace.jsx");
   assert.match(ws, /alternativeLabel\(structure, optimizerLeadingId\)/);
   assert.match(ws, /optgroup label=\{workspaceMode === MODE_OPTIMIZER \? "Leading \/ Strong Alternatives"/);

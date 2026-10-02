@@ -1,6 +1,7 @@
 import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJurisdictions } from "../lib/globeHoverFormat";
 import { shortBlockerReason } from "../lib/blockerDisposition";
 import { jurisdictionName } from "../lib/format";
+import { FAMILY_META } from "../lib/globeStructure";
 import { certaintyLabel, missingFactsSummary, missingFactsTitle, potentialRows } from "../lib/incentivePotential";
 
 // Overview Globe hover data parity: extracted verbatim from
@@ -315,6 +316,59 @@ function hoverCardStyle(hoverRect, canvasEl) {
   return { left, top, width: HOVER_CARD_W };
 }
 
+// STRUCTURE-AWARE GLOBE (2026-10-01): the previewed structure's story -- exact structural family (accent), anchor /
+// principal, component destinations and routed spend, actionability + the specific blocker, and "1 of N structures"
+// with family counts. Every value is a served canonical field read verbatim.
+function StructureStory({ story, locked }) {
+  const dot = (hex) => <span aria-hidden="true" style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: hex, marginRight: 5 }} />;
+  const counts = story.familyCounts ? Object.entries(story.familyCounts) : [];
+  return (
+    <div className="hover-structure-story" data-structure-story data-structure-family={story.family} data-structure-identity={story.identity || ""}
+      style={{ marginTop: 8, paddingTop: 6, borderTop: `2px solid ${story.accent}` }}>
+      <div className="small" style={{ fontWeight: 600 }} data-story-field="family">
+        {dot(story.accent)}{story.accentSecondary ? dot(story.accentSecondary) : null}{story.familyLabel}
+      </div>
+      <div className="text-tertiary small" data-story-field="position">
+        Structure {story.position} of {story.total}{locked ? " · locked" : story.total > 1 ? " · click to lock, click again to cycle" : " · click to lock"}
+      </div>
+      {story.principal && (
+        <div className="hover-field">
+          <div className="text-tertiary small">{story.shape === "peer" || story.shape === "peer_plus_branches" ? "Principal" : "Anchor / principal"}</div>
+          <div className="small" data-story-field="principal">{jurisdictionName(story.principal)}</div>
+        </div>
+      )}
+      {story.routes.length > 0 && (
+        <div className="hover-field">
+          <div className="text-tertiary small">{story.shape === "hub_and_spoke" ? "Routes (hub and spoke)" : "Routes"}</div>
+          {story.routes.map((r, i) => (
+            <div className="small" key={`${r.from}-${r.to}-${i}`} data-story-field="route">
+              {jurisdictionName(r.from)} {r.directed ? "→" : "↔"} {jurisdictionName(r.to)}{r.label ? ` · ${r.label}` : ""}
+            </div>
+          ))}
+        </div>
+      )}
+      {story.layered && (
+        <div className="small text-tertiary" data-story-field="layered">Layered programs in one jurisdiction (no geographic route)</div>
+      )}
+      <div className="hover-field">
+        <div className="text-tertiary small">Status</div>
+        <div className="small" data-story-field="status">{story.statusLabel}</div>
+      </div>
+      {story.blockerText && (
+        <div className="hover-field">
+          <div className="text-tertiary small">Blocker / facts needed</div>
+          <div className="small" data-story-field="blocker">{story.blockerText}</div>
+        </div>
+      )}
+      {counts.length > 1 && (
+        <div className="text-tertiary small" data-story-field="family-counts">
+          Here: {counts.map(([f, n]) => `${n} ${FAMILY_META[f]?.label?.toLowerCase() || f}`).join(" · ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // The canonical Globe hover card — jurisdiction / category, then the
 // Recommended-Alternative / Co-Production / Excluded body variant. `canvasRef`
 // is the panel the card is positioned relative to (the full Project Globe's
@@ -349,6 +403,7 @@ export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
       ) : (
         <RecommendedOrAlternativeBody hover={hover} />
       )}
+      {hover.structureStory && <StructureStory story={hover.structureStory} locked={!!hover.structureLocked} />}
     </div>
   );
 }

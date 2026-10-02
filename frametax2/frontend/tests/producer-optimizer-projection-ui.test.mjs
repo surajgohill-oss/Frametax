@@ -193,10 +193,8 @@ test("Workspace, Overview, and Full Globe are wired to the canonical, COMPLETE o
   // from the original defect this test protects against: SECTIONING/
   // FILTERING the rendered set by tier (OPTIMIZER_SECTIONS must stay
   // status-only, and no row may be included/excluded based on tier).
-  assert.match(globeSource, /optimizerProj\?\.\[key\]/, "sections must read the complete optimizerProj arrays directly");
-  const sectionsBlockMatch = globeSource.match(/const OPTIMIZER_SECTIONS[\s\S]*?\];/);
-  assert.ok(sectionsBlockMatch, "OPTIMIZER_SECTIONS constant must exist");
-  assert.doesNotMatch(sectionsBlockMatch[0], /practicality_tier/, "OPTIMIZER_SECTIONS must remain keyed by recommendation status only, never re-conflated with tier");
+  assert.match(globeSource, /groupByFamily\(\[\.\.\.\(optimizerProj\?\.recommended/, "family groups must read the complete optimizerProj arrays directly");
+  assert.doesNotMatch(globeSource, /const OPTIMIZER_SECTIONS/, "the status-section constant was superseded by structural-family grouping");
   assert.doesNotMatch(globeSource, /\.filter\([^)]*practicality_tier/, "ProjectGlobe.jsx must never FILTER by practicality_tier — display only");
   assert.match(globeSource, /PRACTICALITY_TIER_LABEL\[s\.practicality_tier\]/, "tier must be shown as its own independent display field alongside family, never a filter/section key");
 });

@@ -23,7 +23,7 @@ export const BLOCKER_KIND = {
 export const BLOCKER_LABEL = {
   [BLOCKER_KIND.AWARD_RATE]: "Award / rate confirmation required",
   [BLOCKER_KIND.AUTHORITY]: "Authority insufficient to price",
-  [BLOCKER_KIND.ELIGIBILITY]: "Eligibility facts / statutory conditions unmet",
+  [BLOCKER_KIND.ELIGIBILITY]: "Eligibility conditions not yet established",
   [BLOCKER_KIND.SELECTIVE]: "Selective / non-guaranteed",
   [BLOCKER_KIND.SUPERSEDED]: "Superseded program",
   [BLOCKER_KIND.PROHIBITED]: "Prohibited program combination",

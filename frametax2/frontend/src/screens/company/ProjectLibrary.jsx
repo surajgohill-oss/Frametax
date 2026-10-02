@@ -4,6 +4,7 @@ import { API_ORIGIN, getCurrentOrganization, getProjects } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
+import { libraryStageLabel } from "../../lib/libraryStatus";
 import { getTheme, toggleTheme } from "../../lib/theme";
 import NewProjectModal from "../../components/NewProjectModal";
 import IngestionReviewModal from "../../components/IngestionReviewModal";
@@ -182,7 +183,7 @@ export default function ProjectLibrary() {
                     : <span className="lib-noart">No artwork yet</span>}
                 </div>
                 <div className="lib-body">
-                  <div className="lib-stage"><span className={`dot ${meta.tier}`} />{meta.label}</div>
+                  <div className="lib-stage" data-evaluation-status={libraryStageLabel(p, meta)}><span className={`dot ${meta.tier}`} />{libraryStageLabel(p, meta)}</div>
                   <div className="lib-title">{p.title}</div>
                   <div className="lib-meta">
                     <span>{p.format ? p.format[0].toUpperCase() + p.format.slice(1) : "Format unknown"}</span>
