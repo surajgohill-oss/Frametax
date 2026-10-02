@@ -177,12 +177,12 @@ test("ProjectGlobe.jsx no longer re-sorts visibleStructures by rankById in Optim
 test("ProjectGlobe.jsx groups Optimizer structures by actual structural family, then Needs More Facts, with real counts", () => {
   const src = stripComments(read("screens/production/ProjectGlobe.jsx"));
   assert.match(src, /groupByFamily\(\[\.\.\.\(optimizerProj\?\.recommended/);
-  assert.match(src, /Needs More Facts/);
+  assert.match(src, /coproductionNeedsFactsLabel\(optimizerProj\.opportunities\.length\)/);   // 2026-10-02: co-production opportunities, not "programs"
   // A family with zero real entries renders no header (groupByFamily returns only non-empty groups).
   assert.match(src, /optimizerProj\?\.opportunities\?\.length > 0/, "Needs More Facts must only render when real opportunities exist");
   assert.doesNotMatch(src, /Practical Hybrid<|Advanced Multi-Jurisdiction<|heading: "/, "complexity/practicality are badges, never section headings");
   const famIdx = src.indexOf("groupByFamily([...(optimizerProj");
-  const factsIdx = src.lastIndexOf("Needs More Facts");
+  const factsIdx = src.lastIndexOf("coproductionNeedsFactsLabel(optimizerProj.opportunities.length)");
   assert.ok(famIdx > 0 && famIdx < factsIdx, "family groups render before the trailing Needs More Facts block");
 });
 

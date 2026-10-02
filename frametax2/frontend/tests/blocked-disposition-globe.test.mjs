@@ -142,3 +142,48 @@ test("Project Globe states one representative per jurisdiction and lists account
   const hover = fs.readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
   assert.match(hover, /data-blocker-potential/);
 });
+
+// ── SINGLE-JURISDICTION COMPLETE SERVED UNIVERSE (2026-10-02) ─────────────────────────────────────────────────────
+test("Single-Jurisdiction grouping exposes every served jurisdiction; conditional is never unavailable; winners are a separate stat", async () => {
+  const u = await import("../src/lib/jurisdictionUniverse.js");
+  const rec = (code, category, extra = {}) => ({ jurisdiction_code: code, category, disposition: category === "LEADING_ALTERNATIVE" ? "EXECUTABLE" : "NEEDS_FACTS", ...extra });
+  const allocated = {
+    best_per_jurisdiction: { GR: { primary_jurisdiction: "GR" }, MB: { primary_jurisdiction: "CA-MB" } },
+    jurisdiction_accounting: { single_jurisdiction_contract: [
+      rec("GR", "LEADING_ALTERNATIVE"), rec("CA-MB", "REFERENCE_ALTERNATIVE", { disposition: "EXECUTABLE" }),
+      rec("US-TX", "CONDITIONAL_ALTERNATIVE", { potential_rank: 2, missing_conditions: ["award confirmed"] }),
+      rec("CA-SK", "CONDITIONAL_ALTERNATIVE", { potential_rank: 1 }),
+      rec("AE-DXB", "UNAVAILABLE", { disposition: "HARD_BLOCK" }), rec("BR", "PROGRAM_DATA_INCOMPLETE", { disposition: "DATA_INCOMPLETE" }),
+    ] },
+  };
+  const g = u.groupUniverse(allocated);
+  const by = Object.fromEntries(g.groups.map((x) => [x.key, x.items.map((i) => i.jurisdiction_code)]));
+  assert.deepEqual(by.CONDITIONAL_ALTERNATIVE, ["CA-SK", "US-TX"], "conditional sorted by potential rank, both visible");
+  assert.deepEqual(by.UNAVAILABLE, ["AE-DXB"]);
+  assert.deepEqual(by.NOT_SUITABLE_FOR_THIS_PRODUCTION, [], "never populated without a served fit failure");
+  assert.deepEqual(by.PROGRAM_DATA_INCOMPLETE, ["BR"]);
+  assert.equal(g.total, 6); assert.equal(g.winners, 2); assert.equal(g.unknown.length, 0);
+  assert.notEqual(g.total, g.winners);
+});
+
+test("co-production opportunities are their own list, labelled as opportunities (never programs), with facts and reasons", async () => {
+  const u = await import("../src/lib/jurisdictionUniverse.js");
+  assert.equal(u.coproductionNeedsFactsLabel(25), "25 co-production opportunities need facts");
+  assert.equal(u.coproductionNeedsFactsLabel(1), "1 co-production opportunity needs facts");
+  const rows = u.coproductionRows({ optimizer_opportunities_requiring_facts: [{
+    structure_id: "s1", label: "United Kingdom + Canada — official co-production opportunity (uk-ca-bilateral)", classification: "CONDITIONAL_USER_FACT_REQUIRED",
+    treaty_resolution_state: "UNRESOLVED_FACTS", blockers: ["no project fact states each party's real ownership/spend share"], ceiling_status: "NOT_ESTABLISHED", is_fully_priced: false,
+  }] });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].confirmedFloor, null); assert.equal(rows[0].maximumPotential, null);
+  assert.match(rows[0].missingFacts[0], /ownership\/spend share/); assert.match(rows[0].why, /ownership\/spend share/);
+});
+
+test("Workspace and Project Globe wire the universe panel and the clickable co-production facts list", async () => {
+  const fs = await import("node:fs");
+  const ws = fs.readFileSync(new URL("../src/screens/production/Workspace.jsx", import.meta.url), "utf8");
+  const pg = fs.readFileSync(new URL("../src/screens/production/ProjectGlobe.jsx", import.meta.url), "utf8");
+  assert.match(ws, /<JurisdictionUniversePanel/); assert.match(ws, /<CoproductionFactsList/); assert.match(ws, /coproductionNeedsFactsLabel\(opportunitiesTotal\)/);
+  assert.doesNotMatch(ws, /need more facts` : ""/);
+  assert.match(pg, /<JurisdictionUniversePanel/); assert.match(pg, /coproductionNeedsFactsLabel\(optimizerProj\.opportunities\.length\)/);
+});

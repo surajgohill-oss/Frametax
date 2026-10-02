@@ -201,3 +201,12 @@ def test_cultural_and_composition_differences_are_attributed():
     d2 = reconcile_project_differences(L2, production_types={"A": "feature_film", "B": "feature_film"},
                                        category_spend={"A": {"btl_crew_labor": 5.0}, "B": {"vfx": 9.0}})
     assert d2[0]["cause"] == CAUSE_COMPOSITION and d2[0]["attributed"]
+
+
+def test_contract_carries_names_and_never_labels_a_production_type_exclusion_not_suitable():
+    ledger = {"programs": [{"jurisdiction_code": "CZ", "jurisdiction_name": "Czech Republic"}],
+              "jurisdictions": [{"jurisdiction_code": "CZ", "disposition": "NOT_APPLICABLE", "first_exit_stage": "NOT_APPLICABLE"}],
+              "rows": [{"primary_jurisdiction": "CZ", "disposition": "NOT_APPLICABLE", "program_slug": "x", "program_name": "Czech Animation"}]}
+    r = build_single_jurisdiction_contract(ledger, {})[0]
+    assert r["category"] == "UNAVAILABLE" and r["jurisdiction_name"] == "Czech Republic" and r["program_name"] == "Czech Animation"
+    assert r["headline"] == "Not applicable to this production type."

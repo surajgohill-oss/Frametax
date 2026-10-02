@@ -159,6 +159,9 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
         rank = {"NEEDS_FACTS": 3, "HARD_BLOCK": 2, "DATA_INCOMPLETE": 1, "NOT_APPLICABLE": 0}
         if prev is None or rank.get(r.get("disposition"), 0) > rank.get(prev.get("disposition"), 0):
             rows_by_juris[code] = r
+    names = {}
+    for rec in ledger.get("programs") or []:
+        names.setdefault(rec.get("canonical_jurisdiction") or rec["jurisdiction_code"], rec.get("jurisdiction_name"))
     out: list[dict] = []
     confirmed = sorted((e for e in best_per_jurisdiction.values() if e.get("confirmed_npc_usd") is not None),
                        key=lambda e: e["confirmed_npc_usd"])
@@ -169,7 +172,9 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
         rec: dict = {"jurisdiction_code": code, "disposition": disp, "first_exit_stage": j.get("first_exit_stage"),
                      "confirmed_incentive_usd": None, "confirmed_npc_usd": None, "potential_incentive_usd": None,
                      "potential_npc_usd": None, "economic_certainty": None, "missing_conditions": [],
-                     "authority_warning": None, "hard_failure_reason": None, "difference_reason": None, "program_slug": None}
+                     "authority_warning": None, "hard_failure_reason": None, "difference_reason": None, "program_slug": None,
+                     "jurisdiction_name": names.get(code), "program_name": None, "headline": None, "blocker_kind": None,
+                     "stored_floor_statement": None, "stated_ceiling_rate": None}
         if disp == "EXECUTABLE":
             e = best_per_jurisdiction.get(code) or {}
             rec.update(
@@ -178,7 +183,7 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
                 potential_npc_usd=e.get("potential_npc_usd"), economic_certainty=e.get("economics_certainty"),
                 missing_conditions=[m.get("description") or m.get("fact_key") for m in (e.get("ceiling_missing_facts") or [])],
                 authority_warning=next((w for w in (e.get("warnings") or []) if "Authority provenance incomplete" in w), None),
-                program_slug=e.get("program_slug"),
+                program_slug=e.get("program_slug"), program_name=e.get("program_display_name"),
                 category=(CAT_LEADING if code == leader else CAT_STRONG if (e.get("savings_vs_current_usd") or 0) > 0 else CAT_REFERENCE),
             )
         else:
@@ -192,9 +197,16 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
                 missing_conditions=[p.get("description") or p.get("fact_key") for p in (detail.get("unresolved_propositions") or [])],
                 hard_failure_reason=r.get("hard_block_reason"),
                 authority_warning=detail.get("provenance_axis") if disp == "NEEDS_FACTS" else None,
+                program_name=r.get("program_name"), headline=detail.get("headline") or r.get("missing_facts_reason"),
+                blocker_kind=detail.get("kind"), stored_floor_statement=detail.get("guaranteed_floor"),
+                stated_ceiling_rate=detail.get("potential_ceiling_rate"),
             )
-            rec["category"] = (CAT_CONDITIONAL if disp == "NEEDS_FACTS" else CAT_UNAVAILABLE if disp == "HARD_BLOCK"
-                               else CAT_NOT_SUITABLE if disp == "NOT_APPLICABLE" else CAT_DATA_INCOMPLETE)
+            # NOT_SUITABLE is reserved for an ESTABLISHED production-fit failure (never emitted here: location-fit is a
+            # separate workstream). A program scoped to another production type is accounted as unavailable-with-reason.
+            rec["category"] = (CAT_CONDITIONAL if disp == "NEEDS_FACTS" else CAT_UNAVAILABLE if disp in ("HARD_BLOCK", "NOT_APPLICABLE")
+                               else CAT_DATA_INCOMPLETE)
+            if disp == "NOT_APPLICABLE":
+                rec["headline"] = rec["headline"] or "Not applicable to this production type."
         out.append(rec)
     # confirmed and potential rankings are SEPARATE (ascending NPC); a conditional alternative can lead potential only
     for key, field in (("confirmed_rank", "confirmed_npc_usd"), ("potential_rank", "potential_npc_usd")):

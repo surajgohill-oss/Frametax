@@ -6,6 +6,8 @@ import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDetail, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
+import { CoproductionFactsList, JurisdictionUniversePanel } from "../../components/JurisdictionUniverse";
+import { coproductionNeedsFactsLabel } from "../../lib/jurisdictionUniverse";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { alternativeLabel, fitTag, structureStatusDetail } from "../../lib/alternativeLabels";
@@ -884,7 +886,7 @@ export default function Workspace() {
               return (
                 <span className="wsx-scenario-count">
                   Showing {shownCount} of {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} leading/strong alternative{recommendedTotal === 1 ? "" : "s"} · {evaluatedTotal} reference alternative{evaluatedTotal === 1 ? "" : "s"}
-                  {opportunitiesTotal > 0 ? ` · ${opportunitiesTotal} need more facts` : ""}
+                  {opportunitiesTotal > 0 ? ` · ${coproductionNeedsFactsLabel(opportunitiesTotal)}` : ""}
                   {/* PRODUCTION-FIT (2026-10-01): exact counts served by the backend
                       (optimizer_production_fit_counts); never recomputed here. */}
                   {fitCounts ? ` · location fit: ${fitCounts.fit_confirmed} confirmed · ${fitCounts.fit_unconfirmed} unconfirmed · ${fitCounts.weak_fit} low-fit` : ""}
@@ -900,6 +902,12 @@ export default function Workspace() {
                 </span>
               );
             })()}
+            {workspaceMode === MODE_OPTIMIZER && (
+              <CoproductionFactsList allocated={allocated} openInspector={openInspector} />
+            )}
+            {workspaceMode === MODE_NORMAL && (
+              <JurisdictionUniversePanel allocated={allocated} openInspector={openInspector} onSelect={setSelectedJurisdiction} />
+            )}
             <div className="wsx-viewtabs">
               {MODES.map((m) => (
                 <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>

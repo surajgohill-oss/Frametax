@@ -9,6 +9,8 @@ import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, build
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { classifyBlocker } from "../../lib/blockerDisposition";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
+import { JurisdictionUniversePanel } from "../../components/JurisdictionUniverse";
+import { coproductionNeedsFactsLabel } from "../../lib/jurisdictionUniverse";
 import { alternativeLabel } from "../../lib/alternativeLabels";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -559,6 +561,9 @@ export default function ProjectGlobe() {
             </p>
           );
         })()}
+        {globeMode !== MODE_OPTIMIZER && (
+          <JurisdictionUniversePanel allocated={allocated} openInspector={openInspector} onSelect={setSelectedJurisdiction} />
+        )}
         <div className="sc-jurlist">
           {globeMode === MODE_OPTIMIZER && visibleStructures.length === 0 && (
             <p className="empty-state">No executable optimizer structures for this production yet.</p>
@@ -602,7 +607,7 @@ export default function ProjectGlobe() {
               {optimizerProj?.opportunities?.length > 0 && (
                 <div key="opportunities" className="sc-jurlist-section">
                   <p className="inspector-eyebrow" style={{ margin: "10px 0 4px" }}>
-                    Needs More Facts ({optimizerProj.opportunities.length})
+                    {coproductionNeedsFactsLabel(optimizerProj.opportunities.length)}
                   </p>
                   {optimizerProj.opportunities.map((s) => renderOpportunityChip(s))}
                 </div>
