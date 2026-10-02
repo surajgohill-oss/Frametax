@@ -745,7 +745,9 @@ async def build_project_economic_inputs(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
         financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
-        evidenced_program_facts=_evidenced_program_facts(fact_rows),
+        evidenced_program_facts=(
+            _evidenced_program_facts(fact_rows) | await physical_requirement_fingerprint_facts(session, project_id)
+        ),
         amount_facts=_base_amount_facts,
         # Financing ALREADY inside the source gross budget. Derived from the
         # normalized lines' own canonical category, so it follows the source
@@ -862,7 +864,86 @@ def _location_categories_from_descriptions(descriptions: list[str]) -> dict[str,
     return out
 
 
-async def build_physical_requirements(session: AsyncSession, project_id) -> dict:
+#: LOCATION_TAXONOMY slug (the producer-facing Production Details chips) -> the
+#: location-category key derive_production_requirements() actually reads. Slugs with no
+#: capability equivalent (snow_arctic, jungle_rainforest, small_town_suburban, studio_stage)
+#: are deliberately absent: toggling them records the producer's statement but cannot alter
+#: any feasibility derivation, so it must not trigger a re-evaluation either.
+_TAXONOMY_SLUG_TO_REQUIREMENT_CATEGORY = {
+    "beach_coast": "beach_coast",
+    "marine_open_water": "marine_open_water",
+    "island_tropical": "island_tropical",
+    "desert_arid": "desert",
+    "mountains_alpine": "mountain",
+    "urban_major_city": "urban",
+    "rural_countryside": "rural_countryside",
+    "forest_woodland": "forest",
+    "historic_old_world": "historic_old_world",
+}
+
+#: Prefix of the synthetic evidenced-fact tokens that make a project's EFFECTIVE physical
+#: requirements (when a producer override exists) part of the evaluation fingerprint.
+PHYSICAL_REQUIREMENT_FACT_PREFIX = "physical_requirement_override:"
+
+
+async def _location_override_rows(session: AsyncSession, project_id) -> dict[str, bool]:
+    """This project's producer location-category overrides ({taxonomy slug: bool}), only
+    non-null values. Project-scoped by construction (never the legacy singleton)."""
+    from app.models.project_location_requirement import ProjectLocationRequirement
+
+    rows = (await session.execute(
+        select(ProjectLocationRequirement.category_key, ProjectLocationRequirement.override).where(
+            ProjectLocationRequirement.project_id == project_id,
+            ProjectLocationRequirement.category_key.isnot(None),
+            ProjectLocationRequirement.override.isnot(None),
+        )
+    )).all()
+    return {slug: bool(value) for slug, value in rows}
+
+
+def _apply_location_overrides(location_categories: dict[str, dict], overrides: dict[str, bool]) -> dict[str, dict]:
+    """Layer the producer's confirmed overrides over the script-derived categories: an override
+    is the effective value (True adds the requirement, False removes a script-derived one)."""
+    out = {k: {"effective": v["effective"], "evidence": list(v["evidence"])} for k, v in location_categories.items()}
+    for slug, value in overrides.items():
+        key = _TAXONOMY_SLUG_TO_REQUIREMENT_CATEGORY.get(slug)
+        if key is None:
+            continue
+        entry = out.setdefault(key, {"effective": False, "evidence": []})
+        entry["effective"] = bool(value)
+        if value:
+            entry["evidence"].append("Producer-confirmed location requirement")
+    return out
+
+
+async def physical_requirement_fingerprint_facts(session: AsyncSession, project_id) -> frozenset[str]:
+    """Fingerprint participation for the physical-location controls, via the EFFECTIVE canonical
+    requirement values (the derived environments / hard capabilities), not the raw toggles.
+    Empty whenever the effective requirements equal the script-only baseline -- no override, or
+    an override that derives the identical requirements -- so every such project keeps its
+    existing fingerprint (and its persisted evaluation), and an unchanged effective requirement
+    set reuses the current evaluation. A genuine difference contributes the effective tokens (or
+    a `none` sentinel when the override removed every requirement)."""
+    from app.calculators.production_requirements import derive_production_requirements
+
+    if not await _location_override_rows(session, project_id):
+        return frozenset()
+
+    def _tokens(reqs) -> list[str]:
+        return sorted(reqs.environments | reqs.required_capabilities)
+
+    baseline = _tokens(derive_production_requirements(
+        await build_physical_requirements(session, project_id, apply_overrides=False)
+    ))
+    effective = _tokens(derive_production_requirements(await build_physical_requirements(session, project_id)))
+    if effective == baseline:
+        return frozenset()
+    return frozenset(f"{PHYSICAL_REQUIREMENT_FACT_PREFIX}{t}" for t in effective) or frozenset(
+        {f"{PHYSICAL_REQUIREMENT_FACT_PREFIX}none"}
+    )
+
+
+async def build_physical_requirements(session: AsyncSession, project_id, *, apply_overrides: bool = True) -> dict:
     """Real `physical_requirements` input for `derive_production_requirements()`,
     from SA-1's persisted `ProjectLocationRequirement` (scripted locations)
     and `ProductionRequirement` (PERIOD_REFERENCE presence) rows -- never
@@ -889,6 +970,10 @@ async def build_physical_requirements(session: AsyncSession, project_id) -> dict
         )
     )).scalars().all()
     location_categories = _location_categories_from_descriptions(list(loc_rows))
+    if apply_overrides:
+        location_categories = _apply_location_overrides(
+            location_categories, await _location_override_rows(session, project_id),
+        )
 
     period_rows = (await session.execute(
         select(ProductionRequirement.normalized_value, ProductionRequirement.description)

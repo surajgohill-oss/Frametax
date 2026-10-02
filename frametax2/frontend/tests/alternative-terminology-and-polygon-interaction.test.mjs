@@ -34,7 +34,8 @@ test("label mapping covers every canonical status exactly as specified", () => {
   for (const st of ["RULE_REJECTED", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "FEASIBILITY_REVIEW_REQUIRED", "QUALIFICATION_HARD_FAIL"]) {
     assert.equal(alternativeLabel({ candidate_status: st }), "UNAVAILABLE", st);
   }
-  assert.deepEqual(Object.values(ALT).length, 6);
+  // 6 canonical labels + the two production-fit labels (LOCATION FIT UNCONFIRMED, LOW-LOCATION-FIT REFERENCE).
+  assert.deepEqual(Object.values(ALT).length, 8);
 });
 
 test("zero qualified alternatives: nobody is Leading or Strong, every executable option stays visible as a reference", () => {

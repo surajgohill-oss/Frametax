@@ -720,6 +720,14 @@ export function buildCandidateDetail(structure) {
     recommendation_status: structure.recommendation_status ?? undefined,
     recommendation_reason: structure.recommendation_reason ?? undefined,
     is_recommended: structure.is_recommended ?? undefined,
+    // PRODUCTION-FIT (2026-10-01): served verbatim by the backend (production_fit.py);
+    // never recomputed here.
+    production_fit_status: structure.production_fit_status ?? undefined,
+    production_fit_reasons: structure.production_fit_reasons ?? undefined,
+    production_fit_legs: structure.production_fit_legs ?? undefined,
+    production_fit_basis: structure.production_fit_basis ?? undefined,
+    fit_priority: structure.fit_priority ?? undefined,
+    canonical_recommendation_status: structure.canonical_recommendation_status ?? undefined,
     // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the Jurisdictions-layer
     // counterpart to savings_vs_current_usd above — every real
     // best_per_jurisdiction winner (except the anchor itself, which is null)

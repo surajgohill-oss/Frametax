@@ -494,3 +494,10 @@ Start `9a2f99068885a0096a03619adaddfe9fc5da1a65`; final SHA = tip commit titled 
 - Real-pointer evidence recorded in `docs/architecture/CAPABILITY_LEDGER.md` (GLOBE_RUNTIME_CORRECTION_AND_VISUAL_CLOSEOUT) including what was NOT covered. The full prompted matrix across all four productions still needs independent verification.
 - Backend stays `canonical-1.99.0`; no project regenerated; no backend tests run.
 - Next independent step: Codex/independent browser verification with a protected preview. Remaining pre-ingestion workstreams: maximum-potential incentive optimization; Workspace floor/ceiling presentation.
+
+## Production-fit optimizer priority and location-control wiring (2026-10-01)
+
+- Served production fit is owned by `backend/app/services/production_fit.py` (reuses the canonical classifier; physical legs only; empty/unassessable requirements -> UNKNOWN) and consumed in `canonical_production_view`. Leading/Strong requires STRONG/WORKABLE fit; WEAK/UNKNOWN stay visible with real economics. Served `fit_priority`/`fit_aware_rank` are separate from the canonical financial `rank`. The $100,000 materiality rule and all economics are untouched.
+- Location controls: new `POST /projects/{id}/locations` (project-scoped); effective requirement values enter the fingerprint only when they differ from the script baseline (existing evaluations stay valid); one evaluation on a real change, none otherwise. Overview now exposes the control with copy distinguishing it from jurisdiction exclusion. `canonical_evaluation.py` was NOT edited because it is hashed into the fingerprint source digest.
+- Counts unchanged (FVD 595 -> 595; LU 339, BH 280, LLS 585). BH and LLS are all "location fit unconfirmed" (no requirements / desert not assessable); LU and FVD have weak-fit references; no Leading/Strong exists in any of the four.
+- Not done: live evaluation after a real location change; Globe visual pass; maximum-potential optimization; Workspace floor/ceiling presentation. Test-environment note: the default test DB lacks `budget_documents.source_incentive_estimates`, causing unrelated failures in several DB-backed tests.

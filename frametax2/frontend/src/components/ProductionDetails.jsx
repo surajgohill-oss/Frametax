@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { postPeople, postProjectPeople, postLocations } from "../api";
+import { postPeople, postProjectPeople, postLocations, postProjectLocations } from "../api";
 import { PERSON_ROLES } from "../lib/personRoles";
 import { flagEmoji } from "../lib/format";
 
@@ -129,7 +129,13 @@ export default function ProductionDetails({
         if (projectId) await postProjectPeople(projectId, answers);
         else await postPeople(answers);
       }
-      if (Object.keys(locs).length) await postLocations(locs);
+      // Location requirements are production-feasibility inputs for THIS project (never the
+      // legacy singleton): the server re-evaluates exactly once when the effective
+      // requirements change, and reuses the current evaluation when nothing changed.
+      if (Object.keys(locs).length) {
+        if (projectId) await postProjectLocations(projectId, locs);
+        else await postLocations(locs);
+      }
       refetch();
       setEditing(false);
       setDraft(null);
@@ -213,7 +219,9 @@ export default function ProductionDetails({
         <div className="pd-locations">
           <div className="pd-section-label">Major location requirements</div>
           <p className="pd-req-note">
-            Seeded from script analysis · drives jurisdiction matching · click to toggle
+            Seeded from script analysis · click to toggle. These set how well each alternative suits
+            the production (production fit). They never remove a jurisdiction — use a jurisdiction's
+            own exclude control for that.
           </p>
           {catEntries.length === 0 ? (
             <p className="pd-loc-empty">No script analysis available yet.</p>

@@ -8,7 +8,7 @@ import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDet
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { alternativeLabel } from "../../lib/alternativeLabels";
+import { alternativeLabel, fitTag } from "../../lib/alternativeLabels";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
@@ -599,6 +599,9 @@ export default function Workspace() {
     for (const s of list) {
       if (!collapsedIds.has(s.structure_id)) entries.push({ structure: s, suffix: "" });
     }
+    // Fit-aware presentation order, read from the SERVED fit_priority (stable sort): grouping
+    // by route tie must not push weak / unconfirmed references above fit-confirmed ones.
+    entries.sort((a, b) => (a.structure.fit_priority ?? 2) - (b.structure.fit_priority ?? 2));
     return entries;
   }, [dropdownEvaluatedAlternatives]);
 
@@ -855,11 +858,15 @@ export default function Workspace() {
               const recommendedTotal = allocated.recommended_optimizer_options_total ?? 0;
               const evaluatedTotal = allocated.evaluated_optimizer_alternatives_total ?? 0;
               const opportunitiesTotal = allocated.optimizer_opportunities_requiring_facts_total ?? 0;
+              const fitCounts = allocated.optimizer_production_fit_counts ?? null;
               const shownCount = cols.length;
               return (
                 <span className="wsx-scenario-count">
                   Showing {shownCount} of {executableTotal} executable option{executableTotal === 1 ? "" : "s"} · {recommendedTotal} leading/strong alternative{recommendedTotal === 1 ? "" : "s"} · {evaluatedTotal} reference alternative{evaluatedTotal === 1 ? "" : "s"}
                   {opportunitiesTotal > 0 ? ` · ${opportunitiesTotal} need more facts` : ""}
+                  {/* PRODUCTION-FIT (2026-10-01): exact counts served by the backend
+                      (optimizer_production_fit_counts); never recomputed here. */}
+                  {fitCounts ? ` · location fit: ${fitCounts.fit_confirmed} confirmed · ${fitCounts.fit_unconfirmed} unconfirmed · ${fitCounts.weak_fit} low-fit` : ""}
                 </span>
               );
             })()}
@@ -914,7 +921,7 @@ export default function Workspace() {
                   {workspaceMode === MODE_OPTIMIZER && dropdownEvaluatedAlternativesGrouped.length > 0 && (
                     <optgroup label="Reference Alternatives">
                       {dropdownEvaluatedAlternativesGrouped.map(({ structure: s, suffix }) => (
-                        <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}{suffix}</option>
+                        <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}{suffix}{fitTag(s)}</option>
                       ))}
                     </optgroup>
                   )}

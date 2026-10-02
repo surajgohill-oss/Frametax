@@ -116,6 +116,12 @@ export const postJurisdictionPreference = (projectId, jurisdictionCode, included
 export const postLocations = (overrides) =>
   request("/locations", { method: "POST", body: JSON.stringify({ overrides }) });
 
+// Project-scoped physical/script location requirements (production FEASIBILITY inputs,
+// never statutory exclusions). Persisted against this project only; the server triggers
+// exactly one evaluation when the effective requirements change and none otherwise.
+export const postProjectLocations = (projectId, overrides) =>
+  request(`/projects/${projectId}/locations`, { method: "POST", body: JSON.stringify({ overrides }) });
+
 // Production facts — payroll routing, post location, treaty election,
 // component routing. Answering one invalidates the cached state; every
 // downstream engine (qualification, treaty, structuring, allocation)

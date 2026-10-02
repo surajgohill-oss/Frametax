@@ -115,6 +115,9 @@ RETENTION_POLICY_NOTE = (
 # own docstring for why the constant, not this module's served-view function, is
 # what moved.
 from app.services.materiality_policy import MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD  # noqa: E402
+from app.services.production_fit import (  # noqa: E402
+    FIT_CONFIRMED_STATUSES, FIT_WEAK, classify_entry_fit, fit_aware_category, fit_priority, fit_summary,
+)
 
 
 def materiality_recommendation_threshold_usd(jurisdiction_count: int | None) -> float:
@@ -407,6 +410,20 @@ def _annotate_optimizer_scenario(
         status, reason = REC_STATUS_NEUTRAL, "ZERO_SAVINGS"
     else:
         status, reason = REC_STATUS_EVALUATED_ALTERNATIVE, "SAVINGS_BELOW_THRESHOLD"
+    # PRODUCTION-FIT GATE (2026-10-01): a candidate that passes every economic /
+    # qualification / materiality / dominance test is Leading/Strong ONLY when its
+    # physical-production fit is confirmed (STRONG/WORKABLE). WEAK or UNKNOWN fit keeps the
+    # candidate visible with its real economics as an evaluated alternative -- never deleted,
+    # never promoted by lowest NPC alone. The pre-gate canonical decision stays served
+    # (canonical_recommendation_status/_reason) so the financial verdict remains auditable.
+    # Entries not yet fit-classified (no production_fit_status key) are left untouched.
+    canonical_status, canonical_reason = status, reason
+    if status == REC_STATUS_RECOMMENDED and "production_fit_status" in entry \
+            and entry["production_fit_status"] not in FIT_CONFIRMED_STATUSES:
+        status = REC_STATUS_EVALUATED_ALTERNATIVE
+        reason = (
+            "LOCATION_FIT_WEAK" if entry["production_fit_status"] == FIT_WEAK else "LOCATION_FIT_UNCONFIRMED"
+        )
     _dominance_fields = (dominance_by_id or {}).get(entry.get("structure_id")) or {
         "dominance_status": None, "dominated_by_structure_id": None,
         "dominated_by_economic_identity": None, "npc_difference_usd": None, "dominance_reason": None,
@@ -419,6 +436,8 @@ def _annotate_optimizer_scenario(
         "is_recommended": status == REC_STATUS_RECOMMENDED,
         "recommendation_status": status,
         "recommendation_reason": reason,
+        "canonical_recommendation_status": canonical_status,
+        "canonical_recommendation_reason": canonical_reason,
         **_dominance_fields,
     }
 
@@ -1402,6 +1421,9 @@ def _ranking_entry(entry: dict) -> dict:
     its own economics visible."""
     base = {
         "rank": None,  # filled in by caller only for the numerically-ranked (comparable) set
+        "production_fit_status": entry.get("production_fit_status"),
+        "production_fit_reasons": entry.get("production_fit_reasons") or [],
+        "production_fit_legs": entry.get("production_fit_legs") or [],
         "structure_id": entry["structure_id"],
         "label": entry["label"],
         "is_fully_priced": entry["is_fully_priced"],
@@ -1695,6 +1717,15 @@ async def build_production_and_structures(
     structure_entries = [
         _empty_structure_entry(s, r, jurisdiction_code_by_id, jurisdiction_name_by_code) for s, r in rows
     ]
+    # PRODUCTION-FIT (2026-10-01): classify every served entry ONCE, from the project's own
+    # effective physical requirements (script-derived + producer location overrides), through
+    # the canonical capability classifier. Served fields only; React renders them verbatim.
+    from app.calculators.production_requirements import derive_production_requirements
+    from app.services.canonical_project_economics import build_physical_requirements
+    _fit_requirements = derive_production_requirements(await build_physical_requirements(session, project.id))
+    _fit_cache: dict = {}
+    for _fe in structure_entries:
+        _fe.update(classify_entry_fit(_fe, _fit_requirements, _fit_cache))
 
     # CLAUDE_FINAL_ACTIVE_OPTIMIZER_IMPLEMENTATION_AND_RUNTIME_CLOSEOUT,
     # Section A/B/E — the Anchor Budget Contract's own required comparison:
@@ -1860,12 +1891,16 @@ async def build_production_and_structures(
         r = _ranking_entry(e)
         r["rank"] = i
         r["scenario_category"] = e["scenario_category"]
+        r["fit_priority"] = fit_priority(e)
+        r["fit_aware_category"] = fit_aware_category(e)
         r["recommendation_category"] = REC_VERIFIED_RECOMMENDATION
         ranking.append(r)
     for e in review_required:
         e["scenario_category"] = _scenario_category(e, rank=None)
         r = _ranking_entry(e)
         r["scenario_category"] = e["scenario_category"]
+        r["fit_priority"] = fit_priority(e)
+        r["fit_aware_category"] = fit_aware_category(e)
         r["recommendation_category"] = (
             REC_LEADING_CONDITIONAL if e["structure_id"] == _leading_conditional_id
             else REC_UNLOCKABLE_ALTERNATIVE if e["structure_id"] in _unlockable_alternative_ids
@@ -1876,6 +1911,8 @@ async def build_production_and_structures(
         e["scenario_category"] = _scenario_category(e, rank=None)
         r = _ranking_entry(e)
         r["scenario_category"] = e["scenario_category"]
+        r["fit_priority"] = fit_priority(e)
+        r["fit_aware_category"] = fit_aware_category(e)
         r["recommendation_category"] = (
             REC_AUTHORITY_UNRESOLVED_FAIL_CLOSED
             if e.get("candidate_status") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
@@ -2390,6 +2427,17 @@ async def build_production_and_structures(
         for e in optimizer_scenarios
     ]
     producer_optimizer_baseline_npc_usd = float(_baseline_npc) if _baseline_npc is not None else None
+    # FIT-AWARE PRESENTATION ORDER (2026-10-01), served explicitly and separately from the
+    # canonical financial rank: (1) qualified, materially useful, fit-confirmed alternatives;
+    # (2) other fit-confirmed references; (3) fit-unconfirmed; (4) weak-fit references.
+    # Within a priority the established tier -> NPC order is preserved (stable sort); no
+    # scenario is removed, and `rank` / NPC fields are untouched.
+    for _se in optimizer_scenarios:
+        _se["fit_priority"] = fit_priority(_se)
+        _se["fit_aware_category"] = fit_aware_category(_se)
+    optimizer_scenarios.sort(key=lambda _se: _se["fit_priority"])
+    for _i, _se in enumerate(optimizer_scenarios, start=1):
+        _se["fit_aware_rank"] = _i
 
     recommended_optimizer_options = [e for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_RECOMMENDED]
     evaluated_optimizer_alternatives = [e for e in optimizer_scenarios if e["recommendation_status"] != REC_STATUS_RECOMMENDED]
@@ -2418,6 +2466,10 @@ async def build_production_and_structures(
     optimizer_recommended_total = len(recommended_optimizer_options)
     optimizer_evaluated_alternatives_total = len(evaluated_optimizer_alternatives)
     optimizer_opportunities_requiring_facts_total = len(optimizer_opportunities_requiring_facts)
+    _fit_counts = fit_summary(
+        optimizer_scenarios,
+        unavailable_total=(generation_totals["total"] if fingerprint and generation_total_rows else len(unpriced)),
+    )
     optimizer_recommendation_status_counts = {
         REC_STATUS_RECOMMENDED: optimizer_recommended_total,
         REC_STATUS_EVALUATED_ALTERNATIVE: sum(1 for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_EVALUATED_ALTERNATIVE),
@@ -2587,6 +2639,13 @@ async def build_production_and_structures(
             # taking len() of a served array client-side.
             "optimizer_executable_total": optimizer_executable_total,
             "optimizer_recommendation_status_counts": optimizer_recommendation_status_counts,
+            # PRODUCTION-FIT (2026-10-01): exact fit counts over the same served universe
+            # (scenario_total == optimizer_scenarios_total; fit never removes a scenario).
+            "optimizer_production_fit_counts": _fit_counts,
+            "production_fit_basis": (
+                "REQUIREMENTS_ON_FILE" if (_fit_requirements.environments or _fit_requirements.required_capabilities)
+                else "NO_REQUIREMENTS_ON_FILE"
+            ),
             # Practical producer projection -- BACKWARD-COMPATIBLE ALIAS for
             # recommended_optimizer_options ONLY (never a second, independently-filtered
             # collection). No UI surface may treat this as the sole admissible Optimizer pool.

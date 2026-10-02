@@ -472,9 +472,32 @@ function StructureDetailInspector({ data }) {
             <dd>
               {data.is_recommended
                 ? `Leading / Strong Alternative — saves more than ${data.recommendation_threshold_usd != null ? `$${Math.round(data.recommendation_threshold_usd / 1000)}K` : "the threshold"} (${data.jurisdiction_count ?? "?"} jurisdiction${data.jurisdiction_count === 1 ? "" : "s"})`
-                : `${alternativeLabel({ recommendation_status: data.recommendation_status, savings_vs_current_usd: data.savings_vs_current_usd })} — ${humanizeToken(data.recommendation_status)}`}
+                : `${alternativeLabel({ recommendation_status: data.recommendation_status, savings_vs_current_usd: data.savings_vs_current_usd, production_fit_status: data.production_fit_status })} — ${humanizeToken(data.recommendation_reason || data.recommendation_status)}`}
             </dd>
           </div>
+          {/* PRODUCTION-FIT (2026-10-01): served fit of this structure's PHYSICAL-production
+              legs (service-only post/VFX/music routing is not assessed). A fit issue never
+              makes a structure legally unavailable; it only gates Leading/Strong status. */}
+          {data.production_fit_status && (
+            <div>
+              <dt>Production fit</dt>
+              <dd>
+                {data.production_fit_status === "STRONG" ? "Strong fit"
+                  : data.production_fit_status === "WORKABLE" ? "Workable fit"
+                  : data.production_fit_status === "WEAK" ? "Weak fit"
+                  : "Location fit unconfirmed"}
+                {(data.production_fit_legs || []).length > 0 && (
+                  <span className="text-tertiary small"> · physical production: {(data.production_fit_legs || []).join(", ")}</span>
+                )}
+                {(data.production_fit_reasons || []).length > 0 && (
+                  <span className="text-tertiary small"> · {(data.production_fit_reasons || []).map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>
+                )}
+                {data.is_recommended !== true && data.canonical_recommendation_status === "RECOMMENDED" && (
+                  <span className="text-tertiary small"> · economically qualifies, but is not Leading/Strong until location fit is confirmed</span>
+                )}
+              </dd>
+            </div>
+          )}
         </dl>
       )}
       {/* SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the Jurisdictions-layer

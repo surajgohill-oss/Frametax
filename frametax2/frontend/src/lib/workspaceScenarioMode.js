@@ -134,6 +134,10 @@ function _sortRecommended(list) {
 // tie-break.
 function _sortEvaluatedAlternatives(list) {
   return [...list].sort((a, b) => {
+    // Fit-aware presentation priority is SERVED by the backend (fit_priority 1..5); this is a
+    // read of that field, not a client-side fit computation. Absent -> neutral (legacy payloads).
+    const fitDiff = (a.fit_priority ?? 2) - (b.fit_priority ?? 2);
+    if (fitDiff !== 0) return fitDiff;
     const rankDiff = (_EVAL_STATUS_RANK[a.recommendation_status] ?? 9) - (_EVAL_STATUS_RANK[b.recommendation_status] ?? 9);
     if (rankDiff !== 0) return rankDiff;
     const aDominated = a.dominance_status === "DOMINATED" ? 1 : 0;

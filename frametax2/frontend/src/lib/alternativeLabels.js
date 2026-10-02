@@ -18,6 +18,10 @@ export const ALT = {
   REFERENCE: "REFERENCE ALTERNATIVE",
   NEEDS_FACTS: "NEEDS MORE FACTS",
   UNAVAILABLE: "UNAVAILABLE",
+  // PRODUCTION-FIT (2026-10-01): served `production_fit_status` UNKNOWN / WEAK on a priced,
+  // non-Leading/Strong scenario. The scenario keeps its real economics and stays visible.
+  FIT_UNCONFIRMED: "LOCATION FIT UNCONFIRMED",
+  LOW_FIT: "LOW-LOCATION-FIT REFERENCE",
 };
 
 const UNAVAILABLE_STATUSES = new Set([
@@ -35,6 +39,9 @@ export function alternativeLabel(structure, leadingId = null) {
   if (structure.recommendation_status === "RECOMMENDED" || structure.is_recommended === true) {
     return leadingId && structure.structure_id === leadingId ? ALT.LEADING : ALT.STRONG;
   }
+  // Fit-aware label from the SERVED backend field only (never recomputed in React).
+  if (structure.production_fit_status === "WEAK") return ALT.LOW_FIT;
+  if (structure.production_fit_status === "UNKNOWN") return ALT.FIT_UNCONFIRMED;
   const savings = structure.savings_vs_current_usd;
   if (structure.recommendation_status !== "COSTS_MORE" && structure.recommendation_status !== "NEUTRAL"
       && typeof savings === "number" && savings > 0) return ALT.COST_SAVING;
@@ -44,4 +51,12 @@ export function alternativeLabel(structure, leadingId = null) {
 // Title-case form for running text ("Leading Alternative").
 export function alternativeTitle(label) {
   return String(label).toLowerCase().replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+}
+
+// Short dropdown suffix from the SERVED fit (never recomputed): keeps weak / unconfirmed
+// alternatives visible and identifiable in compact lists.
+export function fitTag(structure) {
+  if (structure?.production_fit_status === "WEAK") return " · low location fit";
+  if (structure?.production_fit_status === "UNKNOWN") return " · location fit unconfirmed";
+  return "";
 }

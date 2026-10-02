@@ -980,6 +980,73 @@ async def post_locations(body: LocationOverrides, db: AsyncSession = Depends(get
     return {"location_categories": s.physical_requirements["location_categories"]}
 
 
+@router.post("/projects/{project_id}/locations")
+async def post_project_locations(
+    project_id: str, body: LocationOverrides, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Project-scoped physical/script location requirements (coast, marine, city, ... chips).
+
+    These are production-FEASIBILITY inputs -- never statutory exclusions, and distinct from the
+    explicit jurisdiction inclusion/exclusion above. Persisted against THIS project only (never
+    the legacy singleton ``/locations``). The effective canonical requirement values participate
+    in the evaluation fingerprint (see canonical_project_economics.physical_requirement_
+    fingerprint_facts), so a change that alters the effective requirements triggers exactly ONE
+    evaluation here, while an unchanged save (or a toggle that derives identical requirements)
+    changes nothing and triggers none -- the current evaluation is reused."""
+    from app.calculators.production_requirements import LOCATION_TAXONOMY
+    from app.services.canonical_evaluation import evaluate_project
+    from app.services.canonical_project_economics import (
+        _location_override_rows,
+        build_ui_location_categories,
+        physical_requirement_fingerprint_facts,
+    )
+
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    unknown = sorted(slug for slug in body.overrides if slug not in LOCATION_TAXONOMY)
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Unknown location categories: {', '.join(unknown)}")
+
+    before_overrides = await _location_override_rows(db, project.id)
+    before_facts = await physical_requirement_fingerprint_facts(db, project.id)
+    for slug, value in body.overrides.items():
+        row = (await db.execute(
+            select(ProjectLocationRequirement).where(
+                ProjectLocationRequirement.project_id == project.id,
+                ProjectLocationRequirement.category_key == slug,
+            )
+        )).scalar_one_or_none()
+        if value is None:
+            if row is not None:
+                row.override = None
+            continue
+        if row is None:
+            db.add(ProjectLocationRequirement(
+                project_id=project.id, description=LOCATION_TAXONOMY[slug],
+                category_key=slug, override=bool(value),
+            ))
+        else:
+            row.override = bool(value)
+    await db.commit()
+
+    after_overrides = await _location_override_rows(db, project.id)
+    after_facts = await physical_requirement_fingerprint_facts(db, project.id)
+    stored_changed = after_overrides != before_overrides
+    evaluation_required = after_facts != before_facts
+    evaluation_status = None
+    if evaluation_required:
+        result = await evaluate_project(db, project.id)
+        evaluation_status = result.get("status")
+    return {
+        "project_id": str(project.id),
+        "changed": stored_changed,
+        "evaluation_triggered": evaluation_required,
+        "evaluation_status": evaluation_status,
+        "location_categories": await build_ui_location_categories(db, project.id),
+    }
+
+
 # ── Screen 2: Package Intelligence (Budget / Script / Questions) ────────────
 
 @router.get("/package")

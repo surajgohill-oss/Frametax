@@ -164,7 +164,7 @@ export default function Overview() {
             requirements={production.physical_requirements}
             refetch={refetch}
             projectId={projectId}
-            showLocationRequirements={false}
+            showLocationRequirements
           />
         </div>
 
