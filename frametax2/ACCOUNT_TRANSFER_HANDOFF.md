@@ -501,3 +501,13 @@ Start `9a2f99068885a0096a03619adaddfe9fc5da1a65`; final SHA = tip commit titled 
 - Location controls: new `POST /projects/{id}/locations` (project-scoped); effective requirement values enter the fingerprint only when they differ from the script baseline (existing evaluations stay valid); one evaluation on a real change, none otherwise. Overview now exposes the control with copy distinguishing it from jurisdiction exclusion. `canonical_evaluation.py` was NOT edited because it is hashed into the fingerprint source digest.
 - Counts unchanged (FVD 595 -> 595; LU 339, BH 280, LLS 585). BH and LLS are all "location fit unconfirmed" (no requirements / desert not assessable); LU and FVD have weak-fit references; no Leading/Strong exists in any of the four.
 - Not done: live evaluation after a real location change; Globe visual pass; maximum-potential optimization; Workspace floor/ceiling presentation. Test-environment note: the default test DB lacks `budget_documents.source_incentive_estimates`, causing unrelated failures in several DB-backed tests.
+
+## FINAL WIRING ACCEPTANCE — IN PROGRESS (started from 33dd6ad)
+
+Resume from the first unchecked gate. No economics/rates/QPE/doctrine/$100K/candidate-generation/visual changes; no regeneration; no broad suites.
+- [ ] Gate 1 — Canonical API (four projects: totals, fit counts, rank, fit priority, category, label, fit reasons)
+- [ ] Gate 2 — Surface consistency (Lanes, Map, Split, Full Project Globe, Inspector)
+- [ ] Gate 3 — Globe interaction (polygon/state/province/marker-only; confirmed/weak/unconfirmed/unavailable; Map+Split; no backdrop block; console/requests clean)
+- [ ] Gate 4 — Location control (project-scoped endpoint, persistence isolation, fingerprint, exactly one evaluation, idempotent re-save, cleanup)
+- [ ] Gate 5 — Jurisdiction exclusion regression (fingerprint, all families, home cannot be excluded)
+- [ ] Closeout (PASS/FAIL, commit, push, remote equality)

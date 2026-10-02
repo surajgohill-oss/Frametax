@@ -4020,3 +4020,13 @@ Closes only production-fit ranking/category and location-control wiring. Does NO
 **Remaining.** Maximum-potential incentive optimization; Workspace floor/ceiling presentation; Globe visual/atmosphere pass and independent Globe acceptance; persisted trace `feasibility_status` still anchor-based legacy until the next engine bump; capability data lacks desert/snow/underwater provisions (those requirements can only yield UNKNOWN); a live end-to-end location-change evaluation on a throwaway project.
 
 Status: IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION.
+
+## FINAL WIRING ACCEPTANCE — IN PROGRESS (started from 33dd6ad)
+
+Resume from the first unchecked gate. No economics/rates/QPE/doctrine/$100K/candidate-generation/visual changes; no regeneration; no broad suites.
+- [ ] Gate 1 — Canonical API (four projects: totals, fit counts, rank, fit priority, category, label, fit reasons)
+- [ ] Gate 2 — Surface consistency (Lanes, Map, Split, Full Project Globe, Inspector)
+- [ ] Gate 3 — Globe interaction (polygon/state/province/marker-only; confirmed/weak/unconfirmed/unavailable; Map+Split; no backdrop block; console/requests clean)
+- [ ] Gate 4 — Location control (project-scoped endpoint, persistence isolation, fingerprint, exactly one evaluation, idempotent re-save, cleanup)
+- [ ] Gate 5 — Jurisdiction exclusion regression (fingerprint, all families, home cannot be excluded)
+- [ ] Closeout (PASS/FAIL, commit, push, remote equality)
