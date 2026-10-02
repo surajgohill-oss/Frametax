@@ -442,8 +442,8 @@ export default function ProjectGlobe() {
             below and the Inspector both open onto. */}
         <h1 className="serif" style={{ fontSize: 20 }}>Production structures</h1>
         <p className="text-tertiary small">
-          The recommended structure for this production, its optimized alternatives,
-          and the opportunities still to unlock.
+          The leading alternative for this production, the strong and reference
+          alternatives behind it, and the opportunities that need more facts.
         </p>
         <div className="wsx-viewtabs" style={{ marginBottom: 10 }}>
           <button className={globeMode === MODE_NORMAL ? "active" : ""} onClick={() => setGlobeMode(MODE_NORMAL)}>Single Jurisdiction</button>

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { alternativeLabel } from "../lib/alternativeLabels";
 import { useAppState } from "../state/AppState";
@@ -664,13 +665,31 @@ export function InspectorBody({ inspector }) {
 
 export default function Inspector() {
   const { inspector, closeInspector, docked } = useAppState();
+  const floating = !!inspector && !docked;
+  // GLOBE_RUNTIME_CORRECTION: the dimming backdrop must never be a pointer
+  // surface — as a full-viewport z-index:40 layer it sat over the Globe, so
+  // jurisdiction hover/click only worked where a marker was lifted above it.
+  // The backdrop is now visual only; "click outside closes" is done with a
+  // document listener that deliberately excludes the Globe, whose own
+  // click handler changes the selection (and so the Inspector) instead.
+  useEffect(() => {
+    if (!floating) return undefined;
+    const onDown = (ev) => {
+      const t = ev.target;
+      if (!(t instanceof Element)) return;
+      if (t.closest(".inspector, .globe-canvas, .globe-hit-target, .globe-hover-card, [data-keep-inspector]")) return;
+      closeInspector();
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [floating, closeInspector]);
   // When the Workspace docks the Inspector into its right column, the
   // app-level floating overlay stands down (single presentation at a time).
   if (!inspector || docked) return null;
 
   return (
     <>
-      <div className="inspector-backdrop" onClick={closeInspector} />
+      <div className="inspector-backdrop" aria-hidden="true" />
       <aside className="inspector">
         <button className="inspector-close" onClick={closeInspector} aria-label="Close inspector">
           <X size={16} />

@@ -485,3 +485,12 @@ Start `9a2f99068885a0096a03619adaddfe9fc5da1a65`; final SHA = tip commit titled 
 - **Still required:** independent Codex Globe acceptance (Project Globe, Workspace Map, Workspace Split individually). Do NOT regenerate projects, restart authority research or re-audit economics. Workspace card formatting and project-evidence reconciliation remain separate later workstreams.
 - **Runtime:** unchanged (backend `uvicorn app.main:app --host 127.0.0.1 --port 8010` with the DB above; frontend `npm run dev -- --host 127.0.0.1 --port 5173`, open `http://localhost:5173`). Untracked runtime logs still never committed: `.backend_gd_wire.log`, `.frontend_gd_wire.log` (repository root).
 
+
+## Globe runtime correction and visual closeout (2026-10-01)
+
+- `18a409d` is implementation-ready but NOT accepted: owner saw hover only over the marker dot.
+- Verified root cause: the app-level `.inspector-backdrop` (fixed, full-viewport, z-index 40) sat above the Globe canvas whenever an Inspector was open and swallowed all pointer events (markers z-index 45 were the only things above it; `18a409d` had also disabled polygon-backed markers as pointer targets). Fixed by making the backdrop visual-only with a document-level outside-click close that excludes the Globe (`shell/Inspector.jsx`, `styles/shell.css`). Also fixed: hover now re-evaluates when the camera moves under a stationary pointer (`Globe3D.jsx` `evalPointerHover`).
+- Approved Gemini visual items applied (ocean, clearcoat, lighting, graphite land, brighter category colours incl. oxblood Unavailable, bloom, subtitle terminology). Only Leading Alternative pulses.
+- Real-pointer evidence recorded in `docs/architecture/CAPABILITY_LEDGER.md` (GLOBE_RUNTIME_CORRECTION_AND_VISUAL_CLOSEOUT) including what was NOT covered. The full prompted matrix across all four productions still needs independent verification.
+- Backend stays `canonical-1.99.0`; no project regenerated; no backend tests run.
+- Next independent step: Codex/independent browser verification with a protected preview. Remaining pre-ingestion workstreams: maximum-potential incentive optimization; Workspace floor/ceiling presentation.

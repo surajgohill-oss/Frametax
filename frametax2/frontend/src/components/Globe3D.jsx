@@ -240,11 +240,11 @@ const GLOBE_THEME = {
     // mostly by the emissive floor and the sharpened clearcoat highlight
     // below, but the base color itself now has to be a blue an eye would
     // call "ocean" even unlit, not a desaturated gray-blue.
-    ocean: "#1c3350",
+    ocean: "#152a44",
     // Raised in step with the base color so the unlit hemisphere of the
     // ocean still reads as deep blue rather than collapsing toward black —
     // same guaranteed-floor role the land emissive floor plays below.
-    oceanEmissive: "#16283f",
+    oceanEmissive: "#0f1f33",
     land: GRAPHITE_HEX,
     stroke: "#9aa3b0",
     rim: "#b9c1cb",
@@ -282,10 +282,10 @@ const GLOBE_THEME = {
     // Deepened in step with day, keeping the same relative move (a more
     // saturated, less desaturated-gray navy). Still clearly darker than day's
     // ocean — night must stay night — but no longer reads as a flat void.
-    ocean: "#152540",
+    ocean: "#0f1d33",
     // Faint internal blue illumination — the "lit from within" quality the
     // art direction calls for, and the guarantee the ocean never collapses.
-    oceanEmissive: "#10203a",
+    oceanEmissive: "#0b182c",
     // Neutral grey land on a navy ocean is precisely what reads as an
     // unfinished or missing asset — the two share no hue family. Night land
     // is a navy-slate: clearly lighter than the ocean, clearly darker than
@@ -295,7 +295,7 @@ const GLOBE_THEME = {
     // navy-slate (#4f6870, luminance held ~97 vs the prior ~99), matching the
     // day-mode land's teal-slate move (GRAPHITE_HEX) so both themes carry the
     // same material character, not just the same luminance position.
-    land: "#4f6870",
+    land: "#425a62",
     // Borders soften markedly at night: on a dark ground the same value
     // reads far hotter, and hard white admin lines are the single biggest
     // contributor to the "technical GIS map" impression.
@@ -1114,17 +1114,17 @@ export default function Globe3D({
     // which is exactly what was asked for ("do not solve this by increasing
     // global brightness alone"). The environment still provides exposure;
     // the key now does more of the "which way is the light coming from" work.
-    const key = new THREE.DirectionalLight(0xffffff, 0.38);
+    const key = new THREE.DirectionalLight(0xffffff, 0.52);
     key.position.set(200, 120, 200);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8890a0, 0.15);
+    const fill = new THREE.DirectionalLight(0x7c88a0, 0.12);
     fill.position.set(-200, -80, -150);
     scene.add(fill);
     // Back/rim gives the sphere mass by separating its dark limb from the
     // dark backdrop. Raised slightly (0.40 -> 0.46, production only) to pair
     // with the tightened Fresnel falloff below — a stronger rim behind a
     // tighter falloff reads as a crisp curvature edge rather than a wash.
-    const rim = new THREE.DirectionalLight(0xaeb6c2, isBrand ? 0.24 : 0.46);
+    const rim = new THREE.DirectionalLight(0xaeb6c2, isBrand ? 0.28 : 0.56);
     rim.position.set(-170, 70, -230);
     scene.add(rim);
     // NOTE: a camera-attached point light was tried here twice to get a
@@ -1821,7 +1821,7 @@ export default function Globe3D({
       // texture, no new asset.
       roughness: 0.76,
       roughnessMap: oceanSurfaceTexture,
-      clearcoat: 1.0,
+      clearcoat: 0.9, // controlled clearcoat (smoked obsidian, not chrome)
       // PHASE 3A FINAL CORRECTION: restrained procedural surface variation —
       // see makeOceanSurfaceTexture's own comment for why this is bumpMap
       // only, not roughnessMap. bumpScale is deliberately tiny: at anything
@@ -2013,9 +2013,9 @@ export default function Globe3D({
     composer.addPass(new RenderPass(scene, camera));
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, h),
-      0.09, // strength — deliberately far below the usual 1.0+ demo values
+      0.13, // strength — deliberately far below the usual 1.0+ demo values
       0.5,  // radius
-      0.93, // threshold — only the very top of the range blooms at all
+      0.9,  // threshold — only the very top of the range blooms at all
     );
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
@@ -2052,6 +2052,7 @@ export default function Globe3D({
         if (stateRef.current.povKey !== povKey) {
           stateRef.current.povKey = povKey;
           povGlobe.setPointOfView(camera);
+          stateRef.current.evalPointerHover?.();
         }
       }
       if (stateRef.current.ambientMotion) {
@@ -2299,21 +2300,30 @@ export default function Globe3D({
         },
       };
     }
+    // Hover is a function of (pointer position, camera, polygon index). It is
+    // therefore re-evaluated on pointer movement AND whenever the camera moves
+    // under a stationary pointer (ambient autorotation, damping, fit tween) —
+    // otherwise the card would stay pinned to the jurisdiction that WAS under
+    // the pointer. `lastPolyIso` is trusted only while it agrees with the
+    // rendered hover (a marker mouseleave can clear the card behind its back).
     let hoverRaf = 0;
+    const pointer = { x: 0, y: 0, inside: false, target: null };
+    const evalPointerHover = () => {
+      if (!pointer.inside) return;
+      const res = pickPolygonTarget({ clientX: pointer.x, clientY: pointer.y, target: document.elementFromPoint(pointer.x, pointer.y) });
+      if (!res || res.fallback) return;
+      const datum = res.datum;
+      mount.style.cursor = datum ? "pointer" : "";
+      const iso = datum ? datum.iso : null;
+      if (iso === liveRef.current.lastPolyIso && (!iso || iso === liveRef.current.hoveredIso)) return;
+      liveRef.current.lastPolyIso = iso;
+      liveRef.current.onPointHover?.(datum || null, datum ? { left: pointer.x, top: pointer.y, width: 0, height: 0 } : undefined);
+    };
+    stateRef.current.evalPointerHover = evalPointerHover;
     const onPolygonMove = (ev) => {
+      pointer.x = ev.clientX; pointer.y = ev.clientY; pointer.target = ev.target; pointer.inside = true;
       if (hoverRaf) return;
-      const cx = ev.clientX, cy = ev.clientY, target = ev.target;
-      hoverRaf = requestAnimationFrame(() => {
-        hoverRaf = 0;
-        const res = pickPolygonTarget({ clientX: cx, clientY: cy, target });
-        if (!res || res.fallback) return;
-        const datum = res.datum;
-        mount.style.cursor = datum ? "pointer" : "";
-        const iso = datum ? datum.iso : null;
-        if (iso === liveRef.current.lastPolyIso) return;
-        liveRef.current.lastPolyIso = iso;
-        liveRef.current.onPointHover?.(datum || null, datum ? { left: cx, top: cy, width: 0, height: 0 } : undefined);
-      });
+      hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; evalPointerHover(); });
     };
     let downAt = null;
     const onPolygonDown = (ev) => { downAt = { x: ev.clientX, y: ev.clientY }; };
@@ -2322,7 +2332,7 @@ export default function Globe3D({
       const res = pickPolygonTarget(ev);
       if (res && !res.fallback && res.datum) liveRef.current.onPointClick?.(res.datum);
     };
-    const onPolygonLeave = () => { liveRef.current.lastPolyIso = null; mount.style.cursor = ""; };
+    const onPolygonLeave = () => { pointer.inside = false; liveRef.current.lastPolyIso = null; mount.style.cursor = ""; };
     mount.addEventListener("pointermove", onPolygonMove);
     mount.addEventListener("pointerdown", onPolygonDown);
     mount.addEventListener("click", onPolygonClick);

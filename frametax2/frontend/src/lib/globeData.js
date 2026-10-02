@@ -172,13 +172,13 @@ export function activeStructure(allocated, leadingStructureId, extraPool = null)
 // Same four slots, same hex, same `state` keys, same logic — a wording pass
 // only, per this batch's explicit "do not change semantic logic" instruction.
 export const GLOBE_SEMANTIC = {
-  gold: { state: "recommended", label: "Leading Jurisdiction", fullLabel: "Leading Jurisdiction", hex: "#e6d3a8", pulse: true },
-  jade: { state: "alternative", label: "Alternatives", fullLabel: "Alternatives", hex: "#4cbd97", pulse: false },
-  amber: { state: "unlockable", label: "Co-Pro Opportunities", fullLabel: "Co-Production Opportunities", hex: "#d48a49", pulse: false },
+  gold: { state: "recommended", label: "Leading Jurisdiction", fullLabel: "Leading Jurisdiction", hex: "#ffd77a", pulse: true },
+  jade: { state: "alternative", label: "Alternatives", fullLabel: "Alternatives", hex: "#3fd9a0", pulse: false },
+  amber: { state: "unlockable", label: "Co-Pro Opportunities", fullLabel: "Co-Production Opportunities", hex: "#f09a3e", pulse: false },
   // Desaturated slate — deliberately the DIMMEST of the four, sitting just
   // above untouched land. Never a warm/taupe grey: those reintroduce the muddy
   // cast the neutral light rig exists to prevent (see Globe3D lighting).
-  silver: { state: "additional", label: "Excluded", fullLabel: "Excluded", hex: "#8494a4", pulse: false },
+  silver: { state: "additional", label: "Excluded", fullLabel: "Excluded", hex: "#93a4b4", pulse: false },
 };
 
 // Derived, never hand-maintained. Existing consumers (Globe3D's TIER_HEX,
@@ -225,7 +225,7 @@ export const OPTIMIZER_SEMANTIC = {
   jade: { label: "Strong Alternative", hex: GLOBE_SEMANTIC.jade.hex, pulse: false },
   silver: { label: "Reference Alternative", hex: GLOBE_SEMANTIC.silver.hex, pulse: false },
   amber: { label: "Needs More Facts", hex: GLOBE_SEMANTIC.amber.hex, pulse: false },
-  red: { label: "Unavailable", hex: "#9C3C31", pulse: false },
+  red: { label: "Unavailable", hex: "#b5403a", pulse: false },
 };
 export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
   Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.hex]),
@@ -295,7 +295,7 @@ export const PRACTICALITY_TIER_LABEL = {
 //
 // Still strictly a TEAL-slate, never a warm/taupe one: warm neutrals here
 // reintroduce the muddy cast the neutral light rig exists to prevent.
-export const GRAPHITE_HEX = "#6c8c90";
+export const GRAPHITE_HEX = "#5d7a7e";
 
 // Development-only: rewrite a status map to the visual fixture's assignments.
 // Lives HERE rather than in globeVisualFixture.js because this module is the
