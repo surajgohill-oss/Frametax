@@ -1,3 +1,4 @@
+import { readIncentivePotential } from "./incentivePotential.js";
 // ALTERNATIVE_TERMINOLOGY (2026-10-01): the ONE producer-facing vocabulary for
 // an optimizer structure's canonical status. "Recommended" over-directs a
 // producer; the same canonical backend fields are presented as alternatives:
@@ -68,6 +69,7 @@ export function structureStatusDetail(structure, leadingId = null) {
   if (!structure) return {};
   return {
     structureStatusLabel: alternativeLabel(structure, leadingId),
+    incentive_potential: readIncentivePotential(structure) ?? undefined,
     production_fit_status: structure.production_fit_status ?? undefined,
     production_fit_legs: structure.production_fit_legs ?? undefined,
     production_fit_reasons: structure.production_fit_reasons ?? undefined,

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { readIncentivePotential } from "../../lib/incentivePotential";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
@@ -145,7 +146,7 @@ export default function Overview() {
     const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
     const seg = s.segments.find((sg) => sg.jurisdiction_code === code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, incentive_potential: readIncentivePotential(s) ?? undefined });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
 

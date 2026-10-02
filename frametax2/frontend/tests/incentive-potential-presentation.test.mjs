@@ -94,3 +94,40 @@ test("Workspace card and Inspector use the shared reader and perform no arithmet
   const reader = read("lib/incentivePotential.js");
   assert.doesNotMatch(reader, /[a-zA-Z_.)\]]\s[-*/]\s[a-zA-Z_(]/.source ? /\b(maxIncentive|potentialNpc)\s*[-*/]/ : /x/);
 });
+
+// ── Globe hover + segment Inspector (completion of 6240e09) ──────────────────────────────────
+import { buildCountryHoverData } from "../src/lib/globeData.js";
+import { MODE_NORMAL, MODE_OPTIMIZER } from "../src/lib/workspaceScenarioMode.js";
+import { structureStatusDetail } from "../src/lib/alternativeLabels.js";
+import { potentialRows } from "../src/lib/incentivePotential.js";
+
+test("Globe hover record carries the SAME shared contract as the card (both modes), verbatim", () => {
+  const entry = { status: "jade", hex: "#000", best: { structure: served, code: "MU" } };
+  for (const mode of [MODE_NORMAL, MODE_OPTIMIZER]) {
+    const hover = buildCountryHoverData(new Map([["MU", entry]]), 4_000_000, mode).get("MU");
+    assert.deepEqual(hover.incentivePotential, readIncentivePotential(served));
+  }
+  const unpriced = { ...served, is_fully_priced: false };
+  const h2 = buildCountryHoverData(new Map([["MU", { ...entry, best: { structure: unpriced, code: "MU" } }]]), 1, MODE_NORMAL).get("MU");
+  assert.equal(h2.incentivePotential, null, "an unpriced structure never shows maximum economics");
+});
+
+test("segment Inspector context carries the structure's shared contract (Map/Split/Globe openers)", () => {
+  assert.deepEqual(structureStatusDetail(served, null).incentive_potential, readIncentivePotential(served));
+  assert.equal(structureStatusDetail({ structure_id: "legacy" }, null).incentive_potential, undefined);
+  assert.deepEqual(potentialRows(readIncentivePotential(served)).map((r) => r.value), [111, 222, 333, 444]);
+});
+
+test("hover bodies and every segment-Inspector opener render the shared contract, never a recompute", () => {
+  const hover = read("components/GlobeHoverCard.jsx");
+  assert.equal((hover.match(/<PotentialFields pot=/g) || []).length, 3, "all three priced hover bodies");
+  assert.match(hover, /hidePotential=\{!!hover\.structureDetail\?\.incentive_potential\}/, "a route hover renders the contract once");
+  assert.doesNotMatch(hover, /pot\.\w+\s*[-+*/]\s*pot\./);
+  const insp = read("shell/Inspector.jsx");
+  assert.equal((insp.match(/<IncentivePotentialRows pot=\{data\.incentive_potential\}/g) || []).length, 2, "structure + segment Inspector");
+  assert.equal((insp.match(/<NeededForMaximum pot=\{data\.incentive_potential\}/g) || []).length, 2);
+  assert.equal((read("screens/production/Workspace.jsx").match(/\.\.\.structureStatusDetail\(/g) || []).length, 2);
+  for (const f of ["screens/production/Scenarios.jsx", "screens/production/Overview.jsx"]) {
+    assert.match(read(f), /incentive_potential: readIncentivePotential\(s\)/);
+  }
+});

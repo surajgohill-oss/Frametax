@@ -224,3 +224,49 @@ def test_confirmed_rank_is_distinct_from_potential_opportunity_rank():
     assert (b["potential_opportunity_rank"], a["potential_opportunity_rank"]) == (1, 2)
     assert c["potential_opportunity_rank"] is None
     assert [e["structure_id"] for e in scen] == ["a", "b", "c"]  # no scenario reordered or removed
+
+
+def _fvd_hybrid(co_ceiling=4_000.0, adjusted_pair=("ca_federal_cptc", "on_ofttc")):
+    # The real FVD shape: CPTC 502,327.25 + OFTTC 3,570 are reduced by a canonical stacking
+    # adjustment (-892.50, persisted as post_adjustment_component_incentives_usd); Colombia has a
+    # conditional ceiling (3,500 -> 4,000); Italy is plain.
+    return {
+        "component_allocations": [
+            {"component": "principal_production", "jurisdiction_code": "CA", "program_slug": "ca_federal_cptc",
+             "guaranteed_incentive_usd": 502_327.25, "incentive_floor_usd": 502_327.25,
+             "incentive_ceiling_usd": 502_327.25, "ceiling_requires_confirmation": False},
+            {"component": "music_package", "jurisdiction_code": "CA-ON", "program_slug": "on_ofttc",
+             "guaranteed_incentive_usd": 3_570.0, "incentive_floor_usd": 3_570.0,
+             "incentive_ceiling_usd": 3_570.0, "ceiling_requires_confirmation": False},
+            {"component": "x", "jurisdiction_code": "CO", "program_slug": "co_film_in_colombia",
+             "guaranteed_incentive_usd": 3_500.0, "incentive_floor_usd": 3_500.0,
+             "incentive_ceiling_usd": co_ceiling, "ceiling_requires_confirmation": True,
+             "ceiling_conditions": MB_CONDITIONS[:1]},
+            {"component": "post_vfx_package", "jurisdiction_code": "IT", "program_slug": "it_tax_credit_foreign",
+             "guaranteed_incentive_usd": 58_578.4, "incentive_floor_usd": 58_578.4,
+             "incentive_ceiling_usd": 58_578.4, "ceiling_requires_confirmation": False},
+        ],
+        "post_adjustment_component_incentives_usd": {
+            "ca_federal_cptc": 502_327.25, "on_ofttc": 2_677.5, "co_film_in_colombia": 3_500.0,
+            "it_tax_credit_foreign": 58_578.4,
+        },
+        "stacking_adjustments": [{"program_a_id": adjusted_pair[0], "program_b_id": adjusted_pair[1],
+                                  "rule_type": "spend_reduction", "adjustment_usd": -892.5}],
+    }
+
+
+def test_persisted_stacking_adjustment_makes_the_fvd_hybrid_reconcile():
+    c = build(_fvd_hybrid(), 567_083.15, 2_500_000.0)
+    assert c["ceiling_status"] == CEILING_CONDITIONAL
+    assert c["confirmed_incentive_floor_usd"] == 567_083.15
+    assert c["maximum_supported_incentive_usd"] == 567_583.15   # + Colombia's own 500 uplift only
+    assert [f["jurisdiction_code"] for f in c["ceiling_missing_facts"]] == ["CO"]
+
+
+def test_conditional_leg_touched_by_an_adjustment_is_not_established_with_the_exact_leg():
+    t = _fvd_hybrid(adjusted_pair=("on_ofttc", "co_film_in_colombia"))
+    c = build(t, 567_083.15, 2_500_000.0)
+    assert c["ceiling_status"] == CEILING_NOT_ESTABLISHED and c["maximum_supported_incentive_usd"] is None
+    assert c["ceiling_basis"]["blocked_legs"] == [
+        {"jurisdiction_code": "CO", "program_slug": "co_film_in_colombia", "component": "x"}]
+    assert "CO/co_film_in_colombia" in c["ceiling_basis"]["note"]

@@ -1,6 +1,7 @@
 import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJurisdictions } from "../lib/globeHoverFormat";
 import { shortBlockerReason } from "../lib/blockerDisposition";
 import { jurisdictionName } from "../lib/format";
+import { certaintyLabel, missingFactsSummary, missingFactsTitle, potentialRows } from "../lib/incentivePotential";
 
 // Overview Globe hover data parity: extracted verbatim from
 // ProjectGlobe.jsx (the sole prior home of this component) so BOTH the full
@@ -39,20 +40,43 @@ function RecommendedOrAlternativeBody({ hover }) {
         <div className="small">{programLine || "Not available"}</div>
       </div>
       <div className="hover-field">
-        <div className="text-tertiary small">Maximum Incentive</div>
+        <div className="text-tertiary small">{hover.incentivePotential ? "Maximum rate" : "Maximum Incentive"}</div>
         <div className="small">{b?.ratePct != null ? `Up to ${b.ratePct}%` : "Not available"}</div>
       </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Modeled Incentive</div>
-        <div className="small">{hover.incentiveUsd != null ? formatFullUsd(hover.incentiveUsd) : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">NPC</div>
-        <div className="small">{hover.npcUsd != null ? formatFullUsd(hover.npcUsd) : "Not priced"}</div>
-      </div>
+      {hover.incentivePotential ? <PotentialFields pot={hover.incentivePotential} /> : (
+        <>
+          <div className="hover-field">
+            <div className="text-tertiary small">Modeled Incentive</div>
+            <div className="small">{hover.incentiveUsd != null ? formatFullUsd(hover.incentiveUsd) : "Not available"}</div>
+          </div>
+          <div className="hover-field">
+            <div className="text-tertiary small">NPC</div>
+            <div className="small">{hover.npcUsd != null ? formatFullUsd(hover.npcUsd) : "Not priced"}</div>
+          </div>
+        </>
+      )}
       <div className="hover-field">
         <div className="text-tertiary small">Incentive / Gross Budget</div>
         <div className="small">{pctOfGross || "Not available"}</div>
+      </div>
+    </>
+  );
+}
+
+// MAXIMUM-POTENTIAL INCENTIVE CONTRACT: the shared served floor/maximum and confirmed/potential NPC
+// rows (identical to the Workspace card and Inspector), rendered verbatim -- never recomputed here.
+function PotentialFields({ pot }) {
+  return (
+    <>
+      {potentialRows(pot).map((r) => (
+        <div className="hover-field" key={r.key} data-potential-field={r.key}>
+          <div className="text-tertiary small">{r.label}</div>
+          <div className="small">{r.value != null ? formatFullUsd(r.value) : "Not established"}</div>
+        </div>
+      ))}
+      <div className="hover-field" data-potential-field="status" title={missingFactsTitle(pot)}>
+        <div className="text-tertiary small">Economics</div>
+        <div className="small">{certaintyLabel(pot)} · {missingFactsSummary(pot, 1)}</div>
       </div>
     </>
   );
@@ -129,14 +153,18 @@ function OptimizerStructureBody({ hover }) {
             : "Not available from source data"}
         </div>
       </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Total incentive</div>
-        <div className="small">{d.incentive_usd != null ? formatFullUsd(d.incentive_usd) : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">NPC</div>
-        <div className="small">{d.npc_usd != null ? formatFullUsd(d.npc_usd) : "Not priced"}</div>
-      </div>
+      {d.incentive_potential ? <PotentialFields pot={d.incentive_potential} /> : (
+        <>
+          <div className="hover-field">
+            <div className="text-tertiary small">Total incentive</div>
+            <div className="small">{d.incentive_usd != null ? formatFullUsd(d.incentive_usd) : "Not available"}</div>
+          </div>
+          <div className="hover-field">
+            <div className="text-tertiary small">NPC</div>
+            <div className="small">{d.npc_usd != null ? formatFullUsd(d.npc_usd) : "Not priced"}</div>
+          </div>
+        </>
+      )}
       {d.recommendation_status && (
         <div className="hover-field">
           <div className="text-tertiary small">{deltaLabel}</div>
@@ -189,7 +217,7 @@ function CategoryCounts({ counts }) {
   );
 }
 
-function JurisdictionRecordBody({ hover }) {
+function JurisdictionRecordBody({ hover, hidePotential = false }) {
   const priced = hover.npcUsd != null;
   const reason = shortBlockerReason(hover.blockerReason || hover.excludedReason);
   return (
@@ -206,10 +234,12 @@ function JurisdictionRecordBody({ hover }) {
       )}
       {priced ? (
         <>
-          <div className="hover-field">
-            <div className="text-tertiary small">NPC</div>
-            <div className="small">{formatFullUsd(hover.npcUsd)}</div>
-          </div>
+          {hidePotential ? null : hover.incentivePotential ? <PotentialFields pot={hover.incentivePotential} /> : (
+            <div className="hover-field">
+              <div className="text-tertiary small">NPC</div>
+              <div className="small">{formatFullUsd(hover.npcUsd)}</div>
+            </div>
+          )}
           {hover.savingsUsd != null && (
             <div className="hover-field">
               <div className="text-tertiary small">{hover.savingsUsd >= 0 ? "Saves vs. Current Location" : "Costs more than Current Location"}</div>
@@ -256,7 +286,8 @@ function AggregatedUniverseBody({ hover }) {
 function RouteJurisdictionBody({ hover }) {
   return (
     <>
-      <JurisdictionRecordBody hover={hover} />
+      {/* The selected route's own structure economics render once, below (OptimizerStructureBody). */}
+      <JurisdictionRecordBody hover={hover} hidePotential={!!hover.structureDetail?.incentive_potential} />
       <div className="hover-field">
         <div className="text-tertiary small">Selected route</div>
         <div className="small">{hover.role || "Participating jurisdiction"}</div>

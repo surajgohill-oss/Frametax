@@ -4048,3 +4048,15 @@ Classification: the floor/ceiling economics were `EXISTS_BUT_DISCONNECTED` (per-
 **Frontend.** `src/lib/incentivePotential.js` single verbatim reader; Workspace card strip + Inspector rows/"Needed to reach the maximum" list; card height held (443 -> 435 px) by tightening row/net/range spacing. Status `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`.
 
 **Preserved / deferred.** Globe hover/segment Inspector maximum fields; one FVD hybrid `NOT_ESTABLISHED` (stacking-reduction effect on a conditional leg not persisted); independent Codex acceptance; capability-data gaps; new-project ingestion acceptance.
+
+## MAXIMUM_POTENTIAL_CONTRACT_COMPLETION (2026-10-01, from `6240e09`)
+
+Closes the two presentation gaps and the FVD hybrid left by `6240e09`; no evaluator change, no regeneration, counts unchanged (LU 339 / FVD 595 / BH 280 / LLS 585).
+
+**Globe + segment Inspector.** One shared reader (`incentivePotential.js`) feeds Workspace card, structure Inspector, segment Inspector (Workspace/Scenarios/Overview openers via `structureStatusDetail`/explicit `incentive_potential`) and Globe hover (`PotentialFields` in all three priced hover bodies; route hover renders it once). No React recomputation.
+
+**FVD hybrid (`EXISTS_BUT_DISCONNECTED`).** The CPTC/OFTTC stacking reduction was already persisted by the hybrid generator (`post_adjustment_component_incentives_usd`, `stacking_adjustments`) but unused by the contract; now each hybrid component's confirmed value is its post-adjustment incentive and the legs reconcile. A conditional leg touched by an adjustment remains fail-closed (`NOT_ESTABLISHED` + `ceiling_basis.blocked_legs`). FVD: 0 NOT_ESTABLISHED.
+
+**Test DB.** `tests/_schema_guard.py` + `tests/conftest.py` default the session to isolated `frametax2_pytest` and refuse shared `frametax2`; `scripts/prepare_test_database.py` creates/migrates it to head (proven from empty). Real-production tests need an explicit acceptance-DB `DATABASE_URL`.
+
+**Evidence/status.** Four-project browser matrix (card / Map-or-hover / Inspector vs API) recorded in the handoff; status `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`. Remaining: independent acceptance, Split mode, real-pointer-only hover pass, capability-data gaps, ingestion acceptance.

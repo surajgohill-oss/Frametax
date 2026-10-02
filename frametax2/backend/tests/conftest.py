@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import pytest
 
-from tests._schema_guard import abort_message_for_configured_database
+from tests._schema_guard import abort_message_for_configured_database, select_test_database
+
+# Must run before any `app` import reads settings: default to the isolated pytest database.
+select_test_database()
 
 
 def pytest_sessionstart(session):  # noqa: ARG001

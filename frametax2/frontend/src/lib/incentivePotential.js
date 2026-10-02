@@ -55,3 +55,15 @@ export function missingFactsTitle(pot) {
     .map((f) => `${f.jurisdiction_code || ""} ${f.program_slug || ""}: ${f.description}${f.state ? ` [${f.state}]` : ""}`.trim())
     .join("\n");
 }
+
+// Display rows for the shared contract, in one fixed order, used by every compact surface
+// (Globe hover, segment Inspector). Values are the served fields verbatim -- a null stays null.
+export function potentialRows(pot) {
+  if (!pot) return [];
+  return [
+    { key: "confirmedIncentive", label: "Confirmed incentive", value: pot.confirmedIncentive },
+    { key: "maxIncentive", label: "Max potential incentive", value: pot.maxIncentive },
+    { key: "confirmedNpc", label: "Confirmed NPC", value: pot.confirmedNpc },
+    { key: "potentialNpc", label: "Potential NPC", value: pot.potentialNpc },
+  ];
+}

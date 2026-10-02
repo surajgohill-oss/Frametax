@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { readIncentivePotential } from "../../lib/incentivePotential";
 import { useLocation, useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
@@ -56,7 +57,7 @@ export default function Scenarios() {
     if (!s) return;
     openedFromNav.current = true;
     if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
-    else if (s.segments?.[0]) openInspector("allocation-segment", { ...s.segments[0], structureLabel: s.label });
+    else if (s.segments?.[0]) openInspector("allocation-segment", { ...s.segments[0], structureLabel: s.label, incentive_potential: readIncentivePotential(s) ?? undefined });
   }, [location.state, allocated, openInspector]);
 
   if (loading) return <div className="screen"><Loading /></div>;
@@ -92,7 +93,7 @@ export default function Scenarios() {
 
   function inspect(s) {
     if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
-    else if (s.segments?.[0]) openInspector("allocation-segment", { ...s.segments[0], structureLabel: s.label });
+    else if (s.segments?.[0]) openInspector("allocation-segment", { ...s.segments[0], structureLabel: s.label, incentive_potential: readIncentivePotential(s) ?? undefined });
   }
 
   // Scenario Manager selection — synchronizes Globe / Budget Rail /

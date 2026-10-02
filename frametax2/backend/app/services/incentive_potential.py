@@ -125,6 +125,18 @@ def _legs_from_trace(trace: dict) -> tuple[str, list[dict]] | None:
             })
         return ("SEGMENT_TIERS", legs) if legs else None
     components = trace.get("component_allocations") or []
+    # The hybrid generator already applies the canonical stacking/assistance adjustments across
+    # its guaranteed components and persists the post-adjustment per-program incentives and the
+    # adjustment list (structural_archetype_generator -> _hy_result_trace_extras). Consume them:
+    # the confirmed value of a component is its post-adjustment incentive, so the legs reconcile
+    # to the priced total instead of being the raw pre-adjustment sum.
+    post = trace.get("post_adjustment_component_incentives_usd") or {}
+    adjusted_programs = {
+        pid
+        for a in (trace.get("stacking_adjustments") or [])
+        for pid in (a.get("program_a_id"), a.get("program_b_id"))
+        if pid
+    }
     for comp in components:
         guaranteed = _num(comp.get("guaranteed_incentive_usd"))
         if guaranteed is None:
@@ -134,17 +146,26 @@ def _legs_from_trace(trace: dict) -> tuple[str, list[dict]] | None:
             # A component that persisted no ceiling (a generation that predates the contract)
             # cannot support ANY maximum for the structure -- never assume "no upside".
             return None
-        maximum = max(ceiling, guaranteed)
+        slug = comp.get("program_slug")
+        confirmed = _num(post.get(slug)) if slug in post else guaranteed
+        confirmed = guaranteed if confirmed is None else confirmed
+        # Conditional uplift is the component's own pre-adjustment ceiling-tier uplift.
+        uplift = max(0.0, ceiling - guaranteed)
+        # A conditional uplift on a program that a stacking/assistance adjustment touches cannot
+        # be carried through that adjustment from persisted data: the maximum for this leg is not
+        # established (exact leg is reported), rather than guessed.
+        blocked = uplift > _RECONCILE_TOLERANCE_USD / 100.0 and slug in adjusted_programs
         legs.append({
             "jurisdiction_code": comp.get("jurisdiction_code"),
-            "program_slug": comp.get("program_slug"),
-            "confirmed_usd": round(guaranteed, 2),
-            "maximum_usd": round(maximum, 2),
+            "program_slug": slug,
+            "confirmed_usd": round(confirmed, 2),
+            "maximum_usd": round(confirmed + uplift, 2),
             "rate_confirmed": None,
             "rate_maximum": None,
-            "conditional": maximum - guaranteed > _RECONCILE_TOLERANCE_USD / 100.0,
+            "conditional": uplift > _RECONCILE_TOLERANCE_USD / 100.0,
             "ceiling_conditions": comp.get("ceiling_conditions") or [],
             "component": comp.get("component"),
+            "adjustment_blocks_maximum": blocked,
         })
     return ("COMPONENT_SEGMENT_TIERS", legs) if legs else None
 
@@ -193,6 +214,29 @@ def build_incentive_potential(
         return base
     method, legs = extracted
 
+    blocked_legs = [l for l in legs if l.get("adjustment_blocks_maximum")]
+    if blocked_legs:
+        base["ceiling_basis"] = {
+            "method": method,
+            "legs": [],
+            "note": (
+                "Maximum not established: " + "; ".join(
+                    f"{l['jurisdiction_code']}/{l['program_slug']} carries conditional upside but is "
+                    "touched by a stacking/assistance adjustment whose effect on that upside is not "
+                    "persisted" for l in blocked_legs)
+                + "."
+            ),
+            "blocked_legs": [
+                {"jurisdiction_code": l["jurisdiction_code"], "program_slug": l["program_slug"],
+                 "component": l.get("component")}
+                for l in blocked_legs
+            ],
+        }
+        base["economics_certainty"] = (
+            CERTAINTY_CONDITIONAL if (legal_review_required or administrative_allocation_risk)
+            else CERTAINTY_CONFIRMED
+        )
+        return base
     legs_confirmed = round(sum(l["confirmed_usd"] for l in legs), 2)
     legs_upside = round(sum(max(0.0, l["maximum_usd"] - l["confirmed_usd"]) for l in legs), 2)
     reconciles = abs(legs_confirmed - confirmed_floor) <= _RECONCILE_TOLERANCE_USD

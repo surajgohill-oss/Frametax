@@ -885,6 +885,8 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
       semanticState: mode === MODE_OPTIMIZER ? entry.status : GLOBE_SEMANTIC[entry.status]?.state ?? null,
       hex: entry.hex,
       incentiveUsd: structure?.is_fully_priced ? structure.selected_incentive_usd : null,
+      // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: the structure's shared served contract (verbatim).
+      incentivePotential: structure?.is_fully_priced ? readIncentivePotential(structure) : null,
       npcUsd: structure?.is_fully_priced ? structure.npc_with_adjustments_usd : null,
       // This jurisdiction's OWN segment incentive (at the modeled rate) —
       // distinct from `incentiveUsd` above, which is the whole structure's

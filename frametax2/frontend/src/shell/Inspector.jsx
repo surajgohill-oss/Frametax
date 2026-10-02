@@ -2,6 +2,36 @@ import { useEffect } from "react";
 import { X } from "lucide-react";
 import { alternativeLabel } from "../lib/alternativeLabels";
 import { certaintyLabel } from "../lib/incentivePotential";
+
+// MAXIMUM-POTENTIAL INCENTIVE CONTRACT: ONE component renders the shared contract for both the
+// structure Inspector and the segment Inspector (values verbatim from the served fields).
+function IncentivePotentialRows({ pot }) {
+  if (!pot) return null;
+  return (
+    <>
+      <div><dt>Confirmed incentive</dt><dd className="mono"><Money value={pot.confirmedIncentive} /></dd></div>
+      <div><dt>Max potential incentive</dt><dd className="mono"><Money value={pot.maxIncentive} /></dd></div>
+      <div><dt>Confirmed NPC</dt><dd className="mono"><Money value={pot.confirmedNpc} /></dd></div>
+      <div><dt>Potential NPC</dt><dd className="mono"><Money value={pot.potentialNpc} /></dd></div>
+      <div><dt>Economics</dt><dd>{certaintyLabel(pot)}</dd></div>
+    </>
+  );
+}
+
+function NeededForMaximum({ pot }) {
+  if (!pot || !pot.missingFacts.length) return null;
+  return (
+    <div className="inspector-sect" data-testid="ceiling-missing-facts">
+      <p className="inspector-eyebrow" style={{ marginTop: 4 }}>Needed to reach the maximum</p>
+      {pot.missingFacts.map((f, i) => (
+        <p key={`${f.program_slug}-${f.fact_id}-${i}`} className="text-secondary small" style={{ margin: "4px 0" }}>
+          {f.description}
+          <span className="text-tertiary"> — {f.jurisdiction_code} · {f.state === "USER_FACT_REQUIRED" ? "producer fact" : f.state === "SCRIPT_FACT_REQUIRED" ? "script fact" : f.state === "AUTHORITY_UNRESOLVED" ? "authority decision" : "disclosure"}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
 import { useAppState } from "../state/AppState";
 import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
@@ -316,6 +346,7 @@ function AllocationSegmentInspector({ data }) {
             </dd>
           </div>
         )}
+        <IncentivePotentialRows pot={data.incentive_potential} />
         <div><dt>Allocated spend</dt><dd className="mono"><Money value={data.allocated_usd} /></dd></div>
         {data.claims_incentive ? (
           <>
@@ -328,6 +359,7 @@ function AllocationSegmentInspector({ data }) {
           <div><dt>Incentive</dt><dd>None claimed here</dd></div>
         )}
       </dl>
+      <NeededForMaximum pot={data.incentive_potential} />
       {data.statutory_basis && <p className="text-secondary small" style={{ marginTop: 8 }}>{data.statutory_basis}</p>}
       {data.blockers?.length > 0 && (
         <div className="inspector-sect">
@@ -443,18 +475,10 @@ function StructureDetailInspector({ data }) {
       )}
       <dl className="kv-list">
         <div><dt>Participants</dt><dd>{(data.participants || []).map((code) => bestJurisdictionName(code, data)).join(", ") || "—"}</dd></div>
-        <div><dt>{data.incentive_potential ? "Confirmed incentive" : "Total incentive"}</dt><dd className="mono"><Money value={data.incentive_potential ? data.incentive_potential.confirmedIncentive : data.incentive_usd} /></dd></div>
+        {!data.incentive_potential && <div><dt>Total incentive</dt><dd className="mono"><Money value={data.incentive_usd} /></dd></div>}
         <div><dt>Total QPE</dt><dd className="mono"><Money value={data.qpe_usd} /></dd></div>
-        <div><dt>{data.incentive_potential ? "Confirmed NPC" : "Net production cost"}</dt><dd className="mono"><Money value={data.incentive_potential ? data.incentive_potential.confirmedNpc : data.npc_usd} /></dd></div>
-        {/* MAXIMUM-POTENTIAL INCENTIVE CONTRACT (2026-10-01): the SAME served fields and the
-            SAME shared reader the Workspace card uses, rendered verbatim. */}
-        {data.incentive_potential && (
-          <>
-            <div><dt>Max potential incentive</dt><dd className="mono"><Money value={data.incentive_potential.maxIncentive} /></dd></div>
-            <div><dt>Potential NPC</dt><dd className="mono"><Money value={data.incentive_potential.potentialNpc} /></dd></div>
-            <div><dt>Economics</dt><dd>{certaintyLabel(data.incentive_potential)}</dd></div>
-          </>
-        )}
+        {!data.incentive_potential && <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>}
+        <IncentivePotentialRows pot={data.incentive_potential} />
         {!data.incentive_potential && data.ceiling_requires_confirmation && data.incentive_ceiling_usd != null
           && data.incentive_ceiling_usd !== data.incentive_floor_usd && (
           <>
@@ -464,17 +488,7 @@ function StructureDetailInspector({ data }) {
         )}
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
-      {data.incentive_potential && data.incentive_potential.missingFacts.length > 0 && (
-        <div className="inspector-sect" data-testid="ceiling-missing-facts">
-          <p className="inspector-eyebrow" style={{ marginTop: 4 }}>Needed to reach the maximum</p>
-          {data.incentive_potential.missingFacts.map((f, i) => (
-            <p key={`${f.program_slug}-${f.fact_id}-${i}`} className="text-secondary small" style={{ margin: "4px 0" }}>
-              {f.description}
-              <span className="text-tertiary"> — {f.jurisdiction_code} · {f.state === "USER_FACT_REQUIRED" ? "producer fact" : f.state === "SCRIPT_FACT_REQUIRED" ? "script fact" : f.state === "AUTHORITY_UNRESOLVED" ? "authority decision" : "disclosure"}</span>
-            </p>
-          ))}
-        </div>
-      )}
+      <NeededForMaximum pot={data.incentive_potential} />
       {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the exact savings/cost
           delta and recommendation-vs-evaluated-alternative status, when this structure
           carries one (only optimizer_scenarios entries do — a Jurisdictions-layer
