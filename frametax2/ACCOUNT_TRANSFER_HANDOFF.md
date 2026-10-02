@@ -513,3 +513,47 @@ No economics, rates, QPE, doctrine, $100,000 rule, candidate generation, visuals
 - [x] **Gate 5 — Jurisdiction exclusion: PASS (existing evidence only).** `excluded_jurisdiction_codes` is part of the fingerprint payload (verified: set changes the fingerprint; empty set equals none); it is applied at the single candidate choke point that full relocation, component routing and treaty partner discovery all derive from, so ranking/Workspace/Globe follow; the filter expression `c[0] not in excluded or c[0] == inputs.jurisdiction_code` protects the home jurisdiction. Real-FVD evaluation tests (`test_jurisdiction_preference.py`) were deliberately not run.
 
 **Preserved, not implemented:** maximum-potential incentive optimization; Workspace confirmed-floor/maximum-ceiling presentation; desert/snow/underwater capability-data gaps (those requirements can only yield UNKNOWN); test-database migration gap (`budget_documents.source_incentive_estimates` missing; causes unrelated failures in DB-backed tests); new-project ingestion acceptance; Globe visual pass; persisted-trace `feasibility_status` legacy until next engine bump.
+
+# NEXT CLAUDE ACCOUNT — START HERE
+
+**1. Repository state (verified before writing this section)**
+- Worktree: `/Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2` (Git root is the parent directory; expected). Branch: `claude/global-optimizer-remediation`.
+- Local HEAD = remote `origin/claude/global-optimizer-remediation` = `00a3b44b64a768dee474b8cd536357b8486d6bb1` (EQUAL; this handoff commit will be its descendant).
+
+**2. Established runtime**
+- Acceptance database: `frametax2_claude_optimizer_acceptance_20260919` (Postgres, localhost:5432, user `frametax`).
+- Backend `http://127.0.0.1:8010` (uvicorn `app.main:app`, `DATABASE_URL` pointing at the acceptance DB; no reload — restart after backend edits). Frontend `http://localhost:5173` (vite; use `localhost`, the backend CORS allows only that origin). Run only one of each. Both may be stopped; restart them, do not assume they are up.
+- Project ids: Little Utopia ("The Little Utopia") `fa5cade5-0669-4816-bfe6-72146f8d3bae`; F#K Valentine's Day `6c6f1c13-2d49-4bbc-bafb-2a12efa93112`; Bad Hombres `4355ae88-a636-4c18-af60-ad73b2646124`; Lips Like Sugar `ab10b319-978e-44d3-9331-af2a5f2cccc2`.
+
+**3. Reachable commits:** `e7b1fac7` (Globe interaction/visual closeout), `33dd6ad5` (production-fit ranking + location-control wiring), `00a3b44b` (final wiring acceptance + repair) — all ancestors of HEAD.
+
+**4. Completed (do not redo)**
+- canonical-1.99.0 evaluations for all four projects (reused; second evaluate = reuse).
+- Optimizer performance repair; fit-aware optimizer ordering (`backend/app/services/production_fit.py`, served `fit_priority`/`fit_aware_rank`/`optimizer_production_fit_counts`).
+- Project-scoped location controls (`POST /projects/{id}/locations`, effective requirements in the fingerprint only when they differ from the script baseline).
+- Globe polygon hover/click (root cause: Inspector backdrop; fixed) and Workspace/Globe/Inspector label agreement.
+- Scenario totals: LU 339, FVD 595, BH 280, LLS 585.
+- This handoff and `docs/architecture/CAPABILITY_LEDGER.md` are current.
+
+**5. Unresolved, in order**
+1. Independently sample Canadian-province and marker-only (no polygon) Globe interaction with a real pointer.
+2. Repair the test-database migration gap: `budget_documents.source_incentive_estimates` is missing in the default test DB (causes unrelated DB-backed test failures).
+3. Maximum-potential incentive optimization.
+4. Workspace confirmed-floor / maximum-ceiling presentation (items 3 and 4 share one contract).
+5. Desert/snow/underwater capability-data gaps (such requirements can only yield UNKNOWN fit today).
+6. New-project ingestion acceptance.
+7. Final Codex independent acceptance after implementation.
+
+**6. Disclosures**
+- All four projects currently have ZERO Leading/Strong alternatives: the pre-fit canonical recommendation count was already zero, so the fit gate demoted nothing live (proven only by unit tests). Bad Hombres/LLS read entirely "LOCATION FIT UNCONFIRMED" (no requirements on file / desert not assessable).
+- Every valid scenario remains visible; fit never removes one.
+- The stored trace `feasibility_status` is legacy and anchor-based; the canonical SERVED view carries the corrected physical-leg fit (`production_fit_*`).
+- `canonical_evaluation.py` (and the other modules in `canonical_runtime_attribution._SEMANTIC_PRICING_MODULES`) are hashed into the evaluation fingerprint: editing them invalidates all four generations. Do not regenerate the four expensive evaluations without a real input/fingerprint change.
+- Do not repeat the completed Globe visual or optimizer audits.
+- Preserve the two untracked runtime logs in the Git root (`.backend_gd_wire.log`, `.frontend_gd_wire.log`); never commit them.
+- UI/runtime work may only be reported `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION` or `BLOCKED` (PROJECT_RULES.md INDEPENDENT UI COMPLETION GATE).
+
+**7. First prompt for the new account (copy as-is)**
+```
+Navigate to /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2 (branch claude/global-optimizer-remediation, expected head 00a3b44b or a clean pushed descendant; the Git root being the parent directory is expected). Read PROJECT_RULES.md, ACCOUNT_TRANSFER_HANDOFF.md (section "NEXT CLAUDE ACCOUNT — START HERE") and docs/architecture/CAPABILITY_LEDGER.md. Do not reopen completed optimizer, production-fit, location-control or Globe work, and do not regenerate the four canonical-1.99.0 evaluations. Task: (1) repair the test-database schema gap (budget_documents.source_incentive_estimates) with the project's migration mechanism and confirm only the previously blocked focused tests; (2) implement maximum-potential incentive optimization and the Workspace confirmed-floor / maximum-ceiling presentation as ONE shared served contract (backend-served fields, frontend renders them verbatim, no client recomputation), keeping canonical NPC/QPE/qualification rules and the $100,000 materiality rule unchanged and respecting the fingerprint-source-digest constraint in the handoff. Use focused tests only, report IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION for UI work, update the handoff and ledger, commit and push.
+```
