@@ -507,6 +507,8 @@ def price_segment(
     evidenced_requirement_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
     fx_context=None,
+    home_jurisdiction_code: str | None = None,
+    scenario_btl_nonlocal: bool = False,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -627,6 +629,10 @@ def price_segment(
             c for c in offshore_payroll_accounts if c in {l.account_code for l in lines}
         ),
         contingency_expected_utilization_pct=contingency_expected_utilization_pct,
+        # SCENARIO default (project-wide rule): relocated BTL labour is locally hired unless overridden.
+        scenario_local_btl=bool(
+            home_jurisdiction_code and jurisdiction_code != home_jurisdiction_code and not scenario_btl_nonlocal
+        ),
     )
     register = derive_qualification_register(
         lines, program_slug=slug, facts=facts, rate=0.0,
@@ -1574,6 +1580,8 @@ def price_allocated_structure(
     evidenced_requirement_facts: frozenset[str] | None = None,
     amount_facts: dict[str, float] | None = None,
     fx_context=None,
+    home_jurisdiction_code: str | None = None,
+    scenario_btl_nonlocal: bool = False,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
@@ -1666,6 +1674,8 @@ def price_allocated_structure(
             evidenced_requirement_facts=evidenced_requirement_facts,
             amount_facts=amount_facts,
             fx_context=fx_context,
+            home_jurisdiction_code=home_jurisdiction_code,
+            scenario_btl_nonlocal=scenario_btl_nonlocal,
         )
         segments.append(seg)
         blockers.extend(seg.blockers)

@@ -291,6 +291,21 @@ class AllocationResult:
 
 # ── The allocator ────────────────────────────────────────────────────────────
 
+def _memo_alloc(key, build):
+    """AccountAllocation is a frozen dataclass: identical inputs may share one instance. Inside `alias_memo_scope()` (the bounded
+    regeneration wrapper) the hybrid search re-derives the same per-line assignment millions of times; outside the scope this is
+    exactly `build()`."""
+    from app.services.canonical_program_identity import _ALIAS_MEMO
+
+    memo = _ALIAS_MEMO.get()
+    if memo is None:
+        return build()
+    hit = memo.get(key)
+    if hit is None:
+        hit = memo[key] = build()
+    return hit
+
+
 def derive_account_allocation(
     lines: list[BudgetLine],
     spend_category_by_code: dict[str, str],
@@ -478,7 +493,7 @@ def derive_account_allocation(
             kind = (AssignmentKind.USER_ELECTED
                     if provenance.startswith("Producer")
                     else AssignmentKind.RECOMMENDED)
-            assignments.append(AccountAllocation(
+            assignments.append(_memo_alloc(("a3", line.line_id, jur, provenance, overrides_stated, stated_location_code, stated_location_authority, category), lambda: AccountAllocation(
                 account_code=line.account_code,
                 line_id=line.line_id,
                 description=line.description,
@@ -496,7 +511,7 @@ def derive_account_allocation(
                 ),
                 authority=stated_location_authority if overrides_stated else None,
                 unresolved_requirements=tuple(reqs),
-            ))
+            )))
             continue
 
         # 4. stated-location fact
@@ -526,7 +541,7 @@ def derive_account_allocation(
 
         # 5. location-bound -> primary
         if component in LOCATION_BOUND_COMPONENTS:
-            assignments.append(AccountAllocation(
+            assignments.append(_memo_alloc(("a5", line.line_id, spec.primary_jurisdiction, category), lambda: AccountAllocation(
                 account_code=line.account_code,
                 line_id=line.line_id,
                 description=line.description,
@@ -540,11 +555,11 @@ def derive_account_allocation(
                     f"incurred where the camera rolls ({spec.primary_jurisdiction})."
                 ),
                 governing_decision=f"primary_shoot_location:{spec.primary_jurisdiction}",
-            ))
+            )))
             continue
 
         # 6. default -> primary (recommended)
-        assignments.append(AccountAllocation(
+        assignments.append(_memo_alloc(("a6", line.line_id, spec.primary_jurisdiction, category), lambda: AccountAllocation(
             account_code=line.account_code,
             line_id=line.line_id,
             description=line.description,
@@ -563,7 +578,7 @@ def derive_account_allocation(
                 "decision may re-route it."
             ),
             governing_decision=f"default_domicile:{spec.primary_jurisdiction}",
-        ))
+        )))
 
     cash_lines_total = round(sum(l.amount_usd for l in lines if not l.is_memo), 2)
     allocated_total = round(sum(a.amount_usd for a in assignments), 2)

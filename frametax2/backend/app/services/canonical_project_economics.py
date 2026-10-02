@@ -86,6 +86,8 @@ FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT = "contingency_expected_utilization_pc
 #: silent assumption"). Absent means genuinely unset — treated as 0.0 by
 #: price_allocated_structure's own default, never defaulted here.
 FACT_FINANCING_COST_USD = "financing_cost_usd"
+#: Project override of the local-BTL scenario default: "true" = relocated BTL is NOT hired locally.
+FACT_SCENARIO_BTL_NONLOCAL = "scenario_btl_nonlocal"
 
 #: Codex final runtime remediation (11 B3 formulaic connection repairs) —
 #: the SAME generic ProjectFact model, extended with two new key
@@ -177,6 +179,9 @@ class ProjectEconomicInputs:
     #: Producer Display Names + Budget Rail User Assumptions closeout —
     #: see FACT_FINANCING_COST_USD above. None means genuinely unset.
     financing_cost_usd: float | None = None
+
+    #: Project override of the SCENARIO local-BTL default (see ProductionFacts.scenario_local_btl).
+    scenario_btl_nonlocal: bool = False
 
     #: FINANCE SEMANTICS (settled doctrine). financing_cost_usd means
     #: INCREMENTAL / OFF-BUDGET financing NOT already inside the source gross
@@ -745,6 +750,10 @@ async def build_project_economic_inputs(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
         financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
+        scenario_btl_nonlocal=any(
+            f.fact_key == FACT_SCENARIO_BTL_NONLOCAL and str(f.value).strip().lower() in ("true", "1", "yes")
+            for f in fact_rows
+        ),
         evidenced_program_facts=(
             _evidenced_program_facts(fact_rows) | await physical_requirement_fingerprint_facts(session, project_id)
         ),
@@ -791,6 +800,10 @@ def production_facts_for(
         accounts_outside_jurisdiction=inputs.accounts_outside_jurisdiction,
         offshore_payroll_accounts=inputs.offshore_payroll_accounts,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        # SCENARIO default: a candidate OTHER than the production's home jurisdiction models relocated BTL as local.
+        scenario_local_btl=bool(
+            jurisdiction_code and jurisdiction_code != inputs.jurisdiction_code and not inputs.scenario_btl_nonlocal
+        ),
     )
 
 

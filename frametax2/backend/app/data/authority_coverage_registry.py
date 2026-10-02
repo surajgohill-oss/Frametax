@@ -241,7 +241,7 @@ from __future__ import annotations
 #: chain now inherits its terminal disposition instead of being resolved
 #: only one hop, which could previously let a corrupted intermediate alias
 #: reach an injected rule undetected.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.9.0"  # 1.9.0: HO-011 source-level reconciliation (structural-optimizer wiring correction) -- removed us_tn_performance_grant from _B1_DISCRETIONARY_RULING (26 -> 25 entries), applying the EXACT same Task 6 STATUTORY_FORMULAIC criterion above to a program that pass evidently missed. program_rate_rules_worldwide.py's US_TN_DOCTRINE (confidence_tier=VERIFIED, citation="tn.gov (Tennessee state government, official, fetched directly): 'projects with budgets over $200,000 will be eligible to receive grants equal to 25 percent of their qualified Tennessee expenditures,' effective 2012-07-01", verified_date=2026-08-17) carries a single, unconditional, non-band-ceiling flat-25%-of-QPE tier (min_qpe_usd=200_000.0, annual_cap_usd=None, zero RateConditions attached) -- structurally identical in kind to the 18 programs already removed above, not merely similar. This directly caused the two-registry disagreement this control's own consumer-side workaround (canonical_evaluation.py's _capability_only_status()) was papering over: coverage_state() (COVERAGE_REGISTRY, the newer "sole gate") had no entry at all for this program (defaulting to PRICEABLE_VALIDATED by absence), while economic_block_for_program() (this file's OLDER _B1_DISCRETIONARY_RULING) still returned a stale FAIL_CLOSED block that resolve_program_rate() empirically honored -- fixing the SOURCE (this removal) makes both registries agree the program is priceable, so the downstream workaround is removed in the same pass rather than left as permanent dead complexity citing a disagreement that no longer exists.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.10.0"  # 1.10.0: FOUR_PROJECT_PROGRAM_PRICING_RECONCILIATION -- 15 floor-supported programs removed from _B1_DISCRETIONARY_RULING (25 -> 10); see the comment above the assert. 1.9.0: 1.9.0: HO-011 source-level reconciliation (structural-optimizer wiring correction) -- removed us_tn_performance_grant from _B1_DISCRETIONARY_RULING (26 -> 25 entries), applying the EXACT same Task 6 STATUTORY_FORMULAIC criterion above to a program that pass evidently missed. program_rate_rules_worldwide.py's US_TN_DOCTRINE (confidence_tier=VERIFIED, citation="tn.gov (Tennessee state government, official, fetched directly): 'projects with budgets over $200,000 will be eligible to receive grants equal to 25 percent of their qualified Tennessee expenditures,' effective 2012-07-01", verified_date=2026-08-17) carries a single, unconditional, non-band-ceiling flat-25%-of-QPE tier (min_qpe_usd=200_000.0, annual_cap_usd=None, zero RateConditions attached) -- structurally identical in kind to the 18 programs already removed above, not merely similar. This directly caused the two-registry disagreement this control's own consumer-side workaround (canonical_evaluation.py's _capability_only_status()) was papering over: coverage_state() (COVERAGE_REGISTRY, the newer "sole gate") had no entry at all for this program (defaulting to PRICEABLE_VALIDATED by absence), while economic_block_for_program() (this file's OLDER _B1_DISCRETIONARY_RULING) still returned a stale FAIL_CLOSED block that resolve_program_rate() empirically honored -- fixing the SOURCE (this removal) makes both registries agree the program is priceable, so the downstream workaround is removed in the same pass rather than left as permanent dead complexity citing a disagreement that no longer exists.
 # 1.7.0: CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT -- removed ca_bc_pstc, ca_federal_pstc, ca_qc_pstc, ca_nl_all_spend_credit from _B1_DISCRETIONARY_RULING (49 -> 45 entries); each is a real, standard, non-discretionary Canadian tax credit with a directly-sourced official rate and guaranteed non-band-ceiling floor tier, genuinely misclassified as authority-exhausted.
 
 from dataclasses import dataclass
@@ -947,24 +947,11 @@ from app.data.program_slug_aliases import PROGRAM_SLUG_ALIASES  # noqa: E402
 #: economic_block_for_program()/resolve_program_rate() runtime check, not
 #: assumed.
 _B1_DISCRETIONARY_RULING: dict[str, str] = {
-    "ae_ad_film_rebate": "FAIL_CLOSED",
     "ag-us-pr-puerto-rico-film-industry-economic-incentives-act": "FAIL_CLOSED",
-    "al_cash_rebate": "FAIL_CLOSED",
-    "be_tax_shelter": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "ca_sk_production_grant": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "ch_pics_national_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "cr_tax_return_incentive": "FAIL_CLOSED",
-    "de_dfff": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "dk_production_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "eg_empc_cashback": "FAIL_CLOSED",
-    "gh_film_tax_incentive": "FAIL_CLOSED",
-    "il_foreign_production_fund": "FAIL_CLOSED",
-    "in_national_film": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "lu_filmfund_tax_shelter_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "no_film_incentive": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "pa_film_rebate": "FAIL_CLOSED",
-    "ph_fdcp_flip": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "qa_screen_production_incentive": "FAIL_CLOSED",
     "sa_film_commission_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
     "se_production_rebate": "FAIL_CLOSED",
     "sg_made_with_singapore_rebate": "DISPLAY_ONLY_ZERO_GUARANTEED",
@@ -976,12 +963,23 @@ _B1_DISCRETIONARY_RULING: dict[str, str] = {
     # (US_TN_DOCTRINE, program_rate_rules_worldwide.py) -- genuinely
     # misclassified as authority-exhausted, identical reasoning to the
     # 18 STATUTORY_FORMULAIC removals above.
-    "us_wa_mpcp": "DISPLAY_ONLY_ZERO_GUARANTEED",
-    "uy_acau_cash_rebate": "FAIL_CLOSED",
 }
-assert len(_B1_DISCRETIONARY_RULING) == 25  # 26 - 1 (us_tn_performance_grant, HO-011 source-level reconciliation, AUTHORITY_COVERAGE_REGISTRY_VERSION 1.9.0)
-assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 12  # 13 - 1
-assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 13
+#: AUTHORITY_COVERAGE_REGISTRY_VERSION 1.10.0 (2026-10-02, FOUR_PROJECT_PROGRAM_PRICING_RECONCILIATION): 15 programs were
+#: removed from this ruling because each carries a SUPPORTED, UNCONDITIONAL-OR-FACT-GATED GUARANTEED FLOOR tier (a real
+#: retained RateRule whose floor tier names no `discretionary_band` / `material_funding_risk_not_modeled` condition) and
+#: its requirements profile does not declare the WHOLE award discretionary. The same criterion the 1.7.0 / 1.9.0
+#: removals applied (STATUTORY_FORMULAIC), now stated once and pinned by test_program_pricing_reconciliation:
+#:   ae_ad_film_rebate, al_cash_rebate, be_tax_shelter, ch_pics_national_rebate, de_dfff, dk_production_rebate,
+#:   eg_empc_cashback, gh_film_tax_incentive, il_foreign_production_fund, in_national_film, pa_film_rebate,
+#:   ph_fdcp_flip, qa_screen_production_incentive, us_wa_mpcp, uy_acau_cash_rebate.
+#: A supported floor prices even when a higher tier is conditional; competitive allocation and preapproval risk stay
+#: DISCLOSED (canonical_evaluation._competitive_allocation_disclosure), provenance incompleteness stays a production-
+#: acceptance warning (two-axis rule). What remains here is genuinely discretionary (the award itself is selective:
+#: sa, lu, sg declare AllocationType.DISCRETIONARY; no, tw, cr, se carry a discretionary band on the floor tier; ca_sk is a
+#: selective grant) -- guaranteed value zero, maximum potential served -- or has no RateRule at all.
+assert len(_B1_DISCRETIONARY_RULING) == 10
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "FAIL_CLOSED") == 4
+assert sum(1 for v in _B1_DISCRETIONARY_RULING.values() if v == "DISPLAY_ONLY_ZERO_GUARANTEED") == 6
 
 #: Retired / superseded runtime identities that must never resolve to an
 #: automatic rate even if a stale RateRule survives (B2 KEEP_SEPARATE and B3

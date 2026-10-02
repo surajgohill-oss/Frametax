@@ -623,3 +623,14 @@ Status for UI work: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION` (local b
 - Code: `services/jurisdiction_accounting.py`, `services/program_content_gates.py`, `incentive_potential.build_program_maximum_potential`, `jurisdiction_disposition` (min-threshold hard branch, discretionary-award fact key), view wiring in `canonical_production_view.py`; frontend slate state "Data incomplete", hover/Inspector potential + content gates, 59 coordinates.
 - Runtime: backend must be restarted to pick up serving changes (no `--reload`); one process on 8010 with `DATABASE_URL` = acceptance DB and `CURRENT_ORGANIZATION_ID`.
 - Tests: backend 121 focused pass (isolated DB); frontend 396/396. Not run: tests needing the real production projects.
+
+## FOUR-PROJECT PROGRAM PRICING RECONCILIATION (2026-10-02, from `a34b896`) — engine `canonical-1.103.0`, coverage registry `1.10.0`
+
+Status for UI work: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`. Full detail: `docs/architecture/CAPABILITY_LEDGER.md` (`FOUR_PROJECT_PROGRAM_PRICING_RECONCILIATION`) and `docs/validation/FOUR_PROJECT_PROGRAM_PRICING_RECONCILIATION_CLAUDE.csv` (+ `.summary.json`: per-project sets, pairwise differences, causes).
+
+- 15 floor-supported programs were wrongly blocked by the Codex B1 ruling and are repriced (B1 25 -> 10); alias spellings now resolve rate rules through both alias graphs; all four productions regenerated on 1.103.0 (LU 337 s, BH 57 s, LLS 2,951 s before the perf repair, FVD ~7.4 min bounded).
+- Four-project base universe: 3 of 126 programs differ, all attributed (ES min spend, CPTC nationality, OCASE VFX composition). Saudi is a Conditional Alternative (confirmed $0, max 60% x QPE) in all four.
+- Local-BTL scenario default: `ProductionFacts.scenario_local_btl`, override fact `scenario_btl_nonlocal`, inference owner `services/scenario_local_labour.py`.
+- **Every future regeneration MUST use `scripts/regenerate_project_bounded.py <project_id>`** (hard 720 s ceiling, acceptance-DB assertion, `--measure` for a non-persisting timing run). LLS measured 682 s, so the headroom is thin. Never edit a fingerprint-hashed module (`canonical_evaluation`, `authority_coverage_registry`, `allocation_pricing`, `qualification_derivation`, the two bridges, `program_rate_rules`) without planning all four regenerations.
+- Runtime: backend 8010 (restart needed to load serving changes) with `DATABASE_URL` = acceptance DB + `CURRENT_ORGANIZATION_ID`; frontend 5173.
+- Tests: backend focused groups pass on the isolated DB except tests that need the real production projects (pre-existing); frontend untouched this pass.

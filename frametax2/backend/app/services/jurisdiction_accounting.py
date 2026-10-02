@@ -197,6 +197,25 @@ def _threshold_unreachable_reason(inputs, slug: str, production_type: str, qpe: 
     return "; ".join(dict.fromkeys(parts)) + " (cannot be met even if every project fact were confirmed)."
 
 
+def _min_spend_threshold(slug: str, production_type: str) -> float | None:
+    """The program's stated minimum qualifying/local spend (USD): the larger of the requirements profile's
+    ``min_local_spend_usd``, the doctrine's ``min_spend_usd`` and the lowest applicable tier ``min_qpe_usd``."""
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    from app.data.program_requirements import get_program_requirements
+
+    vals = []
+    p = get_program_requirements(slug)
+    if p is not None and p.min_local_spend_usd:
+        vals.append(float(p.min_local_spend_usd))
+    d = get_doctrine(slug)
+    if d is not None and getattr(d, "min_spend_usd", None):
+        vals.append(float(d.min_spend_usd))
+    tier_min = _min_qpe_threshold(slug, production_type)
+    if tier_min:
+        vals.append(float(tier_min))
+    return max(vals) if vals else None
+
+
 def _per_project_cap(slug: str) -> float | None:
     from app.data.program_requirements import get_program_requirements
 
@@ -272,6 +291,8 @@ async def build_jurisdiction_accounting(
     by_code, by_name = await _canonical_jurisdictions(session)
     outcomes = await _persisted_outcomes(session, project.id, fingerprint, engine_version)
     served_pairs = {(r.get("primary_jurisdiction"), r.get("program_slug")) for r in (served_blocked_rows or [])}
+    served_by_pair = {(r.get("primary_jurisdiction"), r.get("program_slug")): r for r in (served_blocked_rows or [])}
+    all_rows: list[dict] = []
 
     # stored facts for every program the ledger may need to name (rate-rule facts + content-gate confirmations)
     slugs = {e.program_slug for e in economic.examinations if e.program_slug}
@@ -362,7 +383,23 @@ async def build_jurisdiction_accounting(
                 threshold_unreachable_reason=(_threshold_unreachable_reason(inputs, slug, production_type, qpe) if stage == S_CONDITIONS else None),
             )
             disp = _disposition_for(base)
+            # A genuine minimum-spend exclusion: the production's canonical qualifying spend is below the program's
+            # stated minimum -> confirmed hard failure with the exact numbers (never reached for a program that passes).
+            _min_spend = _min_spend_threshold(slug, production_type)
+            if disp == D_NEEDS_FACTS and qpe is not None and _min_spend and qpe < _min_spend:
+                _msg = (f"{base.get('program_name') or slug}: requires at least ${_min_spend:,.2f} of qualifying spend; "
+                        f"this production's canonical qualifying spend is ${qpe:,.2f}.")
+                base.update(disposition="HARD_BLOCK", blocked_cause="CONFIRMED_LEGAL_PROGRAM_INELIGIBILITY",
+                            hard_block_reason=_msg, engine_reason=base.get("missing_facts_reason"), missing_facts_reason=None)
+                (base.get("blocker_detail") or {}).update(reconciliation_class="GENUINE_HARD_FAILURE", kind="MINIMUM_QUALIFYING_SPEND_NOT_MET", headline=_msg)
+                disp = D_HARD_BLOCK
             detail = base.get("blocker_detail") or {}
+            # SCENARIO local-BTL inference: a resident-crew percentage the producer has not evidenced is inferred for a
+            # hypothetical relocation (shared owner: scenario_local_labour); cast residency is never inferred.
+            if detail and code != inputs.jurisdiction_code and not inputs.scenario_btl_nonlocal:
+                from app.services.scenario_local_labour import apply_scenario_crew_inference
+
+                apply_scenario_crew_inference(detail, inputs.budget_lines)
             gates = content_gates_for_program(slug, facts)
             if gates:
                 base["content_gates"] = gates
@@ -393,8 +430,16 @@ async def build_jurisdiction_accounting(
                 )
             rec.update(stage=stage, disposition=disp, exit_reason=base.get("hard_block_reason") or base.get("missing_facts_reason") or reason,
                        blocked_cause=base.get("blocked_cause"), reconciliation_class=detail.get("reconciliation_class"))
-            if outcome and outcome["source"] == "retained" and (code, slug) in served_pairs:
-                row = None   # already served as a retained blocked row
+            all_rows.append(base)
+            _served = served_by_pair.get((code, slug))
+            if outcome and outcome["source"] == "retained" and _served is not None:
+                # already served as a retained blocked row: enrich THAT row in place with the shared potential / gates /
+                # scenario assumptions / minimum-spend verdict (one owner, never two divergent copies)
+                for _k in ("incentive_potential", "content_gates", "content_gate_summary", "blocker_detail", "disposition",
+                           "blocked_cause", "hard_block_reason", "missing_facts_reason", "first_exit_stage"):
+                    if _k in base:
+                        _served[_k] = base[_k]
+                row = None
             else:
                 row = base
         if row is not None:
@@ -439,6 +484,7 @@ async def build_jurisdiction_accounting(
         "home_jurisdiction": inputs.jurisdiction_code, "gross_budget_usd": inputs.gross_budget_usd,
         "programs": programs, "jurisdictions": list(juris.values()),
         "rows": new_rows,
+        "all_rows": all_rows + [r for r in new_rows if r not in all_rows],
         "waterfall": {
             "canonical_jurisdictions_database": len(by_code),
             "jurisdiction_codes_examined": len({r["jurisdiction_code"] for r in programs}),

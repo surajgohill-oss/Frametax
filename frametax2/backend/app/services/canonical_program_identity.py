@@ -39,6 +39,9 @@ registry is deleted or modified.
 """
 from __future__ import annotations
 
+import contextlib
+import contextvars
+
 from dataclasses import dataclass, field
 
 from app.calculators import jurisdiction_comparison as _jc
@@ -84,7 +87,33 @@ def _known_slugs() -> set[str]:
     return slugs
 
 
+# PERFORMANCE (2026-10-02): the hybrid search calls _aliases_for ~12x per candidate (4.4M calls in 240 s of a Lips Like Sugar
+# evaluation, ~25 s of pure dict scanning) although it is a pure function of two static registries. A memo is enabled ONLY
+# inside `alias_memo_scope()` (the bounded regeneration wrapper), so tests and servers that mutate PROGRAM_SLUG_ALIASES /
+# CANONICAL_RUNTIME_SLUG_BINDINGS between calls keep exact, uncached behaviour. Not a fingerprint-hashed module.
+_ALIAS_MEMO: "contextvars.ContextVar[dict | None]" = contextvars.ContextVar("alias_memo", default=None)
+
+
+@contextlib.contextmanager
+def alias_memo_scope():
+    token = _ALIAS_MEMO.set({})
+    try:
+        yield
+    finally:
+        _ALIAS_MEMO.reset(token)
+
+
 def _aliases_for(slug: str) -> tuple[str, ...]:
+    memo = _ALIAS_MEMO.get()
+    if memo is None:
+        return _aliases_for_uncached(slug)
+    hit = memo.get(slug)
+    if hit is None:
+        hit = memo[slug] = _aliases_for_uncached(slug)
+    return hit
+
+
+def _aliases_for_uncached(slug: str) -> tuple[str, ...]:
     """Every other spelling in `slug`'s equivalence class, regardless of
     whether `slug` itself is the canonical identity or one of its known
     variant/legacy spellings (Codex bounded remediation, B2 identity

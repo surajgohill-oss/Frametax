@@ -68,7 +68,7 @@ def restore_rules_by_program():
 # AUTHORITY_EXHAUSTED_FAIL_CLOSED. ──────────────────────────────────────
 
 def test_negative_1_stale_rate_rule_injected_under_fail_closed_id_refused(restore_rules_by_program):
-    slug = "ae_ad_film_rebate"  # B1 FAIL_CLOSED
+    slug = "cr_tax_return_incentive"  # B1 FAIL_CLOSED
     assert economic_block_for_program(slug) is not None
     _inject_stale_rule(slug)
     assert resolve_program_rate(slug, production_type="feature_film", qpe_usd=5_000_000) is None
@@ -79,9 +79,9 @@ def test_negative_1_stale_rate_rule_injected_under_fail_closed_id_refused(restor
 # whose canonical target is blocked. ────────────────────────────────────
 
 def test_negative_2_stale_rule_reached_via_legacy_alias_still_refused(restore_rules_by_program):
-    # al_cash_rebate (B1 FAIL_CLOSED) has a known legacy alias spelling.
-    canonical = "al_cash_rebate"
-    alias = "al_film_incentive"  # CANONICAL_RUNTIME_SLUG_BINDINGS: al_film_incentive -> al_cash_rebate
+    # sa_film_commission_rebate (B1 FAIL_CLOSED) has a known legacy alias spelling.
+    canonical = "sa_film_commission_rebate"
+    alias = "sa_sfc_rebate"  # CANONICAL_RUNTIME_SLUG_BINDINGS: sa_sfc_rebate -> sa_film_commission_rebate
     assert economic_block_for_program(canonical) is not None
     assert economic_block_for_program(alias) is not None
     _inject_stale_rule(canonical)
@@ -95,10 +95,10 @@ def test_negative_2_stale_rule_reached_via_legacy_alias_still_refused(restore_ru
 # identity reject with the same explicit reason. ────────────────────────
 
 def test_negative_3_pair_and_group_stacks_with_blocked_member_reject():
-    """Uses be_tax_shelter (B1 DISPLAY_ONLY_ZERO_GUARANTEED) paired with
-    eu_eurimages -- a REAL, _SLUG_PAIR_RULES-covered combination
-    (frozenset({"be_tax_shelter", "eu_eurimages"})) that would otherwise be
-    a legitimate, named, stackable pair. Same jurisdiction_code ("BE") for
+    """Uses no_film_incentive (B1 DISPLAY_ONLY_ZERO_GUARANTEED) paired with
+    no_mro_film3 -- a REAL, _SLUG_PAIR_RULES-covered combination
+    (frozenset({"no_film_incentive", "no_mro_film3"})) that would otherwise be
+    a legitimate, named, stackable pair. Same jurisdiction_code ("NO") for
     both candidates makes the group trivially eligible_for_combination, so
     a None result here is attributable ONLY to the B4 gate, not to
     jurisdiction incompatibility."""
@@ -107,30 +107,21 @@ def test_negative_3_pair_and_group_stacks_with_blocked_member_reject():
     )
 
     blocked = StackCandidate(
-        program_slug="be_tax_shelter", jurisdiction_code="BE",
+        program_slug="no_film_incentive", jurisdiction_code="NO",
         selected_incentive_usd=0.0, effective_rate=0.0,
         qualifying_spend_usd=1_000_000.0, incentive_type="tax_credit",
     )
     clean = StackCandidate(
-        program_slug="eu_eurimages", jurisdiction_code="BE",
+        program_slug="no_mro_film3", jurisdiction_code="NO",
         selected_incentive_usd=100_000.0, effective_rate=0.10,
         qualifying_spend_usd=1_000_000.0, incentive_type="grant",
     )
-    assert economic_block_for_program("be_tax_shelter") is not None
-    assert economic_block_for_program("eu_eurimages") is None
+    assert economic_block_for_program("no_film_incentive") is not None
+    assert economic_block_for_program("no_mro_film3") is None
     assert price_program_pair_stack(blocked, clean) is None
     assert price_program_group_stack([blocked, clean]) is None
-    # A three-way group with the blocked member in a different list position.
-    third = StackCandidate(
-        program_slug="be_vlg_vaf", jurisdiction_code="BE",
-        selected_incentive_usd=50_000.0, effective_rate=0.05,
-        qualifying_spend_usd=1_000_000.0, incentive_type="grant",
-    )
-    assert price_program_group_stack([clean, third, blocked]) is None
-    # Sanity: the SAME real pair WITHOUT the blocked member actually stacks
-    # (proves the None above is caused by the block, not by some unrelated
-    # gap in the pair-rule/eligibility machinery).
-    assert price_program_group_stack([clean, third]) is not None
+    # (The three-way positive control was removed with 1.10.0: it relied on be_tax_shelter's pair rules; the
+    # remaining B1 programs have only this one named pair, so the two-member refusal above is the full control.)
 
 
 # ── Negative control 4: a display-only discretionary candidate remains
@@ -183,7 +174,7 @@ def test_negative_6_reregistering_a_blocked_slugs_rate_rule_cannot_reactivate_it
     simulation: the gate must still refuse it."""
     from app.data.program_rate_rules import register_rate_rules
 
-    slug = "de_dfff"
+    slug = "sa_film_commission_rebate"
     assert economic_block_for_program(slug) is not None
     register_rate_rules((
         RateRule(

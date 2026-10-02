@@ -6467,6 +6467,7 @@ US_TX_DOCTRINE = register(DoctrineRecord(
                 amount_fact_key="us_tx_miip_resident_crew_pct",
                 amount_fact_min=35.0,
                 gates_tier_eligibility=False,
+                local_labour_basis="crew_resident_pct",
             ),
             RateCondition(
                 condition_id="us-tx-resident-cast-pct",

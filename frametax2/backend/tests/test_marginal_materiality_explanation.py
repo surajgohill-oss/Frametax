@@ -1,4 +1,4 @@
-"""Marginal-materiality explanation contract (canonical-1.102.0).
+"""Marginal-materiality explanation contract (canonical-1.103.0).
 
 A proven UPPER BOUND below the $100,000 hurdle is disclosed as such (never "unverified");
 genuinely missing evidence stays unverified and fail-closed; the aggregate saving can never
@@ -93,4 +93,4 @@ def test_lazy_enrichment_persists_every_added_jurisdiction_and_marks_lost_recons
 
 
 def test_engine_version_advanced_past_the_shared_pre_repair_stamp():
-    assert ce.ENGINE_VERSION == "canonical-1.102.0"
+    assert ce.ENGINE_VERSION == "canonical-1.103.0"

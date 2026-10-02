@@ -91,6 +91,8 @@ LABOR_CATEGORIES = frozenset({
     "atl_writer", "atl_director", "atl_producer", "atl_cast",
     "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
 })
+#: Below-the-line labour categories: the ones a hypothetical relocation re-hires locally (SCENARIO default).
+BTL_LABOR_CATEGORIES = frozenset({"btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
 POST_CATEGORIES = frozenset({"post_production", "vfx", "music", "sound"})
 CASHFLOW_CATEGORIES = frozenset({"finance_costs"})
 # Categories where a rule exists but carries qualifies=None because the
@@ -159,14 +161,23 @@ class ProductionFacts:
     #: PROJECTION should treat as likely to actually be deployed and
     #: therefore incurred.
     contingency_expected_utilization_pct: float | None = None
+    #: SCENARIO ASSUMPTION (project-wide rule): for a hypothetical relocation / routed physical-production leg,
+    #: BTL labour assigned to this jurisdiction is modeled as locally hired unless a project override says
+    #: otherwise. It never rewrites the source budget's residency and never claims the actual production has
+    #: local labour; ATL, cast and any producer/director nationality or residency stay separately evidenced.
+    scenario_local_btl: bool = False
 
     def work_outside(self, account_code: str, category: str) -> bool:
+        if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
+            return False
         if category in POST_CATEGORIES and self.post_work_in_jurisdiction is not None:
             return not self.post_work_in_jurisdiction
         return account_code in self.accounts_outside_jurisdiction
 
     def routed_offshore(self, account_code: str, category: str) -> bool:
         if category not in LABOR_CATEGORIES:
+            return False
+        if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
             return False
         if self.payroll_routing_localized:
             return False
@@ -213,6 +224,8 @@ def derive_qualification_register(
 
     for line in line_items:
         category = line.spend_category or classify_line_item(line.description).spend_category.value
+        if facts.scenario_local_btl and category == "btl_nonresident_labor":
+            category = "btl_resident_labor"   # scenario default: relocated BTL is hired locally (see ProductionFacts)
         rule = rules.get(category)
         amt = line.amount_usd
 

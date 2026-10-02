@@ -1,0 +1,334 @@
+{
+ "engine_version": "canonical-1.103.0",
+ "rows": 126,
+ "treatment_counts": {
+  "CONDITIONAL_TIER": 46,
+  "SUPERSEDED_DUPLICATE_NOT_APPLICABLE": 2,
+  "PRICEABLE_WITH_PROVENANCE_WARNING": 13,
+  "PROJECT_FACT_REQUIRED": 38,
+  "DISCRETIONARY_ZERO_GUARANTEED": 19,
+  "DETERMINISTIC_PRICEABLE": 7,
+  "ECONOMIC_MECHANICS_INCOMPLETE": 1
+ },
+ "per_project_disposition": {
+  "LU": {
+   "DATA_INCOMPLETE": 104,
+   "EXECUTABLE": 92,
+   "HARD_BLOCK": 1,
+   "NEEDS_FACTS": 20
+  },
+  "FVD": {
+   "DATA_INCOMPLETE": 104,
+   "EXECUTABLE": 91,
+   "HARD_BLOCK": 2,
+   "NEEDS_FACTS": 20
+  },
+  "BH": {
+   "DATA_INCOMPLETE": 104,
+   "EXECUTABLE": 91,
+   "HARD_BLOCK": 2,
+   "NEEDS_FACTS": 20
+  },
+  "LLS": {
+   "DATA_INCOMPLETE": 104,
+   "EXECUTABLE": 92,
+   "HARD_BLOCK": 1,
+   "NEEDS_FACTS": 20
+  }
+ },
+ "per_project_stage": {
+  "LU": {
+   "ALIAS_DUPLICATE": 7,
+   "NO_PROGRAM_MODEL": 99,
+   "NOT_APPLICABLE": 1,
+   "SUPERSEDED_OR_DUPLICATE": 1,
+   "AUTHORITY_BLOCKED": 11,
+   "CONDITIONS_UNMET": 4,
+   "PRICING_BLOCKED": 9,
+   "PRICED": 99,
+   "NOT_GENERATED": 0
+  },
+  "FVD": {
+   "ALIAS_DUPLICATE": 7,
+   "NO_PROGRAM_MODEL": 99,
+   "NOT_APPLICABLE": 1,
+   "SUPERSEDED_OR_DUPLICATE": 1,
+   "AUTHORITY_BLOCKED": 11,
+   "CONDITIONS_UNMET": 4,
+   "PRICING_BLOCKED": 9,
+   "PRICED": 99,
+   "NOT_GENERATED": 0
+  },
+  "BH": {
+   "ALIAS_DUPLICATE": 7,
+   "NO_PROGRAM_MODEL": 99,
+   "NOT_APPLICABLE": 1,
+   "SUPERSEDED_OR_DUPLICATE": 1,
+   "AUTHORITY_BLOCKED": 11,
+   "CONDITIONS_UNMET": 4,
+   "PRICING_BLOCKED": 10,
+   "PRICED": 98,
+   "NOT_GENERATED": 0
+  },
+  "LLS": {
+   "ALIAS_DUPLICATE": 7,
+   "NO_PROGRAM_MODEL": 99,
+   "NOT_APPLICABLE": 1,
+   "SUPERSEDED_OR_DUPLICATE": 1,
+   "AUTHORITY_BLOCKED": 11,
+   "CONDITIONS_UNMET": 3,
+   "PRICING_BLOCKED": 9,
+   "PRICED": 100,
+   "NOT_GENERATED": 0
+  }
+ },
+ "differences": [
+  {
+   "program_slug": "ca_federal_cptc",
+   "statuses": {
+    "BH": "EXECUTABLE:PRICED",
+    "FVD": "EXECUTABLE:PRICED",
+    "LLS": "EXECUTABLE:PRICED",
+    "LU": "HARD_BLOCK:CONDITIONS_UNMET"
+   },
+   "cause": "CULTURAL_NATIONALITY_RESIDENCY_FACT",
+   "cause_detail": "a mandatory cultural / nationality / residency qualification (e.g. CAVCO key-creative nationality) fails on this project's evidenced people and passes where none is evidenced",
+   "attributed": true
+  },
+  {
+   "program_slug": "es_tax_credit_foreign",
+   "statuses": {
+    "BH": "HARD_BLOCK:CONDITIONS_UNMET",
+    "FVD": "HARD_BLOCK:CONDITIONS_UNMET",
+    "LLS": "EXECUTABLE:PRICED",
+    "LU": "EXECUTABLE:PRICED"
+   },
+   "cause": "BUDGET_QPE_THRESHOLD",
+   "cause_detail": "a mandatory qualifying-spend / threshold gate passes in one project and fails in another",
+   "attributed": true
+  },
+  {
+   "program_slug": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+   "statuses": {
+    "BH": "NEEDS_FACTS:PRICING_BLOCKED",
+    "FVD": "EXECUTABLE:PRICED",
+    "LLS": "EXECUTABLE:PRICED",
+    "LU": "EXECUTABLE:PRICED"
+   },
+   "cause": "BUDGET_CATEGORY_COMPOSITION",
+   "cause_detail": "the program's rate is restricted to ['vfx'] spend, which at least one project's budget does not contain",
+   "attributed": true
+  }
+ ],
+ "unattributed": [],
+ "pairwise_set_differences_sizes": {
+  "LU-vs-FVD": {
+   "priced": {
+    "only_LU": 1,
+    "only_FVD": 1
+   },
+   "conditional": {
+    "only_LU": 0,
+    "only_FVD": 0
+   },
+   "hard": {
+    "only_LU": 1,
+    "only_FVD": 1
+   }
+  },
+  "LU-vs-BH": {
+   "priced": {
+    "only_LU": 2,
+    "only_BH": 1
+   },
+   "conditional": {
+    "only_LU": 0,
+    "only_BH": 1
+   },
+   "hard": {
+    "only_LU": 1,
+    "only_BH": 1
+   }
+  },
+  "LU-vs-LLS": {
+   "priced": {
+    "only_LU": 0,
+    "only_LLS": 1
+   },
+   "conditional": {
+    "only_LU": 0,
+    "only_LLS": 0
+   },
+   "hard": {
+    "only_LU": 1,
+    "only_LLS": 0
+   }
+  },
+  "FVD-vs-BH": {
+   "priced": {
+    "only_FVD": 1,
+    "only_BH": 0
+   },
+   "conditional": {
+    "only_FVD": 0,
+    "only_BH": 1
+   },
+   "hard": {
+    "only_FVD": 0,
+    "only_BH": 0
+   }
+  },
+  "FVD-vs-LLS": {
+   "priced": {
+    "only_FVD": 0,
+    "only_LLS": 1
+   },
+   "conditional": {
+    "only_FVD": 0,
+    "only_LLS": 0
+   },
+   "hard": {
+    "only_FVD": 1,
+    "only_LLS": 0
+   }
+  },
+  "BH-vs-LLS": {
+   "priced": {
+    "only_BH": 0,
+    "only_LLS": 2
+   },
+   "conditional": {
+    "only_BH": 1,
+    "only_LLS": 0
+   },
+   "hard": {
+    "only_BH": 1,
+    "only_LLS": 0
+   }
+  }
+ },
+ "pairwise": {
+  "LU-vs-FVD": {
+   "priced": {
+    "only_LU": [
+     "es_tax_credit_foreign"
+    ],
+    "only_FVD": [
+     "ca_federal_cptc"
+    ]
+   },
+   "conditional": {
+    "only_LU": [],
+    "only_FVD": []
+   },
+   "hard": {
+    "only_LU": [
+     "ca_federal_cptc"
+    ],
+    "only_FVD": [
+     "es_tax_credit_foreign"
+    ]
+   }
+  },
+  "LU-vs-BH": {
+   "priced": {
+    "only_LU": [
+     "es_tax_credit_foreign",
+     "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    ],
+    "only_BH": [
+     "ca_federal_cptc"
+    ]
+   },
+   "conditional": {
+    "only_LU": [],
+    "only_BH": [
+     "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    ]
+   },
+   "hard": {
+    "only_LU": [
+     "ca_federal_cptc"
+    ],
+    "only_BH": [
+     "es_tax_credit_foreign"
+    ]
+   }
+  },
+  "LU-vs-LLS": {
+   "priced": {
+    "only_LU": [],
+    "only_LLS": [
+     "ca_federal_cptc"
+    ]
+   },
+   "conditional": {
+    "only_LU": [],
+    "only_LLS": []
+   },
+   "hard": {
+    "only_LU": [
+     "ca_federal_cptc"
+    ],
+    "only_LLS": []
+   }
+  },
+  "FVD-vs-BH": {
+   "priced": {
+    "only_FVD": [
+     "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    ],
+    "only_BH": []
+   },
+   "conditional": {
+    "only_FVD": [],
+    "only_BH": [
+     "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    ]
+   },
+   "hard": {
+    "only_FVD": [],
+    "only_BH": []
+   }
+  },
+  "FVD-vs-LLS": {
+   "priced": {
+    "only_FVD": [],
+    "only_LLS": [
+     "es_tax_credit_foreign"
+    ]
+   },
+   "conditional": {
+    "only_FVD": [],
+    "only_LLS": []
+   },
+   "hard": {
+    "only_FVD": [
+     "es_tax_credit_foreign"
+    ],
+    "only_LLS": []
+   }
+  },
+  "BH-vs-LLS": {
+   "priced": {
+    "only_BH": [],
+    "only_LLS": [
+     "es_tax_credit_foreign",
+     "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    ]
+   },
+   "conditional": {
+    "only_BH": [
+     "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    ],
+    "only_LLS": []
+   },
+   "hard": {
+    "only_BH": [
+     "es_tax_credit_foreign"
+    ],
+    "only_LLS": []
+   }
+  }
+ }
+}

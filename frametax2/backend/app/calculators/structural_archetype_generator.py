@@ -50,7 +50,23 @@ from itertools import combinations
 
 from app.calculators.allocation_pricing import price_segment, SegmentEconomics
 from app.calculators.apply_stacking_adjustments import StackingAdjustment, apply_stacking_adjustments
-from app.calculators.canonical_stack_bridge import load_named_pair_rule
+from app.calculators.canonical_stack_bridge import load_named_pair_rule as _load_named_pair_rule_uncached
+
+
+def load_named_pair_rule(slug_a: str, slug_b: str):
+    """Same result as canonical_stack_bridge.load_named_pair_rule. Inside `alias_memo_scope()` (the bounded regeneration
+    wrapper) the (read-only) result is memoized per slug pair: the hybrid search resolves the same ~125x125 pairs 12x per
+    candidate (1.7M calls / 240 s). Outside the scope behaviour is exactly the uncached call."""
+    from app.services.canonical_program_identity import _ALIAS_MEMO
+
+    memo = _ALIAS_MEMO.get()
+    if memo is None:
+        return _load_named_pair_rule_uncached(slug_a, slug_b)
+    key = ("pair", slug_a, slug_b)
+    if key in memo:
+        return memo[key]
+    rule = memo[key] = _load_named_pair_rule_uncached(slug_a, slug_b)
+    return rule
 from app.calculators.production_allocation import AccountAllocation
 from app.services.materiality_policy import MATERIALITY_THRESHOLD_PER_ADDITIONAL_JURISDICTION_USD
 from app.data.authority_coverage_registry import economic_block_for_program

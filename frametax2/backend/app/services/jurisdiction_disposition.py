@@ -242,6 +242,7 @@ def _propositions(slug: str, facts: dict[str, str]) -> tuple[list[dict], list[st
             props.append({
                 "condition_id": c.condition_id, "description": c.description, "kind": c.kind,
                 "fact_key": key, "stored_value": stored,
+                "amount_min": c.amount_fact_min, "local_labour_basis": getattr(c, "local_labour_basis", None),
                 "requirement": (
                     f">= {c.amount_fact_min}" if c.amount_fact_min is not None
                     else "confirmed" if c.required_boolean_fact_key else None

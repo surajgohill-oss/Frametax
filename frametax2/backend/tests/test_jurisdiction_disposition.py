@@ -146,7 +146,7 @@ def test_saskatchewan_is_a_discretionary_award_not_provenance_and_not_statutory_
 
 
 def test_authority_exhausted_programs_keep_their_rate_rule_and_are_amber_with_the_exact_ruling():
-    row = enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "x"), "al_cash_rebate", {})
+    row = enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "x"), "cr_tax_return_incentive", {})
     assert row["blocker_detail"]["kind"] == "AUTHORITY_EXHAUSTED_FAIL_CLOSED" and row["disposition"] == NEEDS_FACTS
     assert row["blocked_cause"] == "AUTHORITY_PROVENANCE_UNCERTAINTY"
 

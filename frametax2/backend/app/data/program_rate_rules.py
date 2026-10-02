@@ -223,6 +223,13 @@ class RateCondition:
     # neither tier.
     amount_fact_min_exclusive: bool = False
 
+    # SCENARIO local-labour inference (2026-10-02): names the kind of resident-labour percentage this condition's
+    # amount_fact_key measures, so the ONE shared inference (services/scenario_local_labour.py) can derive it for a
+    # hypothetical relocation when the producer has not evidenced it. "crew_resident_pct" = share of paid CREW (BTL
+    # plus above-the-line crew) that are local residents. Cast residency is deliberately NOT inferable
+    # (no basis); None = this condition is not a local-labour percentage.
+    local_labour_basis: str | None = None
+
     # Codex final P0 (mt_mfc_rebate): "Certificate fact selects the 40%
     # RateResolution but unresolved limb conditions keep served selected
     # incentive at 30%." A discretionary_band condition (a CRITERION the
@@ -1515,6 +1522,16 @@ def get_rate_rules(program_slug: str) -> tuple[RateRule, ...]:
     rules = _RULES_BY_PROGRAM.get(program_slug)
     if rules is None:
         rules = _RULES_BY_PROGRAM.get(_canonical_program_slug(program_slug))
+    if rules is None and program_slug:
+        # ALIAS SPELLING MUST NOT CHANGE ECONOMIC TREATMENT: the B4 gate already resolves a spelling through BOTH alias graphs
+        # (PROGRAM_SLUG_ALIASES and CANONICAL_RUNTIME_SLUG_BINDINGS); the rate lookup must too, otherwise a runtime-bound
+        # spelling (e.g. sa_sfc_rebate -> sa_film_commission_rebate) reads "no statutory rate rules" and its verified economics vanish.
+        from app.data.authority_coverage_registry import _b4_spellings
+
+        for spelling in sorted(_b4_spellings(program_slug)):
+            if spelling != program_slug and spelling in _RULES_BY_PROGRAM:
+                rules = _RULES_BY_PROGRAM[spelling]
+                break
     return rules or ()
 
 

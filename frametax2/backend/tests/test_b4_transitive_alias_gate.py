@@ -69,7 +69,7 @@ def isolated_registries():
 
 def test_one_hop_blocked_alias_refuses(isolated_registries):
     outer = "__b4t_one_hop__"
-    PROGRAM_SLUG_ALIASES[outer] = "ae_ad_film_rebate"  # B1 FAIL_CLOSED
+    PROGRAM_SLUG_ALIASES[outer] = "cr_tax_return_incentive"  # B1 FAIL_CLOSED
     _RULES_BY_PROGRAM[outer] = (_rule(outer),)
     assert economic_block_for_program(outer) is not None
     assert resolve_program_rate(outer, "feature_film", 5_000_000) is None
@@ -81,7 +81,7 @@ def test_one_hop_blocked_alias_refuses(isolated_registries):
 # the terminal target. ───────────────────────────────────────────────────
 
 def test_two_hop_blocked_alias_with_live_intermediate_refuses(isolated_registries):
-    outer, middle, target = "__b4t_two_hop_outer__", "__b4t_two_hop_middle__", "de_dfff"  # B1 DISPLAY_ONLY
+    outer, middle, target = "__b4t_two_hop_outer__", "__b4t_two_hop_middle__", "sa_film_commission_rebate"  # B1 DISPLAY_ONLY
     PROGRAM_SLUG_ALIASES[outer] = middle
     PROGRAM_SLUG_ALIASES[middle] = target
     _RULES_BY_PROGRAM[outer] = (_rule(outer),)
@@ -118,7 +118,7 @@ def test_three_hop_blocked_alias_chain_refuses(isolated_registries):
 
 def test_blocked_intermediate_with_clean_terminal_still_refuses(isolated_registries):
     outer, blocked_middle, clean_target = (
-        "__b4t_blocked_mid_outer__", "al_cash_rebate", "ca_federal_cptc",  # blocked_middle is B1 FAIL_CLOSED
+        "__b4t_blocked_mid_outer__", "sa_film_commission_rebate", "ca_federal_cptc",  # blocked_middle is B1 FAIL_CLOSED
     )
     # blocked_middle already resolves nowhere further in real data; give it
     # an explicit (corrupted) further hop to a real, clean, priceable
@@ -198,7 +198,7 @@ def test_retired_identity_multi_hop_alias_cannot_reach_active_rule(isolated_regi
 # cannot bypass the pair/group entrypoints. ──────────────────────────────
 
 def test_pair_and_group_stack_reject_multi_hop_aliased_blocked_candidate(isolated_registries):
-    a, b, target = "__b4t_stack_a__", "__b4t_stack_b__", "be_tax_shelter"  # B1 DISPLAY_ONLY
+    a, b, target = "__b4t_stack_a__", "__b4t_stack_b__", "no_film_incentive"  # B1 DISPLAY_ONLY
     PROGRAM_SLUG_ALIASES[a] = b
     PROGRAM_SLUG_ALIASES[b] = target
     blocked = StackCandidate(a, "BE", 999_999.0, 0.99, 1_000_000.0, "tax_credit")
@@ -213,7 +213,7 @@ def test_pair_and_group_stack_reject_multi_hop_aliased_blocked_candidate(isolate
 def test_conditional_fallback_through_multi_hop_chain_cannot_reactivate(isolated_registries):
     from app.data.program_rate_rules import RateCondition
 
-    outer, target = "__b4t_conditional_multi_hop__", "de_dfff"  # B1 DISPLAY_ONLY
+    outer, target = "__b4t_conditional_multi_hop__", "sa_film_commission_rebate"  # B1 DISPLAY_ONLY
     PROGRAM_SLUG_ALIASES[outer] = target
     _RULES_BY_PROGRAM[outer] = (
         RateRule(
@@ -234,7 +234,7 @@ def test_conditional_fallback_through_multi_hop_chain_cannot_reactivate(isolated
 # bypass the gate (extends Codex's single-hop re-registration case). ────
 
 def test_legacy_registry_reregistration_through_multi_hop_chain_cannot_bypass(isolated_registries):
-    outer, target = "__b4t_legacy_reregister__", "be_tax_shelter"  # B1 DISPLAY_ONLY
+    outer, target = "__b4t_legacy_reregister__", "no_film_incentive"  # B1 DISPLAY_ONLY
     PROGRAM_SLUG_ALIASES[outer] = target
     register_rate_rules((_rule(outer),))
     assert resolve_program_rate(outer, "feature_film", 5_000_000) is None
@@ -246,7 +246,7 @@ def test_legacy_registry_reregistration_through_multi_hop_chain_cannot_bypass(is
 def test_serialized_reconstruction_of_multi_hop_aliased_candidate_stays_blocked(isolated_registries):
     from dataclasses import asdict
 
-    a, b, target = "__b4t_serialize_a__", "__b4t_serialize_b__", "de_dfff"
+    a, b, target = "__b4t_serialize_a__", "__b4t_serialize_b__", "sa_film_commission_rebate"
     PROGRAM_SLUG_ALIASES[a] = b
     PROGRAM_SLUG_ALIASES[b] = target
     raw = asdict(StackCandidate(a, "DE", 999_999.0, 0.99, 1_000_000.0, "tax_credit"))
