@@ -238,6 +238,15 @@ _JURISDICTION_CURRENCY: dict[str, str] = {
     # require a real rate in FX_RATE_SNAPSHOTS above to be evaluable via
     # the canonical FX path at all -- these were missing entirely.
     "AU": "AUD", "MA": "MAD", "TH": "THB",
+    # MAXIMUM-POTENTIAL INCENTIVE CONTRACT closeout (2026-10-01): cz_film_incentive's CZK450m
+    # and za_nfvf_rebate's ZAR25m project caps are native-currency caps converted through
+    # CanonicalFXContext (see the CZK/ZAR snapshot note above). ALL_TRACKED_CURRENCIES is
+    # derived from THIS map, so with CZ/ZA absent a SUCCESSFUL live refresh produced a
+    # snapshot with no CZK/ZAR and every Czech/South-African-cap candidate fail-closed to
+    # PRICING_BLOCKED ("No sourced FX rate for CZK in the ... snapshot") -- silently removing
+    # real, previously priced scenarios from any evaluation run after a live refresh. Real
+    # ISO 4217 codes only; no rate is invented (the live provider supplies them).
+    "CZ": "CZK", "ZA": "ZAR",
     # US/CA participants are frequently sub-national (e.g. "US-TX", "CA-BC")
     # — the frontend resolves those to their country prefix before this
     # lookup, so the plain "US"/"CA" entries below cover every US state and

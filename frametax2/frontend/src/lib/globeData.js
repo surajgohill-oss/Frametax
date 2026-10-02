@@ -1,4 +1,5 @@
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
+import { readIncentivePotential } from "./incentivePotential.js";
 import { classifyBlocker } from "./blockerDisposition.js";
 import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
 // Reused, not re-derived: the SAME program-name + rate presentation
@@ -699,6 +700,8 @@ export function buildCandidateDetail(structure) {
     ceiling_requires_confirmation: !!structure.ceiling_requires_confirmation,
     npc_floor_usd: structure.npc_floor_usd ?? null,
     npc_ceiling_usd: structure.npc_ceiling_usd ?? null,
+    // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: the shared served reader (no arithmetic).
+    incentive_potential: readIncentivePotential(structure),
     blockers: structure.blockers || [],
     warnings: structure.warnings || [],
     components,

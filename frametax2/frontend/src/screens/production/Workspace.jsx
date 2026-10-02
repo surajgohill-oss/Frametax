@@ -11,6 +11,7 @@ import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { alternativeLabel, fitTag, structureStatusDetail } from "../../lib/alternativeLabels";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
+import { readIncentivePotential, certaintyLabel, missingFactsSummary, missingFactsTitle } from "../../lib/incentivePotential";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
@@ -150,6 +151,10 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // away here.
   const qualifiedSpend = qpeOf(structure);
   const npc = structure.npc_with_adjustments_usd;
+  // MAXIMUM-POTENTIAL INCENTIVE CONTRACT (2026-10-01): confirmed vs. maximum-supported
+  // economics are backend-served fields (services/incentive_potential.py), read verbatim
+  // through the one shared reader the Inspector also uses -- nothing is computed here.
+  const pot = readIncentivePotential(structure);
 
   // CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30), item 8:
   // an Evaluated Alternative shown in a six-card slot (backfilled when its tier
@@ -310,9 +315,19 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
           <div className="wsx-rows">
             <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
             <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
-            <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>
+            <div className="wsx-row"><span>{pot ? "Confirmed incentive" : "Gross incentive"}</span><span className="incentive"><Money value={pot ? pot.confirmedIncentive : structure.selected_incentive_usd} bare /></span></div>
           </div>
-          <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
+          <div className="wsx-row net"><span>{pot ? "Confirmed NPC" : "Net production cost"}</span><span><Money value={pot ? pot.confirmedNpc : npc} bare /></span></div>
+          {pot && (
+            <div className="wsx-pot" data-certainty={pot.certainty} data-ceiling-status={pot.ceilingStatus}>
+              <div className="wsx-pot-line"><span>Max incentive</span><span><Money value={pot.maxIncentive} bare /></span></div>
+              <div className="wsx-pot-line"><span>Potential NPC</span><span><Money value={pot.potentialNpc} bare /></span></div>
+              <div className="wsx-pot-facts" title={missingFactsTitle(pot)}>
+                <b>{certaintyLabel(pot)}</b>
+                <span>{missingFactsSummary(pot)}</span>
+              </div>
+            </div>
+          )}
           {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22), Phase 4: an Optimizer-
               mode card (recommended OR evaluated alternative — this field is only ever
               present on optimizer_scenarios entries) always shows its exact delta from

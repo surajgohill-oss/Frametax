@@ -43,6 +43,10 @@ from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.economic_identity import canonical_economic_identity
+from app.services.incentive_potential import (
+    assign_incentive_potential_ranks,
+    build_incentive_potential,
+)
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     UNPRICEABLE_PAGE_DEFAULT_LIMIT,
@@ -883,7 +887,7 @@ def _empty_structure_entry(
 
     _seg_floor, _seg_ceiling, _ceiling_requires_confirmation = _aggregate_segment_incentive_floor_ceiling(trace)
 
-    return {
+    entry = {
         "structure_id": str(structure.id),
         "structure_type": structure_type,
         "label": _humanize_structure_label(structure.name, jurisdiction_name_by_code),
@@ -1174,6 +1178,21 @@ def _empty_structure_entry(
         "feasibility_status": trace.get("feasibility_status"),
         "feasibility_reasons": trace.get("feasibility_reasons") or [],
     }
+    # MAXIMUM-POTENTIAL INCENTIVE CONTRACT (2026-10-01): the single served definition of
+    # confirmed vs. maximum-supportable economics (services/incentive_potential.py). Read
+    # from the same persisted per-segment/per-component pricing values as everything above
+    # -- never a second calculator; every consumer renders these fields verbatim.
+    entry.update(build_incentive_potential(
+        trace,
+        is_priced=is_priced,
+        selected_incentive_usd=selected_incentive_usd,
+        npc_with_adjustments_usd=(
+            float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
+        ),
+        legal_review_required=bool(trace.get("legal_review_required", False)),
+        administrative_allocation_risk=bool(trace.get("administrative_allocation_risk")),
+    ))
+    return entry
 
 
 #: Existing Optimizer/Stacker Reconnection, Task 12 — thin scenario-
@@ -2438,6 +2457,9 @@ async def build_production_and_structures(
     optimizer_scenarios.sort(key=lambda _se: _se["fit_priority"])
     for _i, _se in enumerate(optimizer_scenarios, start=1):
         _se["fit_aware_rank"] = _i
+    # Two independent orderings over the same never-filtered list (confirmed financial vs.
+    # maximum-potential opportunity); neither reorders or removes anything.
+    assign_incentive_potential_ranks(optimizer_scenarios)
 
     recommended_optimizer_options = [e for e in optimizer_scenarios if e["recommendation_status"] == REC_STATUS_RECOMMENDED]
     evaluated_optimizer_alternatives = [e for e in optimizer_scenarios if e["recommendation_status"] != REC_STATUS_RECOMMENDED]

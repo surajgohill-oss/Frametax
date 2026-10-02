@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { alternativeLabel } from "../lib/alternativeLabels";
+import { certaintyLabel } from "../lib/incentivePotential";
 import { useAppState } from "../state/AppState";
 import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
@@ -442,16 +443,19 @@ function StructureDetailInspector({ data }) {
       )}
       <dl className="kv-list">
         <div><dt>Participants</dt><dd>{(data.participants || []).map((code) => bestJurisdictionName(code, data)).join(", ") || "—"}</dd></div>
-        <div><dt>Total incentive</dt><dd className="mono"><Money value={data.incentive_usd} /></dd></div>
+        <div><dt>{data.incentive_potential ? "Confirmed incentive" : "Total incentive"}</dt><dd className="mono"><Money value={data.incentive_potential ? data.incentive_potential.confirmedIncentive : data.incentive_usd} /></dd></div>
         <div><dt>Total QPE</dt><dd className="mono"><Money value={data.qpe_usd} /></dd></div>
-        <div><dt>Net production cost</dt><dd className="mono"><Money value={data.npc_usd} /></dd></div>
-        {/* LU Mauritius economics reconciliation: a discretionary rate
-            ceiling (e.g. Mauritius "up to 40%") that has not been
-            production-specifically confirmed prices at the floor. Show the
-            distinct potential ceiling incentive/NPC alongside it, never
-            collapsed into the selected value, only when they genuinely
-            differ and the ceiling is real but unconfirmed. */}
-        {data.ceiling_requires_confirmation && data.incentive_ceiling_usd != null
+        <div><dt>{data.incentive_potential ? "Confirmed NPC" : "Net production cost"}</dt><dd className="mono"><Money value={data.incentive_potential ? data.incentive_potential.confirmedNpc : data.npc_usd} /></dd></div>
+        {/* MAXIMUM-POTENTIAL INCENTIVE CONTRACT (2026-10-01): the SAME served fields and the
+            SAME shared reader the Workspace card uses, rendered verbatim. */}
+        {data.incentive_potential && (
+          <>
+            <div><dt>Max potential incentive</dt><dd className="mono"><Money value={data.incentive_potential.maxIncentive} /></dd></div>
+            <div><dt>Potential NPC</dt><dd className="mono"><Money value={data.incentive_potential.potentialNpc} /></dd></div>
+            <div><dt>Economics</dt><dd>{certaintyLabel(data.incentive_potential)}</dd></div>
+          </>
+        )}
+        {!data.incentive_potential && data.ceiling_requires_confirmation && data.incentive_ceiling_usd != null
           && data.incentive_ceiling_usd !== data.incentive_floor_usd && (
           <>
             <div><dt>Potential ceiling incentive</dt><dd className="mono"><Money value={data.incentive_ceiling_usd} /> <span className="text-tertiary small">(requires confirmation)</span></dd></div>
@@ -460,6 +464,17 @@ function StructureDetailInspector({ data }) {
         )}
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
+      {data.incentive_potential && data.incentive_potential.missingFacts.length > 0 && (
+        <div className="inspector-sect" data-testid="ceiling-missing-facts">
+          <p className="inspector-eyebrow" style={{ marginTop: 4 }}>Needed to reach the maximum</p>
+          {data.incentive_potential.missingFacts.map((f, i) => (
+            <p key={`${f.program_slug}-${f.fact_id}-${i}`} className="text-secondary small" style={{ margin: "4px 0" }}>
+              {f.description}
+              <span className="text-tertiary"> — {f.jurisdiction_code} · {f.state === "USER_FACT_REQUIRED" ? "producer fact" : f.state === "SCRIPT_FACT_REQUIRED" ? "script fact" : f.state === "AUTHORITY_UNRESOLVED" ? "authority decision" : "disclosure"}</span>
+            </p>
+          ))}
+        </div>
+      )}
       {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the exact savings/cost
           delta and recommendation-vs-evaluated-alternative status, when this structure
           carries one (only optimizer_scenarios entries do — a Jurisdictions-layer

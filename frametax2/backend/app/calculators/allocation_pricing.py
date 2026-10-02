@@ -132,6 +132,14 @@ class SegmentEconomics:
     # 40%, Australia's flat 30%) — those have is_band_ceiling=False and
     # this stays False.
     ceiling_requires_confirmation: bool = False
+    # MAXIMUM-POTENTIAL INCENTIVE CONTRACT (2026-10-01): the exact conditions of
+    # the resolved ceiling tier that could NOT be confirmed from known facts
+    # (ConditionEvaluation.satisfied is not True), copied verbatim from
+    # RateResolution.conditions_evaluated -- never invented, never re-derived.
+    # Empty unless ceiling_requires_confirmation. Persisted so the served
+    # contract can name the specific facts/authority actions that stand
+    # between the confirmed floor and the maximum.
+    ceiling_conditions: tuple[dict, ...] = ()
     qpe_cap_applied_usd: float = 0.0   # amount excluded by a program-level QPE cap (e.g. GB/GR 80%)
     # Cluster 7 (dollar caps). A percentage QPE cap (above) limits the BASE;
     # these limit the INCENTIVE itself, applied after base x rate. Both are
@@ -1429,6 +1437,21 @@ def price_segment(
         register_trace=trace,
         notes=cap_notes,
         ceiling_requires_confirmation=ceiling_requires_confirmation,
+        ceiling_conditions=(
+            tuple(
+                {
+                    "condition_id": e.condition_id,
+                    "description": e.description,
+                    "kind": e.kind,
+                    "condition_state": e.condition_state,
+                    "satisfied": e.satisfied,
+                    "note": e.note,
+                }
+                for e in rr.conditions_evaluated
+                if e.satisfied is not True
+            )
+            if ceiling_requires_confirmation else ()
+        ),
         qpe_cap_applied_usd=qpe_cap_applied,
         incentive_cap_usd=cap_usd,
         incentive_cap_type=cap_type,
