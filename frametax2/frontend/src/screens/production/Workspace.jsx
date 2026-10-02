@@ -8,7 +8,7 @@ import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDet
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { alternativeLabel, fitTag } from "../../lib/alternativeLabels";
+import { alternativeLabel, fitTag, structureStatusDetail } from "../../lib/alternativeLabels";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
@@ -720,7 +720,7 @@ export default function Workspace() {
     if (pt.tier === "amber") { openInspector("optimizer-opportunity", buildOpportunityDetail(s)); return; }
     if (pt.tier === "red") { openInspector("optimizer-rejection", buildRejectedDetail(s)); return; }
     const seg = resolveSegmentDetail(s, code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, ...structureStatusDetail(s, optimizerLeadingId), contingencyByAccount });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
   // CODEX_FG-002 (2026-09-21): the card's "Inspect" action opens that whole
@@ -734,7 +734,7 @@ export default function Workspace() {
   }
   function handleSelectSegment(structure, code) {
     const seg = resolveSegmentDetail(structure, code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, contingencyByAccount });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, ...structureStatusDetail(structure, optimizerLeadingId), contingencyByAccount });
   }
 
   return (

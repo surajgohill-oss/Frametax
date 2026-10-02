@@ -303,6 +303,18 @@ function AllocationSegmentInspector({ data }) {
         </p>
       )}
       <dl className="kv-list">
+        {data.structureStatusLabel && <div><dt>Structure status</dt><dd>{data.structureStatusLabel}</dd></div>}
+        {data.production_fit_status && (
+          <div>
+            <dt>Production fit</dt>
+            <dd>
+              {data.production_fit_status === "STRONG" ? "Strong fit" : data.production_fit_status === "WORKABLE" ? "Workable fit"
+                : data.production_fit_status === "WEAK" ? "Weak fit" : "Location fit unconfirmed"}
+              {(data.production_fit_legs || []).length > 0 && <span className="text-tertiary small"> · physical production: {data.production_fit_legs.join(", ")}</span>}
+              {(data.production_fit_reasons || []).length > 0 && <span className="text-tertiary small"> · {data.production_fit_reasons.map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>}
+            </dd>
+          </div>
+        )}
         <div><dt>Allocated spend</dt><dd className="mono"><Money value={data.allocated_usd} /></dd></div>
         {data.claims_incentive ? (
           <>

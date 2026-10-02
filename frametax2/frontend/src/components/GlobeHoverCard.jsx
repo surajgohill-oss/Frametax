@@ -198,6 +198,12 @@ function JurisdictionRecordBody({ hover }) {
         <div className="text-tertiary small">Best associated structure</div>
         <div className="small">{hover.structureLabel || "Not available"}</div>
       </div>
+      {hover.structureStatusLabel && (
+        <div className="hover-field">
+          <div className="text-tertiary small">Structure status</div>
+          <div className="small">{hover.structureStatusLabel}</div>
+        </div>
+      )}
       {priced ? (
         <>
           <div className="hover-field">

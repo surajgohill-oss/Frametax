@@ -60,3 +60,16 @@ export function fitTag(structure) {
   if (structure?.production_fit_status === "UNKNOWN") return " · location fit unconfirmed";
   return "";
 }
+
+// Inspector detail (status label + served production fit) for any surface that opens a
+// structure's segment view, so a Globe click, a card segment row and the structure Inspector
+// all disclose the SAME status. Served fields only.
+export function structureStatusDetail(structure, leadingId = null) {
+  if (!structure) return {};
+  return {
+    structureStatusLabel: alternativeLabel(structure, leadingId),
+    production_fit_status: structure.production_fit_status ?? undefined,
+    production_fit_legs: structure.production_fit_legs ?? undefined,
+    production_fit_reasons: structure.production_fit_reasons ?? undefined,
+  };
+}

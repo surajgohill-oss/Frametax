@@ -62,3 +62,18 @@ test("Workspace counters, dropdown order and Globe list read the same served fit
   assert.match(read("../src/screens/production/ProjectGlobe.jsx"), /alternativeLabel\(s, /);
   assert.match(ws, /alternativeLabel\(structure, optimizerLeadingId\)/);
 });
+
+test("FINAL WIRING: Globe hover and segment Inspector carry the same served structure status as Lanes", async () => {
+  const { structureStatusDetail } = await import("../src/lib/alternativeLabels.js");
+  const weak = { structure_id: "w", candidate_status: "PRICED", recommendation_status: "EVALUATED_ALTERNATIVE", savings_vs_current_usd: 1, production_fit_status: "WEAK", production_fit_legs: ["MN"], production_fit_reasons: ["MN:MARINE_MISMATCH"] };
+  const d = structureStatusDetail(weak, null);
+  assert.equal(d.structureStatusLabel, alternativeLabel(weak, null));
+  assert.equal(d.structureStatusLabel, "LOW-LOCATION-FIT REFERENCE");
+  assert.deepEqual(d.production_fit_legs, ["MN"]);
+  const globeData = read("../src/lib/globeData.js");
+  assert.match(globeData, /structureStatusLabel: mode === MODE_OPTIMIZER && structure\s*\?\s*alternativeLabel\(structure/);
+  assert.match(read("../src/components/GlobeHoverCard.jsx"), /Structure status/);
+  const ws = read("../src/screens/production/Workspace.jsx");
+  assert.equal((ws.match(/\.\.\.structureStatusDetail\(/g) || []).length, 2);
+  assert.match(read("../src/shell/Inspector.jsx"), /data\.structureStatusLabel/);
+});
