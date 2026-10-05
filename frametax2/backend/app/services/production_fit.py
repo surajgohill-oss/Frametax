@@ -76,53 +76,69 @@ _ASSESSABLE_HARD_CAPABILITIES = frozenset({"marine_filming", "open_water_filming
 
 
 def classify_jurisdiction_fit(code: str, requirements) -> tuple[str, list[str]]:
-    """Fit of ONE physical-production jurisdiction.
+    """Fit of ONE physical-production jurisdiction -- the HARD-requirement doctrine.
 
-    Per location requirement (production_requirements.assess_location_capability, over the jurisdiction's structured
-    capability data): MATCH / MISMATCH / UNKNOWN. A confirmed physical MISMATCH -> WEAK (a confirmed mismatch, served as
-    "not suitable for this production"); no mismatch but any requirement that cannot be assessed -> UNKNOWN with a precise
-    `<TOKEN>_NOT_ASSESSABLE` reason (fit unconfirmed, never unsuitable); every requirement affirmatively matched -> the
-    canonical classifier's STRONG / WORKABLE."""
+    Only the HARD physical requirements (production_requirements._HARD_REQUIREMENT_CAPABILITIES: marine / open-water /
+    underwater filming, water tanks, desert, snow -- each present only when the script or the producer explicitly requires
+    it) can decide the fit:
+      * a hard requirement the structured capability data DENIES (landlocked vs marine / open water) -> WEAK, served as
+        "not suitable for this production";
+      * a hard requirement no profile can affirm or deny (desert / snow / underwater) -> UNKNOWN, `<TOKEN>_NOT_ASSESSABLE`
+        (fit unconfirmed, never unsuitable);
+      * otherwise the canonical classifier's STRONG / WORKABLE.
+    SOFT suitability signals (beach/coast, island, jungle, mountains, urban, small town, rural, forest, historic, studio)
+    never reach this decision: a missing soft datum is neutral and a confirmed soft mismatch is disclosed, never blocking
+    (see `classify_soft_signals`). A missing datum is never a mismatch."""
     import dataclasses
 
-    from app.calculators.production_requirements import (
-        ASSESS_MISMATCH, ASSESS_UNKNOWN, LOCATION_CAPABILITY_TOKENS, assess_location_capability,
-        jurisdiction_capability_profile, match_capability,
-    )
+    from app.calculators.production_requirements import jurisdiction_capability_profile, match_capability
     from app.services.canonical_evaluation import _feasibility_status
 
     cap = jurisdiction_capability_profile(code)
     if cap.has_capability_data and not requirements_disclosed(requirements):
         # An empty requirement set must not manufacture a fit claim.
         return FIT_UNKNOWN, ["NO_REQUIREMENTS_ON_FILE"]
-    needs = sorted((requirements.environments | requirements.required_capabilities) & LOCATION_CAPABILITY_TOKENS)
-    mismatches: list[str] = []
-    unassessed: list[str] = []
-    for token in needs:
-        verdict, reason = assess_location_capability(token, cap)
-        if verdict == ASSESS_MISMATCH:
-            mismatches.append(reason)
-        elif verdict == ASSESS_UNKNOWN and cap.has_capability_data:
-            unassessed.append(reason)
+    unassessed = sorted(requirements.required_capabilities - _ASSESSABLE_HARD_CAPABILITIES)
     assessable = dataclasses.replace(
         requirements, required_capabilities=requirements.required_capabilities & _ASSESSABLE_HARD_CAPABILITIES,
     )
     match = match_capability(assessable, cap)
     exam = SimpleNamespace(
         jurisdiction_code=code, has_capability_data=cap.has_capability_data,
-        production_capable=match.production_capable and not mismatches,
+        production_capable=match.production_capable,
     )
     status, reasons = _feasibility_status(exam, assessable)
-    if mismatches:
-        status = FIT_WEAK
-        reasons = list(dict.fromkeys([*mismatches, *(r for r in reasons if r != "CAPABILITY_MISMATCH")]))
     if status in FIT_CONFIRMED_STATUSES and unassessed:
-        # Nothing assessable contradicts the production, but a requirement cannot be confirmed from the capability data:
-        # unconfirmed, never a manufactured fit claim.
-        return FIT_UNKNOWN, list(dict.fromkeys(unassessed))
+        # Nothing assessable contradicts the production, but a HARD requirement cannot be
+        # confirmed from the capability data: unconfirmed, never a manufactured fit claim.
+        return FIT_UNKNOWN, [f"{t.upper()}_NOT_ASSESSABLE" for t in unassessed]
     if status == FIT_UNKNOWN and not reasons:
         reasons = ["CAPABILITY_UNKNOWN"]
+    if status == FIT_STRONG and classify_soft_signals(code, requirements)["mismatched"]:
+        status = FIT_WORKABLE       # a confirmed soft mismatch may lower suitability; it never makes a fit Weak
     return status, list(reasons)
+
+
+def classify_soft_signals(code: str, requirements) -> dict[str, list[str]]:
+    """SOFT suitability signals of ONE jurisdiction: the active location requirements that are NOT hard physical needs,
+    each assessed against the structured capability data (production_requirements.assess_location_capability):
+    `matched` (confirmed support), `mismatched` (confirmed denial, e.g. a landlocked jurisdiction vs beach/coast) and
+    `unassessed` (no structured data: neutral, disclosed, non-blocking). Disclosure only -- never a gate."""
+    from app.calculators.production_requirements import (
+        ASSESS_MATCH, ASSESS_MISMATCH, LOCATION_CAPABILITY_TOKENS, _HARD_REQUIREMENT_CAPABILITIES,
+        assess_location_capability, jurisdiction_capability_profile,
+    )
+
+    cap = jurisdiction_capability_profile(code)
+    out: dict[str, list[str]] = {"matched": [], "mismatched": [], "unassessed": []}
+    if not cap.has_capability_data:
+        return out
+    soft = sorted((requirements.environments & LOCATION_CAPABILITY_TOKENS) - _HARD_REQUIREMENT_CAPABILITIES
+                  - requirements.required_capabilities)
+    for token in soft:
+        verdict, _ = assess_location_capability(token, cap)
+        out["matched" if verdict == ASSESS_MATCH else "mismatched" if verdict == ASSESS_MISMATCH else "unassessed"].append(token)
+    return out
 
 
 def physical_production_legs(entry: dict) -> list[str]:
@@ -162,12 +178,18 @@ def classify_entry_fit(entry: dict, requirements, cache: dict | None = None) -> 
         return {
             "production_fit_status": FIT_UNKNOWN, "production_fit_reasons": ["NO_PHYSICAL_PRODUCTION_LEG"],
             "production_fit_legs": [], "production_fit_leg_status": {}, "production_fit_basis": basis,
+            "production_fit_soft_signals": {"matched": [], "mismatched": [], "unassessed": []},
         }
     per_leg: dict[str, str] = {}
     reasons: list[str] = []
+    soft: dict[str, list[str]] = {"matched": [], "mismatched": [], "unassessed": []}
     for code in legs:
         if code not in cache:
             cache[code] = classify_jurisdiction_fit(code, requirements)
+        if ("soft", code) not in cache:
+            cache[("soft", code)] = classify_soft_signals(code, requirements)
+        for kind, tokens in cache[("soft", code)].items():
+            soft[kind].extend(f"{code}:{t}" for t in tokens)
         status, leg_reasons = cache[code]
         per_leg[code] = status
         reasons.extend(f"{code}:{r}" for r in leg_reasons)
@@ -178,6 +200,7 @@ def classify_entry_fit(entry: dict, requirements, cache: dict | None = None) -> 
         "production_fit_legs": legs,
         "production_fit_leg_status": per_leg,
         "production_fit_basis": basis,
+        "production_fit_soft_signals": soft,
     }
 
 

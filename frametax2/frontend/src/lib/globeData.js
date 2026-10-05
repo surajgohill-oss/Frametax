@@ -746,6 +746,7 @@ export function buildCandidateDetail(structure) {
     // never recomputed here.
     production_fit_status: structure.production_fit_status ?? undefined,
     production_fit_reasons: structure.production_fit_reasons ?? undefined,
+    production_fit_soft_signals: structure.production_fit_soft_signals ?? undefined,
     production_fit_legs: structure.production_fit_legs ?? undefined,
     production_fit_basis: structure.production_fit_basis ?? undefined,
     fit_priority: structure.fit_priority ?? undefined,

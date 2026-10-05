@@ -75,5 +75,6 @@ export function structureStatusDetail(structure, leadingId = null) {
     production_fit_status: structure.production_fit_status ?? undefined,
     production_fit_legs: structure.production_fit_legs ?? undefined,
     production_fit_reasons: structure.production_fit_reasons ?? undefined,
+    production_fit_soft_signals: structure.production_fit_soft_signals ?? undefined,
   };
 }

@@ -429,6 +429,7 @@ def location_category_matrix() -> list[dict]:
             "chip": chip, "label": label, "category": category, "capability_tokens": tokens,
             "changes_effective_requirements": bool(tokens), "structured_capability_field": field,
             "hard_requirement": bool(reqs.required_capabilities - base.required_capabilities),
+            "suitability_class": "HARD" if (reqs.required_capabilities - base.required_capabilities) else "SOFT",
             "disposition": "CANONICAL_AND_CONSUMED" if (tokens and field) else ("CANONICAL_DATA_MISSING" if tokens else "EXISTS_BUT_DISCONNECTED"),
         })
     return rows

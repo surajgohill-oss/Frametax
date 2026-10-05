@@ -1449,6 +1449,7 @@ def _ranking_entry(entry: dict) -> dict:
         "production_fit_status": entry.get("production_fit_status"),
         "production_fit_reasons": entry.get("production_fit_reasons") or [],
         "production_fit_legs": entry.get("production_fit_legs") or [],
+        "production_fit_soft_signals": entry.get("production_fit_soft_signals") or {},
         "structure_id": entry["structure_id"],
         "label": entry["label"],
         "is_fully_priced": entry["is_fully_priced"],

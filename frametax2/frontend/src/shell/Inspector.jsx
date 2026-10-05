@@ -5,6 +5,16 @@ import { certaintyLabel } from "../lib/incentivePotential";
 
 // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: ONE component renders the shared contract for both the
 // structure Inspector and the segment Inspector (values verbatim from the served fields).
+// Soft suitability signals (urban / rural / historic / beach ...): disclosed, never a gate. Unassessed = no capability data.
+function SoftFitSignals({ signals }) {
+  const part = (kind, label) => {
+    const items = [...new Set((signals?.[kind] || []).map((t) => humanizeToken(String(t).split(":").pop().replace(/_environments$/, "").replace(/_/g, " "))))];
+    return items.length ? `${label}: ${items.join(", ")}` : null;
+  };
+  const parts = [part("matched", "supported"), part("mismatched", "not supported"), part("unassessed", "not assessed (no capability data, non-blocking)")].filter(Boolean);
+  return parts.length ? <span className="text-tertiary small"> · Soft signals — {parts.join("; ")}</span> : null;
+}
+
 function IncentivePotentialRows({ pot }) {
   if (!pot) return null;
   return (
@@ -344,6 +354,7 @@ function AllocationSegmentInspector({ data }) {
                 : data.production_fit_status === "WEAK" ? "Weak fit" : "Location fit unconfirmed"}
               {(data.production_fit_legs || []).length > 0 && <span className="text-tertiary small"> · physical production: {data.production_fit_legs.join(", ")}</span>}
               {(data.production_fit_reasons || []).length > 0 && <span className="text-tertiary small"> · {data.production_fit_reasons.map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>}
+              <SoftFitSignals signals={data.production_fit_soft_signals} />
             </dd>
           </div>
         )}
@@ -490,6 +501,22 @@ function StructureDetailInspector({ data }) {
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
       <NeededForMaximum pot={data.incentive_potential} />
+      {/* A Jurisdictions-layer winner has no recommendation concept, but it carries the SAME served production fit as every
+          other surface (Lanes / Globe hover / segment Inspector): shown here when the recommendation block below is absent. */}
+      {!data.recommendation_status && data.production_fit_status && (
+        <dl className="kv-list" style={{ marginTop: -4, marginBottom: 8 }} data-production-fit={data.production_fit_status}>
+          <div>
+            <dt>Production fit</dt>
+            <dd>
+              {data.production_fit_status === "STRONG" ? "Strong fit" : data.production_fit_status === "WORKABLE" ? "Workable fit"
+                : data.production_fit_status === "WEAK" ? "Weak fit" : "Location fit unconfirmed"}
+              {(data.production_fit_legs || []).length > 0 && <span className="text-tertiary small"> · physical production: {data.production_fit_legs.join(", ")}</span>}
+              {(data.production_fit_reasons || []).length > 0 && <span className="text-tertiary small"> · {data.production_fit_reasons.map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>}
+              <SoftFitSignals signals={data.production_fit_soft_signals} />
+            </dd>
+          </div>
+        </dl>
+      )}
       {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22): the exact savings/cost
           delta and recommendation-vs-evaluated-alternative status, when this structure
           carries one (only optimizer_scenarios entries do — a Jurisdictions-layer
@@ -534,6 +561,7 @@ function StructureDetailInspector({ data }) {
                 {(data.production_fit_reasons || []).length > 0 && (
                   <span className="text-tertiary small"> · {(data.production_fit_reasons || []).map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>
                 )}
+                <SoftFitSignals signals={data.production_fit_soft_signals} />
                 {data.is_recommended !== true && data.canonical_recommendation_status === "RECOMMENDED" && (
                   <span className="text-tertiary small"> · economically qualifies, but is not Leading/Strong until location fit is confirmed</span>
                 )}

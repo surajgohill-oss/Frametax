@@ -71,31 +71,75 @@ def test_location_toggles_are_never_jurisdiction_exclusions():
     assert "JURISDICTION_PREFERENCE" not in src and "excluded" not in src.lower().replace("never statutory exclusions", "")
 
 
-# ── distinct served fit statuses ────────────────────────────────────────────────────────────────────────────────────
-def test_confirmed_match_unknown_data_and_confirmed_mismatch_are_three_distinct_statuses():
-    assert pf.classify_jurisdiction_fit("GR", _reqs("beach_coast"))[0] in pf.FIT_CONFIRMED_STATUSES        # confirmed match
-    status, reasons = pf.classify_jurisdiction_fit("GR", _reqs("desert"))                                    # no structured data
-    assert status == pf.FIT_UNKNOWN and reasons == ["DESERT_ENVIRONMENTS_NOT_ASSESSABLE"]
-    status, reasons = pf.classify_jurisdiction_fit("AT", _reqs("beach_coast"))                               # landlocked: mismatch
-    assert status == pf.FIT_WEAK and reasons == ["MARINE_MISMATCH"]
-    assert pf.classify_jurisdiction_fit("XX", _reqs("beach_coast"))[0] == pf.FIT_UNKNOWN                    # no profile at all
+# ── hard physical requirements vs soft suitability signals vs missing capability data ───────────────────────────────────
+HARD_CHIPS = {"marine_open_water", "desert_arid", "snow_arctic"}
 
 
-def test_missing_capability_data_is_never_unsuitable_for_any_data_missing_chip():
+def test_only_the_hard_physical_chips_are_hard_requirements_and_the_rest_are_soft():
+    matrix = location_category_matrix()
+    assert {r["chip"] for r in matrix if r["suitability_class"] == "HARD"} == HARD_CHIPS
+    assert all(r["suitability_class"] == "SOFT" for r in matrix if r["chip"] not in HARD_CHIPS)
+    assert all(r["hard_requirement"] == (r["suitability_class"] == "HARD") for r in matrix)
+
+
+def test_urban_rural_and_historic_alone_never_force_an_assessable_jurisdiction_to_unknown():
+    reqs = _reqs("urban", "rural_countryside", "historic_old_world")
+    for code in ("GR", "AT", "ES"):
+        status, reasons = pf.classify_jurisdiction_fit(code, reqs)
+        assert status in pf.FIT_CONFIRMED_STATUSES and not any(r.endswith("_NOT_ASSESSABLE") for r in reasons), (code, status, reasons)
+    soft = pf.classify_soft_signals("GR", reqs)       # disclosed, non-blocking
+    assert set(soft["unassessed"]) == {"urban_environments", "rural_environments", "historic_architecture"} and not soft["mismatched"]
+
+
+def test_every_soft_chip_with_missing_data_stays_confirmed_and_never_not_suitable():
     for row in location_category_matrix():
-        if row["disposition"] == "CANONICAL_DATA_MISSING":
-            status, reasons = pf.classify_jurisdiction_fit("GR", _reqs(row["category"]))
-            assert status == pf.FIT_UNKNOWN and reasons == [f"{row['capability_tokens'][0].upper()}_NOT_ASSESSABLE"], row["chip"]
+        if row["suitability_class"] == "SOFT":
+            for code in ("GR", "AT"):                  # AT is landlocked: coast / island are CONFIRMED soft mismatches
+                status, reasons = pf.classify_jurisdiction_fit(code, _reqs(row["category"]))
+                assert status in pf.FIT_CONFIRMED_STATUSES and status != pf.FIT_WEAK, (row["chip"], code, status, reasons)
+
+
+def test_a_confirmed_soft_match_is_disclosed_and_a_confirmed_soft_mismatch_is_disclosed_without_blocking():
+    assert pf.classify_soft_signals("GR", _reqs("beach_coast"))["matched"] == ["coastal_environments"]
+    assert pf.classify_soft_signals("GR", _reqs("studio"))["matched"] == ["sound_stages"]
+    at = pf.classify_soft_signals("AT", _reqs("beach_coast"))
+    assert at["mismatched"] == ["coastal_environments"]
+    assert pf.classify_jurisdiction_fit("AT", _reqs("beach_coast"))[0] in pf.FIT_CONFIRMED_STATUSES
+    entry = pf.classify_entry_fit({"anchor_jurisdiction": "GR"}, _reqs("beach_coast", "urban"))
+    assert entry["production_fit_soft_signals"] == {"matched": ["GR:coastal_environments"], "mismatched": [], "unassessed": ["GR:urban_environments"]}
+    assert entry["production_fit_status"] in pf.FIT_CONFIRMED_STATUSES
+
+
+def test_a_hard_desert_or_snow_requirement_without_capability_data_stays_conditional_never_unsuitable():
+    for category, token in (("desert", "DESERT_ENVIRONMENTS"), ("snow", "SNOW_ENVIRONMENTS")):
+        for code in ("GR", "AT"):
+            assert pf.classify_jurisdiction_fit(code, _reqs(category)) == (pf.FIT_UNKNOWN, [f"{token}_NOT_ASSESSABLE"])
+        # a soft requirement beside it does not change the (hard-driven) status
+        assert pf.classify_jurisdiction_fit("GR", _reqs(category, "urban")) == (pf.FIT_UNKNOWN, [f"{token}_NOT_ASSESSABLE"])
+
+
+def test_marine_open_water_in_a_confirmed_landlocked_jurisdiction_is_not_suitable_and_a_supporting_one_is_fit_confirmed():
+    assert pf.classify_jurisdiction_fit("AT", _reqs("marine_open_water")) == (pf.FIT_WEAK, ["MARINE_MISMATCH"])
+    status, reasons = pf.classify_jurisdiction_fit("GR", _reqs("marine_open_water"))
+    assert status in pf.FIT_CONFIRMED_STATUSES and reasons == []
+    # the hard requirement decides even when soft signals are also present
+    assert pf.classify_jurisdiction_fit("AT", _reqs("marine_open_water", "urban", "beach_coast"))[0] == pf.FIT_WEAK
+
+
+def test_no_requirements_on_file_remains_honestly_unconfirmed():
+    assert pf.classify_jurisdiction_fit("GR", _reqs()) == (pf.FIT_UNKNOWN, ["NO_REQUIREMENTS_ON_FILE"])
+    assert pf.classify_jurisdiction_fit("XX", _reqs("urban"))[0] == pf.FIT_UNKNOWN                          # no profile at all
 
 
 def test_service_only_routed_components_inherit_no_location_penalty_but_physical_legs_do():
-    reqs = _reqs("beach_coast")
+    reqs = _reqs("marine_open_water")
     service = {"anchor_jurisdiction": "GR", "component_allocations": [
         {"component": "principal_production", "jurisdiction_code": "GR"}, {"component": "vfx", "jurisdiction_code": "AT"},
         {"component": "post_vfx_package", "jurisdiction_code": "AT"}]}
     assert pf.classify_entry_fit(service, reqs)["production_fit_status"] in pf.FIT_CONFIRMED_STATUSES
     physical = {"anchor_jurisdiction": "GR", "component_allocations": [{"component": "principal_production", "jurisdiction_code": "AT"}]}
-    assert pf.classify_entry_fit(physical, reqs)["production_fit_status"] == pf.FIT_WEAK
+    got = pf.classify_entry_fit(physical, reqs)         # the routed PHYSICAL leg decides
+    assert got["production_fit_status"] == pf.FIT_WEAK and got["production_fit_legs"] == ["AT"]
 
 
 def test_single_jurisdiction_contract_serves_not_suitable_only_for_a_confirmed_mismatch():
@@ -109,6 +153,23 @@ def test_single_jurisdiction_contract_serves_not_suitable_only_for_a_confirmed_m
     assert got["GR"]["category"] == "LEADING_ALTERNATIVE"
     assert got["AT"]["category"] == "NOT_SUITABLE_FOR_THIS_PRODUCTION" and "MARINE_MISMATCH" in got["AT"]["hard_failure_reason"]
     assert got["XX"]["category"] == "CONDITIONAL_ALTERNATIVE" and any("Location fit unconfirmed" in c for c in got["XX"]["missing_conditions"])
+
+
+def test_soft_only_fit_is_never_conditional_and_every_ledger_jurisdiction_stays_visible():
+    from app.services.program_pricing_crosswalk import build_single_jurisdiction_contract
+
+    codes = ["GR", "AT", "XX", "SA", "US-TX", "CA-SK"]
+    ledger = {"jurisdictions": [{"jurisdiction_code": c, "disposition": "EXECUTABLE" if c in ("GR", "AT", "XX") else "HARD_BLOCK",
+                                 "first_exit_stage": "PRICED"} for c in codes], "rows": [], "programs": []}
+    reqs = _reqs("urban", "rural_countryside", "historic_old_world")
+    bpj = {}
+    for i, c in enumerate(("GR", "AT")):
+        fit = pf.classify_entry_fit({"anchor_jurisdiction": c}, reqs)
+        bpj[c] = {"primary_jurisdiction": c, "confirmed_npc_usd": 100.0 + i, **fit}
+    got = {r["jurisdiction_code"]: r for r in build_single_jurisdiction_contract(ledger, bpj)}
+    assert set(got) == set(codes)                                                   # nothing is removed
+    assert got["GR"]["category"] == "LEADING_ALTERNATIVE" and got["AT"]["category"] != "CONDITIONAL_ALTERNATIVE"
+    assert not any("Location fit unconfirmed" in c for r in (got["GR"], got["AT"]) for c in r["missing_conditions"])
 
 
 # ── content gates ───────────────────────────────────────────────────────────────────────────────────────────────────
