@@ -84,6 +84,14 @@ _LOCATION_CATEGORY_TO_CAPABILITY = {
     "urban": "urban_environments",
     "rural_countryside": "rural_environments",
     "forest": "forest_environments",
+    # LOCATION CHIP CONNECTION (2026-10-05): the four producer chips that previously persisted but reached no requirement.
+    # snow_arctic -> the EXISTING snow capability (also fed by the script "snow" signal); studio_stage -> the EXISTING
+    # sound_stages provision (jurisdiction studio_available); jungle_rainforest / small_town_suburban extend the SAME
+    # capability vocabulary with one token each (no capability data exists for them: served as NOT_ASSESSABLE).
+    "snow": "snow_environments",
+    "studio": "sound_stages",
+    "jungle": "jungle_environments",
+    "small_town": "small_town_environments",
 }
 # Which derived capabilities are HARD requirements (a jurisdiction must be
 # able to provide them) vs. broadly-available soft requirements. Marine /
@@ -93,6 +101,22 @@ _HARD_REQUIREMENT_CAPABILITIES = frozenset({
     "marine_filming", "open_water_filming", "underwater_filming",
     "water_tanks", "desert_environments", "snow_environments",
 })
+
+
+#: Every capability token that names a PHYSICAL LOCATION requirement (the chips plus the script signals that feed them).
+#: Non-location needs (period / night / post / vfx / marine_support / aerial_support) are not location capabilities and
+#: never affect location fit.
+LOCATION_CAPABILITY_TOKENS = (frozenset(_LOCATION_CATEGORY_TO_CAPABILITY.values()) - {"period_environments"}) | frozenset({
+    "underwater_filming", "marine_filming", "water_tanks", "snow_environments", "desert_environments",
+})
+
+#: Producer-facing chip (LOCATION_TAXONOMY slug) -> location-category key -> capability token. ONE table, both directions.
+CHIP_TO_CATEGORY = {
+    "beach_coast": "beach_coast", "marine_open_water": "marine_open_water", "island_tropical": "island_tropical",
+    "jungle_rainforest": "jungle", "desert_arid": "desert", "mountains_alpine": "mountain", "snow_arctic": "snow",
+    "urban_major_city": "urban", "small_town_suburban": "small_town", "rural_countryside": "rural_countryside",
+    "forest_woodland": "forest", "historic_old_world": "historic_old_world", "studio_stage": "studio",
+}
 
 
 def derive_production_requirements(physical_requirements: dict) -> ProductionRequirements:
@@ -313,6 +337,36 @@ def jurisdiction_capability_profile(code: str) -> CapabilityProfile:
     )
 
 
+# Per-token ASSESSMENT of one location requirement against one jurisdiction's STRUCTURED capability data.
+# Three-valued by design: a capability the data does not state is UNKNOWN, never a mismatch.
+ASSESS_MATCH = "MATCH"
+ASSESS_MISMATCH = "MISMATCH"
+ASSESS_UNKNOWN = "UNKNOWN"
+
+
+def assess_location_capability(token: str, cap: CapabilityProfile) -> tuple[str, str]:
+    """(status, reason) for one location capability token. Only fields the profile structurally records can
+    affirm or deny: marine_suitability / open-water / water tanks / studio_available. Everything else (desert, snow,
+    mountains, jungle, urban, small town, rural, forest, historic, tropical, underwater) has NO structured data in any
+    registry -> UNKNOWN with a precise `<TOKEN>_NOT_ASSESSABLE` reason."""
+    not_assessable = f"{token.upper()}_NOT_ASSESSABLE"
+    if not cap.has_capability_data:
+        return ASSESS_UNKNOWN, "CAPABILITY_UNKNOWN"
+    marine = str(cap.marine_suitability or "").lower()
+    landlocked = marine == "none" and "open_water_filming" not in cap.provisions
+    if token in ("open_water_filming", "marine_filming", "coastal_environments"):
+        if token in cap.provisions:
+            return ASSESS_MATCH, ""
+        return (ASSESS_MISMATCH, "MARINE_MISMATCH") if landlocked else (ASSESS_UNKNOWN, not_assessable)
+    if token == "island_environments":
+        return (ASSESS_MISMATCH, "MARINE_MISMATCH") if landlocked else (ASSESS_UNKNOWN, not_assessable)
+    if token == "water_tanks":
+        return (ASSESS_MATCH, "") if token in cap.provisions else (ASSESS_MISMATCH, "MARINE_MISMATCH")
+    if token == "sound_stages":
+        return (ASSESS_MATCH, "") if token in cap.provisions else (ASSESS_UNKNOWN, not_assessable)
+    return ASSESS_UNKNOWN, not_assessable
+
+
 @dataclass(frozen=True)
 class CapabilityMatch:
     production_capable: bool
@@ -351,3 +405,30 @@ def match_capability(reqs: ProductionRequirements, cap: CapabilityProfile) -> Ca
         compatible=tuple(compatible), incompatible=tuple(incompatible),
         unknown=(), reasons=tuple(reasons),
     )
+
+
+# ── The 13-chip disposition matrix (documentation + test owner) ───────────────────────────────────────────────────────
+def location_category_matrix() -> list[dict]:
+    """For every producer chip: the canonical category and capability token it reaches, whether the effective requirement
+    set changes when it is on, the structured capability field(s) that can assess it, and its disposition:
+    CANONICAL_AND_CONSUMED (a structured field can affirm AND deny it) or CANONICAL_DATA_MISSING (connected and counted in
+    the fingerprint, but no jurisdiction carries structured data for it -> served `<TOKEN>_NOT_ASSESSABLE`)."""
+    base = derive_production_requirements({})
+    assess_fields = {
+        "coastal_environments": "marine_suitability / has_open_water_filming (denied only when landlocked)",
+        "open_water_filming": "marine_suitability / has_open_water_filming",
+        "sound_stages": "studio_available (affirm only)",
+    }
+    rows = []
+    for chip, label in LOCATION_TAXONOMY.items():
+        category = CHIP_TO_CATEGORY[chip]
+        reqs = derive_production_requirements({"location_categories": {category: {"effective": True, "evidence": ["chip"]}}})
+        tokens = sorted((reqs.environments | reqs.required_capabilities) - (base.environments | base.required_capabilities))
+        field = next((assess_fields[t] for t in tokens if t in assess_fields), None)
+        rows.append({
+            "chip": chip, "label": label, "category": category, "capability_tokens": tokens,
+            "changes_effective_requirements": bool(tokens), "structured_capability_field": field,
+            "hard_requirement": bool(reqs.required_capabilities - base.required_capabilities),
+            "disposition": "CANONICAL_AND_CONSUMED" if (tokens and field) else ("CANONICAL_DATA_MISSING" if tokens else "EXISTS_BUT_DISCONNECTED"),
+        })
+    return rows

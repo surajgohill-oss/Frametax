@@ -1047,6 +1047,72 @@ async def post_project_locations(
     }
 
 
+class ContentGateResolutions(BaseModel):
+    gates: dict[str, str]
+
+
+@router.post("/projects/{project_id}/content-gates")
+async def post_project_content_gates(
+    project_id: str, body: ContentGateResolutions, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Record the producer's resolution of a program's content / approval / cultural gate: ``confirmed`` (approved),
+    ``refused`` (denied) or ``not_on_file`` (clears the record). Project-scoped ProjectFact persistence under the key the
+    served gate itself names; only keys of gates the registry actually serves as RESOLVABLE are accepted (never an
+    arbitrary fact key, never an advisory risk). The recorded states participate in the evaluation fingerprint, so a
+    meaningful change triggers exactly ONE evaluation and an identical save triggers none."""
+    from app.models.enums import ProjectFactSourceType, ReviewStatus
+    from app.models.project_fact import ProjectFact
+    from app.services.canonical_evaluation import evaluate_project
+    from app.services.program_content_gates import (
+        CONTROL_VALUES, GATE_FACT_PREFIX, gate_control_whitelist, gate_fingerprint_tokens, stored_value_for,
+    )
+
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    whitelist = gate_control_whitelist()
+    unknown = sorted(k for k in body.gates if k not in whitelist)
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Not a resolvable content gate: {', '.join(unknown)}")
+    bad = sorted(f"{k}={v}" for k, v in body.gates.items() if v not in CONTROL_VALUES)
+    if bad:
+        raise HTTPException(status_code=422, detail=f"Resolution must be one of {', '.join(CONTROL_VALUES)}: {', '.join(bad)}")
+
+    async def _rows():
+        return (await db.execute(
+            select(ProjectFact).where(ProjectFact.project_id == project.id, ProjectFact.fact_key.like(f"{GATE_FACT_PREFIX}%"))
+        )).scalars().all()
+
+    before = gate_fingerprint_tokens(await _rows())
+    for key, control in body.gates.items():
+        fact_key = GATE_FACT_PREFIX + key
+        row = (await db.execute(select(ProjectFact).where(
+            ProjectFact.project_id == project.id, ProjectFact.fact_key == fact_key))).scalar_one_or_none()
+        stored = stored_value_for(control)
+        if stored is None:                       # not_on_file: clear
+            if row is not None:
+                await db.delete(row)
+            continue
+        if row is None:
+            db.add(ProjectFact(
+                project_id=project.id, fact_key=fact_key, value=stored, value_type="string",
+                source_type=ProjectFactSourceType.USER_OVERRIDE.value, review_status=ReviewStatus.APPROVED.value,
+            ))
+        else:
+            row.value = stored
+    await db.commit()
+    after = gate_fingerprint_tokens(await _rows())
+    evaluation_required = after != before
+    evaluation_status = None
+    if evaluation_required:
+        evaluation_status = (await evaluate_project(db, project.id)).get("status")
+    return {
+        "project_id": str(project.id), "changed": evaluation_required,
+        "evaluation_triggered": evaluation_required, "evaluation_status": evaluation_status,
+        "recorded": sorted(after),
+    }
+
+
 # ── Screen 2: Package Intelligence (Budget / Script / Questions) ────────────
 
 @router.get("/package")

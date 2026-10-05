@@ -309,6 +309,13 @@ def _evidenced_program_facts(rows: list[ProjectFact]) -> frozenset[str]:
     return frozenset(out)
 
 
+def _content_gate_tokens(rows) -> frozenset[str]:
+    """Recorded content / approval gate resolutions (confirmed or refused) as fingerprint tokens."""
+    from app.services.program_content_gates import gate_fingerprint_tokens
+
+    return gate_fingerprint_tokens(rows)
+
+
 def _amount_facts(rows: list[ProjectFact]) -> dict[str, float]:
     """Codex final runtime remediation — every fact_id whose ProjectFact
     row is `f"{FACT_AMOUNT_FACT_PREFIX}{fact_key_name}"` with a parseable
@@ -756,6 +763,7 @@ async def build_project_economic_inputs(
         ),
         evidenced_program_facts=(
             _evidenced_program_facts(fact_rows) | await physical_requirement_fingerprint_facts(session, project_id)
+            | _content_gate_tokens(fact_rows)
         ),
         amount_facts=_base_amount_facts,
         # Financing ALREADY inside the source gross budget. Derived from the
@@ -879,20 +887,16 @@ def _location_categories_from_descriptions(descriptions: list[str]) -> dict[str,
 
 #: LOCATION_TAXONOMY slug (the producer-facing Production Details chips) -> the
 #: location-category key derive_production_requirements() actually reads. Slugs with no
-#: capability equivalent (snow_arctic, jungle_rainforest, small_town_suburban, studio_stage)
-#: are deliberately absent: toggling them records the producer's statement but cannot alter
-#: any feasibility derivation, so it must not trigger a re-evaluation either.
-_TAXONOMY_SLUG_TO_REQUIREMENT_CATEGORY = {
-    "beach_coast": "beach_coast",
-    "marine_open_water": "marine_open_water",
-    "island_tropical": "island_tropical",
-    "desert_arid": "desert",
-    "mountains_alpine": "mountain",
-    "urban_major_city": "urban",
-    "rural_countryside": "rural_countryside",
-    "forest_woodland": "forest",
-    "historic_old_world": "historic_old_world",
-}
+#: capability equivalent: none remain -- since 2026-10-05 every one of the 13 chips maps to a capability token, so
+#: toggling a chip changes the effective requirement set (and the fingerprint) whenever its effective value changes.
+def _chip_map() -> dict[str, str]:
+    from app.calculators.production_requirements import CHIP_TO_CATEGORY
+
+    return CHIP_TO_CATEGORY
+
+
+# All 13 chips reach a canonical requirement category (the single table lives with the capability vocabulary).
+_TAXONOMY_SLUG_TO_REQUIREMENT_CATEGORY = _chip_map()
 
 #: Prefix of the synthetic evidenced-fact tokens that make a project's EFFECTIVE physical
 #: requirements (when a producer override exists) part of the evaluation fingerprint.

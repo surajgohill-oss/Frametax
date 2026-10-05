@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { alternativeLabel } from "../lib/alternativeLabels";
 import { certaintyLabel } from "../lib/incentivePotential";
@@ -33,6 +33,7 @@ function NeededForMaximum({ pot }) {
   );
 }
 import { useAppState } from "../state/AppState";
+import { postProjectContentGates } from "../api";
 import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
 // Final Global Discovery phase: the "Requirements & Timing" section of a
@@ -627,6 +628,55 @@ const CONTENT_CATEGORY_LABEL = {
   MISSING_CANONICAL_DATA: "Canonical data missing",
 };
 
+// Producer-facing resolution of each served content / approval / cultural gate. Only the gate's OWN served fact key is
+// ever written (the server whitelists keys); an advisory risk is shown but never offered as a yes/no question.
+const GATE_CONTROLS = [["confirmed", "Confirmed / approved"], ["refused", "Refused / denied"], ["not_on_file", "Not on file"]];
+const GATE_STATUS_TO_CONTROL = { CONFIRMED: "confirmed", REFUSED: "refused", NOT_ON_FILE: "not_on_file" };
+
+function ContentGateControls({ gates }) {
+  const projectId = (typeof window !== "undefined" && window.location.pathname.match(/\/projects\/([^/]+)/)?.[1]) || null;
+  const [local, setLocal] = useState({});
+  const [note, setNote] = useState(null);
+  const current = (g) => local[g.fact_key] ?? GATE_STATUS_TO_CONTROL[g.status] ?? "not_on_file";
+  async function resolve(g, control) {
+    if (!projectId || control === current(g)) return;
+    setNote("Saving…");
+    try {
+      const r = await postProjectContentGates(projectId, { [g.fact_key]: control });
+      setLocal((l) => ({ ...l, [g.fact_key]: control }));
+      setNote(r.evaluation_triggered ? "Saved — evaluation requested; the served status refreshes when it completes." : "Saved — no change to the evaluation.");
+      window.dispatchEvent(new Event("cineglobe:refetch"));
+    } catch (e) {
+      setNote(`Not saved: ${e.message || e}`);
+    }
+  }
+  return (
+    <div className="inspector-sect" data-testid="content-gates">
+      <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Content, approval and cultural requirements</p>
+      {gates.map((g) => (
+        <div key={g.kind} data-gate-key={g.fact_key} style={{ margin: "6px 0" }}>
+          <p className="text-secondary small" style={{ margin: "2px 0" }}>
+            <strong>{humanizeToken(g.kind.toLowerCase())}</strong> — {CONTENT_CATEGORY_LABEL[g.category] || g.category}
+            <span className="text-tertiary"> · {g.consumed_by_optimizer ? "evaluated by pricing" : "not evaluated by pricing"} · {g.fact_key}</span>
+          </p>
+          {g.resolvable === false || g.effect === "ADVISORY" ? (
+            <p className="text-tertiary small" style={{ margin: "2px 0" }}>Advisory risk — disclosed, never a yes/no eligibility question.</p>
+          ) : (
+            <div role="group" aria-label={`Resolve ${g.kind}`} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {GATE_CONTROLS.map(([value, label]) => (
+                <button key={value} type="button" className={`field-select${current(g) === value ? " active" : ""}`} data-gate-control={value}
+                  aria-pressed={current(g) === value} disabled={!projectId} onClick={() => resolve(g, value)}>{label}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      {note && <p className="text-tertiary small" data-testid="content-gate-note" style={{ margin: "4px 0" }}>{note}</p>}
+      <p className="text-tertiary small" style={{ margin: "4px 0" }}>A missing approval keeps the jurisdiction visible as Needs More Facts; only a refused mandatory approval is a hard block. General censorship or distribution risk is a business risk, not program ineligibility.</p>
+    </div>
+  );
+}
+
 // Maximum-potential economics (shared contract; never guaranteed), the content / censorship / cultural gates the program
 // names, and any catalog lead -- all served by the one accounting owner for a not-yet-priced jurisdiction.
 function AccountedExtras({ potential, gates, leads }) {
@@ -644,18 +694,7 @@ function AccountedExtras({ potential, gates, leads }) {
           {potential.ceiling_basis?.note && <p className="text-tertiary small" style={{ margin: "4px 0" }}>{potential.ceiling_basis.note}</p>}
         </div>
       )}
-      {gates?.length > 0 && (
-        <div className="inspector-sect" data-testid="content-gates">
-          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Content, approval and cultural requirements</p>
-          {gates.map((g) => (
-            <p key={g.kind} className="text-secondary small" style={{ margin: "4px 0" }}>
-              <strong>{humanizeToken(g.kind.toLowerCase())}</strong> — {CONTENT_CATEGORY_LABEL[g.category] || g.category}
-              <span className="text-tertiary"> · {g.status === "NOT_ON_FILE" ? "not on file" : g.status.toLowerCase()} · {g.consumed_by_optimizer ? "evaluated by pricing" : "not evaluated by pricing"} · {g.fact_key}</span>
-            </p>
-          ))}
-          <p className="text-tertiary small" style={{ margin: "4px 0" }}>A missing approval keeps the jurisdiction visible as Needs More Facts; only a refused approval is a hard block. General censorship or distribution risk is a business risk, not program ineligibility.</p>
-        </div>
-      )}
+      {gates?.length > 0 && <ContentGateControls gates={gates} />}
       {leads?.length > 0 && (
         <div className="inspector-sect" data-testid="catalog-leads">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Catalog leads (unverified)</p>

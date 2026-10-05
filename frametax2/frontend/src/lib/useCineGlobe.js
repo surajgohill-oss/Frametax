@@ -64,5 +64,11 @@ export function useCineGlobe(projectId) {
 
   useEffect(() => { load(); }, [load]);
 
+  // A control elsewhere (e.g. the Inspector's content-gate resolution) asks every mounted state hook to refetch.
+  useEffect(() => {
+    window.addEventListener("cineglobe:refetch", load);
+    return () => window.removeEventListener("cineglobe:refetch", load);
+  }, [load]);
+
   return { ...state, refetch: load };
 }

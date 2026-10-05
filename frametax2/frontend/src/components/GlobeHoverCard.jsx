@@ -275,6 +275,11 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
                   Maximum potential {formatFullUsd(hover.blockerPotential.maximum_supported_incentive_usd)} (not guaranteed) · potential NPC {formatFullUsd(hover.blockerPotential.potential_npc_usd)}
                 </div>
               )}
+              {(hover.blockerContentGates || []).filter((g) => g.status === "REFUSED").length > 0 && (
+                <div className="small" data-blocker-content-refused>
+                  Approval refused: {(hover.blockerContentGates || []).filter((g) => g.status === "REFUSED").map((g) => g.kind.toLowerCase().replace(/_/g, " ")).slice(0, 3).join(", ")}
+                </div>
+              )}
               {(hover.blockerContentGates || []).filter((g) => g.status === "NOT_ON_FILE").length > 0 && (
                 <div className="small" data-blocker-content-gates>
                   Content / approvals not on file: {(hover.blockerContentGates || []).filter((g) => g.status === "NOT_ON_FILE").map((g) => g.kind.toLowerCase().replace(/_/g, " ")).slice(0, 3).join(", ")}

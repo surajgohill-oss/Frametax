@@ -62,9 +62,24 @@ _TRUE = {"true", "1", "yes", "confirmed", "granted", "approved"}
 _REFUSED = {"refused", "denied", "rejected", "prohibited"}
 
 
+#: ProjectFact.fact_key is VARCHAR(100) including the 23-character storage prefix: the longest kind label is shortened.
+_KEY_KIND = {KIND_AGENCY_APPROVAL: "agency_preapproval"}
+
+
+def gate_effect(category: str, status: str) -> str:
+    """The served effect of a gate's recorded state. Only an explicit refusal of a MANDATORY approval is a hard block; a
+    refusal of any other resolvable gate stays conditional; an advisory risk never blocks; a missing confirmation is
+    amber; a confirmation clears the gate."""
+    if category == ADVISORY:
+        return "ADVISORY"
+    if status == "REFUSED":
+        return "HARD_BLOCK" if category == CONFIRMED_MANDATORY else "NEEDS_FACTS"
+    return "NONE" if status == "CONFIRMED" else "NEEDS_FACTS"
+
+
 def gate_fact_key(program_slug: str, kind: str) -> str:
     """The ProjectFact fact_key (without the storage prefix) a producer's confirmation of this gate is stored under."""
-    return f"{program_slug}__{kind.lower()}_confirmed"
+    return f"{program_slug}__{_KEY_KIND.get(kind, kind.lower())}_confirmed"
 
 
 def _evaluated_by_kernel(program_slug: str) -> bool:
@@ -99,8 +114,10 @@ def content_gates_for_program(program_slug: str | None, facts: dict[str, str] | 
         gates.append({
             "kind": kind, "category": category, "description": description, "source": source,
             "consumed_by_optimizer": consumed, "fact_key": fact_key, "stored_value": stored, "status": status,
-            # Only an explicit refusal is ever a hard block; a missing confirmation is amber.
-            "effect": "HARD_BLOCK" if status == "REFUSED" else ("NONE" if status == "CONFIRMED" else "NEEDS_FACTS"),
+            # Only an explicit refusal of a MANDATORY approval is ever a hard block; any other refusal (a project-fact gate)
+            # stays conditional, an advisory risk never blocks, and a missing confirmation is amber.
+            "effect": gate_effect(category, status),
+            "resolvable": category != ADVISORY,
         })
 
     if profile is not None:
@@ -182,3 +199,48 @@ def content_gate_inventory() -> dict:
         "by_kind": by_kind,
         "by_category": by_category,
     }
+
+
+# ── Producer-facing controls: the whitelist, the stored value and the fingerprint tokens ─────────────────────────────
+GATE_FACT_PREFIX = "evidenced_program_fact:"
+CONTROL_CONFIRMED = "confirmed"
+CONTROL_REFUSED = "refused"
+CONTROL_NOT_ON_FILE = "not_on_file"
+CONTROL_VALUES = (CONTROL_CONFIRMED, CONTROL_REFUSED, CONTROL_NOT_ON_FILE)
+_STORED = {CONTROL_CONFIRMED: "true", CONTROL_REFUSED: "refused"}
+
+
+def gate_control_whitelist() -> dict[str, dict]:
+    """{gate fact_key: gate} for every RESOLVABLE gate the registry actually serves (advisory risks are never a yes/no
+    question). The ONLY keys the control may write."""
+    from app.data.program_requirements import all_program_requirements
+
+    out: dict[str, dict] = {}
+    for slug in sorted(all_program_requirements()):
+        for g in content_gates_for_program(slug):
+            if g.get("resolvable"):
+                out[g["fact_key"]] = {**g, "program_slug": slug}
+    return out
+
+
+def stored_value_for(control: str) -> str | None:
+    return _STORED.get(control)
+
+
+def gate_fingerprint_tokens(fact_rows) -> frozenset[str]:
+    """Fingerprint participation of every recorded gate resolution (confirmed AND refused) -- a confirmed gate is also in
+    the evidenced-fact set, a refusal is not, so both get an explicit state token."""
+    out: set[str] = set()
+    for row in fact_rows:
+        key = getattr(row, "fact_key", "") or ""
+        if not key.startswith(GATE_FACT_PREFIX):
+            continue
+        name = key[len(GATE_FACT_PREFIX):]
+        value = str(getattr(row, "value", "") or "").strip().lower()
+        if "__" not in name:
+            continue
+        if value in _TRUE:
+            out.add(f"content_gate_confirmed:{name}")
+        elif value in _REFUSED:
+            out.add(f"content_gate_refused:{name}")
+    return frozenset(out)

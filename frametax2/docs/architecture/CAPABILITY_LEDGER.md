@@ -4124,3 +4124,35 @@ No engine change (`canonical-1.102.0`; hashed evaluator modules untouched; nothi
 **Served universe by project (disposition count; winners separate).** LU 217 = 92 executable + 20 conditional + 1 unavailable + 104 data incomplete (92 winners); FVD 217 = 91 + 20 + 2 + 104 (91); BH 217 = 91 + 20 + 2 + 104 (91); LLS 217 = 92 + 20 + 1 + 104 (92). LLS also lists 25 co-production opportunities needing facts (separate from the 217).
 
 **Next ledger item:** location / censorship suitability (the source of any "Not suitable" group). **Deferred explicitly:** final Globe categories / colors, atmosphere, card redesign.
+
+## LEDGER ITEM 2 — LOCATION CAPABILITY + CONTENT-GATE WIRING (2026-10-05, from `481b4fd`): COMPLETE (data gaps disclosed)
+
+No engine bump, no regeneration, no fingerprint-hashed module touched (`production_requirements`, `production_fit`, `program_content_gates`, `canonical_project_economics`, accounting and the API are not hashed); current generations were reused. Persisted fit remains a serving-time projection.
+
+**13-chip disposition matrix** (`production_requirements.location_category_matrix()`, pinned by test). Every chip now reaches a canonical capability token, changes the effective requirement set (hence the fingerprint) when its effective value changes, persists per project and requests exactly one evaluation on a meaningful change (none on an identical save):
+
+| Chip | Token | Disposition | Structured capability field |
+|---|---|---|---|
+| beach_coast | coastal_environments | CANONICAL_AND_CONSUMED | marine_suitability / open water (denied only when landlocked) |
+| marine_open_water | open_water_filming (hard) | CANONICAL_AND_CONSUMED | marine_suitability / has_open_water_filming |
+| studio_stage | sound_stages | CANONICAL_AND_CONSUMED (connected this pass; was EXISTS_BUT_DISCONNECTED) | studio_available (affirm only) |
+| island_tropical | tropical_environments | CANONICAL_DATA_MISSING | none |
+| jungle_rainforest | jungle_environments | CANONICAL_DATA_MISSING (connected this pass) | none |
+| desert_arid | desert_environments (hard) | CANONICAL_DATA_MISSING | none |
+| mountains_alpine | mountain_environments | CANONICAL_DATA_MISSING | none |
+| snow_arctic | snow_environments (hard) | CANONICAL_DATA_MISSING (connected this pass) | none |
+| urban_major_city | urban_environments | CANONICAL_DATA_MISSING | none |
+| small_town_suburban | small_town_environments | CANONICAL_DATA_MISSING (connected this pass) | none |
+| rural_countryside | rural_environments | CANONICAL_DATA_MISSING | none |
+| forest_woodland | forest_environments | CANONICAL_DATA_MISSING | none |
+| historic_old_world | historic_architecture | CANONICAL_DATA_MISSING | none |
+
+3/13 are fully assessable (affirm and deny / affirm); 13/13 are connected and fingerprinted; 4 were connected this pass (jungle, snow, small town, studio). No chip is OPTIMIZER_CAPABILITY_MISSING.
+
+**Capability data recovered.** Registries, migrations, inventory data and Git history hold structured capability only in the 113 jurisdiction comparison profiles (marine suitability, open-water, water tanks, studio, crew depth); everything else exists only as free-text notes ("desert + modern city locations"), which is not verified capability data and was not migrated. Newly connected from those 113 profiles: `studio_available` -> `sound_stages` (60 affirm) and landlocked (`marine_suitability = none`, 21) as an affirmative denial of coast / open water / island. Genuinely missing for every jurisdiction: desert, snow, mountains, jungle, tropical, urban, small town, rural, forest, historic, underwater. A missing datum is `UNKNOWN` -> `<TOKEN>_NOT_ASSESSABLE` (fit unconfirmed), never unsuitable; period / night are script signals, not location capabilities.
+
+**Served semantics** (`production_fit.classify_jurisdiction_fit`, the existing owner): confirmed match -> fit-confirmed; confirmed mismatch (landlocked vs coast / marine) -> WEAK -> Single-Jurisdiction `NOT_SUITABLE_FOR_THIS_PRODUCTION`; unknown -> UNKNOWN -> `CONDITIONAL_ALTERNATIVE` with the exact `*_NOT_ASSESSABLE` reasons; service-only routed legs never penalised, physical legs are; alternatives are never removed. Effect on the four productions (universe 217 each): LU 94 conditional / 18 not suitable / 1 unavailable / 104 data incomplete; FVD 93 / 18 / 2 / 104; BH 111 / 0 / 2 / 104; LLS 94 / 18 / 1 / 104. Fit-confirmed scenarios are now 0 everywhere (every production's urban / rural / historic needs cannot be assessed), where the previous soft-requirement logic had counted them confirmed; scenario totals are unchanged by this pass.
+
+**Content gates.** 113 gates over 64 programs: 9 optimizer-consumed (cultural tests evaluated by the pricing kernel), 104 disclosure-only (served, never priced). New producer control (Inspector, per gate: Confirmed / Refused / Not on file) -> `POST /projects/{id}/content-gates`: only the 113 served resolvable gate keys are accepted (others 422), stored as project-scoped `ProjectFact`s, confirmed and refused states are fingerprint tokens (one evaluation on change, none on identical save, other projects untouched), a confirmation clears the gate everywhere it is served, a refusal is UNAVAILABLE only for a mandatory approval (non-mandatory refusal stays conditional, advisory risk never blocks). Fact keys were shortened (`agency_preapproval`) so all fit the 100-character column.
+
+**Remaining.** No jurisdiction environment-capability data for 10 of 13 chips (needs an evidence-backed capability census, i.e. research, outside this item); confirmed gates are served-resolved but not yet pricing inputs (only the 9 cultural tests are); persisted trace `feasibility_status` is still the legacy anchor-based disclosure. **Next step:** final Globe category / color / interaction pass.

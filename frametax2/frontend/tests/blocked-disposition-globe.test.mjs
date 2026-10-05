@@ -187,3 +187,31 @@ test("Workspace and Project Globe wire the universe panel and the clickable co-p
   assert.doesNotMatch(ws, /need more facts` : ""/);
   assert.match(pg, /<JurisdictionUniversePanel/); assert.match(pg, /coproductionNeedsFactsLabel\(optimizerProj\.opportunities\.length\)/);
 });
+
+// ── LOCATION + CONTENT-GATE WIRING (2026-10-05) ───────────────────────────────────────────────────────────────────
+test("content-gate control writes only the served gate key through the project-scoped endpoint, with the three states", async () => {
+  const fs = await import("node:fs");
+  const insp = fs.readFileSync(new URL("../src/shell/Inspector.jsx", import.meta.url), "utf8");
+  const api = fs.readFileSync(new URL("../src/api.js", import.meta.url), "utf8");
+  assert.match(api, /postProjectContentGates = \(projectId, gates\)[\s\S]*\/projects\/\$\{projectId\}\/content-gates/);
+  for (const v of ["confirmed", "refused", "not_on_file"]) assert.ok(insp.includes(`["${v}"`), v);
+  assert.match(insp, /postProjectContentGates\(projectId, \{ \[g\.fact_key\]: control \}\)/, "only the gate's own served fact key is written");
+  assert.match(insp, /Advisory risk — disclosed, never a yes\/no eligibility question/);
+  assert.match(insp, /<ContentGateControls gates=\{gates\}/);
+  const hook = fs.readFileSync(new URL("../src/lib/useCineGlobe.js", import.meta.url), "utf8");
+  assert.match(hook, /cineglobe:refetch/);
+  const hover = fs.readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
+  assert.match(hover, /data-blocker-content-refused/);
+});
+
+test("Single-Jurisdiction groups place a confirmed mismatch under NOT SUITABLE and an unconfirmed fit under CONDITIONAL", async () => {
+  const u = await import("../src/lib/jurisdictionUniverse.js");
+  const mk = (code, category) => ({ jurisdiction_code: code, category, disposition: "EXECUTABLE" });
+  const g = u.groupUniverse({ best_per_jurisdiction: {}, jurisdiction_accounting: { single_jurisdiction_contract: [
+    mk("AT", "NOT_SUITABLE_FOR_THIS_PRODUCTION"), mk("XX", "CONDITIONAL_ALTERNATIVE"), mk("GR", "LEADING_ALTERNATIVE"),
+  ] } });
+  const by = Object.fromEntries(g.groups.map((x) => [x.key, x.items.map((i) => i.jurisdiction_code)]));
+  assert.deepEqual(by.NOT_SUITABLE_FOR_THIS_PRODUCTION, ["AT"]);
+  assert.deepEqual(by.CONDITIONAL_ALTERNATIVE, ["XX"]);
+  assert.deepEqual(by.UNAVAILABLE, [], "a mismatch or unknown fit is never Unavailable");
+});

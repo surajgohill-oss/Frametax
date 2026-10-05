@@ -76,30 +76,50 @@ _ASSESSABLE_HARD_CAPABILITIES = frozenset({"marine_filming", "open_water_filming
 
 
 def classify_jurisdiction_fit(code: str, requirements) -> tuple[str, list[str]]:
-    """Fit of ONE physical-production jurisdiction, via the canonical classifier."""
+    """Fit of ONE physical-production jurisdiction.
+
+    Per location requirement (production_requirements.assess_location_capability, over the jurisdiction's structured
+    capability data): MATCH / MISMATCH / UNKNOWN. A confirmed physical MISMATCH -> WEAK (a confirmed mismatch, served as
+    "not suitable for this production"); no mismatch but any requirement that cannot be assessed -> UNKNOWN with a precise
+    `<TOKEN>_NOT_ASSESSABLE` reason (fit unconfirmed, never unsuitable); every requirement affirmatively matched -> the
+    canonical classifier's STRONG / WORKABLE."""
     import dataclasses
 
-    from app.calculators.production_requirements import jurisdiction_capability_profile, match_capability
+    from app.calculators.production_requirements import (
+        ASSESS_MISMATCH, ASSESS_UNKNOWN, LOCATION_CAPABILITY_TOKENS, assess_location_capability,
+        jurisdiction_capability_profile, match_capability,
+    )
     from app.services.canonical_evaluation import _feasibility_status
 
     cap = jurisdiction_capability_profile(code)
     if cap.has_capability_data and not requirements_disclosed(requirements):
         # An empty requirement set must not manufacture a fit claim.
         return FIT_UNKNOWN, ["NO_REQUIREMENTS_ON_FILE"]
-    unassessed = sorted(requirements.required_capabilities - _ASSESSABLE_HARD_CAPABILITIES)
+    needs = sorted((requirements.environments | requirements.required_capabilities) & LOCATION_CAPABILITY_TOKENS)
+    mismatches: list[str] = []
+    unassessed: list[str] = []
+    for token in needs:
+        verdict, reason = assess_location_capability(token, cap)
+        if verdict == ASSESS_MISMATCH:
+            mismatches.append(reason)
+        elif verdict == ASSESS_UNKNOWN and cap.has_capability_data:
+            unassessed.append(reason)
     assessable = dataclasses.replace(
         requirements, required_capabilities=requirements.required_capabilities & _ASSESSABLE_HARD_CAPABILITIES,
     )
     match = match_capability(assessable, cap)
     exam = SimpleNamespace(
         jurisdiction_code=code, has_capability_data=cap.has_capability_data,
-        production_capable=match.production_capable,
+        production_capable=match.production_capable and not mismatches,
     )
     status, reasons = _feasibility_status(exam, assessable)
+    if mismatches:
+        status = FIT_WEAK
+        reasons = list(dict.fromkeys([*mismatches, *(r for r in reasons if r != "CAPABILITY_MISMATCH")]))
     if status in FIT_CONFIRMED_STATUSES and unassessed:
-        # Nothing assessable contradicts the production, but a hard requirement cannot be
-        # confirmed from the capability data: unconfirmed, never a manufactured fit claim.
-        return FIT_UNKNOWN, [f"{t.upper()}_NOT_ASSESSABLE" for t in unassessed]
+        # Nothing assessable contradicts the production, but a requirement cannot be confirmed from the capability data:
+        # unconfirmed, never a manufactured fit claim.
+        return FIT_UNKNOWN, list(dict.fromkeys(unassessed))
     if status == FIT_UNKNOWN and not reasons:
         reasons = ["CAPABILITY_UNKNOWN"]
     return status, list(reasons)

@@ -122,6 +122,11 @@ export const postLocations = (overrides) =>
 export const postProjectLocations = (projectId, overrides) =>
   request(`/projects/${projectId}/locations`, { method: "POST", body: JSON.stringify({ overrides }) });
 
+// Content / approval / cultural gate resolutions for ONE project (confirmed | refused | not_on_file). Only keys of gates the
+// registry serves as resolvable are accepted server-side; the server triggers exactly one evaluation on a meaningful change.
+export const postProjectContentGates = (projectId, gates) =>
+  request(`/projects/${projectId}/content-gates`, { method: "POST", body: JSON.stringify({ gates }) });
+
 // Production facts — payroll routing, post location, treaty election,
 // component routing. Answering one invalidates the cached state; every
 // downstream engine (qualification, treaty, structuring, allocation)

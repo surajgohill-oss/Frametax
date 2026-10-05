@@ -163,7 +163,14 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
     for rec in ledger.get("programs") or []:
         names.setdefault(rec.get("canonical_jurisdiction") or rec["jurisdiction_code"], rec.get("jurisdiction_name"))
     out: list[dict] = []
-    confirmed = sorted((e for e in best_per_jurisdiction.values() if e.get("confirmed_npc_usd") is not None),
+    from app.services.production_fit import FIT_CONFIRMED_STATUSES, FIT_WEAK
+
+    def _fit_known(e):   # a served fit status exists (legacy payloads without it are classified as before)
+        return e.get("production_fit_status") is not None
+
+    confirmed = sorted((e for e in best_per_jurisdiction.values()
+                        if e.get("confirmed_npc_usd") is not None
+                        and (not _fit_known(e) or e.get("production_fit_status") in FIT_CONFIRMED_STATUSES)),
                        key=lambda e: e["confirmed_npc_usd"])
     leader = confirmed[0]["primary_jurisdiction"] if confirmed else None
     for j in ledger.get("jurisdictions") or []:
@@ -174,18 +181,31 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
                      "potential_npc_usd": None, "economic_certainty": None, "missing_conditions": [],
                      "authority_warning": None, "hard_failure_reason": None, "difference_reason": None, "program_slug": None,
                      "jurisdiction_name": names.get(code), "program_name": None, "headline": None, "blocker_kind": None,
-                     "stored_floor_statement": None, "stated_ceiling_rate": None}
+                     "stored_floor_statement": None, "stated_ceiling_rate": None,
+                     "production_fit_status": None, "production_fit_reasons": []}
         if disp == "EXECUTABLE":
             e = best_per_jurisdiction.get(code) or {}
+            fit, fit_reasons = e.get("production_fit_status"), list(e.get("production_fit_reasons") or [])
+            conditions = [m.get("description") or m.get("fact_key") for m in (e.get("ceiling_missing_facts") or [])]
+            if _fit_known(e) and fit not in FIT_CONFIRMED_STATUSES and fit != FIT_WEAK:
+                conditions.append("Location fit unconfirmed (capability data cannot assess): " + ", ".join(fit_reasons or ["CAPABILITY_UNKNOWN"]))
             rec.update(
                 confirmed_incentive_usd=e.get("confirmed_incentive_floor_usd", e.get("selected_incentive_usd")),
                 confirmed_npc_usd=e.get("confirmed_npc_usd"), potential_incentive_usd=e.get("maximum_supported_incentive_usd"),
                 potential_npc_usd=e.get("potential_npc_usd"), economic_certainty=e.get("economics_certainty"),
-                missing_conditions=[m.get("description") or m.get("fact_key") for m in (e.get("ceiling_missing_facts") or [])],
+                missing_conditions=conditions,
                 authority_warning=next((w for w in (e.get("warnings") or []) if "Authority provenance incomplete" in w), None),
                 program_slug=e.get("program_slug"), program_name=e.get("program_display_name"),
-                category=(CAT_LEADING if code == leader else CAT_STRONG if (e.get("savings_vs_current_usd") or 0) > 0 else CAT_REFERENCE),
+                production_fit_status=fit, production_fit_reasons=fit_reasons,
             )
+            if _fit_known(e) and fit == FIT_WEAK:
+                # an ESTABLISHED physical mismatch (never emitted for missing capability data)
+                rec["category"] = CAT_NOT_SUITABLE
+                rec["hard_failure_reason"] = "Confirmed physical-location mismatch: " + ", ".join(fit_reasons or ["LOCATION_MISMATCH"])
+            elif _fit_known(e) and fit not in FIT_CONFIRMED_STATUSES:
+                rec["category"] = CAT_CONDITIONAL     # fit unconfirmed: conditional, never unavailable
+            else:
+                rec["category"] = (CAT_LEADING if code == leader else CAT_STRONG if (e.get("savings_vs_current_usd") or 0) > 0 else CAT_REFERENCE)
         else:
             r = rows_by_juris.get(code) or {}
             pot = r.get("incentive_potential") or {}

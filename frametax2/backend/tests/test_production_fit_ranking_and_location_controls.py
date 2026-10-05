@@ -265,10 +265,10 @@ async def test_one_projects_location_change_cannot_affect_another(rolled_back_se
 async def test_toggle_without_effective_requirement_change_reuses_current_evaluation(rolled_back_session, monkeypatch):
     session, a, _b = rolled_back_session
     calls: list[str] = []
-    # studio_stage has no capability equivalent, and an explicit False on an absent requirement
-    # derives the identical effective requirements -> stored, but no re-evaluation.
-    r1 = await _post(session, a, {"studio_stage": True}, monkeypatch, calls)
-    r2 = await _post(session, a, {"marine_open_water": False}, monkeypatch, calls)
+    # An explicit False on an absent requirement derives the identical effective requirements -> stored, but no
+    # re-evaluation (every chip, including the four connected on 2026-10-05, changes the effective set only when ON).
+    r1 = await _post(session, a, {"marine_open_water": False}, monkeypatch, calls)
+    r2 = await _post(session, a, {"studio_stage": False}, monkeypatch, calls)
     assert r1["changed"] is True and r1["evaluation_triggered"] is False
     assert r2["changed"] is True and r2["evaluation_triggered"] is False
     assert calls == []

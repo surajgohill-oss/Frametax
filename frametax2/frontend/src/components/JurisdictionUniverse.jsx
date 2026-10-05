@@ -22,7 +22,7 @@ export function openUniverseRecord(allocated, rec, openInspector, onSelect) {
 }
 
 function UniverseRow({ rec, onOpen }) {
-  const conditional = rec.category === "CONDITIONAL_ALTERNATIVE";
+  const conditional = rec.category === "CONDITIONAL_ALTERNATIVE" && rec.disposition !== "EXECUTABLE";
   const missing = rec.missing_conditions || [];
   return (
     <div className="portfolio-chip" data-universe-row={rec.jurisdiction_code} data-universe-category={rec.category} onClick={() => onOpen(rec)} style={{ display: "block" }}>
@@ -40,7 +40,7 @@ function UniverseRow({ rec, onOpen }) {
           {rec.stated_ceiling_rate != null ? ` · ceiling up to ${Math.round(rec.stated_ceiling_rate * 100)}%` : ""}
         </div>
       )}
-      {(conditional || rec.disposition === "HARD_BLOCK" || rec.disposition === "DATA_INCOMPLETE") && (rec.headline || rec.hard_failure_reason) && (
+      {(conditional || rec.category === "NOT_SUITABLE_FOR_THIS_PRODUCTION" || rec.disposition === "HARD_BLOCK" || rec.disposition === "DATA_INCOMPLETE") && (rec.headline || rec.hard_failure_reason) && (
         <div className="row-sub">{rec.hard_failure_reason || rec.headline}</div>
       )}
       {missing.length > 0 && (

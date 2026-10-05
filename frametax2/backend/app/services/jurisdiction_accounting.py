@@ -51,8 +51,9 @@ S_AUTHORITY = "AUTHORITY_BLOCKED"
 S_CONDITIONS = "CONDITIONS_UNMET"
 S_PRICING = "PRICING_BLOCKED"
 S_PRICED = "PRICED"
+S_CONTENT_REFUSED = "MANDATORY_APPROVAL_REFUSED"
 S_NOT_GENERATED = "NOT_GENERATED"   # discovery-ready but no persisted candidate (must be 0; reported if not)
-STAGES = (S_ALIAS, S_NO_MODEL, S_NOT_APPLICABLE, S_SUPERSEDED, S_AUTHORITY, S_CONDITIONS, S_PRICING, S_PRICED, S_NOT_GENERATED)
+STAGES = (S_ALIAS, S_NO_MODEL, S_NOT_APPLICABLE, S_SUPERSEDED, S_AUTHORITY, S_CONDITIONS, S_PRICING, S_PRICED, S_NOT_GENERATED, S_CONTENT_REFUSED)
 
 # jurisdiction-level dispositions (the vocabulary the Globe renders)
 D_EXECUTABLE = "EXECUTABLE"
@@ -195,6 +196,18 @@ def _threshold_unreachable_reason(inputs, slug: str, production_type: str, qpe: 
     if not parts:
         parts.append("its mandatory conditions cannot be met by this production even if every project fact were confirmed")
     return "; ".join(dict.fromkeys(parts)) + " (cannot be met even if every project fact were confirmed)."
+
+
+def _refused_mandatory(slug: str | None, facts: dict) -> list[dict]:
+    from app.services.program_content_gates import content_gates_for_program
+
+    return [g for g in content_gates_for_program(slug, facts) if g["effect"] == "HARD_BLOCK"] if slug else []
+
+
+def _program_name(slug: str) -> str:
+    from app.services.jurisdiction_disposition import _program_label
+
+    return _program_label(slug)
 
 
 def _min_spend_threshold(slug: str, production_type: str) -> float | None:
@@ -358,6 +371,24 @@ async def build_jurisdiction_accounting(
         elif (block is not None and block.classification == "RETIRED_SUPERSEDED_IDENTITY") or state in ("SUPERSEDED", "DUPLICATE"):
             rec.update(stage=S_SUPERSEDED, disposition=D_HARD_BLOCK,
                        exit_reason="The canonical authority-coverage registry retired / superseded / duplicated this program.")
+        elif outcome and outcome["candidate_status"] == "PRICED" and _refused_mandatory(slug, facts):
+            # An EXPLICITLY REFUSED mandatory approval makes the program unavailable even where it priced; a missing or
+            # advisory gate never does.
+            gates = _refused_mandatory(slug, facts)
+            msg = (f"{_program_name(slug)}: a mandatory approval was REFUSED on file ("
+                   + "; ".join(g["kind"].replace("_", " ").lower() for g in gates) + "); the program is unavailable.")
+            rec.update(stage=S_CONTENT_REFUSED, disposition=D_HARD_BLOCK, exit_reason=msg)
+            row = _accounting_row(code=code, name=name, slug=slug, outcome=outcome, reason=msg, stage=S_CONTENT_REFUSED)
+            row.update(candidate_status="MANDATORY_APPROVAL_REFUSED", rejection_reason_class="MANDATORY_APPROVAL_REFUSED",
+                       disposition="HARD_BLOCK", blocked_cause="CONFIRMED_LEGAL_PROGRAM_INELIGIBILITY",
+                       disposition_kind="mandatory_approval_refused", hard_block_reason=msg, missing_facts_reason=None,
+                       program_slug=slug, program_name=_program_name(slug), content_gates=content_gates_for_program(slug, facts),
+                       blocker_detail={"reconciliation_class": "GENUINE_HARD_FAILURE", "kind": "MANDATORY_APPROVAL_REFUSED",
+                                       "headline": msg, "unresolved_propositions": [], "stored_facts_found": [],
+                                       "guaranteed_floor": "none (program unavailable)", "potential_ceiling_rate": None,
+                                       "ceiling_unlocked_by": [], "provenance_axis": "A producer-recorded refusal of a mandatory approval."})
+            new_rows.append(row)
+            all_rows.append(row)
         elif outcome and outcome["candidate_status"] == "PRICED":
             rec.update(stage=S_PRICED, disposition=D_EXECUTABLE, exit_reason="Priced: a retained executable structure exists.")
         elif outcome is None and e.classification == "incentive_ready":
@@ -383,6 +414,14 @@ async def build_jurisdiction_accounting(
                 threshold_unreachable_reason=(_threshold_unreachable_reason(inputs, slug, production_type, qpe) if stage == S_CONDITIONS else None),
             )
             disp = _disposition_for(base)
+            _refused = _refused_mandatory(slug, facts)
+            if _refused and disp != D_HARD_BLOCK:
+                _msg = (f"{base.get('program_name') or slug}: a mandatory approval was REFUSED on file ("
+                        + "; ".join(g["kind"].replace("_", " ").lower() for g in _refused) + ").")
+                base.update(disposition="HARD_BLOCK", blocked_cause="CONFIRMED_LEGAL_PROGRAM_INELIGIBILITY",
+                            hard_block_reason=_msg, engine_reason=base.get("missing_facts_reason"), missing_facts_reason=None)
+                (base.get("blocker_detail") or {}).update(reconciliation_class="GENUINE_HARD_FAILURE", kind="MANDATORY_APPROVAL_REFUSED", headline=_msg)
+                disp = D_HARD_BLOCK
             # A genuine minimum-spend exclusion: the production's canonical qualifying spend is below the program's
             # stated minimum -> confirmed hard failure with the exact numbers (never reached for a program that passes).
             _min_spend = _min_spend_threshold(slug, production_type)
