@@ -4273,3 +4273,85 @@ GAP_MATRIX: dict[str, dict[str, object]] = {
         "grants_support": None,          # No confirmed supplementary grant program identified
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# LOCATION CAPABILITY CENSUS (2026-10-06) -- the ten location-capability cells of every jurisdiction.
+#
+# The canonical owner of per-jurisdiction capability stays this module: `production_requirements.jurisdiction_capability_profile`
+# reads it, `production_fit` consumes that. The retained evidence lives in app/data/jurisdiction_location_capability.py (data
+# recovered from records ALREADY in this repository; no new source). Each (jurisdiction, category) cell is exactly one of
+#   SUPPORTED     -- a retained cited record states the capability;
+#   NOT_SUPPORTED -- affirmative structured evidence / geographic impossibility (island/tropical in a landlocked
+#                    jurisdiction: `marine_suitability == "none"` and no open-water filming);
+#   UNKNOWN       -- nothing retained: neutral, NEVER a mismatch.
+# Subnational and national profiles are independent keys: a national result never overwrites a state/province result. The
+# national `US` has no incentive profile (so it is not in ALL_PROFILES); its capability cells are the union of its constituent
+# state profiles' SUPPORTED cells.
+# ---------------------------------------------------------------------------
+from dataclasses import dataclass as _dataclass
+
+
+@_dataclass(frozen=True)
+class LocationCapabilityCell:
+    jurisdiction_code: str
+    category: str
+    token: str
+    status: str
+    proposition: str = ""
+    source_title: str = ""
+    source_url: str = ""
+    publisher: str = ""
+    checked_or_effective_date: str = ""
+    evidence_tier: str = ""
+    record_ref: str = ""
+
+
+def _is_landlocked(profile) -> bool:
+    return str(getattr(profile, "marine_suitability", "") or "").lower() == "none" and not getattr(profile, "has_open_water_filming", None)
+
+
+#: census jurisdictions: every structured profile plus the national US (capability only).
+def location_census_jurisdictions() -> list[str]:
+    return sorted({*ALL_PROFILES, "US"})
+
+
+def _us_constituents() -> list[str]:
+    return sorted(c for c in ALL_PROFILES if c.startswith("US-"))
+
+
+def location_capability_cells(code: str) -> dict[str, LocationCapabilityCell]:
+    """The ten census cells of one jurisdiction (category -> cell). Pure and deterministic."""
+    from app.data.jurisdiction_location_capability import (
+        LOCATION_CENSUS_CATEGORIES, NOT_SUPPORTED, RETAINED_SUPPORTED, SUPPORTED, UNKNOWN,
+    )
+
+    profile = ALL_PROFILES.get(code)
+    cells: dict[str, LocationCapabilityCell] = {}
+    for category, token in LOCATION_CENSUS_CATEGORIES.items():
+        rec = RETAINED_SUPPORTED.get((code, category))
+        if code == "US" and profile is None:
+            parts = [c for c in _us_constituents() if (c, category) in RETAINED_SUPPORTED]
+            if parts:
+                first = RETAINED_SUPPORTED[(parts[0], category)]
+                cells[category] = LocationCapabilityCell(
+                    code, category, token, SUPPORTED,
+                    f"Supported in constituent state profile(s) {', '.join(parts)}; first: {first.proposition}",
+                    first.source_title, first.source_url, first.publisher, first.checked_or_effective_date,
+                    "DERIVED_FROM_CONSTITUENT_PROFILES", first.record_ref)
+                continue
+        elif rec is not None:
+            cells[category] = LocationCapabilityCell(
+                code, category, token, SUPPORTED, rec.proposition, rec.source_title, rec.source_url, rec.publisher,
+                rec.checked_or_effective_date, rec.evidence_tier, rec.record_ref)
+            continue
+        if category == "island_tropical" and profile is not None and _is_landlocked(profile):
+            cells[category] = LocationCapabilityCell(
+                code, category, token, NOT_SUPPORTED,
+                "Landlocked (structured profile field marine_suitability = none, no open-water filming): no sea coast, hence no "
+                "sea-island or coastal tropical locations (geographic impossibility)",
+                f"{profile.jurisdiction_name} jurisdiction comparison profile", "", profile.authority_name or "",
+                "", "TIER_0_RUNTIME_STRUCTURED_FIELD", f"app/calculators/jurisdiction_comparison.py::{code}.marine_suitability")
+            continue
+        cells[category] = LocationCapabilityCell(code, category, token, UNKNOWN)
+    return cells

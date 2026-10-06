@@ -233,6 +233,12 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
           <div className="small">{hover.structureStatusLabel}</div>
         </div>
       )}
+      {hover.structureStatusLabel && hover.capabilityEvidenceLabel && (
+        <div className="hover-field" data-capability-evidence>
+          <div className="text-tertiary small">Capability evidence</div>
+          <div className="small">{hover.capabilityEvidenceLabel}</div>
+        </div>
+      )}
       {priced ? (
         <>
           {hover.status === "amber" && hover.blockerReason && (

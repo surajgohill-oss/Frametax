@@ -6,6 +6,26 @@ import { certaintyLabel } from "../lib/incentivePotential";
 // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: ONE component renders the shared contract for both the
 // structure Inspector and the segment Inspector (values verbatim from the served fields).
 // Soft suitability signals (urban / rural / historic / beach ...): disclosed, never a gate. Unassessed = no capability data.
+// Retained location-census evidence behind the fit (SUPPORTED / NOT_SUPPORTED cells for the active requirements). Disclosure only.
+function CapabilityEvidence({ evidence }) {
+  const rows = (evidence || []).slice(0, 6);
+  if (!rows.length) return null;
+  return (
+    <span className="text-tertiary small" data-capability-evidence>
+      {" · Capability evidence — "}
+      {rows.map((e, i) => (
+        <span key={`${e.jurisdiction}-${e.token}`}>
+          {i > 0 ? "; " : ""}
+          {humanizeToken(e.category)} {e.status === "SUPPORTED" ? "supported" : "not supported"} in {e.jurisdiction}
+          {e.hard_requirement ? " (hard requirement)" : ""}
+          {" ["}{e.source_title}{e.evidence_tier ? `, ${String(e.evidence_tier).toLowerCase().replace(/_/g, " ")}` : ""}{"]"}
+        </span>
+      ))}
+      {(evidence || []).length > rows.length ? ` +${evidence.length - rows.length} more` : ""}
+    </span>
+  );
+}
+
 function SoftFitSignals({ signals }) {
   const part = (kind, label) => {
     const items = [...new Set((signals?.[kind] || []).map((t) => humanizeToken(String(t).split(":").pop().replace(/_environments$/, "").replace(/_/g, " "))))];
@@ -355,6 +375,7 @@ function AllocationSegmentInspector({ data }) {
               {(data.production_fit_legs || []).length > 0 && <span className="text-tertiary small"> · physical production: {data.production_fit_legs.join(", ")}</span>}
               {(data.production_fit_reasons || []).length > 0 && <span className="text-tertiary small"> · {data.production_fit_reasons.map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>}
               <SoftFitSignals signals={data.production_fit_soft_signals} />
+              <CapabilityEvidence evidence={data.production_fit_capability_evidence} />
             </dd>
           </div>
         )}
@@ -513,6 +534,7 @@ function StructureDetailInspector({ data }) {
               {(data.production_fit_legs || []).length > 0 && <span className="text-tertiary small"> · physical production: {data.production_fit_legs.join(", ")}</span>}
               {(data.production_fit_reasons || []).length > 0 && <span className="text-tertiary small"> · {data.production_fit_reasons.map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>}
               <SoftFitSignals signals={data.production_fit_soft_signals} />
+              <CapabilityEvidence evidence={data.production_fit_capability_evidence} />
             </dd>
           </div>
         </dl>
@@ -562,6 +584,7 @@ function StructureDetailInspector({ data }) {
                   <span className="text-tertiary small"> · {(data.production_fit_reasons || []).map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>
                 )}
                 <SoftFitSignals signals={data.production_fit_soft_signals} />
+              <CapabilityEvidence evidence={data.production_fit_capability_evidence} />
                 {data.is_recommended !== true && data.canonical_recommendation_status === "RECOMMENDED" && (
                   <span className="text-tertiary small"> · economically qualifies, but is not Leading/Strong until location fit is confirmed</span>
                 )}

@@ -98,9 +98,15 @@ def classify_jurisdiction_fit(code: str, requirements) -> tuple[str, list[str]]:
     if cap.has_capability_data and not requirements_disclosed(requirements):
         # An empty requirement set must not manufacture a fit claim.
         return FIT_UNKNOWN, ["NO_REQUIREMENTS_ON_FILE"]
-    unassessed = sorted(requirements.required_capabilities - _ASSESSABLE_HARD_CAPABILITIES)
+    # A hard capability is assessable for THIS jurisdiction when the capability model can affirm or deny it: the marine / water
+    # set always, and a location-census hard token (desert / snow) whenever the jurisdiction has a SUPPORTED (in provisions) or
+    # NOT_SUPPORTED cell for it. UNKNOWN stays unassessed: Conditional, never a mismatch.
+    assessable_here = _ASSESSABLE_HARD_CAPABILITIES | {
+        t for t in requirements.required_capabilities if t in cap.provisions or t in cap.location_not_supported
+    }
+    unassessed = sorted(requirements.required_capabilities - assessable_here)
     assessable = dataclasses.replace(
-        requirements, required_capabilities=requirements.required_capabilities & _ASSESSABLE_HARD_CAPABILITIES,
+        requirements, required_capabilities=requirements.required_capabilities & assessable_here,
     )
     match = match_capability(assessable, cap)
     exam = SimpleNamespace(
@@ -108,6 +114,9 @@ def classify_jurisdiction_fit(code: str, requirements) -> tuple[str, list[str]]:
         production_capable=match.production_capable,
     )
     status, reasons = _feasibility_status(exam, assessable)
+    denied = sorted(t for t in assessable.required_capabilities if t in cap.location_not_supported)
+    if status == FIT_WEAK and denied:
+        reasons = list(dict.fromkeys([*(f"{t.upper()}_NOT_SUPPORTED" for t in denied), *(r for r in reasons if r != "CAPABILITY_MISMATCH")]))
     if status in FIT_CONFIRMED_STATUSES and unassessed:
         # Nothing assessable contradicts the production, but a HARD requirement cannot be
         # confirmed from the capability data: unconfirmed, never a manufactured fit claim.
@@ -139,6 +148,23 @@ def classify_soft_signals(code: str, requirements) -> dict[str, list[str]]:
         verdict, _ = assess_location_capability(token, cap)
         out["matched" if verdict == ASSESS_MATCH else "mismatched" if verdict == ASSESS_MISMATCH else "unassessed"].append(token)
     return out
+
+
+def classify_capability_evidence(code: str, requirements) -> list[dict]:
+    """Retained location-census evidence behind this jurisdiction's SUPPORTED / NOT_SUPPORTED cells for the ACTIVE location
+    requirements (hard and soft alike), served beside the fit so every surface can show the same provenance. UNKNOWN cells
+    carry no evidence and are not listed."""
+    from app.calculators.production_requirements import LOCATION_CENSUS_TOKENS, jurisdiction_capability_profile
+
+    cap = jurisdiction_capability_profile(code)
+    active = (requirements.environments | requirements.required_capabilities) & LOCATION_CENSUS_TOKENS
+    return [
+        {"jurisdiction": code, "category": c.category, "token": c.token, "status": c.status,
+         "hard_requirement": c.token in requirements.required_capabilities, "proposition": c.proposition,
+         "source_title": c.source_title, "source_url": c.source_url, "publisher": c.publisher,
+         "evidence_tier": c.evidence_tier}
+        for c in cap.location_evidence if c.token in active
+    ]
 
 
 def physical_production_legs(entry: dict) -> list[str]:
@@ -179,15 +205,20 @@ def classify_entry_fit(entry: dict, requirements, cache: dict | None = None) -> 
             "production_fit_status": FIT_UNKNOWN, "production_fit_reasons": ["NO_PHYSICAL_PRODUCTION_LEG"],
             "production_fit_legs": [], "production_fit_leg_status": {}, "production_fit_basis": basis,
             "production_fit_soft_signals": {"matched": [], "mismatched": [], "unassessed": []},
+            "production_fit_capability_evidence": [],
         }
     per_leg: dict[str, str] = {}
     reasons: list[str] = []
     soft: dict[str, list[str]] = {"matched": [], "mismatched": [], "unassessed": []}
+    evidence: list[dict] = []
     for code in legs:
         if code not in cache:
             cache[code] = classify_jurisdiction_fit(code, requirements)
         if ("soft", code) not in cache:
             cache[("soft", code)] = classify_soft_signals(code, requirements)
+        if ("evidence", code) not in cache:
+            cache[("evidence", code)] = classify_capability_evidence(code, requirements)
+        evidence.extend(cache[("evidence", code)])
         for kind, tokens in cache[("soft", code)].items():
             soft[kind].extend(f"{code}:{t}" for t in tokens)
         status, leg_reasons = cache[code]
@@ -201,6 +232,7 @@ def classify_entry_fit(entry: dict, requirements, cache: dict | None = None) -> 
         "production_fit_leg_status": per_leg,
         "production_fit_basis": basis,
         "production_fit_soft_signals": soft,
+        "production_fit_capability_evidence": evidence,
     }
 
 

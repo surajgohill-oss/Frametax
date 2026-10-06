@@ -747,6 +747,7 @@ export function buildCandidateDetail(structure) {
     production_fit_status: structure.production_fit_status ?? undefined,
     production_fit_reasons: structure.production_fit_reasons ?? undefined,
     production_fit_soft_signals: structure.production_fit_soft_signals ?? undefined,
+    production_fit_capability_evidence: structure.production_fit_capability_evidence ?? undefined,
     production_fit_legs: structure.production_fit_legs ?? undefined,
     production_fit_basis: structure.production_fit_basis ?? undefined,
     fit_priority: structure.fit_priority ?? undefined,
@@ -975,6 +976,11 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
         ? alternativeLabel(structure, entry.status === "gold" ? structure.structure_id : null)
         : null,
       productionFitStatus: structure?.production_fit_status ?? null,
+      // Same served capability evidence the Inspector lists (SUPPORTED / NOT_SUPPORTED cells for the active requirements).
+      capabilityEvidenceLabel: (structure?.production_fit_capability_evidence || []).length
+        ? structure.production_fit_capability_evidence.slice(0, 3)
+            .map((e) => `${String(e.category).replace(/_/g, " ")} ${e.status === "SUPPORTED" ? "supported" : "not supported"} in ${e.jurisdiction}`).join("; ")
+        : null,
       structureLabel: humanizeJurisdictionCodes(structure?.label ?? structure?.name ?? null),
       // GLOBE_WIRING_REMEDIATION (2026-10-01): this jurisdiction's OWN
       // canonical record (Optimizer mode) -- per-category structure counts,

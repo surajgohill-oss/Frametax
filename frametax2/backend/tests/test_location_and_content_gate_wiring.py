@@ -30,8 +30,9 @@ def test_all_13_chips_reach_a_canonical_requirement_token_and_none_is_disconnect
         assert r["changes_effective_requirements"] and r["capability_tokens"], r
         assert set(r["capability_tokens"]) <= LOCATION_CAPABILITY_TOKENS
         assert r["disposition"] in ("CANONICAL_AND_CONSUMED", "CANONICAL_DATA_MISSING")
+    # after the 2026-10-06 location census every chip reaches a structured capability field (coverage per cell is census data)
     consumed = {r["chip"] for r in matrix if r["disposition"] == "CANONICAL_AND_CONSUMED"}
-    assert consumed == {"beach_coast", "marine_open_water", "studio_stage"}
+    assert consumed == set(LOCATION_TAXONOMY)
     # the four that previously persisted but did nothing are now connected
     for chip in ("jungle_rainforest", "snow_arctic", "small_town_suburban", "studio_stage"):
         assert next(r for r in matrix if r["chip"] == chip)["changes_effective_requirements"]
