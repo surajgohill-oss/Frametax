@@ -337,14 +337,31 @@ def jurisdiction_capability_profile(code: str) -> CapabilityProfile:
     if getattr(p, "music_qualifies", None):
         provisions.add("music_scoring")
     census = jc.location_capability_cells(code)
-    provisions |= {c.token for c in census.values() if c.status == "SUPPORTED"}
+    sup, deny = _census_tokens_of(census)
+    provisions |= sup
     return CapabilityProfile(
         jurisdiction_code=code, has_capability_data=True, provisions=frozenset(provisions),
         marine_suitability=marine, crew_depth=getattr(p, "crew_depth_rating", None),
         notes=(getattr(p, "notes", "") or "")[:160],
-        location_not_supported=frozenset(c.token for c in census.values() if c.status == "NOT_SUPPORTED"),
+        location_not_supported=frozenset(deny),
         location_evidence=tuple(c for c in census.values() if c.status in ("SUPPORTED", "NOT_SUPPORTED")),
     )
+
+
+def _census_tokens_of(census) -> tuple[set[str], set[str]]:
+    """Capability tokens a jurisdiction's census cells affirm / deny: each chip token (the cell's combined status) and, for the
+    combined island/tropical category, each COMPONENT token (island, tropical) on its own."""
+    sup: set[str] = set()
+    deny: set[str] = set()
+    for c in census.values():
+        if c.status == "SUPPORTED":
+            sup.add(c.token)
+        elif c.status == "NOT_SUPPORTED":
+            deny.add(c.token)
+        if len(c.components) > 1 or (c.components and c.components[0][0] != c.token):
+            for tok, st in c.components:
+                (sup if st == "SUPPORTED" else deny if st == "NOT_SUPPORTED" else set()).add(tok)
+    return sup, deny
 
 
 _MARINE_RANK = {"none": 0, "limited": 1, "moderate": 2, "strong": 3, "excellent": 4}
@@ -353,34 +370,34 @@ _CREW_RANK = {None: 0, "thin": 1, "limited": 1, "medium": 2, "deep": 3}
 
 def _national_us_capability_profile() -> CapabilityProfile:
     """The national US capability profile. The US has no incentive profile of its own (ALL_PROFILES carries its 29 state
-    profiles), so its capability is the UNION of its constituent state profiles' affirmed capability: the nation can host a
-    production wherever one of its states can. A national result never feeds back into a state profile (state profiles are
-    built independently above), and no capability is invented: every provision is one a state profile already affirms."""
+    profiles): its marine / studio / post provisions are the UNION of the constituent state profiles' affirmed capability (the
+    nation can host a production wherever one of its states can) and its location-census cells are its OWN (derived from the
+    national polygon). A national result never feeds back into a state profile, which is built independently above."""
     from app.calculators import jurisdiction_comparison as jc
 
-    states = [jurisdiction_capability_profile(c) for c in jc._us_constituents()]
-    provisions: set[str] = set().union(*(s.provisions for s in states)) if states else set()
+    states = [jurisdiction_capability_profile(c) for c in sorted(c for c in jc.ALL_PROFILES if c.startswith("US-"))]
+    provisions: set[str] = set().union(*(s.provisions - LOCATION_ALL_TOKENS for s in states)) if states else set()
     marine = max((s.marine_suitability for s in states), key=lambda m: _MARINE_RANK.get(str(m or "").lower(), 0), default=None)
     crew = max((s.crew_depth for s in states), key=lambda c: _CREW_RANK.get(c, 0), default=None)
     census = jc.location_capability_cells("US")
+    sup, deny = _census_tokens_of(census)
     return CapabilityProfile(
-        jurisdiction_code="US", has_capability_data=bool(states), provisions=frozenset(provisions),
+        jurisdiction_code="US", has_capability_data=bool(states), provisions=frozenset(provisions | sup),
         marine_suitability=marine, crew_depth=crew,
-        notes="National US capability = union of the constituent state profiles' affirmed capability.",
-        location_not_supported=frozenset(),
-        location_evidence=tuple(c for c in census.values() if c.status == "SUPPORTED"),
+        notes="National US capability: marine/studio/post = union of the constituent state profiles; location census = national cells.",
+        location_not_supported=frozenset(deny),
+        location_evidence=tuple(c for c in census.values() if c.status in ("SUPPORTED", "NOT_SUPPORTED")),
     )
 
 
-# Per-token ASSESSMENT of one location requirement against one jurisdiction's STRUCTURED capability data.
-# Three-valued by design: a capability the data does not state is UNKNOWN, never a mismatch.
-def _census_tokens() -> frozenset[str]:
-    from app.data.jurisdiction_location_capability import LOCATION_CENSUS_CATEGORIES
+def _census_token_sets() -> tuple[frozenset[str], frozenset[str]]:
+    from app.data.jurisdiction_location_capability import COMPONENT_TOKENS, LOCATION_CENSUS_CATEGORIES
 
-    return frozenset(LOCATION_CENSUS_CATEGORIES.values())
+    chips = frozenset(LOCATION_CENSUS_CATEGORIES.values())
+    return chips, chips | frozenset(COMPONENT_TOKENS.values())
 
 
-LOCATION_CENSUS_TOKENS = _census_tokens()
+LOCATION_CENSUS_TOKENS, LOCATION_ALL_TOKENS = _census_token_sets()   # chip tokens; chip + component tokens
 ASSESS_MATCH = "MATCH"
 ASSESS_MISMATCH = "MISMATCH"
 ASSESS_UNKNOWN = "UNKNOWN"
@@ -394,8 +411,8 @@ def assess_location_capability(token: str, cap: CapabilityProfile) -> tuple[str,
     not_assessable = f"{token.upper()}_NOT_ASSESSABLE"
     if not cap.has_capability_data:
         return ASSESS_UNKNOWN, "CAPABILITY_UNKNOWN"
-    if token in LOCATION_CENSUS_TOKENS:
-        # location census cell: SUPPORTED -> in provisions; NOT_SUPPORTED -> affirmatively denied; otherwise UNKNOWN (neutral)
+    if token in LOCATION_ALL_TOKENS:
+        # location census cell / component: SUPPORTED -> in provisions; NOT_SUPPORTED -> affirmatively denied; UNRESOLVED_NEUTRAL -> UNKNOWN
         if token in cap.provisions:
             return ASSESS_MATCH, ""
         if token in cap.location_not_supported:
@@ -406,8 +423,6 @@ def assess_location_capability(token: str, cap: CapabilityProfile) -> tuple[str,
     if token in ("open_water_filming", "marine_filming", "coastal_environments"):
         if token in cap.provisions:
             return ASSESS_MATCH, ""
-        return (ASSESS_MISMATCH, "MARINE_MISMATCH") if landlocked else (ASSESS_UNKNOWN, not_assessable)
-    if token == "island_environments":
         return (ASSESS_MISMATCH, "MARINE_MISMATCH") if landlocked else (ASSESS_UNKNOWN, not_assessable)
     if token == "water_tanks":
         return (ASSESS_MATCH, "") if token in cap.provisions else (ASSESS_MISMATCH, "MARINE_MISMATCH")

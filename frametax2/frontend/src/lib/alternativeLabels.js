@@ -1,4 +1,5 @@
 import { readIncentivePotential } from "./incentivePotential.js";
+import { humanizeToken } from "./programNames.js";
 // ALTERNATIVE_TERMINOLOGY (2026-10-01): the ONE producer-facing vocabulary for
 // an optimizer structure's canonical status. "Recommended" over-directs a
 // producer; the same canonical backend fields are presented as alternatives:
@@ -78,4 +79,41 @@ export function structureStatusDetail(structure, leadingId = null) {
     production_fit_soft_signals: structure.production_fit_soft_signals ?? undefined,
     production_fit_capability_evidence: structure.production_fit_capability_evidence ?? undefined,
   };
+}
+
+
+// ONE rendering of the served production fit for every surface (Inspector, Globe hover, structure story): status word, physical legs and
+// reasons -- served fields only, never classified here.
+const FIT_WORD = { STRONG: "Strong fit", WORKABLE: "Workable fit", WEAK: "Weak fit" };
+export function fitText(structure) {
+  const status = structure?.production_fit_status;
+  if (!status) return null;
+  const legs = (structure.production_fit_legs || []).length ? ` · physical production: ${structure.production_fit_legs.join(", ")}` : "";
+  const reasons = (structure.production_fit_reasons || []).length
+    ? ` · ${structure.production_fit_reasons.map((r) => humanizeToken(String(r).replace(":", " "))).join("; ")}` : "";
+  return `${FIT_WORD[status] || "Location fit unconfirmed"}${legs}${reasons}`;
+}
+
+export function softSignalsText(signals) {
+  const part = (kind, label) => {
+    const items = [...new Set((signals?.[kind] || []).map((t) => humanizeToken(String(t).split(":").pop().replace(/_environments$/, "").replace(/_/g, " "))))];
+    return items.length ? `${label}: ${items.join(", ")}` : null;
+  };
+  const parts = [part("matched", "supported"), part("mismatched", "not supported"), part("unassessed", "not assessed (no capability data, non-blocking)")].filter(Boolean);
+  return parts.length ? `Soft signals — ${parts.join("; ")}` : null;
+}
+
+export function capabilityEvidenceText(evidence) {
+  const rows = (evidence || []).slice(0, 6);
+  if (!rows.length) return null;
+  const body = rows.map((e) => `${humanizeToken(e.category)} ${e.status === "SUPPORTED" ? "supported" : "not supported"} in ${e.jurisdiction}`
+    + `${e.hard_requirement ? " (hard requirement)" : ""} [${(e.source_labels && e.source_labels.length ? e.source_labels.join(", ") : e.source_title)}${e.evidence_tier ? `, ${String(e.evidence_tier).toLowerCase().replace(/_/g, " ")}` : ""}]`).join("; ");
+  return `Capability evidence — ${body}${(evidence || []).length > rows.length ? ` +${evidence.length - rows.length} more` : ""}`;
+}
+
+// Hover / story summary of the same three served facts.
+export function fitSummaryText(structure) {
+  const fit = fitText(structure);
+  if (!fit) return null;
+  return [fit, softSignalsText(structure.production_fit_soft_signals), capabilityEvidenceText(structure.production_fit_capability_evidence)].filter(Boolean).join(" · ");
 }

@@ -83,13 +83,23 @@ def test_only_the_hard_physical_chips_are_hard_requirements_and_the_rest_are_sof
     assert all(r["hard_requirement"] == (r["suitability_class"] == "HARD") for r in matrix)
 
 
+def _with_status(category: str, status: str, *, profile_only: bool = True) -> list[str]:
+    from app.calculators import jurisdiction_comparison as jc
+
+    return sorted(c for c in jc.location_census_jurisdictions() if (not profile_only or c in jc.ALL_PROFILES)
+                  and jc.location_capability_cells(c)[category].status == status)
+
+
 def test_urban_rural_and_historic_alone_never_force_an_assessable_jurisdiction_to_unknown():
-    reqs = _reqs("urban", "rural_countryside", "historic_old_world")
-    for code in ("GR", "AT", "ES"):
-        status, reasons = pf.classify_jurisdiction_fit(code, reqs)
-        assert status in pf.FIT_CONFIRMED_STATUSES and not any(r.endswith("_NOT_ASSESSABLE") for r in reasons), (code, status, reasons)
-    soft = pf.classify_soft_signals("GR", reqs)       # disclosed, non-blocking
-    assert set(soft["unassessed"]) == {"urban_environments", "rural_environments", "historic_architecture"} and not soft["mismatched"]
+    for category, chip in (("urban_major_city", "urban"), ("rural_countryside", "rural_countryside"), ("historic_old_world", "historic_old_world")):
+        codes = _with_status(category, "UNRESOLVED_NEUTRAL")
+        assert codes, category                                         # the census leaves some soft cells unresolved: they stay neutral
+        for code in codes:
+            status, reasons = pf.classify_jurisdiction_fit(code, _reqs(chip))
+            assert status in pf.FIT_CONFIRMED_STATUSES and not any(r.endswith("_NOT_ASSESSABLE") for r in reasons), (code, status, reasons)
+    code = _with_status("historic_old_world", "UNRESOLVED_NEUTRAL")[0]
+    soft = pf.classify_soft_signals(code, _reqs("historic_old_world"))       # disclosed, non-blocking
+    assert soft["unassessed"] == ["historic_architecture"] and not soft["mismatched"]
 
 
 def test_every_soft_chip_with_missing_data_stays_confirmed_and_never_not_suitable():
@@ -106,17 +116,20 @@ def test_a_confirmed_soft_match_is_disclosed_and_a_confirmed_soft_mismatch_is_di
     at = pf.classify_soft_signals("AT", _reqs("beach_coast"))
     assert at["mismatched"] == ["coastal_environments"]
     assert pf.classify_jurisdiction_fit("AT", _reqs("beach_coast"))[0] in pf.FIT_CONFIRMED_STATUSES
-    entry = pf.classify_entry_fit({"anchor_jurisdiction": "GR"}, _reqs("beach_coast", "urban"))
-    assert entry["production_fit_soft_signals"] == {"matched": ["GR:coastal_environments"], "mismatched": [], "unassessed": ["GR:urban_environments"]}
+    unresolved = _with_status("historic_old_world", "UNRESOLVED_NEUTRAL")[0]
+    entry = pf.classify_entry_fit({"anchor_jurisdiction": unresolved}, _reqs("urban", "historic_old_world"))
+    assert f"{unresolved}:historic_architecture" in entry["production_fit_soft_signals"]["unassessed"]
     assert entry["production_fit_status"] in pf.FIT_CONFIRMED_STATUSES
 
 
-def test_a_hard_desert_or_snow_requirement_without_capability_data_stays_conditional_never_unsuitable():
-    for category, token in (("desert", "DESERT_ENVIRONMENTS"), ("snow", "SNOW_ENVIRONMENTS")):
-        for code in ("GR", "AT"):
-            assert pf.classify_jurisdiction_fit(code, _reqs(category)) == (pf.FIT_UNKNOWN, [f"{token}_NOT_ASSESSABLE"])
+def test_a_hard_desert_or_snow_requirement_that_the_census_leaves_unresolved_stays_conditional_never_unsuitable():
+    for category, chip, token in (("desert_arid", "desert", "DESERT_ENVIRONMENTS"), ("snow_arctic", "snow", "SNOW_ENVIRONMENTS")):
+        codes = _with_status(category, "UNRESOLVED_NEUTRAL")
+        assert codes, category
+        for code in codes:
+            assert pf.classify_jurisdiction_fit(code, _reqs(chip)) == (pf.FIT_UNKNOWN, [f"{token}_NOT_ASSESSABLE"])
         # a soft requirement beside it does not change the (hard-driven) status
-        assert pf.classify_jurisdiction_fit("GR", _reqs(category, "urban")) == (pf.FIT_UNKNOWN, [f"{token}_NOT_ASSESSABLE"])
+        assert pf.classify_jurisdiction_fit(codes[0], _reqs(chip, "urban")) == (pf.FIT_UNKNOWN, [f"{token}_NOT_ASSESSABLE"])
 
 
 def test_marine_open_water_in_a_confirmed_landlocked_jurisdiction_is_not_suitable_and_a_supporting_one_is_fit_confirmed():

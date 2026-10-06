@@ -233,10 +233,10 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
           <div className="small">{hover.structureStatusLabel}</div>
         </div>
       )}
-      {hover.structureStatusLabel && hover.capabilityEvidenceLabel && (
-        <div className="hover-field" data-capability-evidence>
-          <div className="text-tertiary small">Capability evidence</div>
-          <div className="small">{hover.capabilityEvidenceLabel}</div>
+      {hover.productionFitSummary && (
+        <div className="hover-field" data-production-fit>
+          <div className="text-tertiary small">Production fit</div>
+          <div className="small">{hover.productionFitSummary}</div>
         </div>
       )}
       {priced ? (
@@ -392,6 +392,12 @@ function StructureStory({ story, locked }) {
         <div className="text-tertiary small">Status</div>
         <div className="small" data-story-field="status">{story.statusLabel}</div>
       </div>
+      {story.fitSummary && (
+        <div className="hover-field" data-production-fit>
+          <div className="text-tertiary small">Production fit</div>
+          <div className="small" data-story-field="production-fit">{story.fitSummary}</div>
+        </div>
+      )}
       {story.blockerText && (
         <div className="hover-field">
           <div className="text-tertiary small">Blocker / facts needed</div>

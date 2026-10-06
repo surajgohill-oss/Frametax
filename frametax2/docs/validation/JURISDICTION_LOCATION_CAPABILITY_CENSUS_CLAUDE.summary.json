@@ -1,0 +1,642 @@
+{
+ "desert_not_supported": [
+  "BE",
+  "CA-NB",
+  "CA-NS",
+  "CZ",
+  "DK",
+  "EE",
+  "FJ",
+  "GH",
+  "HR",
+  "HU",
+  "IE",
+  "LT",
+  "LU",
+  "LV",
+  "MU",
+  "NL",
+  "PH",
+  "PT",
+  "RS",
+  "SG",
+  "TH",
+  "TT",
+  "US-AL",
+  "US-CT",
+  "US-GA",
+  "US-IL",
+  "US-KY",
+  "US-LA",
+  "US-MA",
+  "US-MD",
+  "US-MN",
+  "US-MS",
+  "US-NC",
+  "US-NY",
+  "US-PA",
+  "US-PR",
+  "US-RI",
+  "US-SC",
+  "US-TN",
+  "US-VA",
+  "UY"
+ ],
+ "desert_supported": [
+  "AE-AD",
+  "AE-DXB",
+  "AU",
+  "AU-NSW",
+  "AU-QLD",
+  "AU-SA",
+  "CA",
+  "CL",
+  "CO",
+  "EG",
+  "ES",
+  "IL",
+  "IN",
+  "IS",
+  "JO",
+  "KZ",
+  "MA",
+  "MN",
+  "MX",
+  "NO",
+  "PE",
+  "QA",
+  "SA",
+  "US",
+  "US-AZ",
+  "US-CA",
+  "US-CO",
+  "US-NM",
+  "US-NV",
+  "US-OR",
+  "US-TX",
+  "US-UT",
+  "US-WA",
+  "UZ",
+  "ZA"
+ ],
+ "desert_unresolved": [
+  "AL",
+  "AT",
+  "BG",
+  "CA-AB",
+  "CA-BC",
+  "CA-MB",
+  "CA-NL",
+  "CA-ON",
+  "CA-QC",
+  "CA-SK",
+  "CH",
+  "CR",
+  "CY",
+  "DE",
+  "DO",
+  "FI",
+  "FR",
+  "GB",
+  "GE",
+  "GR",
+  "IT",
+  "JP",
+  "KR",
+  "ME",
+  "MK",
+  "MT",
+  "MY",
+  "NZ",
+  "PA",
+  "PL",
+  "RO",
+  "SE",
+  "SI",
+  "SK",
+  "TW",
+  "UA",
+  "US-HI",
+  "US-OK"
+ ],
+ "evidence_tier": {
+  "(unresolved)": 235,
+  "GOVERNMENT_AGENCY_PAGE": 3,
+  "GOVERNMENT_DATASET": 31,
+  "INTERGOVERNMENTAL_DATASET": 551,
+  "PEER_REVIEWED_OPEN_DATASET": 320
+ },
+ "generic_unknown_cells": 0,
+ "rows": 1140,
+ "terminal_status": {
+  "AUTHORITY_UNRESOLVED_NEUTRAL": 235,
+  "AUTHORITY_VERIFIED_NOT_SUPPORTED": 86,
+  "AUTHORITY_VERIFIED_SUPPORTED": 819
+ },
+ "terminal_status_by_category": {
+  "desert_arid": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 38,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 41,
+   "AUTHORITY_VERIFIED_SUPPORTED": 35
+  },
+  "forest_woodland": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 4,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 4,
+   "AUTHORITY_VERIFIED_SUPPORTED": 106
+  },
+  "historic_old_world": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 24,
+   "AUTHORITY_VERIFIED_SUPPORTED": 90
+  },
+  "island_tropical": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 19,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 22,
+   "AUTHORITY_VERIFIED_SUPPORTED": 73
+  },
+  "jungle_rainforest": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 68,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 16,
+   "AUTHORITY_VERIFIED_SUPPORTED": 30
+  },
+  "mountains_alpine": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 21,
+   "AUTHORITY_VERIFIED_SUPPORTED": 93
+  },
+  "rural_countryside": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 15,
+   "AUTHORITY_VERIFIED_SUPPORTED": 99
+  },
+  "small_town_suburban": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 7,
+   "AUTHORITY_VERIFIED_SUPPORTED": 107
+  },
+  "snow_arctic": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 34,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 3,
+   "AUTHORITY_VERIFIED_SUPPORTED": 77
+  },
+  "urban_major_city": {
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 5,
+   "AUTHORITY_VERIFIED_SUPPORTED": 109
+  }
+ },
+ "unresolved_by_category": {
+  "desert_arid": 38,
+  "forest_woodland": 4,
+  "historic_old_world": 24,
+  "island_tropical": 19,
+  "jungle_rainforest": 68,
+  "mountains_alpine": 21,
+  "rural_countryside": 15,
+  "small_town_suburban": 7,
+  "snow_arctic": 34,
+  "urban_major_city": 5
+ },
+ "unresolved_by_jurisdiction": {
+  "AE-AD": [
+   "historic_old_world",
+   "mountains_alpine",
+   "rural_countryside",
+   "small_town_suburban",
+   "snow_arctic"
+  ],
+  "AE-DXB": [
+   "historic_old_world",
+   "rural_countryside",
+   "small_town_suburban",
+   "snow_arctic"
+  ],
+  "AL": [
+   "desert_arid",
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "AT": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "AU-QLD": [
+   "snow_arctic"
+  ],
+  "AU-SA": [
+   "forest_woodland",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "BE": [
+   "island_tropical",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "BG": [
+   "desert_arid",
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "CA-AB": [
+   "desert_arid",
+   "historic_old_world"
+  ],
+  "CA-BC": [
+   "desert_arid",
+   "historic_old_world",
+   "jungle_rainforest",
+   "rural_countryside"
+  ],
+  "CA-MB": [
+   "desert_arid",
+   "historic_old_world",
+   "island_tropical",
+   "mountains_alpine",
+   "small_town_suburban"
+  ],
+  "CA-NB": [
+   "historic_old_world",
+   "rural_countryside",
+   "urban_major_city"
+  ],
+  "CA-NL": [
+   "desert_arid",
+   "rural_countryside",
+   "urban_major_city"
+  ],
+  "CA-NS": [
+   "mountains_alpine",
+   "rural_countryside",
+   "small_town_suburban"
+  ],
+  "CA-ON": [
+   "desert_arid",
+   "historic_old_world",
+   "island_tropical",
+   "rural_countryside"
+  ],
+  "CA-QC": [
+   "desert_arid"
+  ],
+  "CA-SK": [
+   "desert_arid",
+   "historic_old_world",
+   "mountains_alpine",
+   "urban_major_city"
+  ],
+  "CH": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "CR": [
+   "desert_arid",
+   "historic_old_world"
+  ],
+  "CY": [
+   "desert_arid",
+   "historic_old_world",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "CZ": [
+   "jungle_rainforest"
+  ],
+  "DE": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "DK": [
+   "jungle_rainforest",
+   "mountains_alpine"
+  ],
+  "DO": [
+   "desert_arid",
+   "snow_arctic"
+  ],
+  "EE": [
+   "mountains_alpine"
+  ],
+  "EG": [
+   "snow_arctic"
+  ],
+  "ES": [
+   "jungle_rainforest"
+  ],
+  "FI": [
+   "desert_arid"
+  ],
+  "FJ": [
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "FR": [
+   "desert_arid"
+  ],
+  "GB": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "GE": [
+   "desert_arid",
+   "island_tropical"
+  ],
+  "GH": [
+   "mountains_alpine"
+  ],
+  "GR": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "HR": [
+   "jungle_rainforest"
+  ],
+  "HU": [
+   "jungle_rainforest"
+  ],
+  "IE": [
+   "historic_old_world",
+   "jungle_rainforest",
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "IL": [
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "IS": [
+   "forest_woodland",
+   "historic_old_world",
+   "jungle_rainforest",
+   "rural_countryside"
+  ],
+  "IT": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "JO": [
+   "forest_woodland",
+   "historic_old_world",
+   "island_tropical",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "JP": [
+   "desert_arid"
+  ],
+  "KR": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "KZ": [
+   "historic_old_world",
+   "jungle_rainforest"
+  ],
+  "LT": [
+   "island_tropical",
+   "mountains_alpine"
+  ],
+  "LU": [
+   "jungle_rainforest",
+   "snow_arctic",
+   "urban_major_city"
+  ],
+  "LV": [
+   "island_tropical",
+   "mountains_alpine"
+  ],
+  "MA": [
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "ME": [
+   "desert_arid",
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "MK": [
+   "desert_arid",
+   "historic_old_world",
+   "jungle_rainforest"
+  ],
+  "MN": [
+   "historic_old_world"
+  ],
+  "MT": [
+   "desert_arid",
+   "jungle_rainforest",
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "MU": [
+   "historic_old_world",
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "MX": [
+   "snow_arctic"
+  ],
+  "MY": [
+   "desert_arid",
+   "snow_arctic"
+  ],
+  "NL": [
+   "jungle_rainforest",
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "NO": [
+   "historic_old_world",
+   "jungle_rainforest"
+  ],
+  "NZ": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "PA": [
+   "desert_arid"
+  ],
+  "PH": [
+   "snow_arctic"
+  ],
+  "PL": [
+   "desert_arid",
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "PT": [
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "QA": [
+   "historic_old_world",
+   "island_tropical",
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "RO": [
+   "desert_arid",
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "RS": [
+   "jungle_rainforest"
+  ],
+  "SA": [
+   "forest_woodland",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "SE": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "SG": [
+   "historic_old_world",
+   "mountains_alpine",
+   "rural_countryside",
+   "small_town_suburban"
+  ],
+  "SI": [
+   "desert_arid",
+   "historic_old_world",
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "SK": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "TH": [
+   "snow_arctic"
+  ],
+  "TT": [
+   "historic_old_world",
+   "mountains_alpine"
+  ],
+  "TW": [
+   "desert_arid",
+   "historic_old_world",
+   "snow_arctic"
+  ],
+  "UA": [
+   "desert_arid",
+   "jungle_rainforest"
+  ],
+  "US-AL": [
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "US-AZ": [
+   "jungle_rainforest",
+   "rural_countryside"
+  ],
+  "US-CA": [
+   "jungle_rainforest"
+  ],
+  "US-CO": [
+   "jungle_rainforest"
+  ],
+  "US-CT": [
+   "island_tropical",
+   "jungle_rainforest",
+   "rural_countryside",
+   "small_town_suburban"
+  ],
+  "US-GA": [
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "US-HI": [
+   "desert_arid"
+  ],
+  "US-IL": [
+   "jungle_rainforest"
+  ],
+  "US-KY": [
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "US-LA": [
+   "jungle_rainforest",
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "US-MA": [
+   "jungle_rainforest",
+   "rural_countryside"
+  ],
+  "US-MD": [
+   "jungle_rainforest"
+  ],
+  "US-MN": [
+   "mountains_alpine"
+  ],
+  "US-MS": [
+   "jungle_rainforest",
+   "snow_arctic",
+   "urban_major_city"
+  ],
+  "US-NC": [
+   "jungle_rainforest"
+  ],
+  "US-NM": [
+   "jungle_rainforest"
+  ],
+  "US-NV": [
+   "jungle_rainforest",
+   "rural_countryside"
+  ],
+  "US-NY": [
+   "jungle_rainforest"
+  ],
+  "US-OK": [
+   "desert_arid",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "US-OR": [
+   "jungle_rainforest"
+  ],
+  "US-PA": [
+   "island_tropical",
+   "jungle_rainforest"
+  ],
+  "US-PR": [
+   "mountains_alpine",
+   "snow_arctic"
+  ],
+  "US-RI": [
+   "jungle_rainforest",
+   "mountains_alpine",
+   "rural_countryside",
+   "small_town_suburban"
+  ],
+  "US-SC": [
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "US-TN": [
+   "jungle_rainforest"
+  ],
+  "US-TX": [
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "US-UT": [
+   "jungle_rainforest",
+   "rural_countryside"
+  ],
+  "US-VA": [
+   "jungle_rainforest"
+  ],
+  "UY": [
+   "island_tropical",
+   "jungle_rainforest",
+   "snow_arctic"
+  ],
+  "UZ": [
+   "jungle_rainforest"
+  ],
+  "ZA": [
+   "historic_old_world",
+   "jungle_rainforest",
+   "snow_arctic"
+  ]
+ }
+}

@@ -574,10 +574,15 @@ _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
     # program) a live target. recommended_optimizer_options_total remains 0
     # for all three (unchanged) -- this is a visibility/completeness
     # correction, never a recommendation-economics change.
-    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 339,   # Little Utopia
-    "4355ae88-a636-4c18-af60-ad73b2646124": 277,   # Bad Hombres
-    FVD_PROJECT_ID: 590,                            # F#K Valentine's Day
-    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 569,   # Lips Like Sugar
+    # 2026-10-06 ORACLE CORRECTION: `optimizer_scenarios_total` is the CURATED surface since the music carve-out (canonical-1.102.0,
+    # `services/music_carveout.py`, strict > $25,000): music-split hybrids at or under the threshold are preserved in
+    # `optimizer_scenarios_music_suppressed`, never dropped. Totals below are the curated counts of the persisted canonical-1.103.0
+    # generations; scenarios_before_curation_total (curated + suppressed) is LU 376 / FVD 681 / BH 321 / LLS 660. The previous values
+    # (339 / 277 / 590 / 569) were pre-curation counts of earlier engine versions.
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 376,   # Little Utopia
+    "4355ae88-a636-4c18-af60-ad73b2646124": 61,    # Bad Hombres
+    FVD_PROJECT_ID: 238,                            # F#K Valentine's Day
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 247,   # Lips Like Sugar
 }
 
 
@@ -938,49 +943,43 @@ async def test_optimizer_candidates_scoped_to_current_engine_generation(db: Asyn
 # genuine byte-identical duplicate discovery path when one exists.
 
 async def test_optimizer_scenarios_no_longer_wrongly_collapses_the_fvd_manitoba_component_routing_differences(db: AsyncSession):
-    """The three FVD candidates the prior (incorrect) pass collapsed into
-    one scenario -- differing only by which category (music/post/vfx)
-    routed to Newfoundland & Labrador vs Italy -- must now remain three
-    separate scenarios: each routes a materially different real dollar
-    amount under a materially different category."""
+    """Generic form of the original Manitoba+NL+Italy guard (2026-10-06 oracle correction: that exact route no longer exists in the
+    persisted canonical-1.103.0 FVD generation, so a data-specific assertion could only pass vacuously or fail falsely). The
+    invariant it protected: routes that differ only by which category (music/post/vfx) routed where are materially different and
+    must NEVER be merged. Every scenario (curated or music-suppressed) must therefore contain raw variants of exactly ONE
+    economic identity, and no two scenarios may share an identity."""
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     alloc = view["structures"]["allocated_structures"]
-    oc = alloc["optimizer_candidates"]
-    scenarios = alloc["optimizer_scenarios"]
-
-    repeats = [
-        e for e in oc[:5]
-        if e["primary_jurisdiction"] == "CA-MB" and set(e["participants"]) == {"CA-MB", "CA-NL", "IT"}
-    ]
-    assert len(repeats) >= 3, "expected at least 3 raw Manitoba+NL+Italy candidates among the first few"
-    repeat_ids = {e["structure_id"] for e in repeats}
-
-    matching_scenarios = [
-        s for s in scenarios
-        if s["primary_jurisdiction"] == "CA-MB" and set(s["participants"]) == {"CA-MB", "CA-NL", "IT"}
-    ]
-    assert len(matching_scenarios) >= 3, (
-        "each real component-routing permutation must survive as its own scenario, "
-        "never wrongly collapsed into one"
-    )
-    scenario_ids = {s["structure_id"] for s in matching_scenarios}
-    assert repeat_ids <= scenario_ids, "every one of the named raw candidates must resolve to its OWN scenario"
-    for s in matching_scenarios:
-        assert s["raw_variant_count"] == 1, "a genuinely distinct route must never report a fabricated collapse"
+    identity_of_raw = {e["structure_id"]: e["economic_identity"] for e in alloc["optimizer_candidates"]}
+    complete = alloc["optimizer_scenarios"] + alloc["optimizer_scenarios_music_suppressed"]
+    assert len({s["economic_identity"] for s in complete}) == len(complete), "two scenarios share one economic identity"
+    for s in complete:
+        assert {identity_of_raw[i] for i in s["raw_variant_structure_ids"]} == {s["economic_identity"]}, (
+            "a scenario merged raw variants of different economic identities"
+        )
+        assert s["raw_variant_count"] == len(s["raw_variant_structure_ids"])
+    # routes with the same participants but different component routing exist and stay separate scenarios
+    by_participants: dict = {}
+    for s in complete:
+        by_participants.setdefault(frozenset(s["participants"]), []).append(s)
+    assert any(len(v) >= 2 for v in by_participants.values()), "expected same-participant routes that differ only by component routing"
 
 
 async def test_optimizer_scenarios_never_collapses_a_materially_different_route(db: AsyncSession):
-    """A structure adding a fourth jurisdiction (e.g. Ontario) to the same
-    Manitoba+NL+Italy base is a genuinely different route and must remain
-    its own separate scenario, never merged into the 3-jurisdiction group."""
+    """A structure that adds a jurisdiction to another route's participants is a genuinely different route and must remain its
+    own separate scenario, never merged into the smaller group (generic form, 2026-10-06 oracle correction)."""
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     alloc = view["structures"]["allocated_structures"]
-    scenarios = alloc["optimizer_scenarios"]
-    three_way = [s for s in scenarios if set(s["participants"]) == {"CA-MB", "CA-NL", "IT"}]
-    four_way = [s for s in scenarios if set(s["participants"]) == {"CA-MB", "CA-NL", "CA-ON", "IT"}]
-    assert three_way, "the 3-jurisdiction route must survive as its own scenario"
-    assert four_way, "the 4-jurisdiction route must survive as its own separate scenario"
-    assert {s["structure_id"] for s in three_way}.isdisjoint({s["structure_id"] for s in four_way})
+    complete = alloc["optimizer_scenarios"] + alloc["optimizer_scenarios_music_suppressed"]
+    groups: dict = {}
+    for s in complete:
+        groups.setdefault(frozenset(s["participants"]), set()).add(s["structure_id"])
+    keys = list(groups)
+    nested = [(a, b) for a in keys for b in keys if a < b]
+    assert nested, "expected at least one route whose participants strictly contain another route's"
+    for small, large in nested:
+        assert groups[small].isdisjoint(groups[large])
+
 
 
 async def test_optimizer_scenarios_total_equals_optimizer_candidates_total_when_no_genuine_duplicates_exist(db: AsyncSession):
@@ -991,7 +990,8 @@ async def test_optimizer_scenarios_total_equals_optimizer_candidates_total_when_
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
         view = await build_production_and_structures(db, project_id)
         alloc = view["structures"]["allocated_structures"]
-        assert alloc["optimizer_scenarios_total"] == alloc["optimizer_candidates_total"], (
+        # curated surface + music-carve-out-suppressed splits == every raw candidate (nothing silently under- or over-collapsed)
+        assert alloc["optimizer_scenarios_total"] + len(alloc["optimizer_scenarios_music_suppressed"]) == alloc["optimizer_candidates_total"], (
             f"{project_id}: confirmed live, this generation has no genuine duplicate "
             "discovery paths once components are respected"
         )
@@ -1096,11 +1096,12 @@ async def test_optimizer_scenarios_every_raw_candidate_is_accounted_for_exactly_
     alloc = view["structures"]["allocated_structures"]
     all_raw_ids = {e["structure_id"] for e in alloc["optimizer_candidates"]}
     accounted = []
-    for s in alloc["optimizer_scenarios"]:
+    complete = alloc["optimizer_scenarios"] + alloc["optimizer_scenarios_music_suppressed"]   # curated + suppressed splits
+    for s in complete:
         accounted.extend(s["raw_variant_structure_ids"])
     assert len(accounted) == len(set(accounted)) == len(all_raw_ids)
     assert set(accounted) == all_raw_ids
-    assert sum(s["raw_variant_count"] for s in alloc["optimizer_scenarios"]) == len(alloc["optimizer_candidates"])
+    assert sum(s["raw_variant_count"] for s in complete) == len(alloc["optimizer_candidates"])
 
 
 async def test_optimizer_candidates_untouched_by_scenario_grouping(db: AsyncSession):

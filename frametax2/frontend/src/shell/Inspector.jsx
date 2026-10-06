@@ -1,40 +1,21 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { alternativeLabel } from "../lib/alternativeLabels";
+import { alternativeLabel, softSignalsText, capabilityEvidenceText } from "../lib/alternativeLabels";
 import { certaintyLabel } from "../lib/incentivePotential";
+
+// Soft suitability signals and the retained capability evidence behind the fit: one text from lib/alternativeLabels (shared with the hover).
+function SoftFitSignals({ signals }) {
+  const t = softSignalsText(signals);
+  return t ? <span className="text-tertiary small"> · {t}</span> : null;
+}
+
+function CapabilityEvidence({ evidence }) {
+  const t = capabilityEvidenceText(evidence);
+  return t ? <span className="text-tertiary small" data-capability-evidence> · {t}</span> : null;
+}
 
 // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: ONE component renders the shared contract for both the
 // structure Inspector and the segment Inspector (values verbatim from the served fields).
-// Soft suitability signals (urban / rural / historic / beach ...): disclosed, never a gate. Unassessed = no capability data.
-// Retained location-census evidence behind the fit (SUPPORTED / NOT_SUPPORTED cells for the active requirements). Disclosure only.
-function CapabilityEvidence({ evidence }) {
-  const rows = (evidence || []).slice(0, 6);
-  if (!rows.length) return null;
-  return (
-    <span className="text-tertiary small" data-capability-evidence>
-      {" · Capability evidence — "}
-      {rows.map((e, i) => (
-        <span key={`${e.jurisdiction}-${e.token}`}>
-          {i > 0 ? "; " : ""}
-          {humanizeToken(e.category)} {e.status === "SUPPORTED" ? "supported" : "not supported"} in {e.jurisdiction}
-          {e.hard_requirement ? " (hard requirement)" : ""}
-          {" ["}{e.source_title}{e.evidence_tier ? `, ${String(e.evidence_tier).toLowerCase().replace(/_/g, " ")}` : ""}{"]"}
-        </span>
-      ))}
-      {(evidence || []).length > rows.length ? ` +${evidence.length - rows.length} more` : ""}
-    </span>
-  );
-}
-
-function SoftFitSignals({ signals }) {
-  const part = (kind, label) => {
-    const items = [...new Set((signals?.[kind] || []).map((t) => humanizeToken(String(t).split(":").pop().replace(/_environments$/, "").replace(/_/g, " "))))];
-    return items.length ? `${label}: ${items.join(", ")}` : null;
-  };
-  const parts = [part("matched", "supported"), part("mismatched", "not supported"), part("unassessed", "not assessed (no capability data, non-blocking)")].filter(Boolean);
-  return parts.length ? <span className="text-tertiary small"> · Soft signals — {parts.join("; ")}</span> : null;
-}
-
 function IncentivePotentialRows({ pot }) {
   if (!pot) return null;
   return (

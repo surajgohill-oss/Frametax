@@ -13,7 +13,7 @@
 
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
 import { globeKey } from "./globeData.js";
-import { alternativeLabel } from "./alternativeLabels.js";
+import { alternativeLabel, fitSummaryText } from "./alternativeLabels.js";
 
 export const FAMILY = {
   SINGLE: "single",
@@ -199,6 +199,7 @@ export function structureStory(s, { position = 1, total = 1, familyCountsForJuri
     routes: topo.edges.map((e) => ({ from: e.from, to: e.to, label: e.label, directed: e.directed, kind: e.kind })),
     layered: topo.layered,
     statusLabel: alternativeLabel(s, leadingId),
+    fitSummary: fitSummaryText(s),
     // The specific blocker / missing facts for a structure that is not (yet) executable.
     blockerText: s.is_fully_priced ? null : (s.reason || (Array.isArray(s.blockers) && s.blockers[0]) || s.personnel_next_question || null),
     missingFacts: !s.is_fully_priced && Array.isArray(s.personnel_missing_facts) ? s.personnel_missing_facts.slice(0, 3) : [],

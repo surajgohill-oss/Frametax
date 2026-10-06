@@ -7,7 +7,7 @@ import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts }
 // Workspace and Scenarios (see format.jsx) — so a hovered jurisdiction's
 // "base incentive" line can never disagree with what its own card shows.
 import { programDisplay } from "./programNames.js";
-import { alternativeLabel } from "./alternativeLabels.js";
+import { alternativeLabel, fitSummaryText } from "./alternativeLabels.js";
 // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the SAME canonical
 // candidate-set selection Workspace's six-slot contract already uses —
 // never a second, independently-derived Globe-only notion of "which
@@ -976,11 +976,8 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
         ? alternativeLabel(structure, entry.status === "gold" ? structure.structure_id : null)
         : null,
       productionFitStatus: structure?.production_fit_status ?? null,
-      // Same served capability evidence the Inspector lists (SUPPORTED / NOT_SUPPORTED cells for the active requirements).
-      capabilityEvidenceLabel: (structure?.production_fit_capability_evidence || []).length
-        ? structure.production_fit_capability_evidence.slice(0, 3)
-            .map((e) => `${String(e.category).replace(/_/g, " ")} ${e.status === "SUPPORTED" ? "supported" : "not supported"} in ${e.jurisdiction}`).join("; ")
-        : null,
+      // The SAME served fit / soft signals / capability evidence the Inspector renders (one text, lib/alternativeLabels).
+      productionFitSummary: fitSummaryText(structure),
       structureLabel: humanizeJurisdictionCodes(structure?.label ?? structure?.name ?? null),
       // GLOBE_WIRING_REMEDIATION (2026-10-01): this jurisdiction's OWN
       // canonical record (Optimizer mode) -- per-category structure counts,

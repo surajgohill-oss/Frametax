@@ -159,10 +159,10 @@ def classify_capability_evidence(code: str, requirements) -> list[dict]:
     cap = jurisdiction_capability_profile(code)
     active = (requirements.environments | requirements.required_capabilities) & LOCATION_CENSUS_TOKENS
     return [
-        {"jurisdiction": code, "category": c.category, "token": c.token, "status": c.status,
+        {"jurisdiction": code, "category": c.category, "token": c.token, "status": c.status, "terminal_status": c.terminal_status,
          "hard_requirement": c.token in requirements.required_capabilities, "proposition": c.proposition,
-         "source_title": c.source_title, "source_url": c.source_url, "publisher": c.publisher,
-         "evidence_tier": c.evidence_tier}
+         "source_title": c.source_title, "source_labels": list(c.source_labels), "source_url": c.source_url, "publisher": c.publisher,
+         "source_version": c.source_version, "evidence_tier": c.evidence_tier, "derivation_method": c.derivation_method}
         for c in cap.location_evidence if c.token in active
     ]
 

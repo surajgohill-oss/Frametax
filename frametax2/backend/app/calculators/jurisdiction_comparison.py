@@ -4276,20 +4276,18 @@ GAP_MATRIX: dict[str, dict[str, object]] = {
 
 
 # ---------------------------------------------------------------------------
-# LOCATION CAPABILITY CENSUS (2026-10-06) -- the ten location-capability cells of every jurisdiction.
+# LOCATION CAPABILITY CENSUS (2026-10-06, final closure) -- the ten location-capability cells of every jurisdiction.
 #
 # The canonical owner of per-jurisdiction capability stays this module: `production_requirements.jurisdiction_capability_profile`
-# reads it, `production_fit` consumes that. The retained evidence lives in app/data/jurisdiction_location_capability.py (data
-# recovered from records ALREADY in this repository; no new source). Each (jurisdiction, category) cell is exactly one of
-#   SUPPORTED     -- a retained cited record states the capability;
-#   NOT_SUPPORTED -- affirmative structured evidence / geographic impossibility (island/tropical in a landlocked
-#                    jurisdiction: `marine_suitability == "none"` and no open-water filming);
-#   UNKNOWN       -- nothing retained: neutral, NEVER a mismatch.
-# Subnational and national profiles are independent keys: a national result never overwrites a state/province result. The
-# national `US` has no incentive profile (so it is not in ALL_PROFILES); its capability cells are the union of its constituent
-# state profiles' SUPPORTED cells.
+# reads it, `production_fit` consumes that. The 1,140 terminal cells (114 jurisdictions x 10 categories) live in
+# app/data/jurisdiction_location_capability.py as DATA, each derived deterministically from structured official/authoritative
+# datasets (the derivation method and source version travel with the reusable SOURCES records). A cell is exactly one of
+#   SUPPORTED / NOT_SUPPORTED / UNRESOLVED_NEUTRAL (runtime-neutral; never a mismatch).
+# Subnational and national profiles are independent keys: a national result never overwrites a state/province result, and each
+# jurisdiction (including the national `US`, which has no incentive profile and so is not in ALL_PROFILES) has its OWN cells.
+# `island_tropical` is combined: two component assertions (island, tropical), SUPPORTED if either is, NOT_SUPPORTED only if both.
 # ---------------------------------------------------------------------------
-from dataclasses import dataclass as _dataclass
+from dataclasses import dataclass as _dataclass, field as _field
 
 
 @_dataclass(frozen=True)
@@ -4297,61 +4295,63 @@ class LocationCapabilityCell:
     jurisdiction_code: str
     category: str
     token: str
-    status: str
+    status: str                                   # SUPPORTED / NOT_SUPPORTED / UNRESOLVED_NEUTRAL
+    components: tuple = ()                        # ((component_token, component_status), ...)
     proposition: str = ""
-    source_title: str = ""
-    source_url: str = ""
-    publisher: str = ""
-    checked_or_effective_date: str = ""
-    evidence_tier: str = ""
-    record_ref: str = ""
+    source_ids: tuple = ()
+    derivation_method: str = ""
+    sources_attempted: tuple = ()
+    missing_proposition: str = ""
+    sources: tuple = _field(default=(), compare=False)   # resolved SOURCES records (dicts)
+
+    @property
+    def terminal_status(self) -> str:
+        from app.data.jurisdiction_location_capability import TERMINAL_STATUS
+        return TERMINAL_STATUS[self.status]
+
+    @property
+    def evidence_tier(self) -> str:
+        """Strongest authority tier among the cell's sources ('' for an unresolved cell: only a verified cell carries a tier)."""
+        from app.data.jurisdiction_location_capability import ACCEPTED_TIERS
+        if self.status == "UNRESOLVED_NEUTRAL":
+            return ""
+        tiers = {s["tier"] for s in self.sources}
+        return next((t for t in ACCEPTED_TIERS if t in tiers), "")
+
+    @property
+    def source_title(self) -> str:
+        return "; ".join(s["title"] for s in self.sources)
+
+    @property
+    def source_labels(self) -> tuple:
+        return tuple(s["short"] for s in self.sources)
+
+    @property
+    def source_url(self) -> str:
+        return "; ".join(s["url"] for s in self.sources)
+
+    @property
+    def publisher(self) -> str:
+        return "; ".join(dict.fromkeys(s["publisher"] for s in self.sources))
+
+    @property
+    def source_version(self) -> str:
+        return "; ".join(s["version"] for s in self.sources)
 
 
-def _is_landlocked(profile) -> bool:
-    return str(getattr(profile, "marine_suitability", "") or "").lower() == "none" and not getattr(profile, "has_open_water_filming", None)
-
-
-#: census jurisdictions: every structured profile plus the national US (capability only).
 def location_census_jurisdictions() -> list[str]:
+    """The frozen census inventory: every structured profile plus the national US (capability only)."""
     return sorted({*ALL_PROFILES, "US"})
-
-
-def _us_constituents() -> list[str]:
-    return sorted(c for c in ALL_PROFILES if c.startswith("US-"))
 
 
 def location_capability_cells(code: str) -> dict[str, LocationCapabilityCell]:
     """The ten census cells of one jurisdiction (category -> cell). Pure and deterministic."""
-    from app.data.jurisdiction_location_capability import (
-        LOCATION_CENSUS_CATEGORIES, NOT_SUPPORTED, RETAINED_SUPPORTED, SUPPORTED, UNKNOWN,
-    )
+    from app.data.jurisdiction_location_capability import CELLS, LOCATION_CENSUS_CATEGORIES, SOURCES
 
-    profile = ALL_PROFILES.get(code)
     cells: dict[str, LocationCapabilityCell] = {}
     for category, token in LOCATION_CENSUS_CATEGORIES.items():
-        rec = RETAINED_SUPPORTED.get((code, category))
-        if code == "US" and profile is None:
-            parts = [c for c in _us_constituents() if (c, category) in RETAINED_SUPPORTED]
-            if parts:
-                first = RETAINED_SUPPORTED[(parts[0], category)]
-                cells[category] = LocationCapabilityCell(
-                    code, category, token, SUPPORTED,
-                    f"Supported in constituent state profile(s) {', '.join(parts)}; first: {first.proposition}",
-                    first.source_title, first.source_url, first.publisher, first.checked_or_effective_date,
-                    "DERIVED_FROM_CONSTITUENT_PROFILES", first.record_ref)
-                continue
-        elif rec is not None:
-            cells[category] = LocationCapabilityCell(
-                code, category, token, SUPPORTED, rec.proposition, rec.source_title, rec.source_url, rec.publisher,
-                rec.checked_or_effective_date, rec.evidence_tier, rec.record_ref)
-            continue
-        if category == "island_tropical" and profile is not None and _is_landlocked(profile):
-            cells[category] = LocationCapabilityCell(
-                code, category, token, NOT_SUPPORTED,
-                "Landlocked (structured profile field marine_suitability = none, no open-water filming): no sea coast, hence no "
-                "sea-island or coastal tropical locations (geographic impossibility)",
-                f"{profile.jurisdiction_name} jurisdiction comparison profile", "", profile.authority_name or "",
-                "", "TIER_0_RUNTIME_STRUCTURED_FIELD", f"app/calculators/jurisdiction_comparison.py::{code}.marine_suitability")
-            continue
-        cells[category] = LocationCapabilityCell(code, category, token, UNKNOWN)
+        status, comps, prop, src_ids, method, attempted, missing = CELLS[(code, category)]
+        cells[category] = LocationCapabilityCell(
+            code, category, token, status, comps, prop, src_ids, method, attempted, missing,
+            tuple(SOURCES[i] for i in src_ids))
     return cells
