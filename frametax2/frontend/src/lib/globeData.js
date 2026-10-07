@@ -751,6 +751,12 @@ export function buildCandidateDetail(structure) {
     production_fit_legs: structure.production_fit_legs ?? undefined,
     production_fit_basis: structure.production_fit_basis ?? undefined,
     fit_priority: structure.fit_priority ?? undefined,
+    // MUSIC CARVE-OUT (served verbatim by services/music_carveout.py)
+    music_carveout_status: structure.music_carveout_status ?? undefined,
+    music_carveout_delta_usd: structure.music_carveout_delta_usd ?? undefined,
+    music_carveout_threshold_usd: structure.music_carveout_threshold_usd ?? undefined,
+    music_carveout_counterpart: structure.music_carveout_counterpart ?? undefined,
+    music_carveout_reason: structure.music_carveout_reason ?? undefined,
     canonical_recommendation_status: structure.canonical_recommendation_status ?? undefined,
     // SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): the Jurisdictions-layer
     // counterpart to savings_vs_current_usd above — every real

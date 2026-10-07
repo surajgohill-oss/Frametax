@@ -32,6 +32,7 @@ from app.services import candidate_aggregation as cagg
 from app.services import candidate_retention as cret
 from app.services import canonical_evaluation as ce
 from app.services.economic_identity import canonical_economic_identity
+from app.services.structural_classification import classify_structure
 
 LEGACY_ENGINE, NEW_ENGINE = "test-legacy-full-enumeration", "test-bounded-retention"
 LEGACY_FP, NEW_FP = "1" * 64, "2" * 64
@@ -104,6 +105,9 @@ class Cand:
             "relocation_cost_normalized": False, "component_types": ["principal_production", ["post", "vfx", "music"][idx % 3]],
         }
         self.identity = canonical_economic_identity(self.stype, self.trace) if self.priced else None
+        # canonical-1.92.0 (GD-2/GD-4): the bounded writer stamps this classification onto every routed candidate and
+        # retains a per-family lane on it; computed here independently from the same classifier.
+        self.family = classify_structure(dict(self.trace), self.stype, self.status == "PRICED")
 
     def rows(self, pid, engine_version, fingerprint):
         sid = uuid.uuid4()
@@ -162,6 +166,8 @@ def expected_retained(cands: list[Cand], *, global_top=cret.GLOBAL_TOP, type_top
         keep |= {c.idx for c in sorted(priced, key=key)[:global_top]}
         for t in {c.stype for c in priced}:
             keep |= {c.idx for c in sorted((c for c in priced if c.stype == t), key=key)[:type_top]}
+        for f in {c.family for c in priced if c.family}:
+            keep |= {c.idx for c in sorted((c for c in priced if c.family == f), key=key)[:type_top]}
         for j in {c.jur for c in priced if c.stype in cret.LOCAL_STACK_TYPES}:
             keep |= {c.idx for c in sorted((c for c in priced if c.stype in cret.LOCAL_STACK_TYPES and c.jur == j), key=key)[:jur_top]}
     keep |= {c.idx for c in cands if c.baseline}
@@ -215,7 +221,8 @@ async def test_bounded_retention_equals_full_enumeration_exactly(project_id):
 
     # ---- retained detailed rows == the independently sorted retention policy, EXACTLY (no more, no less)
     expected = expected_retained(cands)
-    assert {idx_of(r.name) for r in new_rows} == expected
+    got_idx = {idx_of(r.name) for r in new_rows}
+    assert got_idx == expected, (sorted(got_idx - expected)[:10], sorted(expected - got_idx)[:10])
     assert len(new_rows) == len(expected) < N / 2                               # bounded, well below enumeration
 
     # ---- every retained row is economically byte-identical to its legacy row
@@ -229,9 +236,22 @@ async def test_bounded_retention_equals_full_enumeration_exactly(project_id):
             return [no_row_ids(x) for x in v]
         return "<row-id>" if isinstance(v, str) and _uuid.match(v) else v
 
+    # The legacy full-enumeration control never stamps structural_classification; the bounded writer does
+    # (GD-2). It is checked against the independent classifier, then every other column must be identical.
+    # Mismatches are reported compactly (row index + differing keys), never as a full nested-row diff.
     legacy_by_idx = {idx_of(r.name): (r.ps, no_row_ids(r.scr)) for r in legacy_rows}
+    row_mismatches = []
     for r in new_rows:
-        assert (r.ps, no_row_ids(r.scr)) == legacy_by_idx[idx_of(r.name)]
+        i = idx_of(r.name)
+        scr = dict(r.scr)
+        trace = dict(scr["calculation_trace_json"])
+        if trace.pop("structural_classification", None) != cands[i].family:
+            row_mismatches.append((i, "structural_classification"))
+        scr["calculation_trace_json"] = trace
+        new_scr, (legacy_ps, legacy_scr) = no_row_ids(scr), legacy_by_idx[i]
+        if r.ps != legacy_ps or new_scr != legacy_scr:
+            row_mismatches.append((i, sorted(k for k in set(new_scr) | set(legacy_scr) if new_scr.get(k) != legacy_scr.get(k))))
+    assert not row_mismatches, row_mismatches[:5]
 
     # ---- exact same winner / baseline, global top-100 (both keys), top-per-family, best-per-jurisdiction
     priced = [c for c in cands if c.priced and c.status == "PRICED"]
@@ -240,7 +260,10 @@ async def test_bounded_retention_equals_full_enumeration_exactly(project_id):
         assert [c.idx for c in sorted(retained_priced, key=key)[:100]] == [c.idx for c in sorted(priced, key=key)[:100]]
         for t in TYPES:
             assert ([c.idx for c in sorted((c for c in retained_priced if c.stype == t), key=key)[:100]]
-                    == [c.idx for c in sorted((c for c in priced if c.stype == t), key=key)[:100]])
+                    == [c.idx for c in sorted((c for c in priced if c.stype == t), key=key)[:100]]), t
+        for f in {c.family for c in priced if c.family}:
+            assert ([c.idx for c in sorted((c for c in retained_priced if c.family == f), key=key)[:100]]
+                    == [c.idx for c in sorted((c for c in priced if c.family == f), key=key)[:100]]), f
         for j in {c.jur for c in priced if c.stype in cret.LOCAL_STACK_TYPES}:
             pick = lambda pool: min((c for c in pool if c.stype in cret.LOCAL_STACK_TYPES and c.jur == j), key=key).idx
             assert pick(retained_priced) == pick(priced)
@@ -258,7 +281,8 @@ async def test_bounded_retention_equals_full_enumeration_exactly(project_id):
         if i in expected:
             continue
         c = cands[i]
-        ident = cagg.candidate_group_identity(c.status, r.scr["structure_type"], r.scr["calculation_trace_json"], r.ps["claimed_program_ids"])
+        trace = {**r.scr["calculation_trace_json"], "structural_classification": c.family}   # the stamp the writer applies
+        ident = cagg.candidate_group_identity(c.status, r.scr["structure_type"], trace, r.ps["claimed_program_ids"])
         g = groups.setdefault(cagg.candidate_group_key(ident), {"n": 0, "min": None, "max": None, "best": None, "inc_min": None, "inc_max": None})
         g["n"] += 1
         if c.priced:
@@ -267,20 +291,28 @@ async def test_bounded_retention_equals_full_enumeration_exactly(project_id):
             g["best"] = min(g["best"], (c.npc, c.identity)) if g["best"] else (c.npc, c.identity)
             g["inc_min"] = c.incentive if g["inc_min"] is None else min(g["inc_min"], c.incentive)
             g["inc_max"] = c.incentive if g["inc_max"] is None else max(g["inc_max"], c.incentive)
-    got = {r["group_key"]: r for r in new._aggregator.rows(new._retention.dominating_by_type)}
-    assert {k: v["n"] for k, v in groups.items()} == {k: r["candidate_count"] for k, r in got.items()}
+    got = {r["group_key"]: r for r in new._aggregator.rows(
+        new._retention.dominating_by_type, new._retention.dominating_by_family)}
+    assert len(groups) <= cagg.FINE_GROUP_CAP          # every group is a fine group: keys are comparable 1:1
+    assert set(groups) == set(got), (len(set(groups) - set(got)), len(set(got) - set(groups)))
+    group_mismatches = []
     for k, v in groups.items():
         r = got[k]
-        assert (r["min_npc_usd"], r["max_npc_usd"]) == (v["min"], v["max"])
-        assert (r["min_incentive_usd"], r["max_incentive_usd"]) == (v["inc_min"], v["inc_max"])
-        assert r["best_economic_identity"] == (v["best"][1] if v["best"] else None)
-        assert (r["dominating_structure_id"] is not None) is (r["candidate_status"] == "PRICED")
-    # a PRICED group's dominating reference is a RETAINED detailed row of the same type with NPC <= every member
+        if ((r["candidate_count"], r["min_npc_usd"], r["max_npc_usd"], r["min_incentive_usd"], r["max_incentive_usd"],
+             r["best_economic_identity"]) != (v["n"], v["min"], v["max"], v["inc_min"], v["inc_max"], v["best"][1] if v["best"] else None)
+                or (r["dominating_structure_id"] is not None) is not (r["candidate_status"] == "PRICED")):
+            group_mismatches.append(k[:12])
+    assert not group_mismatches, (len(group_mismatches), group_mismatches[:5])
+    # a PRICED group's dominating reference is a RETAINED detailed row of the same canonical family (GD-4; the
+    # type when the group carries no family) with NPC <= every member
     persisted_ids = {str(r.sid): idx_of(r.name) for r in new_rows}
-    for r in got.values():
+    family_of_group = {k: r["representative"]["trace"].get("structural_classification") or "" for k, r in got.items()}
+    for k, r in got.items():
         if r["candidate_status"] == "PRICED":
             dom = cands[persisted_ids[str(r["dominating_structure_id"])]]
-            assert dom.stype == r["structure_type"] and dom.npc <= r["min_npc_usd"]
+            fam = family_of_group[k]
+            assert (dom.family == fam if fam in new._retention.dominating_by_family else dom.stype == r["structure_type"]), k[:12]
+            assert dom.npc <= r["min_npc_usd"], k[:12]
 
     # ---- summaries: exact totals identical to full enumeration; the persisted/aggregated split is exact
     lp, np_ = legacy._summary.payload(), new._summary.payload(aggregate_groups=new._aggregator.group_count)

@@ -6,7 +6,7 @@ import { patchProject } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDetail, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
-import { CoproductionFactsList, JurisdictionUniversePanel } from "../../components/JurisdictionUniverse";
+import { CoproductionFactsList, JurisdictionUniversePanel, PolicySuppressedReferences } from "../../components/JurisdictionUniverse";
 import { coproductionNeedsFactsLabel } from "../../lib/jurisdictionUniverse";
 import Globe3D from "../../components/Globe3D";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
@@ -903,7 +903,10 @@ export default function Workspace() {
               );
             })()}
             {workspaceMode === MODE_OPTIMIZER && (
-              <CoproductionFactsList allocated={allocated} openInspector={openInspector} />
+              <>
+                <CoproductionFactsList allocated={allocated} openInspector={openInspector} />
+                <PolicySuppressedReferences allocated={allocated} openInspector={openInspector} />
+              </>
             )}
             {workspaceMode === MODE_NORMAL && (
               <JurisdictionUniversePanel allocated={allocated} openInspector={openInspector} onSelect={setSelectedJurisdiction} />

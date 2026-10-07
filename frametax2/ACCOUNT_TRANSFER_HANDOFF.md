@@ -664,3 +664,12 @@ Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORT
   - `test_bounded_candidate_retention.py::test_bounded_retention_equals_full_enumeration_exactly` has been stale since 1.92.0.
   - Music + post/VFX to the same destination is a product decision.
 - **Backend environment note.** The backend's CORS default allows `http://localhost:5173`, so use that origin rather than `127.0.0.1` when the backend is started without `.env` origins.
+
+## LEDGER ITEM 6 CLOSED — optimizer residual closure (2026-10-07, from `ec5efcc`) — engine `canonical-1.105.0`
+
+- **Retention test.** The retention-equivalence test is repaired to the current contract and passes.
+- **Package policy.** The post/VFX/music package is a canonical routable unit (`production_allocation.POST_VFX_MUSIC_PACKAGE`, with a route fallback of component → bundle → package). The music carve-out surfaces a split at ≥ $25,000.
+- **Regeneration.** All four acceptance productions were regenerated once; the 1.104.0 generations are kept. Curated / suppressed counts: LU 557/0, FVD 646/498, BH 275/345, LLS 680/442.
+- **UI.** Policy-suppressed references are reachable in Workspace and on the Project Globe (`components/JurisdictionUniverse.jsx` `PolicySuppressedReferences`), with an Inspector carve-out block.
+- **Tests.** `tests/test_music_package_policy.py` (synthetic), the package assertion in `test_optimizer_scenario_universe_accounting.py`, and `frontend/tests/policy-suppressed-references.test.mjs`.
+- **Environment.** Load the frontend at `http://localhost:5173` (backend CORS default).

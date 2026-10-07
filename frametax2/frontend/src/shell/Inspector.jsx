@@ -502,6 +502,20 @@ function StructureDetailInspector({ data }) {
         )}
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
+      {data.music_carveout_status && data.music_carveout_status !== "NOT_MUSIC_SPLIT" && (
+        <dl className="kv-list" data-music-carveout={data.music_carveout_status}>
+          <div>
+            <dt>Music carve-out</dt>
+            <dd>
+              {data.music_carveout_status === "SURFACED" ? "Separate Music leg surfaced" : "Policy-suppressed reference (calculated, excluded from preferred presentation)"}
+              {data.music_carveout_delta_usd != null && <> · NPC benefit of splitting Music <Money value={data.music_carveout_delta_usd} /></>}
+              {data.music_carveout_threshold_usd != null && <> · policy threshold <Money value={data.music_carveout_threshold_usd} /></>}
+              {data.music_carveout_counterpart?.bundled_npc_with_adjustments_usd != null && <> · bundled comparison NPC <Money value={data.music_carveout_counterpart.bundled_npc_with_adjustments_usd} /></>}
+              {data.music_carveout_reason && <div className="text-tertiary small">{data.music_carveout_reason}</div>}
+            </dd>
+          </div>
+        </dl>
+      )}
       <NeededForMaximum pot={data.incentive_potential} />
       {/* A Jurisdictions-layer winner has no recommendation concept, but it carries the SAME served production fit as every
           other surface (Lanes / Globe hover / segment Inspector): shown here when the recommendation block below is absent. */}

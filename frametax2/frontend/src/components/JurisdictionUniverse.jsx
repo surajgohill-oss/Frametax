@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Money } from "../lib/format";
 import {
   accountedRowFor, coproductionNeedsFactsLabel, coproductionRows, executableFor, groupUniverse, jurisdictionLabel,
+  policySuppressedLabel, policySuppressedRows,
 } from "../lib/jurisdictionUniverse";
 import { buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail } from "../lib/globeData";
 
@@ -115,6 +116,43 @@ export function CoproductionFactsList({ allocated, openInspector }) {
                   <ul className="row-sub" style={{ margin: "4px 0 0 16px" }}>{r.missingFacts.map((m, i) => <li key={i}>{m}</li>)}</ul>
                 </details>
               )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Policy-suppressed reference structures (music carve-out): a collapsed, secondary list -- never primary cards,
+// never Leading/Strong. Every row opens the same candidate Inspector, which shows the suppression explanation.
+export function PolicySuppressedReferences({ allocated, openInspector }) {
+  const rows = policySuppressedRows(allocated);
+  const [open, setOpen] = useState(false);
+  if (!rows.length) return null;
+  return (
+    <div className="wsx-policy-suppressed" data-testid="policy-suppressed" style={{ margin: "4px 0 8px" }}>
+      <button type="button" className="field-select" data-testid="policy-suppressed-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        {policySuppressedLabel(rows.length)}
+      </button>
+      {open && (
+        <div data-testid="policy-suppressed-list">
+          <p className="text-tertiary small" style={{ margin: "4px 0 6px" }}>
+            Calculated and priced, but excluded from preferred presentation by the music carve-out policy: Music is routed
+            separately only when that saves at least the policy threshold against the bundled counterpart.
+          </p>
+          {rows.map((r) => (
+            <div key={r.id} className="portfolio-chip" data-policy-suppressed-row={r.id} style={{ display: "block" }}
+              onClick={() => openInspector("candidate-structure", buildCandidateDetail(r.structure))}>
+              <div className="row-title small">{r.route}</div>
+              <div className="row-sub">
+                Music destination {r.musicDestination || "—"} · bundled comparison: {r.bundledRoute}
+                {r.bundledNpc != null && <> (NPC {usd(r.bundledNpc)})</>}
+              </div>
+              <div className="row-sub">
+                NPC {usd(r.npc)} · NPC benefit of splitting Music {r.delta == null ? "not established" : usd(r.delta)} · policy threshold {usd(r.threshold)}
+              </div>
+              <div className="row-sub">{r.reason}</div>
             </div>
           ))}
         </div>

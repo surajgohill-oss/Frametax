@@ -217,3 +217,27 @@ async def test_served_universe_reconciles_to_the_generation(db: AsyncSession, na
     assert len(contract) == len({r["jurisdiction_code"] for r in contract}) == 217
     assert all(r["category"] for r in contract)
     assert a["optimizer_opportunities_requiring_facts_total"] == len(a["optimizer_opportunities_requiring_facts"])
+
+
+@pytest.mark.parametrize("name", list(PROJECTS))
+async def test_post_vfx_music_package_is_a_real_route_and_never_a_comparison_only_value(db: AsyncSession, name: str):
+    """canonical-1.105.0: with Post/VFX and Music spend, the package is a searched routable unit, never searched with its
+    own member bundles, so every same-destination collision is the package's own route (zero separate-bundle visits)
+    and package structures are persisted/aggregated candidates with distinct economic identities."""
+    g = await _generation(db, PROJECTS[name])
+    proofs = await _proof_traces(db, g)
+    units = {u for t in proofs for u in t["component_subset"]}
+    package = "post_vfx_music_package"
+    for t in proofs:
+        subset = set(t["component_subset"])
+        assert not (package in subset and subset & {"post_vfx_package", "music_package"})
+    if not {"post_vfx_package", "music_package"} <= units:
+        assert package not in units
+        return
+    assert package in units
+    assert sum(t["non_route_combination_counts"]["same_destination_separate_bundles"] for t in proofs) == 0
+    packaged = (await db.execute(text(
+        "SELECT count(*), count(DISTINCT r.economic_identity)" + _ROWS
+        + " AND r.true_net_cost_usd IS NOT NULL AND r.calculation_trace_json::text LIKE '%post_vfx_music_package%'"
+    ), g)).one()
+    assert packaged[0] > 0 and packaged[0] == packaged[1]

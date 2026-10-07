@@ -24,20 +24,21 @@ def hybrid(split_npc, bundled_npc, sid="h"):
     }
 
 
-def test_threshold_is_exactly_25000_strictly_greater():
+def test_threshold_is_exactly_25000_at_least():
+    # canonical-1.105.0 product rule: a separate music leg is surfaced when its benefit is AT LEAST $25,000
     assert T == 25_000.0
     below = music_carveout_decision(hybrid(1_000_000.0, 1_024_999.99), None)
     equal = music_carveout_decision(hybrid(1_000_000.0, 1_025_000.0), None)
     above = music_carveout_decision(hybrid(1_000_000.0, 1_025_000.01), None)
     assert below["music_carveout_status"] == SUPPRESSED_BELOW_THRESHOLD
-    assert equal["music_carveout_status"] == SUPPRESSED_BELOW_THRESHOLD, "> not >="
+    assert equal["music_carveout_status"] == SURFACED, ">= not >"
     assert above["music_carveout_status"] == SURFACED
     assert above["music_carveout_delta_usd"] == pytest.approx(25_000.01, abs=1e-6)
 
 
 def test_comparison_uses_full_precision_before_display_rounding():
     # both would DISPLAY as a $25,000 gap after rounding to the dollar; only full precision decides
-    assert music_carveout_decision(hybrid(1_000_000.4, 1_025_000.4), None)["music_carveout_status"] == SUPPRESSED_BELOW_THRESHOLD
+    assert music_carveout_decision(hybrid(1_000_000.4, 1_025_000.0), None)["music_carveout_status"] == SUPPRESSED_BELOW_THRESHOLD
     assert music_carveout_decision(hybrid(1_000_000.4, 1_025_000.5), None)["music_carveout_status"] == SURFACED
 
 
@@ -50,8 +51,8 @@ def test_split_that_is_worse_than_bundled_is_suppressed_but_preserved():
 def test_music_only_relocation_is_compared_to_the_current_location_baseline():
     e = {"structure_id": "c", "structure_type": "component_relocation", "npc_with_adjustments_usd": 975_000.0,
          "component_allocations": [{"component": "music_package"}]}
-    assert music_carveout_decision(e, 1_000_000.0)["music_carveout_status"] == SUPPRESSED_BELOW_THRESHOLD   # == 25,000
-    assert music_carveout_decision(dict(e, npc_with_adjustments_usd=974_999.99), 1_000_000.0)["music_carveout_status"] == SURFACED
+    assert music_carveout_decision(e, 1_000_000.0)["music_carveout_status"] == SURFACED   # == 25,000 (at least)
+    assert music_carveout_decision(dict(e, npc_with_adjustments_usd=975_000.01), 1_000_000.0)["music_carveout_status"] == SUPPRESSED_BELOW_THRESHOLD
     d = music_carveout_decision(e, 1_000_000.0)
     assert d["music_carveout_counterpart"]["kind"] == "CURRENT_LOCATION_BASELINE"
 

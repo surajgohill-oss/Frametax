@@ -92,3 +92,37 @@ export function coproductionRows(allocated) {
 }
 
 export const coproductionNeedsFactsLabel = (n) => `${n} co-production ${n === 1 ? "opportunity needs" : "opportunities need"} facts`;
+
+// MUSIC CARVE-OUT policy-suppressed references (canonical-1.105.0): calculated, priced alternatives the curated
+// optimizer surface excludes from preferred presentation (`optimizer_scenarios_music_suppressed`). Read verbatim;
+// never ranked into the primary cards, never Leading/Strong.
+const codeName = (code) => JURISDICTION_COORDS[code]?.name || code || "";
+export function policySuppressedRows(allocated) {
+  const list = allocated?.optimizer_scenarios_music_suppressed || [];
+  const threshold = allocated?.music_carveout?.threshold_usd ?? null;
+  return list.map((s) => {
+    const cp = s.music_carveout_counterpart || {};
+    const music = (s.component_allocations || []).find((c) => c.component === "music_package");
+    const bundled = cp.kind === "CURRENT_LOCATION_BASELINE"
+      ? "Music kept at the current location (baseline)"
+      : cp.host_component
+        ? `Music bundled with ${String(cp.host_component).replace(/_/g, " ")} in ${codeName(cp.host_jurisdiction_code)}`
+        : "Not established";
+    return {
+      structure: s,
+      id: s.structure_id,
+      route: s.label || (s.participants || []).join(" + "),
+      musicDestination: codeName(cp.music_jurisdiction_code || music?.jurisdiction_code),
+      bundledRoute: bundled,
+      bundledNpc: cp.bundled_npc_with_adjustments_usd ?? null,
+      npc: s.npc_with_adjustments_usd ?? null,
+      delta: s.music_carveout_delta_usd ?? null,
+      threshold: s.music_carveout_threshold_usd ?? threshold,
+      status: s.music_carveout_status,
+      reason: s.music_carveout_reason || "",
+    };
+  });
+}
+
+export const policySuppressedLabel = (n) =>
+  `${n} policy-suppressed reference structure${n === 1 ? "" : "s"}`;

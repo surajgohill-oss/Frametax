@@ -4230,3 +4230,21 @@ Full proof: `docs/validation/OPTIMIZER_SCENARIO_UNIVERSE_ACCOUNTING_CLAUDE.md`.
   - The music-suppressed list (FVD 530 / BH 349 / LLS 451) and the aggregated groups are API-reachable only; no UI surface reads them.
   - Music + post/VFX to one destination is counted, and priced only as the carve-out counterfactual (product decision).
 - **UI status:** `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`.
+
+## LEDGER ITEM 6 — OPTIMIZER RESIDUAL CLOSURE: RETENTION EQUIVALENCE, MUSIC PACKAGE POLICY, SUPPRESSED REFERENCES (2026-10-07, from `ec5efcc`) — `ENGINE_VERSION = canonical-1.105.0`
+
+Proof: `docs/validation/OPTIMIZER_SCENARIO_UNIVERSE_ACCOUNTING_CLAUDE.md` § Residual closure.
+
+1. **Retention equivalence.** `test_bounded_retention_equals_full_enumeration_exactly` updated to the post-1.92 contract: stamped classification, per-family lanes, both dominator maps, and compact mismatch reporting. It passes; no engine defect.
+2. **Music / post-VFX package policy.**
+   - `post_vfx_music_package` is a real routable unit (one leg), so same-destination Post/VFX + Music is a priced structure.
+   - A separate music leg is surfaced at ≥ $25,000 NPC benefit over the bundled counterpart. The threshold is unchanged; the operator changed from > to ≥.
+   - The synthetic boundary fixtures were proven first.
+   - **Regenerated once:** LU 90 s (engine stamp only; candidates identical), BH 13 s, FVD 491 s, LLS 551 s.
+   - **Pre-curation:** LU 557, FVD 948→1,144, BH 501→620, LLS 932→1,122.
+   - **Curated:** 557, 418→646, 152→275, 481→680.
+   - **Suppressed:** 0, 530→498, 349→345, 451→442.
+   - **Invariants:** existing economics identical; zero duplicate identities; generated = persisted + aggregated.
+3. **Suppressed references reachable.** A collapsed "policy-suppressed reference structures" section in Workspace Optimizer mode and the Project Globe optimizer panel. Rows open the Inspector, which shows the carve-out explanation. Primary cards are unchanged.
+
+UI status: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`. Remaining optimizer blocker: none.

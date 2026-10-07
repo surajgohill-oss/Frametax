@@ -11,6 +11,7 @@ import { classifyBlocker } from "../../lib/blockerDisposition";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
 import { JurisdictionUniversePanel } from "../../components/JurisdictionUniverse";
 import { coproductionNeedsFactsLabel } from "../../lib/jurisdictionUniverse";
+import { PolicySuppressedReferences } from "../../components/JurisdictionUniverse";
 import { alternativeLabel } from "../../lib/alternativeLabels";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -610,6 +611,11 @@ export default function ProjectGlobe() {
                     {coproductionNeedsFactsLabel(optimizerProj.opportunities.length)}
                   </p>
                   {optimizerProj.opportunities.map((s) => renderOpportunityChip(s))}
+                </div>
+              )}
+              {optimizerProj && (
+                <div key="policy-suppressed" className="sc-jurlist-section">
+                  <PolicySuppressedReferences allocated={allocated} openInspector={openInspector} />
                 </div>
               )}
               {(optimizerProj?.needsFactsBlocked || []).filter((r) => r.candidate_status !== "DOMINATED_WITH_PROOF").length > 0 && (

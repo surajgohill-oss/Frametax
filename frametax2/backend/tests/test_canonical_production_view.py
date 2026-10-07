@@ -583,10 +583,13 @@ _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
     # movable unit (archetypes ARCH-01..04), previously never enumerated. Added two-jurisdiction hybrids: LU +182, FVD +270,
     # BH +182, LLS +275 before curation (now LU 557 / FVD 948 / BH 501 / LLS 932); every 1.103.0 candidate keeps its
     # identical economics. Curated (music carve-out applied) totals:
+    # 2026-10-07 canonical-1.105.0 (MUSIC_POST_VFX_PACKAGE_POLICY): the post/VFX/music package is a real routable unit
+    # (FVD +263, BH +134, LLS +207 package structures before curation; LU has no music spend) and a separate music leg
+    # surfaces at >= $25,000. Pre-curation LU 557 / FVD 1,144 / BH 620 / LLS 1,122; existing economics identical.
     "fa5cade5-0669-4816-bfe6-72146f8d3bae": 557,   # Little Utopia
-    "4355ae88-a636-4c18-af60-ad73b2646124": 152,   # Bad Hombres
-    FVD_PROJECT_ID: 418,                            # F#K Valentine's Day
-    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 481,   # Lips Like Sugar
+    "4355ae88-a636-4c18-af60-ad73b2646124": 275,   # Bad Hombres
+    FVD_PROJECT_ID: 646,                            # F#K Valentine's Day
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 680,   # Lips Like Sugar
 }
 
 

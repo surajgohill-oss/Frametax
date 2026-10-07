@@ -5,7 +5,7 @@ Every Music-split scenario is still calculated and persisted. A scenario that ro
 separate jurisdiction is surfaced in the curated optimizer output only when
 
     canonical NPC of the otherwise-identical structure with Music BUNDLED with Post/VFX
-  - canonical NPC of the Music-split structure                       >  $25,000   (strictly greater)
+  - canonical NPC of the Music-split structure                       >= $25,000   (at least; canonical-1.105.0)
 
 Both NPCs are the full-precision canonical ``npc_with_adjustments_usd`` (travel, FX, local cost,
 stacking, financing and structural adjustments included); the comparison happens before any display
@@ -81,14 +81,17 @@ def music_carveout_decision(entry: dict, baseline_npc_usd: float | None) -> dict
         })
         return base
     delta = bundled_npc - float(split_npc)
-    surfaced = delta > MUSIC_CARVEOUT_THRESHOLD_USD       # strictly greater; no rounding before compare
+    surfaced = delta >= MUSIC_CARVEOUT_THRESHOLD_USD      # at least the threshold; no rounding before compare
     base.update({
         "music_carveout_status": SURFACED if surfaced else SUPPRESSED_BELOW_THRESHOLD,
         "music_carveout_delta_usd": delta,
         "music_carveout_counterpart": counterpart,
         "music_carveout_reason": None if surfaced else (
-            f"Splitting Music into its own jurisdiction improves canonical NPC by ${delta:,.2f}, which does not "
-            f"exceed the ${MUSIC_CARVEOUT_THRESHOLD_USD:,.0f} carve-out threshold; Music stays bundled with Post/VFX."
+            (f"Splitting Music into its own jurisdiction improves canonical NPC by ${delta:,.2f}, which is below "
+             if delta >= 0 else
+             f"Splitting Music into its own jurisdiction costs ${-delta:,.2f} more canonical NPC than the bundled "
+             "structure, so it is below ")
+            + f"the ${MUSIC_CARVEOUT_THRESHOLD_USD:,.0f} carve-out threshold; Music stays bundled with Post/VFX."
         ),
     })
     return base
@@ -108,7 +111,7 @@ def apply_music_carveout(scenarios: list[dict], baseline_npc_usd: float | None) 
         (suppressed if d["music_carveout_status"] in (SUPPRESSED_BELOW_THRESHOLD, SUPPRESSED_UNPROVEN) else curated).append(e)
     summary = {
         "threshold_usd": MUSIC_CARVEOUT_THRESHOLD_USD,
-        "comparison": "strictly_greater_than",
+        "comparison": "greater_than_or_equal",
         "music_split_scenarios_total": split_total,
         "surfaced_music_split_total": split_total - len(suppressed),
         "suppressed_total": len(suppressed),

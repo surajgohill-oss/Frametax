@@ -179,3 +179,90 @@ All match the API. New relocated-principal practical hybrids render (e.g. "Qatar
 2. Aggregated PRICED candidates (outside the top-100 lanes) are reachable via `/evaluation/aggregates` only.
 3. Routing music and post/VFX to the same destination is not a standalone hybrid candidate. It is counted (`same_destination_separate_bundles`) and priced only as the music carve-out counterfactual. Making it a candidate is a product decision, because the 1.98.0 bundling doctrine keeps music its own bundle.
 4. `test_bounded_retention_equals_full_enumeration_exactly`, stale since 1.92.0 (see Tests).
+
+## Residual closure (canonical-1.105.0, 2026-10-07, from `ec5efcc`)
+
+This closes the three remaining items above.
+
+### 1. Retention equivalence: PASS
+
+`test_bounded_retention_equals_full_enumeration_exactly` now matches the post-1.92 contract:
+
+- **Independent oracle:**
+  - Each candidate carries the canonical `structural_classification`, computed by the classifier.
+  - Expected retention includes the per-family lanes (GD-4).
+  - Legacy rows are regrouped with the stamp the writer applies.
+- **Dominators:** the aggregator is called with both the type and the family dominator maps. A PRICED group's dominator must be a retained row of the same canonical family, with NPC ≤ every member.
+- **Exactness kept:** retained rows, legacy rows and summary totals must match exactly. Compact mismatch reporting (row index plus differing keys) replaces pytest's full nested diff.
+- **Result:** passes in 28 s under a 120 s alarm, run once. No engine defect found.
+
+The earlier stalls were pytest rendering a thousands-entry group-dict diff, after the stale classification made every group key differ.
+
+### 2. Music / post-VFX package policy: PASS
+
+- **Package unit.**
+  - With both Post/VFX and Music spend, `post_vfx_music_package` is a canonical routable unit: one destination, one leg, one program.
+  - `production_allocation`: a line resolves its own component first, then its bundle, then the package.
+  - Families that route it: the home `component_relocation` family and the hybrid search (principal + package, and package + VFX split).
+  - Never searched with its own member bundles: `_hy_subset_admissible`.
+  - Excluded from the co-production families' components, which are unchanged.
+- **Same-destination collisions.** Every one is now the package's own route (`_same_destination_kind`). Separate-bundle non-route visits are 0 on all four projects.
+- **Music split threshold.** A separate music leg is surfaced when its canonical NPC benefit over the bundled counterpart is **at least** $25,000 (threshold unchanged; operator changed from strict > to ≥ per the product rule). A missing comparator fails closed as `SUPPRESSED_COUNTERPART_NOT_ESTABLISHED`, with its reason kept. The served reason now reads correctly for a negative benefit ("costs $X more canonical NPC than the bundled structure").
+- **Synthetic fixtures (`tests/test_music_package_policy.py`, no database), proven before the evaluator change:**
+  - same destination → one package leg (and a VFX split keeps Post + Music together);
+  - $24,999.99 suppressed; exactly $25,000 surfaced; $25,000.01 surfaced;
+  - missing comparator fails closed and stays accounted;
+  - package ≠ post-only identity, and the identity is independent of order;
+  - unrelated routes (post-only, music + post separate, full relocation) unchanged.
+
+**Regeneration.** Each project was regenerated once at 1.105.0 under the 720 s ceiling. LU only needed the engine stamp: it has no music spend, so it has no package, and its candidates are identical.
+
+| | LU | FVD | BH | LLS |
+|---|---:|---:|---:|---:|
+| regeneration | 90 s | 491 s | 13 s | 551 s |
+| generated G, 1.104.0 → 1.105.0 | 223,058 → 223,058 | 1,199,447 → 1,215,900 | 11,491 → 11,851 | 1,280,568 → 1,298,334 |
+| = persisted + aggregated | 977 + 222,081 | 2,108 + 1,213,792 | 1,126 + 10,725 | 2,094 + 1,296,240 |
+| priced | 197,534 → 197,534 | 248,088 → 253,233 | 11,062 → 11,305 | 1,278,362 → 1,295,937 |
+| served pre-curation | 557 → 557 | 948 → 1,144 | 501 → 620 | 932 → 1,122 |
+| curated | 557 → 557 | 418 → 646 | 152 → 275 | 481 → 680 |
+| policy-suppressed | 0 → 0 | 530 → 498 | 349 → 345 | 451 → 442 |
+| music splits surfaced (≥ $25,000) | 0 | 0 | 0 | 65 |
+| served package structures (two-party) | 0 | 263 (139) | 134 (134) | 207 (105) |
+| duplicate economic identities | 0 | 0 | 0 | 0 |
+
+**Other invariants:**
+- curated + suppressed = pre-curation for all four.
+- 0 economic differences on every identity served at both versions.
+- Baseline NPC, best-per-jurisdiction and the 217-row contract are identical.
+- 99 rows served at 1.104.0 (FVD 67, BH 15, LLS 17) moved from the top-100 retained lanes into aggregate groups. All 99 trace to a 1.105.0 group whose count and NPC range include them.
+
+### 3. Policy-suppressed references are reachable in the UI: YES
+
+- **Where it lives.** A collapsed secondary section, "N policy-suppressed reference structures" (`PolicySuppressedReferences`, adapter `policySuppressedRows`). It sits in Workspace Optimizer mode beside the co-production list and in the Project Globe's optimizer side panel.
+- **What the section shows.** It states that these structures are calculated but excluded from preferred presentation. Each row shows the route, the music destination, the bundled comparison route and its NPC, the split's NPC benefit, the $25,000 threshold and the exact served reason.
+- **Inspector.** Each row opens the existing candidate Inspector, which now shows a "Music carve-out" block.
+- **Unchanged:** the primary cards, counts, ordering, categories and Globe design.
+
+**Browser check (local, implementation evidence):**
+
+| Project | Suppressed rows (Workspace and Globe) | Package route | Inspector block |
+|---|---|---|---|
+| FVD | 498 | Belgium + package → Manitoba | yes |
+| BH | 345 | Manitoba + package → Belgium | yes |
+| LLS | 442 | Qatar + package → Manitoba | yes |
+| LU | none, section absent | Belgium + post/VFX → Manitoba | n/a |
+
+The Workspace headers stay at 646 / 275 / 680 / 557. There were no console errors and every request returned 200. UI status: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`.
+
+### Tests (each family run once)
+
+| Family | Result |
+|---|---|
+| Retention equivalence node | 1/1 |
+| Package policy plus music carve-out | 15/15 (one stale strict-operator oracle corrected) |
+| Accounting / persisted-to-served / identity / archetype / materiality | 174/174 (curated oracles LU 557 / BH 275 / FVD 646 / LLS 680; new persisted package test) |
+| Frontend count/reachability | 109/109 |
+| New suppressed-reference contract | 3/3 |
+| `vite build` | OK |
+
+Remaining optimizer blocker: none.

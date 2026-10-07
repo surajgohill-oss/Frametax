@@ -131,6 +131,12 @@ _COMPONENT_TO_BUNDLE: dict[str, str] = {
     member: bundle for bundle, members in COMPONENT_BUNDLE_MEMBERS.items() for member in members
 }
 
+# MUSIC / POST-VFX PACKAGE POLICY (canonical-1.105.0): Music stays inside the post/VFX/music package by
+# default. The package is one routable unit (one destination, one leg, one program) that covers every
+# member bundle not routed on its own; a separately routed music_package or vfx still wins for its lines.
+POST_VFX_MUSIC_PACKAGE = "post_vfx_music_package"
+PACKAGE_BUNDLES = frozenset({"post_vfx_package", "music_package"})
+
 
 def component_bundle_for(component: str) -> str:
     """The canonical operational bundle a movable component belongs to.
@@ -462,6 +468,8 @@ def derive_account_allocation(
         _route_component = (
             component if component in spec.component_routes
             else component_bundle_for(component) if component_bundle_for(component) in spec.component_routes
+            else POST_VFX_MUSIC_PACKAGE
+            if component_bundle_for(component) in PACKAGE_BUNDLES and POST_VFX_MUSIC_PACKAGE in spec.component_routes
             else None
         )
         if _route_component is not None:

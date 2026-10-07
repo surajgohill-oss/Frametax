@@ -55,9 +55,9 @@ _FIT_SEVERITY = {FIT_WEAK: 0, FIT_UNKNOWN: 1, FIT_WORKABLE: 2, FIT_STRONG: 3}
 # camera rolls. Reuses the canonical allocation vocabulary (MOVABLE_COMPONENTS,
 # COMPONENT_BUNDLE_MEMBERS) plus animation, which the product names explicitly.
 def _service_only_components() -> frozenset[str]:
-    from app.calculators.production_allocation import COMPONENT_BUNDLE_MEMBERS, MOVABLE_COMPONENTS
+    from app.calculators.production_allocation import COMPONENT_BUNDLE_MEMBERS, MOVABLE_COMPONENTS, POST_VFX_MUSIC_PACKAGE
 
-    return frozenset(MOVABLE_COMPONENTS) | frozenset(COMPONENT_BUNDLE_MEMBERS) | frozenset({"animation"})
+    return frozenset(MOVABLE_COMPONENTS) | frozenset(COMPONENT_BUNDLE_MEMBERS) | frozenset({POST_VFX_MUSIC_PACKAGE, "animation"})
 
 
 def requirements_disclosed(requirements) -> bool:
