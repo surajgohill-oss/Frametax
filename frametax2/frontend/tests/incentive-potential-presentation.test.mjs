@@ -120,7 +120,8 @@ test("segment Inspector context carries the structure's shared contract (Map/Spl
 
 test("hover bodies and every segment-Inspector opener render the shared contract, never a recompute", () => {
   const hover = read("components/GlobeHoverCard.jsx");
-  assert.equal((hover.match(/<PotentialFields pot=/g) || []).length, 3, "all three priced hover bodies");
+  assert.equal((hover.match(/<PotentialFields pot=/g) || []).length, 4,
+    "the three priced structure bodies plus the complete-contract jurisdiction body");
   assert.match(hover, /hidePotential=\{!!hover\.structureDetail\?\.incentive_potential\}/, "a route hover renders the contract once");
   assert.doesNotMatch(hover, /pot\.\w+\s*[-+*/]\s*pot\./);
   const insp = read("shell/Inspector.jsx");

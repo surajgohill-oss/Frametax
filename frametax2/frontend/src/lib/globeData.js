@@ -8,6 +8,7 @@ import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts }
 // "base incentive" line can never disagree with what its own card shows.
 import { programDisplay } from "./programNames.js";
 import { alternativeLabel, fitSummaryText } from "./alternativeLabels.js";
+import { servedContract } from "./jurisdictionUniverse.js";
 // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the SAME canonical
 // candidate-set selection Workspace's six-slot contract already uses —
 // never a second, independently-derived Globe-only notion of "which
@@ -238,6 +239,24 @@ export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
 export const OPTIMIZER_STATUS_LABEL = Object.fromEntries(
   Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.label]),
 );
+
+// The complete Single-Jurisdiction contract has seven producer-facing categories. They reuse the
+// existing six approved Globe colours (Not Suitable and Unavailable deliberately share red) rather
+// than inventing another palette. This is category presentation only; the backend remains the sole
+// owner of the category and every economic/fit field behind it.
+export const SINGLE_JURISDICTION_CATEGORY_SEMANTIC = {
+  LEADING_ALTERNATIVE: { slot: "gold", label: "Leading alternative", hex: OPTIMIZER_SEMANTIC.gold.hex },
+  STRONG_ALTERNATIVE: { slot: "jade", label: "Strong alternative", hex: OPTIMIZER_SEMANTIC.jade.hex },
+  REFERENCE_ALTERNATIVE: { slot: "silver", label: "Reference alternative", hex: OPTIMIZER_SEMANTIC.silver.hex },
+  CONDITIONAL_ALTERNATIVE: { slot: "amber", label: "Conditional alternative", hex: OPTIMIZER_SEMANTIC.amber.hex },
+  NOT_SUITABLE_FOR_THIS_PRODUCTION: { slot: "red", label: "Not suitable for this production", hex: OPTIMIZER_SEMANTIC.red.hex },
+  UNAVAILABLE: { slot: "red", label: "Unavailable", hex: OPTIMIZER_SEMANTIC.red.hex },
+  PROGRAM_DATA_INCOMPLETE: { slot: "slate", label: "Program data incomplete", hex: OPTIMIZER_SEMANTIC.slate.hex },
+};
+export const SINGLE_JURISDICTION_CATEGORY_ORDER = [
+  "LEADING_ALTERNATIVE", "STRONG_ALTERNATIVE", "REFERENCE_ALTERNATIVE", "CONDITIONAL_ALTERNATIVE",
+  "NOT_SUITABLE_FOR_THIS_PRODUCTION", "UNAVAILABLE", "PROGRAM_DATA_INCOMPLETE",
+];
 
 // The four canonical Optimizer structural families, real backend
 // `classification` values (structural_classification.py) mapped to the
@@ -510,10 +529,78 @@ export function buildOptimizerUniverse(allocated) {
   return byIso;
 }
 
+function contractStructure(rec, executable) {
+  if (executable) return executable;
+  return {
+    structure_id: `jurisdiction-contract:${rec.jurisdiction_code}`,
+    label: rec.jurisdiction_name || rec.jurisdiction_code,
+    primary_jurisdiction: rec.jurisdiction_code,
+    participants: [rec.jurisdiction_code],
+    is_fully_priced: rec.confirmed_npc_usd != null,
+    selected_incentive_usd: rec.confirmed_incentive_usd,
+    npc_with_adjustments_usd: rec.confirmed_npc_usd,
+    confirmed_incentive_floor_usd: rec.confirmed_incentive_usd,
+    maximum_supported_incentive_usd: rec.potential_incentive_usd,
+    confirmed_npc_usd: rec.confirmed_npc_usd,
+    potential_npc_usd: rec.potential_npc_usd,
+    economics_certainty: rec.economic_certainty,
+    ceiling_status: rec.economic_certainty === "CONDITIONAL" ? "CONDITIONAL" : "CONFIRMED",
+    ceiling_missing_facts: (rec.missing_conditions || []).map((description) => ({
+      jurisdiction_code: rec.jurisdiction_code, program_slug: rec.program_slug, description,
+    })),
+    program_slug: rec.program_slug,
+    program_display_name: rec.program_name,
+    production_fit_status: rec.production_fit_status,
+    production_fit_reasons: rec.production_fit_reasons || [],
+    production_fit_soft_signals: rec.production_fit_soft_signals || {},
+    production_fit_capability_evidence: rec.production_fit_capability_evidence || [],
+  };
+}
+
+// Single-Jurisdiction Globe truth: every one of the 217 served contract records, including
+// conditional, unsuitable, unavailable and data-incomplete jurisdictions. Before this adapter the
+// side panel read the contract while the actual choropleth still read best_per_jurisdiction (only
+// executable winners), making the canvas appear unchanged after location/capability work.
+export function buildSingleJurisdictionUniverse(allocated) {
+  const byIso = new Map();
+  for (const rec of servedContract(allocated)) {
+    const semantic = SINGLE_JURISDICTION_CATEGORY_SEMANTIC[rec.category];
+    if (!semantic) continue;
+    const code = rec.jurisdiction_code;
+    const iso = globeKey(code);
+    const executable = allocated?.best_per_jurisdiction?.[code] || null;
+    const structure = contractStructure(rec, executable);
+    const entry = {
+      status: semantic.slot,
+      hex: semantic.hex,
+      category: rec.category,
+      categoryLabel: semantic.label,
+      jurisdictionCodes: new Set([code]),
+      best: { structure, code },
+      meta: {
+        contract: rec,
+        reason: rec.hard_failure_reason || rec.headline || null,
+      },
+    };
+    // Defensive collision handling for any future jurisdiction identity alias: retain the stronger
+    // producer-facing category while preserving every represented code.
+    const prev = byIso.get(iso);
+    if (!prev) byIso.set(iso, entry);
+    else {
+      prev.jurisdictionCodes.add(code);
+      const priority = SINGLE_JURISDICTION_CATEGORY_ORDER.length - SINGLE_JURISDICTION_CATEGORY_ORDER.indexOf(rec.category);
+      const prevPriority = SINGLE_JURISDICTION_CATEGORY_ORDER.length - SINGLE_JURISDICTION_CATEGORY_ORDER.indexOf(prev.category);
+      if (priority > prevPriority) byIso.set(iso, { ...entry, jurisdictionCodes: prev.jurisdictionCodes });
+    }
+  }
+  return byIso;
+}
+
 export function buildCountryStatuses(allocated, rankById, mode = MODE_NORMAL) {
   const byIso = new Map(); // iso2 -> { status, hex, jurisdictionCodes:Set, best:{structure,code} }
   if (!allocated) return byIso;
   if (mode === MODE_OPTIMIZER) return buildOptimizerUniverse(allocated);
+  if (servedContract(allocated).length) return buildSingleJurisdictionUniverse(allocated);
   const pool = admissibleForMode(allocated, mode);
 
   // `meta` carries presentation-only extras that aren't part of the
@@ -806,6 +893,12 @@ export function buildOpportunityDetail(structure) {
     content_gates: structure.content_gates ?? null,
     first_exit_stage: structure.first_exit_stage ?? null,
     catalog_leads: structure.catalog_leads ?? null,
+    production_fit_status: structure.production_fit_status ?? undefined,
+    production_fit_reasons: structure.production_fit_reasons ?? [],
+    production_fit_legs: structure.production_fit_legs ?? [],
+    production_fit_basis: structure.production_fit_basis ?? undefined,
+    production_fit_soft_signals: structure.production_fit_soft_signals ?? {},
+    production_fit_capability_evidence: structure.production_fit_capability_evidence ?? [],
   };
 }
 
@@ -837,6 +930,12 @@ export function buildRejectedDetail(structure) {
     first_exit_stage: structure.first_exit_stage ?? null,
     catalog_leads: structure.catalog_leads ?? null,
     missing_facts_reason: structure.missing_facts_reason ?? null,
+    production_fit_status: structure.production_fit_status ?? undefined,
+    production_fit_reasons: structure.production_fit_reasons ?? [],
+    production_fit_legs: structure.production_fit_legs ?? [],
+    production_fit_basis: structure.production_fit_basis ?? undefined,
+    production_fit_soft_signals: structure.production_fit_soft_signals ?? {},
+    production_fit_capability_evidence: structure.production_fit_capability_evidence ?? [],
   };
 }
 
@@ -886,6 +985,7 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
     const { structure, code } = entry.best;
+    const contract = entry.meta?.contract || null;
     // Base incentive structure + rate, read from the SAME segment field
     // names Inspector.jsx's AllocationSegmentInspector renders (program_slug,
     // rate_floor, rate_ceiling, is_band_ceiling, claims_incentive) — no
@@ -924,10 +1024,10 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
       jurisdictionCode: code,
       jurisdictionName: JURISDICTION_COORDS[code]?.name || code,
       status: entry.status,
-      statusLabel: mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_LABEL[entry.status] : STATUS_LABEL[entry.status],
+      statusLabel: entry.categoryLabel || (mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_LABEL[entry.status] : STATUS_LABEL[entry.status]),
       // Long form for the hover card ("Co-Production Opportunities"); the
       // legend keeps the compact STATUS_LABEL ("Co-Pro Opportunities").
-      fullStatusLabel: mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_LABEL[entry.status] : STATUS_FULL_LABEL[entry.status],
+      fullStatusLabel: entry.categoryLabel || (mode === MODE_OPTIMIZER ? OPTIMIZER_STATUS_LABEL[entry.status] : STATUS_FULL_LABEL[entry.status]),
       semanticState: mode === MODE_OPTIMIZER ? entry.status : GLOBE_SEMANTIC[entry.status]?.state ?? null,
       hex: entry.hex,
       incentiveUsd: structure?.is_fully_priced ? structure.selected_incentive_usd : null,
@@ -1003,6 +1103,7 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null, mode = MO
       blockerPotential: entry.meta?.potential ?? null,
       blockerContentGates: entry.meta?.contentGates ?? null,
       blockerReason: (entry.meta?.detail?.headline ? entry.meta.reason : null) ?? entry.meta?.blocker?.reason ?? (mode === MODE_OPTIMIZER ? (entry.meta?.reason ?? null) : null),
+      contractRecord: contract,
     });
   }
   return byIso;
@@ -1251,7 +1352,7 @@ export function buildGlobeView(
     points: [], arcs: [], polygonColors: new Map(), selectedIso: null,
     selectedLat: null, selectedLng: null, focusLat: null, focusLng: null, focusDistance: null,
     hoverByIso: new Map(), structuresByCode: new Map(),
-    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0, red: 0 }, categoryByIso: new Map(),
+    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0, red: 0, slate: 0 }, categoryByIso: new Map(),
     sceneSignature: sceneSignature(mode, null, [], []),
   };
   if (!allocated) return empty;
@@ -1302,7 +1403,7 @@ export function buildGlobeView(
   // fixture badge and the regression checks can assert the distribution
   // (notably "exactly one Recommended") against the rendered truth rather than
   // against a hardcoded expectation.
-  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0, red: 0 };
+  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0, red: 0, slate: 0 };
   for (const [, entry] of statuses) {
     if (stateCounts[entry.status] != null) stateCounts[entry.status] += 1;
   }

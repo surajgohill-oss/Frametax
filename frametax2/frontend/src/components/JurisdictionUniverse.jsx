@@ -17,9 +17,18 @@ export function openUniverseRecord(allocated, rec, openInspector, onSelect) {
   if (exec) return openInspector("candidate-structure", buildCandidateDetail(exec));
   const row = accountedRowFor(allocated, rec);
   if (!row) return null;
+  const detailRow = {
+    ...row,
+    production_fit_status: rec.production_fit_status,
+    production_fit_reasons: rec.production_fit_reasons || [],
+    production_fit_legs: rec.production_fit_legs || [],
+    production_fit_basis: rec.production_fit_basis,
+    production_fit_soft_signals: rec.production_fit_soft_signals || {},
+    production_fit_capability_evidence: rec.production_fit_capability_evidence || [],
+  };
   return rec.disposition === "HARD_BLOCK"
-    ? openInspector("optimizer-rejection", buildRejectedDetail(row))
-    : openInspector("optimizer-opportunity", buildOpportunityDetail(row));
+    ? openInspector("optimizer-rejection", buildRejectedDetail(detailRow))
+    : openInspector("optimizer-opportunity", buildOpportunityDetail(detailRow));
 }
 
 function UniverseRow({ rec, onOpen }) {

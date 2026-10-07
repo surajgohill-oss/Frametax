@@ -9,7 +9,7 @@ import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, build
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { classifyBlocker } from "../../lib/blockerDisposition";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
-import { JurisdictionUniversePanel } from "../../components/JurisdictionUniverse";
+import { JurisdictionUniversePanel, openUniverseRecord } from "../../components/JurisdictionUniverse";
 import { coproductionNeedsFactsLabel } from "../../lib/jurisdictionUniverse";
 import { PolicySuppressedReferences } from "../../components/JurisdictionUniverse";
 import { alternativeLabel } from "../../lib/alternativeLabels";
@@ -305,9 +305,13 @@ export default function ProjectGlobe() {
     // real OFTTC + OCASE) and omitted structure id/economic identity/total
     // NPC/delta from Current Location entirely.
     if (globeMode === MODE_NORMAL) {
+      const rec = allocated?.jurisdiction_accounting?.single_jurisdiction_contract?.find((r) => r.jurisdiction_code === code);
+      if (rec) {
+        openUniverseRecord(allocated, rec, openInspector, setSelectedJurisdiction);
+        return;
+      }
       const winner = allocated?.best_per_jurisdiction?.[code];
-      if (!winner) return;
-      openInspector("candidate-structure", buildCandidateDetail(winner));
+      if (winner) openInspector("candidate-structure", buildCandidateDetail(winner));
       return;
     }
     // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): every marker currently

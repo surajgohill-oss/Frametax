@@ -14,6 +14,25 @@ function CapabilityEvidence({ evidence }) {
   return t ? <span className="text-tertiary small" data-capability-evidence> · {t}</span> : null;
 }
 
+function ProductionFitDisclosure({ data }) {
+  if (!data.production_fit_status) return null;
+  return (
+    <dl className="kv-list" data-production-fit={data.production_fit_status}>
+      <div>
+        <dt>Production fit</dt>
+        <dd>
+          {data.production_fit_status === "STRONG" ? "Strong fit" : data.production_fit_status === "WORKABLE" ? "Workable fit"
+            : data.production_fit_status === "WEAK" ? "Weak fit" : "Location fit unconfirmed"}
+          {(data.production_fit_legs || []).length > 0 && <span className="text-tertiary small"> · physical production: {data.production_fit_legs.join(", ")}</span>}
+          {(data.production_fit_reasons || []).length > 0 && <span className="text-tertiary small"> · {data.production_fit_reasons.map((r) => humanizeToken(r.replace(":", " "))).join("; ")}</span>}
+          <SoftFitSignals signals={data.production_fit_soft_signals} />
+          <CapabilityEvidence evidence={data.production_fit_capability_evidence} />
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
 // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: ONE component renders the shared contract for both the
 // structure Inspector and the segment Inspector (values verbatim from the served fields).
 function IncentivePotentialRows({ pot }) {
@@ -807,6 +826,7 @@ function OptimizerOpportunityInspector({ data }) {
         </div>
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : data.blocker_detail?.kind === "NO_PROGRAM_MODEL" ? "Not priced — program data incomplete" : "Not executable — needs facts"}</dd></div>
       </dl>
+      <ProductionFitDisclosure data={data} />
       <BlockerDetailSection detail={data.blocker_detail} />
       <AccountedExtras potential={data.incentive_potential} gates={data.content_gates} leads={data.catalog_leads} />
       {data.reason && !isProgramBlock && (
@@ -845,6 +865,7 @@ function OptimizerRejectionInspector({ data }) {
         {data.blocker?.label && <div><dt>Blocker</dt><dd>{data.blocker.label}</dd></div>}
         <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
       </dl>
+      <ProductionFitDisclosure data={data} />
       <BlockerDetailSection detail={data.blocker_detail} />
       <AccountedExtras potential={data.incentive_potential} gates={data.content_gates} leads={data.catalog_leads} />
       {data.reason && (

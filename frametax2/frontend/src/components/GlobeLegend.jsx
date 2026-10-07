@@ -1,4 +1,7 @@
-import { GLOBE_SEMANTIC, OPTIMIZER_SEMANTIC } from "../lib/globeData";
+import {
+  GLOBE_SEMANTIC, OPTIMIZER_SEMANTIC,
+  SINGLE_JURISDICTION_CATEGORY_ORDER, SINGLE_JURISDICTION_CATEGORY_SEMANTIC,
+} from "../lib/globeData";
 import { MODE_OPTIMIZER } from "../lib/workspaceScenarioMode";
 
 // ── Four-state Globe legend — top-left, chrome-free (Phase 3B closeout) ──
@@ -49,14 +52,14 @@ export default function GlobeLegend({ className = "", mode }) {
   // wired into ProjectGlobe.jsx's own list) — previously declared in
   // OPTIMIZER_SEMANTIC "for completeness" but never actually shown
   // anywhere, including this legend.
-  const order = isOptimizer ? ["gold", "jade", "silver", "amber", "red", "slate"] : ["gold", "jade", "amber", "silver"];
+  const order = isOptimizer ? ["gold", "jade", "silver", "amber", "red", "slate"] : SINGLE_JURISDICTION_CATEGORY_ORDER;
   const semantic = isOptimizer ? OPTIMIZER_SEMANTIC : GLOBE_SEMANTIC;
   return (
     <div className={`globe-legend-vertical ${className}`.trim()} role="note" aria-label={isOptimizer ? "Optimizer status key" : "Globe status key"}>
       {order.map((slot) => (
         <span key={slot} className="glv-item">
-          <span className="glv-dot" style={{ background: semantic[slot].hex }} aria-hidden="true" />
-          {isOptimizer ? semantic[slot].label : semantic[slot].fullLabel}
+          <span className="glv-dot" style={{ background: isOptimizer ? semantic[slot].hex : SINGLE_JURISDICTION_CATEGORY_SEMANTIC[slot].hex }} aria-hidden="true" />
+          {isOptimizer ? semantic[slot].label : SINGLE_JURISDICTION_CATEGORY_SEMANTIC[slot].label}
         </span>
       ))}
     </div>

@@ -91,6 +91,34 @@ function PotentialFields({ pot }) {
   );
 }
 
+function SingleJurisdictionContractBody({ hover }) {
+  const rec = hover.contractRecord;
+  const pot = hover.incentivePotential;
+  return (
+    <>
+      <div className="hover-field">
+        <div className="text-tertiary small">Program</div>
+        <div className="small">{rec.program_name || "Not available"}</div>
+      </div>
+      {pot ? <PotentialFields pot={pot} /> : (
+        <div className="hover-field"><div className="text-tertiary small">Economics</div><div className="small">Not priced</div></div>
+      )}
+      {hover.productionFitSummary && (
+        <div className="hover-field" data-hover-field="production-fit">
+          <div className="text-tertiary small">Production fit</div>
+          <div className="small">{hover.productionFitSummary}</div>
+        </div>
+      )}
+      {(rec.hard_failure_reason || rec.headline) && (
+        <div className="hover-field"><div className="text-tertiary small">Reason</div><div className="small">{rec.hard_failure_reason || rec.headline}</div></div>
+      )}
+      {(rec.missing_conditions || []).length > 0 && (
+        <div className="hover-field"><div className="text-tertiary small">Missing facts</div><div className="small">{rec.missing_conditions.join(" · ")}</div></div>
+      )}
+    </>
+  );
+}
+
 // Co-Production Opportunity: program (if one resolved despite the block),
 // the structure's own real related jurisdictions, and an explicit,
 // undisguised "not available" for the two figures this data model does not
@@ -444,7 +472,9 @@ export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
         {hover.fullStatusLabel || hover.optimizerStatusLabel}
         {isRoute && hover.familyLabel ? ` · ${hover.familyLabel}` : ""}
       </div>
-      {isAggregated ? (
+      {hover.contractRecord ? (
+        <SingleJurisdictionContractBody hover={hover} />
+      ) : isAggregated ? (
         <AggregatedUniverseBody hover={hover} />
       ) : isRoute ? (
         <RouteJurisdictionBody hover={hover} />

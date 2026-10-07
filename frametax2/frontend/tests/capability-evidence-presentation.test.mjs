@@ -28,7 +28,8 @@ test("hover, Inspector and every fit surface read only the served evidence (no c
     assert.ok(/production_fit_capability_evidence|capabilityEvidenceText|fitSummaryText|fitSummary/.test(src), f);
     assert.ok(!/desert_environments\s*[:=]|LOCATION_CENSUS|location_capability_cells|jurisdiction_capability_profile/.test(src.replace(/\/\/.*$/gm, "")), f);
   }
-  assert.ok((read("../src/shell/Inspector.jsx").match(/<CapabilityEvidence evidence=\{data\.production_fit_capability_evidence\} \/>/g) || []).length === 3);
+  assert.ok((read("../src/shell/Inspector.jsx").match(/<CapabilityEvidence evidence=\{data\.production_fit_capability_evidence\} \/>/g) || []).length === 4,
+    "structure, segment, opportunity, and unavailable-jurisdiction Inspectors must all render served evidence");
   assert.match(read("../src/components/GlobeHoverCard.jsx"), /hover\.productionFitSummary/);
   assert.match(read("../src/components/GlobeHoverCard.jsx"), /story\.fitSummary/);
 });

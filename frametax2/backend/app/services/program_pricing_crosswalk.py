@@ -147,7 +147,11 @@ CAT_UNAVAILABLE = "UNAVAILABLE"
 CAT_DATA_INCOMPLETE = "PROGRAM_DATA_INCOMPLETE"
 
 
-def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict) -> list[dict]:
+def build_single_jurisdiction_contract(
+    ledger: dict,
+    best_per_jurisdiction: dict,
+    production_requirements=None,
+) -> list[dict]:
     """One record per accounted jurisdiction carrying everything the later Single-Jurisdiction UI needs: the category,
     confirmed incentive / NPC, maximum-potential incentive / NPC, economic certainty, the exact missing conditions, the
     authority/provenance warning and the hard-failure reason. Confirmed and potential rankings stay separate."""
@@ -163,7 +167,13 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
     for rec in ledger.get("programs") or []:
         names.setdefault(rec.get("canonical_jurisdiction") or rec["jurisdiction_code"], rec.get("jurisdiction_name"))
     out: list[dict] = []
-    from app.services.production_fit import FIT_CONFIRMED_STATUSES, FIT_WEAK
+    from app.services.production_fit import (
+        FIT_CONFIRMED_STATUSES,
+        FIT_WEAK,
+        classify_entry_fit,
+    )
+
+    fit_cache: dict = {}
 
     def _fit_known(e):   # a served fit status exists (legacy payloads without it are classified as before)
         return e.get("production_fit_status") is not None
@@ -182,12 +192,26 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
                      "authority_warning": None, "hard_failure_reason": None, "difference_reason": None, "program_slug": None,
                      "jurisdiction_name": names.get(code), "program_name": None, "headline": None, "blocker_kind": None,
                      "stored_floor_statement": None, "stated_ceiling_rate": None,
-                     "production_fit_status": None, "production_fit_reasons": []}
+                     "production_fit_status": None, "production_fit_reasons": [], "production_fit_legs": [],
+                     "production_fit_basis": None, "production_fit_soft_signals": {},
+                     "production_fit_capability_evidence": []}
+        # The complete jurisdiction contract, not only executable winners, owns the Single-Jurisdiction
+        # Globe. Classify every accounted jurisdiction against the same project requirements before its
+        # program disposition is translated into a presentation category. Previously only entries in
+        # best_per_jurisdiction carried fit, leaving conditional Saskatchewan/Texas-style rows with null
+        # fit and causing the Globe/sidebar split the contract was created to eliminate.
+        direct_fit = (
+            classify_entry_fit({"anchor_jurisdiction": code}, production_requirements, fit_cache)
+            if production_requirements is not None else None
+        )
+        if direct_fit:
+            rec.update(direct_fit)
         if disp == "EXECUTABLE":
             e = best_per_jurisdiction.get(code) or {}
-            fit, fit_reasons = e.get("production_fit_status"), list(e.get("production_fit_reasons") or [])
+            fit_source = direct_fit or e
+            fit, fit_reasons = fit_source.get("production_fit_status"), list(fit_source.get("production_fit_reasons") or [])
             conditions = [m.get("description") or m.get("fact_key") for m in (e.get("ceiling_missing_facts") or [])]
-            if _fit_known(e) and fit not in FIT_CONFIRMED_STATUSES and fit != FIT_WEAK:
+            if _fit_known(fit_source) and fit not in FIT_CONFIRMED_STATUSES and fit != FIT_WEAK:
                 conditions.append("Location fit unconfirmed (capability data cannot assess): " + ", ".join(fit_reasons or ["CAPABILITY_UNKNOWN"]))
             rec.update(
                 confirmed_incentive_usd=e.get("confirmed_incentive_floor_usd", e.get("selected_incentive_usd")),
@@ -197,12 +221,16 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
                 authority_warning=next((w for w in (e.get("warnings") or []) if "Authority provenance incomplete" in w), None),
                 program_slug=e.get("program_slug"), program_name=e.get("program_display_name"),
                 production_fit_status=fit, production_fit_reasons=fit_reasons,
+                production_fit_legs=fit_source.get("production_fit_legs") or [],
+                production_fit_basis=fit_source.get("production_fit_basis"),
+                production_fit_soft_signals=fit_source.get("production_fit_soft_signals") or {},
+                production_fit_capability_evidence=fit_source.get("production_fit_capability_evidence") or [],
             )
-            if _fit_known(e) and fit == FIT_WEAK:
+            if _fit_known(fit_source) and fit == FIT_WEAK:
                 # an ESTABLISHED physical mismatch (never emitted for missing capability data)
                 rec["category"] = CAT_NOT_SUITABLE
                 rec["hard_failure_reason"] = "Confirmed physical-location mismatch: " + ", ".join(fit_reasons or ["LOCATION_MISMATCH"])
-            elif _fit_known(e) and fit not in FIT_CONFIRMED_STATUSES:
+            elif _fit_known(fit_source) and fit not in FIT_CONFIRMED_STATUSES:
                 rec["category"] = CAT_CONDITIONAL     # fit unconfirmed: conditional, never unavailable
             else:
                 rec["category"] = (CAT_LEADING if code == leader else CAT_STRONG if (e.get("savings_vs_current_usd") or 0) > 0 else CAT_REFERENCE)
@@ -225,6 +253,16 @@ def build_single_jurisdiction_contract(ledger: dict, best_per_jurisdiction: dict
             # separate workstream). A program scoped to another production type is accounted as unavailable-with-reason.
             rec["category"] = (CAT_CONDITIONAL if disp == "NEEDS_FACTS" else CAT_UNAVAILABLE if disp in ("HARD_BLOCK", "NOT_APPLICABLE")
                                else CAT_DATA_INCOMPLETE)
+            # Program uncertainty and physical suitability are independent axes. A curable/selective
+            # program row with an established hard location mismatch is still visible, but its producer-
+            # facing category is Not Suitable; the underlying NEEDS_FACTS disposition and program facts
+            # remain on the same record for the Inspector. Hard legal/program failures and incomplete
+            # program data keep their stronger fail-closed categories.
+            if disp == "NEEDS_FACTS" and rec.get("production_fit_status") == FIT_WEAK:
+                rec["category"] = CAT_NOT_SUITABLE
+                rec["hard_failure_reason"] = "Confirmed physical-location mismatch: " + ", ".join(
+                    rec.get("production_fit_reasons") or ["LOCATION_MISMATCH"]
+                )
             if disp == "NOT_APPLICABLE":
                 rec["headline"] = rec["headline"] or "Not applicable to this production type."
         out.append(rec)

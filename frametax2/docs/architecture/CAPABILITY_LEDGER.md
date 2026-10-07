@@ -4287,3 +4287,13 @@ Items 5, 6 and 7 above are **ready for Codex acceptance, not accepted**. Nothing
 | Real executable official co-production browser example | DEFERRED_PRODUCT_WORK (no real production reaches one; fixture coverage only) |
 
 Four-project 1.105.0 snapshot (read-only): one generation each; generated = persisted + aggregated; curated + suppressed = pre-curation; zero duplicate identities; 217 rows; zero economic diffs against the accepted 1.104.0 identities.
+
+## LEDGER ITEM 9 — SINGLE-JURISDICTION GLOBE CONTRACT/CANVAS RECONCILIATION (2026-10-07)
+
+**Root cause.** The sidebar consumed the complete 217-row `jurisdiction_accounting.single_jurisdiction_contract`, but the Globe canvas still consumed winner-only `best_per_jurisdiction`. Prior acceptance therefore proved the list, not canvas parity. Production fit was also attached only to executable winners, leaving conditional jurisdictions such as Saskatchewan and Texas without fit semantics.
+
+**Repair.** `build_single_jurisdiction_contract` now classifies every accounted jurisdiction against canonical project requirements. Confirmed hard mismatches are Not Suitable; unresolved awards/facts remain Conditional; unavailable and data-incomplete rows retain those dispositions. Single-Jurisdiction Globe colors, hover and click/Inspector consume that complete contract. Optimizer mode remains structure-specific: fit is assessed on physical production legs, never service-only post/VFX/music destinations. No calculation, generation, fingerprint, parse, project fact or database row changed.
+
+**Runtime proof.** All four productions serve 217 contract rows with zero null fit statuses and 179 distinct geographic Globe identities after intentional country-polygon folding. FVD: Saskatchewan and Manitoba are Not Suitable (marine mismatch); Texas is Conditional but Workable, with the exact MIIP award/residency facts preserved. FVD and LLS render materially different category distributions, and all rows remain reachable in the universe panel.
+
+**Verification.** Backend focused tests 62/62; frontend 411/411; frontend production build passes. Live FVD evidence confirms the seven-category legend, Saskatchewan and Texas rows, click-through and Inspector agreement. No evaluation or budget parse ran. Company Globe, atmosphere/visual polish, Build Your Own and ingestion acceptance remain separate.

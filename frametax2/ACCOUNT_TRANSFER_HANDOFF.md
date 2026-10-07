@@ -674,6 +674,15 @@ Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORT
 - **Tests.** `tests/test_music_package_policy.py` (synthetic), the package assertion in `test_optimizer_scenario_universe_accounting.py`, and `frontend/tests/policy-suppressed-references.test.mjs`.
 - **Environment.** Load the frontend at `http://localhost:5173` (backend CORS default).
 
+## SINGLE-JURISDICTION GLOBE CONTRACT/CANVAS RECONCILIATION (2026-10-07)
+
+- **Defect fixed:** the universe sidebar used all 217 served jurisdiction rows while the Globe canvas used only `best_per_jurisdiction`; earlier checks did not verify canvas parity.
+- **Canonical behavior:** Single-Jurisdiction canvas, legend, hover, click and Inspector now use the complete contract. Fit is computed for every row. Optimizer mode remains structure-specific and evaluates physical production legs only.
+- **FVD proof:** CA-SK and CA-MB are Not Suitable because of confirmed marine mismatch; US-TX is Conditional with Workable fit and retains its award/residency missing facts.
+- **Four-project proof:** 217 rows, zero null fit statuses, 179 geographic identities after intentional polygon folding; project distributions differ according to requirements.
+- **Non-regression:** no evaluation, reparse, fingerprint, economics or database mutation. Backend focused 62/62; frontend 411/411; build passes.
+- **Still separate:** Company Globe, atmosphere/visual polish, Build Your Own and ingestion acceptance.
+
 ## LEDGER ITEM 7 CLOSED — location-capability Codex remediation (2026-10-07, from `611fb72`); Item 4 was reopened by Codex
 
 - **Census.** 826 / 90 / 224 (supported / not supported / unresolved neutral) across 1,140 cells.

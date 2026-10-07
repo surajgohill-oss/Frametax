@@ -186,6 +186,35 @@ def test_soft_only_fit_is_never_conditional_and_every_ledger_jurisdiction_stays_
     assert not any("Location fit unconfirmed" in c for r in (got["GR"], got["AT"]) for c in r["missing_conditions"])
 
 
+def test_complete_contract_applies_location_fit_to_conditional_rows_not_only_executable_winners():
+    from app.services.program_pricing_crosswalk import build_single_jurisdiction_contract
+
+    codes = ("CA-SK", "US-TX")
+    ledger = {
+        "jurisdictions": [
+            {"jurisdiction_code": c, "disposition": "NEEDS_FACTS", "first_exit_stage": "PROGRAM_CONDITIONS"}
+            for c in codes
+        ],
+        "rows": [
+            {
+                "primary_jurisdiction": c, "disposition": "NEEDS_FACTS", "program_slug": "conditional-program",
+                "incentive_potential": {}, "blocker_detail": {"unresolved_propositions": []},
+            }
+            for c in codes
+        ],
+        "programs": [],
+    }
+    got = {
+        r["jurisdiction_code"]: r
+        for r in build_single_jurisdiction_contract(ledger, {}, production_requirements=_reqs("marine_open_water"))
+    }
+    assert got["CA-SK"]["production_fit_status"] == "WEAK"
+    assert got["CA-SK"]["category"] == "NOT_SUITABLE_FOR_THIS_PRODUCTION"
+    assert "MARINE_MISMATCH" in got["CA-SK"]["hard_failure_reason"]
+    assert got["US-TX"]["production_fit_status"] in pf.FIT_CONFIRMED_STATUSES
+    assert got["US-TX"]["category"] == "CONDITIONAL_ALTERNATIVE"
+
+
 # ── content gates ───────────────────────────────────────────────────────────────────────────────────────────────────
 def test_a_confirmation_resolves_the_gate_and_a_refusal_hard_blocks_only_mandatory_gates():
     key = "evidenced_program_fact:" + gate_fact_key(SA, KIND_SCRIPT_CONTENT_CLEARANCE)

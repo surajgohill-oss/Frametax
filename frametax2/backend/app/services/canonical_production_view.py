@@ -2672,7 +2672,8 @@ async def build_production_and_structures(
                 {k: jurisdiction_accounting[k] for k in ("engine_version", "production_type", "home_jurisdiction",
                                                          "gross_budget_usd", "programs", "jurisdictions", "waterfall")}
                 | {"single_jurisdiction_contract": __import__("app.services.program_pricing_crosswalk", fromlist=["x"]).build_single_jurisdiction_contract(
-                       {**jurisdiction_accounting, "rows": jurisdiction_accounting["all_rows"]}, best_per_jurisdiction),
+                       {**jurisdiction_accounting, "rows": jurisdiction_accounting["all_rows"]}, best_per_jurisdiction,
+                       production_requirements=_fit_requirements),
                    "best_per_jurisdiction_count": len(best_per_jurisdiction),
                    "executable_matches_best_per_jurisdiction": (
                        {j["jurisdiction_code"] for j in jurisdiction_accounting["jurisdictions"] if j["disposition"] == "EXECUTABLE"}

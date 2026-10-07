@@ -209,7 +209,9 @@ test("the restored Globe legend carries exactly the four current states, no lega
   // fixture badge.
   assert.match(src, /GLOBE_SEMANTIC/, "legend must import the canonical semantic table");
   assert.ok(!/#[0-9a-fA-F]{3,6}/.test(src), "legend must not hardcode a hex colour of its own");
-  // Exactly the four current slot keys — no fifth, no legacy category name.
+  // Optimizer keeps its six structure states. Single Jurisdiction now uses
+  // the complete seven-category jurisdiction contract rather than the old
+  // four winner-only slots.
   // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): `order` is now a
   // mode-conditional ternary (Single Jurisdiction's existing order vs
   // Optimizer's own order, per the controlling contract's explicit
@@ -234,7 +236,8 @@ test("the restored Globe legend carries exactly the four current states, no lega
       (slots.length === 5 && slots.every((s) => ["gold", "jade", "amber", "silver", "red"].includes(s))) ||
       // + "slate": program/capability data incomplete (accounted jurisdictions), Optimizer mode only
       (slots.length === 6 && slots.every((s) => ["gold", "jade", "amber", "silver", "red", "slate"].includes(s))));
-  assert.ok(orderMatches.length >= 2, "legend must declare an explicit state order for both Single Jurisdiction and Optimizer modes");
+  assert.ok(orderMatches.length >= 1, "legend must declare the explicit Optimizer state order");
+  assert.match(src, /SINGLE_JURISDICTION_CATEGORY_ORDER/, "Single Jurisdiction must consume the canonical complete-contract order");
   for (const slots of orderMatches) {
     const sorted = [...slots].sort();
     assert.ok(
