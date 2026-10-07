@@ -652,3 +652,15 @@ Repository recovery and connection only; the earlier web-research pass was stopp
 ## LEDGER ITEM 4 CLOSED — final location-capability closure (2026-10-06, from `1913bd1`)
 Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORTED 819, VERIFIED_NOT_SUPPORTED 86, UNRESOLVED_NEUTRAL 235, generic UNKNOWN 0; DISCOVERY-tier evidence removed; combined `island/tropical` = island OR tropical (landlocked alone never rejects tropical); national `US` has its own cells. Data derived in batch from UNESCO WHL, FAO GLC-SHARE/FRA, UN WUP 2025, US NRHP, AU NHL, Koppen-Geiger 2023 and Natural Earth (320 cells rest on those last two only; disclosed tier) plus 3 official agency pages; reproduction in `backend/scripts/location_census_derivation`; CSV + `.summary.json` rebuilt by `scripts/build_location_capability_census.py`. Hard verified mismatch -> Not Suitable, hard unresolved -> Conditional, soft -> disclosure; one served evidence text on Workspace, Globe hover and Inspector (verified by real hover for STRONG/WORKABLE/WEAK/UNKNOWN). The five failing `test_canonical_production_view` tests were pre-existing stale pre-curation oracles (music carve-out), corrected. Economics, ids, NPC, incentives and scenario counts unchanged; no regeneration; no hashed module touched. Residual: 235 unresolved cells (neutral) + film-commission pages not queried per cell. Run DB tests with the acceptance env and the sandbox disabled. Globe colour pass still deferred.
 
+
+## LEDGER ITEM 5 CLOSED — optimizer scenario-universe accounting (2026-10-06, from `dac1514`) — engine `canonical-1.104.0`
+
+- **Repairs.** The candidate generator now enumerates a relocated principal + one movable unit (post/VFX package, VFX or music). This route was silently absent for every non-home anchor. It also labels non-route hybrid visits, and routes component-specific destination programs in the home component family.
+- **Regeneration.** All four acceptance productions were regenerated once (the persisted 1.103.0 generations are kept). Existing economics are identical; generated = persisted + aggregated holds exactly.
+- **Served curated / pre-curation.** LU 557/557, FVD 418/948, BH 152/501, LLS 481/932.
+- **Proof and tests.** `docs/validation/OPTIMIZER_SCENARIO_UNIVERSE_ACCOUNTING_CLAUDE.md`; `backend/tests/test_optimizer_scenario_universe_accounting.py` (reuse-only, acceptance DB).
+- **Open items.**
+  - Music-suppressed scenarios and aggregate groups have no UI surface.
+  - `test_bounded_candidate_retention.py::test_bounded_retention_equals_full_enumeration_exactly` has been stale since 1.92.0.
+  - Music + post/VFX to the same destination is a product decision.
+- **Backend environment note.** The backend's CORS default allows `http://localhost:5173`, so use that origin rather than `127.0.0.1` when the backend is started without `.env` origins.

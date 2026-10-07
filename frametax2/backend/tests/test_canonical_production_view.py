@@ -579,10 +579,14 @@ _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL = {
     # `optimizer_scenarios_music_suppressed`, never dropped. Totals below are the curated counts of the persisted canonical-1.103.0
     # generations; scenarios_before_curation_total (curated + suppressed) is LU 376 / FVD 681 / BH 321 / LLS 660. The previous values
     # (339 / 277 / 590 / 569) were pre-curation counts of earlier engine versions.
-    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 376,   # Little Utopia
-    "4355ae88-a636-4c18-af60-ad73b2646124": 61,    # Bad Hombres
-    FVD_PROJECT_ID: 238,                            # F#K Valentine's Day
-    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 247,   # Lips Like Sugar
+    # 2026-10-06 canonical-1.104.0 (SCENARIO_UNIVERSE_ACCOUNTING): a relocated principal anchor now also routes a single
+    # movable unit (archetypes ARCH-01..04), previously never enumerated. Added two-jurisdiction hybrids: LU +182, FVD +270,
+    # BH +182, LLS +275 before curation (now LU 557 / FVD 948 / BH 501 / LLS 932); every 1.103.0 candidate keeps its
+    # identical economics. Curated (music carve-out applied) totals:
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": 557,   # Little Utopia
+    "4355ae88-a636-4c18-af60-ad73b2646124": 152,   # Bad Hombres
+    FVD_PROJECT_ID: 418,                            # F#K Valentine's Day
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": 481,   # Lips Like Sugar
 }
 
 
@@ -1066,11 +1070,17 @@ async def test_optimizer_scenarios_ordered_practical_then_formal_then_advanced_a
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
         view = await build_production_and_structures(db, project_id)
         scenarios = view["structures"]["allocated_structures"]["optimizer_scenarios"]
-        ranks = [tier_rank[s["practicality_tier"]] for s in scenarios]
-        assert ranks == sorted(ranks), f"{project_id}: tiers must appear in Practical -> Formal -> Advanced order, never interleaved"
-        # Within the Practical run, NPC must be strictly non-decreasing (economics untouched).
-        practical_npcs = [s["npc_verified_usd"] for s in scenarios if s["practicality_tier"] == "PRACTICAL_HYBRID"]
-        assert practical_npcs == sorted(practical_npcs), f"{project_id}: Practical tier must be NPC-ascending"
+        # FIT-AWARE PRESENTATION ORDER (2026-10-01) sorts by fit_priority first (stable), so the tier -> NPC order holds
+        # within each fit-priority group, not across the whole list (canonical-1.104.0 adds weak-fit practical routes).
+        priorities = [s["fit_priority"] for s in scenarios]
+        assert priorities == sorted(priorities), f"{project_id}: fit priority order"
+        for priority in set(priorities):
+            group = [s for s in scenarios if s["fit_priority"] == priority]
+            ranks = [tier_rank[s["practicality_tier"]] for s in group]
+            assert ranks == sorted(ranks), f"{project_id}: tiers must appear in Practical -> Formal -> Advanced order, never interleaved"
+            # Within the Practical run, NPC must be strictly non-decreasing (economics untouched).
+            practical_npcs = [s["npc_verified_usd"] for s in group if s["practicality_tier"] == "PRACTICAL_HYBRID"]
+            assert practical_npcs == sorted(practical_npcs), f"{project_id}: Practical tier must be NPC-ascending"
 
 
 async def test_workspace_headline_cards_favor_practical_over_advanced_for_fvd(db: AsyncSession):

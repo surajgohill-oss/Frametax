@@ -4209,3 +4209,24 @@ Fixed inventory: the 113 structured jurisdiction profiles + the missing national
 
 **Residual (separately authorisable): the 235 AUTHORITY_UNRESOLVED_NEUTRAL cells** (jungle 68, desert 38, snow 34, historic 24, mountains 21, island-tropical 19, rural 15, small town 7, urban 5, forest 4; per-jurisdiction inventory in the summary JSON, 105 jurisdictions). Runtime-neutral; a film-commission/agency pass per jurisdiction could convert some. **Capability phase: data and runtime COMPLETE; UI `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION` (local browser evidence is implementation evidence only).** Globe category/colour pass NOT started.
 
+
+## LEDGER ITEM 5 — CANONICAL OPTIMIZER SCENARIO-UNIVERSE ACCOUNTING (2026-10-06, from `dac1514`) — `ENGINE_VERSION = canonical-1.104.0`
+
+Full proof: `docs/validation/OPTIMIZER_SCENARIO_UNIVERSE_ACCOUNTING_CLAUDE.md`.
+
+- **Universe definition.** Generated candidates = `evaluation_generation_summaries.total_rows` = persisted rows + Σ aggregate counts (fail-closed at commit). The complete canonical universe adds each hybrid proof's bound-dominated and non-route combinations, with `total = Π lists = visited + dominated` and `visited = evaluated + non-route`. Σ evaluated equals the hybrid candidates exactly for all four projects.
+- **Three silent-drop coverage defects** were repaired in `canonical_evaluation.py`:
+  - **D1:** a relocated (non-home) principal anchor never routed a single unit (ARCH-01..04). This has been a gap since the 1.98.0 Post/VFX bundling. Now added: LU +182, FVD +270, BH +182, LLS +275 two-jurisdiction hybrids before curation.
+  - **D2:** visited same-destination, degenerate and duplicate tuples are now counted by reason (`non_route_combination_counts`).
+  - **D3:** the home `component_relocation` family also routes each component's own best destination program (LLS, Portugal medium-budget tier: 2 routes).
+- **Regeneration.** LU, BH, FVD and LLS were regenerated once each (97 / 14 / 421 / 572 s).
+- **Economics unchanged.** 1.103.0 identities keep identical economics, and the baseline, the 217 single-jurisdiction contract, best-per-jurisdiction and the leading structures are identical. No threshold changed.
+- **Served (curated / pre-curation).** LU 557/557, FVD 418/948, BH 152/501, LLS 481/932. 11 previously served rows are now aggregated by the top-100 retention lanes, each traced to a group.
+- **Tests.**
+  - The new `tests/test_optimizer_scenario_universe_accounting.py` passes 20/20.
+  - View oracles updated: curated totals, and tier order within each fit-priority group.
+  - `test_bounded_retention_equals_full_enumeration_exactly` is pre-existing and stale since 1.92.0 (it reproduces at `dac1514`); it is INCOMPLETE.
+- **Remaining.**
+  - The music-suppressed list (FVD 530 / BH 349 / LLS 451) and the aggregated groups are API-reachable only; no UI surface reads them.
+  - Music + post/VFX to one destination is counted, and priced only as the carve-out counterfactual (product decision).
+- **UI status:** `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`.

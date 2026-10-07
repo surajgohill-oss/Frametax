@@ -93,4 +93,5 @@ def test_lazy_enrichment_persists_every_added_jurisdiction_and_marks_lost_recons
 
 
 def test_engine_version_advanced_past_the_shared_pre_repair_stamp():
-    assert ce.ENGINE_VERSION == "canonical-1.103.0"
+    # 1.103.0 introduced the explanation contract; later engines (1.104.0 scenario-universe accounting) keep it.
+    assert tuple(int(p) for p in ce.ENGINE_VERSION.removeprefix("canonical-").split(".")) >= (1, 103, 0)
