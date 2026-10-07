@@ -1,0 +1,2249 @@
+{
+ "checked": "2026-10-07",
+ "sources": {
+  "ADFC_LOC": {
+   "short": "Abu Dhabi Film Commission",
+   "title": "Abu Dhabi Film Commission - Locations / Location Guide",
+   "publisher": "Abu Dhabi Film Commission (Department of Culture and Tourism - Abu Dhabi)",
+   "url": "https://www.film.gov.ae/en/locations",
+   "version": "page fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official film commission locations page; verbatim statement"
+  },
+  "SAFC_LOC": {
+   "short": "South Australian Film Corporation",
+   "title": "Filming in SA - Locations",
+   "publisher": "South Australian Film Corporation (SA Government statutory authority)",
+   "url": "https://www.safilm.com.au/locations/",
+   "version": "page fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official film commission locations page; verbatim statement"
+  },
+  "BC_GBR": {
+   "short": "BC Government - Great Bear Rainforest",
+   "title": "Great Bear Rainforest - Land use decision resources",
+   "publisher": "Government of British Columbia",
+   "url": "https://www2.gov.bc.ca/gov/content/industry/crown-land-water/land-use-planning/regions/west-coast/great-bear-rainforest",
+   "version": "page fetched 2026-10-07",
+   "tier": "GOVERNMENT_AGENCY_PAGE",
+   "method": "provincial government land-use page naming the present-day Great Bear Rainforest"
+  },
+  "MBFM_LOC": {
+   "short": "Manitoba Film & Music",
+   "title": "Manitoba Film & Music - Film locations",
+   "publisher": "Manitoba Film & Music (Province of Manitoba agency)",
+   "url": "https://mbfilmmusic.ca/en/film/locations",
+   "version": "page fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official film commission locations page; verbatim statement"
+  },
+  "SNS_LOC": {
+   "short": "Screen Nova Scotia",
+   "title": "Screen Nova Scotia - Locations / home",
+   "publisher": "Screen Nova Scotia (provincial screen industry office)",
+   "url": "https://screennovascotia.com/locations/",
+   "version": "pages fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official provincial screen office page; verbatim statement"
+  },
+  "RFCJ_LOC": {
+   "short": "Royal Film Commission - Jordan",
+   "title": "Royal Film Commission - Jordan: Locations",
+   "publisher": "Royal Film Commission - Jordan",
+   "url": "https://film.jo/locations",
+   "version": "page fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official film commission location database; verbatim entry"
+  },
+  "MAFO_LOC": {
+   "short": "Massachusetts Film Office",
+   "title": "Massachusetts Film Office - locations",
+   "publisher": "Massachusetts Film Office (Massachusetts Office of Travel and Tourism)",
+   "url": "https://mafilm.org/",
+   "version": "page fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official state film office page; verbatim statement"
+  },
+  "SCFC_LOC": {
+   "short": "South Carolina Film Commission",
+   "title": "South Carolina Film Commission - Locations",
+   "publisher": "South Carolina Film Commission (SC Department of Parks, Recreation & Tourism)",
+   "url": "https://filmsc.com/locations/",
+   "version": "page fetched 2026-10-07",
+   "tier": "FILM_COMMISSION_PAGE",
+   "method": "official state film commission locations page; verbatim statement"
+  },
+  "USGS_ELEV": {
+   "short": "USGS Elevations and Distances",
+   "title": "Elevations and Distances in the United States - Highest and Lowest Elevations",
+   "publisher": "U.S. Geological Survey",
+   "url": "https://pubs.usgs.gov/gip/Elevations-Distances/elvadist.html",
+   "version": "online edition fetched 2026-10-07",
+   "tier": "GOVERNMENT_DATASET",
+   "method": "State highest point (feet) compared with the UNEP-WCMC mountain definition's 300 m floor (Kapos et al. 2000; UNEP-WCMC 2002 Mountain Watch): a territory whose highest point is below 300 m has no land in any mountain class"
+  }
+ },
+ "cells": {
+  "AE-AD|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film.gov.ae/en/locations (checked 2026-10-07): HTTP 200, 1397 chars of text (redirected to https://www.film.gov.ae/locations)",
+    "Official film-office / agency page https://www.film.gov.ae/ (checked 2026-10-07): HTTP 200, 5010 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-AD|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film.gov.ae/en/locations (checked 2026-10-07): HTTP 200, 1397 chars of text (redirected to https://www.film.gov.ae/locations)",
+    "Official film-office / agency page https://www.film.gov.ae/ (checked 2026-10-07): HTTP 200, 5010 chars of text"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Abu Dhabi Film Commission Location Guide lists a 'Mountains' location category (alongside City, Coastlines, Middle Eastern Desert, Nature)",
+   "source_ids": [
+    "ADFC_LOC"
+   ]
+  },
+  "AE-AD|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film.gov.ae/en/locations (checked 2026-10-07): HTTP 200, 1397 chars of text (redirected to https://www.film.gov.ae/locations)",
+    "Official film-office / agency page https://www.film.gov.ae/ (checked 2026-10-07): HTTP 200, 5010 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-AD|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film.gov.ae/en/locations (checked 2026-10-07): HTTP 200, 1397 chars of text (redirected to https://www.film.gov.ae/locations)",
+    "Official film-office / agency page https://www.film.gov.ae/ (checked 2026-10-07): HTTP 200, 5010 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-AD|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film.gov.ae/en/locations (checked 2026-10-07): HTTP 200, 1397 chars of text (redirected to https://www.film.gov.ae/locations)",
+    "Official film-office / agency page https://www.film.gov.ae/ (checked 2026-10-07): HTTP 200, 5010 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-DXB|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dftc.gov.ae/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.dubaifilmcommission.ae/ (checked 2026-10-07): failed: URLError: <urlopen error timed out>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-DXB|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dftc.gov.ae/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.dubaifilmcommission.ae/ (checked 2026-10-07): failed: URLError: <urlopen error timed out>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-DXB|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dftc.gov.ae/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.dubaifilmcommission.ae/ (checked 2026-10-07): failed: URLError: <urlopen error timed out>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AE-DXB|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dftc.gov.ae/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.dubaifilmcommission.ae/ (checked 2026-10-07): failed: URLError: <urlopen error timed out>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AL|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nationalfilmcenter.gov.al/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://qkk.gov.al/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/albania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AL|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nationalfilmcenter.gov.al/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://qkk.gov.al/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/albania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AL|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nationalfilmcenter.gov.al/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://qkk.gov.al/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/albania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AT|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.locationaustria.at/en/ (checked 2026-10-07): HTTP 200, 2243 chars of text (redirected to https://www.filminaustria.com/en/)",
+    "Official film-office / agency page https://www.austrianfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/austria/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AT|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.locationaustria.at/en/ (checked 2026-10-07): HTTP 200, 2243 chars of text (redirected to https://www.filminaustria.com/en/)",
+    "Official film-office / agency page https://www.austrianfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/austria/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AU-QLD|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://screenqueensland.com.au/production-in-queensland/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://screenqueensland.com.au/ (checked 2026-10-07): HTTP 200, 4720 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AU-SA|forest_woodland": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.safilm.com.au/locations/ (checked 2026-10-07): HTTP 200, 3954 chars of text",
+    "Official film-office / agency page https://www.safilm.com.au/ (checked 2026-10-07): HTTP 200, 5545 chars of text"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "SAFC Locations: 'From salt lakes to moonscapes and dense green forests to rugged desert ranges'; 'rural settings and dramatic bushland and forests' within 20 minutes of Adelaide",
+   "source_ids": [
+    "SAFC_LOC"
+   ]
+  },
+  "AU-SA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.safilm.com.au/locations/ (checked 2026-10-07): HTTP 200, 3954 chars of text",
+    "Official film-office / agency page https://www.safilm.com.au/ (checked 2026-10-07): HTTP 200, 5545 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "AU-SA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.safilm.com.au/locations/ (checked 2026-10-07): HTTP 200, 3954 chars of text",
+    "Official film-office / agency page https://www.safilm.com.au/ (checked 2026-10-07): HTTP 200, 5545 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "BE|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminflanders.be/en/locations (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://screen.brussels/en/film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.wallimage.be/en/ (checked 2026-10-07): HTTP 200, 3472 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/belgium/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "BE|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminflanders.be/en/locations (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://screen.brussels/en/film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.wallimage.be/en/ (checked 2026-10-07): HTTP 200, 3472 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/belgium/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "BE|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminflanders.be/en/locations (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://screen.brussels/en/film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.wallimage.be/en/ (checked 2026-10-07): HTTP 200, 3472 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/belgium/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "BG|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nfc.bg/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.bulgariafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 522: <none>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/bulgaria/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "BG|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nfc.bg/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.bulgariafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 522: <none>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/bulgaria/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "BG|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nfc.bg/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.bulgariafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 522: <none>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/bulgaria/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www2.gov.bc.ca/gov/content/industry/crown-land-water/land-use-planning/regions/west-coast/great-bear-rainforest (checked 2026-10-07): HTTP 200, 13190 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/canada/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Government of British Columbia land-use page for the present-day Great Bear Rainforest (west coast of BC, Canada)",
+   "source_ids": [
+    "BC_GBR"
+   ]
+  },
+  "CA-AB|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.albertafilm.ca/locations (checked 2026-10-07): HTTP 200, 4133 chars of text (redirected to https://www.alberta.ca/alberta-film-commission)",
+    "Official film-office / agency page https://www.albertafilm.ca/ (checked 2026-10-07): HTTP 200, 4133 chars of text (redirected to https://www.alberta.ca/alberta-film-commission)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-AB|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.albertafilm.ca/locations (checked 2026-10-07): HTTP 200, 4133 chars of text (redirected to https://www.alberta.ca/alberta-film-commission)",
+    "Official film-office / agency page https://www.albertafilm.ca/ (checked 2026-10-07): HTTP 200, 4133 chars of text (redirected to https://www.alberta.ca/alberta-film-commission)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-BC|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.creativebc.com/bc-film-commission/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.creativebc.com/ (checked 2026-10-07): HTTP 200, 5023 chars of text (redirected to https://creativebc.com/)",
+    "Official film-office / agency page https://www2.gov.bc.ca/gov/content/industry/crown-land-water/land-use-planning/regions/west-coast/great-bear-rainforest (checked 2026-10-07): HTTP 200, 13190 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-BC|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.creativebc.com/bc-film-commission/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.creativebc.com/ (checked 2026-10-07): HTTP 200, 5023 chars of text (redirected to https://creativebc.com/)",
+    "Official film-office / agency page https://www2.gov.bc.ca/gov/content/industry/crown-land-water/land-use-planning/regions/west-coast/great-bear-rainforest (checked 2026-10-07): HTTP 200, 13190 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-BC|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.creativebc.com/bc-film-commission/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.creativebc.com/ (checked 2026-10-07): HTTP 200, 5023 chars of text (redirected to https://creativebc.com/)",
+    "Official film-office / agency page https://www2.gov.bc.ca/gov/content/industry/crown-land-water/land-use-planning/regions/west-coast/great-bear-rainforest (checked 2026-10-07): HTTP 200, 13190 chars of text"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Government of British Columbia land-use page for the present-day Great Bear Rainforest (West Coast region)",
+   "source_ids": [
+    "BC_GBR"
+   ]
+  },
+  "CA-BC|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.creativebc.com/bc-film-commission/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.creativebc.com/ (checked 2026-10-07): HTTP 200, 5023 chars of text (redirected to https://creativebc.com/)",
+    "Official film-office / agency page https://www2.gov.bc.ca/gov/content/industry/crown-land-water/land-use-planning/regions/west-coast/great-bear-rainforest (checked 2026-10-07): HTTP 200, 13190 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-MB|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mbfilmmusic.ca/en/film/locations (checked 2026-10-07): HTTP 200, 7479 chars of text (redirected to https://www.mbfilmmusic.ca/film-commission/locations)",
+    "Official film-office / agency page https://mbfilmmusic.ca/ (checked 2026-10-07): HTTP 200, 4817 chars of text (redirected to https://www.mbfilmmusic.ca/)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Manitoba Film & Music locations, 'Desert landscape': 'Spirit Sands is a four-sq-km tract of open blowing sand dunes that tower 30 m above the surrounding prairie'",
+   "source_ids": [
+    "MBFM_LOC"
+   ]
+  },
+  "CA-MB|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mbfilmmusic.ca/en/film/locations (checked 2026-10-07): HTTP 200, 7479 chars of text (redirected to https://www.mbfilmmusic.ca/film-commission/locations)",
+    "Official film-office / agency page https://mbfilmmusic.ca/ (checked 2026-10-07): HTTP 200, 4817 chars of text (redirected to https://www.mbfilmmusic.ca/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-MB|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mbfilmmusic.ca/en/film/locations (checked 2026-10-07): HTTP 200, 7479 chars of text (redirected to https://www.mbfilmmusic.ca/film-commission/locations)",
+    "Official film-office / agency page https://mbfilmmusic.ca/ (checked 2026-10-07): HTTP 200, 4817 chars of text (redirected to https://www.mbfilmmusic.ca/)",
+    "Statement found but insufficient: Manitoba Film & Music page: 'Rhode Island' appears only as a film credit, not a Manitoba location"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-MB|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mbfilmmusic.ca/en/film/locations (checked 2026-10-07): HTTP 200, 7479 chars of text (redirected to https://www.mbfilmmusic.ca/film-commission/locations)",
+    "Official film-office / agency page https://mbfilmmusic.ca/ (checked 2026-10-07): HTTP 200, 4817 chars of text (redirected to https://www.mbfilmmusic.ca/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-MB|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mbfilmmusic.ca/en/film/locations (checked 2026-10-07): HTTP 200, 7479 chars of text (redirected to https://www.mbfilmmusic.ca/film-commission/locations)",
+    "Official film-office / agency page https://mbfilmmusic.ca/ (checked 2026-10-07): HTTP 200, 4817 chars of text (redirected to https://www.mbfilmmusic.ca/)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Manitoba Film & Music location categories include 'Small Town Look' and 'Turn of Century Town'",
+   "source_ids": [
+    "MBFM_LOC"
+   ]
+  },
+  "CA-NB|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.tourismnewbrunswick.ca/ (checked 2026-10-07): HTTP 200, 9286 chars of text (redirected to https://tourismnewbrunswick.ca/)",
+    "Official film-office / agency page https://www2.gnb.ca/content/gnb/en.html (checked 2026-10-07): HTTP 200, 4111 chars of text (redirected to https://www.gnb.ca/en.html)",
+    "Statement found but insufficient: Tourism New Brunswick: 'Historic Sites' appears only as a navigation-menu label"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NB|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.tourismnewbrunswick.ca/ (checked 2026-10-07): HTTP 200, 9286 chars of text (redirected to https://tourismnewbrunswick.ca/)",
+    "Official film-office / agency page https://www2.gnb.ca/content/gnb/en.html (checked 2026-10-07): HTTP 200, 4111 chars of text (redirected to https://www.gnb.ca/en.html)",
+    "Statement found but insufficient: Tourism New Brunswick: 'Ferries & Farms' appears only as a road-trip menu label"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NB|urban_major_city": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.tourismnewbrunswick.ca/ (checked 2026-10-07): HTTP 200, 9286 chars of text (redirected to https://tourismnewbrunswick.ca/)",
+    "Official film-office / agency page https://www2.gnb.ca/content/gnb/en.html (checked 2026-10-07): HTTP 200, 4111 chars of text (redirected to https://www.gnb.ca/en.html)",
+    "Statement found but insufficient: Tourism New Brunswick: 'Cities & Regions' appears only as a navigation-menu label (no city of the required size is stated)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NL|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nlfdc.ca/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'nlfdc.ca'. (_ssl.c:1010)>",
+    "Official film-office / agency page https://nlfdc.ca/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'nlfdc.ca'. (_ssl.c:1010)>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NL|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nlfdc.ca/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'nlfdc.ca'. (_ssl.c:1010)>",
+    "Official film-office / agency page https://nlfdc.ca/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'nlfdc.ca'. (_ssl.c:1010)>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NL|urban_major_city": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nlfdc.ca/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'nlfdc.ca'. (_ssl.c:1010)>",
+    "Official film-office / agency page https://nlfdc.ca/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'nlfdc.ca'. (_ssl.c:1010)>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NS|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://screennovascotia.com/locations/ (checked 2026-10-07): HTTP 200, 5248 chars of text",
+    "Official film-office / agency page https://screennovascotia.com/ (checked 2026-10-07): HTTP 200, 4410 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-NS|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://screennovascotia.com/locations/ (checked 2026-10-07): HTTP 200, 5248 chars of text",
+    "Official film-office / agency page https://screennovascotia.com/ (checked 2026-10-07): HTTP 200, 4410 chars of text"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Screen Nova Scotia Locations: 'an exceptional variety of distinctive and visually compelling locations - coastal, rural, urban, historic'",
+   "source_ids": [
+    "SNS_LOC"
+   ]
+  },
+  "CA-NS|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://screennovascotia.com/locations/ (checked 2026-10-07): HTTP 200, 5248 chars of text",
+    "Official film-office / agency page https://screennovascotia.com/ (checked 2026-10-07): HTTP 200, 4410 chars of text"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Screen Nova Scotia: 'Urban sophistication, small town ambience, and miles of unspoiled coastline'",
+   "source_ids": [
+    "SNS_LOC"
+   ]
+  },
+  "CA-ON|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ontariocreates.ca/business-development/film-and-television/ontario-film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.ontariocreates.ca/ (checked 2026-10-07): HTTP 200, 5416 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-ON|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ontariocreates.ca/business-development/film-and-television/ontario-film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.ontariocreates.ca/ (checked 2026-10-07): HTTP 200, 5416 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-ON|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ontariocreates.ca/business-development/film-and-television/ontario-film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.ontariocreates.ca/ (checked 2026-10-07): HTTP 200, 5416 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-ON|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ontariocreates.ca/business-development/film-and-television/ontario-film-commission (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.ontariocreates.ca/ (checked 2026-10-07): HTTP 200, 5416 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-QC|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.qftc.ca/en/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.qftc.ca/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-SK|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://creativesask.ca/ (checked 2026-10-07): HTTP 200, 3817 chars of text (redirected to https://www.creativesask.ca/)",
+    "Official film-office / agency page https://www.tourismsaskatchewan.com/ (checked 2026-10-07): HTTP 200, 3085 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-SK|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://creativesask.ca/ (checked 2026-10-07): HTTP 200, 3817 chars of text (redirected to https://www.creativesask.ca/)",
+    "Official film-office / agency page https://www.tourismsaskatchewan.com/ (checked 2026-10-07): HTTP 200, 3085 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-SK|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://creativesask.ca/ (checked 2026-10-07): HTTP 200, 3817 chars of text (redirected to https://www.creativesask.ca/)",
+    "Official film-office / agency page https://www.tourismsaskatchewan.com/ (checked 2026-10-07): HTTP 200, 3085 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CA-SK|urban_major_city": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://creativesask.ca/ (checked 2026-10-07): HTTP 200, 3817 chars of text (redirected to https://www.creativesask.ca/)",
+    "Official film-office / agency page https://www.tourismsaskatchewan.com/ (checked 2026-10-07): HTTP 200, 3085 chars of text",
+    "Statement found but insufficient: Tourism Saskatchewan: 'Prairie Life & City Lights' appears only as a travel-zone menu label"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CH|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmlocation.ch/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.filmlocation.ch'. (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.swissfilms.ch/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/switzerland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CH|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmlocation.ch/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.filmlocation.ch'. (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.swissfilms.ch/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/switzerland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CR|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcostarica.com/ (checked 2026-10-07): HTTP 200, 335 chars of text (redirected to https://costaricalocation.com/)",
+    "Official film-office / agency page https://www.procomer.com/ (checked 2026-10-07): HTTP 200, 14081 chars of text (redirected to https://procomer.com/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/costa-rica/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CR|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcostarica.com/ (checked 2026-10-07): HTTP 200, 335 chars of text (redirected to https://costaricalocation.com/)",
+    "Official film-office / agency page https://www.procomer.com/ (checked 2026-10-07): HTTP 200, 14081 chars of text (redirected to https://procomer.com/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/costa-rica/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CY|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.investcyprus.org.cy/film (checked 2026-10-07): HTTP 200, 8746 chars of text (redirected to https://www.investcyprus.org.cy/filming-in-cyprus/)",
+    "Official film-office / agency page https://www.cyprusfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/cyprus/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CY|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.investcyprus.org.cy/film (checked 2026-10-07): HTTP 200, 8746 chars of text (redirected to https://www.investcyprus.org.cy/filming-in-cyprus/)",
+    "Official film-office / agency page https://www.cyprusfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/cyprus/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CY|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.investcyprus.org.cy/film (checked 2026-10-07): HTTP 200, 8746 chars of text (redirected to https://www.investcyprus.org.cy/filming-in-cyprus/)",
+    "Official film-office / agency page https://www.cyprusfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/cyprus/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CY|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.investcyprus.org.cy/film (checked 2026-10-07): HTTP 200, 8746 chars of text (redirected to https://www.investcyprus.org.cy/filming-in-cyprus/)",
+    "Official film-office / agency page https://www.cyprusfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/cyprus/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "CZ|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcommission.cz/en/locations/ (checked 2026-10-07): HTTP 200, 4433 chars of text (redirected to https://filmcommission.gov.cz/en/locations/)",
+    "Official film-office / agency page https://www.filmcommission.cz/en/ (checked 2026-10-07): HTTP 200, 8099 chars of text (redirected to https://filmcommission.gov.cz/en/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/czechia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DE|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.location-germany.de/en/ (checked 2026-10-07): HTTP 200, 2105 chars of text (redirected to https://www.location-germany.de/en/Welcome)",
+    "Official film-office / agency page https://www.ffa.de/ (checked 2026-10-07): HTTP 200, 9176 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/germany/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DE|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.location-germany.de/en/ (checked 2026-10-07): HTTP 200, 2105 chars of text (redirected to https://www.location-germany.de/en/Welcome)",
+    "Official film-office / agency page https://www.ffa.de/ (checked 2026-10-07): HTTP 200, 9176 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/germany/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DK|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dfi.dk/en (checked 2026-10-07): HTTP 200, 3172 chars of text",
+    "Official film-office / agency page https://www.thedanishfilmcommission.dk/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/denmark/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DK|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dfi.dk/en (checked 2026-10-07): HTTP 200, 3172 chars of text",
+    "Official film-office / agency page https://www.thedanishfilmcommission.dk/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/denmark/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DK|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dfi.dk/en (checked 2026-10-07): HTTP 200, 3172 chars of text",
+    "Official film-office / agency page https://www.thedanishfilmcommission.dk/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/denmark/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DO|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://dgcine.gob.do/en/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://dgcine.gob.do/en/ (checked 2026-10-07): HTTP 200, 3738 chars of text (redirected to https://dgcine.gob.do/en/home/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/dominican-republic/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "DO|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://dgcine.gob.do/en/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://dgcine.gob.do/en/ (checked 2026-10-07): HTTP 200, 3738 chars of text (redirected to https://dgcine.gob.do/en/home/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/dominican-republic/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "EE|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmestonia.eu/locations/ (checked 2026-10-07): HTTP 200, 2939 chars of text",
+    "Official film-office / agency page https://filmestonia.eu/ (checked 2026-10-07): HTTP 200, 1670 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/estonia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "EG|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.egyptfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://egymonuments.gov.eg/ (checked 2026-10-07): HTTP 200, 1491 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/egypt/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ES|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.shootinginspain.info/en/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.shootinginspain.info/en/ (checked 2026-10-07): HTTP 200, 3281 chars of text (redirected to https://spainfilmcommission.com/en/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/spain/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "FI|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminfinland.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filminfinland.com/ (checked 2026-10-07): HTTP 200, 1862 chars of text (redirected to https://www.filminfinland.com:443/en/frontpage/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/finland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "FJ|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfiji.com/locations/ (checked 2026-10-07): HTTP 200, 6166 chars of text (redirected to https://filmmir.xyz/)",
+    "Official film-office / agency page https://www.filmfiji.com/ (checked 2026-10-07): HTTP 200, 6166 chars of text (redirected to https://filmmir.xyz/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/fiji/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "FJ|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfiji.com/locations/ (checked 2026-10-07): HTTP 200, 6166 chars of text (redirected to https://filmmir.xyz/)",
+    "Official film-office / agency page https://www.filmfiji.com/ (checked 2026-10-07): HTTP 200, 6166 chars of text (redirected to https://filmmir.xyz/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/fiji/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "FR|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfrance.net/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.filmfrance.net/en/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/france/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "FR|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfrance.net/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.filmfrance.net/en/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/france/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GB|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://britishfilmcommission.org.uk/ (checked 2026-10-07): HTTP 200, 2535 chars of text",
+    "Official film-office / agency page https://www.screen.scot/locations (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://cairngorms.co.uk/discover-explore/things-to-do/winter-activities/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/united-kingdom/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GB|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://britishfilmcommission.org.uk/ (checked 2026-10-07): HTTP 200, 2535 chars of text",
+    "Official film-office / agency page https://www.screen.scot/locations (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://cairngorms.co.uk/discover-explore/things-to-do/winter-activities/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/united-kingdom/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GB|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://britishfilmcommission.org.uk/ (checked 2026-10-07): HTTP 200, 2535 chars of text",
+    "Official film-office / agency page https://www.screen.scot/locations (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://cairngorms.co.uk/discover-explore/things-to-do/winter-activities/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/united-kingdom/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)",
+    "Targeted government geography/agency page https://www.visitscotland.com/things-to-do/activities/winter-sports (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Targeted government geography/agency page https://cairngorms.co.uk/ (checked 2026-10-07): HTTP 200, 12916 chars of text",
+    "Statement found but insufficient: Cairngorms National Park Authority home page fetched: no snow/snow-sport statement; winter-activities and VisitScotland winter-sports pages HTTP 404"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GE|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.gnfc.ge/eng/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://filmingeorgia.ge/ (checked 2026-10-07): failed: URLError: <urlopen error _ssl.c:993: The handshake operation timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/georgia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GE|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.gnfc.ge/eng/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://filmingeorgia.ge/ (checked 2026-10-07): failed: URLError: <urlopen error _ssl.c:993: The handshake operation timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/georgia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GH|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nfa.gov.gh/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 61] Connection refused>",
+    "Official film-office / agency page https://visitghana.com/ (checked 2026-10-07): HTTP 200, 3054 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ghana/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)",
+    "Statement found but insufficient: Visit Ghana (Ghana Tourism Authority): 'Mountains' appears only as a navigation-menu label"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GR|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ekome.media/filming-in-greece/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.ekome.media/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/greece/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "GR|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ekome.media/filming-in-greece/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.ekome.media/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/greece/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "HR|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmingincroatia.hr/en/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filmingincroatia.hr/en (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/croatia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "HU|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nfi.hu/en/filming-in-hungary/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://nfi.hu/en/ (checked 2026-10-07): HTTP 200, 9759 chars of text (redirected to https://nfi.hu/en)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/hungary/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IE|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland (checked 2026-10-07): HTTP 200, 7716 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ireland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IE|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland (checked 2026-10-07): HTTP 200, 7716 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ireland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IE|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland (checked 2026-10-07): HTTP 200, 7716 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ireland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IE|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.screenireland.ie/filming-in-ireland (checked 2026-10-07): HTTP 200, 7716 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ireland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IL|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminisrael.com/ (checked 2026-10-07): HTTP 200, 3064 chars of text",
+    "Official film-office / agency page https://www.jerusalemfilmfund.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/israel/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IL|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminisrael.com/ (checked 2026-10-07): HTTP 200, 3064 chars of text",
+    "Official film-office / agency page https://www.jerusalemfilmfund.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/israel/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IS|forest_woodland": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminiceland.com/locations/ (checked 2026-10-07): HTTP 200, 1056 chars of text (redirected to https://filminiceland.com/locations)",
+    "Official film-office / agency page https://www.filminiceland.com/ (checked 2026-10-07): HTTP 200, 4110 chars of text (redirected to https://filminiceland.com/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/iceland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IS|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminiceland.com/locations/ (checked 2026-10-07): HTTP 200, 1056 chars of text (redirected to https://filminiceland.com/locations)",
+    "Official film-office / agency page https://www.filminiceland.com/ (checked 2026-10-07): HTTP 200, 4110 chars of text (redirected to https://filminiceland.com/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/iceland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IS|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminiceland.com/locations/ (checked 2026-10-07): HTTP 200, 1056 chars of text (redirected to https://filminiceland.com/locations)",
+    "Official film-office / agency page https://www.filminiceland.com/ (checked 2026-10-07): HTTP 200, 4110 chars of text (redirected to https://filminiceland.com/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/iceland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IS|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminiceland.com/locations/ (checked 2026-10-07): HTTP 200, 1056 chars of text (redirected to https://filminiceland.com/locations)",
+    "Official film-office / agency page https://www.filminiceland.com/ (checked 2026-10-07): HTTP 200, 4110 chars of text (redirected to https://filminiceland.com/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/iceland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IT|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.italianfilmcommissions.it/en/ (checked 2026-10-07): HTTP 200, 112210 chars of text (redirected to https://www.italianfilmcommissions.it/news/detail/enit-alla-77-mostra-del-cinema-di-venezia/)",
+    "Official film-office / agency page https://www.italianfilmcommissions.it/en/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/italy/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "IT|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.italianfilmcommissions.it/en/ (checked 2026-10-07): HTTP 200, 112210 chars of text (redirected to https://www.italianfilmcommissions.it/news/detail/enit-alla-77-mostra-del-cinema-di-venezia/)",
+    "Official film-office / agency page https://www.italianfilmcommissions.it/en/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/italy/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "JO|forest_woodland": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.jo/locations (checked 2026-10-07): HTTP 200, 3715 chars of text",
+    "Official film-office / agency page https://film.jo/ (checked 2026-10-07): HTTP 200, 11134 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/jordan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Royal Film Commission - Jordan location entry 'Ajloun Forest Reserve': 'located in the Ajloun highlands north of Amman and covers 13 sq km'",
+   "source_ids": [
+    "RFCJ_LOC"
+   ]
+  },
+  "JO|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.jo/locations (checked 2026-10-07): HTTP 200, 3715 chars of text",
+    "Official film-office / agency page https://film.jo/ (checked 2026-10-07): HTTP 200, 11134 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/jordan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Royal Film Commission - Jordan location entries 'Ajloun Castle' (Qal'at Ar-Rabad) and the 'Historical Sites' location category",
+   "source_ids": [
+    "RFCJ_LOC"
+   ]
+  },
+  "JO|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.jo/locations (checked 2026-10-07): HTTP 200, 3715 chars of text",
+    "Official film-office / agency page https://film.jo/ (checked 2026-10-07): HTTP 200, 11134 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/jordan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "JO|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.jo/locations (checked 2026-10-07): HTTP 200, 3715 chars of text",
+    "Official film-office / agency page https://film.jo/ (checked 2026-10-07): HTTP 200, 11134 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/jordan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "JO|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.jo/locations (checked 2026-10-07): HTTP 200, 3715 chars of text",
+    "Official film-office / agency page https://film.jo/ (checked 2026-10-07): HTTP 200, 11134 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/jordan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "JP|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.japanfc.org/en/ (checked 2026-10-07): HTTP 200, 3249 chars of text",
+    "Official film-office / agency page https://www.japanfc.org/en/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/japan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "KR|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.koreanfilm.or.kr/eng/locations/locationList.jsp (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.koreanfilm.or.kr/eng/ (checked 2026-10-07): HTTP 200, 11801 chars of text (redirected to https://www.koreanfilm.or.kr/eng/main/main.jsp)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/korea-south/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "KR|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.koreanfilm.or.kr/eng/locations/locationList.jsp (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.koreanfilm.or.kr/eng/ (checked 2026-10-07): HTTP 200, 11801 chars of text (redirected to https://www.koreanfilm.or.kr/eng/main/main.jsp)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/korea-south/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "KZ|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://kazakhfilm.kz/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://kazakhfilm.kz/ (checked 2026-10-07): HTTP 200, 5770 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/kazakhstan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "KZ|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://kazakhfilm.kz/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://kazakhfilm.kz/ (checked 2026-10-07): HTTP 200, 5770 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/kazakhstan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LT|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.lkc.lt/en/ (checked 2026-10-07): HTTP 200, 2240 chars of text",
+    "Official film-office / agency page https://www.filmlithuania.lt/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/lithuania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LT|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.lkc.lt/en/ (checked 2026-10-07): HTTP 200, 2240 chars of text",
+    "Official film-office / agency page https://www.filmlithuania.lt/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/lithuania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LU|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfund.lu/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.filmfund.lu/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/luxembourg/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LU|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfund.lu/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.filmfund.lu/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/luxembourg/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LU|urban_major_city": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmfund.lu/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.filmfund.lu/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/luxembourg/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LV|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nkc.gov.lv/en (checked 2026-10-07): HTTP 200, 6255 chars of text",
+    "Official film-office / agency page https://www.filmlatvia.lv/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/latvia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "LV|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nkc.gov.lv/en (checked 2026-10-07): HTTP 200, 6255 chars of text",
+    "Official film-office / agency page https://www.filmlatvia.lv/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/latvia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MA|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ccm.ma/ (checked 2026-10-07): HTTP 200, 6002 chars of text",
+    "Official film-office / agency page https://www.ccm.ma/en/ (checked 2026-10-07): HTTP 200, 2880 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/morocco/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ccm.ma/ (checked 2026-10-07): HTTP 200, 6002 chars of text",
+    "Official film-office / agency page https://www.ccm.ma/en/ (checked 2026-10-07): HTTP 200, 2880 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/morocco/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ME|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://fccg.me/en/ (checked 2026-10-07): HTTP 200, 14030 chars of text (redirected to http://fccg.me/en)",
+    "Official film-office / agency page https://filmingmontenegro.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/montenegro/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ME|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://fccg.me/en/ (checked 2026-10-07): HTTP 200, 14030 chars of text (redirected to http://fccg.me/en)",
+    "Official film-office / agency page https://filmingmontenegro.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/montenegro/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ME|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://fccg.me/en/ (checked 2026-10-07): HTTP 200, 14030 chars of text (redirected to http://fccg.me/en)",
+    "Official film-office / agency page https://filmingmontenegro.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/montenegro/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MK|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmagency.gov.mk/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filmagency.gov.mk/ (checked 2026-10-07): HTTP 200, 2476 chars of text (redirected to https://filmagency.gov.mk/pocetna/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/north-macedonia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MK|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmagency.gov.mk/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filmagency.gov.mk/ (checked 2026-10-07): HTTP 200, 2476 chars of text (redirected to https://filmagency.gov.mk/pocetna/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/north-macedonia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MK|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmagency.gov.mk/en/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filmagency.gov.mk/ (checked 2026-10-07): HTTP 200, 2476 chars of text (redirected to https://filmagency.gov.mk/pocetna/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/north-macedonia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MN|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcouncil.mn/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://mongolia.travel/ (checked 2026-10-07): HTTP 200, 8 chars of text (redirected to https://www.mongolia.travel/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/mongolia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MT|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.maltafilmcommission.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.maltafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/malta/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MT|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.maltafilmcommission.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.maltafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/malta/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MT|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.maltafilmcommission.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.maltafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/malta/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MT|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.maltafilmcommission.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.maltafilmcommission.com/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/malta/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MU|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.edbmauritius.org/film-rebate-scheme (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.mauritiusfilm.mu/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/mauritius/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MU|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.edbmauritius.org/film-rebate-scheme (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.mauritiusfilm.mu/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/mauritius/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MU|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.edbmauritius.org/film-rebate-scheme (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.mauritiusfilm.mu/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/mauritius/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MX|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.comefilm.gob.mx/ (checked 2026-10-07): HTTP 200, 1690 chars of text (redirected to https://www.imcine.gob.mx/comefilm/)",
+    "Official film-office / agency page https://www.imcine.gob.mx/ (checked 2026-10-07): HTTP 200, 1246 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/mexico/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MY|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminmalaysia.com/locations (checked 2026-10-07): HTTP 200, 2102 chars of text (redirected to https://www.filminmalaysia.com/locations/)",
+    "Official film-office / agency page https://www.filminmalaysia.com/ (checked 2026-10-07): HTTP 200, 3999 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/malaysia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "MY|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminmalaysia.com/locations (checked 2026-10-07): HTTP 200, 2102 chars of text (redirected to https://www.filminmalaysia.com/locations/)",
+    "Official film-office / agency page https://www.filminmalaysia.com/ (checked 2026-10-07): HTTP 200, 3999 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/malaysia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "NL|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcommission.nl/en/locations (checked 2026-10-07): HTTP 200, 10003 chars of text",
+    "Official film-office / agency page https://www.filmcommission.nl/en/ (checked 2026-10-07): HTTP 200, 2518 chars of text (redirected to https://www.filmcommission.nl/en)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/netherlands/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "NL|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcommission.nl/en/locations (checked 2026-10-07): HTTP 200, 10003 chars of text",
+    "Official film-office / agency page https://www.filmcommission.nl/en/ (checked 2026-10-07): HTTP 200, 2518 chars of text (redirected to https://www.filmcommission.nl/en)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/netherlands/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)",
+    "Statement found but insufficient: Netherlands Film Commission locations list 'Saint Pieter mountain' and 'Dutch mountains' (Maastricht hills); not a mountain/alpine environment"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "NL|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcommission.nl/en/locations (checked 2026-10-07): HTTP 200, 10003 chars of text",
+    "Official film-office / agency page https://www.filmcommission.nl/en/ (checked 2026-10-07): HTTP 200, 2518 chars of text (redirected to https://www.filmcommission.nl/en)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/netherlands/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "NO|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.norwegianfilm.com/locations (checked 2026-10-07): HTTP 200, 1116 chars of text",
+    "Official film-office / agency page https://www.nfi.no/eng (checked 2026-10-07): HTTP 200, 2950 chars of text (redirected to https://www.nfi.no/en)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/norway/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "NO|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.norwegianfilm.com/locations (checked 2026-10-07): HTTP 200, 1116 chars of text",
+    "Official film-office / agency page https://www.nfi.no/eng (checked 2026-10-07): HTTP 200, 2950 chars of text (redirected to https://www.nfi.no/en)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/norway/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "NZ|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nzfilm.co.nz/inbound-productions/filming-in-nz/locations (checked 2026-10-07): HTTP 200, 7764 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/new-zealand/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "NZ Film Commission locations: 'coastlines, cities, colonial towns, alpine terrain, forests, deserts, and countryside'; location 'Rangipo Desert - volcanic terrain, stark open plains'",
+   "source_ids": [
+    "NZFC_LOC"
+   ]
+  },
+  "NZ|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.nzfilm.co.nz/inbound-productions/filming-in-nz/locations (checked 2026-10-07): HTTP 200, 7764 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/new-zealand/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "NZ Film Commission locations: 'Denize Bluff, Waikato Cliffs, rugged forest and jungles'",
+   "source_ids": [
+    "NZFC_LOC"
+   ]
+  },
+  "PA|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.panamafilmcommission.gob.pa/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.dicine.gob.pa/ (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/panama/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.panamafilmcommission.gob.pa/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.dicine.gob.pa/ (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/panama/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PH|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.fdcp.ph/ (checked 2026-10-07): HTTP 200, 5740 chars of text (redirected to https://fdcp.ph/)",
+    "Official film-office / agency page https://www.fdcp.ph/programs/philippine-film-industry-month (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/philippines/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PL|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmcommission.pl/en/locations (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'polishfilmcommission.pl'. (_ssl.c:10",
+    "Official film-office / agency page https://filmcommission.pl/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'polishfilmcommission.pl'. (_ssl.c:10",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/poland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PL|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmcommission.pl/en/locations (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'polishfilmcommission.pl'. (_ssl.c:10",
+    "Official film-office / agency page https://filmcommission.pl/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'polishfilmcommission.pl'. (_ssl.c:10",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/poland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PL|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmcommission.pl/en/locations (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'polishfilmcommission.pl'. (_ssl.c:10",
+    "Official film-office / agency page https://filmcommission.pl/en/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'polishfilmcommission.pl'. (_ssl.c:10",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/poland/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PT|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.portugalfilmcommission.com/en/locations (checked 2026-10-07): HTTP 200, 67262 chars of text (redirected to https://portugalfilmcommission.com/)",
+    "Official film-office / agency page https://www.portugalfilmcommission.com/en/ (checked 2026-10-07): HTTP 200, 62780 chars of text (redirected to https://portugalfilmcommission.com/en/welcome-to-pfc/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/portugal/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "PT|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.portugalfilmcommission.com/en/locations (checked 2026-10-07): HTTP 200, 67262 chars of text (redirected to https://portugalfilmcommission.com/)",
+    "Official film-office / agency page https://www.portugalfilmcommission.com/en/ (checked 2026-10-07): HTTP 200, 62780 chars of text (redirected to https://portugalfilmcommission.com/en/welcome-to-pfc/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/portugal/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "QA|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dohafilm.com/en/ (checked 2026-10-07): HTTP 200, 1032 chars of text (redirected to https://www.dohafilm.com/en)",
+    "Official film-office / agency page https://www.dohafilm.com/en/filming-in-qatar (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/qatar/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "QA|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dohafilm.com/en/ (checked 2026-10-07): HTTP 200, 1032 chars of text (redirected to https://www.dohafilm.com/en)",
+    "Official film-office / agency page https://www.dohafilm.com/en/filming-in-qatar (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/qatar/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "QA|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dohafilm.com/en/ (checked 2026-10-07): HTTP 200, 1032 chars of text (redirected to https://www.dohafilm.com/en)",
+    "Official film-office / agency page https://www.dohafilm.com/en/filming-in-qatar (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/qatar/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "QA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.dohafilm.com/en/ (checked 2026-10-07): HTTP 200, 1032 chars of text (redirected to https://www.dohafilm.com/en)",
+    "Official film-office / agency page https://www.dohafilm.com/en/filming-in-qatar (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/qatar/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "RO|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://cnc.gov.ro/ (checked 2026-10-07): failed: HTTPError: HTTP Error 503: Service Temporarily Unavailable",
+    "Official film-office / agency page https://romaniafilmcommission.ro/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/romania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "RO|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://cnc.gov.ro/ (checked 2026-10-07): failed: HTTPError: HTTP Error 503: Service Temporarily Unavailable",
+    "Official film-office / agency page https://romaniafilmcommission.ro/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/romania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "RO|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://cnc.gov.ro/ (checked 2026-10-07): failed: HTTPError: HTTP Error 503: Service Temporarily Unavailable",
+    "Official film-office / agency page https://romaniafilmcommission.ro/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/romania/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "RS|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminserbia.com/locations/ (checked 2026-10-07): HTTP 200, 2077 chars of text (redirected to https://www.filminserbia.com/locations-page/)",
+    "Official film-office / agency page https://www.filminserbia.com/ (checked 2026-10-07): HTTP 200, 2297 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/serbia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SA|forest_woodland": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.moc.gov.sa/en (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "Official film-office / agency page https://film.moc.gov.sa/en/locations (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/saudi-arabia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.moc.gov.sa/en (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "Official film-office / agency page https://film.moc.gov.sa/en/locations (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/saudi-arabia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.moc.gov.sa/en (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "Official film-office / agency page https://film.moc.gov.sa/en/locations (checked 2026-10-07): failed: URLError: <urlopen error timed out>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/saudi-arabia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SE|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminstitutet.se/en/ (checked 2026-10-07): HTTP 200, 7544 chars of text",
+    "Official film-office / agency page https://www.swedishfilmcommission.se/ (checked 2026-10-07): failed: 202",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/sweden/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SE|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filminstitutet.se/en/ (checked 2026-10-07): HTTP 200, 7544 chars of text",
+    "Official film-office / agency page https://www.swedishfilmcommission.se/ (checked 2026-10-07): failed: 202",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/sweden/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SG|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.imda.gov.sg/how-we-can-help/singapore-film-commission (checked 2026-10-07): HTTP 200, 2279 chars of text",
+    "Official film-office / agency page https://www.visitsingapore.com/ (checked 2026-10-07): HTTP 200, 109 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/singapore/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SG|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.imda.gov.sg/how-we-can-help/singapore-film-commission (checked 2026-10-07): HTTP 200, 2279 chars of text",
+    "Official film-office / agency page https://www.visitsingapore.com/ (checked 2026-10-07): HTTP 200, 109 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/singapore/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)",
+    "Targeted government geography/agency page https://www.nparks.gov.sg/gardens-parks-and-nature/parks-and-nature-reserves/bukit-timah-nature-reserve (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SG|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.imda.gov.sg/how-we-can-help/singapore-film-commission (checked 2026-10-07): HTTP 200, 2279 chars of text",
+    "Official film-office / agency page https://www.visitsingapore.com/ (checked 2026-10-07): HTTP 200, 109 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/singapore/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SG|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.imda.gov.sg/how-we-can-help/singapore-film-commission (checked 2026-10-07): HTTP 200, 2279 chars of text",
+    "Official film-office / agency page https://www.visitsingapore.com/ (checked 2026-10-07): HTTP 200, 109 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/singapore/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SI|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film-center.si/en/film-commission/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.film-center.si/en/ (checked 2026-10-07): HTTP 200, 3846 chars of text (redirected to https://www.sfc.si/en/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/slovenia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SI|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film-center.si/en/film-commission/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.film-center.si/en/ (checked 2026-10-07): HTTP 200, 3846 chars of text (redirected to https://www.sfc.si/en/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/slovenia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SI|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film-center.si/en/film-commission/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.film-center.si/en/ (checked 2026-10-07): HTTP 200, 3846 chars of text (redirected to https://www.sfc.si/en/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/slovenia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SI|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film-center.si/en/film-commission/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.film-center.si/en/ (checked 2026-10-07): HTTP 200, 3846 chars of text (redirected to https://www.sfc.si/en/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/slovenia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SK|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcommission.sk/en/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filmcommission.sk/en/ (checked 2026-10-07): HTTP 200, 6380 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/slovakia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "SK|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.filmcommission.sk/en/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.filmcommission.sk/en/ (checked 2026-10-07): HTTP 200, 6380 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/slovakia/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "TH|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmthailand.org/locations/ (checked 2026-10-07): HTTP 200, 1425 chars of text",
+    "Official film-office / agency page https://filmthailand.org/ (checked 2026-10-07): HTTP 200, 2829 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/thailand/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "TT|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmtt.co.tt/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://filmtt.co.tt/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/trinidad-and-tobago/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "TT|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmtt.co.tt/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://filmtt.co.tt/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/trinidad-and-tobago/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "TW|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.taipeifilmcommission.org/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>",
+    "Official film-office / agency page https://www.tfc.org.tw/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/taiwan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "TW|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.taipeifilmcommission.org/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>",
+    "Official film-office / agency page https://www.tfc.org.tw/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/taiwan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "TW|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.taipeifilmcommission.org/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>",
+    "Official film-office / agency page https://www.tfc.org.tw/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/taiwan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "UA|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://usfa.gov.ua/en (checked 2026-10-07): HTTP 200, 2304 chars of text",
+    "Official film-office / agency page https://ukrainianfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ukraine/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "UA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://usfa.gov.ua/en (checked 2026-10-07): HTTP 200, 2304 chars of text",
+    "Official film-office / agency page https://ukrainianfilmcommission.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/ukraine/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-AL|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://alabamafilm.org/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>",
+    "Official film-office / agency page https://alabamafilm.org/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-AL|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://alabamafilm.org/locations/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>",
+    "Official film-office / agency page https://alabamafilm.org/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 54] Connection reset by peer>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-AZ|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.azcommerce.com/film-and-digital-media/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.azcommerce.com/film-and-digital-media/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-AZ|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.azcommerce.com/film-and-digital-media/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.azcommerce.com/film-and-digital-media/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-CA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.ca.gov/location-resources/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://film.ca.gov/ (checked 2026-10-07): HTTP 200, 24762 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-CO|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://coloradofilm.org/locations/ (checked 2026-10-07): HTTP 200, 64981 chars of text (redirected to https://coloradofilm.org/)",
+    "Official film-office / agency page https://coloradofilm.org/ (checked 2026-10-07): HTTP 200, 64981 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-CT|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://portal.ct.gov/decd/content/arts-culture-and-tourism/02_film-tv-and-digital-media (checked 2026-10-07): HTTP 200, 1377 chars of text (redirected to https://portal.ct.gov/en/404error/?item=%2fdecd%2fcontent%2farts-culture-and-tourism%2f02_film-tv-and-digital-media&user=extranet%5cAnonymous&site=website)",
+    "Official film-office / agency page https://portal.ct.gov/decd (checked 2026-10-07): HTTP 200, 3147 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-CT|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://portal.ct.gov/decd/content/arts-culture-and-tourism/02_film-tv-and-digital-media (checked 2026-10-07): HTTP 200, 1377 chars of text (redirected to https://portal.ct.gov/en/404error/?item=%2fdecd%2fcontent%2farts-culture-and-tourism%2f02_film-tv-and-digital-media&user=extranet%5cAnonymous&site=website)",
+    "Official film-office / agency page https://portal.ct.gov/decd (checked 2026-10-07): HTTP 200, 3147 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-CT|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://portal.ct.gov/decd/content/arts-culture-and-tourism/02_film-tv-and-digital-media (checked 2026-10-07): HTTP 200, 1377 chars of text (redirected to https://portal.ct.gov/en/404error/?item=%2fdecd%2fcontent%2farts-culture-and-tourism%2f02_film-tv-and-digital-media&user=extranet%5cAnonymous&site=website)",
+    "Official film-office / agency page https://portal.ct.gov/decd (checked 2026-10-07): HTTP 200, 3147 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-CT|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://portal.ct.gov/decd/content/arts-culture-and-tourism/02_film-tv-and-digital-media (checked 2026-10-07): HTTP 200, 1377 chars of text (redirected to https://portal.ct.gov/en/404error/?item=%2fdecd%2fcontent%2farts-culture-and-tourism%2f02_film-tv-and-digital-media&user=extranet%5cAnonymous&site=website)",
+    "Official film-office / agency page https://portal.ct.gov/decd (checked 2026-10-07): HTTP 200, 3147 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-GA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.georgia.org/industries/film-entertainment/georgia-film-tv-production/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.georgia.org/industries/film-entertainment (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-GA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.georgia.org/industries/film-entertainment/georgia-film-tv-production/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://www.georgia.org/industries/film-entertainment (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-HI|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmoffice.hawaii.gov/locations/ (checked 2026-10-07): HTTP 200, 5728 chars of text",
+    "Official film-office / agency page https://www.nps.gov/havo/planyourvisit/kau-desert.htm (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Targeted government geography/agency page https://www.nps.gov/havo/learn/nature/kau-desert.htm (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Targeted government geography/agency page https://www.nps.gov/havo/index.htm (checked 2026-10-07): HTTP 200, 4195 chars of text",
+    "Statement found but insufficient: NPS Hawaii Volcanoes Ka'u Desert page not retrievable (HTTP 404); park home page fetched, no desert statement"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-IL|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://dceo.illinois.gov/whyillinois/film.html (checked 2026-10-07): HTTP 200, 2805 chars of text",
+    "Official film-office / agency page https://www2.illinois.gov/dceo/FilmOffice (checked 2026-10-07): HTTP 200, 3911 chars of text (redirected to https://dceo.illinois.gov/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-KY|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmoffice.ky.gov/ (checked 2026-10-07): HTTP 200, 10571 chars of text (redirected to https://newkentuckyhome.ky.gov/Locating_Expanding/KEI/)",
+    "Official film-office / agency page https://filmoffice.ky.gov/Locations/ (checked 2026-10-07): HTTP 200, 10571 chars of text (redirected to https://newkentuckyhome.ky.gov/Locating_Expanding/KEI/Locations/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-KY|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmoffice.ky.gov/ (checked 2026-10-07): HTTP 200, 10571 chars of text (redirected to https://newkentuckyhome.ky.gov/Locating_Expanding/KEI/)",
+    "Official film-office / agency page https://filmoffice.ky.gov/Locations/ (checked 2026-10-07): HTTP 200, 10571 chars of text (redirected to https://newkentuckyhome.ky.gov/Locating_Expanding/KEI/Locations/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-LA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.louisianaentertainment.gov/film (checked 2026-10-07): HTTP 200, 6602 chars of text",
+    "Official film-office / agency page https://www.louisianaentertainment.gov/film/locations (checked 2026-10-07): HTTP 200, 8197 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-LA|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.louisianaentertainment.gov/film (checked 2026-10-07): HTTP 200, 6602 chars of text",
+    "Official film-office / agency page https://www.louisianaentertainment.gov/film/locations (checked 2026-10-07): HTTP 200, 8197 chars of text",
+    "Targeted government geography/agency page https://pubs.usgs.gov/gip/Elevations-Distances/elvadist.html (checked 2026-10-07): HTTP 200, 24512 chars of text"
+   ],
+   "status": "NOT_SUPPORTED",
+   "proposition": "USGS: Louisiana's highest point is Driskill Mountain, 535 ft (163 m), below the 300 m floor of every UNEP-WCMC mountain class",
+   "source_ids": [
+    "USGS_ELEV"
+   ]
+  },
+  "US-LA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.louisianaentertainment.gov/film (checked 2026-10-07): HTTP 200, 6602 chars of text",
+    "Official film-office / agency page https://www.louisianaentertainment.gov/film/locations (checked 2026-10-07): HTTP 200, 8197 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-MA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mafilm.org/locations/ (checked 2026-10-07): HTTP 200, 2167 chars of text (redirected to https://mafilm.org/locations-home-page/)",
+    "Official film-office / agency page https://mafilm.org/ (checked 2026-10-07): HTTP 200, 5457 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-MA|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mafilm.org/locations/ (checked 2026-10-07): HTTP 200, 2167 chars of text (redirected to https://mafilm.org/locations-home-page/)",
+    "Official film-office / agency page https://mafilm.org/ (checked 2026-10-07): HTTP 200, 5457 chars of text"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "Massachusetts Film Office: 'Rural Landscapes - Rolling hills, farms, and pastoral countryside scenes'",
+   "source_ids": [
+    "MAFO_LOC"
+   ]
+  },
+  "US-MD|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://marylandfilm.org/locations/ (checked 2026-10-07): HTTP 200, 8575 chars of text (redirected to https://business.maryland.gov/key-industries/maryland-film-office/)",
+    "Official film-office / agency page https://marylandfilm.org/ (checked 2026-10-07): HTTP 200, 8575 chars of text (redirected to https://business.maryland.gov/key-industries/maryland-film-office/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-MN|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://mnfilmtv.org/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://mnfilmtv.org/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Targeted government geography/agency page https://pubs.usgs.gov/gip/Elevations-Distances/elvadist.html (checked 2026-10-07): HTTP 200, 24512 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-MS|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmmississippi.org/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://filmmississippi.org/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-MS|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmmississippi.org/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://filmmississippi.org/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-MS|urban_major_city": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmmississippi.org/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Official film-office / agency page https://filmmississippi.org/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-NC|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.ncfilm.com/locations (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "Official film-office / agency page https://www.ncfilm.com/ (checked 2026-10-07): failed: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-NM|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nmfilm.com/locations/ (checked 2026-10-07): HTTP 200, 205 chars of text (redirected to https://nmfilm.location.pro/locations)",
+    "Official film-office / agency page https://nmfilm.com/ (checked 2026-10-07): HTTP 200, 4325 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-NV|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nvfilm.com/locations/ (checked 2026-10-07): failed: 200",
+    "Official film-office / agency page https://nvfilm.com/ (checked 2026-10-07): failed: 200"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-NV|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://nvfilm.com/locations/ (checked 2026-10-07): failed: 200",
+    "Official film-office / agency page https://nvfilm.com/ (checked 2026-10-07): failed: 200"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-NY|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://esd.ny.gov/nys-film-office (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://esd.ny.gov/industries/film (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-OK|desert_arid": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://okfilmmusic.org/film/locations (checked 2026-10-07): HTTP 200, 4810 chars of text (redirected to https://www.okfilmmusic.org/locationsdirectory)",
+    "Official film-office / agency page https://okfilmmusic.org/ (checked 2026-10-07): HTTP 200, 9208 chars of text (redirected to https://www.okfilmmusic.org/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-OK|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://okfilmmusic.org/film/locations (checked 2026-10-07): HTTP 200, 4810 chars of text (redirected to https://www.okfilmmusic.org/locationsdirectory)",
+    "Official film-office / agency page https://okfilmmusic.org/ (checked 2026-10-07): HTTP 200, 9208 chars of text (redirected to https://www.okfilmmusic.org/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-OK|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://okfilmmusic.org/film/locations (checked 2026-10-07): HTTP 200, 4810 chars of text (redirected to https://www.okfilmmusic.org/locationsdirectory)",
+    "Official film-office / agency page https://okfilmmusic.org/ (checked 2026-10-07): HTTP 200, 9208 chars of text (redirected to https://www.okfilmmusic.org/)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-OR|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://oregonfilm.org/locations/ (checked 2026-10-07): HTTP 200, 2675 chars of text",
+    "Official film-office / agency page https://oregonfilm.org/ (checked 2026-10-07): HTTP 200, 3308 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-PA|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filminpa.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://filminpa.com/ (checked 2026-10-07): HTTP 200, 5713 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-PA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filminpa.com/locations/ (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://filminpa.com/ (checked 2026-10-07): HTTP 200, 5713 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-PR|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.puertoricofilm.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.investpr.org/film/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden",
+    "Targeted government geography/agency page https://pubs.usgs.gov/gip/Elevations-Distances/elvadist.html (checked 2026-10-07): HTTP 200, 24512 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-PR|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.puertoricofilm.com/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://www.investpr.org/film/ (checked 2026-10-07): failed: HTTPError: HTTP Error 403: Forbidden"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-RI|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.ri.gov/ (checked 2026-10-07): HTTP 200, 5538 chars of text",
+    "Official film-office / agency page https://film.ri.gov/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-RI|mountains_alpine": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.ri.gov/ (checked 2026-10-07): HTTP 200, 5538 chars of text",
+    "Official film-office / agency page https://film.ri.gov/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Targeted government geography/agency page https://pubs.usgs.gov/gip/Elevations-Distances/elvadist.html (checked 2026-10-07): HTTP 200, 24512 chars of text"
+   ],
+   "status": "NOT_SUPPORTED",
+   "proposition": "USGS: Rhode Island's highest point is Jerimoth Hill, 812 ft (247 m), below the 300 m floor of every UNEP-WCMC mountain class",
+   "source_ids": [
+    "USGS_ELEV"
+   ]
+  },
+  "US-RI|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.ri.gov/ (checked 2026-10-07): HTTP 200, 5538 chars of text",
+    "Official film-office / agency page https://film.ri.gov/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-RI|small_town_suburban": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.ri.gov/ (checked 2026-10-07): HTTP 200, 5538 chars of text",
+    "Official film-office / agency page https://film.ri.gov/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Statement found but insufficient: Rhode Island Film & TV Office: 'the city, the small town, the coastline' appears only inside a producer testimonial, not as the office's own statement"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-SC|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmsc.com/locations/ (checked 2026-10-07): HTTP 200, 5795 chars of text (redirected to https://www.scprt.com/film-commission)",
+    "Official film-office / agency page https://filmsc.com/ (checked 2026-10-07): HTTP 200, 5795 chars of text (redirected to https://www.scprt.com/film-commission)"
+   ],
+   "status": "SUPPORTED",
+   "proposition": "South Carolina Film Commission Locations: locations 'include mountains and the coast, rural settings ... and sub-tropical jungles'",
+   "source_ids": [
+    "SCFC_LOC"
+   ]
+  },
+  "US-SC|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://filmsc.com/locations/ (checked 2026-10-07): HTTP 200, 5795 chars of text (redirected to https://www.scprt.com/film-commission)",
+    "Official film-office / agency page https://filmsc.com/ (checked 2026-10-07): HTTP 200, 5795 chars of text (redirected to https://www.scprt.com/film-commission)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-TN|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.tnentertainment.com/ (checked 2026-10-07): HTTP 200, 2988 chars of text",
+    "Official film-office / agency page https://www.tnentertainment.com/film/locations (checked 2026-10-07): HTTP 200, 7773 chars of text",
+    "Statement found but insufficient: Tennessee Entertainment Commission: forests 'have stood in for the jungles of Asia' (a stand-in look, not a jungle/rainforest environment)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-TX|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://gov.texas.gov/film/page/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://gov.texas.gov/film (checked 2026-10-07): HTTP 200, 2917 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-TX|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://gov.texas.gov/film/page/locations (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://gov.texas.gov/film (checked 2026-10-07): HTTP 200, 2917 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-UT|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.utah.gov/locations/ (checked 2026-10-07): HTTP 200, 3005 chars of text",
+    "Official film-office / agency page https://film.utah.gov/ (checked 2026-10-07): HTTP 200, 6512 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-UT|rural_countryside": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://film.utah.gov/locations/ (checked 2026-10-07): HTTP 200, 3005 chars of text",
+    "Official film-office / agency page https://film.utah.gov/ (checked 2026-10-07): HTTP 200, 6512 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "US-VA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.film.virginia.org/locations (checked 2026-10-07): HTTP 200, 33581 chars of text (redirected to https://www.film.virginia.org/locations/)",
+    "Official film-office / agency page https://www.film.virginia.org/ (checked 2026-10-07): HTTP 200, 7464 chars of text"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "UY|island_tropical": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://icau.mec.gub.uy/ (checked 2026-10-07): HTTP 200, 12216 chars of text",
+    "Official film-office / agency page https://www.uruguayxxi.gub.uy/en/ (checked 2026-10-07): HTTP 200, 4100 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/uruguay/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "UY|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://icau.mec.gub.uy/ (checked 2026-10-07): HTTP 200, 12216 chars of text",
+    "Official film-office / agency page https://www.uruguayxxi.gub.uy/en/ (checked 2026-10-07): HTTP 200, 4100 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/uruguay/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "UY|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://icau.mec.gub.uy/ (checked 2026-10-07): HTTP 200, 12216 chars of text",
+    "Official film-office / agency page https://www.uruguayxxi.gub.uy/en/ (checked 2026-10-07): HTTP 200, 4100 chars of text",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/uruguay/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "UZ|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://uzbekkino.uz/en/ (checked 2026-10-07): failed: URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "Official film-office / agency page https://uzbektourism.uz/en/ (checked 2026-10-07): HTTP 200, 6661 chars of text (redirected to https://gov.uz/oz/uzbektourism)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/uzbekistan/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ZA|historic_old_world": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.wesgro.co.za/film-and-media (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.gfc.co.za/ (checked 2026-10-07): HTTP 200, 18 chars of text",
+    "Official film-office / agency page https://www.kwazulunatalfilm.co.za/ (checked 2026-10-07): HTTP 200, 2364 chars of text (redirected to https://visitkzn-sa.com/film/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/south-africa/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ZA|jungle_rainforest": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.wesgro.co.za/film-and-media (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.gfc.co.za/ (checked 2026-10-07): HTTP 200, 18 chars of text",
+    "Official film-office / agency page https://www.kwazulunatalfilm.co.za/ (checked 2026-10-07): HTTP 200, 2364 chars of text (redirected to https://visitkzn-sa.com/film/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/south-africa/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  },
+  "ZA|snow_arctic": {
+   "attempted": [
+    "Repository canonical recovery: no location-capability statement for this jurisdiction in the canonical registries (app/data/*), program records or retained provenance",
+    "Official film-office / agency page https://www.wesgro.co.za/film-and-media (checked 2026-10-07): failed: HTTPError: HTTP Error 404: Not Found",
+    "Official film-office / agency page https://www.gfc.co.za/ (checked 2026-10-07): HTTP 200, 18 chars of text",
+    "Official film-office / agency page https://www.kwazulunatalfilm.co.za/ (checked 2026-10-07): HTTP 200, 2364 chars of text (redirected to https://visitkzn-sa.com/film/)",
+    "National government geography source https://www.cia.gov/the-world-factbook/countries/south-africa/ (checked 2026-10-07): HTTP 200 -> CIA notice: The World Factbook sunset 2026-02-04 (no country content)"
+   ],
+   "status": "UNRESOLVED_NEUTRAL"
+  }
+ }
+}

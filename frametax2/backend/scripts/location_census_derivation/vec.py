@@ -57,12 +57,36 @@ for cls, key in (("Desert", "desert_ne"), ("Range/mtn", "range_ne"), ("Tundra", 
         hits = [sel[i][0] for i in tree.query(g, predicate="intersects") if g.intersection(sel[i][1]).area > 1e-3]
         facts[c][key] = sorted(set(h for h in hits if h))
 
+# Codex EVD-002 (2026-10-07): a subnational jurisdiction takes a point (peak, populated place) only when that point's
+# ONE admin-1 unit -- the containing polygon, else the nearest within 0.05 degrees -- is the jurisdiction; national
+# jurisdictions keep the 0.05 degree tolerance (international border summits genuinely belong to both states).
+from geoms import NAT, SUB
+_a1r = shapefile.Reader(NE + "ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces") if "NE" in globals() else shapefile.Reader("ne/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces")
+A1 = [(rec.as_dict()["iso_3166_2"], make_valid(shape(shp.__geo_interface__))) for rec, shp in zip(_a1r.records(), _a1r.shapes())]
+A1_TREE = STRtree([g for _, g in A1])
+_a1c = {}
+def admin1_of(pt):
+    k = (pt.x, pt.y)
+    if k not in _a1c:
+        inside = [i for i in A1_TREE.query(pt) if A1[i][1].intersects(pt)]
+        if inside:
+            _a1c[k] = A1[inside[0]][0]
+        else:
+            i = A1_TREE.nearest(pt)
+            _a1c[k] = A1[i][0] if A1[i][1].distance(pt) <= 0.05 else None
+    return _a1c[k]
+def point_hits(tree, items, ptof, c, g):
+    cand = [items[i] for i in tree.query(g.buffer(0.05), predicate="intersects")]
+    if c in NAT:
+        return cand
+    return [x for x in cand if admin1_of(ptof(x)) == SUB.get(c, c)]
+
 # ---- elevation points (peaks)
 er, es = read("ne_10m_geography_regions_elevation_points", "el")
 pts = [(r["name"], r["elevation"], Point(s.points[0])) for r, s in zip(er, es) if r["elevation"]]
 ptree = STRtree([p for n, e, p in pts])
 for c, g in G.items():
-    hit = [pts[i] for i in ptree.query(g.buffer(0.05), predicate="intersects")]
+    hit = point_hits(ptree, pts, lambda x: x[2], c, g)
     hit.sort(key=lambda x: -x[1])
     facts[c]["peaks"] = [(n, e) for n, e, p in hit[:3]]
     facts[c]["peak_max"] = hit[0][1] if hit else None
@@ -101,7 +125,7 @@ pr_, ps_ = read("ne_10m_populated_places", "pp")
 pp = [(r["NAME"], r["POP_MAX"] or 0, r["ADM0CAP"], Point(s.points[0])) for r, s in zip(pr_, ps_)]
 pptree = STRtree([p[3] for p in pp])
 for c, g in G.items():
-    hit = [pp[i] for i in pptree.query(g.buffer(0.05), predicate="intersects")]
+    hit = point_hits(pptree, pp, lambda x: x[3], c, g)
     big = sorted([h for h in hit if h[1] >= 300000], key=lambda h: -h[1])
     town = [h for h in hit if 10000 <= h[1] < 300000]
     facts[c]["cities300k"] = [(h[0], int(h[1])) for h in big[:3]]

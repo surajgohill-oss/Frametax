@@ -49,3 +49,11 @@ test("hover story, hover record and Inspector share one served text for fit + so
   assert.equal(capabilityEvidenceText([]), null);
   assert.equal(fitSummaryText({}), null);
 });
+
+test("Map / Split hover cards (no structure story) show the same served production-fit text, never twice", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
+  const body = src.slice(src.indexOf("function RecommendedOrAlternativeBody"), src.indexOf("function PotentialFields"));
+  assert.match(body, /hover\.productionFitSummary && !hover\.structureStory\?\.fitSummary/);
+  assert.match(body, /data-hover-field="production-fit"/);
+});

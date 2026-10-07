@@ -10,7 +10,7 @@ CAT_TOKEN = {"island_tropical": "tropical_environments", "jungle_rainforest": "j
 SOURCES = {
  "UNESCO_WHL": dict(short='UNESCO World Heritage List', title="UNESCO World Heritage List (UNESCO open data, dataset whc001)", publisher="UNESCO World Heritage Centre",
    url="https://data.unesco.org/explore/dataset/whc001/", version="1,273 properties; retrieved 2026-10-06", tier="INTERGOVERNMENTAL_DATASET",
-   method="inscribed property whose name/short description states the feature (keyword rule); subnational jurisdictions by property coordinates within 0.05 degrees of the Natural Earth admin-1 polygon"),
+   method="inscribed property whose name/short description states the PRESENT feature (keyword rule; fossil/palaeontological sites and geological-era sentences excluded); a property counts only where a component point lies in the jurisdiction's own territory (national: within 0.5 degrees of the territory polygon, so overseas territories never count for a clipped metropolitan scope; subnational: the point's one admin-1 unit)"),
  "GLC_SHARE": dict(short='FAO GLC-SHARE v1.0', title="Global Land Cover-SHARE (GLC-SHARE) v1.0, 30 arc-second percentage layers", publisher="FAO (Food and Agriculture Organization of the United Nations), Land and Water Division",
    url="https://data.apps.fao.org/map/catalog/us/api/records/ba4526fd-cdbf-4028-a1bd-5a559c4bff38", version="v1.0 (2014); layers 01-04, 08-10 retrieved 2026-10-06", tier="INTERGOVERNMENTAL_DATASET",
    method="cos(latitude)-weighted zonal mean of the percentage layer over the territory polygon (all-touched mask), 1 km pixels"),
@@ -35,11 +35,11 @@ SOURCES = {
  "KG2023": dict(short='Koppen-Geiger 1 km (Beck 2023)', title="High-resolution (1 km) Koppen-Geiger maps for 1901-2099 based on constrained CMIP6 projections, 1991-2020 map (Beck et al. 2023, Scientific Data 10:724)", publisher="Beck, McVicar, Vergopolan et al. (peer reviewed; figshare)",
    url="https://doi.org/10.6084/m9.figshare.21789074.v2", version="figshare v2 (2026-01-14), 1991_2020/koppen_geiger_0p00833333.tif", tier="PEER_REVIEWED_OPEN_DATASET",
    method="cos(latitude)-weighted share of classified 1 km cells per Koppen class over the territory polygon; 'present' = >= 0.5%"),
- "NE": dict(short='Natural Earth 1:10m', title="Natural Earth 1:10m physical and cultural vectors (admin-0/1, land, minor islands, geography regions, elevation points, glaciated areas)", publisher="Natural Earth (NACIS; public domain)",
-   url="https://www.naturalearthdata.com/", version="admin 5.1.1/5.1.2; regions 5.0.0; retrieved 2026-10-06", tier="PEER_REVIEWED_OPEN_DATASET",
-   method="spatial intersection of the territory polygon with the feature layer (0.05 degree tolerance for point layers)"),
+ "NE": dict(short='Natural Earth 1:10m', title="Natural Earth 1:10m physical and cultural vectors (admin-0/1, land, minor islands, geography regions, elevation points, glaciated areas)", publisher="Natural Earth (NACIS volunteer project; public domain)",
+   url="https://www.naturalearthdata.com/", version="admin 5.1.1/5.1.2; regions 5.0.0; retrieved 2026-10-06", tier="OPEN_GEOSPATIAL_DATASET",
+   method="spatial intersection of the territory polygon with the feature layer; point layers: national 0.05 degree tolerance, subnational the point's one admin-1 unit (open geospatial reference data, not peer reviewed, not a government or film-agency source)"),
  "NE_PP": dict(short='Natural Earth populated places', title="Natural Earth 1:10m populated places", publisher="Natural Earth (NACIS; public domain)", url="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
-   version="5.1.2; retrieved 2026-10-06", tier="PEER_REVIEWED_OPEN_DATASET", method="populated places (POP_MAX) inside the territory polygon (0.05 degree tolerance)"),
+   version="5.1.2; retrieved 2026-10-06", tier="OPEN_GEOSPATIAL_DATASET", method="populated places (POP_MAX) of the territory (national 0.05 degree tolerance; subnational the place's one admin-1 unit); open geospatial reference data, not peer reviewed"),
 }
 EXTRA = {
  ("NZ", "historic_old_world"): ("SUPPORTED", "NZ Film Commission locations page: 'Renowned for its preserved Victorian streetscapes and distinctive limestone architecture' (Oamaru)", ("NZFC_LOC",), "official film commission locations page"),
@@ -51,7 +51,12 @@ EXTRA_ATT = {
  ("MK", "historic_old_world"): ["mfa.gov.mk (retained lead URL, fetched 2026-10-06): site is the Ministry of Foreign Affairs; no statement on historic locations"],
  ("CA-BC", "desert_arid"): ["Destination BC (Super, Natural BC) Nk'Mip Desert Cultural Centre page (fetched 2026-10-06): no explicit statement; BC Government news release not retrievable (TLS certificate error)"],
 }
-GENERIC_ATT = "National/regional film-commission and agency location pages were not queried per cell (batch method authorised); the bounded sequence applied is the structured official/authoritative dataset sequence recorded for the cell, plus any retained repository agency lead for the cell that is listed with its fetch outcome"
+GENERIC_ATT = ("Bounded official-source sequence completed 2026-10-07: (1) repository canonical registries and retained provenance; (2) the structured "
+               "datasets recorded for the cell; (3) the jurisdiction's official film-office / agency pages; (4) a government geography source "
+               "(the CIA World Factbook, sunset 2026-02-04, returned no country content) and, where decisive, a targeted government page -- "
+               "each URL and its outcome is listed in this cell's attempts. Silence is recorded as silence, never as a negative.")
+TRAIL = json.load(open("official_source_trail.json"))
+SOURCES.update(TRAIL["sources"])
 cells = {}
 for (code, cat), r in sorted(R.items()):
     status, comps, tokens, prop, srcs, method, att = r
@@ -59,8 +64,13 @@ for (code, cat), r in sorted(R.items()):
     if (code, cat) in EXTRA and status == "UNRESOLVED_NEUTRAL":
         status, prop, srcs, method = EXTRA[(code, cat)]
         comps = {cat: status}; att = []
+    trail = TRAIL["cells"].get(f"{code}|{cat}")
+    if trail and status == "UNRESOLVED_NEUTRAL" and trail["status"] != "UNRESOLVED_NEUTRAL":
+        status, prop, srcs = trail["status"], trail["proposition"], tuple(trail["source_ids"])
+        method = "; ".join(SOURCES[x]["method"] for x in srcs)
+        comps = {cat: status}; att = []
     if status == "UNRESOLVED_NEUTRAL":
-        att = att + EXTRA_ATT.get((code, cat), [])
+        att = att + EXTRA_ATT.get((code, cat), []) + (trail["attempted"] if trail else [])
         missing = ""
     else:
         missing = ""
@@ -72,7 +82,7 @@ for (code, cat), r in sorted(R.items()):
 pickle.dump((SOURCES, cells), open("emit.pkl", "wb"))
 import collections
 print(collections.Counter(v[0] for v in cells.values()))
-HDR = '''"""LOCATION CAPABILITY CENSUS DATA (2026-10-06, final closure) -- the 114 x 10 = 1,140 terminal cells.
+HDR = '''"""LOCATION CAPABILITY CENSUS DATA (2026-10-07, Codex acceptance remediation) -- the 114 x 10 = 1,140 terminal cells.
 
 DATA for the one canonical capability owner (`jurisdiction_comparison.location_capability_cells` ->
 `production_requirements.jurisdiction_capability_profile` -> `production_fit`); not a registry of its own.
@@ -98,7 +108,8 @@ LOCATION_CENSUS_CATEGORIES: dict[str, str] = %s
 #: internal component assertions of the combined island/tropical category (token per component).
 COMPONENT_TOKENS: dict[str, str] = %s
 #: authority tiers accepted for a verified cell, strongest first.
-ACCEPTED_TIERS = ("INTERGOVERNMENTAL_DATASET", "GOVERNMENT_DATASET", "GOVERNMENT_AGENCY_PAGE", "PEER_REVIEWED_OPEN_DATASET")
+ACCEPTED_TIERS = ("INTERGOVERNMENTAL_DATASET", "GOVERNMENT_DATASET", "GOVERNMENT_AGENCY_PAGE", "FILM_COMMISSION_PAGE",
+                  "PEER_REVIEWED_OPEN_DATASET", "OPEN_GEOSPATIAL_DATASET")
 
 #: reusable source / derivation records referenced by the cells.
 SOURCES: dict[str, dict] = %s

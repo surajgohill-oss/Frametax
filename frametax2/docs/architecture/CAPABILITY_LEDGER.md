@@ -4193,6 +4193,8 @@ Fixed inventory: the 113 structured jurisdiction profiles + the missing national
 
 ## LEDGER ITEM 4 — FINAL LOCATION-CAPABILITY CLOSURE (2026-10-06, from `1913bd1`)
 
+> **REOPENED 2026-10-07:** independent Codex acceptance (`docs/validation/CODEX_LOCATION_CAPABILITY_FINAL_ACCEPTANCE.md`) rejected this item: Natural Earth mis-tiered as peer reviewed, Joggins false positives, inconsistent FR/overseas scope, the 235-cell residual not exhausted, and an incomplete browser matrix. Closed again by **Ledger Item 7** below.
+
 **Defects in Item 3, corrected.** (1) 1,045 cells were generic UNKNOWN. (2) 68 SUPPORTED cells rested on DISCOVERY-tier repository notes (an official URL cited at record level, sentence unverified): they are NOT evidence and are gone. (3) `island/tropical = NOT_SUPPORTED` for the 21 landlocked jurisdictions was inferred from landlocked status alone, which proves "no sea island", not "not tropical". (4) The five failing tests in `test_canonical_production_view.py` were pushed unexplained.
 
 **Census (frozen: 113 profiles + national `US` = 114 x 10 = 1,140 cells; `docs/validation/JURISDICTION_LOCATION_CAPABILITY_CENSUS_CLAUDE.csv`, exactly 1,140 unique rows, plus `.summary.json`).** AUTHORITY_VERIFIED_SUPPORTED 819, AUTHORITY_VERIFIED_NOT_SUPPORTED 86, AUTHORITY_UNRESOLVED_NEUTRAL 235, generic UNKNOWN 0, DISCOVERY-tier cells presented as verified 0. Per category (supported / not supported / unresolved): island-tropical 73/22/19, jungle-rainforest 30/16/68, desert-arid 35/41/38, mountains-alpine 93/0/21, snow-arctic 77/3/34, urban 109/0/5, small-town 107/0/7, rural 99/0/15, forest 106/4/4, historic 90/0/24.
@@ -4248,3 +4250,19 @@ Proof: `docs/validation/OPTIMIZER_SCENARIO_UNIVERSE_ACCOUNTING_CLAUDE.md` § Res
 3. **Suppressed references reachable.** A collapsed "policy-suppressed reference structures" section in Workspace Optimizer mode and the Project Globe optimizer panel. Rows open the Inspector, which shows the carve-out explanation. Primary cards are unchanged.
 
 UI status: `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`. Remaining optimizer blocker: none.
+
+
+## LEDGER ITEM 7 — LOCATION-CAPABILITY CODEX REMEDIATION (2026-10-07, from `611fb72`): closes the reopened Item 4
+
+Proof: `docs/validation/CLAUDE_LOCATION_CAPABILITY_CODEX_REMEDIATION.md`.
+
+- **Census.** 1,140 / 1,140 unique terminal cells: **826 supported / 90 not supported / 224 unresolved neutral** (was 819 / 86 / 235). No generic UNKNOWN; no DISCOVERY tier.
+- **Natural Earth.** Tiered `OPEN_GEOSPATIAL_DATASET` (165 cells). Köppen-Geiger is the only peer-reviewed source (162 cells). New `FILM_COMMISSION_PAGE` tier.
+- **Joggins.** CA-NS and CA-NB jungle are now verified not supported (no tropical or temperate Köppen class). CA jungle is supported only by the BC government Great Bear Rainforest page. Fossil and geological-era wording is excluded from all present-environment matches, and every point is assigned to exactly one admin-1 unit.
+- **Scope.** FR is metropolitan France; NL is the European Netherlands. UNESCO evidence counts only inside the jurisdiction's own territory. This removed overseas evidence for FR, DK (Greenland), GB, NL, AU and US.
+- **Residual.** 240 cells (Codex 235 + 5 reopened). Repository → datasets → official film-office pages (281 URLs, fetched once) → government geography (CIA World Factbook sunset 2026-02-04; targeted USGS / NPS / CNPA pages). Outcome: 14 supported, 2 not supported (USGS highest point below the UNEP-WCMC 300 m floor: LA, RI), 224 neutral. Every URL and outcome is in `backend/scripts/location_census_derivation/official_source_trail.json` and the CSV.
+- **Runtime and economics.**
+  - Economics unchanged on all four projects (no regeneration; identical served economic hashes and 217-row contract).
+  - LLS fit: Manitoba and New Zealand desert are now verified, so conditional 51 → 49 and fit-confirmed scenarios 227 → 325.
+  - Workspace Map/Split hover card now shows the served production fit (fix plus test).
+- **Status.** UI `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`. Remaining: genuine official silence on 224 neutral cells, of which 63 had every official source unavailable.

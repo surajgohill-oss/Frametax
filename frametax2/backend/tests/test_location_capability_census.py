@@ -107,7 +107,9 @@ def test_negative_dispositions_rest_only_on_the_datasets_own_category_definition
                 "jungle_rainforest": "only arid/cold/polar" in p,
                 "desert_arid": "no koppen-geiger arid" in p,
                 "snow_arctic": "every classified cell is tropical" in p,
-                "forest_woodland": "tree-covered area" in p}.get(cat, False), (code, cat, cell.proposition)
+                "forest_woodland": "tree-covered area" in p,
+                # official highest point below the 300 m floor of every UNEP-WCMC mountain class (2026-10-07)
+                "mountains_alpine": "unep-wcmc" in p and "highest point" in p}.get(cat, False), (code, cat, cell.proposition)
 
 
 # ── combined category: island OR tropical ───────────────────────────────────────────────────────────────────────────────
@@ -304,3 +306,80 @@ def test_the_census_changes_no_economics_module_and_no_fingerprint_hashed_source
     touched = {"app.calculators.jurisdiction_comparison", "app.calculators.production_requirements", "app.services.production_fit",
                "app.data.jurisdiction_location_capability", "app.services.canonical_production_view"}
     assert not touched & set(_SEMANTIC_PRICING_MODULES)                    # generations / candidate identities / economics keep their fingerprint
+
+
+# ── Codex location-capability acceptance remediation (2026-10-07) ─────────────────────────────────────────────────────────
+DERIVATION = Path(__file__).resolve().parents[1] / "scripts/location_census_derivation"
+TRAIL = json.loads((DERIVATION / "official_source_trail.json").read_text())
+
+
+def _rules():
+    spec = importlib.util.spec_from_file_location("census_rules", DERIVATION / "rules.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_natural_earth_is_open_geospatial_evidence_and_only_koppen_geiger_is_peer_reviewed():
+    assert SOURCES["NE"]["tier"] == SOURCES["NE_PP"]["tier"] == "OPEN_GEOSPATIAL_DATASET"
+    assert {k for k, s in SOURCES.items() if s["tier"] == "PEER_REVIEWED_OPEN_DATASET"} == {"KG2023"}
+    for code, cat, cell in _all_cells():
+        if cell.status != UNRESOLVED_NEUTRAL and set(cell.source_ids) <= {"NE", "NE_PP"}:
+            assert cell.evidence_tier == "OPEN_GEOSPATIAL_DATASET" and cell.proposition.startswith(("Natural Earth", "island:")), (code, cat)
+
+
+def test_fossil_and_geological_era_wording_never_evidences_a_present_environment():
+    import re
+    rules = _rules()
+    rain = re.compile(r"rain ?forests?", re.I)
+    joggins = ("The Joggins Fossil Cliffs ... the most complete known fossil record of terrestrial life from that time. "
+               "These include the remains and tracks of very early animals and the rainforest in which they lived.")
+    assert rules.present_match(rain, joggins, "Joggins Fossil Cliffs")[0] is None
+    glacier = re.compile(r"glaciers?", re.I)
+    assert rules.present_match(glacier, "A glaciotectonic landscape shaped by Pleistocene glaciers. Beech forests.", "Møns Klint")[0] is None
+    m, _ = rules.present_match(glacier, "Studded with mountain peaks, glaciers, lakes. The Burgess Shale fossil site is also found there.",
+                               "Canadian Rocky Mountain Parks")
+    assert m is not None and m.group(0) == "glaciers"                         # a present glacier in a park that also holds fossils
+    for code, cat, cell in _all_cells():
+        if cell.status == SUPPORTED and cat in ("jungle_rainforest", "forest_woodland", "desert_arid", "snow_arctic"):
+            assert not re.search(r"Joggins|Fossil|Wadi Al-Hitan", cell.proposition), (code, cat, cell.proposition)
+            if cat == "snow_arctic":                                             # Mons Klint's present beech forests stay valid evidence
+                assert "Møns Klint" not in cell.proposition, (code, cell.proposition)
+
+
+def test_joggins_false_positives_are_corrected_and_the_new_brunswick_spillover_is_gone():
+    cells = {c: jc.location_capability_cells(c)["jungle_rainforest"] for c in ("CA", "CA-NB", "CA-NS")}
+    assert cells["CA-NB"].status == cells["CA-NS"].status == NOT_SUPPORTED          # no tropical or temperate Koppen class at all
+    assert "Joggins" not in cells["CA-NB"].proposition + cells["CA-NS"].proposition
+    assert cells["CA"].status == SUPPORTED and cells["CA"].source_ids == ("BC_GBR",)   # the present-day Great Bear Rainforest
+
+
+def test_overseas_territory_evidence_never_supports_a_metropolitan_or_clipped_national_scope():
+    import re
+    overseas = {
+        "FR": r"R[ée]union|Martinique|Guadeloupe|Pel[ée]e|Marquesas|Henua|Austral|Guiana|Polyn",
+        "NL": r"Willemstad|Cura[çc]ao|Bonaire|Saba",
+        "DK": r"Greenland|Ilulissat|Kujataa|Aasivissuit|Faroe",
+        "GB": r"Gough|Henderson|St George|Bermuda|Tristan|Pitcairn",
+        "AU": r"Heard|McDonald",
+    }
+    for code, rx in overseas.items():
+        for cat, cell in jc.location_capability_cells(code).items():
+            assert not re.search(rx, cell.proposition), (code, cat, cell.proposition)
+    assert jc.location_capability_cells("FR")["jungle_rainforest"].status == UNRESOLVED_NEUTRAL
+
+
+def test_every_prior_residual_cell_completed_the_bounded_official_source_sequence():
+    trail = TRAIL["cells"]
+    assert len(trail) == 240                                                    # Codex's exact 235 + the 5 cells the evidence fixes reopened
+    for key, t in trail.items():
+        code, cat = key.split("|")
+        cell = jc.location_capability_cells(code)[cat]
+        assert cell.status == t["status"], key
+        if cell.status == UNRESOLVED_NEUTRAL:
+            attempted = " ".join(cell.sources_attempted)
+            assert "Repository canonical recovery" in attempted and "(checked 2026-10-07)" in attempted, key
+        else:
+            assert set(cell.source_ids) == set(t["source_ids"]) and cell.evidence_tier in ACCEPTED_TIERS, key
+    assert "not queried" not in data.GENERIC_UNRESOLVED_ATTEMPT
+    assert not any("not queried" in r["sources_attempted_if_unresolved"] for r in csv.DictReader(CSV_PATH.open()))

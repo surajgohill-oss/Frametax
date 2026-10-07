@@ -50,6 +50,7 @@
   "AU-QLD",
   "AU-SA",
   "CA",
+  "CA-MB",
   "CL",
   "CO",
   "EG",
@@ -63,6 +64,7 @@
   "MN",
   "MX",
   "NO",
+  "NZ",
   "PE",
   "QA",
   "SA",
@@ -85,7 +87,6 @@
   "BG",
   "CA-AB",
   "CA-BC",
-  "CA-MB",
   "CA-NL",
   "CA-ON",
   "CA-QC",
@@ -107,7 +108,6 @@
   "MK",
   "MT",
   "MY",
-  "NZ",
   "PA",
   "PL",
   "RO",
@@ -120,33 +120,35 @@
   "US-OK"
  ],
  "evidence_tier": {
-  "(unresolved)": 235,
-  "GOVERNMENT_AGENCY_PAGE": 3,
-  "GOVERNMENT_DATASET": 31,
-  "INTERGOVERNMENTAL_DATASET": 551,
-  "PEER_REVIEWED_OPEN_DATASET": 320
+  "(unresolved)": 224,
+  "FILM_COMMISSION_PAGE": 10,
+  "GOVERNMENT_AGENCY_PAGE": 7,
+  "GOVERNMENT_DATASET": 33,
+  "INTERGOVERNMENTAL_DATASET": 539,
+  "OPEN_GEOSPATIAL_DATASET": 165,
+  "PEER_REVIEWED_OPEN_DATASET": 162
  },
  "generic_unknown_cells": 0,
  "rows": 1140,
  "terminal_status": {
-  "AUTHORITY_UNRESOLVED_NEUTRAL": 235,
-  "AUTHORITY_VERIFIED_NOT_SUPPORTED": 86,
-  "AUTHORITY_VERIFIED_SUPPORTED": 819
+  "AUTHORITY_UNRESOLVED_NEUTRAL": 224,
+  "AUTHORITY_VERIFIED_NOT_SUPPORTED": 90,
+  "AUTHORITY_VERIFIED_SUPPORTED": 826
  },
  "terminal_status_by_category": {
   "desert_arid": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 38,
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 36,
    "AUTHORITY_VERIFIED_NOT_SUPPORTED": 41,
-   "AUTHORITY_VERIFIED_SUPPORTED": 35
+   "AUTHORITY_VERIFIED_SUPPORTED": 37
   },
   "forest_woodland": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 4,
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 2,
    "AUTHORITY_VERIFIED_NOT_SUPPORTED": 4,
-   "AUTHORITY_VERIFIED_SUPPORTED": 106
+   "AUTHORITY_VERIFIED_SUPPORTED": 108
   },
   "historic_old_world": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 24,
-   "AUTHORITY_VERIFIED_SUPPORTED": 90
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 23,
+   "AUTHORITY_VERIFIED_SUPPORTED": 91
   },
   "island_tropical": {
    "AUTHORITY_UNRESOLVED_NEUTRAL": 19,
@@ -154,26 +156,27 @@
    "AUTHORITY_VERIFIED_SUPPORTED": 73
   },
   "jungle_rainforest": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 68,
-   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 16,
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 66,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 18,
    "AUTHORITY_VERIFIED_SUPPORTED": 30
   },
   "mountains_alpine": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 21,
-   "AUTHORITY_VERIFIED_SUPPORTED": 93
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 18,
+   "AUTHORITY_VERIFIED_NOT_SUPPORTED": 2,
+   "AUTHORITY_VERIFIED_SUPPORTED": 94
   },
   "rural_countryside": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 15,
-   "AUTHORITY_VERIFIED_SUPPORTED": 99
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 13,
+   "AUTHORITY_VERIFIED_SUPPORTED": 101
   },
   "small_town_suburban": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 7,
-   "AUTHORITY_VERIFIED_SUPPORTED": 107
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 5,
+   "AUTHORITY_VERIFIED_SUPPORTED": 109
   },
   "snow_arctic": {
-   "AUTHORITY_UNRESOLVED_NEUTRAL": 34,
+   "AUTHORITY_UNRESOLVED_NEUTRAL": 37,
    "AUTHORITY_VERIFIED_NOT_SUPPORTED": 3,
-   "AUTHORITY_VERIFIED_SUPPORTED": 77
+   "AUTHORITY_VERIFIED_SUPPORTED": 74
   },
   "urban_major_city": {
    "AUTHORITY_UNRESOLVED_NEUTRAL": 5,
@@ -181,21 +184,20 @@
   }
  },
  "unresolved_by_category": {
-  "desert_arid": 38,
-  "forest_woodland": 4,
-  "historic_old_world": 24,
+  "desert_arid": 36,
+  "forest_woodland": 2,
+  "historic_old_world": 23,
   "island_tropical": 19,
-  "jungle_rainforest": 68,
-  "mountains_alpine": 21,
-  "rural_countryside": 15,
-  "small_town_suburban": 7,
-  "snow_arctic": 34,
+  "jungle_rainforest": 66,
+  "mountains_alpine": 18,
+  "rural_countryside": 13,
+  "small_town_suburban": 5,
+  "snow_arctic": 37,
   "urban_major_city": 5
  },
  "unresolved_by_jurisdiction": {
   "AE-AD": [
    "historic_old_world",
-   "mountains_alpine",
    "rural_countryside",
    "small_town_suburban",
    "snow_arctic"
@@ -219,7 +221,6 @@
    "snow_arctic"
   ],
   "AU-SA": [
-   "forest_woodland",
    "jungle_rainforest",
    "snow_arctic"
   ],
@@ -240,15 +241,12 @@
   "CA-BC": [
    "desert_arid",
    "historic_old_world",
-   "jungle_rainforest",
    "rural_countryside"
   ],
   "CA-MB": [
-   "desert_arid",
    "historic_old_world",
    "island_tropical",
-   "mountains_alpine",
-   "small_town_suburban"
+   "mountains_alpine"
   ],
   "CA-NB": [
    "historic_old_world",
@@ -261,9 +259,7 @@
    "urban_major_city"
   ],
   "CA-NS": [
-   "mountains_alpine",
-   "rural_countryside",
-   "small_town_suburban"
+   "mountains_alpine"
   ],
   "CA-ON": [
    "desert_arid",
@@ -303,7 +299,8 @@
   ],
   "DK": [
    "jungle_rainforest",
-   "mountains_alpine"
+   "mountains_alpine",
+   "snow_arctic"
   ],
   "DO": [
    "desert_arid",
@@ -326,11 +323,13 @@
    "snow_arctic"
   ],
   "FR": [
-   "desert_arid"
+   "desert_arid",
+   "jungle_rainforest"
   ],
   "GB": [
    "desert_arid",
-   "jungle_rainforest"
+   "jungle_rainforest",
+   "snow_arctic"
   ],
   "GE": [
    "desert_arid",
@@ -370,8 +369,6 @@
    "jungle_rainforest"
   ],
   "JO": [
-   "forest_woodland",
-   "historic_old_world",
    "island_tropical",
    "jungle_rainforest",
    "snow_arctic"
@@ -444,12 +441,9 @@
    "historic_old_world",
    "jungle_rainforest"
   ],
-  "NZ": [
-   "desert_arid",
-   "jungle_rainforest"
-  ],
   "PA": [
-   "desert_arid"
+   "desert_arid",
+   "snow_arctic"
   ],
   "PH": [
    "snow_arctic"
@@ -554,12 +548,10 @@
   ],
   "US-LA": [
    "jungle_rainforest",
-   "mountains_alpine",
    "snow_arctic"
   ],
   "US-MA": [
-   "jungle_rainforest",
-   "rural_countryside"
+   "jungle_rainforest"
   ],
   "US-MD": [
    "jungle_rainforest"
@@ -603,12 +595,10 @@
   ],
   "US-RI": [
    "jungle_rainforest",
-   "mountains_alpine",
    "rural_countryside",
    "small_town_suburban"
   ],
   "US-SC": [
-   "jungle_rainforest",
    "snow_arctic"
   ],
   "US-TN": [

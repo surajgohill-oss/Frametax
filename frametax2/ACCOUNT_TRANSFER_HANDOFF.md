@@ -673,3 +673,17 @@ Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORT
 - **UI.** Policy-suppressed references are reachable in Workspace and on the Project Globe (`components/JurisdictionUniverse.jsx` `PolicySuppressedReferences`), with an Inspector carve-out block.
 - **Tests.** `tests/test_music_package_policy.py` (synthetic), the package assertion in `test_optimizer_scenario_universe_accounting.py`, and `frontend/tests/policy-suppressed-references.test.mjs`.
 - **Environment.** Load the frontend at `http://localhost:5173` (backend CORS default).
+
+## LEDGER ITEM 7 CLOSED — location-capability Codex remediation (2026-10-07, from `611fb72`); Item 4 was reopened by Codex
+
+- **Census.** 826 / 90 / 224 (supported / not supported / unresolved neutral) across 1,140 cells.
+- **Evidence fixes.**
+  - Natural Earth is now `OPEN_GEOSPATIAL_DATASET`.
+  - The Joggins false positives are fixed (CA-NB and CA-NS jungle not supported; CA supported via the BC government).
+  - FR is metropolitan, with UNESCO evidence constrained to each territory.
+  - Points are assigned to exactly one admin-1 unit.
+- **Residual.** All 240 residual cells completed the official-source sequence (`backend/scripts/location_census_derivation/official_source_trail.json`).
+- **Reproduction.** Run the derivation scripts with `CINEGLOBE_BACKEND=<backend path>`; `rules.py` holds the shared text rules. Rebuild the CSV with `scripts/build_location_capability_census.py`.
+- **Non-regression.** No regeneration; economics are identical.
+- **UI fix.** The Workspace Map/Split hover card now shows the served fit.
+- **Environment.** Browser at `http://localhost:5173`.

@@ -60,6 +60,14 @@ function RecommendedOrAlternativeBody({ hover }) {
         <div className="text-tertiary small">Incentive / Gross Budget</div>
         <div className="small">{pctOfGross || "Not available"}</div>
       </div>
+      {/* Surfaces without a structure story (Workspace Map / Split) carry the same served fit text here;
+          the story renders it otherwise, so it is never shown twice. */}
+      {hover.productionFitSummary && !hover.structureStory?.fitSummary && (
+        <div className="hover-field" data-hover-field="production-fit">
+          <div className="text-tertiary small">Production fit</div>
+          <div className="small">{hover.productionFitSummary}</div>
+        </div>
+      )}
     </>
   );
 }

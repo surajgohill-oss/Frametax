@@ -3,7 +3,9 @@ from shapely import wkb
 from shapely.geometry import Point
 import shapefile
 from shapely.geometry import shape
-from geoms import NAT
+from geoms import NAT, SUB, CLIP
+from shapely import make_valid
+from shapely.strtree import STRtree
 
 G = {c: wkb.loads(w) for c, (w, s) in pickle.load(open("geoms.pkl", "rb")).items()}
 out = {c: {} for c in G}
@@ -59,14 +61,34 @@ for r in rows:
             pass
     props.append(dict(id=r["id_no"], name=r["name_en"], cat=r["category"], states=[s.strip() for s in r["iso_codes"].split(",") if s.strip()],
                       text=(r["name_en"] + ". " + (r["short_description_en"] or "")), comps=comps, inscribed=r["date_inscribed"]))
+# Codex EVD-002/003 (2026-10-07): each component point belongs to exactly ONE admin-1 unit (the containing polygon,
+# else the nearest within 0.05 degrees for coastal points the 1:10m generalisation drops) -- never every unit within
+# a buffer; and a national jurisdiction counts a property only when a component point lies in its own (possibly
+# clipped, e.g. metropolitan FR / European NL) territory, so geometry and UNESCO evidence share one scope.
+A1 = [(rec.as_dict()["iso_3166_2"], make_valid(shape(shp.__geo_interface__))) for rec, shp in zip(adm1.records(), adm1.shapes())]
+A1_TREE = STRtree([g for _, g in A1])
+_a1_cache = {}
+def admin1_of(la, lo):
+    if (la, lo) not in _a1_cache:
+        pt = Point(lo, la)
+        inside = [i for i in A1_TREE.query(pt) if A1[i][1].intersects(pt)]
+        if inside:
+            _a1_cache[(la, lo)] = A1[inside[0]][0]
+        else:
+            i = A1_TREE.nearest(pt)
+            _a1_cache[(la, lo)] = A1[i][0] if A1[i][1].distance(pt) <= 0.05 else None
+    return _a1_cache[(la, lo)]
+from rules import PALAEO, PALAEO_SITE, present_match
+palaeo_log = []
 for c, g in G.items():
-    gb = None if c in NAT else g.buffer(0.05)
+    scope = g.buffer(0.5)   # national: tolerance for offshore islands (Robben Island); overseas territories lie far outside
     hits = collections.defaultdict(list)
     for p in props:
         if c in NAT:
-            inside = c in p["states"]
+            inside = c in p["states"] and (
+                any(scope.intersects(Point(lo, la)) for la, lo in p["comps"]) or (not p["comps"] and c not in CLIP))
         else:
-            inside = any(gb.intersects(Point(lo, la)) for la, lo in p["comps"])
+            inside = any(admin1_of(la, lo) == SUB.get(c, c) for la, lo in p["comps"])
         if not inside:
             continue
         for cat, rx in KW.items():
@@ -82,10 +104,14 @@ for c, g in G.items():
                 if p["cat"] in ("Natural", "Mixed") and rx.search(p["name"]):
                     hits[cat].append((p["id"], p["name"]))
             else:
-                m = rx.search(p["text"])
+                m, excluded = present_match(rx, p["text"], p["name"])
+                if excluded:
+                    palaeo_log.append((c, cat, p["id"], p["name"], excluded[0][:160], bool(m)))
                 if m:
                     hits[cat].append((p["id"], p["name"], m.group(0).lower()))
     out[c]["unesco"] = {k: v[:4] for k, v in hits.items()}
 pickle.dump(out, open("facts_tab.pkl", "wb"))
+json.dump(palaeo_log, open("palaeo_excluded.json", "w"), indent=1)
+print("palaeo-excluded keyword matches:", len(palaeo_log))
 for c in ("QA", "IL", "US-AZ", "AU-QLD", "CA-QC", "AT", "US-WA"):
     print(c, out[c]["unesco"], out[c].get("wb"))

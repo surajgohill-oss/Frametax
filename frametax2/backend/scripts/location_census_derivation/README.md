@@ -21,3 +21,13 @@ Rules (thresholds are in `derive.py`): negatives are only emitted where the cate
 (no tropical Koppen group-A cell; no marine coastline and no island landmass; no arid/polar cell, no desert region, no UNESCO desert
 property and negligible bare/sparse cover; no tropical or temperate Koppen class; fully tropical for snow; no tree cover in two FAO
 sources). Everything else that no source establishes stays UNRESOLVED_NEUTRAL.
+
+## Codex remediation (2026-10-07)
+
+- `rules.py`: pure text rules shared with the tests. A fossil or palaeontological site (by name) never evidences a present-day environment, and keyword sentences carrying geological-era wording are skipped.
+- `tab.py` / `vec.py`: every point (UNESCO component, Natural Earth peak, populated place) is assigned to exactly one admin-1 unit (the containing polygon, else the nearest within 0.05°). A national jurisdiction counts a UNESCO property only when a component point lies in its own territory (0.5° tolerance). Clipped scopes such as metropolitan FR and the European NL therefore never take overseas evidence.
+- `emit.py`:
+  - Natural Earth sources are tiered `OPEN_GEOSPATIAL_DATASET`.
+  - Film-office pages are tiered `FILM_COMMISSION_PAGE`.
+  - The residual official-source research is applied from `official_source_trail.json`, which records the 240 residual cells, every URL checked, its outcome, the decisions and their sources.
+- Mountain negative rule: an official highest point below the 300 m UNEP-WCMC mountain floor (USGS for US states).
