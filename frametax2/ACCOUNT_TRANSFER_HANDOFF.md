@@ -687,3 +687,14 @@ Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORT
 - **Non-regression.** No regeneration; economics are identical.
 - **UI fix.** The Workspace Map/Split hover card now shows the served fit.
 - **Environment.** Browser at `http://localhost:5173`.
+
+## FINAL PRE-CODEX HANDOFF (2026-10-07, from `36844e6`) — read `docs/validation/CLAUDE_FINAL_PRE_CODEX_ACCEPTANCE_HANDOFF.md` first
+
+- **Codex delta-acceptance range:** `611fb723daac05d5d91265172d334c61a37deb9f..HEAD`.
+- **Status:** optimizer and location work is READY_FOR_CODEX_ACCEPTANCE, not accepted.
+- **Classification of remaining items:**
+  - the 224 neutral cells are TERMINAL_NEUTRAL;
+  - the budget reparse/version policy and new-project ingestion are INGESTION_ACCEPTANCE_REQUIRED;
+  - Company Globe is COMPANY_GLOBE_REQUIRED;
+  - Build Your Own, final Globe visuals and a real executable co-production example are DEFERRED_PRODUCT_WORK.
+- **New integration proofs:** `backend/tests/test_final_pre_codex_integration.py`. Run them only against `frametax2_pytest`: `DATABASE_URL=…/frametax2_pytest CINEGLOBE_TEST_DB_NAME=frametax2_pytest`, with the sandbox disabled.

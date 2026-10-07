@@ -4266,3 +4266,24 @@ Proof: `docs/validation/CLAUDE_LOCATION_CAPABILITY_CODEX_REMEDIATION.md`.
   - LLS fit: Manitoba and New Zealand desert are now verified, so conditional 51 → 49 and fit-confirmed scenarios 227 → 325.
   - Workspace Map/Split hover card now shows the served production fit (fix plus test).
 - **Status.** UI `IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION`. Remaining: genuine official silence on 224 neutral cells, of which 63 had every official source unavailable.
+
+## LEDGER ITEM 8 — FINAL PRE-CODEX ACCEPTANCE HANDOFF (2026-10-07, from `36844e6`)
+
+Proof: `docs/validation/CLAUDE_FINAL_PRE_CODEX_ACCEPTANCE_HANDOFF.md`. Codex audit range: `611fb72..HEAD`.
+
+Items 5, 6 and 7 above are **ready for Codex acceptance, not accepted**. Nothing below is closed beyond its evidence.
+
+| Item | Classification |
+|---|---|
+| Optimizer scenario generation / accounting / retention / music–post-VFX package policy | READY_FOR_CODEX_ACCEPTANCE |
+| Location controls + capability wiring (real integration test on an isolated DB: one evaluation per effective change, none on an identical save, correct supported / not-supported / unresolved fit, economics unchanged) | READY_FOR_CODEX_ACCEPTANCE |
+| Location census evidence (826 / 90) | READY_FOR_CODEX_ACCEPTANCE |
+| 224 AUTHORITY_UNRESOLVED_NEUTRAL cells | TERMINAL_NEUTRAL |
+| Parsed-budget reparse/version policy (`_route_budget` refreshes a stale parse in place when committed-material routing re-runs; state/evaluation never reparse) | INGESTION_ACCEPTANCE_REQUIRED |
+| New-project ingestion acceptance | INGESTION_ACCEPTANCE_REQUIRED |
+| Company Globe | COMPANY_GLOBE_REQUIRED |
+| Build Your Own | DEFERRED_PRODUCT_WORK |
+| Final Globe categories / colours / atmosphere | DEFERRED_PRODUCT_WORK |
+| Real executable official co-production browser example | DEFERRED_PRODUCT_WORK (no real production reaches one; fixture coverage only) |
+
+Four-project 1.105.0 snapshot (read-only): one generation each; generated = persisted + aggregated; curated + suppressed = pre-curation; zero duplicate identities; 217 rows; zero economic diffs against the accepted 1.104.0 identities.
