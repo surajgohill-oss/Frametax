@@ -236,7 +236,7 @@ export const OPTIMIZER_SEMANTIC = {
   red: { label: "Unavailable", hex: "#8c2f3b", pulse: false },
   // Program / capability data incomplete: the jurisdiction is accounted (catalog lead only, no verified rate rule), never
   // silently absent and never presented as an alternative. A neutral grey, distinct from the blue of "Reference".
-  slate: { label: "Data Incomplete", hex: "#a2abb7", pulse: false },
+  slate: { label: "Data Incomplete", hex: "#6f7d8c", pulse: false },
 };
 export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
   Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.hex]),

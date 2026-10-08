@@ -240,17 +240,14 @@ const GLOBE_THEME = {
     // mostly by the emissive floor and the sharpened clearcoat highlight
     // below, but the base color itself now has to be a blue an eye would
     // call "ocean" even unlit, not a desaturated gray-blue.
-    // LUXURY OPTICAL-GLASS PASS (2026-10-08): a richer, deeper ocean (#152a44 -> #102541).
-    ocean: "#17435c", // STAGE/OCEAN PASS (2026-10-08): ~15% lighter, deep blue-green maritime
+    ocean: "#152a44",
     // Raised in step with the base color so the unlit hemisphere of the
     // ocean still reads as deep blue rather than collapsing toward black —
     // same guaranteed-floor role the land emissive floor plays below.
-    oceanEmissive: "#12334a",
+    oceanEmissive: "#0f1f33",
     land: GRAPHITE_HEX,
     stroke: "#9aa3b0",
-    // Soft dual-tone limb: maritime slate on the shaded side, warm ivory toward the upper-left key light.
-    rim: "#7f96b0",
-    rimWarm: "#f4ead6",
+    rim: "#b9c1cb",
     // PHASE 3A FINAL CORRECTION: deepened from the pale #8fc6ff, which read
     // as washed-out/whitish once the altitude tightened — a limb glow needs
     // enough of its own saturation to register as colour, not just as more
@@ -286,10 +283,10 @@ const GLOBE_THEME = {
     // Deepened in step with day, keeping the same relative move (a more
     // saturated, less desaturated-gray navy). Still clearly darker than day's
     // ocean — night must stay night — but no longer reads as a flat void.
-    ocean: "#123c56",
+    ocean: "#0f1d33",
     // Faint internal blue illumination — the "lit from within" quality the
     // art direction calls for, and the guarantee the ocean never collapses.
-    oceanEmissive: "#0d2c44",
+    oceanEmissive: "#0b182c",
     // Neutral grey land on a navy ocean is precisely what reads as an
     // unfinished or missing asset — the two share no hue family. Night land
     // is a navy-slate: clearly lighter than the ocean, clearly darker than
@@ -305,8 +302,7 @@ const GLOBE_THEME = {
     // contributor to the "technical GIS map" impression.
     stroke: "#8290a8",
     // Cool silver-blue limb rather than day's neutral platinum.
-    rim: "#6f87a8",
-    rimWarm: "#e6d9bf",
+    rim: "#9fb6d6",
     // Deepened in step with day (same reasoning: the paler predecessor
     // washed out once the shell tightened). Still cooler and quieter than
     // day's — night reads as a deeper, more concentrated blue at the limb
@@ -357,7 +353,7 @@ const GOLD_STROKE = "#f7e3ab";
 // mistaken for a committed selection. Neutral (no hue of its own) so it
 // reads identically over all four semantic states and over untouched land.
 const HOVER_STROKE = "#dfe4ec";
-const DATA_INCOMPLETE_STROKE = "#d3dae4";
+const DATA_INCOMPLETE_STROKE = "#a5b0bc";
 
 // Fresnel rim strength. Raised on selection to read as "illuminated". The
 // rim colour itself is warm brass now (was a cold blue "#4a7fb5") — the
@@ -390,7 +386,7 @@ const DATA_INCOMPLETE_STROKE = "#d3dae4";
 // the same proportion (was left at 0.32 in the prior pass, which shrank the
 // "substantial lift on selection" gap from ~33% relative to ~10% — an
 // unintended regression, corrected here).
-const BASE_RIM_INTENSITY = 0.55;
+const BASE_RIM_INTENSITY = 0.34;
 const SELECTED_RIM_INTENSITY = 0.44;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
@@ -1925,8 +1921,6 @@ export default function Globe3D({
     // rises toward grazing angles — the glass edge that gives the sphere
     // curvature. Production only: at brand-mark size it is a blue halo.
     let rimMesh = null;
-    let hazeMesh = null;
-    let depthMesh = null;
     if (!isBrand) {
       rimMesh = new THREE.Mesh(
         new THREE.SphereGeometry(globe.getGlobeRadius() * 1.004, 64, 64),
@@ -1943,12 +1937,10 @@ export default function Globe3D({
             // wider shell) is what supplies the soft falloff beyond it now,
             // so this one no longer has to do both jobs at once.
             uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) },
-            // Warm ivory key-light tone, mixed in toward the upper-left limb (see the fragment shader).
-            uWarm: { value: new THREE.Color(GLOBE_THEME.day.rimWarm) },
             uIntensity: { value: BASE_RIM_INTENSITY },
-            // LUXURY OPTICAL-GLASS PASS: 3.4 -> 2.9, a slightly wider, softer Fresnel feather.
-            uPower: { value: 2.3 },
-            uShift: { value: 0 },
+            // PHASE 3A FINAL RECONCILIATION: 3.1 -> 3.4, tightened in step
+            // with the pulled-in atmosphere altitude above (item 4).
+            uPower: { value: 3.4 },
           },
           vertexShader: `
             varying vec3 vNormal;
@@ -1961,17 +1953,13 @@ export default function Globe3D({
             }`,
           fragmentShader: `
             uniform vec3 uColor;
-            uniform vec3 uWarm;
             uniform float uIntensity;
             uniform float uPower;
-            uniform float uShift;
             varying vec3 vNormal;
             varying vec3 vView;
             void main() {
               float f = pow(1.0 - abs(dot(vNormal, vView)), uPower);
-              // warm ivory toward the upper-left key-light edge, maritime slate on the lower-right
-              float warm = smoothstep(-0.15, 0.85, dot(normalize(vNormal.xy + vec2(1e-4)), normalize(vec2(-0.62 * cos(uShift) - 0.78 * sin(uShift), 0.78 * cos(uShift) - 0.62 * sin(uShift)))));
-              gl_FragColor = vec4(mix(uColor, uWarm, warm * 0.95), f * uIntensity);
+              gl_FragColor = vec4(uColor, f * uIntensity);
             }`,
           side: THREE.BackSide,
           blending: THREE.AdditiveBlending,
@@ -1981,64 +1969,6 @@ export default function Globe3D({
       );
       scene.add(rimMesh);
       stateRef.current.rimMesh = rimMesh;
-      // Restrained inner-limb haze: a faint, wide front-face Fresnel veil just inside the silhouette that gives the glass
-      // body depth without clouds, particles or a halo. Static (no animation) and very low alpha.
-      hazeMesh = new THREE.Mesh(
-        new THREE.SphereGeometry(globe.getGlobeRadius() * 1.0015, 64, 64),
-        new THREE.ShaderMaterial({
-          uniforms: { uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) }, uPower: { value: 2.0 }, uAlpha: { value: 0.17 } },
-          vertexShader: `
-            varying vec3 vNormal;
-            varying vec3 vView;
-            void main() {
-              vNormal = normalize(normalMatrix * normal);
-              vec4 mv = modelViewMatrix * vec4(position, 1.0);
-              vView = normalize(-mv.xyz);
-              gl_Position = projectionMatrix * mv;
-            }`,
-          fragmentShader: `
-            uniform vec3 uColor;
-            uniform float uPower;
-            uniform float uAlpha;
-            varying vec3 vNormal;
-            varying vec3 vView;
-            void main() {
-              float f = pow(1.0 - max(dot(vNormal, vView), 0.0), uPower);
-              gl_FragColor = vec4(uColor, f * uAlpha);
-            }`,
-          side: THREE.FrontSide,
-          blending: THREE.AdditiveBlending,
-          transparent: true,
-          depthWrite: false,
-        }),
-      );
-      scene.add(hazeMesh);
-      // Ocean depth shell: a darker lower-right depth gradient and a soft upper-left key-light response laid over the
-      // ocean only (land and status caps are raised above it). Static, no animation.
-      depthMesh = new THREE.Mesh(
-        new THREE.SphereGeometry(globe.getGlobeRadius() * 1.003, 96, 96),
-        new THREE.ShaderMaterial({
-          vertexShader: `
-            varying vec3 vNormal;
-            void main() {
-              vNormal = normalize(normalMatrix * normal);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }`,
-          fragmentShader: `
-            varying vec3 vNormal;
-            void main() {
-              float d = dot(vNormal.xy, normalize(vec2(0.55, -0.83)));
-              float dark = smoothstep(-0.1, 0.9, d);
-              float key = smoothstep(0.15, 0.95, dot(vNormal, normalize(vec3(-0.55, 0.62, 0.56))));
-              vec3 c = mix(vec3(0.0, 0.02, 0.05), vec3(0.62, 0.82, 0.88), key);
-              gl_FragColor = vec4(c, max(dark * 0.30, key * 0.14));
-            }`,
-          side: THREE.FrontSide,
-          transparent: true,
-          depthWrite: false,
-        }),
-      );
-      scene.add(depthMesh);
     }
 
     let cancelled = false;
@@ -2187,13 +2117,6 @@ export default function Globe3D({
           povGlobe.setPointOfView(camera);
           stateRef.current.evalPointerHover?.();
         }
-      }
-      if (rimMesh) {
-        // View-responsive optical shimmer: the warm/cool split of the limb shifts a few degrees with the camera azimuth and,
-        // unless reduced motion is requested, drifts very slowly over time. No pulsing, no waves.
-        const cp = camera.position;
-        const slow = stateRef.current.ambientMotion ? 0.14 * Math.sin(((performance.now() - ambientT0) / 1000 / 42) * Math.PI * 2) : 0;
-        rimMesh.material.uniforms.uShift.value = Math.atan2(cp.x, cp.z) * 0.2 + slow;
       }
       if (stateRef.current.ambientMotion) {
         // 1. Specular drift — rotates the pre-filtered studio radiance map,
@@ -2492,8 +2415,7 @@ export default function Globe3D({
       material.emissive.set(t.oceanEmissive);
       material.envMapIntensity = t.envIntensity;
       renderer.toneMappingExposure = t.exposure;
-      if (rimMesh) { rimMesh.material.uniforms.uColor.value.set(t.rim); rimMesh.material.uniforms.uWarm.value.set(t.rimWarm); }
-      if (hazeMesh) hazeMesh.material.uniforms.uColor.value.set(t.rim);
+      if (rimMesh) rimMesh.material.uniforms.uColor.value.set(t.rim);
       // Atmosphere colour is theme-driven the same way rim colour is. Calling
       // .atmosphereColor() re-triggers three-globe's own atmosphere rebuild
       // (see its `update()` — recreates the GlowMesh whenever colour or
@@ -2569,8 +2491,6 @@ export default function Globe3D({
       capMaterialCache.forEach((m) => m.dispose());
       sideMaterialCache.forEach((m) => m.dispose());
       if (rimMesh) { rimMesh.geometry.dispose(); rimMesh.material.dispose(); }
-      if (hazeMesh) { hazeMesh.geometry.dispose(); hazeMesh.material.dispose(); }
-      if (depthMesh) { depthMesh.geometry.dispose(); depthMesh.material.dispose(); }
       // dispose() frees GPU resources but does NOT release the underlying
       // WebGL context — it lingers on the detached canvas until GC. With a
       // persistent sidebar globe plus route globes mounting/unmounting (and
