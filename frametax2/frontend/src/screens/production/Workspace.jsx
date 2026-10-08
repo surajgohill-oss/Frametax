@@ -13,7 +13,7 @@ import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { alternativeLabel, fitTag, structureStatusDetail } from "../../lib/alternativeLabels";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
-import { readIncentivePotential, certaintyLabel, missingFactsSummary, missingFactsTitle } from "../../lib/incentivePotential";
+import { readIncentivePotential, missingFactsSummary, missingFactsTitle } from "../../lib/incentivePotential";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
@@ -71,6 +71,18 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // Optimizer mode — never a second, independently-maintained selection
 // here. See that module's header comment for the exact family mapping.
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
+// Card tag beside MAXIMUM POTENTIAL NPC: says plainly when the maximum is not yet confirmed.
+const potentialTag = (pot) =>
+  pot.ceilingStatus === "NOT_ESTABLISHED" ? "Not established"
+    : pot.ceilingStatus === "CONDITIONAL" || pot.certainty === "CONDITIONAL" ? "Conditional"
+      : null;
+// One concise line for NEEDED TO REACH MAXIMUM; authority citations and full detail stay in the Inspector.
+const neededToReachMaximum = (pot) => {
+  if (pot.ceilingStatus === "CONFIRMED" && pot.certainty === "CONFIRMED") return "Nothing — maximum is confirmed";
+  if (pot.ceilingStatus === "CONFIRMED") return "Award confirmation"; // max = confirmed; discretionary award risk open
+  // first clause of the served fact only; the full text is the line's tooltip and the Inspector
+  return missingFactsSummary(pot, 1).split(/ -- | — | \(/)[0];
+};
 
 // Workspace Display Regression: "Other Scenarios" is a real HTML <select>
 // — every option needs its own distinct text, unlike a visible card,
@@ -317,18 +329,41 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
           <div className="wsx-rows">
             <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
             <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
-            <div className="wsx-row"><span>{pot ? "Confirmed incentive" : "Gross incentive"}</span><span className="incentive"><Money value={pot ? pot.confirmedIncentive : structure.selected_incentive_usd} bare /></span></div>
+            {/* With the incentive-potential contract, incentive figures live only in the economic
+                well below (never duplicated here); a legacy structure keeps its gross incentive row. */}
+            {!pot && <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>}
           </div>
-          <div className="wsx-row net"><span>{pot ? "Confirmed NPC" : "Net production cost"}</span><span><Money value={pot ? pot.confirmedNpc : npc} bare /></span></div>
-          {pot && (
-            <div className="wsx-pot" data-certainty={pot.certainty} data-ceiling-status={pot.ceilingStatus}>
-              <div className="wsx-pot-line"><span>Max incentive</span><span><Money value={pot.maxIncentive} bare /></span></div>
-              <div className="wsx-pot-line"><span>Potential NPC</span><span><Money value={pot.potentialNpc} bare /></span></div>
-              <div className="wsx-pot-facts" title={missingFactsTitle(pot)}>
-                <b>{certaintyLabel(pot)}</b>
-                <span>{missingFactsSummary(pot)}</span>
+          {pot ? (
+            // ECONOMIC WELL (2026-10-08): maximum potential NPC is the primary figure (the optimization
+            // target), confirmed NPC directly beneath it. Every value is the served contract verbatim.
+            <div className="wsx-econ" data-certainty={pot.certainty} data-ceiling-status={pot.ceilingStatus}>
+              <div className="wsx-econ-max">
+                <div className="wsx-econ-head">
+                  <span className="wsx-econ-label">Maximum potential NPC</span>
+                  {potentialTag(pot) && <span className="wsx-econ-tag">{potentialTag(pot)}</span>}
+                </div>
+                <div className="wsx-econ-figure"><Money value={pot.potentialNpc} bare /></div>
+                <div className="wsx-econ-line"><span>Maximum potential incentive</span><span className="potential"><Money value={pot.maxIncentive} bare /></span></div>
+              </div>
+              <div className="wsx-econ-confirmed">
+                <div className="wsx-econ-line npc"><span>Confirmed NPC</span><span><Money value={pot.confirmedNpc} bare /></span></div>
+                <div className="wsx-econ-line"><span>Confirmed incentive</span><span className="incentive"><Money value={pot.confirmedIncentive} bare /></span></div>
+              </div>
+              {/* Denominator is the maximum potential incentive: green = confirmed share, amber = the
+                  rest of the maximum. All green only when confirmed equals the maximum. */}
+              {pot.maxIncentive != null && (
+                <div className="wsx-range" role="img" aria-label={`Confirmed ${Math.round(pct(pot.confirmedIncentive, pot.maxIncentive))}% of maximum potential incentive`}>
+                  <u style={{ left: 0, width: `${pct(pot.confirmedIncentive, pot.maxIncentive)}%` }} />
+                  <i style={{ left: `${pct(pot.confirmedIncentive, pot.maxIncentive)}%`, right: 0 }} />
+                </div>
+              )}
+              <div className="wsx-econ-needed" title={missingFactsTitle(pot)}>
+                <span>Needed to reach maximum</span>
+                <b>{neededToReachMaximum(pot)}</b>
               </div>
             </div>
+          ) : (
+            <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           )}
           {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22), Phase 4: an Optimizer-
               mode card (recommended OR evaluated alternative — this field is only ever
@@ -368,11 +403,6 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
               )}
             </div>
           )}
-          <div className="wsx-range">
-            <u style={{ left: 0, width: `${pct(qualifiedSpend, gross)}%` }} />
-            <i style={{ left: `${pct(qualifiedSpend, gross)}%`, right: 0 }} />
-            <b style={{ left: `${pct(npc, gross)}%` }} />
-          </div>
           {/* F#K item 3: same generic administrative/discretionary
               allocation-risk disclosure as Overview's cards and the Hero
               — a priced structure here can still be gated by award-

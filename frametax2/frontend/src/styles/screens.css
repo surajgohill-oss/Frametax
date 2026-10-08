@@ -1107,7 +1107,7 @@
 .wsx-station-head {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  grid-template-areas: "mode tabs other" "count tabs other" "universe universe universe";
+  grid-template-areas: "mode tabs other" "count tabs other";
   align-items: center;
   gap: 4px 14px;
   padding: 12px 18px 0;
@@ -1117,6 +1117,10 @@
    collapsed the mode/count/other columns to 0px, so the toggle, count and button overlapped. It
    gets its own full-width row below the controls. */
 .wsx-station-head > .wsx-universe { grid-area: universe; min-width: 0; }
+.wsx-station-head { grid-template-areas: "mode tabs other" "count tabs other" "universe universe universe"; }
+@container wsx-station (max-width: 860px) {
+  .wsx-station-head { grid-template-areas: "mode tabs" "count other" "universe universe"; }
+}
 .wsx-station-head-spacer { min-width: 0; }
 .wsx-scenario-mode { grid-area: mode; min-width: 0; }
 /* Scenario-count disclosure — was an inline whiteSpace:"nowrap" span; now a
@@ -1147,7 +1151,7 @@
 @container wsx-station (max-width: 860px) {
   .wsx-station-head {
     grid-template-columns: 1fr 1fr;
-    grid-template-areas: "mode tabs" "count other" "universe universe";
+    grid-template-areas: "mode tabs" "count other";
   }
   .wsx-station-head > .wsx-viewtabs { grid-row: auto; justify-self: start; }
   .wsx-other-scenarios, .wsx-other-scenarios-spacer { grid-row: auto; }
@@ -1958,3 +1962,47 @@
 /* FX telemetry strip breathing room above the Workspace controls (2026-10-07): static flow, explicit
    separation from the tabs above and the station controls below. */
 .wsx-fxstrip { position: relative; margin-top: 12px; margin-bottom: 16px; padding: 8px 16px; }
+
+/* WORKSPACE GROUND (2026-10-08): no graph-paper grid behind the rack; the cards carry the structure. */
+.wsx-work { background-image: none; }
+
+/* ECONOMIC WELL (2026-10-08): the card area below the divider. Above the divider the upper rows keep a
+   fixed 88px block (3 rows x 28px, or 2 rows x 42px when the incentive moved into the well), so the
+   divider stays on the same baseline. MAXIMUM POTENTIAL NPC is the primary figure; CONFIRMED NPC sits
+   directly beneath it; the range bar's denominator is the maximum potential incentive. */
+.wsx-lane .wsx-rows { height: 88px; display: flex; flex-direction: column; }
+.wsx-lane .wsx-rows .wsx-row { flex: 1 1 0; height: auto; min-height: 0; }
+.wsx-lane {
+  --wsx-potential: #B45309; --wsx-needed: #92400E;
+}
+:root[data-theme="night"] .wsx-lane, :root[data-theme="dark"] .wsx-lane, .dark .wsx-lane {
+  --wsx-potential: #F5A524; --wsx-needed: #F5B759;
+}
+.wsx-econ {
+  flex: none; margin-top: 2px; padding: 7px 18px 2px;
+  border-top: 1px solid var(--wsx-seam); box-shadow: var(--wsx-seam-hi);
+}
+.wsx-econ-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wsx-econ-label { font: 600 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--wsx-label); white-space: nowrap; }
+.wsx-econ-tag {
+  font: 600 9px var(--wsx-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-potential);
+  border: 1px solid currentColor; border-radius: 2px; padding: 1px 5px; white-space: nowrap; opacity: 0.9;
+}
+.wsx-econ-figure {
+  margin: 2px 0 1px; font: 700 24px/1.1 var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em; color: var(--wsx-npc); white-space: nowrap;
+}
+.wsx-econ-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 15px; }
+.wsx-econ-line span:first-child { font: 500 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-label); white-space: nowrap; }
+.wsx-econ-line span:last-child { font: 500 11px var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums; color: var(--wsx-fig); white-space: nowrap; }
+.wsx-econ-line .potential { font-weight: 700; color: var(--wsx-potential); }
+.wsx-econ[data-ceiling-status="CONFIRMED"] .wsx-econ-line .potential { color: var(--wsx-inc); }
+.wsx-econ-line .incentive { font-weight: 700; color: var(--wsx-inc); }
+.wsx-econ-confirmed { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--hairline); }
+.wsx-econ-line.npc span:first-child { font-weight: 600; letter-spacing: 0.1em; }
+.wsx-econ-line.npc span:last-child { font-size: 16px; font-weight: 700; letter-spacing: -0.015em; color: var(--wsx-npc); }
+.wsx-lane .wsx-econ .wsx-range { margin: 6px 0 4px; }
+.wsx-econ-needed { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.wsx-econ-needed span { flex: none; font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-label); }
+.wsx-econ-needed b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10.5px var(--font-sans); color: var(--wsx-needed); }
+.wsx-econ[data-ceiling-status="CONFIRMED"][data-certainty="CONFIRMED"] .wsx-econ-needed b { color: var(--wsx-sub); font-weight: 500; }

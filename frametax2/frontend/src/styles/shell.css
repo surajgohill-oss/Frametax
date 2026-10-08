@@ -698,13 +698,13 @@
 /* ART PLATE HERO (2026-10-07; supersedes the Full-Art Hero Rule above at the product owner's request):
    one 160px row: back link, 200x112 landscape art plate (object-fit: cover, edge to edge), title + chips,
    metric bay (icons pinned top-right). Theme-aware: warm vellum in the day theme, obsidian in the night
-   theme; both read the per-production tint ProductionHero.jsx sets (--ph-hero-grad-light on the day
-   gradient, --ph-hero-grad-start on the night gradient, --ph-hero-glow on the lens wash). The old
+   theme; both use the per-production companion colours ProductionHero.jsx sets (--ph-hero-day-a/b,
+   --ph-hero-night-a/b, and --ph-hero-glow on the lens wash localized behind the plate). The old
    full-width .ph-hero-art / .ph-hero-scrim rules above are no longer rendered. */
 .ph-hero {
-  --phh-bg: linear-gradient(90deg, var(--ph-hero-grad-light, #ECE8DF) 0%, #F5F2EB 45%, #EAE5DC 100%); --phh-bg-color: #F5F2EB;
+  --phh-bg: linear-gradient(90deg, var(--ph-hero-day-a, #E8E5DF) 0%, var(--ph-hero-day-b, #F3F1EC) 55%, var(--ph-hero-day-a, #E8E5DF) 100%); --phh-bg-color: var(--ph-hero-day-b, #F3F1EC);
   --phh-bd-top: rgba(0, 0, 0, 0.05); --phh-bd-bot: #D8D3C8; --phh-inset: inset 0 -8px 16px rgba(60, 50, 30, 0.05);
-  --phh-lens-opacity: 0.6;
+  --phh-lens-opacity: 0.55;
   --phh-title: #1C2D27; --phh-back: #64748B; --phh-back-h: #1C2D27;
   --phh-chip-bg: rgba(0, 0, 0, 0.05); --phh-chip-bd: rgba(0, 0, 0, 0.1); --phh-chip-fg: #4A5568;
   --phh-chip-bd-h: rgba(0, 0, 0, 0.25); --phh-chip-fg-h: #1C2D27;
@@ -729,9 +729,9 @@
   box-shadow: var(--phh-inset);
 }
 :root[data-theme="night"] .ph-hero {
-  --phh-bg: linear-gradient(90deg, var(--ph-hero-grad-start, #0B0D11) 0%, #141720 40%, #0A0C10 100%); --phh-bg-color: #0C0E13;
+  --phh-bg: linear-gradient(90deg, var(--ph-hero-night-a, #161C24) 0%, var(--ph-hero-night-b, #0F1318) 55%, var(--ph-hero-night-a, #161C24) 100%); --phh-bg-color: var(--ph-hero-night-b, #0F1318);
   --phh-bd-top: rgba(255, 255, 255, 0.1); --phh-bd-bot: #1A1E26; --phh-inset: inset 0 -10px 20px rgba(0, 0, 0, 0.4);
-  --phh-lens-opacity: 1;
+  --phh-lens-opacity: 0.85;
   --phh-title: #FFFFFF; --phh-back: #7C8799; --phh-back-h: #FFFFFF;
   --phh-chip-bg: rgba(0, 0, 0, 0.4); --phh-chip-bd: rgba(255, 255, 255, 0.1); --phh-chip-fg: #94A3B8;
   --phh-chip-bd-h: rgba(255, 255, 255, 0.3); --phh-chip-fg-h: #FFFFFF;
@@ -741,11 +741,13 @@
   --phh-ico-bg: rgba(20, 22, 20, 0.38); --phh-ico-bd: rgba(247, 243, 232, 0.25); --phh-ico-fg: rgba(247, 243, 232, 0.85);
   --phh-ico-bd-h: rgba(247, 243, 232, 0.5); --phh-ico-fg-h: #F7F3E8;
 }
+/* localized behind the art plate only (plate sits at 108-308px), restrained */
 .ph-hero-lens {
-  position: absolute; left: 0; top: 0; width: 55%; height: 100%; z-index: -1; pointer-events: none;
+  position: absolute; left: 48px; top: 0; width: 320px; height: 100%; z-index: -1; pointer-events: none;
   opacity: var(--phh-lens-opacity);
-  background: radial-gradient(ellipse at 30% 50%, var(--ph-hero-glow, rgba(45, 75, 100, 0.2)), transparent 75%);
+  background: radial-gradient(ellipse 50% 55% at 50% 50%, var(--ph-hero-glow, rgba(70, 95, 120, 0.14)), transparent 100%);
 }
+.ph-hero-plate-neutral { width: 100%; height: 100%; }
 .ph-hero-back {
   flex: none; width: 72px; margin-right: 12px; padding: 0; border: 0;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start;

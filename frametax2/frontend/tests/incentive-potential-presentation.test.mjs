@@ -78,10 +78,12 @@ test("Workspace card and Inspector use the shared reader and perform no arithmet
   const ws = read("screens/production/Workspace.jsx");
   const insp = read("shell/Inspector.jsx");
   assert.match(ws, /readIncentivePotential\(structure\)/);
-  assert.match(ws, /Confirmed incentive/);
-  assert.match(ws, /Max incentive/);
-  assert.match(ws, /Potential NPC/);
+  // Card labels (2026-10-08 economic well): maximum potential NPC leads, confirmed NPC beneath it.
+  assert.match(ws, /Maximum potential NPC/);
+  assert.match(ws, /Maximum potential incentive/);
   assert.match(ws, /Confirmed NPC/);
+  assert.match(ws, /Confirmed incentive/);
+  assert.match(ws, /Needed to reach maximum/);
   assert.match(insp, /Max potential incentive/);
   assert.match(insp, /Needed to reach the maximum/);
   for (const [name, text] of [["Workspace", ws], ["Inspector", insp]]) {

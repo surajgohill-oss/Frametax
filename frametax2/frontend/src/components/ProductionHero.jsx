@@ -38,24 +38,24 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 // Rule. Do not reintroduce `object-fit: cover`/`contain`, a crop, or a
 // composite here; see CAPABILITY_LEDGER.md for why both were tried and
 // reverted.
-// Hero atmosphere tinted to each production's own key-art palette (lens glow + the left stop of the
-// horizontal gradient). Matched on the production title; anything unmatched gets a neutral slate.
-function getProjectHeroTheme(title = "") {
+// Hero atmosphere per production: a quiet, desaturated COMPANION colour taken from the project's own key
+// art (never its dominant colour), so the artwork plate stands out against the header instead of merging
+// with it. day/night are [edge, centre] gradient stops; glow is a restrained wash localized behind the plate.
+// Matched on the production title. A project with no key art (e.g. Bad Hombres today) gets the slate default.
+const HERO_THEMES = {
+  // F#K Valentine's Day -- art is saturated red with white type; companion: dusty mauve-grey / plum-charcoal.
+  valentine: { day: ["#E7DFE1", "#F3EFEF"], night: ["#261C21", "#15121A"], glow: "rgba(150, 40, 55, 0.20)" },
+  // The Little Utopia -- art is dark cliffs, gold sunset, white village; companion: sea-mist / harbour blue.
+  utopia: { day: ["#DCE4E7", "#EEF1F1"], night: ["#142029", "#0E141A"], glow: "rgba(205, 155, 70, 0.18)" },
+  // Lips Like Sugar -- art is near-black with an electric-blue figure and a red accent; companion: cool
+  // lavender-grey / deep indigo.
+  sugar: { day: ["#E1E0EA", "#F0EFF4"], night: ["#1C1D30", "#121320"], glow: "rgba(80, 100, 210, 0.16)" },
+};
+const DEFAULT_HERO_THEME = { day: ["#E8E5DF", "#F3F1EC"], night: ["#161C24", "#0F1318"], glow: "rgba(70, 95, 120, 0.14)" };
+function getProjectHeroTheme(title) {
   const t = (title || "").toLowerCase();
-  if (t.includes("valentine")) {
-    // F#K Valentine's Day: subtle rose tint for light mode, deep crimson for night
-    return { glow: "rgba(160, 25, 35, 0.25)", gradientStart: "rgba(50, 10, 15, 0.85)", gradLight: "rgba(244, 226, 226, 0.90)" };
-  }
-  if (t.includes("utopia")) {
-    // The Little Utopia: Mediterranean maritime indigo / warm gold
-    return { glow: "rgba(195, 150, 45, 0.22)", gradientStart: "rgba(18, 32, 50, 0.85)", gradLight: "#ECE8DF" };
-  }
-  if (t.includes("sugar")) {
-    // Lips Like Sugar: sunset violet / warm amber
-    return { glow: "rgba(140, 40, 100, 0.22)", gradientStart: "rgba(40, 15, 35, 0.85)", gradLight: "#ECE8DF" };
-  }
-  // Default: executive deep slate
-  return { glow: "rgba(45, 75, 100, 0.20)", gradientStart: "rgba(15, 22, 30, 0.85)", gradLight: "#ECE8DF" };
+  const key = Object.keys(HERO_THEMES).find((k) => t.includes(k));
+  return key ? HERO_THEMES[key] : DEFAULT_HERO_THEME;
 }
 
 export default function ProductionHero({
@@ -119,17 +119,21 @@ export default function ProductionHero({
       className="ph-hero"
       style={{
         "--ph-hero-glow": heroTheme.glow,
-        "--ph-hero-grad-start": heroTheme.gradientStart,
-        "--ph-hero-grad-light": heroTheme.gradLight,
+        "--ph-hero-day-a": heroTheme.day[0],
+        "--ph-hero-day-b": heroTheme.day[1],
+        "--ph-hero-night-a": heroTheme.night[0],
+        "--ph-hero-night-b": heroTheme.night[1],
       }}
     >
-      {/* Cinematic lens wash behind the left content (see shell.css POSTER HERO block). */}
+      {/* Cinematic lens wash behind the left content (localized behind the art plate; see shell.css ART PLATE HERO block). */}
       <div className="ph-hero-lens" aria-hidden="true" />
       <button className="ph-back ph-hero-back" onClick={onBack}>← Project Library</button>
       {/* Art plate: 200x112, the artwork fills it edge to edge (object-fit: cover). The blurred copy
           underneath only shows while the crisp image loads. */}
       <div className="ph-hero-plate" aria-hidden="true">
-        {!showNeutralFallback && (
+        {showNeutralFallback ? (
+          <div className="ph-hero-plate-neutral ph-hero-art-neutral" />
+        ) : (
           <>
             <img key={`plate-bg-${production?.project_id || "fallback"}`} className="ph-hero-plate-bg" src={heroSrc} alt="" />
             <img
