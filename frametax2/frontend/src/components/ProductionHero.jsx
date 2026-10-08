@@ -14,7 +14,12 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 // resolution mirrors Overview.jsx's own `snapshot`/`structure` logic;
 // question-count/swing mirrors ProjectHeader's existing compact-bar calc).
 //
-// FULL-ART HERO RULE (permanent — see CAPABILITY_LEDGER.md): the complete
+// ART PLATE HERO (2026-10-07, supersedes the Full-Art Hero Rule below at the product owner's request): a
+// 160px hero in one row -- back link, a 200x112 landscape art plate (object-fit: cover, edge to edge; same
+// proportions as Project Library's art), title + chips, then the budget/questions bay. Theme-aware, with a
+// per-production tint from getProjectHeroTheme. No full-width image.
+//
+// (superseded) FULL-ART HERO RULE: the complete
 // approved key art fills the entire Hero artwork rectangle, edge to edge,
 // with the whole image visible — never letterboxed, never cropped.
 // `little-utopia-hero-clean.png` is the SAME master photograph
@@ -33,6 +38,26 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 // Rule. Do not reintroduce `object-fit: cover`/`contain`, a crop, or a
 // composite here; see CAPABILITY_LEDGER.md for why both were tried and
 // reverted.
+// Hero atmosphere tinted to each production's own key-art palette (lens glow + the left stop of the
+// horizontal gradient). Matched on the production title; anything unmatched gets a neutral slate.
+function getProjectHeroTheme(title = "") {
+  const t = (title || "").toLowerCase();
+  if (t.includes("valentine")) {
+    // F#K Valentine's Day: subtle rose tint for light mode, deep crimson for night
+    return { glow: "rgba(160, 25, 35, 0.25)", gradientStart: "rgba(50, 10, 15, 0.85)", gradLight: "rgba(244, 226, 226, 0.90)" };
+  }
+  if (t.includes("utopia")) {
+    // The Little Utopia: Mediterranean maritime indigo / warm gold
+    return { glow: "rgba(195, 150, 45, 0.22)", gradientStart: "rgba(18, 32, 50, 0.85)", gradLight: "#ECE8DF" };
+  }
+  if (t.includes("sugar")) {
+    // Lips Like Sugar: sunset violet / warm amber
+    return { glow: "rgba(140, 40, 100, 0.22)", gradientStart: "rgba(40, 15, 35, 0.85)", gradLight: "#ECE8DF" };
+  }
+  // Default: executive deep slate
+  return { glow: "rgba(45, 75, 100, 0.20)", gradientStart: "rgba(15, 22, 30, 0.85)", gradLight: "#ECE8DF" };
+}
+
 export default function ProductionHero({
   production,
   stageControl,
@@ -87,63 +112,64 @@ export default function ProductionHero({
   // uses (screens.css .lib-art) — not a new design, not a new asset.
   const showNeutralFallback = isLittleUtopia ? false : (!artworkUrl || artworkFailed);
   const heroSrc = isLittleUtopia ? heroArt : artworkUrl;
+  const heroTheme = getProjectHeroTheme(production?.production_name);
 
   return (
-    <div className="ph-hero">
-      {/* Artwork layer — the complete master image, stretched via
-          object-fit:fill to exactly cover the Hero rectangle (see the
-          Full-Art Hero Rule in the file header comment above). */}
-      {showNeutralFallback ? (
-        <div className="ph-hero-art ph-hero-art-neutral" aria-hidden="true" />
-      ) : (
-        <img
-          key={production?.project_id || "fallback"}
-          className="ph-hero-art"
-          src={heroSrc}
-          alt=""
-          aria-hidden="true"
-          onError={() => setArtworkFailed(true)}
-        />
-      )}
-      {/* Overlay: directional, not uniform — strongest behind the identity
-          block (left) and in a shallow band at the bottom (grounding into
-          the tabs), much lighter behind the metrics (right) and near-clear
-          through the middle, so the sea/sunset the artwork layer now
-          actually shows is not multiplied back into near-black. */}
-      <div className="ph-hero-scrim" aria-hidden="true" />
-      <div className="ph-hero-topbar">
-        <button className="ph-back ph-hero-back" onClick={onBack}>← Project Library</button>
-        {headerActions}
+    <div
+      className="ph-hero"
+      style={{
+        "--ph-hero-glow": heroTheme.glow,
+        "--ph-hero-grad-start": heroTheme.gradientStart,
+        "--ph-hero-grad-light": heroTheme.gradLight,
+      }}
+    >
+      {/* Cinematic lens wash behind the left content (see shell.css POSTER HERO block). */}
+      <div className="ph-hero-lens" aria-hidden="true" />
+      <button className="ph-back ph-hero-back" onClick={onBack}>← Project Library</button>
+      {/* Art plate: 200x112, the artwork fills it edge to edge (object-fit: cover). The blurred copy
+          underneath only shows while the crisp image loads. */}
+      <div className="ph-hero-plate" aria-hidden="true">
+        {!showNeutralFallback && (
+          <>
+            <img key={`plate-bg-${production?.project_id || "fallback"}`} className="ph-hero-plate-bg" src={heroSrc} alt="" />
+            <img
+              key={`plate-fg-${production?.project_id || "fallback"}`}
+              className="ph-hero-plate-fg"
+              src={heroSrc}
+              alt=""
+              onError={() => setArtworkFailed(true)}
+            />
+          </>
+        )}
       </div>
-      <div className="ph-hero-row">
-        <div className="ph-hero-identity">
-          <h1 className="serif ph-hero-title">{production?.production_name || "—"}</h1>
-          <div className="ph-hero-identity-sub">
-            <p className="ph-hero-sub">Feature Film</p>
-            {stageControl}
-          </div>
+      <div className="ph-hero-identity">
+        <h1 className="serif ph-hero-title">{production?.production_name || "—"}</h1>
+        <div className="ph-hero-identity-sub">
+          <p className="ph-hero-sub">Feature Film</p>
+          {stageControl}
         </div>
+      </div>
 
-        <div className="ph-hero-metrics">
-          <div className="ph-hero-metric">
-            <span className="ph-hero-metric-label">Production Budget</span>
-            <span className="ph-hero-metric-value mono">
-              {production ? <Money value={production.gross_budget_usd} /> : "—"}
-            </span>
-            <span className="ph-hero-metric-caption">Total estimated budget</span>
-          </div>
-          <div className="ph-hero-sep" aria-hidden="true" />
-          <div className="ph-hero-metric">
-            <span className="ph-hero-metric-label">
-              Question{openQuestions === 1 ? "" : "s"} Remaining
-            </span>
-            <span className="ph-hero-metric-value mono">{openQuestions}</span>
-            {!!swing && (
-              <span className="ph-hero-metric-caption">±${Math.round(swing).toLocaleString()} at stake</span>
-            )}
-          </div>
+      <div className="ph-hero-metrics">
+        <div className="ph-hero-metric">
+          <span className="ph-hero-metric-label">Production Budget</span>
+          <span className="ph-hero-metric-value mono">
+            {production ? <Money value={production.gross_budget_usd} /> : "—"}
+          </span>
+          <span className="ph-hero-metric-caption">Total estimated budget</span>
+        </div>
+        <div className="ph-hero-sep" aria-hidden="true" />
+        <div className="ph-hero-metric">
+          <span className="ph-hero-metric-label">
+            Question{openQuestions === 1 ? "" : "s"} Remaining
+          </span>
+          <span className="ph-hero-metric-value mono">{openQuestions}</span>
+          {!!swing && (
+            <span className="ph-hero-metric-caption">±${Math.round(swing).toLocaleString()} at stake</span>
+          )}
         </div>
       </div>
+      <div className="ph-hero-topbar">{headerActions}</div>
     </div>
   );
 }

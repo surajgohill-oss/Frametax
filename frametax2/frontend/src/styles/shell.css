@@ -694,3 +694,112 @@
 @media (max-width: 1100px) {
   .cg-sidebar { width: 0; padding: 0; border: none; overflow: hidden; }
 }
+
+/* ART PLATE HERO (2026-10-07; supersedes the Full-Art Hero Rule above at the product owner's request):
+   one 160px row: back link, 200x112 landscape art plate (object-fit: cover, edge to edge), title + chips,
+   metric bay (icons pinned top-right). Theme-aware: warm vellum in the day theme, obsidian in the night
+   theme; both read the per-production tint ProductionHero.jsx sets (--ph-hero-grad-light on the day
+   gradient, --ph-hero-grad-start on the night gradient, --ph-hero-glow on the lens wash). The old
+   full-width .ph-hero-art / .ph-hero-scrim rules above are no longer rendered. */
+.ph-hero {
+  --phh-bg: linear-gradient(90deg, var(--ph-hero-grad-light, #ECE8DF) 0%, #F5F2EB 45%, #EAE5DC 100%); --phh-bg-color: #F5F2EB;
+  --phh-bd-top: rgba(0, 0, 0, 0.05); --phh-bd-bot: #D8D3C8; --phh-inset: inset 0 -8px 16px rgba(60, 50, 30, 0.05);
+  --phh-lens-opacity: 0.6;
+  --phh-title: #1C2D27; --phh-back: #64748B; --phh-back-h: #1C2D27;
+  --phh-chip-bg: rgba(0, 0, 0, 0.05); --phh-chip-bd: rgba(0, 0, 0, 0.1); --phh-chip-fg: #4A5568;
+  --phh-chip-bd-h: rgba(0, 0, 0, 0.25); --phh-chip-fg-h: #1C2D27;
+  --phh-label: #64748B; --phh-value: #1C2D27; --phh-sep: rgba(0, 0, 0, 0.12);
+  --phh-q: #B45309; --phh-q-bg: rgba(245, 144, 30, 0.1); --phh-q-bd: rgba(180, 83, 9, 0.3);
+  --phh-plate-bd: rgba(0, 0, 0, 0.1); --phh-plate-shadow: 0 6px 14px rgba(40, 30, 20, 0.18);
+  --phh-ico-bg: rgba(255, 255, 255, 0.6); --phh-ico-bd: rgba(0, 0, 0, 0.12); --phh-ico-fg: #4A5568;
+  --phh-ico-bd-h: rgba(0, 0, 0, 0.3); --phh-ico-fg-h: #1C2D27;
+
+  box-sizing: content-box;
+  height: 160px;
+  min-height: 160px;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 24px;
+  isolation: isolate;
+  background-color: var(--phh-bg-color);
+  background-image: var(--phh-bg);
+  border-top: 1px solid var(--phh-bd-top);
+  border-bottom: 1px solid var(--phh-bd-bot);
+  box-shadow: var(--phh-inset);
+}
+:root[data-theme="night"] .ph-hero {
+  --phh-bg: linear-gradient(90deg, var(--ph-hero-grad-start, #0B0D11) 0%, #141720 40%, #0A0C10 100%); --phh-bg-color: #0C0E13;
+  --phh-bd-top: rgba(255, 255, 255, 0.1); --phh-bd-bot: #1A1E26; --phh-inset: inset 0 -10px 20px rgba(0, 0, 0, 0.4);
+  --phh-lens-opacity: 1;
+  --phh-title: #FFFFFF; --phh-back: #7C8799; --phh-back-h: #FFFFFF;
+  --phh-chip-bg: rgba(0, 0, 0, 0.4); --phh-chip-bd: rgba(255, 255, 255, 0.1); --phh-chip-fg: #94A3B8;
+  --phh-chip-bd-h: rgba(255, 255, 255, 0.3); --phh-chip-fg-h: #FFFFFF;
+  --phh-label: #7C8799; --phh-value: #FFFFFF; --phh-sep: rgba(247, 243, 232, 0.22);
+  --phh-q: #F5901E; --phh-q-bg: rgba(245, 144, 30, 0.1); --phh-q-bd: rgba(245, 144, 30, 0.2);
+  --phh-plate-bd: rgba(255, 255, 255, 0.1); --phh-plate-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+  --phh-ico-bg: rgba(20, 22, 20, 0.38); --phh-ico-bd: rgba(247, 243, 232, 0.25); --phh-ico-fg: rgba(247, 243, 232, 0.85);
+  --phh-ico-bd-h: rgba(247, 243, 232, 0.5); --phh-ico-fg-h: #F7F3E8;
+}
+.ph-hero-lens {
+  position: absolute; left: 0; top: 0; width: 55%; height: 100%; z-index: -1; pointer-events: none;
+  opacity: var(--phh-lens-opacity);
+  background: radial-gradient(ellipse at 30% 50%, var(--ph-hero-glow, rgba(45, 75, 100, 0.2)), transparent 75%);
+}
+.ph-hero-back {
+  flex: none; width: 72px; margin-right: 12px; padding: 0; border: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  white-space: normal; font-size: 11px; color: var(--phh-back); transition: color 0.15s;
+}
+.ph-hero-back:hover { color: var(--phh-back-h); }
+.ph-hero-plate {
+  position: relative; flex: none; width: 200px; height: 112px; min-width: 200px; min-height: 112px; margin-right: 24px;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  border-radius: 2px; border: 1px solid var(--phh-plate-bd); background: var(--surface-2);
+  box-shadow: var(--phh-plate-shadow);
+}
+.ph-hero-plate-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; filter: blur(16px); opacity: 0.4; transform: scale(1.25); pointer-events: none;
+}
+.ph-hero-plate-fg {
+  position: relative; z-index: 10; display: block; width: 100%; height: 100%;
+  padding: 0; object-fit: cover; object-position: center;
+}
+
+.ph-hero-identity { flex: 1 1 0; min-width: 0; justify-content: center; gap: 6px; }
+.ph-hero-title { font-size: 24px; line-height: 1.25; letter-spacing: -0.025em; color: var(--phh-title); text-shadow: none; }
+.ph-hero-identity-sub { gap: 8px; }
+.ph-hero-sub,
+.ph-hero-identity .ph-stage-val {
+  padding: 2px 10px; border-radius: 2px;
+  background: var(--phh-chip-bg); border: 1px solid var(--phh-chip-bd);
+  font: 500 10px var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--phh-chip-fg); text-shadow: none; backdrop-filter: none;
+}
+.ph-hero-identity .ph-stage-val { height: auto; }
+.ph-hero-identity .ph-stage-val:hover { border-color: var(--phh-chip-bd-h); color: var(--phh-chip-fg-h); }
+.ph-hero-identity .ph-stage-val .car { color: inherit; }
+
+.ph-hero-metrics { margin-left: 24px; padding: 0 0 0 24px; background: none; backdrop-filter: none; border-radius: 0; align-items: center; gap: 24px; text-align: right; }
+.ph-hero-metric { align-items: flex-end; }
+.ph-hero-metric-label { font: 400 9px var(--font-mono); letter-spacing: 0.1em; color: var(--phh-label); }
+.ph-hero-metric-value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--phh-value); text-shadow: none; }
+.ph-hero-metric-caption { font-size: 10px; color: var(--phh-label); }
+.ph-hero-sep { background: var(--phh-sep); }
+.ph-hero-metric ~ .ph-hero-metric .ph-hero-metric-value {
+  font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--phh-q);
+  background: var(--phh-q-bg); border: 1px solid var(--phh-q-bd); padding: 2px 8px; border-radius: 2px;
+}
+.ph-hero-topbar { position: absolute; top: 12px; right: 24px; padding: 0; z-index: 2; justify-content: flex-end; }
+.ph-hero .ph-hero-topbar .ph-ico { background: var(--phh-ico-bg); border-color: var(--phh-ico-bd); color: var(--phh-ico-fg); }
+.ph-hero .ph-hero-topbar .ph-ico:hover { border-color: var(--phh-ico-bd-h); color: var(--phh-ico-fg-h); }
+
+/* SIDEBAR TYPOGRAPHY (2026-10-07): section headers and links match the tracked-uppercase / compact
+   sans hierarchy used in the Workspace cards. The rail is dark in both themes, so the light-on-dark
+   slate values apply in both. Spacing and links are unchanged. */
+.cg-sidebar .cg-group { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: #94A3B8; padding: 4px 20px; margin-bottom: 4px; }
+.cg-sidebar .cg-group ~ .cg-group { margin-top: 16px; padding-top: 16px; }
+.cg-sidebar .cg-navlink { font-size: 12px; font-weight: 500; letter-spacing: -0.01em; color: #CBD5E1; }
+.cg-sidebar .cg-navlink:hover { color: #FFFFFF; background: rgba(255, 255, 255, 0.05); opacity: 1; }
+.cg-sidebar .cg-navlink.on { color: #FFFFFF; font-weight: 600; border-left-color: #E5B233; }
