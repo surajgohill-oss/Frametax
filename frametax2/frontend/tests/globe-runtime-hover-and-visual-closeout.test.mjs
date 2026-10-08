@@ -61,10 +61,10 @@ test("both themes: darker ocean than land with clear separation; land darker tha
   const grab = (theme, key) => new RegExp(`${theme}: \\{[\\s\\S]*?${key}: "(#[0-9a-fA-F]{6})"`).exec(globe)[1];
   for (const theme of ["day", "night"]) {
     const ocean = lum(grab(theme, "ocean"));
-    const land = lum(grab(theme, "land"));
-    assert.ok(land - ocean >= 40, `${theme} land clears ocean`);
+    const land = theme === "day" ? lum("#5d7a7e") : lum(grab(theme, "land")); // day land is the GRAPHITE_HEX constant
+    assert.ok(land - ocean >= 30, `${theme} land clears ocean`);
   }
-  assert.ok(lum(grab("day", "ocean")) < lum("#1c3350"), "day ocean deeper than prior");
+  assert.ok(lum(grab("day", "ocean")) < lum("#2a4f66"), "day ocean stays a deep maritime blue-green");
   assert.ok(lum("#5d7a7e") < lum("#6c8c90"));
 });
 

@@ -109,7 +109,7 @@ function SingleJurisdictionContractBody({ hover }) {
         <div className="hover-field"><div className="text-tertiary small">Economics</div><div className="small">Not priced</div></div>
       )}
       {(rec.hard_failure_reason || rec.headline) && (
-        <div className="hover-field"><div className="text-tertiary small">Reason</div><div className="small">{rec.hard_failure_reason || rec.headline}</div></div>
+        <div className="hover-field"><div className="text-tertiary small">Blocker</div><div className="small">{briefly(rec.hard_failure_reason || rec.headline)}</div></div>
       )}
       {(rec.missing_conditions || []).length > 0 && !pot && (
         <div className="hover-field"><div className="text-tertiary small">Missing fact</div><div className="small">{rec.missing_conditions[0]}{rec.missing_conditions.length > 1 ? ` · +${rec.missing_conditions.length - 1} more in Inspector` : ""}</div></div>
@@ -217,7 +217,7 @@ function ExcludedBody({ hover }) {
   return (
     <div className="hover-field">
       <div className="text-tertiary small">Reason</div>
-      <div className="small">{reason}</div>
+      <div className="small">{briefly(reason)}</div>
     </div>
   );
 }

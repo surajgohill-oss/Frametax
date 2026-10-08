@@ -241,11 +241,11 @@ const GLOBE_THEME = {
     // below, but the base color itself now has to be a blue an eye would
     // call "ocean" even unlit, not a desaturated gray-blue.
     // LUXURY OPTICAL-GLASS PASS (2026-10-08): a richer, deeper ocean (#152a44 -> #102541).
-    ocean: "#113246", // STAGE/OCEAN PASS (2026-10-08): ~15% lighter, deep blue-green maritime
+    ocean: "#17435c", // STAGE/OCEAN PASS (2026-10-08): ~15% lighter, deep blue-green maritime
     // Raised in step with the base color so the unlit hemisphere of the
     // ocean still reads as deep blue rather than collapsing toward black —
     // same guaranteed-floor role the land emissive floor plays below.
-    oceanEmissive: "#0f2a3e",
+    oceanEmissive: "#12334a",
     land: GRAPHITE_HEX,
     stroke: "#9aa3b0",
     // Soft dual-tone limb: maritime slate on the shaded side, warm ivory toward the upper-left key light.
@@ -258,7 +258,7 @@ const GLOBE_THEME = {
     // one coherent edge treatment rather than competing effects.
     atmosphere: "#6fb4ef",
     backdrop: ["#05080e", "#04070c", "#03050a"],
-    bloom: "#133650",
+    bloom: "#143a58",
     // Raised modestly from 0.95: a first, conservative increment paired with
     // the deepened ocean and the atmosphere re-enable, verified live rather
     // than chased to a target number. The neutral-light-rig ratio (ambient
@@ -286,10 +286,10 @@ const GLOBE_THEME = {
     // Deepened in step with day, keeping the same relative move (a more
     // saturated, less desaturated-gray navy). Still clearly darker than day's
     // ocean — night must stay night — but no longer reads as a flat void.
-    ocean: "#0f2a42",
+    ocean: "#123c56",
     // Faint internal blue illumination — the "lit from within" quality the
     // art direction calls for, and the guarantee the ocean never collapses.
-    oceanEmissive: "#0b2238",
+    oceanEmissive: "#0d2c44",
     // Neutral grey land on a navy ocean is precisely what reads as an
     // unfinished or missing asset — the two share no hue family. Night land
     // is a navy-slate: clearly lighter than the ocean, clearly darker than
@@ -315,7 +315,7 @@ const GLOBE_THEME = {
     // Meets --dark-canvas/--dark-surface-0 from the night token layer, so
     // the globe panel and the application shell share one continuous field.
     backdrop: ["#04070d", "#03060b", "#020409"],
-    bloom: "#10304a",
+    bloom: "#10324e",
     // Slightly hotter: the surrounding UI is far darker at night, so the
     // same exposure reads dimmer by simultaneous contrast. Raised in the
     // same proportion as day (1.04 -> 1.12).
@@ -357,6 +357,7 @@ const GOLD_STROKE = "#f7e3ab";
 // mistaken for a committed selection. Neutral (no hue of its own) so it
 // reads identically over all four semantic states and over untouched land.
 const HOVER_STROKE = "#dfe4ec";
+const DATA_INCOMPLETE_STROKE = "#d3dae4";
 
 // Fresnel rim strength. Raised on selection to read as "illuminated". The
 // rim colour itself is warm brass now (was a cold blue "#4a7fb5") — the
@@ -389,7 +390,7 @@ const HOVER_STROKE = "#dfe4ec";
 // the same proportion (was left at 0.32 in the prior pass, which shrank the
 // "substantial lift on selection" gap from ~33% relative to ~10% — an
 // unintended regression, corrected here).
-const BASE_RIM_INTENSITY = 0.38;
+const BASE_RIM_INTENSITY = 0.55;
 const SELECTED_RIM_INTENSITY = 0.44;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
@@ -691,9 +692,9 @@ function makeOceanBackgroundTexture() {
   base.addColorStop(1, stops[2]);
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, 256, 256);
-  const bloom = ctx.createRadialGradient(128, 128, 20, 128, 128, 150);
-  bloom.addColorStop(0, `${globeTheme().bloom}cc`);
-  bloom.addColorStop(0.55, `${globeTheme().bloom}55`);
+  const bloom = ctx.createRadialGradient(128, 128, 10, 128, 128, 100);
+  bloom.addColorStop(0, `${globeTheme().bloom}e0`);
+  bloom.addColorStop(0.55, `${globeTheme().bloom}50`);
   bloom.addColorStop(1, `${globeTheme().bloom}00`);
   ctx.fillStyle = bloom;
   ctx.fillRect(0, 0, 256, 256);
@@ -1223,6 +1224,8 @@ export default function Globe3D({
       // inventing a new accent colour for a one-shot event.
       if (iso && liveRef.current.pulsingIsos?.has(iso)) return GOLD_STROKE;
       if (hex === TIER_HEX.gold) return GOLD_STROKE;
+      // Data Incomplete: a lighter outline keeps it distinct from ocean, inactive land and Reference Alternative.
+      if (hex === OPTIMIZER_STATUS_HEX.slate) return DATA_INCOMPLETE_STROKE;
       // Theme-driven: night mode softens borders markedly (see GLOBE_THEME).
       return liveRef.current.strokeColor || NEUTRAL_STROKE;
     };
@@ -1923,6 +1926,7 @@ export default function Globe3D({
     // curvature. Production only: at brand-mark size it is a blue halo.
     let rimMesh = null;
     let hazeMesh = null;
+    let depthMesh = null;
     if (!isBrand) {
       rimMesh = new THREE.Mesh(
         new THREE.SphereGeometry(globe.getGlobeRadius() * 1.004, 64, 64),
@@ -1943,7 +1947,8 @@ export default function Globe3D({
             uWarm: { value: new THREE.Color(GLOBE_THEME.day.rimWarm) },
             uIntensity: { value: BASE_RIM_INTENSITY },
             // LUXURY OPTICAL-GLASS PASS: 3.4 -> 2.9, a slightly wider, softer Fresnel feather.
-            uPower: { value: 2.9 },
+            uPower: { value: 2.3 },
+            uShift: { value: 0 },
           },
           vertexShader: `
             varying vec3 vNormal;
@@ -1959,13 +1964,14 @@ export default function Globe3D({
             uniform vec3 uWarm;
             uniform float uIntensity;
             uniform float uPower;
+            uniform float uShift;
             varying vec3 vNormal;
             varying vec3 vView;
             void main() {
               float f = pow(1.0 - abs(dot(vNormal, vView)), uPower);
               // warm ivory toward the upper-left key-light edge, maritime slate on the lower-right
-              float warm = smoothstep(-0.15, 0.85, dot(normalize(vNormal.xy + vec2(1e-4)), normalize(vec2(-0.62, 0.78))));
-              gl_FragColor = vec4(mix(uColor, uWarm, warm * 0.85), f * uIntensity);
+              float warm = smoothstep(-0.15, 0.85, dot(normalize(vNormal.xy + vec2(1e-4)), normalize(vec2(-0.62 * cos(uShift) - 0.78 * sin(uShift), 0.78 * cos(uShift) - 0.62 * sin(uShift)))));
+              gl_FragColor = vec4(mix(uColor, uWarm, warm * 0.95), f * uIntensity);
             }`,
           side: THREE.BackSide,
           blending: THREE.AdditiveBlending,
@@ -1980,7 +1986,7 @@ export default function Globe3D({
       hazeMesh = new THREE.Mesh(
         new THREE.SphereGeometry(globe.getGlobeRadius() * 1.0015, 64, 64),
         new THREE.ShaderMaterial({
-          uniforms: { uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) }, uPower: { value: 2.3 }, uAlpha: { value: 0.10 } },
+          uniforms: { uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) }, uPower: { value: 2.0 }, uAlpha: { value: 0.17 } },
           vertexShader: `
             varying vec3 vNormal;
             varying vec3 vView;
@@ -2007,6 +2013,32 @@ export default function Globe3D({
         }),
       );
       scene.add(hazeMesh);
+      // Ocean depth shell: a darker lower-right depth gradient and a soft upper-left key-light response laid over the
+      // ocean only (land and status caps are raised above it). Static, no animation.
+      depthMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(globe.getGlobeRadius() * 1.003, 96, 96),
+        new THREE.ShaderMaterial({
+          vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }`,
+          fragmentShader: `
+            varying vec3 vNormal;
+            void main() {
+              float d = dot(vNormal.xy, normalize(vec2(0.55, -0.83)));
+              float dark = smoothstep(-0.1, 0.9, d);
+              float key = smoothstep(0.15, 0.95, dot(vNormal, normalize(vec3(-0.55, 0.62, 0.56))));
+              vec3 c = mix(vec3(0.0, 0.02, 0.05), vec3(0.62, 0.82, 0.88), key);
+              gl_FragColor = vec4(c, max(dark * 0.30, key * 0.14));
+            }`,
+          side: THREE.FrontSide,
+          transparent: true,
+          depthWrite: false,
+        }),
+      );
+      scene.add(depthMesh);
     }
 
     let cancelled = false;
@@ -2155,6 +2187,13 @@ export default function Globe3D({
           povGlobe.setPointOfView(camera);
           stateRef.current.evalPointerHover?.();
         }
+      }
+      if (rimMesh) {
+        // View-responsive optical shimmer: the warm/cool split of the limb shifts a few degrees with the camera azimuth and,
+        // unless reduced motion is requested, drifts very slowly over time. No pulsing, no waves.
+        const cp = camera.position;
+        const slow = stateRef.current.ambientMotion ? 0.14 * Math.sin(((performance.now() - ambientT0) / 1000 / 42) * Math.PI * 2) : 0;
+        rimMesh.material.uniforms.uShift.value = Math.atan2(cp.x, cp.z) * 0.2 + slow;
       }
       if (stateRef.current.ambientMotion) {
         // 1. Specular drift — rotates the pre-filtered studio radiance map,
@@ -2531,6 +2570,7 @@ export default function Globe3D({
       sideMaterialCache.forEach((m) => m.dispose());
       if (rimMesh) { rimMesh.geometry.dispose(); rimMesh.material.dispose(); }
       if (hazeMesh) { hazeMesh.geometry.dispose(); hazeMesh.material.dispose(); }
+      if (depthMesh) { depthMesh.geometry.dispose(); depthMesh.material.dispose(); }
       // dispose() frees GPU resources but does NOT release the underlying
       // WebGL context — it lingers on the detached canvas until GC. With a
       // persistent sidebar globe plus route globes mounting/unmounting (and
