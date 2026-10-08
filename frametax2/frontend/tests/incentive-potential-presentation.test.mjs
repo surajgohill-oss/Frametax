@@ -136,3 +136,31 @@ test("hover bodies and every segment-Inspector opener render the shared contract
     assert.match(read(f), /incentive_potential: readIncentivePotential\(s\)/);
   }
 });
+
+// ── Precise structure wording (2026-10-08): the unresolved upside is its own axis ────────────────
+import { economicsStatusText } from "../src/lib/incentivePotential.js";
+
+test("economicsStatusText never labels a whole structure 'Conditional' for an unresolved upside", () => {
+  const pot = (o) => readIncentivePotential({ ceiling_status: "CONFIRMED", economics_certainty: "CONFIRMED", confirmed_incentive_floor_usd: 5, ...o });
+  assert.equal(economicsStatusText(pot({})), "Confirmed");
+  assert.equal(economicsStatusText(pot({ ceiling_status: "CONDITIONAL", economics_certainty: "CONDITIONAL" })), "Confirmed floor · maximum needs the facts below");
+  assert.equal(economicsStatusText(pot({ ceiling_status: "NOT_ESTABLISHED" })), "Confirmed floor · maximum not established");
+  assert.equal(economicsStatusText(pot({ economics_certainty: "CONDITIONAL" })), "Maximum equals the confirmed floor · award confirmation open");
+  assert.equal(economicsStatusText(pot({ economics_certainty: "REFERENCE_ONLY" })), "Reference only");
+  for (const o of [{}, { ceiling_status: "CONDITIONAL", economics_certainty: "CONDITIONAL" }, { ceiling_status: "NOT_ESTABLISHED" }]) {
+    assert.doesNotMatch(economicsStatusText(pot(o)), /^Conditional$/);
+  }
+});
+
+test("Inspector, universe panel and Globe state the same served jurisdiction category and reason", () => {
+  const univ = read("components/JurisdictionUniverse.jsx");
+  const insp = read("shell/Inspector.jsx");
+  // every Inspector kind opened from the universe/Globe carries the served category + reason
+  assert.equal((univ.match(/\.\.\.category/g) || []).length, 3, "candidate, rejection and opportunity Inspectors all receive the category");
+  assert.match(insp, /data-jurisdiction-category/);
+  assert.equal((insp.match(/<JurisdictionCategoryDisclosure data=\{data\} \/>/g) || []).length, 3);
+  // the row never appends the lowercased certainty word to a whole jurisdiction
+  assert.doesNotMatch(univ, /economic_certainty\)\.toLowerCase\(\)/);
+  // the Globe adapter reads the served upside axis instead of inferring it from certainty
+  assert.match(read("lib/globeData.js"), /ceiling_status: rec\.ceiling_status \?\?/);
+});

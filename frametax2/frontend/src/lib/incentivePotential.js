@@ -33,6 +33,18 @@ export function certaintyLabel(pot) {
   return (pot && CERTAINTY_LABEL[pot.certainty]) || "Reference only";
 }
 
+// Precise, two-axis economics statement for the Inspector: the confirmed floor and the unresolved upside are
+// different facts, so the whole structure is never labelled "Conditional" merely because its maximum needs facts.
+// Served fields only (certainty = confidence in the confirmed floor / award; ceilingStatus = the upside axis).
+export function economicsStatusText(pot) {
+  if (!pot) return "Reference only";
+  if (pot.certainty === "REFERENCE_ONLY") return "Reference only";
+  if (pot.ceilingStatus === "NOT_ESTABLISHED") return "Confirmed floor · maximum not established";
+  if (pot.ceilingStatus === "CONDITIONAL") return "Confirmed floor · maximum needs the facts below";
+  if (pot.certainty === "CONDITIONAL") return "Maximum equals the confirmed floor · award confirmation open";
+  return "Confirmed";
+}
+
 // One-line summary of what is missing for the maximum, for the dense card. The full list is
 // always available through `missingFactsTitle` (tooltip) and the Inspector.
 export function missingFactsSummary(pot, max = 2) {

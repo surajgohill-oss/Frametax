@@ -175,8 +175,11 @@ def build_single_jurisdiction_contract(
 
     fit_cache: dict = {}
 
-    def _fit_known(e):   # a served fit status exists (legacy payloads without it are classified as before)
-        return e.get("production_fit_status") is not None
+    def _fit_known(e):
+        # A served fit CLAIM exists (legacy payloads without it are classified as before). A production with NO location
+        # requirements on file has nothing to confirm or contradict, so its UNKNOWN fit is not a claim: it never turns
+        # every executable jurisdiction "conditional" (the basis is still served on the record for disclosure).
+        return e.get("production_fit_status") is not None and e.get("production_fit_basis") != "NO_REQUIREMENTS_ON_FILE"
 
     confirmed = sorted((e for e in best_per_jurisdiction.values()
                         if e.get("confirmed_npc_usd") is not None
@@ -188,7 +191,7 @@ def build_single_jurisdiction_contract(
         disp = j["disposition"]
         rec: dict = {"jurisdiction_code": code, "disposition": disp, "first_exit_stage": j.get("first_exit_stage"),
                      "confirmed_incentive_usd": None, "confirmed_npc_usd": None, "potential_incentive_usd": None,
-                     "potential_npc_usd": None, "economic_certainty": None, "missing_conditions": [],
+                     "potential_npc_usd": None, "economic_certainty": None, "ceiling_status": None, "missing_conditions": [],
                      "authority_warning": None, "hard_failure_reason": None, "difference_reason": None, "program_slug": None,
                      "jurisdiction_name": names.get(code), "program_name": None, "headline": None, "blocker_kind": None,
                      "stored_floor_statement": None, "stated_ceiling_rate": None,
@@ -217,6 +220,7 @@ def build_single_jurisdiction_contract(
                 confirmed_incentive_usd=e.get("confirmed_incentive_floor_usd", e.get("selected_incentive_usd")),
                 confirmed_npc_usd=e.get("confirmed_npc_usd"), potential_incentive_usd=e.get("maximum_supported_incentive_usd"),
                 potential_npc_usd=e.get("potential_npc_usd"), economic_certainty=e.get("economics_certainty"),
+                ceiling_status=e.get("ceiling_status"),
                 missing_conditions=conditions,
                 authority_warning=next((w for w in (e.get("warnings") or []) if "Authority provenance incomplete" in w), None),
                 program_slug=e.get("program_slug"), program_name=e.get("program_display_name"),
@@ -241,7 +245,7 @@ def build_single_jurisdiction_contract(
             rec.update(
                 program_slug=r.get("program_slug"), confirmed_incentive_usd=pot.get("confirmed_incentive_floor_usd"),
                 potential_incentive_usd=pot.get("maximum_supported_incentive_usd"), potential_npc_usd=pot.get("potential_npc_usd"),
-                economic_certainty=pot.get("economics_certainty"),
+                economic_certainty=pot.get("economics_certainty"), ceiling_status=pot.get("ceiling_status"),
                 missing_conditions=[p.get("description") or p.get("fact_key") for p in (detail.get("unresolved_propositions") or [])],
                 hard_failure_reason=r.get("hard_block_reason"),
                 authority_warning=detail.get("provenance_axis") if disp == "NEEDS_FACTS" else None,

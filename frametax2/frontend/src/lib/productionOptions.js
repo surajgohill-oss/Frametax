@@ -19,6 +19,7 @@
 
 import { hasAdministrativeAllocationRisk, hasUnconfirmedStackingDeduction } from "./allocationRisk.js";
 import { optimizerProjection } from "./workspaceScenarioMode.js";
+import { ALT } from "./alternativeLabels.js";
 
 export const CLASSIFICATIONS = {
   current: { key: "current", label: "Current / Base Production", accent: "gold" },
@@ -291,7 +292,12 @@ export function selectAnchorLeadingOptimized(allocated) {
   const winners = Object.values(allocated.best_per_jurisdiction || {})
     .filter(Boolean)
     .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
-  const leading = winners.find(isNew);
+  // Production fit decides who may LEAD (the same rule as the served single-jurisdiction contract's leader): the
+  // cheapest fit-CONFIRMED winner leads; a winner with an established physical mismatch (WEAK) never does; a
+  // winner whose fit is merely unconfirmed (or has no fit claim at all) leads only when no winner is confirmed.
+  const confirmedFit = (x) => x.production_fit_status === "STRONG" || x.production_fit_status === "WORKABLE";
+  const leading = winners.find((x) => isNew(x) && confirmedFit(x))
+    || winners.find((x) => isNew(x) && x.production_fit_status !== "WEAK");
   if (leading) add(leading, "Leading Jurisdiction");
 
   const projection = optimizerProjection(allocated);
@@ -304,7 +310,8 @@ export function selectAnchorLeadingOptimized(allocated) {
   }
 
   const conditional = [...allocated.structures, ...winners, ...projection.recommended, ...projection.evaluated]
-    .filter((s) => s.ceiling_status === "CONDITIONAL" && s.potential_npc_usd != null && isNew(s))
+    // a structure with an established physical-location mismatch is never offered as upside
+    .filter((s) => s.ceiling_status === "CONDITIONAL" && s.potential_npc_usd != null && s.production_fit_status !== "WEAK" && isNew(s))
     .sort((a, b) => a.potential_npc_usd - b.potential_npc_usd)[0];
   if (conditional) add(conditional, "Conditional Upside", { __isConditionalUpside: true });
 
@@ -352,23 +359,20 @@ export function selectAnchorLeadingOptimized(allocated) {
 // already-established contract this fix does not reopen.
 export function cardStatus(structure, cardIndex) {
   if (structure.__isOpportunity) return "OPTIMIZED";
-  if (structure.__isConditionalUpside) return "CONDITIONAL";
-  // The optimizer's top evaluated alternative (no recommended option served): never a confident
-  // OPTIMIZED claim while its maximum is still conditional.
-  if (structure.__isOptimizerReference) {
-    return structure.ceiling_status === "CONDITIONAL" || structure.economics_certainty === "CONDITIONAL"
-      || hasAdministrativeAllocationRisk(structure) || structure.legal_review_required
-      ? "CONDITIONAL" : "OPTIMIZED";
-  }
   if (cardIndex === 0 && isBaselineStructure(structure)) return "ANCHOR";
   if (structure.__isProducerOptimizer) return "OPTIMIZED";
+  // Location fit is its own precise category (same vocabulary as the Workspace badges): an established
+  // physical mismatch is low-location-fit; capability data that cannot assess is "fit unconfirmed".
+  if (structure.production_fit_status === "WEAK") return ALT.LOW_FIT;
+  if (structure.production_fit_status === "UNKNOWN") return ALT.FIT_UNCONFIRMED;
+  // A reference alternative (the optimizer's top evaluated alternative when no option is recommended, or the
+  // upside slot's structure) keeps its precise reference category. An unresolved UPSIDE is disclosed by the
+  // economic well's "needed to reach maximum" line, never by relabelling the whole structure CONDITIONAL.
+  if (structure.__isOptimizerReference || structure.__isConditionalUpside) return "REFERENCE";
   if (
     hasAdministrativeAllocationRisk(structure)
     || structure.legal_review_required
     || hasUnconfirmedStackingDeduction(structure)
-    // a structure whose served maximum is still conditional/unresolved never claims LEADING
-    || structure.ceiling_status === "CONDITIONAL" || structure.ceiling_status === "NOT_ESTABLISHED"
-    || structure.economics_certainty === "CONDITIONAL"
   ) return "CONDITIONAL";
   return "LEADING";
 }

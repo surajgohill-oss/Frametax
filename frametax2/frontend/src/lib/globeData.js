@@ -544,7 +544,9 @@ function contractStructure(rec, executable) {
     confirmed_npc_usd: rec.confirmed_npc_usd,
     potential_npc_usd: rec.potential_npc_usd,
     economics_certainty: rec.economic_certainty,
-    ceiling_status: rec.economic_certainty === "CONDITIONAL" ? "CONDITIONAL" : "CONFIRMED",
+    // the served upside axis (CONFIRMED / CONDITIONAL / NOT_ESTABLISHED); certainty is a separate axis and is
+    // never used to infer it (a legacy payload without the field keeps the old fallback)
+    ceiling_status: rec.ceiling_status ?? (rec.economic_certainty === "CONDITIONAL" ? "CONDITIONAL" : "CONFIRMED"),
     ceiling_missing_facts: (rec.missing_conditions || []).map((description) => ({
       jurisdiction_code: rec.jurisdiction_code, program_slug: rec.program_slug, description,
     })),

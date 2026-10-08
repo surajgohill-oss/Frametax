@@ -4,7 +4,7 @@ import {
   accountedRowFor, coproductionNeedsFactsLabel, coproductionRows, executableFor, groupUniverse, jurisdictionLabel,
   policySuppressedLabel, policySuppressedRows,
 } from "../lib/jurisdictionUniverse";
-import { buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail } from "../lib/globeData";
+import { buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, SINGLE_JURISDICTION_CATEGORY_SEMANTIC } from "../lib/globeData";
 
 // Complete served jurisdiction universe (Single-Jurisdiction mode) + the co-production-opportunities-need-facts list.
 // Reads ONLY the served contract (lib/jurisdictionUniverse.js); opens the same Inspector every other surface opens.
@@ -13,8 +13,18 @@ const usd = (v) => (v == null ? "—" : <Money value={v} bare />);
 
 export function openUniverseRecord(allocated, rec, openInspector, onSelect) {
   onSelect?.(rec.jurisdiction_code);
+  // The served category and its reason, carried into the Inspector so it states the SAME result the panel and the Globe do.
+  const category = {
+    jurisdictionCategory: rec.category,
+    jurisdictionCategoryLabel: SINGLE_JURISDICTION_CATEGORY_SEMANTIC[rec.category]?.label ?? null,
+    jurisdictionCategoryReason: rec.hard_failure_reason
+      || (rec.disposition === "EXECUTABLE"
+        ? (rec.production_fit_status === "UNKNOWN" ? (rec.missing_conditions || []).find((c) => /Location fit unconfirmed/.test(c)) : null)
+        : rec.headline)
+      || null,
+  };
   const exec = rec.disposition === "EXECUTABLE" ? executableFor(allocated, rec) : null;
-  if (exec) return openInspector("candidate-structure", buildCandidateDetail(exec));
+  if (exec) return openInspector("candidate-structure", { ...buildCandidateDetail(exec), ...category });
   const row = accountedRowFor(allocated, rec);
   if (!row) return null;
   const detailRow = {
@@ -27,8 +37,8 @@ export function openUniverseRecord(allocated, rec, openInspector, onSelect) {
     production_fit_capability_evidence: rec.production_fit_capability_evidence || [],
   };
   return rec.disposition === "HARD_BLOCK"
-    ? openInspector("optimizer-rejection", buildRejectedDetail(detailRow))
-    : openInspector("optimizer-opportunity", buildOpportunityDetail(detailRow));
+    ? openInspector("optimizer-rejection", { ...buildRejectedDetail(detailRow), ...category })
+    : openInspector("optimizer-opportunity", { ...buildOpportunityDetail(detailRow), ...category });
 }
 
 function UniverseRow({ rec, onOpen }) {
@@ -41,7 +51,10 @@ function UniverseRow({ rec, onOpen }) {
         <div className="row-sub">
           Confirmed incentive {usd(rec.confirmed_incentive_usd)} · NPC {usd(rec.confirmed_npc_usd)}
           {rec.potential_incentive_usd != null && rec.potential_incentive_usd > (rec.confirmed_incentive_usd ?? 0) && <> · maximum potential {usd(rec.potential_incentive_usd)} (not guaranteed)</>}
-          {rec.economic_certainty ? ` · ${String(rec.economic_certainty).toLowerCase()}` : ""}
+          {/* never label the whole jurisdiction "conditional" for an unresolved upside: the maximum-potential
+              clause above and the exact missing facts below disclose it; only an open award confirmation
+              (certainty conditional with no upside) is stated here. */}
+          {rec.economic_certainty === "CONDITIONAL" && !(rec.potential_incentive_usd != null && rec.potential_incentive_usd > (rec.confirmed_incentive_usd ?? 0)) ? " · award confirmation open" : ""}
         </div>
       )}
       {conditional && (

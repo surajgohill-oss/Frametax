@@ -150,7 +150,7 @@ test("four-slot contract: Current Location, Leading Jurisdiction, Optimized Stru
   assert.deepEqual(result.map((s) => s.structure_id), ["base", "lead", "opt", "lead2"]);
   assert.equal(new Set(result.map((s) => s.economic_identity)).size, 4);
   assert.equal(cardStatus(result[2], 2), "OPTIMIZED");
-  assert.equal(cardStatus(result[3], 3), "CONDITIONAL");
+  assert.equal(cardStatus(result[3], 3), "REFERENCE", "the upside slot keeps its precise reference category; the unresolved upside is disclosed in the well");
 });
 
 test("four-slot contract: with no recommended option, Optimized uses the optimizer's top evaluated alternative, flagged as a reference", () => {
@@ -165,7 +165,7 @@ test("four-slot contract: with no recommended option, Optimized uses the optimiz
   assert.equal(optimized.structure_id, "eval");
   assert.equal(optimized.__isOptimizerReference, true);
   assert.equal(optimized.__isProducerOptimizer, undefined, "a reference alternative never claims a recommendation");
-  assert.equal(cardStatus(optimized, 2), "CONDITIONAL", "a conditional reference is never shown as a confident OPTIMIZED");
+  assert.equal(cardStatus(optimized, 2), "REFERENCE", "a reference alternative is never shown as a confident OPTIMIZED, and an unresolved upside never makes it CONDITIONAL");
 });
 
 test("four-slot contract: an economic identity already shown is never repeated in a later slot", () => {
@@ -202,7 +202,7 @@ test("cardStatus never returns N/A, NO INCENTIVE, or any value outside the vocab
     cardStatus(structure({}), 2),
     cardStatus(structure({}), 3),
   ];
-  for (const s of cases) assert.ok(["ANCHOR", "LEADING", "OPTIMIZED", "CONDITIONAL"].includes(s), `unexpected status: ${s}`);
+  for (const s of cases) assert.ok(["ANCHOR", "LEADING", "OPTIMIZED", "CONDITIONAL", "REFERENCE"].includes(s), `unexpected status: ${s}`);
 });
 
 // ── Runtime wiring remediation: an unconfirmed-calculation structure can
@@ -335,4 +335,42 @@ test("screens.css: .ii-grid is a genuine 2x2 (two columns), not the rejected fou
   const src = stripComments(read("styles/screens.css"));
   assert.match(src, /\.ii-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,/);
   assert.doesNotMatch(src, /\.ii-grid\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
+});
+
+// ── Precise structure category (2026-10-08): an unresolved upside never relabels a structure CONDITIONAL ──
+test("cardStatus: an unresolved UPSIDE (ceiling conditional, floor confirmed) keeps the precise category — never CONDITIONAL", () => {
+  const upsideOnly = structure({ ceiling_status: "CONDITIONAL", economics_certainty: "CONDITIONAL", potential_npc_usd: 1, warnings: [] });
+  assert.equal(cardStatus(upsideOnly, 1), "LEADING");
+  assert.equal(cardStatus({ ...upsideOnly, __isConditionalUpside: true }, 3), "REFERENCE");
+  assert.equal(cardStatus({ ...upsideOnly, __isOptimizerReference: true }, 2), "REFERENCE");
+});
+
+test("cardStatus: location fit is its own category (low-location-fit / fit unconfirmed), never LEADING", () => {
+  assert.equal(cardStatus(structure({ production_fit_status: "WEAK" }), 1), "LOW-LOCATION-FIT REFERENCE");
+  assert.equal(cardStatus(structure({ production_fit_status: "UNKNOWN" }), 1), "LOCATION FIT UNCONFIRMED");
+  assert.equal(cardStatus(structure({ production_fit_status: "WORKABLE" }), 1), "LEADING");
+});
+
+test("Leading Jurisdiction: the cheapest fit-confirmed winner leads; a confirmed-mismatch winner never does", () => {
+  const base = structure({ structure_id: "base", is_baseline: true, economic_identity: "e0" });
+  const weakCheap = structure({ structure_id: "weak", economic_identity: "e1", npc_with_adjustments_usd: 100, production_fit_status: "WEAK" });
+  const unknownMid = structure({ structure_id: "unk", economic_identity: "e2", npc_with_adjustments_usd: 200, production_fit_status: "UNKNOWN" });
+  const okDear = structure({ structure_id: "ok", economic_identity: "e3", npc_with_adjustments_usd: 300, production_fit_status: "WORKABLE" });
+  let result = selectAnchorLeadingOptimized(allocated([base, weakCheap, unknownMid, okDear]));
+  assert.equal(result[1].structure_id, "ok", "fit-confirmed wins even though it is dearer");
+  result = selectAnchorLeadingOptimized(allocated([base, weakCheap, unknownMid]));
+  assert.equal(result[1].structure_id, "unk", "unconfirmed fit leads only when nothing is confirmed");
+  result = selectAnchorLeadingOptimized(allocated([base, weakCheap]));
+  assert.equal(result.length, 1, "a confirmed mismatch never fills the Leading slot");
+});
+
+test("Conditional Upside never offers a structure with an established physical-location mismatch", () => {
+  const base = structure({ structure_id: "base", is_baseline: true, economic_identity: "e0" });
+  const weakUp = structure({ structure_id: "weak-up", economic_identity: "e1", ceiling_status: "CONDITIONAL", potential_npc_usd: 10, production_fit_status: "WEAK" });
+  const okUp = structure({ structure_id: "ok-up", economic_identity: "e2", ceiling_status: "CONDITIONAL", potential_npc_usd: 20, production_fit_status: "WORKABLE" });
+  const lead = structure({ structure_id: "lead", economic_identity: "e3", npc_with_adjustments_usd: 100, production_fit_status: "WORKABLE" });
+  let result = selectAnchorLeadingOptimized(allocated([base, lead, weakUp, okUp]));
+  assert.equal(result.find((s) => s.__slot === "Conditional Upside").structure_id, "ok-up");
+  result = selectAnchorLeadingOptimized(allocated([base, lead, weakUp]));
+  assert.equal(result.find((s) => s.__slot === "Conditional Upside"), undefined);
 });

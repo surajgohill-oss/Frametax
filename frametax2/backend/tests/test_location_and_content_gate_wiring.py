@@ -169,6 +169,45 @@ def test_single_jurisdiction_contract_serves_not_suitable_only_for_a_confirmed_m
     assert got["XX"]["category"] == "CONDITIONAL_ALTERNATIVE" and any("Location fit unconfirmed" in c for c in got["XX"]["missing_conditions"])
 
 
+def test_contract_serves_the_upside_axis_separately_from_certainty():
+    """The Globe/Workspace/Inspector read the unresolved-upside axis (ceiling_status) from the served contract; it is never
+    inferred from certainty, so an executable jurisdiction whose floor is confirmed but whose upside needs facts is not
+    relabelled wholesale."""
+    from app.services.program_pricing_crosswalk import build_single_jurisdiction_contract
+
+    ledger = {"jurisdictions": [{"jurisdiction_code": c, "disposition": "EXECUTABLE", "first_exit_stage": "PRICED"} for c in ("GR", "CZ")],
+              "rows": [], "programs": []}
+    bpj = {
+        "GR": {"primary_jurisdiction": "GR", "confirmed_npc_usd": 100.0, "production_fit_status": "WORKABLE", "production_fit_reasons": [],
+               "ceiling_status": "CONDITIONAL", "economics_certainty": "CONDITIONAL"},
+        "CZ": {"primary_jurisdiction": "CZ", "confirmed_npc_usd": 101.0, "production_fit_status": "WORKABLE", "production_fit_reasons": [],
+               "ceiling_status": "CONFIRMED", "economics_certainty": "CONFIRMED"},
+    }
+    got = {r["jurisdiction_code"]: r for r in build_single_jurisdiction_contract(ledger, bpj)}
+    assert got["GR"]["ceiling_status"] == "CONDITIONAL" and got["CZ"]["ceiling_status"] == "CONFIRMED"
+    assert got["GR"]["category"] == "LEADING_ALTERNATIVE"      # category stays the precise structure category
+
+
+def test_no_requirements_on_file_never_makes_every_executable_jurisdiction_conditional():
+    """With no location requirements on file there is nothing to confirm: the precise economic category stands and the basis is
+    disclosed, instead of relabelling the whole single-jurisdiction map 'conditional'."""
+    from app.services.program_pricing_crosswalk import build_single_jurisdiction_contract
+
+    ledger = {"jurisdictions": [{"jurisdiction_code": c, "disposition": "EXECUTABLE", "first_exit_stage": "PRICED"} for c in ("GR", "AT")],
+              "rows": [], "programs": []}
+    none = {"production_fit_status": "UNKNOWN", "production_fit_reasons": [], "production_fit_basis": "NO_REQUIREMENTS_ON_FILE"}
+    bpj = {c: {"primary_jurisdiction": c, "confirmed_npc_usd": 100.0 + i, **none} for i, c in enumerate(("GR", "AT"))}
+    got = {r["jurisdiction_code"]: r for r in build_single_jurisdiction_contract(ledger, bpj)}
+    assert got["GR"]["category"] == "LEADING_ALTERNATIVE" and got["AT"]["category"] == "REFERENCE_ALTERNATIVE"
+    assert got["GR"]["production_fit_basis"] == "NO_REQUIREMENTS_ON_FILE"
+    assert not any("Location fit unconfirmed" in c for r in got.values() for c in r["missing_conditions"])
+    # requirements on file but unassessable still reads conditional (needs facts) -- unchanged
+    on_file = {"production_fit_status": "UNKNOWN", "production_fit_reasons": ["DESERT_ENVIRONMENTS_NOT_ASSESSABLE"], "production_fit_basis": "REQUIREMENTS_ON_FILE"}
+    got = {r["jurisdiction_code"]: r for r in build_single_jurisdiction_contract(
+        ledger, {c: {"primary_jurisdiction": c, "confirmed_npc_usd": 100.0, **on_file} for c in ("GR", "AT")})}
+    assert got["AT"]["category"] == "CONDITIONAL_ALTERNATIVE"
+
+
 def test_soft_only_fit_is_never_conditional_and_every_ledger_jurisdiction_stays_visible():
     from app.services.program_pricing_crosswalk import build_single_jurisdiction_contract
 

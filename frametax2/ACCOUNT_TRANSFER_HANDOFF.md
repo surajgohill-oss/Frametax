@@ -707,3 +707,9 @@ Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORT
   - Company Globe is COMPANY_GLOBE_REQUIRED;
   - Build Your Own, final Globe visuals and a real executable co-production example are DEFERRED_PRODUCT_WORK.
 - **New integration proofs:** `backend/tests/test_final_pre_codex_integration.py`. Run them only against `frametax2_pytest`: `DATABASE_URL=…/frametax2_pytest CINEGLOBE_TEST_DB_NAME=frametax2_pytest`, with the sandbox disabled.
+
+## LEDGER ITEM 10 CLOSED — project-location control wiring + precise wording (2026-10-08, from `b6ab849`)
+
+- **Wiring:** all 13 location controls persist per project, change the evaluation fingerprint only when the effective requirements change, trigger exactly one evaluation (Bad Hombres live: generations 20 -> 21), reuse the stored evaluation on an unchanged resave or a revert (`EVALUATION_REUSED`), and never alter another project. Economics and scenario counts are identical before and after for all four productions.
+- **Fixed:** whole-structure "Conditional" wording for an unresolved upside; no-requirements-on-file marking every executable jurisdiction Conditional; Inspector missing the served jurisdiction category/reason; Overview Leading slot ignoring production fit. Details in `docs/architecture/CAPABILITY_LEDGER.md` Item 10.
+- **Environment:** backend `uvicorn app.main:app --port 8010` against the acceptance DB (one process); browser at `http://localhost:5173`.

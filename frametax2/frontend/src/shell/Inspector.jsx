@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { alternativeLabel, softSignalsText, capabilityEvidenceText } from "../lib/alternativeLabels";
-import { certaintyLabel } from "../lib/incentivePotential";
+import { economicsStatusText } from "../lib/incentivePotential";
 
 // Soft suitability signals and the retained capability evidence behind the fit: one text from lib/alternativeLabels (shared with the hover).
 function SoftFitSignals({ signals }) {
@@ -33,6 +33,23 @@ function ProductionFitDisclosure({ data }) {
   );
 }
 
+// The served single-jurisdiction category (and its reason) the Workspace universe panel and the Globe already show for
+// this jurisdiction, so every surface states the same result and reason. Present only when opened from the universe.
+function JurisdictionCategoryDisclosure({ data }) {
+  if (!data.jurisdictionCategoryLabel) return null;
+  return (
+    <dl className="kv-list" data-jurisdiction-category={data.jurisdictionCategory}>
+      <div>
+        <dt>Jurisdiction category</dt>
+        <dd>
+          {data.jurisdictionCategoryLabel}
+          {data.jurisdictionCategoryReason && <span className="text-tertiary small"> · {data.jurisdictionCategoryReason}</span>}
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
 // MAXIMUM-POTENTIAL INCENTIVE CONTRACT: ONE component renders the shared contract for both the
 // structure Inspector and the segment Inspector (values verbatim from the served fields).
 function IncentivePotentialRows({ pot }) {
@@ -43,7 +60,7 @@ function IncentivePotentialRows({ pot }) {
       <div><dt>Max potential incentive</dt><dd className="mono"><Money value={pot.maxIncentive} /></dd></div>
       <div><dt>Confirmed NPC</dt><dd className="mono"><Money value={pot.confirmedNpc} /></dd></div>
       <div><dt>Potential NPC</dt><dd className="mono"><Money value={pot.potentialNpc} /></dd></div>
-      <div><dt>Economics</dt><dd>{certaintyLabel(pot)}</dd></div>
+      <div><dt>Economics</dt><dd>{economicsStatusText(pot)}</dd></div>
     </>
   );
 }
@@ -521,6 +538,7 @@ function StructureDetailInspector({ data }) {
         )}
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : (data.candidate_status ? humanizeToken(data.candidate_status) : "Not priced")}</dd></div>
       </dl>
+      <JurisdictionCategoryDisclosure data={data} />
       {data.music_carveout_status && data.music_carveout_status !== "NOT_MUSIC_SPLIT" && (
         <dl className="kv-list" data-music-carveout={data.music_carveout_status}>
           <div>
@@ -826,6 +844,7 @@ function OptimizerOpportunityInspector({ data }) {
         </div>
         <div><dt>Status</dt><dd>{data.is_fully_priced ? "Priced" : data.blocker_detail?.kind === "NO_PROGRAM_MODEL" ? "Not priced — program data incomplete" : "Not executable — needs facts"}</dd></div>
       </dl>
+      <JurisdictionCategoryDisclosure data={data} />
       <ProductionFitDisclosure data={data} />
       <BlockerDetailSection detail={data.blocker_detail} />
       <AccountedExtras potential={data.incentive_potential} gates={data.content_gates} leads={data.catalog_leads} />
@@ -865,6 +884,7 @@ function OptimizerRejectionInspector({ data }) {
         {data.blocker?.label && <div><dt>Blocker</dt><dd>{data.blocker.label}</dd></div>}
         <div><dt>Reason class</dt><dd>{data.rejection_reason_class ? humanizeToken(data.rejection_reason_class) : "Not available from source data"}</dd></div>
       </dl>
+      <JurisdictionCategoryDisclosure data={data} />
       <ProductionFitDisclosure data={data} />
       <BlockerDetailSection detail={data.blocker_detail} />
       <AccountedExtras potential={data.incentive_potential} gates={data.content_gates} leads={data.catalog_leads} />
