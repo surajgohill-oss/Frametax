@@ -64,6 +64,13 @@ export function getProjectState(projectId) {
   _projectStateInFlight.set(projectId, promise);
   return promise;
 }
+// Company Globe / sidebar mini-globe: every ACTIVE project's leading structure in ONE request
+// (app/services/portfolio_globe_view.py) -- never one full /state per project. Single-flight like getProjectState.
+let _portfolioInFlight = null;
+export function getPortfolioGlobe() {
+  _portfolioInFlight ||= request("/portfolio/globe").finally(() => { _portfolioInFlight = null; });
+  return _portfolioInFlight;
+}
 export const checkConstraints = () => request("/constraints/check");
 export const postScenario = (kind, targetJurisdiction) =>
   request("/scenarios", {

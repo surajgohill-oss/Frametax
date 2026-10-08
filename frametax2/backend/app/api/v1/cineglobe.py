@@ -1442,6 +1442,20 @@ EMPTY_PEOPLE: dict[str, Any] = {
 EMPTY_FACTS: dict[str, Any] = {"answers": {}, "answerable": {}}
 
 
+@router.get("/portfolio/globe")
+async def get_portfolio_globe(organization_id: str | None = None, db: AsyncSession = Depends(get_db)) -> JSONResponse:
+    """Company Globe: every ACTIVE project's leading structure in ONE read (no per-project /state fan-out, no
+    evaluation). Owner: app/services/portfolio_globe_view.py. Organization scope is the same fail-closed rule the
+    Project Library uses."""
+    from app.core.config import settings
+    from app.services.portfolio_globe_view import build_portfolio_globe
+
+    organization_id = organization_id or settings.CURRENT_ORGANIZATION_ID or None
+    if not organization_id:
+        return JSONResponse(content={"projects": [], "excluded_not_active": 0, "snapshots_rebuilt": 0})
+    return JSONResponse(content=await build_portfolio_globe(db, organization_id))
+
+
 @router.get("/projects/{project_id}/state")
 async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     from app.services.canonical_evaluation import evaluate_project

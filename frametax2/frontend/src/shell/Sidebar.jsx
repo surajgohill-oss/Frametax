@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { useLeadingSelection } from "../lib/leadingSelection";
+import { getPortfolio, loadPortfolio, useLeadingSelection } from "../lib/leadingSelection";
 import { miniGlobeOverlay } from "../lib/globeStructure";
 import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
@@ -29,6 +29,10 @@ export default function Sidebar() {
   // surface reads; no request of its own). Elsewhere, or with no evaluated structure, it stays the neutral emblem.
   const projectId = useLocation().pathname.match(/^\/projects\/([^/]+)/)?.[1] || null;
   const selection = useLeadingSelection(projectId);
+  // The one aggregate portfolio read (shared single-flight with Company Globe), once per session -- never a full /state.
+  useEffect(() => {
+    if (projectId && !getPortfolio()) loadPortfolio().catch(() => {});
+  }, [projectId]);
   const overlay = useMemo(
     () => miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode }),
     [selection],

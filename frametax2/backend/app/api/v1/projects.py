@@ -31,6 +31,7 @@ from app.models.project_activity import ProjectActivity
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.budget import BudgetDocument
 from app.services.leading_selection import selection_identity
+from app.services.portfolio_globe_view import served_fingerprints
 from app.demo.little_utopia_state import PRODUCTION_NAME
 from app.schemas.project import MaterialsCompleteness, ProjectCard, ProjectCreate, ProjectRead, ProjectUpdate
 
@@ -178,25 +179,7 @@ async def list_projects(
     # current-evaluation reader (build_project_workspace_view,
     # canonical_production_view) already keys off, so "served" here means
     # exactly what it means everywhere else in this codebase.
-    from app.services.canonical_evaluation import ENGINE_VERSION, current_generation_fingerprint
-
-    current_engine_rows = (await db.execute(
-        select(ProductionStructure.project_id, StructureCalculationResult.input_fingerprint)
-        .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
-        .where(
-            ProductionStructure.project_id.in_(project_ids),
-            StructureCalculationResult.engine_version == ENGINE_VERSION,
-        )
-    )).all()
-    current_engine_fingerprints_by_project: dict[uuid.UUID, set[str]] = {}
-    for pid, fp in current_engine_rows:
-        current_engine_fingerprints_by_project.setdefault(pid, set()).add(fp)
-
-    served_project_ids: set[uuid.UUID] = set()
-    for pid, persisted_fingerprints in current_engine_fingerprints_by_project.items():
-        fingerprint = await current_generation_fingerprint(db, pid)
-        if fingerprint is not None and fingerprint in persisted_fingerprints:
-            served_project_ids.add(pid)
+    served_project_ids = set(await served_fingerprints(db, project_ids))
 
     cards: list[ProjectCard] = []
     for p in projects:

@@ -363,3 +363,6 @@ See CAPABILITY_LEDGER.md Item 13: Library defaults to All Active (Submitted deri
 
 ## Leading structure across Globes (2026-10-08)
 See CAPABILITY_LEDGER.md Item 14: one project-scoped leading selection (`lib/leadingSelection.js`) feeds Project Globe, Company Globe and the sidebar mini-globe; backend keeps a user choice across regeneration by economic identity (migration 0079). Backend restart required to load it.
+
+## Company Globe aggregate (2026-10-08)
+See CAPABILITY_LEDGER.md Item 15: one `GET /cineglobe/portfolio/globe` feeds Company Globe and the sidebar mini-globe; never fan out to per-project `/state`. Backend restart needed for migration 0080 and the endpoint.

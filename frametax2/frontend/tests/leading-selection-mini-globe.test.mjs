@@ -28,7 +28,7 @@ test("Set as Leading goes through one project-scoped commit read by every Globe 
     assert.match(src, /commitLeadingStructure\(/, `${path} must commit through lib/leadingSelection.js`);
     assert.doesNotMatch(src, /patchProject\(projectId, \{ leading_structure_id/, `${path} must not write the selection on its own`);
   }
-  assert.match(read("screens/company/CompanyGlobe.jsx"), /getLeadingSelection\(row\.project\.id\)/);
+  assert.match(read("screens/company/CompanyGlobe.jsx"), /getLeadingSelection\(row\.project_id\)/);
   assert.match(read("shell/Sidebar.jsx"), /useLeadingSelection\(projectId\)/);
   assert.match(read("lib/useCineGlobe.js"), /publishServedLeading\(projectId, data\)/);
 });

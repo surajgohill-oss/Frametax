@@ -38,6 +38,7 @@ export const FAMILY_ORDER = Object.keys(FAMILY_META).sort((a, b) => FAMILY_META[
 const COMPONENT_LABEL = {
   principal_production: "Principal production",
   post_vfx_package: "Post/VFX",
+  post_vfx_music_package: "Post/VFX + Music",
   music_package: "Music",
   vfx: "VFX",
   post: "Post",

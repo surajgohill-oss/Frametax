@@ -84,6 +84,11 @@ class Project(Base):
     # See app/services/leading_selection.py.
     leading_selection_identity: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
+    # COMPANY GLOBE SNAPSHOT (2026-10-08): compact per-structure topology/hover fields of this project's current served
+    # generation, keyed by (engine_version, input fingerprint) and rebuilt from the served view when either changes.
+    # Derived cache only -- see app/services/portfolio_globe_view.py. Never economic truth.
+    portfolio_globe_snapshot: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     # Relationships
     organization: Mapped["Organization"] = relationship(back_populates="projects")
     owner: Mapped["User"] = relationship(back_populates="projects")

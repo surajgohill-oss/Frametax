@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
-import { patchProject } from "../api";
-import { activeStructure } from "./globeData";
+import { getPortfolioGlobe, patchProject } from "../api";
+import { resolveLeadingStructure } from "./leadingResolve";
+
+export { resolveLeadingStructure };
 
 // PROJECT-SCOPED LEADING SELECTION (2026-10-08). One in-memory snapshot per project of the structure that currently
 // leads it: the producer's persisted "Set as Leading" choice (Project.leading_structure_id) when one exists, else the
@@ -39,17 +41,56 @@ export function publishServedLeading(projectId, state) {
   if (entries.get(projectId)?.pending) return;
   const allocated = state?.structures?.allocated_structures || null;
   const production = state?.production || {};
-  const structure = activeStructure(allocated, production.leading_structure_id || null);
+  const userSelected = !!production.leading_selection?.user_selected && !production.leading_selection?.unavailable;
+  const { structure, source } = resolveLeadingStructure(allocated, userSelected ? production.leading_structure_id : null);
   entries.set(projectId, {
     structure,
+    source,
     homeCode: homeCodeOf(allocated),
     baselineCode: production.jurisdiction_code || null,
     selectionKnown: production.leading_selection != null,
-    userSelected: !!production.leading_selection?.user_selected,
+    userSelected,
     unavailable: !!production.leading_selection?.unavailable,
     pending: false,
   });
   emit();
+}
+
+// ONE aggregate payload for every active project (GET /cineglobe/portfolio/globe): Company Globe and the sidebar
+// mini-globe read it; a project's own served state refines the same entry later. Submitted projects are absent.
+let portfolio = null;
+let portfolioLoad = null;
+
+export const getPortfolio = () => portfolio;
+
+export function usePortfolio() {
+  useSyncExternalStore(subscribe, () => version);
+  return portfolio;
+}
+
+export function loadPortfolio({ force = false } = {}) {
+  if (portfolio && !force) return Promise.resolve(portfolio);
+  portfolioLoad ||= getPortfolioGlobe()
+    .then((payload) => {
+      portfolio = payload;
+      for (const row of payload.projects || []) {
+        if (entries.get(row.project_id)?.pending) continue;
+        entries.set(row.project_id, {
+          structure: row.leading?.structure || null,
+          source: row.leading?.source || "baseline",
+          homeCode: row.home_code || null,
+          baselineCode: row.baseline_jurisdiction || null,
+          selectionKnown: true,
+          userSelected: !!row.leading?.user_selected,
+          unavailable: !!row.leading?.unavailable,
+          pending: false,
+        });
+      }
+      emit();
+      return portfolio;
+    })
+    .finally(() => { portfolioLoad = null; });
+  return portfolioLoad;
 }
 
 // "Set as Leading": publish first (every surface updates now), then persist project-scoped. Presentation/portfolio
