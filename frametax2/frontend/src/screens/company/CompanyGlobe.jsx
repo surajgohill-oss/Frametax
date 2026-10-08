@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
-import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
-import { participantsOf, principalOf, structureArcs, structureRouteLabels } from "../../lib/globeStructure";
+import { buildCompanyScene } from "../../lib/companyScene";
+import { participantsOf, principalOf } from "../../lib/globeStructure";
 import { libraryStageKey } from "../../lib/libraryStatus";
 import { getLeadingSelection, getPortfolio, loadPortfolio, usePortfolio, useLeadingSelectionsVersion } from "../../lib/leadingSelection";
-import { readIncentivePotential } from "../../lib/incentivePotential";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
 import { Money, jurisdictionName } from "../../lib/format";
 
@@ -59,29 +58,7 @@ export default function CompanyGlobe() {
     return () => { alive = false; };
   }, []);
 
-  const scene = useMemo(() => {
-    const points = [];
-    const arcs = [];
-    const routeLabels = [];
-    for (const { project, structure, principal, homeCode } of rows || []) {
-      const hex = stageHex(libraryStageKey(project));
-      const codes = structure ? participantsOf(structure) : [principal];
-      for (const code of new Set([principal, ...codes].filter(Boolean))) {
-        const coord = JURISDICTION_COORDS[code] || JURISDICTION_COORDS[String(code).split("-")[0]];
-        if (!coord) continue;
-        points.push({
-          lat: coord.lat, lng: coord.lng, tier: libraryStageKey(project), color: hex,
-          name: project.title, id: `${project.id}:${code}`, projectId: project.id, code, principal: code === principal,
-          pot: readIncentivePotential(structure),
-        });
-      }
-      if (structure) {
-        arcs.push(...structureArcs(structure, { color: hex, homeCode }));
-        routeLabels.push(...structureRouteLabels(structure, { homeCode }).map((l) => ({ ...l, key: `${project.id}:${l.key}` })));
-      }
-    }
-    return { points, arcs, routeLabels };
-  }, [rows]);
+  const scene = useMemo(() => buildCompanyScene(rows, (project) => stageHex(libraryStageKey(project))), [rows]);
 
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
   if (!rows) return <div className="screen"><Loading /></div>;
@@ -115,9 +92,11 @@ export default function CompanyGlobe() {
       <div className="globe-screen-canvas">
         <Globe3D
           points={scene.points}
+          polygonColors={scene.polygonColors}
           arcs={scene.arcs}
           routeLabels={scene.routeLabels}
           height={560}
+          autoHeight
           // .globe-screen-inspector is 320px wide, absolutely positioned over the right edge of this canvas.
           obscuredRightPx={focused ? 320 : 0}
           onPointHover={(pt) => setPreview(pt)}
