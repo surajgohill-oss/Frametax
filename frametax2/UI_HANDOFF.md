@@ -357,3 +357,6 @@ Inspector trace ← segment `qualification_trace` + assignment rationale/authori
   gap noted in the earlier blueprint phase).
 - 12 checkpoint screenshots captured to `frontend/design-review/current/` for external visual
   review — no autonomous visual polish performed past this checkpoint, per instruction.
+
+## Project Library stages and Company Globe (2026-10-08)
+See CAPABILITY_LEDGER.md Item 13: Library defaults to All Active (Submitted derived from `is_served_production`, never stored); Company Globe plots every active project at its saved leading structure in stage colours.

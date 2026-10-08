@@ -4,7 +4,9 @@ import { API_ORIGIN, getCurrentOrganization, getProjects } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
-import { libraryStageLabel } from "../../lib/libraryStatus";
+import {
+  libraryStageKey, libraryStageLabel, libraryFilterMatches, isActiveProject, readLibraryFilter, writeLibraryFilter,
+} from "../../lib/libraryStatus";
 import { getTheme, toggleTheme } from "../../lib/theme";
 import NewProjectModal from "../../components/NewProjectModal";
 import IngestionReviewModal from "../../components/IngestionReviewModal";
@@ -43,7 +45,7 @@ export default function ProjectLibrary() {
   const [projects, setProjects] = useState(null);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(readLibraryFilter);
   const [sort, setSort] = useState("title");
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -68,19 +70,22 @@ export default function ProjectLibrary() {
   }
   useEffect(() => { load(); }, []);
 
+  function chooseFilter(key) { setFilter(key); writeLibraryFilter(key); }
+
   const counts = useMemo(() => {
-    const c = { all: projects?.length || 0 };
+    const c = { all: projects?.length || 0, active: 0, submitted: 0 };
     for (const s of PROJECT_STATUSES) c[s.key] = 0;
     for (const p of projects || []) {
-      const key = (p.lifecycle || "evaluation").toLowerCase();
+      const key = libraryStageKey(p);
       c[key] = (c[key] || 0) + 1;
+      if (isActiveProject(p)) c.active += 1;
     }
     return c;
   }, [projects]);
 
   const visible = useMemo(() => {
     let list = projects || [];
-    if (filter !== "all") list = list.filter((p) => (p.lifecycle || "").toLowerCase() === filter);
+    list = list.filter((p) => libraryFilterMatches(filter, p));
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((p) => p.title.toLowerCase().includes(q));
     const sorted = [...list];
@@ -128,14 +133,16 @@ export default function ProjectLibrary() {
 
       <div className="lib-filterrow">
         <div className="tag-row lib-tags">
-          <button className={`tag ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>
-            All <span className="lib-tag-n">{counts.all}</span>
-          </button>
+          {[["active", "All Active"], ["submitted", "Submitted"], ["all", "All"]].map(([key, label]) => (
+            <button key={key} className={`tag ${filter === key ? "active" : ""}`} onClick={() => chooseFilter(key)}>
+              {label} <span className="lib-tag-n">{counts[key] || 0}</span>
+            </button>
+          ))}
           {PROJECT_STATUSES.map((s) => (
             <button
               key={s.key}
               className={`tag ${filter === s.key ? "active" : ""}`}
-              onClick={() => setFilter(s.key)}
+              onClick={() => chooseFilter(s.key)}
             >
               {s.label} <span className="lib-tag-n">{counts[s.key] || 0}</span>
             </button>
@@ -153,13 +160,13 @@ export default function ProjectLibrary() {
             : "No projects match this search or filter."}
         </div>
       ) : (
-        <div className={`lib-grid ${filter === "all" ? "compact" : ""}`}>
+        <div className={`lib-grid ${filter === "all" || filter === "active" ? "compact" : ""}`}>
           {visible.map((p) => {
             const meta = lifecycleMeta(p.lifecycle);
             return (
               <button
                 key={p.id}
-                className={`lib-card ${filter === "all" ? "compact" : ""} ${meta.key === "archived" ? "arch" : ""}`}
+                className={`lib-card ${filter === "all" || filter === "active" ? "compact" : ""} ${meta.key === "archived" ? "arch" : ""}`}
                 onClick={() => navigate(
                   // Inspector/Sidebar Closeout Phase 1: routes on the
                   // canonical served-production signal (is_served_production
@@ -183,7 +190,7 @@ export default function ProjectLibrary() {
                     : <span className="lib-noart">No artwork yet</span>}
                 </div>
                 <div className="lib-body">
-                  <div className="lib-stage" data-evaluation-status={libraryStageLabel(p, meta)}><span className={`dot ${meta.tier}`} />{libraryStageLabel(p, meta)}</div>
+                  <div className="lib-stage" data-evaluation-status={libraryStageLabel(p, meta)}><span className={`dot ${libraryStageKey(p) === "submitted" ? "silver" : meta.tier}`} />{libraryStageLabel(p, meta)}</div>
                   <div className="lib-title">{p.title}</div>
                   <div className="lib-meta">
                     <span>{p.format ? p.format[0].toUpperCase() + p.format.slice(1) : "Format unknown"}</span>
