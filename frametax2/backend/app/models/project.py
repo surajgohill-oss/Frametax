@@ -77,6 +77,13 @@ class Project(Base):
         nullable=True, index=True,
     )
 
+    # USER-SELECTED LEADING STRUCTURE (2026-10-08). Non-null only when the producer chose the leading structure
+    # ("Set as Leading"); null means the engine's canonical leader owns leading_structure_id. Holds the selection's
+    # run-independent economic_identity (or "structure:<id>" for a row that has none), so a later evaluation can
+    # re-point leading_structure_id to the SAME structure in its new generation, or disclose it as unavailable.
+    # See app/services/leading_selection.py.
+    leading_selection_identity: Mapped[str | None] = mapped_column(String(80), nullable=True)
+
     # Relationships
     organization: Mapped["Organization"] = relationship(back_populates="projects")
     owner: Mapped["User"] = relationship(back_populates="projects")

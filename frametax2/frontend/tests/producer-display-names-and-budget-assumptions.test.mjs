@@ -72,8 +72,12 @@ test("CompanyGlobe.jsx and Settings.jsx sidebar panels resolve baseline jurisdic
   for (const path of ["screens/company/CompanyGlobe.jsx", "screens/production/Settings.jsx"]) {
     const src = stripComments(read(path));
     assert.doesNotMatch(src, /<dd>\{production\.jurisdiction_code\}<\/dd>/, `${path} must not render the raw jurisdiction_code`);
-    assert.match(src, /jurisdictionName\(production\.jurisdiction_code\)/, `${path} must resolve through jurisdictionName`);
   }
+  assert.match(stripComments(read("screens/production/Settings.jsx")), /jurisdictionName\(production\.jurisdiction_code\)/);
+  // Company Globe (2026-10-08) shows each project's principal (or baseline) jurisdiction, always by display name.
+  const company = stripComments(read("screens/company/CompanyGlobe.jsx"));
+  assert.match(company, /jurisdictionName\(focused\.principal\)/);
+  assert.doesNotMatch(company, /<dd>\{[^}]*(jurisdiction_code|principal)\}<\/dd>/);
 });
 
 // ── G: no local-only editable economic inputs remain ──────────────────

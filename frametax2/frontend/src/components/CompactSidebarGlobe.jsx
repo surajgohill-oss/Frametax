@@ -5,7 +5,8 @@ import * as THREE from "three";
 // Globe engine is the whole point of it existing — do not import Globe3D
 // or reuse its scene/material/lighting objects here for any reason. A
 // future change to this file requires the user to explicitly unlock this
-// subsystem first.
+// subsystem first. (Unlocked 2026-10-08 by the user for the leading-structure
+// overlay, offscreen pause and reduced-motion handling only.)
 //
 // Deliberately duplicated rather than imported from Globe3D.jsx — this
 // component must never share a scene-light or material mutation path with
@@ -134,15 +135,66 @@ function getBakedLandCanvas() {
   return bakedLandPromise;
 }
 
+// Overlay colours: the principal reads as the leading jurisdiction (warm gold), the other participants and routes as
+// a quiet ivory -- both well above the smoked ocean and the brass land at 80px.
+const OVERLAY_PRINCIPAL = "#ffd980";
+const OVERLAY_SECONDARY = "#eef2f6";
+const OVERLAY_ROUTE = "#f3ead6";
+
+// Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360), so markers sit exactly on the
+// baked texture's geography.
+function surfacePoint(lat, lng, r = 1) {
+  const phi = ((lng + 180) * Math.PI) / 180;
+  const theta = ((90 - lat) * Math.PI) / 180;
+  return new THREE.Vector3(-r * Math.cos(phi) * Math.sin(theta), r * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta));
+}
+
+// Rebuilds the overlay group's children from { markers, routes }. Arcs stay below radius 1.07 so nothing reaches the
+// canvas edge (the camera frames radius ~1.1).
+function buildOverlay(group, overlay) {
+  for (const child of [...group.children]) {
+    group.remove(child);
+    child.geometry?.dispose();
+    child.material?.dispose();
+  }
+  if (!overlay) return;
+  for (const r of overlay.routes) {
+    const a = surfacePoint(r.from.lat, r.from.lng, 1.005);
+    const b = surfacePoint(r.to.lat, r.to.lng, 1.005);
+    const lift = Math.min(1.07, 1.01 + a.distanceTo(b) * 0.05);
+    const mid = a.clone().add(b).normalize().multiplyScalar(lift);
+    const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+    group.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)),
+      new THREE.LineBasicMaterial({ color: OVERLAY_ROUTE, transparent: true, opacity: 0.9 }),
+    ));
+  }
+  for (const m of overlay.markers) {
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(m.principal ? 0.055 : 0.036, 12, 12),
+      new THREE.MeshBasicMaterial({ color: m.principal ? OVERLAY_PRINCIPAL : OVERLAY_SECONDARY }),
+    );
+    dot.position.copy(surfacePoint(m.lat, m.lng, 1.01));
+    group.add(dot);
+  }
+}
+
 /**
  * Fully decoupled compact brand-mark globe for the sidebar identity slot.
  * NOT the production Globe engine: no three-globe, no polygon/point/arc
  * layers, no CSS2D hit targets, no click/hover handlers, no Inspector
  * awareness, no Admin-1 detail. A lightweight lit sphere with a baked
- * continent-silhouette texture — visually stable at 80px, meant to read as
- * a premium engraved emblem rather than an interactive instrument.
+ * continent-silhouette texture -- visually stable at 80px. On a project
+ * route it also carries a simplified overlay of that project's leading
+ * structure (`overlay` from lib/globeStructure.js::miniGlobeOverlay):
+ * principal marker, participant markers and route lines; null keeps the
+ * neutral emblem (company routes, submitted projects).
+ *
+ * One render loop only, and only while it is useful: it runs while the
+ * emblem is on screen, the tab is visible and reduced motion is off;
+ * otherwise frames are drawn on demand (texture load, overlay change).
  */
-export default function CompactSidebarGlobe({ size = 80, className = "" }) {
+export default function CompactSidebarGlobe({ size = 80, className = "", overlay = null }) {
   const mountRef = useRef(null);
   const stateRef = useRef({});
   const [failed, setFailed] = useState(false);
@@ -198,6 +250,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
       }),
     );
     group.add(sphere);
+    const overlayGroup = new THREE.Group();
+    group.add(overlayGroup);
+
+    const render = () => renderer.render(scene, camera);
 
     let cancelled = false;
     getBakedLandCanvas().then((canvas) => {
@@ -213,23 +269,38 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
       sphere.material.map = texture;
       sphere.material.needsUpdate = true;
       stateRef.current.texture = texture;
+      render();
     });
 
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    let frameId;
-    const animate = () => {
-      if (!prefersReducedMotion) group.rotation.y += 0.0022;
-      renderer.render(scene, camera);
-      frameId = requestAnimationFrame(animate);
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let onScreen = true;
+    let frameId = null;
+    const loop = () => {
+      group.rotation.y += 0.0022;
+      render();
+      frameId = requestAnimationFrame(loop);
     };
-    animate();
+    const sync = () => {
+      const animate = onScreen && !document.hidden && !motionQuery.matches;
+      if (animate && frameId == null) frameId = requestAnimationFrame(loop);
+      if (!animate && frameId != null) { cancelAnimationFrame(frameId); frameId = null; render(); }
+    };
+    const observer = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; sync(); });
+    observer.observe(mount);
+    document.addEventListener("visibilitychange", sync);
+    motionQuery.addEventListener("change", sync);
+    render();
+    sync();
 
-    stateRef.current.renderer = renderer;
+    stateRef.current = { ...stateRef.current, renderer, group, overlayGroup, render };
 
     return () => {
       cancelled = true;
-      cancelAnimationFrame(frameId);
+      if (frameId != null) cancelAnimationFrame(frameId);
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+      motionQuery.removeEventListener("change", sync);
+      buildOverlay(overlayGroup, null);
       renderer.dispose();
       sphere.geometry.dispose();
       sphere.material.dispose();
@@ -244,6 +315,26 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size]);
+
+  // Overlay changes reuse the existing renderer (no new context, no new loop). A new principal is turned to face the
+  // viewer so the selection is visible at once, including under reduced motion.
+  const overlayKey = overlay?.key || null;
+  useEffect(() => {
+    const { group, overlayGroup, render } = stateRef.current;
+    if (!overlayGroup) return;
+    buildOverlay(overlayGroup, overlay);
+    const principal = overlay?.markers.find((m) => m.principal);
+    if (principal) {
+      const p = surfacePoint(principal.lat, principal.lng);
+      group.rotation.y = -Math.atan2(p.x, p.z);
+      // Tilt toward the principal's latitude (bounded) so a high-latitude territory is not left on the limb.
+      group.rotation.x = Math.max(-0.6, Math.min(0.6, (principal.lat * Math.PI) / 180 * 0.8));
+    } else {
+      group.rotation.x = -0.22;
+    }
+    render();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlayKey, failed]);
 
   // Same static CSS fallback Globe3D.jsx uses when WebGL is unavailable —
   // no new raster asset introduced.
@@ -261,7 +352,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
       className={`compact-sidebar-globe ${className}`.trim()}
       style={{ width: size, height: size }}
       role="img"
-      aria-label="CineGlobe"
+      aria-label={overlay ? "CineGlobe: this project's leading structure" : "CineGlobe"}
+      data-principal={overlay?.markers.find((m) => m.principal)?.code || ""}
+      data-participants={overlay ? overlay.markers.map((m) => m.code).join(",") : ""}
+      data-routes={overlay ? overlay.routes.length : 0}
     />
   );
 }

@@ -7,6 +7,7 @@ import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
 import { activeStructure, buildSelectedStructureRoute } from "../../lib/globeData";
 import { participantsOf, principalOf } from "../../lib/globeStructure";
 import { isActiveProject, libraryStageKey } from "../../lib/libraryStatus";
+import { getLeadingSelection, publishServedLeading, useLeadingSelectionsVersion } from "../../lib/leadingSelection";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
 import { Money, jurisdictionName } from "../../lib/format";
 
@@ -23,23 +24,45 @@ const stageHex = (stageKey) => {
   return css || "#8c96a4";
 };
 
-async function loadActiveProjects() {
+// Last loaded portfolio, kept for the page session so returning here renders at once (then revalidates) instead of
+// waiting on every project's served state again.
+let cachedRows = null;
+let inFlight = null;
+
+// Single-flight: a double mount (StrictMode) or a quick return shares the one load already running.
+function loadActiveProjects() {
+  inFlight ||= fetchActiveProjects().finally(() => { inFlight = null; });
+  return inFlight;
+}
+
+async function fetchActiveProjects() {
   const org = await getCurrentOrganization();
   const active = (await getProjects(org?.id)).filter(isActiveProject);
-  return Promise.all(active.map(async (p) => {
+  cachedRows = await Promise.all(active.map(async (p) => {
     const state = await getProjectState(p.id);
-    const allocated = state?.structures?.allocated_structures;
-    const leadingId = state?.production?.leading_structure_id || p.leading_structure_id || null;
-    const structure = activeStructure(allocated, leadingId);
-    // No saved leading structure and no canonical selection: show the production's baseline jurisdiction only.
-    const principal = structure ? principalOf(structure) : state?.production?.jurisdiction_code;
-    return { project: p, production: state?.production, allocated, structure, principal };
+    publishServedLeading(p.id, state);
+    return { project: p, production: state?.production, allocated: state?.structures?.allocated_structures };
   }));
+  return cachedRows;
+}
+
+// The structure each project shows is read from the shared leading selection (persisted user choice, else the
+// canonical leader), so a "Set as Leading" anywhere replaces that one project's markers, routes and Inspector at once.
+function withLeading(row) {
+  const sel = getLeadingSelection(row.project.id);
+  const structure = sel?.structure ?? activeStructure(row.allocated, row.production?.leading_structure_id || null);
+  // No saved or canonical structure: show the production's baseline jurisdiction only.
+  const principal = structure ? principalOf(structure) : row.production?.jurisdiction_code;
+  return { ...row, structure, principal, selectionKnown: !!sel?.selectionKnown, userSelected: !!sel?.userSelected, unavailable: !!sel?.unavailable };
 }
 
 export default function CompanyGlobe() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState(null);
+  const [loaded, setLoaded] = useState(cachedRows);
+  const leadingVersion = useLeadingSelectionsVersion();
+  // leadingVersion is the store's change signal: withLeading() reads the store, so it must re-run on every change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => (loaded ? loaded.map(withLeading) : null), [loaded, leadingVersion]);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState(null);
   const [focusedId, setFocusedId] = useState(null);
@@ -47,7 +70,7 @@ export default function CompanyGlobe() {
   // Fresh read on every mount, so a leading structure saved elsewhere replaces its prior route/territory state here.
   useEffect(() => {
     let alive = true;
-    loadActiveProjects().then((r) => alive && setRows(r)).catch((e) => alive && setError(e.message || String(e)));
+    loadActiveProjects().then((r) => alive && setLoaded(r)).catch((e) => alive && setError(e.message || String(e)));
     return () => { alive = false; };
   }, []);
 
@@ -133,6 +156,7 @@ export default function CompanyGlobe() {
             <div><dt>Stage</dt><dd>{PROJECT_STATUSES.find((s) => s.key === libraryStageKey(focused.project))?.label}</dd></div>
             <div><dt>{focused.structure ? "Principal jurisdiction" : "Baseline jurisdiction"}</dt><dd>{jurisdictionName(focused.principal)}</dd></div>
             {focused.structure && <div><dt>Participants</dt><dd>{participantsOf(focused.structure).map(jurisdictionName).join(", ")}</dd></div>}
+            {focused.selectionKnown && <div><dt>Leading</dt><dd>{focused.unavailable ? "Your selection is no longer available — canonical leader shown" : focused.userSelected ? "Your selection" : focused.structure ? "Canonical leader" : "No evaluated structure"}</dd></div>}
             <div><dt>Gross budget</dt><dd><Money value={focused.production?.gross_budget_usd ?? focused.project.total_budget_usd} /></dd></div>
           </dl>
           <button className="primary-action" onClick={() => openProject(focused.project.id)}>Open production →</button>

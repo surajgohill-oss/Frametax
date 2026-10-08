@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { readIncentivePotential } from "../../lib/incentivePotential";
 import { useLocation, useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
+import { commitLeadingStructure } from "../../lib/leadingSelection";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, scenarioDisplay } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
-import { patchProject } from "../../api";
 import { classifyStructure, isBaselineStructure, isDirectlyComparable } from "../../lib/productionOptions";
 
 const MAX_VISIBLE = 6;
@@ -103,26 +103,12 @@ export default function Scenarios() {
   // update above is what every view already reads synchronously, so a
   // slow/failed PATCH never blocks the UI; it never triggers the optimizer.
   //
-  // Known, deferred gap (see the matching note in Workspace.jsx): the
-  // optimizer's in-memory structures use their own string identifiers, not
-  // real production_structures.id UUIDs. Only the one structure the Phase C
-  // migration persisted has a real row — selecting any other 422s on the
-  // UUID FK, expected until a later phase persists optimizer-generated
-  // structures, not a failure.
   function selectAsLeading(s) {
     if (!s.is_fully_priced) return;
     setLeadingStructureId(s.structure_id);
-    const projectId = data?.production?.project_id;
-    if (projectId) {
-      patchProject(projectId, { leading_structure_id: s.structure_id }).catch((err) => {
-        if (String(err.message).startsWith("422")) {
-          console.info(`[Scenarios] leading structure ${s.structure_id} has no persisted backend row yet (optimizer-generated, not yet migrated) — UI selection still applied`);
-        } else {
-          console.error("[Scenarios] failed to persist leading structure to backend:", err);
-        }
-      });
-    }
+    commitLeadingStructure(data?.production?.project_id, s);
   }
+
 
   const rows = [
     ["Gross budget", () => gross, true],

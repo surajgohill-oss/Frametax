@@ -1,4 +1,7 @@
-import { NavLink } from "react-router-dom";
+import { useMemo } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useLeadingSelection } from "../lib/leadingSelection";
+import { miniGlobeOverlay } from "../lib/globeStructure";
 import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
 
@@ -22,6 +25,14 @@ const COMPANY_NAV = [
 ];
 
 export default function Sidebar() {
+  // On a project route the identity globe shows that project's leading structure (the shared selection every Globe
+  // surface reads; no request of its own). Elsewhere, or with no evaluated structure, it stays the neutral emblem.
+  const projectId = useLocation().pathname.match(/^\/projects\/([^/]+)/)?.[1] || null;
+  const selection = useLeadingSelection(projectId);
+  const overlay = useMemo(
+    () => miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode }),
+    [selection],
+  );
   return (
     <nav className="cg-sidebar" aria-label="Application navigation">
       <div className="cg-wordmark serif">Cine<i>Globe</i></div>
@@ -33,7 +44,7 @@ export default function Sidebar() {
           placeholder rather than blank the entire application shell. */}
       <div className="cg-identity-globe" aria-hidden="true">
         <ErrorBoundary label="sidebar-globe" fallback={null}>
-          <CompactSidebarGlobe size={80} />
+          <CompactSidebarGlobe size={80} overlay={overlay} />
         </ErrorBoundary>
       </div>
       <div className="cg-tagline mono">The Production Atlas</div>

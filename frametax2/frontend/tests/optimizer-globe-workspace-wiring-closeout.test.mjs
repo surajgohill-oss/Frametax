@@ -300,7 +300,9 @@ test("AppState.jsx's setWorkspaceMode clears selectedJurisdiction/leadingStructu
   assert.match(fn[0], /if \(mode !== workspaceMode\) \{/, "the reset must only fire on an actual mode change, never on every call");
   assert.match(fn[0], /setInspector\(null\)/);
   assert.match(fn[0], /setSelectedJurisdiction\(null\)/);
-  assert.match(fn[0], /setLeadingStructureIdRaw\(null\)/);
+  // The in-session preview selection is cleared back to the project's persisted "Set as Leading" choice (or null when
+  // none exists) -- never to another mode's preview (lib/leadingSelection.js, 2026-10-08).
+  assert.match(fn[0], /setLeadingStructureIdRaw\(getLeadingSelection\(projectId\)\?\.structure\?\.structure_id \?\? null\)/);
 });
 
 // 11b. Cross-project leak (Optimizer-specific data): a stale leadingStructureId

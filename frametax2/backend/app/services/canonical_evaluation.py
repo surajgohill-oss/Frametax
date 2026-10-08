@@ -180,6 +180,7 @@ from app.services.candidate_retention import (
     Held as _Held,
 )
 from app.services.generation_summary import GenerationSummaryBuilder
+from app.services.leading_selection import choose_leading, resolve_selection as resolve_leading_selection
 from app.services.economic_identity import (
     candidate_status_of,
     canonical_economic_identity,
@@ -10556,12 +10557,26 @@ async def _summarize_evaluation(
         # winner, and here there is none.
         top_pair = None
 
+    # USER-SELECTED LEADER (2026-10-08): a producer's "Set as Leading" choice overrides the canonical leader. It is
+    # re-resolved by stable identity in THIS generation; if it no longer exists the canonical leader takes over and
+    # the served state discloses the selection as unavailable (never silently mapped to another structure).
+    if project.leading_selection_identity:
+        _user_match = await resolve_leading_selection(
+            session, project.id, project.leading_selection_identity,
+            engine_version=ENGINE_VERSION, fingerprint=fingerprint,
+        )
+        _target, _ = choose_leading(
+            project.leading_selection_identity, _user_match, top_pair[0].id if top_pair else None,
+        )
+        if project.leading_structure_id != _target:
+            project.leading_structure_id = _target
+            await session.commit()
     # Repoint leading_structure_id whenever it's unset OR currently points
     # at a structure NOT produced by this canonical engine (a stale legacy
     # result — e.g. the run_full_analysis-backed rows from commit 87440df —
     # must never keep rendering as the current evaluation). Never
     # overwrites a CURRENT canonical result on a repeat/idempotent run.
-    if top_pair:
+    elif top_pair:
         needs_repoint = project.leading_structure_id is None
         if not needs_repoint and project.leading_structure_id == top_pair[0].id:
             # Even when the pointer already names the top candidate, its

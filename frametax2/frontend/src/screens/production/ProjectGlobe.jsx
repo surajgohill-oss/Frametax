@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, buildSelectedStructureRoute, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
+import { activeStructure, buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, buildSelectedStructureRoute, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { classifyBlocker } from "../../lib/blockerDisposition";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
@@ -224,7 +224,10 @@ export default function ProjectGlobe() {
   const hoverIndex = hoverCycle.key === hoverKey ? Math.min(hoverCycle.index, Math.max(0, hoverList.length - 1)) : 0;
   const previewStructure = hoverList[hoverIndex] || null;
   const lockedStructure = lockedIdentity ? structureByIdentity.get(lockedIdentity) || null : null;
-  const displayStructure = previewStructure || lockedStructure;
+  // At rest (nothing previewed or locked) the Globe shows the project's leading structure: the persisted "Set as
+  // Leading" choice, else the canonical leader -- the same selection Company Globe and the sidebar mini-globe show.
+  const restingStructure = useMemo(() => activeStructure(allocated, leadingStructureId), [allocated, leadingStructureId]);
+  const displayStructure = previewStructure || lockedStructure || restingStructure;
   const displayIsLockedOnly = !previewStructure && !!lockedStructure;
   // The selected structure's route: arcs + concise leg labels. Colour is the jurisdiction CATEGORY colour (Optimizer mode:
   // the structure's own status colour); structure type shows only through topology -- full relocation draws current

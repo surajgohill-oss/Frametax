@@ -360,3 +360,6 @@ Inspector trace ← segment `qualification_trace` + assignment rationale/authori
 
 ## Project Library stages and Company Globe (2026-10-08)
 See CAPABILITY_LEDGER.md Item 13: Library defaults to All Active (Submitted derived from `is_served_production`, never stored); Company Globe plots every active project at its saved leading structure in stage colours.
+
+## Leading structure across Globes (2026-10-08)
+See CAPABILITY_LEDGER.md Item 14: one project-scoped leading selection (`lib/leadingSelection.js`) feeds Project Globe, Company Globe and the sidebar mini-globe; backend keeps a user choice across regeneration by economic identity (migration 0079). Backend restart required to load it.

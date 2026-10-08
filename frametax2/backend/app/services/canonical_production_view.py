@@ -32,6 +32,7 @@ import re
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.leading_selection import selection_status
 from app.data.executable_jurisdiction_registry import get_doctrine
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
@@ -2187,6 +2188,7 @@ async def build_production_and_structures(
         ),
         "lifecycle": project.lifecycle,
         "leading_structure_id": str(project.leading_structure_id) if project.leading_structure_id else None,
+        "leading_selection": await selection_status(session, project),
         "gross_budget_usd": gross_budget_usd,
         "rate": None,
         "rate_resolution": None,

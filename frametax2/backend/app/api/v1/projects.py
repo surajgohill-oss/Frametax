@@ -30,6 +30,7 @@ from app.models.project_location_requirement import ProjectLocationRequirement
 from app.models.project_activity import ProjectActivity
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.budget import BudgetDocument
+from app.services.leading_selection import selection_identity
 from app.demo.little_utopia_state import PRODUCTION_NAME
 from app.schemas.project import MaterialsCompleteness, ProjectCard, ProjectCreate, ProjectRead, ProjectUpdate
 
@@ -644,6 +645,10 @@ async def update_project(
     changes = body.model_dump(exclude_unset=True)
     for field, value in changes.items():
         setattr(row, field, value)
+    if "leading_structure_id" in changes:
+        # "Set as Leading" is the producer's own choice: recorded by stable identity so a later evaluation keeps
+        # it (or discloses it as unavailable); null hands the leader back to the canonical engine. Never evaluates.
+        row.leading_selection_identity = await selection_identity(db, changes["leading_structure_id"])
     await db.commit()
     await db.refresh(row)
     return row

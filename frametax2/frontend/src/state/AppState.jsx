@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { getLeadingSelection } from "../lib/leadingSelection";
 import { useLocation } from "react-router-dom";
 import { MODE_NORMAL } from "../lib/workspaceScenarioMode";
 
@@ -89,7 +90,9 @@ export function AppStateProvider({ children }) {
     if (mode !== workspaceMode) {
       setInspector(null);
       setSelectedJurisdiction(null);
-      setLeadingStructureIdRaw(null);
+      // Clears any in-session preview selection, but never the project's persisted "Set as Leading" choice
+      // (lib/leadingSelection.js): that survives mode switches, navigation and refresh.
+      setLeadingStructureIdRaw(getLeadingSelection(projectId)?.structure?.structure_id ?? null);
     }
     setWorkspaceModeByProject((prev) => ({ ...prev, [projectId]: mode }));
   }, [projectId, workspaceMode]);
@@ -130,7 +133,7 @@ export function AppStateProvider({ children }) {
     lastResetProjectId.current = projectId;
     setInspector(null);
     setSelectedJurisdiction(null);
-    setLeadingStructureIdRaw(null);
+    setLeadingStructureIdRaw(getLeadingSelection(projectId)?.structure?.structure_id ?? null);
     initializedLeadingForProject.current = null;
   }, [projectId]);
 

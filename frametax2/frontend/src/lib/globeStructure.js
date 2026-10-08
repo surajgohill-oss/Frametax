@@ -255,3 +255,14 @@ export function groupByFamily(list) {
   for (const s of list || []) groups.get(structuralFamilyOf(s)).push(s);
   return FAMILY_ORDER.filter((f) => groups.get(f).length).map((f) => ({ family: f, meta: FAMILY_META[f], items: groups.get(f) }));
 }
+
+// Simplified overlay for the 80px sidebar mini-globe: the principal, the other participants and the same topology
+// edges (relocation / hybrid spokes / co-production peers) as plain coordinates. Null when there is no structure.
+export function miniGlobeOverlay(s, { homeCode = null } = {}) {
+  if (!s) return null;
+  const topo = structureTopology(s, { homeCode });
+  const codes = uniq([topo.principal, ...participantsOf(s), ...topo.edges.flatMap((e) => [e.from, e.to])]);
+  const markers = codes.map((code) => ({ code, principal: code === topo.principal, ...coordsOf(code) })).filter((m) => m.lat != null);
+  const routes = topo.edges.map((e) => ({ from: coordsOf(e.from), to: coordsOf(e.to) })).filter((r) => r.from && r.to);
+  return markers.length ? { key: `${s.structure_id}|${codes.join(",")}`, markers, routes } : null;
+}

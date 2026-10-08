@@ -65,10 +65,11 @@ test("Overview UI contract: Sidebar carries no individual project/production row
   assert.match(src, /Project Library/, "Project Library must remain the company-nav project selector");
 });
 
-test("CompanyGlobe's three navigation points target the restored mature UI", () => {
+test("CompanyGlobe's navigation points target the restored mature UI", () => {
   const src = stripComments(read("screens/company/CompanyGlobe.jsx"));
-  const matches = src.match(/\/projects\/\$\{production\.project_id\}\/overview/g) || [];
-  assert.ok(matches.length >= 3, `expected >=3 mature-UI navigations in CompanyGlobe.jsx, found ${matches.length}`);
+  // One project-scoped helper (2026-10-08: one marker set per active project) used by marker click and Open.
+  assert.match(src, /navigate\(`\/projects\/\$\{id\}\/overview`\)/);
+  assert.ok((src.match(/openProject\(/g) || []).length >= 2, "the helper must back both the marker click and the Open action");
   assert.doesNotMatch(src, /navigate\("\/production\/overview"\)/, "no literal legacy navigate target should remain");
 });
 

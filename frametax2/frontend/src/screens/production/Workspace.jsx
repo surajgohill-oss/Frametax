@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
-import { patchProject } from "../../api";
+import { commitLeadingStructure } from "../../lib/leadingSelection";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, buildScenarioLabel, buildRouteOptionDetail, hasAdministrativeAllocationRisk } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
@@ -345,7 +345,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
         {isLeading ? (
           <button className="wsx-lead is-leading" disabled>● Current leading structure</button>
         ) : (
-          <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure.structure_id); }}>◈ Set as leading</button>
+          <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure); }}>◈ Set as leading</button>
         )}
       </div>
     </div>
@@ -439,32 +439,11 @@ export default function Workspace() {
     if (requestedMode) setWorkspaceMode(requestedMode);
   }, [requestedMode, setWorkspaceMode]);
 
-  // Phase C write-through for "Set as Leading": persists to the real
-  // Project row so the choice survives a reload/restart, in addition to
-  // the existing shared AppState update every Workspace view already reads
-  // synchronously. Fire-and-forget — never blocks the UI, never triggers
-  // the optimizer.
-  //
-  // Known, deferred gap (NOT a bug — logged here rather than worked around,
-  // per Phase C's own scope boundary against touching engine/optimizer
-  // code): the optimizer's in-memory structures use their own string
-  // identifiers (e.g. "ALLOC-COMPONENT-POST-SA"), not real
-  // production_structures.id UUIDs. Only the one structure the Phase C
-  // migration persisted (the effective baseline) has a real row. Selecting
-  // any other structure 422s on the UUID FK — expected until a later phase
-  // persists the optimizer's own generated structures, not a failure.
-  const handleSetLeading = useCallback((structureId) => {
-    setLeadingStructureId(structureId);
-    const projectId = data?.production?.project_id;
-    if (projectId) {
-      patchProject(projectId, { leading_structure_id: structureId }).catch((err) => {
-        if (String(err.message).startsWith("422")) {
-          console.info(`[Workspace] leading structure ${structureId} has no persisted backend row yet (optimizer-generated, not yet migrated) — UI selection still applied`);
-        } else {
-          console.error("[Workspace] failed to persist leading structure to backend:", err);
-        }
-      });
-    }
+  // "Set as Leading": the shared AppState selection plus the project-scoped persisted commit (lib/leadingSelection.js),
+  // which every Globe surface reads. Presentation/portfolio state only -- never an evaluation.
+  const handleSetLeading = useCallback((structure) => {
+    setLeadingStructureId(structure.structure_id);
+    commitLeadingStructure(data?.production?.project_id, structure);
   }, [setLeadingStructureId, data]);
 
   // Dock the Inspector into the Workspace right column (frozen-artifact

@@ -4,6 +4,7 @@ import {
   getProjectState, getRecommendations, getStructures,
 } from "../api";
 import { useAppState } from "../state/AppState";
+import { publishServedLeading } from "./leadingSelection";
 
 // One combined fetch of the full backend state — every screen reads
 // from this rather than re-deriving anything client-side.
@@ -51,6 +52,7 @@ export function useCineGlobe(projectId) {
       .then((data) => {
         if (!mounted.current) return;
         setState({ data, error: null, loading: false });
+        if (projectId) publishServedLeading(projectId, data);
         if (projectId && data?.production?.leading_structure_id) {
           initLeadingStructureId(projectId, data.production.leading_structure_id);
         }
