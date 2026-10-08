@@ -365,15 +365,16 @@ export function cardStatus(structure, cardIndex) {
   // physical mismatch is low-location-fit; capability data that cannot assess is "fit unconfirmed".
   if (structure.production_fit_status === "WEAK") return ALT.LOW_FIT;
   if (structure.production_fit_status === "UNKNOWN") return ALT.FIT_UNCONFIRMED;
-  // A reference alternative (the optimizer's top evaluated alternative when no option is recommended, or the
-  // upside slot's structure) keeps its precise reference category. An unresolved UPSIDE is disclosed by the
-  // economic well's "needed to reach maximum" line, never by relabelling the whole structure CONDITIONAL.
-  if (structure.__isOptimizerReference || structure.__isConditionalUpside) return "REFERENCE";
+  // A structure is never labelled "CONDITIONAL" as a whole. A reference alternative, the upside slot's structure, or a
+  // structure whose confirmation still needs an approval (award discretion, legal review, unconfirmed stacking
+  // deduction) keeps the precise category REFERENCE ALTERNATIVE; how reachable its maximum is is stated separately by
+  // attainability() on the card, and the full detail is in the Inspector.
   if (
-    hasAdministrativeAllocationRisk(structure)
+    structure.__isOptimizerReference || structure.__isConditionalUpside
+    || hasAdministrativeAllocationRisk(structure)
     || structure.legal_review_required
     || hasUnconfirmedStackingDeduction(structure)
-  ) return "CONDITIONAL";
+  ) return "REFERENCE ALTERNATIVE";
   return "LEADING";
 }
 

@@ -713,3 +713,9 @@ Item 3's census numbers are superseded. 1,140 cells (114 x 10): VERIFIED_SUPPORT
 - **Wiring:** all 13 location controls persist per project, change the evaluation fingerprint only when the effective requirements change, trigger exactly one evaluation (Bad Hombres live: generations 20 -> 21), reuse the stored evaluation on an unchanged resave or a revert (`EVALUATION_REUSED`), and never alter another project. Economics and scenario counts are identical before and after for all four productions.
 - **Fixed:** whole-structure "Conditional" wording for an unresolved upside; no-requirements-on-file marking every executable jurisdiction Conditional; Inspector missing the served jurisdiction category/reason; Overview Leading slot ignoring production fit. Details in `docs/architecture/CAPABILITY_LEDGER.md` Item 10.
 - **Environment:** backend `uvicorn app.main:app --port 8010` against the acceptance DB (one process); browser at `http://localhost:5173`.
+
+## LEDGER ITEM 11 CLOSED — economic card interior hierarchy (2026-10-08, from `ba8cfb0`)
+
+- **Shared interior:** `frontend/src/components/EconomicWell.jsx` (Overview and Workspace). Field order, bar rules, MFNI placeholder and attainability wording are in `docs/design/ECONOMIC_CARD_HIERARCHY.md`.
+- **Removed from card faces:** Gross Budget, rates/percentages, the whole-structure CONDITIONAL label, the per-card discretionary / delta / reference-explanation rows (the Inspector still carries them; the reference explanation is the badge tooltip).
+- **Next MFNI task:** serve an MFNI adjustment, then turn the reserved rows into `MFNI ADJUSTMENT −$X` / `NPC AFTER MFNI $Y` and wire an assumptions editor.

@@ -150,7 +150,7 @@ test("four-slot contract: Current Location, Leading Jurisdiction, Optimized Stru
   assert.deepEqual(result.map((s) => s.structure_id), ["base", "lead", "opt", "lead2"]);
   assert.equal(new Set(result.map((s) => s.economic_identity)).size, 4);
   assert.equal(cardStatus(result[2], 2), "OPTIMIZED");
-  assert.equal(cardStatus(result[3], 3), "REFERENCE", "the upside slot keeps its precise reference category; the unresolved upside is disclosed in the well");
+  assert.equal(cardStatus(result[3], 3), "REFERENCE ALTERNATIVE", "the upside slot keeps its precise reference category; the unresolved upside is disclosed in the well");
 });
 
 test("four-slot contract: with no recommended option, Optimized uses the optimizer's top evaluated alternative, flagged as a reference", () => {
@@ -165,7 +165,7 @@ test("four-slot contract: with no recommended option, Optimized uses the optimiz
   assert.equal(optimized.structure_id, "eval");
   assert.equal(optimized.__isOptimizerReference, true);
   assert.equal(optimized.__isProducerOptimizer, undefined, "a reference alternative never claims a recommendation");
-  assert.equal(cardStatus(optimized, 2), "REFERENCE", "a reference alternative is never shown as a confident OPTIMIZED, and an unresolved upside never makes it CONDITIONAL");
+  assert.equal(cardStatus(optimized, 2), "REFERENCE ALTERNATIVE", "a reference alternative is never shown as a confident OPTIMIZED, and an unresolved upside never makes it CONDITIONAL");
 });
 
 test("four-slot contract: an economic identity already shown is never repeated in a later slot", () => {
@@ -202,7 +202,7 @@ test("cardStatus never returns N/A, NO INCENTIVE, or any value outside the vocab
     cardStatus(structure({}), 2),
     cardStatus(structure({}), 3),
   ];
-  for (const s of cases) assert.ok(["ANCHOR", "LEADING", "OPTIMIZED", "CONDITIONAL", "REFERENCE"].includes(s), `unexpected status: ${s}`);
+  for (const s of cases) assert.ok(["ANCHOR", "LEADING", "OPTIMIZED", "REFERENCE ALTERNATIVE"].includes(s), `unexpected status: ${s}`);
 });
 
 // ── Runtime wiring remediation: an unconfirmed-calculation structure can
@@ -214,9 +214,9 @@ test("cardStatus: a non-baseline structure with a disclosed administrative/alloc
   const risky = structure({
     warnings: ["Administrative/allocation risk: award authority discretion applies; a preapproval step is required before this incentive is confirmed."],
   });
-  assert.equal(cardStatus(risky, 1), "CONDITIONAL");
-  assert.equal(cardStatus(risky, 2), "CONDITIONAL");
-  assert.equal(cardStatus(risky, 3), "CONDITIONAL");
+  assert.equal(cardStatus(risky, 1), "REFERENCE ALTERNATIVE");
+  assert.equal(cardStatus(risky, 2), "REFERENCE ALTERNATIVE");
+  assert.equal(cardStatus(risky, 3), "REFERENCE ALTERNATIVE");
 });
 
 test("cardStatus: the SAME structure with no disclosed risk is the ordinary LEADING fallback — the gate is data-driven, not a blanket downgrade", () => {
@@ -226,7 +226,7 @@ test("cardStatus: the SAME structure with no disclosed risk is the ordinary LEAD
 
 test("cardStatus: structure.legal_review_required (a hard statutory violation finding) is CONDITIONAL, never LEADING", () => {
   const stackPendingReview = structure({ warnings: [], legal_review_required: true });
-  assert.equal(cardStatus(stackPendingReview, 1), "CONDITIONAL");
+  assert.equal(cardStatus(stackPendingReview, 1), "REFERENCE ALTERNATIVE");
 });
 
 test("cardStatus: legal_review_required=false (or absent) never falsely triggers CONDITIONAL", () => {
@@ -241,7 +241,7 @@ test("cardStatus: an unconfirmed stacking-deduction disclosure is CONDITIONAL, n
       "Statutory rule found (OCASE may be claimed in addition to OFTTC on the same production's eligible computer animation/VFX labour expenditure.) but the reused spend_reduction calculator only recognizes grant/regional_fund/discretionary_fund program types as the reducing side; neither on_ofttc nor ontario_computer_animation_and_special_effects_tax_credit_ocase is typed that way, so no reduction was applied for this pair. This combination's adjusted_incentive_usd is therefore not confirmed net of this statutory deduction — legal/economic review required before this combination is treated as fully priced.",
     ],
   });
-  assert.equal(cardStatus(stackWithUnconfirmedDeduction, 1), "CONDITIONAL");
+  assert.equal(cardStatus(stackWithUnconfirmedDeduction, 1), "REFERENCE ALTERNATIVE");
 });
 
 test("cardStatus: an administrative-risk baseline card stays honestly ANCHOR — a factual designation, never a confidence claim (Little Utopia's own Mauritius baseline carries this exact real risk)", () => {
@@ -341,8 +341,8 @@ test("screens.css: .ii-grid is a genuine 2x2 (two columns), not the rejected fou
 test("cardStatus: an unresolved UPSIDE (ceiling conditional, floor confirmed) keeps the precise category — never CONDITIONAL", () => {
   const upsideOnly = structure({ ceiling_status: "CONDITIONAL", economics_certainty: "CONDITIONAL", potential_npc_usd: 1, warnings: [] });
   assert.equal(cardStatus(upsideOnly, 1), "LEADING");
-  assert.equal(cardStatus({ ...upsideOnly, __isConditionalUpside: true }, 3), "REFERENCE");
-  assert.equal(cardStatus({ ...upsideOnly, __isOptimizerReference: true }, 2), "REFERENCE");
+  assert.equal(cardStatus({ ...upsideOnly, __isConditionalUpside: true }, 3), "REFERENCE ALTERNATIVE");
+  assert.equal(cardStatus({ ...upsideOnly, __isOptimizerReference: true }, 2), "REFERENCE ALTERNATIVE");
 });
 
 test("cardStatus: location fit is its own category (low-location-fit / fit unconfirmed), never LEADING", () => {

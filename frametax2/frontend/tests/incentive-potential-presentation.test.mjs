@@ -79,13 +79,15 @@ test("Workspace card and Inspector use the shared reader and perform no arithmet
   const ws = read("screens/production/Workspace.jsx") + read("components/EconomicWell.jsx");
   const insp = read("shell/Inspector.jsx");
   assert.match(ws, /readIncentivePotential\(structure\)/);
-  assert.match(read("screens/production/Workspace.jsx"), /<EconomicWell pot=\{pot\} \/>/);
-  // Card labels (2026-10-08 economic well): maximum potential NPC leads, confirmed NPC beneath it.
-  assert.match(ws, /Maximum potential NPC/);
-  assert.match(ws, /Maximum potential incentive/);
+  assert.match(read("screens/production/Workspace.jsx"), /<EconomicWell pot=\{pot\}/);
+  // Card labels (economic card interior v2, 2026-10-08): maximum-potential NPC leads, confirmed NPC beneath it.
+  assert.match(ws, /Maximum-potential NPC/);
+  assert.match(ws, /Maximum-potential incentive/);
   assert.match(ws, /Confirmed NPC/);
   assert.match(ws, /Confirmed incentive/);
-  assert.match(ws, /Needed to reach maximum/);
+  assert.match(ws, /MFNI ADJUSTMENT NOT YET MODELED/);
+  assert.match(ws, /NPC AFTER MFNI/);
+  assert.match(ws, /Assumptions editing not yet available/);
   assert.match(insp, /Max potential incentive/);
   assert.match(insp, /Needed to reach the maximum/);
   for (const [name, text] of [["Workspace", ws], ["Inspector", insp]]) {
@@ -163,4 +165,41 @@ test("Inspector, universe panel and Globe state the same served jurisdiction cat
   assert.doesNotMatch(univ, /economic_certainty\)\.toLowerCase\(\)/);
   // the Globe adapter reads the served upside axis instead of inferring it from certainty
   assert.match(read("lib/globeData.js"), /ceiling_status: rec\.ceiling_status \?\?/);
+});
+
+// ── Economic card interior v2: attainability, no percentages, no whole-structure CONDITIONAL ──────
+import { attainability } from "../src/lib/incentivePotential.js";
+
+test("attainability states how reachable the maximum is from served facts, never labelling the structure conditional", () => {
+  const pot = (o) => readIncentivePotential({ ceiling_status: "CONFIRMED", economics_certainty: "CONFIRMED", confirmed_incentive_floor_usd: 5, ...o });
+  assert.equal(attainability(pot({})).headline, "Maximum confirmed from known facts");
+  assert.equal(attainability(pot({ economics_certainty: "CONDITIONAL" })).headline, "Maximum requires 1 approval");
+  assert.equal(attainability(pot({ ceiling_status: "NOT_ESTABLISHED" })).headline, "Maximum not established from known facts");
+  const facts = [
+    { fact_id: "a", description: "+10% Frequent Filming + 5% Manitoba Producer -- needs production history", state: "USER_FACT_REQUIRED" },
+    { fact_id: "b", description: "Film board approval", state: "AUTHORITY_UNRESOLVED" },
+    { fact_id: "c", description: "Shoot location confirmation", state: "USER_FACT_REQUIRED" },
+  ];
+  const a = attainability(pot({ ceiling_status: "CONDITIONAL", ceiling_missing_facts: facts }));
+  assert.equal(a.headline, "Maximum requires 1 approval and 2 facts");
+  assert.equal(a.more, 2);
+  assert.doesNotMatch(a.requirement, /%/, "no rate or percentage on the card face");
+  for (const o of [{}, { economics_certainty: "CONDITIONAL" }, { ceiling_status: "CONDITIONAL", ceiling_missing_facts: facts }]) {
+    assert.doesNotMatch(attainability(pot(o)).headline, /conditional/i);
+  }
+});
+
+test("economic card interior: one shared well, no gross budget / rate / CONDITIONAL on either card face", () => {
+  const well = read("components/EconomicWell.jsx");
+  const ws = read("screens/production/Workspace.jsx");
+  const ov = read("components/IncentiveIntelligence.jsx");
+  assert.doesNotMatch(well + ws + ov, /Gross budget/i.test(ws) ? /x^/ : /Gross budget/, "Gross budget is never printed inside a card");
+  assert.doesNotMatch(ov, /compactIncentiveRate|rateLine|Vs\. current/, "no rate/percentage line on the Overview card face");
+  assert.doesNotMatch(read("lib/productionOptions.js").match(/export function cardStatus[\s\S]*?\n}\n/)[0], /return "CONDITIONAL"/);
+  // order: maximum-potential NPC, confirmed NPC, incentives, bar, MFNI, attainability
+  const order = ["Maximum-potential NPC", "Confirmed NPC", "Confirmed incentive", "wsx-bar", "wsx-econ-mfni", "wsx-econ-need"].map((s) => well.indexOf(s));
+  assert.deepEqual(order, [...order].sort((x, y) => x - y));
+  assert.ok(order.every((i) => i >= 0));
+  // Workspace: qualified spend only after the well
+  assert.ok(ws.indexOf("<EconomicWell") < ws.indexOf('className="wsx-qs"'));
 });

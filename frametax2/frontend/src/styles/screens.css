@@ -1870,7 +1870,7 @@
    properties below. Heights, paddings and the row grid above are untouched; border widths are whole
    pixels so the divider and CONFIRMED NPC stay on one baseline at any device pixel ratio. */
 .wsx-lane, .ii-card {
-  --wsx-mono: "Geist Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+  --wsx-mono: var(--font-mono);
   --wsx-bg: #FCFAF7; --wsx-bg-anchor: color-mix(in srgb, #FCFAF7 96%, #20211F 4%);
   --wsx-bd: #E2E8F0; --wsx-bd-top: #E2E8F0; --wsx-bd-bot: #CBD5E1; --wsx-bd-anchor: rgba(32, 33, 31, 0.55);
   --wsx-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.02);
@@ -1942,23 +1942,6 @@
 .wsx-lane .wsx-foot button:hover { background: var(--wsx-btn-bg-h); border-color: var(--wsx-btn-bd-h); color: var(--wsx-btn-fg-h); }
 .wsx-lane .wsx-lead { border-radius: 2px; }
 
-/* risk track: segmented LED instead of the diagonal stripe */
-.wsx-econ .wsx-range { box-sizing: border-box; height: 7px; background: var(--wsx-track-bg); border: 1px solid var(--wsx-track-bd); border-radius: 1px; }
-.wsx-econ .wsx-range u {
-  opacity: 1;
-  background: linear-gradient(90deg, var(--wsx-led) 0 5px, transparent 5px) 0 0 / 7px 100% repeat-x;
-  filter: var(--wsx-glow);
-}
-.wsx-econ .wsx-range i {
-  opacity: 1;
-  background: linear-gradient(90deg, var(--wsx-tick) 0 3px, transparent 3px) 0 0 / 5px 100% repeat-x;
-}
-.wsx-econ .wsx-range b { background: var(--wsx-marker); box-shadow: 0 0 0 1px var(--wsx-track-bg); }
-
-/* pre-approval warning row (identified by its inline amber colour; JSX untouched) */
-.wsx-lane .wsx-row[style*="--amber"] { font-family: var(--wsx-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--wsx-warn); }
-.wsx-lane .wsx-row[style*="--amber"] span:first-child { font: inherit; letter-spacing: inherit; color: inherit; }
-
 /* FX telemetry strip breathing room above the Workspace controls (2026-10-07): static flow, explicit
    separation from the tabs above and the station controls below. */
 .wsx-fxstrip { position: relative; margin-top: 12px; margin-bottom: 16px; padding: 8px 16px; }
@@ -1966,64 +1949,108 @@
 /* WORKSPACE GROUND (2026-10-08): no graph-paper grid behind the rack; the cards carry the structure. */
 .wsx-work { background-image: none; }
 
-/* ECONOMIC WELL (2026-10-08): the card area below the divider. Above the divider the upper rows keep a
-   fixed 88px block (3 rows x 28px, or 2 rows x 42px when the incentive moved into the well), so the
-   divider stays on the same baseline. MAXIMUM POTENTIAL NPC is the primary figure; CONFIRMED NPC sits
-   directly beneath it; the range bar's denominator is the maximum potential incentive. */
-.wsx-lane .wsx-rows { height: 88px; display: flex; flex-direction: column; }
-.wsx-lane .wsx-rows .wsx-row { flex: 1 1 0; height: auto; min-height: 0; }
-.wsx-lane, .ii-card {
-  --wsx-potential: #B45309; --wsx-needed: #92400E;
+/* ECONOMIC CARD INTERIOR V2 (2026-10-08): one interior for the Workspace and Overview cards. Field order: title, structural
+   category, Maximum-potential NPC (dominant), Confirmed NPC, confirmed + maximum-potential incentive, confirmed-versus-potential
+   bar, MFNI placeholder, attainability + one requirement, [Workspace: quiet qualified spend], existing actions. Existing
+   CineGlobe font families only, tabular numerals, no rates/percentages on the face, fixed row heights so every equivalent row
+   aligns across the cards. Exterior width, the 3 -> 2 -> 1 reflow and the 439px Workspace card height are unchanged. */
+.wsx-lane { min-height: 439px; }
+.wsx-lh { flex: none; display: block; height: 80px; min-height: 80px; padding: 10px 16px 8px; border-bottom: 0; }
+.wsx-lane.anchor .wsx-lh { height: 78px; min-height: 78px; }
+.wsx-lh-id { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.wsx-nm {
+  height: 2.4em; line-height: 1.2; font-size: 17px; width: 100%;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-:root[data-theme="night"] :is(.wsx-lane, .ii-card), :root[data-theme="dark"] :is(.wsx-lane, .ii-card), .dark :is(.wsx-lane, .ii-card) {
-  --wsx-potential: #F5A524; --wsx-needed: #F5B759;
-}
-.wsx-econ {
-  flex: none; margin-top: 2px; padding: 7px 18px 2px;
-  border-top: 1px solid var(--wsx-seam); box-shadow: var(--wsx-seam-hi);
-}
-.wsx-econ-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.wsx-econ-label { font: 600 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--wsx-label); white-space: nowrap; }
-.wsx-econ-tag {
-  font: 600 9px var(--wsx-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-potential);
-  border: 1px solid currentColor; border-radius: 2px; padding: 1px 5px; white-space: nowrap; opacity: 0.9;
-}
-.wsx-econ-figure {
-  margin: 2px 0 1px; font: 700 24px/1.1 var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: -0.02em; color: var(--wsx-npc); white-space: nowrap;
-}
-.wsx-econ-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 15px; }
-.wsx-econ-line span:first-child { font: 500 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-label); white-space: nowrap; }
-.wsx-econ-line span:last-child { font: 500 11px var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums; color: var(--wsx-fig); white-space: nowrap; }
-.wsx-econ-line .potential { font-weight: 700; color: var(--wsx-potential); }
-.wsx-econ[data-ceiling-status="CONFIRMED"] .wsx-econ-line .potential { color: var(--wsx-inc); }
+.wsx-lh .wsx-badge { align-self: flex-start; font: 600 11px var(--font-sans); letter-spacing: 0.02em; border: 0; padding: 0; color: var(--wsx-sub); background: none; }
+.wsx-lane.anchor .wsx-lh .wsx-badge { background: none; color: var(--oxblood); border: 0; }
+.wsx-lane.reference .wsx-lh .wsx-badge, .wsx-lane.draft .wsx-lh .wsx-badge { background: none; border: 0; }
+
+.wsx-econ { flex: none; padding: 6px 16px 0; font-family: var(--font-sans); }
+.wsx-econ-max { height: 52px; }
+.wsx-econ-label { font: 500 12px/16px var(--font-sans); color: var(--wsx-label); white-space: nowrap; }
+.wsx-econ-figure { font: 700 28px/34px var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.02em; color: var(--wsx-npc); white-space: nowrap; }
+.wsx-econ-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; height: 19px; }
+.wsx-econ-line span:first-child { font: 400 13px/19px var(--font-sans); color: var(--wsx-label); white-space: nowrap; }
+.wsx-econ-line span:last-child { font: 500 13px/19px var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums; color: var(--wsx-fig); white-space: nowrap; }
+.wsx-econ-line.npc { height: 26px; }
+.wsx-econ-line.npc span:first-child { font-weight: 600; color: var(--wsx-npc); }
+.wsx-econ-line.npc span:last-child { font-size: 18px; line-height: 26px; font-weight: 700; letter-spacing: -0.015em; color: var(--wsx-npc); }
+.wsx-econ-incentives { margin-top: 4px; }
 .wsx-econ-line .incentive { font-weight: 700; color: var(--wsx-inc); }
-.wsx-econ-confirmed { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--hairline); }
-.wsx-econ-line.npc span:first-child { font-weight: 600; letter-spacing: 0.1em; }
-.wsx-econ-line.npc span:last-child { font-size: 16px; font-weight: 700; letter-spacing: -0.015em; color: var(--wsx-npc); }
-.wsx-econ .wsx-range { margin: 6px 0 4px; }
-.wsx-econ-needed { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.wsx-econ-needed span { flex: none; font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-label); }
-.wsx-econ-needed b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10.5px var(--font-sans); color: var(--wsx-needed); }
-.wsx-econ[data-ceiling-status="CONFIRMED"][data-certainty="CONFIRMED"] .wsx-econ-needed b { color: var(--wsx-sub); font-weight: 500; }
 
-/* OVERVIEW FOUR-SLOT CARDS (2026-10-08): slot kicker and the served maximum-potential contract. */
-.ii-slot { font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: 4px; }
-.ii-metric-primary .ii-metric-value { font-size: 15px; font-weight: 700; }
+/* confirmed-versus-potential bar: one full-width track, jade confirmed share, amber unconfirmed delta, one separator */
+.wsx-bar-wrap { margin-top: 6px; }
+.wsx-bar { display: flex; height: 8px; border-radius: 1px; overflow: hidden; background: var(--surface-2); }
+.wsx-bar .jade { background: var(--jade); }
+.wsx-bar .amber { background: var(--amber); }
+.wsx-bar .jade + .amber { border-left: 1px solid var(--surface-1); }
+.wsx-bar-labels { display: flex; justify-content: space-between; height: 16px; font: 500 12px/16px var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums; }
+.wsx-bar-labels .jade { color: var(--jade); }
+.wsx-bar-labels .amber { color: var(--amber); }
 
-/* OVERVIEW CARDS ON THE SHARED WELL (2026-10-08): fixed-height head so the well starts on the same line
-   in all four cards; in the 190px card each well line stacks its label above its value (the Workspace
-   card is wide enough for one line); the footer rows sit at the card's bottom. */
-.ii-budget { margin: 0 0 10px; font: 600 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); }
-.ii-budget b { margin-left: 6px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--text-primary); }
-.ii-card-head { flex: none; display: flex; flex-direction: column; gap: 7px; height: 80px; overflow: hidden; }
-.ii-card-head .ii-structure { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wsx-econ.ii-econ { padding: 9px 0 0; margin: 0 0 auto; }
-.ii-econ .wsx-econ-line { flex-direction: column; align-items: flex-start; gap: 1px; min-height: 0; margin-top: 3px; }
-.ii-econ .wsx-econ-line span:first-child { font-size: 9px; }
-.ii-econ .wsx-econ-figure { font-size: 26px; margin: 3px 0 1px; }
-.ii-econ .wsx-econ-confirmed { margin-top: 7px; padding-top: 4px; }
-.ii-econ .wsx-econ-needed { flex-direction: column; gap: 1px; }
-.ii-econ .wsx-econ-needed b { max-width: 100%; }
-.ii-econ .wsx-econ-tag { display: none; } /* the card status line directly above already states it */
-.ii-card .ii-program .badge { white-space: normal; }
+/* MFNI placeholder: a stable reserved row (not calculated in this pass) */
+.wsx-econ-mfni { margin-top: 6px; }
+.wsx-econ-mfni .wsx-econ-line { height: 14px; }
+.wsx-econ-mfni .wsx-econ-line span:first-child { font: 400 11px/14px var(--font-sans); letter-spacing: 0.02em; color: var(--wsx-sub); }
+.wsx-econ-mfni .wsx-econ-line span:last-child { font: 500 12px/14px var(--wsx-mono); color: var(--wsx-sub); }
+.wsx-econ-note { height: 14px; font: 400 11px/14px var(--font-sans); color: var(--wsx-sub); white-space: nowrap; }
+
+/* attainability: how reachable the maximum is, plus one requirement (two lines, then "+N more in Inspector") */
+.wsx-econ-need { margin-top: 6px; }
+.wsx-econ-need-head { height: 18px; font: 600 13px/18px var(--font-sans); color: var(--wsx-needed); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wsx-econ[data-ceiling-status="CONFIRMED"] .wsx-econ-need-head { color: var(--wsx-inc); }
+.wsx-econ-need-req { height: 32px; font: 400 12px/16px var(--font-sans); color: var(--wsx-fig); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.wsx-econ-need-more { height: 14px; font: 400 11px/14px var(--font-sans); color: var(--wsx-sub); }
+.wsx-econ-need-more:empty { display: none; }
+.wsx-econ-need:has(.wsx-econ-need-more:not(:empty)) .wsx-econ-need-req { height: 16px; -webkit-line-clamp: 1; }
+
+/* Workspace: quiet qualified spend below the well, never before NPC; footer sits at the card bottom */
+.wsx-qs { margin: 4px 16px 0; display: flex; justify-content: space-between; height: 18px; font: 400 12px/18px var(--font-sans); color: var(--wsx-sub); }
+.wsx-qs span:last-child { font-family: var(--wsx-mono); font-variant-numeric: tabular-nums lining-nums; }
+.wsx-foot { margin-top: auto; min-height: 34px; padding: 3px 16px; }
+.wsx-foot button { height: 28px; }
+.wsx-lead-act { min-height: 34px; padding: 0 16px 6px; }
+.wsx-lead { height: 28px; }
+
+/* Overview cards (190px wide): same interior; each label sits above its value so nothing clips */
+.ii-card-head { flex: none; display: flex; flex-direction: column; overflow: hidden; height: 68px; gap: 3px; }
+.ii-budget { margin: 0 0 10px; font: 500 13px var(--font-sans); color: var(--text-tertiary); }
+.ii-budget b { margin-left: 6px; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); font-variant-numeric: tabular-nums lining-nums; }
+.ii-slot { font: 600 11px var(--font-sans); letter-spacing: 0.02em; text-transform: none; color: var(--text-tertiary); margin: 0; }
+.ii-card .ii-country { align-items: flex-start; }
+.ii-card .ii-country-name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; height: 2.5em; font-size: 14px; }
+.ii-card .ii-status { font: 600 11px var(--font-sans); letter-spacing: 0.02em; text-transform: none; }
+.wsx-econ.ii-econ { padding: 4px 0 0; margin: 0 0 auto; }
+.ii-econ .wsx-econ-label { font-size: 11.5px; }
+.ii-econ .wsx-econ-figure { font-size: 24px; line-height: 28px; }
+.ii-econ .wsx-econ-max { height: 46px; }
+.ii-econ .wsx-econ-line { flex-direction: column; align-items: flex-start; gap: 0; height: auto; }
+.ii-econ .wsx-econ-line span:first-child { font-size: 11.5px; line-height: 14px; }
+.ii-econ .wsx-econ-line span:last-child { line-height: 16px; }
+.ii-econ .wsx-econ-line.npc { height: auto; margin-top: 4px; }
+.ii-econ .wsx-econ-line.npc span:last-child { font-size: 17px; line-height: 20px; }
+.ii-econ .wsx-econ-incentives .wsx-econ-line { margin-top: 2px; }
+.ii-econ .wsx-econ-mfni { margin-top: 4px; }
+.ii-econ .wsx-econ-need { margin-top: 4px; }
+.ii-econ .wsx-bar-labels { font-size: 11px; }
+.ii-econ .wsx-econ-mfni .wsx-econ-line { height: auto; flex-direction: row; align-items: flex-start; justify-content: space-between; }
+.ii-econ .wsx-econ-mfni .wsx-econ-line:first-child span:first-child { white-space: normal; height: 26px; line-height: 13px; }
+.ii-econ .wsx-econ-note { height: 26px; white-space: normal; line-height: 13px; }
+.ii-econ .wsx-econ-need-head { white-space: normal; height: 34px; font-size: 12.5px; line-height: 17px; }
+.ii-econ .wsx-econ-need-req { height: 32px; -webkit-line-clamp: 2; }
+.ii-econ:has(.wsx-econ-need-more:not(:empty)) .wsx-econ-need-req { height: 16px; -webkit-line-clamp: 1; }
+.ii-card .ii-program { margin-top: auto; }
+
+/* narrow Overview cards (the centre column is ~150px per card at 1280px): same interior, smaller type, wrapped labels */
+.ii-card { container-type: inline-size; container-name: iicard; }
+@container iicard (max-width: 170px) {
+  .ii-econ .wsx-econ-figure { font-size: 20px; line-height: 26px; }
+  .ii-econ .wsx-econ-max { height: 42px; }
+  .ii-econ .wsx-econ-label { font-size: 11px; }
+  .ii-econ .wsx-econ-incentives .wsx-econ-line span:first-child { white-space: normal; height: 28px; }
+  .ii-econ .wsx-econ-line span:last-child { font-size: 12px; }
+  .ii-econ .wsx-econ-line.npc span:last-child { font-size: 15px; line-height: 18px; }
+  .ii-econ .wsx-bar-labels { font-size: 10px; }
+  .ii-econ .wsx-econ-need-head { height: 51px; }
+}

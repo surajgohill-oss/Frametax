@@ -264,7 +264,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // (its own routed-component identity, e.g. "Post → Manitoba") instead —
   // flags/subtitle (rate) still come from compactScenarioIdentity, which
   // remains correct for those; only the jurisdiction-name portion changes.
-  const { flags, name: compactName, subtitle } = compactScenarioIdentity(structure);
+  const { flags, name: compactName } = compactScenarioIdentity(structure);
   const name = OPTIMIZER_CLASSIFICATIONS.has(structure.classification)
     ? buildScenarioLabel(structure)
     : compactName;
@@ -302,79 +302,30 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
     >
       <div className="wsx-lh">
         <div className="wsx-lh-id">
-          <div className="wsx-nm">{flags ? `${flags} ${name}` : name}</div>
-          {/* GW-OI-002: an Optimizer-classified structure shows its real
-              family and tier (two independent axes) instead of the
-              generic single-jurisdiction subtitle — never "Practical
-              Hybrid" standing in for a different real tier. */}
-          <div className="wsx-lb">{familyLabel ? [familyLabel, tierLabel].filter(Boolean).join(" · ") : subtitle}</div>
+          {/* Title: up to two lines, full title (and the real family / tier for an optimizer structure) in the tooltip.
+              No rate or percentage on the card face -- those stay in the Inspector. */}
+          <div
+            className="wsx-nm"
+            title={[flags ? `${flags} ${name}` : name, familyLabel ? [familyLabel, tierLabel].filter(Boolean).join(" · ") : null].filter(Boolean).join(" — ")}
+          >{flags ? `${flags} ${name}` : name}</div>
+          <span className="wsx-badge" title={isReference ? referenceExplanationText(structure.recommendation_reason) : undefined}>{badge}</span>
         </div>
-        <span className="wsx-badge">{badge}</span>
       </div>
 
       {priced ? (
         <>
-          <div className="wsx-rows">
-            <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
-            <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
-            {/* With the incentive-potential contract, incentive figures live only in the economic
-                well below (never duplicated here); a legacy structure keeps its gross incentive row. */}
-            {!pot && <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>}
-          </div>
           {pot ? (
-            // ECONOMIC WELL: shared with Overview's cards (components/EconomicWell.jsx).
-            <EconomicWell pot={pot} />
+            <>
+              {/* ECONOMIC WELL v2: shared with Overview's cards (components/EconomicWell.jsx). Gross budget is not
+                  repeated here; qualified spend is quiet subordinate context below the well, never before NPC. */}
+              <EconomicWell pot={pot} awardRisk={hasAdministrativeAllocationRisk(structure)} />
+              <div className="wsx-qs"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
+            </>
           ) : (
-            <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
-          )}
-          {/* GLOBE_WORKSPACE_CANONICAL_WIRING_COMPLETE (2026-09-22), Phase 4: an Optimizer-
-              mode card (recommended OR evaluated alternative — this field is only ever
-              present on optimizer_scenarios entries) always shows its exact delta from
-              Current Location, never a bare status word with no number. */}
-          {structure.recommendation_status && structure.savings_vs_current_usd != null && (
-            <div
-              className="wsx-row"
-              style={{
-                color: structure.recommendation_status === "COSTS_MORE" ? "var(--red)"
-                  : structure.recommendation_status === "NEUTRAL" ? "var(--text-tertiary)"
-                  : "var(--jade)",
-              }}
-            >
-              <span>
-                {structure.recommendation_status === "COSTS_MORE" ? "Costs more than Current Location"
-                  : structure.recommendation_status === "NEUTRAL" ? "Same as Current Location"
-                  : "Saves vs. Current Location"}
-              </span>
-              <span><Money value={Math.abs(structure.savings_vs_current_usd)} bare /></span>
-            </div>
-          )}
-          {/* CANONICAL OPTIMIZER RECOMMENDATION METHODOLOGY CLOSEOUT (2026-09-30),
-              item 8: a reference card must disclose WHY it sits below the
-              recommendation hurdle -- the applicable one of dominance (which
-              simpler structure and by how much) or a specific added-jurisdiction's
-              marginal shortfall against the same $100,000 threshold every other
-              card already discloses via recommendation_threshold_usd. Read
-              verbatim from already-served fields; nothing computed here. This
-              row (not the badge) carries the specific reason text, so the badge
-              itself stays short and never breaks the existing card layout. */}
-          {isReference && (
-            <div className="wsx-row" style={{ color: "var(--text-tertiary)" }}>
-              <span>{referenceExplanationText(structure.recommendation_reason)}</span>
-              {structure.dominance_status === "DOMINATED" && structure.npc_difference_usd != null && (
-                <span><Money value={structure.npc_difference_usd} bare /> higher NPC</span>
-              )}
-            </div>
-          )}
-          {/* F#K item 3: same generic administrative/discretionary
-              allocation-risk disclosure as Overview's cards and the Hero
-              — a priced structure here can still be gated by award-
-              authority discretion, competitive/capacity-limited
-              allocation, or a mandatory preapproval step. Cross-page
-              consistency (invariant H): reads the SAME warnings-derived
-              signal, never a per-page re-derivation. */}
-          {hasAdministrativeAllocationRisk(structure) && (
-            <div className="wsx-row" style={{ color: "var(--amber)" }}>
-              <span>⚠ Discretionary / preapproval required</span>
+            <div className="wsx-rows">
+              <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
+              <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>
+              <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
             </div>
           )}
         </>

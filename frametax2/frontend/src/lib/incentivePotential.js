@@ -79,3 +79,34 @@ export function potentialRows(pot) {
     { key: "potentialNpc", label: "Potential NPC", value: pot.potentialNpc },
   ];
 }
+
+// ATTAINABILITY (2026-10-08): how reachable the maximum is, stated from the served facts only -- separate from the
+// structure's category, which is never relabelled "conditional". `awardRisk` is the shared administrative/award-risk
+// disclosure (an approval step). Returns { headline, requirement, more }:
+//   headline    "Maximum confirmed from known facts" | "Maximum requires 1 approval" | "Maximum requires 2 facts" | ...
+//   requirement the first unresolved requirement (first clause of the served description), or null
+//   more        how many further served requirements are left to the Inspector
+export function attainability(pot, awardRisk = false) {
+  if (!pot) return { headline: "Maximum not established", requirement: null, more: 0 };
+  if (pot.ceilingStatus === "NOT_ESTABLISHED") return { headline: "Maximum not established from known facts", requirement: null, more: 0 };
+  const missing = Array.isArray(pot.missingFacts) ? pot.missingFacts : [];
+  if (pot.ceilingStatus !== "CONDITIONAL") {
+    const open = awardRisk || pot.certainty === "CONDITIONAL";
+    return open
+      ? { headline: "Maximum requires 1 approval", requirement: "Award confirmation", more: 0 }
+      : { headline: "Maximum confirmed from known facts", requirement: null, more: 0 };
+  }
+  const approvals = missing.filter((f) => f.state === "AUTHORITY_UNRESOLVED").length + (awardRisk && !missing.some((f) => f.state === "AUTHORITY_UNRESOLVED") ? 1 : 0);
+  const facts = missing.filter((f) => f.state !== "AUTHORITY_UNRESOLVED").length;
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  const parts = [approvals ? plural(approvals, "approval") : null, facts ? plural(facts, "fact") : null].filter(Boolean);
+  const first = missing.map((f) => f.description).find(Boolean);
+  return {
+    headline: parts.length ? `Maximum requires ${parts.join(" and ")}` : "Maximum requires confirmation",
+    // first clause of the served description, with any rate/percentage removed from the card face (rates stay in the Inspector)
+    requirement: first
+      ? String(first).split(/ -- | — | \(/)[0].replace(/[+\-−]?\s?\d+(?:\.\d+)?\s?%\s*/g, "").replace(/^[\s+]+/, "").trim() || "Additional approval or fact"
+      : (awardRisk ? "Award confirmation" : null),
+    more: Math.max(0, missing.length - 1),
+  };
+}

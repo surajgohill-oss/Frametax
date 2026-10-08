@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Money, scenarioDisplay, buildScenarioLabel, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
+import { Money, scenarioDisplay, buildScenarioLabel, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
 import { readIncentivePotential } from "../lib/incentivePotential";
 import EconomicWell from "./EconomicWell";
 import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, isBaselineStructure } from "../lib/productionOptions";
@@ -39,7 +39,7 @@ const OPTIMIZER_CLASSIFICATIONS = new Set([
   "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
 ]);
 
-function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPreferenceSaved }) {
+function OptionCard({ structure, cardIndex, onClick, projectId, onPreferenceSaved }) {
   const classification = classifyStructure(structure);
   // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 3: an
   // optimizer-classified Optimized card (Card 4) used scenarioDisplay's
@@ -69,30 +69,8 @@ function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPrefe
     : (structure.primary_jurisdiction ? [structure.primary_jurisdiction] : []);
   const flags = codes.map(flagEmoji).filter(Boolean).join(" ");
   const status = cardStatus(structure, cardIndex);
-  const isOpportunity = !!structure.__isOpportunity;
-  // Opportunity cards (Card 4 when it represents a real disclosed
-  // fund/treaty pathway, not yet-earned economics) must never format
-  // their figure through compactIncentiveRate — that function only ever
-  // describes a structure's OWN resolved rate_floor/rate_ceiling, and
-  // applying it here would misrepresent a disclosed cap as an earned
-  // rate. F#K Valentine's Day economic/semantic regression fix
-  // (2026-09-03): this used to sum every disclosed fund's own
-  // documented_cap_usd and show "Potential up to $X" — for a real
-  // production this summed five unrelated national funds' own per-
-  // project ceilings (sized for productions much larger than this one)
-  // into a figure ($16.1M) that exceeded the production's entire $4.5M
-  // source budget by more than 3x. A program's own cap is real and
-  // disclosable but is never this project's calculated potential (item
-  // 5.C/5.D) — disclose the real fund COUNT/NAMES instead, never a
-  // fabricated or summed dollar figure.
-  const rateLine = isOpportunity
-    ? (structure.__fundCount
-        ? `${structure.__fundCount} discretionary fund${structure.__fundCount === 1 ? "" : "s"} available — not a guaranteed or project-scaled figure`
-        : "Potential — not yet modeled")
-    : compactIncentiveRate(structure);
   const npc = structure.npc_with_adjustments_usd;
   const pot = readIncentivePotential(structure);
-  const diff = npc != null && baseNpc != null && !isBaselineStructure(structure) ? npc - baseNpc : null;
   const clickable = !!onClick;
 
   // Batched producer-control closeout (2026-09-03), Batch 6: a compact,
@@ -156,17 +134,16 @@ function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPrefe
         <div className="ii-card-head">
         {structure.__slot && <div className="ii-slot">{structure.__slot}</div>}
         <div className="ii-country">
-          <span className="ii-country-name">{flags ? `${flags} ${title}` : title}</span>
+          <span className="ii-country-name" title={flags ? `${flags} ${title}` : title}>{flags ? `${flags} ${title}` : title}</span>
         </div>
         <div className="ii-status">{status}</div>
-        {rateLine && <div className="ii-structure">{rateLine}</div>}
         </div>
 
         {/* Same shared economic well as the Workspace cards; a structure without the served
             contract keeps its legacy incentive / NPC pair. The production budget is shown once,
             above the grid, never repeated per card. */}
         {pot ? (
-          <EconomicWell pot={pot} className="ii-econ" />
+          <EconomicWell pot={pot} awardRisk={hasRisk} className="ii-econ" />
         ) : (
           <div className="ii-metrics">
             <div className="ii-metric">
@@ -184,34 +161,6 @@ function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPrefe
           </div>
         )}
 
-        {diff != null && (
-          <div className="ii-related">
-            <span className="ii-related-label">Vs. current / base</span>
-            <span className="ii-related-list">
-              {diff > 0 ? "+" : ""}<Money value={diff} />
-            </span>
-          </div>
-        )}
-
-        {structure.confidence_status && (
-          <div className="ii-program">
-            <span className={`badge ${confidenceStatusTone(structure.confidence_status)}`}>
-              {confidenceStatusLabel(structure.confidence_status)}
-            </span>
-          </div>
-        )}
-
-        {/* F#K item 3: real, backend-disclosed administrative/discretionary
-            allocation risk (award-authority discretion, competitive/
-            capacity-limited allocation, or a mandatory preapproval step).
-            A structure carrying this must never present as a clean,
-            unconditional deterministic winner — generic across every
-            jurisdiction/program, see hasAdministrativeAllocationRisk. */}
-        {hasRisk && (
-          <div className="ii-program">
-            <span className="badge amber">⚠ Discretionary / preapproval required</span>
-          </div>
-        )}
         {canExclude && (
           <div className="ii-program">
             <button
@@ -276,8 +225,6 @@ function ExcludedJurisdictions({ facts, projectId, onPreferenceSaved }) {
 
 export default function IncentiveIntelligence({ allocated, onSelect, projectId, onPreferenceSaved, facts, grossBudgetUsd }) {
   const options = selectAnchorLeadingOptimized(allocated);
-  const baseline = allocated?.structures?.find(isBaselineStructure);
-  const baseNpc = baseline?.npc_with_adjustments_usd ?? null;
 
   return (
     <section className="ovx-sec ii-section">
@@ -305,7 +252,6 @@ export default function IncentiveIntelligence({ allocated, onSelect, projectId, 
               key={s.structure_id}
               structure={s}
               cardIndex={i}
-              baseNpc={baseNpc}
               onClick={onSelect ? () => onSelect(s) : undefined}
               projectId={projectId}
               onPreferenceSaved={onPreferenceSaved}

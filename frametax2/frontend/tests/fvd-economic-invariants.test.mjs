@@ -169,11 +169,11 @@ test("IncentiveIntelligence.jsx (Overview's Top Structures) uses full-precision 
   assert.match(iiSrc, /<Money value=\{grossBudgetUsd\} \/> USD/);
   assert.doesNotMatch(iiSrc, /resolveGrossBudget\(structure/, "no per-card gross budget");
   assert.match(iiSrc, /<EconomicWell pot=\{pot\}/);
-  assert.match(iiSrc, /<Money value=\{npc\}/);
   assert.doesNotMatch(read("components/EconomicWell.jsx"), /CompactMoney/);
   // Both scenario surfaces must share the SAME formatter — never two
   // independently-maintained money presentations for the same concept.
-  assert.match(wsSrc, /<Money value=\{gross\}/);
+  assert.match(wsSrc, /<Money value=\{qualifiedSpend\}/);
+  assert.doesNotMatch(wsSrc, /<Money value=\{gross\}/, "gross budget is not repeated on a Workspace card");
   assert.doesNotMatch(wsSrc, /CompactMoney/);
 });
 
