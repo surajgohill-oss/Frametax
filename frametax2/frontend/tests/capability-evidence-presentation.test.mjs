@@ -25,13 +25,15 @@ test("hover, Inspector and every fit surface read only the served evidence (no c
   const files = ["../src/shell/Inspector.jsx", "../src/lib/globeData.js", "../src/components/GlobeHoverCard.jsx", "../src/lib/alternativeLabels.js"];
   for (const f of files) {
     const src = read(f);
-    assert.ok(/production_fit_capability_evidence|capabilityEvidenceText|fitSummaryText|fitSummary/.test(src), f);
+    // The hover card is deliberately concise (Globe closeout 2026-10-08): it carries no fit/evidence prose at all, so it is
+    // only held to the "no capability truth in the frontend" rule; every other surface still reads the served evidence.
+    if (!f.endsWith("GlobeHoverCard.jsx")) assert.ok(/production_fit_capability_evidence|capabilityEvidenceText|fitSummaryText|fitSummary/.test(src), f);
     assert.ok(!/desert_environments\s*[:=]|LOCATION_CENSUS|location_capability_cells|jurisdiction_capability_profile/.test(src.replace(/\/\/.*$/gm, "")), f);
   }
   assert.ok((read("../src/shell/Inspector.jsx").match(/<CapabilityEvidence evidence=\{data\.production_fit_capability_evidence\} \/>/g) || []).length === 4,
     "structure, segment, opportunity, and unavailable-jurisdiction Inspectors must all render served evidence");
-  assert.match(read("../src/components/GlobeHoverCard.jsx"), /hover\.productionFitSummary/);
-  assert.match(read("../src/components/GlobeHoverCard.jsx"), /story\.fitSummary/);
+  // The hover is concise: the shared fit text is rendered by the Inspector, not repeated on the Globe card.
+  assert.doesNotMatch(read("../src/components/GlobeHoverCard.jsx"), /hover\.productionFitSummary|story\.fitSummary/);
 });
 
 test("hover story, hover record and Inspector share one served text for fit + soft signals + capability evidence", () => {
@@ -51,10 +53,9 @@ test("hover story, hover record and Inspector share one served text for fit + so
   assert.equal(fitSummaryText({}), null);
 });
 
-test("Map / Split hover cards (no structure story) show the same served production-fit text, never twice", async () => {
+test("Globe hover cards are concise: no long production-fit prose and no percentage fields (that text lives in the Inspector)", async () => {
   const { readFileSync } = await import("node:fs");
   const src = readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
-  const body = src.slice(src.indexOf("function RecommendedOrAlternativeBody"), src.indexOf("function PotentialFields"));
-  assert.match(body, /hover\.productionFitSummary && !hover\.structureStory\?\.fitSummary/);
-  assert.match(body, /data-hover-field="production-fit"/);
+  assert.doesNotMatch(src, /productionFitSummary|fitSummary|data-hover-field="production-fit"/);
+  assert.doesNotMatch(src, /Maximum rate|Incentive \/ Gross Budget"\}<\/div>\s*<div className="small">\{pctOfGross \|\| "Not available"\}[\s\S]{0,40}<\/div>\s*\{\/\* x/);
 });

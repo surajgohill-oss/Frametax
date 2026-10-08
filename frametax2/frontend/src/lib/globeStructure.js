@@ -12,7 +12,7 @@
 // multi-party. No economics are computed here.
 
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
-import { globeKey } from "./globeData.js";
+import { globeKey } from "./globeKey.js";
 import { alternativeLabel, fitSummaryText } from "./alternativeLabels.js";
 
 export const FAMILY = {
@@ -88,7 +88,7 @@ const coordsOf = (code) => JURISDICTION_COORDS[code] || JURISDICTION_COORDS[Stri
 
 // Route topology. `edges` carry the component/package and routed spend where served; `directed` is true only
 // where the canonical structure establishes a direction (principal -> routed component destination).
-export function structureTopology(s) {
+export function structureTopology(s, { homeCode = null } = {}) {
   const family = structuralFamilyOf(s);
   const principal = principalOf(s);
   const rows = componentRows(s);
@@ -102,21 +102,34 @@ export function structureTopology(s) {
       e.spendUsd += Number(r.allocated_usd) || 0;
       byDest.set(r.jurisdiction_code, e);
     }
-    return [...byDest.values()].map((e) => ({ ...e, label: `${e.components.join(" + ")}${e.spendUsd ? ` · $${Math.round(e.spendUsd).toLocaleString()}` : ""}` }));
+    // Concise route label (POST/VFX, MUSIC): the component only, never the spend or a rule explanation.
+    return [...byDest.values()].map((e) => ({ ...e, label: [...new Set(e.components)].join(" + ").toUpperCase() }));
   };
-  if (family === FAMILY.SINGLE) return { family, shape: "highlight", principal, nodes: participantsOf(s), edges: [], layered: false };
+  // A hybrid whose component allocations are not served still connects its principal to every other participant
+  // (unlabelled): participation is established by the structure, the component label only where served.
+  const withParticipantSpokes = (edges) => (edges.length ? edges
+    : participantsOf(s).filter((c) => c !== principal).map((c) => ({ from: principal, to: c, components: [], spendUsd: 0, directed: true, kind: "component", label: null })));
+  if (family === FAMILY.SINGLE) {
+    // A full relocation is drawn current location -> destination; the current base itself (or a structure with no home
+    // context) is just the selected territory.
+    const relocated = !!homeCode && !!principal && principal !== homeCode && participantsOf(s).length <= 1;
+    return {
+      family, shape: relocated ? "relocation" : "highlight", principal, nodes: participantsOf(s), layered: false,
+      edges: relocated ? [{ from: homeCode, to: principal, components: [], spendUsd: 0, directed: true, kind: "relocation", label: null }] : [],
+    };
+  }
   if (family === FAMILY.STACK) return { family, shape: "layered", principal, nodes: participantsOf(s), edges: [], layered: true };
   if (family === FAMILY.HYBRID_TWO) {
-    return { family, shape: "single_route", principal, nodes: participantsOf(s), edges: edgesToComponents(), layered: false };
+    return { family, shape: "single_route", principal, nodes: participantsOf(s), edges: withParticipantSpokes(edgesToComponents()), layered: false };
   }
   if (family === FAMILY.HYBRID_MULTI) {
-    return { family, shape: "hub_and_spoke", principal, nodes: participantsOf(s), edges: edgesToComponents(), layered: false };
+    return { family, shape: "hub_and_spoke", principal, nodes: participantsOf(s), edges: withParticipantSpokes(edgesToComponents()), layered: false };
   }
   // Official co-production: solid peer relationship between principals (undirected -- no canonical direction).
   const principals = uniq([principal, ...partnersOf(s)]);
   const peerEdges = [];
   for (let i = 1; i < principals.length; i += 1) {
-    peerEdges.push({ from: principals[0], to: principals[i], components: [], spendUsd: 0, directed: false, kind: "peer", label: "Co-production principals" });
+    peerEdges.push({ from: principals[0], to: principals[i], components: [], spendUsd: 0, directed: false, kind: "peer", label: null });
   }
   if (family === FAMILY.COPRO) {
     return { family, shape: "peer", principal, nodes: participantsOf(s), edges: peerEdges, layered: false };
@@ -124,10 +137,12 @@ export function structureTopology(s) {
   return { family, shape: "peer_plus_branches", principal, nodes: participantsOf(s), edges: [...peerEdges, ...edgesToComponents()], layered: false };
 }
 
-// three-globe arcs for ONE displayed structure (never every route at once). Colour is the family accent.
-export function structureArcs(s) {
-  const topo = structureTopology(s);
-  const meta = FAMILY_META[topo.family];
+// three-globe arcs for ONE displayed structure (never every route at once). Colour is the jurisdiction CATEGORY colour
+// supplied by the caller -- structure type is communicated by topology (which territories connect), never by a separate
+// colour, so there is deliberately no per-family colour here.
+export const NEUTRAL_ROUTE_HEX = "#e8dfc8";
+export function structureArcs(s, { color = NEUTRAL_ROUTE_HEX, homeCode = null } = {}) {
+  const topo = structureTopology(s, { homeCode });
   const arcs = [];
   for (const e of topo.edges) {
     const a = coordsOf(e.from);
@@ -136,14 +151,40 @@ export function structureArcs(s) {
     const peer = e.kind === "peer";
     arcs.push({
       startLat: a.lat, startLng: a.lng, endLat: b.lat, endLng: b.lng,
-      color: peer && meta.secondary ? meta.hex : (e.kind === "component" && meta.secondary ? meta.secondary : meta.hex),
-      strokeWidth: peer ? 0.7 : 0.5,
+      color: [color, color],
+      strokeWidth: peer ? 0.7 : 0.6,
       solid: !e.directed,            // undirected / peer relationships are solid and do not animate
-      altitude: peer ? 0.22 : 0.3,
+      altitude: peer ? 0.22 : 0.28,
       startCode: e.from, endCode: e.to, label: e.label || null, kind: e.kind, family: topo.family,
     });
   }
   return arcs;
+}
+
+// great-circle midpoint, for a route label placed over the middle of a leg
+function midpointOf(a, b) {
+  const rad = Math.PI / 180;
+  const [lat1, lng1, lat2, lng2] = [a.lat * rad, a.lng * rad, b.lat * rad, b.lng * rad];
+  const x = Math.cos(lat1) * Math.cos(lng1) + Math.cos(lat2) * Math.cos(lng2);
+  const y = Math.cos(lat1) * Math.sin(lng1) + Math.cos(lat2) * Math.sin(lng2);
+  const z = Math.sin(lat1) + Math.sin(lat2);
+  const len = Math.hypot(x, y, z);
+  if (!len) return { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
+  return { lat: Math.asin(z / len) / rad, lng: Math.atan2(y, x) / rad };
+}
+
+// Concise labels (POST/VFX, MUSIC) for the legs that serve one, positioned over the middle of their arc.
+export function structureRouteLabels(s, { homeCode = null } = {}) {
+  const labels = [];
+  for (const e of structureTopology(s, { homeCode }).edges) {
+    if (!e.label) continue;
+    const a = coordsOf(e.from);
+    const b = coordsOf(e.to);
+    if (!a || !b) continue;
+    const m = midpointOf(a, b);
+    labels.push({ key: `${e.from}>${e.to}`, lat: m.lat, lng: m.lng, text: e.label, altitude: 0.2 });
+  }
+  return labels;
 }
 
 // Globe keys of every participating jurisdiction (for exact highlighting).

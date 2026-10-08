@@ -2054,3 +2054,15 @@
   .ii-econ .wsx-bar-labels { font-size: 10px; }
   .ii-econ .wsx-econ-need-head { height: 51px; }
 }
+
+/* PROJECT GLOBE (2026-10-08): route-leg labels and a readable keyboard focus ring for the marker targets */
+.globe-route-label {
+  position: absolute; left: 0; top: 0; padding: 3px 6px; border-radius: 2px; white-space: nowrap; pointer-events: none;
+  font: 600 10px/1 var(--font-sans); letter-spacing: 0.06em; color: #f4ecd9;
+  background: rgba(12, 16, 24, 0.78); border: 1px solid rgba(244, 236, 217, 0.35);
+}
+.globe-hit-target:focus { outline: none; }
+.globe-hit-target:focus-visible {
+  outline: 2px solid #f4ecd9; outline-offset: 2px; border-radius: 50%;
+  box-shadow: 0 0 0 5px rgba(244, 236, 217, 0.22);
+}

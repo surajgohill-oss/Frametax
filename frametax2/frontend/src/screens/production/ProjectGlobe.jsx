@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
 import GlobeHoverCard from "../../components/GlobeHoverCard";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
+import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, optimizerStructureStatus, buildSelectedStructureRoute, OPTIMIZER_STATUS_HEX, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { admissibleForMode, MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection } from "../../lib/workspaceScenarioMode";
 import { classifyBlocker } from "../../lib/blockerDisposition";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
@@ -19,7 +19,7 @@ import { Money, humanizeToken, buildScenarioLabel } from "../../lib/format";
 import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../../lib/globeCategoryDiff";
 import {
   FAMILY_META, buildStructureIndex, familyCounts, groupByFamily, identityOf, participantGlobeKeys,
-  principalOf, structureArcs, structureStory, structuralFamilyOf,
+  principalOf, structureArcs, structureRouteLabels, structureStory, structuralFamilyOf,
 } from "../../lib/globeStructure";
 
 // OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25) — SUPERSEDES the prior
@@ -226,14 +226,26 @@ export default function ProjectGlobe() {
   const lockedStructure = lockedIdentity ? structureByIdentity.get(lockedIdentity) || null : null;
   const displayStructure = previewStructure || lockedStructure;
   const displayIsLockedOnly = !previewStructure && !!lockedStructure;
-  const structureArcsForDisplay = useMemo(() => (displayStructure ? structureArcs(displayStructure) : []), [displayStructure]);
+  // The selected structure's route: arcs + concise leg labels. Colour is the jurisdiction CATEGORY colour (Optimizer mode:
+  // the structure's own status colour); structure type shows only through topology -- full relocation draws current
+  // location -> destination, a hybrid draws principal -> each routed component, a co-production connects every participant.
+  const displayRoute = useMemo(() => {
+    if (!displayStructure) return { arcs: [], labels: [] };
+    if (globeMode === MODE_OPTIMIZER) {
+      const color = OPTIMIZER_STATUS_HEX[optimizerStructureStatus(allocated, displayStructure)];
+      return { arcs: structureArcs(displayStructure, { color }), labels: structureRouteLabels(displayStructure) };
+    }
+    return buildSelectedStructureRoute(allocated, displayStructure);
+  }, [displayStructure, globeMode, allocated]);
+  const structureArcsForDisplay = displayRoute.arcs;
+  // Participant outlines: the principal is the strongest, secondary participants a softer ivory. No per-structure-type colour.
   const structureBorders = useMemo(() => {
     if (!displayStructure) return null;
-    const fam = FAMILY_META[structuralFamilyOf(displayStructure)];
     const m = new Map();
-    for (const k of participantGlobeKeys(displayStructure)) m.set(k, displayIsLockedOnly ? "#ffffff" : fam.hex);
+    const principalKey = principalOf(displayStructure) ? globeKey(principalOf(displayStructure)) : null;
+    for (const k of participantGlobeKeys(displayStructure)) m.set(k, k === principalKey ? "#ffffff" : "#d8e0ea");
     return m;
-  }, [displayStructure, displayIsLockedOnly]);
+  }, [displayStructure]);
   const hoverWithStory = useMemo(() => {
     if (!hover) return null;
     if (!previewStructure) return hover;
@@ -398,7 +410,7 @@ export default function ProjectGlobe() {
         key={s.structure_id}
         data-structure-identity={identityOf(s)}
         data-structure-family={structuralFamilyOf(s)}
-        style={{ borderLeft: `3px solid ${FAMILY_META[structuralFamilyOf(s)].hex}` }}
+        style={{ borderLeft: "3px solid var(--hairline-strong)" }}
         onClick={() => selectStructure(s)}
       >
         {/* OPTIMIZER_GLOBE_WORKSPACE_WIRING (2026-09-25): Optimizer rows now
@@ -684,6 +696,7 @@ export default function ProjectGlobe() {
           points={points}
           // STRUCTURE-AWARE GLOBE: only the previewed / locked structure's topology is drawn (never every route).
           arcs={structureArcsForDisplay}
+          routeLabels={displayRoute.labels}
           polygonBorders={structureBorders}
           // The stage owns the height (see --globe-stage-* tokens); 560 is now
           // only the floor. Previously a hardcoded 560 regardless of how much

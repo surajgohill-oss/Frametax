@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import {
-  FAMILY, FAMILY_META, buildStructureIndex, familyCounts, groupByFamily, identityOf, participantGlobeKeys,
+  FAMILY, FAMILY_META, NEUTRAL_ROUTE_HEX, buildStructureIndex, familyCounts, groupByFamily, identityOf, participantGlobeKeys,
   principalOf, structureArcs, structureStory, structureTopology, structuralFamilyOf,
 } from "../src/lib/globeStructure.js";
 import { optimizerProjection, selectSixSlots, MODE_OPTIMIZER } from "../src/lib/workspaceScenarioMode.js";
@@ -61,7 +61,7 @@ test("route topology per family", () => {
   const t2 = structureTopology(hybrid2);
   assert.equal(t2.shape, "single_route"); assert.equal(t2.edges.length, 1);
   assert.deepEqual([t2.edges[0].from, t2.edges[0].to, t2.edges[0].directed], ["MU", "IT", true]);
-  assert.match(t2.edges[0].label, /Post\/VFX/); assert.match(t2.edges[0].label, /61,568/);
+  assert.equal(t2.edges[0].label, "POST/VFX", "concise route label: the component only, never spend or rule text");
   const tn = structureTopology(hybridN);
   assert.equal(tn.shape, "hub_and_spoke");
   assert.equal(principalOf(hybridN), "GR", "hub is the principal-production jurisdiction");
@@ -77,15 +77,15 @@ test("arcs: only the displayed structure; peer relationships are solid and undir
   assert.deepEqual(structureArcs(single), []);
   assert.deepEqual(structureArcs(stack), []);
   const a2 = structureArcs(hybrid2);
-  assert.equal(a2.length, 1); assert.equal(a2[0].solid, false); assert.equal(a2[0].color, FAMILY_META[FAMILY.HYBRID_TWO].hex);
+  assert.equal(a2.length, 1); assert.equal(a2[0].solid, false); assert.deepEqual(a2[0].color, [NEUTRAL_ROUTE_HEX, NEUTRAL_ROUTE_HEX], "arcs carry the category colour supplied by the caller (neutral by default), never a per-structure-type colour");
   assert.equal(a2[0].startCode, "MU"); assert.equal(a2[0].endCode, "IT");
   const an = structureArcs(hybridN);
   assert.equal(an.length, 2); assert.ok(an.every((a) => a.startCode === "GR"));
   const ac = structureArcs(copro);
-  assert.equal(ac.length, 1); assert.equal(ac[0].solid, true); assert.equal(ac[0].color, FAMILY_META[FAMILY.COPRO].hex);
+  assert.equal(ac.length, 1); assert.equal(ac[0].solid, true); assert.deepEqual(structureArcs(copro, { color: "#46e0a8" })[0].color, ["#46e0a8", "#46e0a8"]);
   const ab = structureArcs(combined);
   assert.deepEqual(ab.map((a) => [a.kind, a.solid]), [["peer", true], ["component", false]]);
-  assert.equal(ab[1].color, FAMILY_META[FAMILY.COMBINED].secondary, "component branches take the violet half of the combined accent");
+  assert.ok(ab.every((a) => a.color[0] === NEUTRAL_ROUTE_HEX), "every leg shares one category colour");
 });
 
 test("exact participant highlighting and principal", () => {
@@ -136,7 +136,8 @@ test("ProjectGlobe wires preview -> lock -> cycle with structure-only arcs, fami
   const globe = read("components/Globe3D.jsx");
   assert.match(globe, /polygonBorders\?\.get\?\.\(iso\)/);
   assert.match(globe, /useEffect\(\(\) => \{\s*if \(globeRef\.current\) globeRef\.current\.arcsData\(arcs\);/, "arcs swap on their own effect so a hover preview never recreates markers");
-  assert.match(globe, /d\.solid \? 1 : 0\.75/);
+  assert.match(globe, /d\.solid \|\| window\.matchMedia\?\.\("\(prefers-reduced-motion: reduce\)"\)\.matches \? 1 : 0\.75/, "route flow is calm under reduced motion");
+  assert.match(g, /routeLabels=\{displayRoute\.labels\}/);
 });
 
 // ── curated rack contract ──────────────────────────────────────────────────────────────────────────

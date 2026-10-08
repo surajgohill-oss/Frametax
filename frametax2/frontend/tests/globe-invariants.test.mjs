@@ -529,7 +529,8 @@ test("Additional stays desaturated — it is the quiet state, not a colour", asy
   const h = GLOBE_SEMANTIC.silver.hex.replace("#", "");
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
   const spread = Math.max(r, g, b) - Math.min(r, g, b);
-  assert.ok(spread <= 40, `Additional must stay near-neutral, channel spread ${spread}`);
+  // Reference Alternative is a clear blue/slate (Globe closeout 2026-10-08): still cool and clearly quieter than gold/jade.
+  assert.ok(spread <= 80, `Additional must stay muted blue/slate, channel spread ${spread}`);
   // And it must not be a WARM grey — warm neutrals reintroduce the muddy cast.
   assert.ok(b >= r, `Additional must be cool/neutral, not warm (r=${r} b=${b})`);
 });

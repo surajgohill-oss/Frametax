@@ -49,12 +49,12 @@ test("Single-Jurisdiction Globe consumes the complete served contract, not only 
   const statuses = buildSingleJurisdictionUniverse(allocated);
   assert.equal(statuses.size, contract.length);
   assert.equal(statuses.get("US-TX").status, "amber");
-  assert.equal(statuses.get("CA-SK").status, "red");
+  assert.equal(statuses.get("CA-SK").status, "rose", "Not Suitable is muted rose; Unavailable is the deeper oxblood");
   assert.equal(statuses.get("FR").status, "slate");
 
   const view = buildGlobeView(allocated, new Map(), { mode: "normal", grossBudgetUsd: 1000 });
   assert.equal(view.polygonColors.size, contract.length);
-  assert.equal(view.hoverByIso.get("CA-SK").fullStatusLabel, "Not suitable for this production");
+  assert.equal(view.hoverByIso.get("CA-SK").fullStatusLabel, "Not suitable");
   assert.equal(view.hoverByIso.get("US-TX").contractRecord.jurisdiction_code, "US-TX");
   assert.equal(view.points.length, contract.length);
 });

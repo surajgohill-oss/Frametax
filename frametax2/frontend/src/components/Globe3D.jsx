@@ -8,7 +8,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
-import { STATUS_HEX, GRAPHITE_HEX, PULSE_TIERS } from "../lib/globeData";
+import { STATUS_HEX, OPTIMIZER_STATUS_HEX, GRAPHITE_HEX, PULSE_TIERS } from "../lib/globeData";
 import { CAMERA_FOV_DEG, fitCameraDistance } from "../lib/globeFit";
 import { subscribeTheme } from "../lib/theme";
 
@@ -240,21 +240,25 @@ const GLOBE_THEME = {
     // mostly by the emissive floor and the sharpened clearcoat highlight
     // below, but the base color itself now has to be a blue an eye would
     // call "ocean" even unlit, not a desaturated gray-blue.
-    ocean: "#152a44",
+    // LUXURY OPTICAL-GLASS PASS (2026-10-08): a richer, deeper ocean (#152a44 -> #102541).
+    ocean: "#113246", // STAGE/OCEAN PASS (2026-10-08): ~15% lighter, deep blue-green maritime
     // Raised in step with the base color so the unlit hemisphere of the
     // ocean still reads as deep blue rather than collapsing toward black —
     // same guaranteed-floor role the land emissive floor plays below.
-    oceanEmissive: "#0f1f33",
+    oceanEmissive: "#0f2a3e",
     land: GRAPHITE_HEX,
     stroke: "#9aa3b0",
-    rim: "#b9c1cb",
+    // Soft dual-tone limb: maritime slate on the shaded side, warm ivory toward the upper-left key light.
+    rim: "#7f96b0",
+    rimWarm: "#f4ead6",
     // PHASE 3A FINAL CORRECTION: deepened from the pale #8fc6ff, which read
     // as washed-out/whitish once the altitude tightened — a limb glow needs
     // enough of its own saturation to register as colour, not just as more
     // white. Still cool and still close in hue to `rim`, so the two read as
     // one coherent edge treatment rather than competing effects.
     atmosphere: "#6fb4ef",
-    backdrop: ["#14161a", "#0f1114", "#0a0c0e"],
+    backdrop: ["#05080e", "#04070c", "#03050a"],
+    bloom: "#133650",
     // Raised modestly from 0.95: a first, conservative increment paired with
     // the deepened ocean and the atmosphere re-enable, verified live rather
     // than chased to a target number. The neutral-light-rig ratio (ambient
@@ -282,10 +286,10 @@ const GLOBE_THEME = {
     // Deepened in step with day, keeping the same relative move (a more
     // saturated, less desaturated-gray navy). Still clearly darker than day's
     // ocean — night must stay night — but no longer reads as a flat void.
-    ocean: "#0f1d33",
+    ocean: "#0f2a42",
     // Faint internal blue illumination — the "lit from within" quality the
     // art direction calls for, and the guarantee the ocean never collapses.
-    oceanEmissive: "#0b182c",
+    oceanEmissive: "#0b2238",
     // Neutral grey land on a navy ocean is precisely what reads as an
     // unfinished or missing asset — the two share no hue family. Night land
     // is a navy-slate: clearly lighter than the ocean, clearly darker than
@@ -301,7 +305,8 @@ const GLOBE_THEME = {
     // contributor to the "technical GIS map" impression.
     stroke: "#8290a8",
     // Cool silver-blue limb rather than day's neutral platinum.
-    rim: "#9fb6d6",
+    rim: "#6f87a8",
+    rimWarm: "#e6d9bf",
     // Deepened in step with day (same reasoning: the paler predecessor
     // washed out once the shell tightened). Still cooler and quieter than
     // day's — night reads as a deeper, more concentrated blue at the limb
@@ -309,7 +314,8 @@ const GLOBE_THEME = {
     atmosphere: "#4f8fd0",
     // Meets --dark-canvas/--dark-surface-0 from the night token layer, so
     // the globe panel and the application shell share one continuous field.
-    backdrop: ["#0d1420", "#0a1018", "#070b12"],
+    backdrop: ["#04070d", "#03060b", "#020409"],
+    bloom: "#10304a",
     // Slightly hotter: the surrounding UI is far darker at night, so the
     // same exposure reads dimmer by simultaneous contrast. Raised in the
     // same proportion as day (1.04 -> 1.12).
@@ -383,7 +389,7 @@ const HOVER_STROKE = "#dfe4ec";
 // the same proportion (was left at 0.32 in the prior pass, which shrank the
 // "substantial lift on selection" gap from ~33% relative to ~10% — an
 // unintended regression, corrected here).
-const BASE_RIM_INTENSITY = 0.34;
+const BASE_RIM_INTENSITY = 0.38;
 const SELECTED_RIM_INTENSITY = 0.44;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
@@ -672,25 +678,25 @@ function altitudeJitter(iso) {
 // Stops are grounded in the app's own dark-canvas/dark-surface-0/1 tokens —
 // a warm studio backdrop, not the cold navy gradient this used to be.
 function makeOceanBackgroundTexture() {
+  // Near-black navy outer stage with one restrained radial maritime bloom behind the globe, so the silhouette
+  // separates from the stage before any category overlay appears.
   const c = document.createElement("canvas");
-  c.width = 2;
+  c.width = 256;
   c.height = 256;
   const ctx = c.getContext("2d");
-  // Darkened further in the closeout pass — the backdrop was competing with
-  // the globe instead of receding behind it. It now exists only to keep the
-  // sphere from reading as a hole cut in the page, nothing more.
-  // Quiet neutral charcoal. Was a warm near-black ramp (#161310/#100d0a/
-  // #070504) which contributed to the overall brown cast and sat too close
-  // in hue to the ocean for the sphere to separate from it. Neutral now, and
-  // deliberately kept BELOW the ocean's emissive floor so the ocean always
-  // reads as lighter than the backdrop it sits in.
   const stops = globeTheme().backdrop;
-  const grad = ctx.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, stops[0]);
-  grad.addColorStop(0.55, stops[1]);
-  grad.addColorStop(1, stops[2]);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 2, 256);
+  const base = ctx.createLinearGradient(0, 0, 0, 256);
+  base.addColorStop(0, stops[0]);
+  base.addColorStop(0.55, stops[1]);
+  base.addColorStop(1, stops[2]);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 256, 256);
+  const bloom = ctx.createRadialGradient(128, 128, 20, 128, 128, 150);
+  bloom.addColorStop(0, `${globeTheme().bloom}cc`);
+  bloom.addColorStop(0.55, `${globeTheme().bloom}55`);
+  bloom.addColorStop(1, `${globeTheme().bloom}00`);
+  ctx.fillStyle = bloom;
+  ctx.fillRect(0, 0, 256, 256);
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
   return tex;
@@ -846,6 +852,8 @@ function loadWorldGeo() {
 export default function Globe3D({
   points = [],
   arcs = [],
+  // Concise route-leg labels ({ key, lat, lng, text, altitude }) such as POST/VFX or MUSIC, drawn over the middle of the arc.
+  routeLabels = null,
   onPointClick,
   onPointHover,
   height = 520,
@@ -1375,6 +1383,11 @@ export default function Globe3D({
       [STATUS_HEX.jade]: "enamel",
       [STATUS_HEX.amber]: "enamel",
       [STATUS_HEX.silver]: "quiet",
+      // single-jurisdiction categories beyond the four peer states: a muted rose and a deep oxblood read as enamel,
+      // a neutral grey (data incomplete) stays quiet
+      [OPTIMIZER_STATUS_HEX.rose]: "enamel",
+      [OPTIMIZER_STATUS_HEX.red]: "enamel",
+      [OPTIMIZER_STATUS_HEX.slate]: "quiet",
     };
     const capMaterialCache = new Map();
     const getCapMaterial = (hex, tier) => {
@@ -1649,9 +1662,10 @@ export default function Globe3D({
       .arcStroke((d) => (typeof d.strokeWidth === "number" ? d.strokeWidth : 0.35))
       // A `solid` arc (an undirected / peer relationship, e.g. official co-production principals) is a
       // continuous, non-animated line; directed routes keep the established dashed flow.
-      .arcDashLength((d) => (d.solid ? 1 : 0.75))
-      .arcDashGap((d) => (d.solid ? 0 : 0.2))
-      .arcDashAnimateTime((d) => (d.solid ? 0 : 2600))
+      .arcDashLength((d) => (d.solid || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 1 : 0.75))
+      .arcDashGap((d) => (d.solid || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : 0.2))
+      // restrained directional flow; none at all under prefers-reduced-motion (the arc is then a calm solid line)
+      .arcDashAnimateTime((d) => (d.solid || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : 3800))
       .htmlElementsData(points)
       .htmlLat("lat")
       .htmlLng("lng")
@@ -1908,6 +1922,7 @@ export default function Globe3D({
     // rises toward grazing angles — the glass edge that gives the sphere
     // curvature. Production only: at brand-mark size it is a blue halo.
     let rimMesh = null;
+    let hazeMesh = null;
     if (!isBrand) {
       rimMesh = new THREE.Mesh(
         new THREE.SphereGeometry(globe.getGlobeRadius() * 1.004, 64, 64),
@@ -1924,10 +1939,11 @@ export default function Globe3D({
             // wider shell) is what supplies the soft falloff beyond it now,
             // so this one no longer has to do both jobs at once.
             uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) },
+            // Warm ivory key-light tone, mixed in toward the upper-left limb (see the fragment shader).
+            uWarm: { value: new THREE.Color(GLOBE_THEME.day.rimWarm) },
             uIntensity: { value: BASE_RIM_INTENSITY },
-            // PHASE 3A FINAL RECONCILIATION: 3.1 -> 3.4, tightened in step
-            // with the pulled-in atmosphere altitude above (item 4).
-            uPower: { value: 3.4 },
+            // LUXURY OPTICAL-GLASS PASS: 3.4 -> 2.9, a slightly wider, softer Fresnel feather.
+            uPower: { value: 2.9 },
           },
           vertexShader: `
             varying vec3 vNormal;
@@ -1940,13 +1956,16 @@ export default function Globe3D({
             }`,
           fragmentShader: `
             uniform vec3 uColor;
+            uniform vec3 uWarm;
             uniform float uIntensity;
             uniform float uPower;
             varying vec3 vNormal;
             varying vec3 vView;
             void main() {
               float f = pow(1.0 - abs(dot(vNormal, vView)), uPower);
-              gl_FragColor = vec4(uColor, f * uIntensity);
+              // warm ivory toward the upper-left key-light edge, maritime slate on the lower-right
+              float warm = smoothstep(-0.15, 0.85, dot(normalize(vNormal.xy + vec2(1e-4)), normalize(vec2(-0.62, 0.78))));
+              gl_FragColor = vec4(mix(uColor, uWarm, warm * 0.85), f * uIntensity);
             }`,
           side: THREE.BackSide,
           blending: THREE.AdditiveBlending,
@@ -1956,6 +1975,38 @@ export default function Globe3D({
       );
       scene.add(rimMesh);
       stateRef.current.rimMesh = rimMesh;
+      // Restrained inner-limb haze: a faint, wide front-face Fresnel veil just inside the silhouette that gives the glass
+      // body depth without clouds, particles or a halo. Static (no animation) and very low alpha.
+      hazeMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(globe.getGlobeRadius() * 1.0015, 64, 64),
+        new THREE.ShaderMaterial({
+          uniforms: { uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) }, uPower: { value: 2.3 }, uAlpha: { value: 0.10 } },
+          vertexShader: `
+            varying vec3 vNormal;
+            varying vec3 vView;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              vec4 mv = modelViewMatrix * vec4(position, 1.0);
+              vView = normalize(-mv.xyz);
+              gl_Position = projectionMatrix * mv;
+            }`,
+          fragmentShader: `
+            uniform vec3 uColor;
+            uniform float uPower;
+            uniform float uAlpha;
+            varying vec3 vNormal;
+            varying vec3 vView;
+            void main() {
+              float f = pow(1.0 - max(dot(vNormal, vView), 0.0), uPower);
+              gl_FragColor = vec4(uColor, f * uAlpha);
+            }`,
+          side: THREE.FrontSide,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false,
+        }),
+      );
+      scene.add(hazeMesh);
     }
 
     let cancelled = false;
@@ -2043,6 +2094,48 @@ export default function Globe3D({
     // function of absolute elapsed time, not of frame delta.
     const ambientT0 = performance.now();
     let frameId;
+    // ── Route-leg labels (POST/VFX, MUSIC, ...) ──────────────────────────
+    // A small DOM layer, projected each frame from the label's lat/lng; hidden on the far side of the globe; never a pointer
+    // target. Static text: no animation of its own.
+    const labelLayer = document.createElement("div");
+    labelLayer.className = "globe-route-labels";
+    Object.assign(labelLayer.style, { position: "absolute", inset: "0", pointerEvents: "none", overflow: "hidden", zIndex: "3" });
+    mount.appendChild(labelLayer);
+    const labelEls = new Map();
+    const syncRouteLabels = () => {
+      const want = new Map((liveRef.current.routeLabels || []).map((l) => [l.key, l]));
+      for (const [key, el] of labelEls) if (!want.has(key)) { el.remove(); labelEls.delete(key); }
+      for (const [key, l] of want) {
+        let el = labelEls.get(key);
+        if (!el) {
+          el = document.createElement("div");
+          el.className = "globe-route-label";
+          el.dataset.routeLabel = key;
+          labelLayer.appendChild(el);
+          labelEls.set(key, el);
+        }
+        el.textContent = l.text;
+        el.__label = l;
+      }
+    };
+    const updateRouteLabels = () => {
+      const g = globeRef.current;
+      if (!g || !labelEls.size) return;
+      const w = mount.clientWidth, h = mount.clientHeight;
+      const R = g.getGlobeRadius();
+      for (const el of labelEls.values()) {
+        const l = el.__label;
+        const c = g.getCoords(l.lat, l.lng, l.altitude ?? 0.2);
+        const world = new THREE.Vector3(c.x, c.y, c.z);
+        const front = world.dot(camera.position) > R * R * 0.9;
+        const v = world.clone().project(camera);
+        el.style.visibility = front ? "visible" : "hidden";
+        el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-50%, -50%)`;
+      }
+    };
+    stateRef.current.syncRouteLabels = syncRouteLabels;
+    syncRouteLabels();
+
     const animate = () => {
       const elapsed = (performance.now() - ambientT0) / 1000;
       // GLOBE_WIRING_REMEDIATION (2026-10-01): three-globe only hides html
@@ -2105,6 +2198,7 @@ export default function Globe3D({
       }
       controls.update();
       composer.render();
+      updateRouteLabels();
       cssRenderer.render(scene, camera);
       frameId = requestAnimationFrame(animate);
     };
@@ -2359,7 +2453,8 @@ export default function Globe3D({
       material.emissive.set(t.oceanEmissive);
       material.envMapIntensity = t.envIntensity;
       renderer.toneMappingExposure = t.exposure;
-      if (rimMesh) rimMesh.material.uniforms.uColor.value.set(t.rim);
+      if (rimMesh) { rimMesh.material.uniforms.uColor.value.set(t.rim); rimMesh.material.uniforms.uWarm.value.set(t.rimWarm); }
+      if (hazeMesh) hazeMesh.material.uniforms.uColor.value.set(t.rim);
       // Atmosphere colour is theme-driven the same way rim colour is. Calling
       // .atmosphereColor() re-triggers three-globe's own atmosphere rebuild
       // (see its `update()` — recreates the GlowMesh whenever colour or
@@ -2435,6 +2530,7 @@ export default function Globe3D({
       capMaterialCache.forEach((m) => m.dispose());
       sideMaterialCache.forEach((m) => m.dispose());
       if (rimMesh) { rimMesh.geometry.dispose(); rimMesh.material.dispose(); }
+      if (hazeMesh) { hazeMesh.geometry.dispose(); hazeMesh.material.dispose(); }
       // dispose() frees GPU resources but does NOT release the underlying
       // WebGL context — it lingers on the detached canvas until GC. With a
       // persistent sidebar globe plus route globes mounting/unmounting (and
@@ -2445,6 +2541,7 @@ export default function Globe3D({
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       if (mount.contains(cssRenderer.domElement)) mount.removeChild(cssRenderer.domElement);
       if (vignette && mount.contains(vignette)) mount.removeChild(vignette);
+      if (mount.contains(labelLayer)) mount.removeChild(labelLayer);
       globeRef.current = null;
       cameraRef.current = null;
       controlsRef.current = null;
@@ -2515,6 +2612,12 @@ export default function Globe3D({
   useEffect(() => {
     if (globeRef.current) globeRef.current.arcsData(arcs);
   }, [arcs]);
+
+  // Route-leg labels follow the selected structure; separate from the arcs effect so it never touches the markers.
+  useEffect(() => {
+    liveRef.current.routeLabels = routeLabels || [];
+    stateRef.current.syncRouteLabels?.();
+  }, [routeLabels]);
 
   // Family-border repaint (separate from selection so it never re-runs the camera flight).
   useEffect(() => {

@@ -16,10 +16,10 @@ export const UNIVERSE_GROUPS = [
   { key: "LEADING_ALTERNATIVE", label: "Leading alternative" },
   { key: "STRONG_ALTERNATIVE", label: "Strong alternative" },
   { key: "REFERENCE_ALTERNATIVE", label: "Reference alternative" },
-  { key: "CONDITIONAL_ALTERNATIVE", label: "Conditional alternative" },
-  { key: "NOT_SUITABLE_FOR_THIS_PRODUCTION", label: "Not suitable for this production" },
+  { key: "CONDITIONAL_ALTERNATIVE", label: "Needs facts" },
+  { key: "NOT_SUITABLE_FOR_THIS_PRODUCTION", label: "Not suitable" },
   { key: "UNAVAILABLE", label: "Unavailable" },
-  { key: "PROGRAM_DATA_INCOMPLETE", label: "Program data incomplete" },
+  { key: "PROGRAM_DATA_INCOMPLETE", label: "Data incomplete" },
 ];
 
 export const jurisdictionLabel = (rec) => rec?.jurisdiction_name || JURISDICTION_COORDS[rec?.jurisdiction_code]?.name || rec?.jurisdiction_code || "";

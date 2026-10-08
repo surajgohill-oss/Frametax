@@ -2,7 +2,7 @@ import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJuri
 import { shortBlockerReason } from "../lib/blockerDisposition";
 import { jurisdictionName } from "../lib/format";
 import { FAMILY_META } from "../lib/globeStructure";
-import { certaintyLabel, missingFactsSummary, missingFactsTitle, potentialRows } from "../lib/incentivePotential";
+import { attainability, missingFactsTitle } from "../lib/incentivePotential";
 
 // Overview Globe hover data parity: extracted verbatim from
 // ProjectGlobe.jsx (the sole prior home of this component) so BOTH the full
@@ -40,10 +40,12 @@ function RecommendedOrAlternativeBody({ hover }) {
         <div className="text-tertiary small">Program</div>
         <div className="small">{programLine || "Not available"}</div>
       </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">{hover.incentivePotential ? "Maximum rate" : "Maximum Incentive"}</div>
-        <div className="small">{b?.ratePct != null ? `Up to ${b.ratePct}%` : "Not available"}</div>
-      </div>
+      {!hover.incentivePotential && (
+        <div className="hover-field">
+          <div className="text-tertiary small">Maximum Incentive</div>
+          <div className="small">{b?.ratePct != null ? `Up to ${b.ratePct}%` : "Not available"}</div>
+        </div>
+      )}
       {hover.incentivePotential ? <PotentialFields pot={hover.incentivePotential} /> : (
         <>
           <div className="hover-field">
@@ -56,36 +58,39 @@ function RecommendedOrAlternativeBody({ hover }) {
           </div>
         </>
       )}
-      <div className="hover-field">
-        <div className="text-tertiary small">Incentive / Gross Budget</div>
-        <div className="small">{pctOfGross || "Not available"}</div>
-      </div>
-      {/* Surfaces without a structure story (Workspace Map / Split) carry the same served fit text here;
-          the story renders it otherwise, so it is never shown twice. */}
-      {hover.productionFitSummary && !hover.structureStory?.fitSummary && (
-        <div className="hover-field" data-hover-field="production-fit">
-          <div className="text-tertiary small">Production fit</div>
-          <div className="small">{hover.productionFitSummary}</div>
+      {/* legacy payloads without the economics contract keep their old incentive-per-budget line; nothing else shows a percentage */}
+      {!hover.incentivePotential && (
+        <div className="hover-field">
+          <div className="text-tertiary small">Incentive / Gross Budget</div>
+          <div className="small">{pctOfGross || "Not available"}</div>
         </div>
       )}
     </>
   );
 }
 
-// MAXIMUM-POTENTIAL INCENTIVE CONTRACT: the shared served floor/maximum and confirmed/potential NPC
-// rows (identical to the Workspace card and Inspector), rendered verbatim -- never recomputed here.
-function PotentialFields({ pot }) {
+// Shared served economics, in the SAME terminology as the Workspace / Overview cards: maximum-potential NPC first, confirmed NPC,
+// confirmed and maximum-potential incentive, then one precise attainability line. Rendered verbatim -- never recomputed here.
+function PotentialFields({ pot, awardRisk = false }) {
+  const att = attainability(pot, awardRisk);
+  const money = (v) => (v != null ? formatFullUsd(v) : "Not established");
+  const rows = [
+    ["maxNpc", "Maximum-potential NPC", pot.potentialNpc],
+    ["confirmedNpc", "Confirmed NPC", pot.confirmedNpc],
+    ["confirmedIncentive", "Confirmed incentive", pot.confirmedIncentive],
+    ["maxIncentive", "Maximum-potential incentive", pot.maxIncentive],
+  ];
   return (
     <>
-      {potentialRows(pot).map((r) => (
-        <div className="hover-field" key={r.key} data-potential-field={r.key}>
-          <div className="text-tertiary small">{r.label}</div>
-          <div className="small">{r.value != null ? formatFullUsd(r.value) : "Not established"}</div>
+      {rows.map(([key, label, value]) => (
+        <div className="hover-field" key={key} data-potential-field={key}>
+          <div className="text-tertiary small">{label}</div>
+          <div className="small">{money(value)}</div>
         </div>
       ))}
-      <div className="hover-field" data-potential-field="status" title={missingFactsTitle(pot)}>
-        <div className="text-tertiary small">Economics</div>
-        <div className="small">{certaintyLabel(pot)} · {missingFactsSummary(pot, 1)}</div>
+      <div className="hover-field" data-potential-field="attainability" title={missingFactsTitle(pot)}>
+        <div className="small" style={{ fontWeight: 600 }}>{att.headline}</div>
+        {att.requirement && <div className="text-tertiary small">{att.requirement}{att.more > 0 ? ` · +${att.more} more in Inspector` : ""}</div>}
       </div>
     </>
   );
@@ -103,17 +108,11 @@ function SingleJurisdictionContractBody({ hover }) {
       {pot ? <PotentialFields pot={pot} /> : (
         <div className="hover-field"><div className="text-tertiary small">Economics</div><div className="small">Not priced</div></div>
       )}
-      {hover.productionFitSummary && (
-        <div className="hover-field" data-hover-field="production-fit">
-          <div className="text-tertiary small">Production fit</div>
-          <div className="small">{hover.productionFitSummary}</div>
-        </div>
-      )}
       {(rec.hard_failure_reason || rec.headline) && (
         <div className="hover-field"><div className="text-tertiary small">Reason</div><div className="small">{rec.hard_failure_reason || rec.headline}</div></div>
       )}
-      {(rec.missing_conditions || []).length > 0 && (
-        <div className="hover-field"><div className="text-tertiary small">Missing facts</div><div className="small">{rec.missing_conditions.join(" · ")}</div></div>
+      {(rec.missing_conditions || []).length > 0 && !pot && (
+        <div className="hover-field"><div className="text-tertiary small">Missing fact</div><div className="small">{rec.missing_conditions[0]}{rec.missing_conditions.length > 1 ? ` · +${rec.missing_conditions.length - 1} more in Inspector` : ""}</div></div>
       )}
     </>
   );
@@ -182,14 +181,6 @@ function OptimizerStructureBody({ hover }) {
         <div className="text-tertiary small">Participants</div>
         <div className="small">{(d.participants || []).map(jurisdictionName).join(", ") || "Not available"}</div>
       </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Programs</div>
-        <div className="small">
-          {d.components?.length
-            ? d.components.map((c) => `${jurisdictionName(c.code)}${c.program_slug ? ` · ${c.program_slug.replace(/_/g, " ")}` : ""}`).join("; ")
-            : "Not available from source data"}
-        </div>
-      </div>
       {d.incentive_potential ? <PotentialFields pot={d.incentive_potential} /> : (
         <>
           <div className="hover-field">
@@ -254,6 +245,14 @@ function CategoryCounts({ counts }) {
   );
 }
 
+// One short line for the hover (the full served reason lives in the Inspector).
+const briefly = (text, max = 96) => {
+  const t = String(text || "").replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 40)).replace(/[,;:.\s]+$/, "")}…`;
+};
+
 function JurisdictionRecordBody({ hover, hidePotential = false }) {
   const priced = hover.npcUsd != null;
   const reason = shortBlockerReason(hover.blockerReason || hover.excludedReason);
@@ -269,17 +268,11 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
           <div className="small">{hover.structureStatusLabel}</div>
         </div>
       )}
-      {hover.productionFitSummary && (
-        <div className="hover-field" data-production-fit>
-          <div className="text-tertiary small">Production fit</div>
-          <div className="small">{hover.productionFitSummary}</div>
-        </div>
-      )}
       {priced ? (
         <>
           {hover.status === "amber" && hover.blockerReason && (
             <div className="hover-field" data-conditional-on>
-              <div className="text-tertiary small">Conditional on</div>
+              <div className="text-tertiary small">Fact needed</div>
               <div className="small">{String(hover.blockerReason).replace(/^MISSING_LOCATION_CAPABILITY_DATA:\s*/, "Missing location capability data: ").replace(/_NOT_ASSESSABLE/g, " (not assessable)").replace(/_/g, " ").toLowerCase()}</div>
             </div>
           )}
@@ -305,13 +298,13 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
             </div>
           )}
           <div className="hover-field">
-            <div className="text-tertiary small">{hover.status === "amber" ? "Facts needed" : "Canonical reason"}</div>
-            <div className="small">{reason || "Not priced — see Inspector"}</div>
+            <div className="text-tertiary small">{hover.status === "amber" ? "Fact needed" : "Blocker"}</div>
+            <div className="small">{briefly(reason) || "Not priced — see Inspector"}</div>
           </div>
           {hover.blockerDetail && (
             <div className="hover-field" data-blocker-detail>
               <div className="text-tertiary small">Guaranteed floor</div>
-              <div className="small">{hover.blockerDetail.guaranteed_floor}{hover.blockerDetail.potential_ceiling_rate != null ? ` · ceiling up to ${Math.round(hover.blockerDetail.potential_ceiling_rate * 100)}%` : ""}</div>
+              <div className="small">{briefly(hover.blockerDetail.guaranteed_floor, 80)}</div>
               {hover.blockerPotential?.maximum_supported_incentive_usd != null && (
                 <div className="small" data-blocker-potential>
                   Maximum potential {formatFullUsd(hover.blockerPotential.maximum_supported_incentive_usd)} (not guaranteed) · potential NPC {formatFullUsd(hover.blockerPotential.potential_npc_usd)}
@@ -327,9 +320,9 @@ function JurisdictionRecordBody({ hover, hidePotential = false }) {
                   Content / approvals not on file: {(hover.blockerContentGates || []).filter((g) => g.status === "NOT_ON_FILE").map((g) => g.kind.toLowerCase().replace(/_/g, " ")).slice(0, 3).join(", ")}
                 </div>
               )}
-              {(hover.blockerDetail.unresolved_propositions || []).filter((p) => !String(p.kind || "").startsWith("content_gate_")).slice(0, 3).map((p) => (
+              {(hover.blockerDetail.unresolved_propositions || []).filter((p) => !String(p.kind || "").startsWith("content_gate_")).slice(0, 1).map((p) => (
                 <div className="small" key={p.condition_id} data-blocker-proposition>
-                  {p.fact_key ? `${p.fact_key}: ${p.stored_value == null ? "not on file" : p.stored_value}` : p.description}
+                  {briefly(p.fact_key ? `${p.fact_key}: ${p.stored_value == null ? "not on file" : p.stored_value}` : p.description, 90)}
                 </div>
               ))}
             </div>
@@ -393,56 +386,41 @@ function hoverCardStyle(hoverRect, canvasEl) {
 // STRUCTURE-AWARE GLOBE (2026-10-01): the previewed structure's story -- exact structural family (accent), anchor /
 // principal, component destinations and routed spend, actionability + the specific blocker, and "1 of N structures"
 // with family counts. Every value is a served canonical field read verbatim.
-function StructureStory({ story, locked }) {
-  const dot = (hex) => <span aria-hidden="true" style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: hex, marginRight: 5 }} />;
+function StructureStory({ story, locked, jurisdictionCode }) {
   const counts = story.familyCounts ? Object.entries(story.familyCounts) : [];
+  // this jurisdiction's role in the selected structure (principal / routed component / participant)
+  const route = story.routes.find((r) => r.to === jurisdictionCode);
+  const role = !jurisdictionCode ? null
+    : story.principal === jurisdictionCode ? "Principal"
+      : route?.label ? `Routed component · ${route.label}`
+        : (story.participants || []).includes(jurisdictionCode) ? "Participant" : null;
+  const others = (story.participants || []).filter((c) => c !== story.principal);
   return (
     <div className="hover-structure-story" data-structure-story data-structure-family={story.family} data-structure-identity={story.identity || ""}
-      style={{ marginTop: 8, paddingTop: 6, borderTop: `2px solid ${story.accent}` }}>
-      <div className="small" style={{ fontWeight: 600 }} data-story-field="family">
-        {dot(story.accent)}{story.accentSecondary ? dot(story.accentSecondary) : null}{story.familyLabel}
-      </div>
+      style={{ marginTop: 8, paddingTop: 6, borderTop: "1px solid var(--hairline-strong)" }}>
+      <div className="small" style={{ fontWeight: 600 }} data-story-field="family">{story.familyLabel}</div>
       <div className="text-tertiary small" data-story-field="position">
         Structure {story.position} of {story.total}{locked ? " · locked" : story.total > 1 ? " · click to lock, click again to cycle" : " · click to lock"}
       </div>
-      {story.principal && (
+      {role && (
         <div className="hover-field">
-          <div className="text-tertiary small">{story.shape === "peer" || story.shape === "peer_plus_branches" ? "Principal" : "Anchor / principal"}</div>
-          <div className="small" data-story-field="principal">{jurisdictionName(story.principal)}</div>
+          <div className="text-tertiary small">Role in selected structure</div>
+          <div className="small" data-story-field="role">{role}</div>
         </div>
       )}
-      {story.routes.length > 0 && (
+      {others.length > 0 && (
         <div className="hover-field">
-          <div className="text-tertiary small">{story.shape === "hub_and_spoke" ? "Routes (hub and spoke)" : "Routes"}</div>
-          {story.routes.map((r, i) => (
-            <div className="small" key={`${r.from}-${r.to}-${i}`} data-story-field="route">
-              {jurisdictionName(r.from)} {r.directed ? "→" : "↔"} {jurisdictionName(r.to)}{r.label ? ` · ${r.label}` : ""}
-            </div>
-          ))}
+          <div className="text-tertiary small">Participants</div>
+          <div className="small" data-story-field="participants">{[story.principal, ...others].filter(Boolean).map(jurisdictionName).join(" · ")}</div>
         </div>
       )}
       {story.layered && (
         <div className="small text-tertiary" data-story-field="layered">Layered programs in one jurisdiction (no geographic route)</div>
       )}
-      <div className="hover-field">
-        <div className="text-tertiary small">Status</div>
-        <div className="small" data-story-field="status">{story.statusLabel}</div>
-      </div>
-      {story.fitSummary && (
-        <div className="hover-field" data-production-fit>
-          <div className="text-tertiary small">Production fit</div>
-          <div className="small" data-story-field="production-fit">{story.fitSummary}</div>
-        </div>
-      )}
       {story.blockerText && (
         <div className="hover-field">
-          <div className="text-tertiary small">Blocker / facts needed</div>
+          <div className="text-tertiary small">Blocker / fact needed</div>
           <div className="small" data-story-field="blocker">{story.blockerText}</div>
-        </div>
-      )}
-      {counts.length > 1 && (
-        <div className="text-tertiary small" data-story-field="family-counts">
-          Here: {counts.map(([f, n]) => `${n} ${FAMILY_META[f]?.label?.toLowerCase() || f}`).join(" · ")}
         </div>
       )}
     </div>
@@ -485,7 +463,7 @@ export default function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
       ) : (
         <RecommendedOrAlternativeBody hover={hover} />
       )}
-      {hover.structureStory && <StructureStory story={hover.structureStory} locked={!!hover.structureLocked} />}
+      {hover.structureStory && <StructureStory story={hover.structureStory} locked={!!hover.structureLocked} jurisdictionCode={hover.jurisdictionCode || hover.id || null} />}
     </div>
   );
 }

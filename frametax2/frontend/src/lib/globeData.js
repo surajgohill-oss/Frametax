@@ -9,6 +9,7 @@ import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts }
 import { programDisplay } from "./programNames.js";
 import { alternativeLabel, fitSummaryText } from "./alternativeLabels.js";
 import { servedContract } from "./jurisdictionUniverse.js";
+import { structureArcs, structureRouteLabels } from "./globeStructure.js";
 // GLOBE_SINGLE_AND_OPTIMIZER_WIRING (2026-09-21): the SAME canonical
 // candidate-set selection Workspace's six-slot contract already uses —
 // never a second, independently-derived Globe-only notion of "which
@@ -175,13 +176,13 @@ export function activeStructure(allocated, leadingStructureId, extraPool = null)
 // Same four slots, same hex, same `state` keys, same logic — a wording pass
 // only, per this batch's explicit "do not change semantic logic" instruction.
 export const GLOBE_SEMANTIC = {
-  gold: { state: "recommended", label: "Leading Jurisdiction", fullLabel: "Leading Jurisdiction", hex: "#ffd77a", pulse: true },
-  jade: { state: "alternative", label: "Alternatives", fullLabel: "Alternatives", hex: "#3fd9a0", pulse: false },
-  amber: { state: "unlockable", label: "Co-Pro Opportunities", fullLabel: "Co-Production Opportunities", hex: "#f09a3e", pulse: false },
+  gold: { state: "recommended", label: "Leading Jurisdiction", fullLabel: "Leading Jurisdiction", hex: "#ffd980", pulse: true },
+  jade: { state: "alternative", label: "Alternatives", fullLabel: "Alternatives", hex: "#46e0a8", pulse: false },
+  amber: { state: "unlockable", label: "Co-Pro Opportunities", fullLabel: "Co-Production Opportunities", hex: "#f5a347", pulse: false },
   // Desaturated slate — deliberately the DIMMEST of the four, sitting just
   // above untouched land. Never a warm/taupe grey: those reintroduce the muddy
   // cast the neutral light rig exists to prevent (see Globe3D lighting).
-  silver: { state: "additional", label: "Excluded", fullLabel: "Excluded", hex: "#93a4b4", pulse: false },
+  silver: { state: "additional", label: "Excluded", fullLabel: "Excluded", hex: "#86a8cc", pulse: false },
 };
 
 // Derived, never hand-maintained. Existing consumers (Globe3D's TIER_HEX,
@@ -227,11 +228,15 @@ export const OPTIMIZER_SEMANTIC = {
   gold: { label: "Leading Alternative", hex: GLOBE_SEMANTIC.gold.hex, pulse: true },
   jade: { label: "Strong Alternative", hex: GLOBE_SEMANTIC.jade.hex, pulse: false },
   silver: { label: "Reference Alternative", hex: GLOBE_SEMANTIC.silver.hex, pulse: false },
-  amber: { label: "Needs More Facts", hex: GLOBE_SEMANTIC.amber.hex, pulse: false },
-  red: { label: "Unavailable", hex: "#b5403a", pulse: false },
+  // Genuine unresolved project facts. Presented as "Needs Facts", never as a "Conditional" jurisdiction or structure.
+  amber: { label: "Needs Facts", hex: GLOBE_SEMANTIC.amber.hex, pulse: false },
+  // A confirmed production-fit mismatch: a muted rose, clearly distinct from the deeper oxblood of an unavailable jurisdiction.
+  rose: { label: "Not Suitable", hex: "#cc7078", pulse: false },
+  // Deep oxblood: legally / programmatically unavailable (never a fit issue).
+  red: { label: "Unavailable", hex: "#8c2f3b", pulse: false },
   // Program / capability data incomplete: the jurisdiction is accounted (catalog lead only, no verified rate rule), never
-  // silently absent and never presented as an alternative. Deliberately the dimmest, distinct from silver's "Reference".
-  slate: { label: "Data incomplete", hex: "#5d6c80", pulse: false },
+  // silently absent and never presented as an alternative. A neutral grey, distinct from the blue of "Reference".
+  slate: { label: "Data Incomplete", hex: "#7a8591", pulse: false },
 };
 export const OPTIMIZER_STATUS_HEX = Object.fromEntries(
   Object.entries(OPTIMIZER_SEMANTIC).map(([k, v]) => [k, v.hex]),
@@ -248,10 +253,11 @@ export const SINGLE_JURISDICTION_CATEGORY_SEMANTIC = {
   LEADING_ALTERNATIVE: { slot: "gold", label: "Leading alternative", hex: OPTIMIZER_SEMANTIC.gold.hex },
   STRONG_ALTERNATIVE: { slot: "jade", label: "Strong alternative", hex: OPTIMIZER_SEMANTIC.jade.hex },
   REFERENCE_ALTERNATIVE: { slot: "silver", label: "Reference alternative", hex: OPTIMIZER_SEMANTIC.silver.hex },
-  CONDITIONAL_ALTERNATIVE: { slot: "amber", label: "Conditional alternative", hex: OPTIMIZER_SEMANTIC.amber.hex },
-  NOT_SUITABLE_FOR_THIS_PRODUCTION: { slot: "red", label: "Not suitable for this production", hex: OPTIMIZER_SEMANTIC.red.hex },
+  // served category key is CONDITIONAL_ALTERNATIVE; it is presented as "Needs facts" (genuine unresolved project facts)
+  CONDITIONAL_ALTERNATIVE: { slot: "amber", label: "Needs facts", hex: OPTIMIZER_SEMANTIC.amber.hex },
+  NOT_SUITABLE_FOR_THIS_PRODUCTION: { slot: "rose", label: "Not suitable", hex: OPTIMIZER_SEMANTIC.rose.hex },
   UNAVAILABLE: { slot: "red", label: "Unavailable", hex: OPTIMIZER_SEMANTIC.red.hex },
-  PROGRAM_DATA_INCOMPLETE: { slot: "slate", label: "Program data incomplete", hex: OPTIMIZER_SEMANTIC.slate.hex },
+  PROGRAM_DATA_INCOMPLETE: { slot: "slate", label: "Data incomplete", hex: OPTIMIZER_SEMANTIC.slate.hex },
 };
 export const SINGLE_JURISDICTION_CATEGORY_ORDER = [
   "LEADING_ALTERNATIVE", "STRONG_ALTERNATIVE", "REFERENCE_ALTERNATIVE", "CONDITIONAL_ALTERNATIVE",
@@ -350,54 +356,9 @@ function applyFixtureStates(statuses) {
   return statuses;
 }
 
-// A jurisdiction code's country-level ISO2 — sub-national codes (US-CA,
-// CA-BC, AU-NSW, ...) map to their parent country; country-level codes
-// (MU, GR, ...) are already ISO2.
-export function countryCode(jurisdictionCode) {
-  return (jurisdictionCode || "").split("-")[0];
-}
-
-// Countries whose sub-national jurisdictions are the real production
-// decision unit — a producer shoots in Georgia or British Columbia, not in
-// "the United States". For US/CA specifically, the Globe also renders real
-// admin-1 polygons (public/geo/admin1-us-ca.geojson) and the country-level
-// polygon is suppressed entirely (Globe3D's own SUBNATIONAL_COUNTRY_ISOS —
-// a separate, geometry-loading-time constant), so status is never averaged
-// across 50 states.
-//
-// SINGLE_JURISDICTION_GLOBE_WIRING (2026-09-23): AU added — confirmed live
-// (all four acceptance productions) that best_per_jurisdiction genuinely
-// carries a country-level "AU" winner AND real distinct "AU-NSW"/"AU-QLD"/
-// "AU-SA" winners simultaneously, all four coexisting. Before this,
-// globeKey() folded all four onto the single "AU" bucket — buildCountryStatuses'
-// upsert() kept only whichever had the highest STATUS_RANK as `best`, so the
-// other three real winners had no marker, no hover, and no click target
-// anywhere on the Globe (only reachable via the side list's own admissibleForMode
-// pool, which never collapses). No admin1 geojson exists for Australian
-// states (unlike US/CA) — the AU country polygon is NOT dropped from the
-// world set and keeps rendering its own real "AU" winner's colour; AU-NSW/
-// AU-QLD/AU-SA get their own real, already-defined JURISDICTION_COORDS
-// marker points (Sydney/Brisbane/Adelaide) with no additional polygon
-// subdivision, which is the documented, acceptable degradation ("polygon/
-// highlight layer where matching geometry exists") — never a reason to
-// collapse their marker/hover/click identity back into the country's.
-export const SUBNATIONAL_COUNTRIES = new Set(["US", "CA", "AU"]);
-
-// Jurisdiction codes with no admin-1 polygon of their own but a real
-// country-level polygon in the world set — Natural Earth models Puerto
-// Rico as its own country entity rather than a US state.
-const GLOBE_KEY_OVERRIDES = { "US-PR": "PR" };
-
-// The key a jurisdiction code renders under on the Globe: the full
-// sub-national code for US/CA (matching admin-1 `iso_3166_2`), otherwise
-// the parent ISO2 country code (matching world-110m `ISO_A2`).
-export function globeKey(jurisdictionCode) {
-  const code = jurisdictionCode || "";
-  if (GLOBE_KEY_OVERRIDES[code]) return GLOBE_KEY_OVERRIDES[code];
-  const parent = countryCode(code);
-  if (SUBNATIONAL_COUNTRIES.has(parent) && code.includes("-")) return code;
-  return parent;
-}
+import { countryCode, SUBNATIONAL_COUNTRIES, globeKey } from "./globeKey.js";
+export { countryCode, SUBNATIONAL_COUNTRIES, globeKey };
+// (definitions and their long rationale live in globeKey.js)
 
 // Exported (Phase 3B Batch 2) so the category-diff engine's consumer can
 // tell an IMPROVING transition (silver -> amber, amber -> jade, etc., the
@@ -457,7 +418,7 @@ function roleFor(structure, code) {
 // code of the best associated structure, the full per-category counts, and the
 // canonical blocker disposition when nothing priced exists) so hover, click
 // and Inspector all read the same per-jurisdiction record.
-export const OPTIMIZER_STATUS_PRECEDENCE = { gold: 5, jade: 4, silver: 3, amber: 2, red: 1, slate: 0.5 };
+export const OPTIMIZER_STATUS_PRECEDENCE = { gold: 5, jade: 4, silver: 3, amber: 2, rose: 1.5, red: 1, slate: 0.5 };
 
 export function buildOptimizerUniverse(allocated) {
   const byIso = new Map();
@@ -1176,7 +1137,7 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
   // carry `participantColors` as an empty Map, matching every other
   // branch's shape, so buildGlobeView's optimizer return never serves
   // `polygonColors: undefined` to a Globe3D render that expects a Map.
-  if (!structure) return { points: [], arcs: [], structure: null, participantColors: new Map(), focusLat: null, focusLng: null, focusDistance: null };
+  if (!structure) return { points: [], arcs: [], structure: null, participantColors: new Map(), focusLat: null, focusLng: null, focusDistance: null, routeLabels: [] };
   const ordered = [
     structure.primary_jurisdiction,
     ...(structure.participants || []).filter((c) => c !== structure.primary_jurisdiction),
@@ -1239,31 +1200,16 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
   // above) — a solid-colour arc, not the old origin/destination gradient
   // (which encoded chain position, the same colour-by-position defect).
   const arcHex = OPTIMIZER_STATUS_HEX[structureStatus];
-  const arcs = [];
-  for (let i = 0; i < ordered.length - 1; i++) {
-    const a = JURISDICTION_COORDS[ordered[i]];
-    const b = JURISDICTION_COORDS[ordered[i + 1]];
-    const destQpe = qpeByCode.get(ordered[i + 1]);
-    // Floor keeps a low-spend leg legible; the range above it is the real
-    // allocation weight, so thickness still encodes routed spend honestly.
-    // Thickened from the previous 0.3-1.1 range: in the Optimizer Overlay
-    // the routing arcs ARE the production-structure story, not a thin line
-    // under a second choropleth, so they need real physical weight.
+  // The shared structure topology (lib/globeStructure.js): principal -> each routed component, every co-production
+  // participant connected, never a chain implying a route between two secondary territories. Colour is the structure's own
+  // status colour; thickness still encodes routed spend; component legs carry a concise label (POST/VFX, MUSIC).
+  const arcs = structureArcs(structure, { color: arcHex }).map((arc) => {
+    const destQpe = qpeByCode.get(arc.endCode);
+    // Floor keeps a low-spend leg legible; the range above it is the real allocation weight.
     const strokeWidth = destQpe != null ? 0.55 + 1.4 * (destQpe / maxQpe) : 0.85;
-    arcs.push({
-      startLat: a.lat, startLng: a.lng, endLat: b.lat, endLng: b.lng,
-      tier: structureStatus, strokeWidth,
-      color: [arcHex, arcHex],
-      // startCode/endCode: additive, real jurisdiction-code fields (three-
-      // globe's arc layer reads only the start/end Lat/Lng + color/
-      // strokeWidth keys above and ignores unknown properties — verified
-      // against the installed three-globe source). Carried so a non-visual
-      // scene-signature diagnostic can report "which real jurisdictions
-      // this arc connects" without re-deriving it from lat/lng, per the
-      // FVD_GLOBE_RENDERER_CORRECTION diagnostic contract.
-      startCode: ordered[i], endCode: ordered[i + 1],
-    });
-  }
+    return { ...arc, tier: structureStatus, strokeWidth };
+  });
+  const routeLabels = structureRouteLabels(structure);
 
   // Only the active structure's own jurisdictions stay lit in the overlay —
   // this is what stops the mode reading as "the choropleth in other colors".
@@ -1294,7 +1240,21 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
     return Math.round(250 + t * 150);
   })();
 
-  return { points, arcs, structure, participantColors, focusLat, focusLng, focusDistance };
+  return { points, arcs, structure, participantColors, focusLat, focusLng, focusDistance, routeLabels };
+}
+
+// SELECTED-STRUCTURE ROUTE for Single Jurisdiction mode (2026-10-08): the topology of whichever structure the producer
+// previews or locks -- a full relocation draws current location -> destination, a hybrid draws principal -> each routed
+// component (labelled POST/VFX, MUSIC), a co-production connects every participant. Colour is the principal's jurisdiction
+// CATEGORY colour, never a structure-type colour. Optimizer mode draws its own pathway and does not use this.
+export function buildSelectedStructureRoute(allocated, structure) {
+  if (!allocated || !structure) return { arcs: [], labels: [] };
+  const baseline = (allocated.structures || []).find((x) => x.is_baseline || x.structure_type === "single_country");
+  const homeCode = baseline?.primary_jurisdiction ?? allocated?.jurisdiction_accounting?.home_jurisdiction ?? null;
+  const principal = structure.primary_jurisdiction || (structure.participants || [])[0];
+  const rec = servedContract(allocated).find((r) => r.jurisdiction_code === principal);
+  const color = SINGLE_JURISDICTION_CATEGORY_SEMANTIC[rec?.category]?.hex || OPTIMIZER_SEMANTIC.silver.hex;
+  return { arcs: structureArcs(structure, { color, homeCode }), labels: structureRouteLabels(structure, { homeCode }), color };
 }
 
 // FVD_GLOBE_RENDERER_CORRECTION (2026-09-21) — Phase 5 diagnostic contract.
@@ -1353,8 +1313,8 @@ export function buildGlobeView(
   const empty = {
     points: [], arcs: [], polygonColors: new Map(), selectedIso: null,
     selectedLat: null, selectedLng: null, focusLat: null, focusLng: null, focusDistance: null,
-    hoverByIso: new Map(), structuresByCode: new Map(),
-    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0, red: 0, slate: 0 }, categoryByIso: new Map(),
+    hoverByIso: new Map(), structuresByCode: new Map(), routeLabels: [],
+    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0, rose: 0, red: 0, slate: 0 }, categoryByIso: new Map(),
     sceneSignature: sceneSignature(mode, null, [], []),
   };
   if (!allocated) return empty;
@@ -1405,7 +1365,7 @@ export function buildGlobeView(
   // fixture badge and the regression checks can assert the distribution
   // (notably "exactly one Recommended") against the rendered truth rather than
   // against a hardcoded expectation.
-  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0, red: 0, slate: 0 };
+  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0, rose: 0, red: 0, slate: 0 };
   for (const [, entry] of statuses) {
     if (stateCounts[entry.status] != null) stateCounts[entry.status] += 1;
   }
@@ -1452,7 +1412,7 @@ export function buildGlobeView(
       if (!universePoints.some((p) => p.iso === iso)) points.push(route);
     }
     return {
-      points, arcs: pathway.arcs,
+      points, arcs: pathway.arcs, routeLabels: pathway.routeLabels || [],
       polygonColors, selectedIso,
       selectedLat: selectedCoord?.lat ?? null, selectedLng: selectedCoord?.lng ?? null,
       // With no explicit selection, frame the active structure itself.
@@ -1516,7 +1476,7 @@ export function buildGlobeView(
     points, arcs: structureArcs, polygonColors, selectedIso,
     selectedLat: selectedCoord?.lat ?? null, selectedLng: selectedCoord?.lng ?? null,
     focusLat: selectedCoord?.lat ?? null, focusLng: selectedCoord?.lng ?? null, focusDistance: null,
-    hoverByIso, structuresByCode, stateCounts, categoryByIso,
+    hoverByIso, structuresByCode, stateCounts, categoryByIso, routeLabels: [],
     // Single Jurisdiction mode has no single "active structure" (it's a
     // whole choropleth of independent jurisdiction winners) — structure is
     // intentionally null here; economicIdentity/classification stay null,
