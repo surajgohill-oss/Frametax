@@ -8,7 +8,9 @@ evaluation generation, so the choice is persisted by its run-independent economi
 * identity gone after a legitimate regeneration -> fall back to the canonical leader and disclose the selection as
   unavailable; never mapped to a different structure.
 
-No evaluation is ever triggered from here.
+Applied on the served read (reconcile_selection, called from canonical_production_view), never inside
+canonical_evaluation.py: that module's source bytes feed every project's input fingerprint. No evaluation is ever
+triggered from here.
 """
 from __future__ import annotations
 
@@ -70,6 +72,19 @@ def choose_leading(identity: str | None, user_match_id, canonical_id):
     if user_match_id is not None:
         return user_match_id, False
     return canonical_id, True
+
+
+async def reconcile_selection(session: AsyncSession, project, *, engine_version: str, fingerprint: str) -> None:
+    """Point leading_structure_id back at the producer's choice in the current generation when it still exists.
+    A pointer write only; when the choice is gone the canonical leader the evaluation set is left in place."""
+    identity = getattr(project, "leading_selection_identity", None)
+    if not identity:
+        return
+    match = await resolve_selection(session, project.id, identity, engine_version=engine_version, fingerprint=fingerprint)
+    target, unavailable = choose_leading(identity, match, project.leading_structure_id)
+    if not unavailable and project.leading_structure_id != target:
+        project.leading_structure_id = target
+        await session.commit()
 
 
 async def selection_status(session: AsyncSession, project) -> dict:

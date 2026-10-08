@@ -32,7 +32,7 @@ import re
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.leading_selection import selection_status
+from app.services.leading_selection import reconcile_selection, selection_status
 from app.data.executable_jurisdiction_registry import get_doctrine
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
@@ -1688,6 +1688,12 @@ async def build_production_and_structures(
     # reaudit: FVD and Lips Like Sugar could previously diverge).
     from app.services.canonical_evaluation import current_generation_fingerprint
     fingerprint = await current_generation_fingerprint(session, project.id)
+    # USER-SELECTED LEADER (2026-10-08): the evaluation re-points leading_structure_id to its own leader on every new
+    # generation; a producer's "Set as Leading" choice is re-applied here by stable identity (or left on the canonical
+    # leader and disclosed as unavailable). Kept out of canonical_evaluation.py on purpose: that file's bytes are part
+    # of every project's input fingerprint, so editing it would make every production stale.
+    if fingerprint is not None:
+        await reconcile_selection(session, project, engine_version=ENGINE_VERSION, fingerprint=fingerprint)
 
     # Bounded read (2026-09-19): this view previously built a structure entry for EVERY
     # row of the current generation -- 526,155 for F#K Valentine's Day, 99.9% of them
