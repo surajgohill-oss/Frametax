@@ -18,6 +18,7 @@
 // Practical -> Formal -> Advanced, NPC ascending).
 
 import { hasAdministrativeAllocationRisk, hasUnconfirmedStackingDeduction } from "./allocationRisk.js";
+import { optimizerProjection } from "./workspaceScenarioMode.js";
 
 export const CLASSIFICATIONS = {
   current: { key: "current", label: "Current / Base Production", accent: "gold" },
@@ -259,47 +260,55 @@ export function selectMaxPotentialCard(allocated, excludeIds) {
   return null;
 }
 
-// CineGlobe Overview 2x2 anchor/scenario composition (history-based
-// restoration, 2026-09-03). The approved 2x2 grid genuinely existed
-// (commit ec283e5, "Incentive Intelligence 2x2 grid") — its own real
-// category was "Recommended" (gold, the rank-1 structure), not a
-// dedicated anchor/current-production concept; the ONE canonical field
-// this codebase already uses for "current/base production structure" is
-// isBaselineStructure()/is_baseline (backend-sourced -- see its own
-// header comment above), reused here rather than inventing a second
-// concept. Card 1 is always the production's real baseline/current
-// structure when one exists in the allocated set; Cards 2-3 are the two
-// highest-ranked alternatives EXCLUDING the anchor (never array
-// position); Card 4 is the strongest legitimate optimization opportunity
-// not already shown (selectMaxPotentialCard, unchanged from the prior
-// pass — its own real-data sourcing already satisfies item 5's
-// requirement list), falling back to the next-best ranked alternative
-// when no legitimate opportunity exists (never fabricated).
+// OVERVIEW FOUR-SLOT CONTRACT (2026-10-08, supersedes Anchor + 2 Leading + Max-Potential): four
+// distinct cards in a fixed order, each filled only from structures the backend already serves:
+//   1. Current Location     -- the canonical baseline (isBaselineStructure).
+//   2. Leading Jurisdiction -- the lowest-NPC jurisdiction winner (best_per_jurisdiction).
+//   3. Optimized Structure  -- the optimizer's own first-presented scenario (optimizerProjection,
+//      the SAME ordering Workspace's Optimizer mode uses): a recommended option when one exists,
+//      otherwise its top evaluated alternative, flagged as a reference so it never claims a
+//      recommendation it does not have.
+//   4. Conditional Upside   -- the CONDITIONAL-ceiling structure with the lowest served maximum
+//      potential NPC (potential_npc_usd).
+// No economic identity appears twice. A slot the served universe cannot fill is left out, never
+// padded or fabricated. No figure is computed here; only served fields are compared for ordering.
+const _econKey = (s) => s.economic_identity || s.structure_id;
 export function selectAnchorLeadingOptimized(allocated) {
   if (!allocated?.structures) return [];
-  const anchor = allocated.structures.find(isBaselineStructure) || null;
-  const ordered = Object.values(allocated.best_per_jurisdiction || {})
-    .filter(Boolean)
-    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity))
-    .filter(
-    (s) => !anchor || s.structure_id !== anchor.structure_id,
-  );
-  const leading = ordered.slice(0, 2);
-  const cards = anchor ? [anchor, ...leading] : leading.length ? ordered.slice(0, 3) : [];
-  const shownIds = new Set(cards.map((s) => s.structure_id));
+  const cards = [];
+  const shownIds = new Set();
+  const shownEcon = new Set();
+  const isNew = (s) => s && !shownIds.has(s.structure_id) && !shownEcon.has(_econKey(s));
+  const add = (s, slot, extra = {}) => {
+    cards.push({ ...s, __slot: slot, ...extra });
+    shownIds.add(s.structure_id);
+    shownEcon.add(_econKey(s));
+  };
 
-  const maxPotential = selectMaxPotentialCard(allocated, shownIds);
-  if (maxPotential) {
-    cards.push({
-      ...maxPotential.structure,
-      __isOpportunity: maxPotential.isOpportunity,
-      __isProducerOptimizer: maxPotential.isProducerOptimizer,
-      __potentialUsd: maxPotential.potentialUsd,
-      __fundCount: maxPotential.fundCount,
-      __fundNames: maxPotential.fundNames,
-    });
+  const anchor = allocated.structures.find(isBaselineStructure) || null;
+  if (anchor) add(anchor, "Current Location");
+
+  const winners = Object.values(allocated.best_per_jurisdiction || {})
+    .filter(Boolean)
+    .sort((a, b) => (a.npc_with_adjustments_usd ?? Infinity) - (b.npc_with_adjustments_usd ?? Infinity));
+  const leading = winners.find(isNew);
+  if (leading) add(leading, "Leading Jurisdiction");
+
+  const projection = optimizerProjection(allocated);
+  const recommended = projection.recommended.find(isNew);
+  const optimized = recommended || projection.evaluated.find(isNew);
+  if (optimized) {
+    add(optimized, "Optimized Structure", recommended
+      ? { __isProducerOptimizer: true }
+      : { __isOptimizerReference: true });
   }
-  return cards.slice(0, 4);
+
+  const conditional = [...allocated.structures, ...winners, ...projection.recommended, ...projection.evaluated]
+    .filter((s) => s.ceiling_status === "CONDITIONAL" && s.potential_npc_usd != null && isNew(s))
+    .sort((a, b) => a.potential_npc_usd - b.potential_npc_usd)[0];
+  if (conditional) add(conditional, "Conditional Upside", { __isConditionalUpside: true });
+
+  return cards;
 }
 
 // Card status — the restored ANCHOR/LEADING/LEADING/OPTIMIZED vocabulary
@@ -343,6 +352,14 @@ export function selectAnchorLeadingOptimized(allocated) {
 // already-established contract this fix does not reopen.
 export function cardStatus(structure, cardIndex) {
   if (structure.__isOpportunity) return "OPTIMIZED";
+  if (structure.__isConditionalUpside) return "CONDITIONAL";
+  // The optimizer's top evaluated alternative (no recommended option served): never a confident
+  // OPTIMIZED claim while its maximum is still conditional.
+  if (structure.__isOptimizerReference) {
+    return structure.ceiling_status === "CONDITIONAL" || structure.economics_certainty === "CONDITIONAL"
+      || hasAdministrativeAllocationRisk(structure) || structure.legal_review_required
+      ? "CONDITIONAL" : "OPTIMIZED";
+  }
   if (cardIndex === 0 && isBaselineStructure(structure)) return "ANCHOR";
   if (structure.__isProducerOptimizer) return "OPTIMIZED";
   if (

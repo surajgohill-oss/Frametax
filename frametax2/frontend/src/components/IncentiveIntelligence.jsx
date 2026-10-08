@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Money, scenarioDisplay, buildScenarioLabel, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
+import { readIncentivePotential } from "../lib/incentivePotential";
 import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, qpeOf, resolveGrossBudget, isBaselineStructure } from "../lib/productionOptions";
 import { postJurisdictionPreference, beginEvaluation } from "../api";
 
@@ -89,6 +90,7 @@ function OptionCard({ structure, cardIndex, baseNpc, grossBudgetUsd, onClick, pr
         : "Potential — not yet modeled")
     : compactIncentiveRate(structure);
   const npc = structure.npc_with_adjustments_usd;
+  const pot = readIncentivePotential(structure);
   const diff = npc != null && baseNpc != null && !isBaselineStructure(structure) ? npc - baseNpc : null;
   const clickable = !!onClick;
 
@@ -150,10 +152,14 @@ function OptionCard({ structure, cardIndex, baseNpc, grossBudgetUsd, onClick, pr
     >
       <div className="ii-card-accent" aria-hidden="true" />
       <div className="ii-card-body">
+        {structure.__slot && <div className="ii-slot">{structure.__slot}</div>}
         <div className="ii-country">
           <span className="ii-country-name">{flags ? `${flags} ${title}` : title}</span>
         </div>
         <div className="ii-status">{status}</div>
+        {structure.__isOptimizerReference && (
+          <div className="ii-structure">Optimizer reference — no recommended option clears the hurdle</div>
+        )}
         {rateLine && <div className="ii-structure">{rateLine}</div>}
 
         <div className="ii-metrics">
@@ -172,18 +178,43 @@ function OptionCard({ structure, cardIndex, baseNpc, grossBudgetUsd, onClick, pr
               {structure.is_fully_priced ? <Money value={qpeOf(structure)} bare /> : "—"}
             </span>
           </div>
-          <div className="ii-metric">
-            <span className="ii-metric-label">Incentive</span>
-            <span className="ii-metric-value mono">
-              {structure.selected_incentive_usd != null ? <Money value={structure.selected_incentive_usd} bare /> : "—"}
-            </span>
-          </div>
-          <div className="ii-metric">
-            <span className="ii-metric-label">Net Production Cost</span>
-            <span className="ii-metric-value mono">
-              {npc != null ? <Money value={npc} bare /> : "Not priced"}
-            </span>
-          </div>
+          {/* Same served maximum-potential / confirmed contract as the Workspace cards, on every
+              card; a structure without the contract keeps its legacy incentive / NPC pair. */}
+          {pot ? (
+            <>
+              <div className="ii-metric ii-metric-primary">
+                <span className="ii-metric-label">Maximum Potential NPC</span>
+                <span className="ii-metric-value mono"><Money value={pot.potentialNpc} bare /></span>
+              </div>
+              <div className="ii-metric">
+                <span className="ii-metric-label">Maximum Potential Incentive</span>
+                <span className="ii-metric-value mono"><Money value={pot.maxIncentive} bare /></span>
+              </div>
+              <div className="ii-metric">
+                <span className="ii-metric-label">Confirmed NPC</span>
+                <span className="ii-metric-value mono"><Money value={pot.confirmedNpc} bare /></span>
+              </div>
+              <div className="ii-metric">
+                <span className="ii-metric-label">Confirmed Incentive</span>
+                <span className="ii-metric-value mono"><Money value={pot.confirmedIncentive} bare /></span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="ii-metric">
+                <span className="ii-metric-label">Incentive</span>
+                <span className="ii-metric-value mono">
+                  {structure.selected_incentive_usd != null ? <Money value={structure.selected_incentive_usd} bare /> : "—"}
+                </span>
+              </div>
+              <div className="ii-metric">
+                <span className="ii-metric-label">Net Production Cost</span>
+                <span className="ii-metric-value mono">
+                  {npc != null ? <Money value={npc} bare /> : "Not priced"}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {diff != null && (

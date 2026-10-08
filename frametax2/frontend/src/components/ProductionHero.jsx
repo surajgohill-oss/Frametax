@@ -38,20 +38,20 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 // Rule. Do not reintroduce `object-fit: cover`/`contain`, a crop, or a
 // composite here; see CAPABILITY_LEDGER.md for why both were tried and
 // reverted.
-// Hero atmosphere per production: a quiet, desaturated COMPANION colour taken from the project's own key
-// art (never its dominant colour), so the artwork plate stands out against the header instead of merging
-// with it. day/night are [edge, centre] gradient stops; glow is a restrained wash localized behind the plate.
-// Matched on the production title. A project with no key art (e.g. Bad Hombres today) gets the slate default.
+// Hero atmosphere per production -- MANUALLY CURATED companion palettes (not extracted), chosen so each
+// project's own key art stays visually distinct from the header. day/night are [edge, centre] gradient
+// stops; glow is a restrained wash localized behind the art plate; seam tints the header's bottom rule.
+// Matched on the production title. A project without key art (Bad Hombres today) keeps the neutral default.
 const HERO_THEMES = {
-  // F#K Valentine's Day -- art is saturated red with white type; companion: dusty mauve-grey / plum-charcoal.
-  valentine: { day: ["#E7DFE1", "#F3EFEF"], night: ["#261C21", "#15121A"], glow: "rgba(150, 40, 55, 0.20)" },
-  // The Little Utopia -- art is dark cliffs, gold sunset, white village; companion: sea-mist / harbour blue.
-  utopia: { day: ["#DCE4E7", "#EEF1F1"], night: ["#142029", "#0E141A"], glow: "rgba(205, 155, 70, 0.18)" },
-  // Lips Like Sugar -- art is near-black with an electric-blue figure and a red accent; companion: cool
-  // lavender-grey / deep indigo.
-  sugar: { day: ["#E1E0EA", "#F0EFF4"], night: ["#1C1D30", "#121320"], glow: "rgba(80, 100, 210, 0.16)" },
+  // F#K Valentine's Day -- restrained crimson / cream around a saturated red title card.
+  valentine: { day: ["#F1E4DE", "#F8F2EA"], night: ["#2B1215", "#170C0E"], glow: "rgba(178, 34, 46, 0.22)", seam: "rgba(160, 28, 40, 0.45)" },
+  // The Little Utopia -- sea at the edges, warm stone in the centre, a sunset-gold glow and seam.
+  utopia: { day: ["#D7E1E2", "#EEE8DC"], night: ["#10232D", "#1C1A15"], glow: "rgba(214, 160, 66, 0.22)", seam: "rgba(196, 146, 60, 0.5)" },
+  // Lips Like Sugar -- cool blue-black, an electric-blue glow and a restrained red seam (the art's own
+  // blue figure / red accent relationship).
+  sugar: { day: ["#D5DAE4", "#ECEEF2"], night: ["#0B1222", "#06080E"], glow: "rgba(44, 92, 255, 0.20)", seam: "rgba(196, 30, 42, 0.55)" },
 };
-const DEFAULT_HERO_THEME = { day: ["#E8E5DF", "#F3F1EC"], night: ["#161C24", "#0F1318"], glow: "rgba(70, 95, 120, 0.14)" };
+const DEFAULT_HERO_THEME = { day: ["#E8E5DF", "#F3F1EC"], night: ["#161C24", "#0F1318"], glow: "rgba(70, 95, 120, 0.14)", seam: null };
 function getProjectHeroTheme(title) {
   const t = (title || "").toLowerCase();
   const key = Object.keys(HERO_THEMES).find((k) => t.includes(k));
@@ -123,6 +123,7 @@ export default function ProductionHero({
         "--ph-hero-day-b": heroTheme.day[1],
         "--ph-hero-night-a": heroTheme.night[0],
         "--ph-hero-night-b": heroTheme.night[1],
+        ...(heroTheme.seam ? { "--ph-hero-seam": heroTheme.seam } : {}),
       }}
     >
       {/* Cinematic lens wash behind the left content (localized behind the art plate; see shell.css ART PLATE HERO block). */}

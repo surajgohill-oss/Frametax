@@ -87,7 +87,8 @@ test("selectAnchorLeadingOptimized: Leading cards exclude the Anchor structure_i
   const alt2 = structure({ structure_id: "alt2", npc_with_adjustments_usd: 300 });
   const result = selectAnchorLeadingOptimized(allocated([baseline, alt1, alt2]));
   const ids = result.map((s) => s.structure_id);
-  assert.deepEqual(ids, ["base", "alt1", "alt2"]);
+  // four-slot contract: one Leading Jurisdiction; no optimizer or conditional structure served here
+  assert.deepEqual(ids, ["base", "alt1"]);
   assert.equal(new Set(ids).size, ids.length, "no duplicate structure_id across the four cards");
 });
 
@@ -101,7 +102,7 @@ test("selectAnchorLeadingOptimized: Leading cards use the canonical jurisdiction
     { structure_id: "b", rank: 2, is_fully_priced: true },
   ];
   const result = selectAnchorLeadingOptimized(allocated([baseline, a, b], ranking));
-  assert.deepEqual(result.slice(1, 3).map((s) => s.structure_id), ["b", "a"]);
+  assert.equal(result[1].structure_id, "b", "Leading Jurisdiction is the lowest-NPC jurisdiction winner");
 });
 
 // ── Card 4 (Optimized) never duplicates another card and never
@@ -132,7 +133,46 @@ test("selectAnchorLeadingOptimized: no producer optimizer card is fabricated whe
   ];
   const result = selectAnchorLeadingOptimized(allocated(structs));
   const ids = result.map((s) => s.structure_id);
-  assert.deepEqual(ids, ["base", "a", "b"]);
+  assert.deepEqual(ids, ["base", "a"]);
+});
+
+// ── Overview four-slot contract (2026-10-08) ─────────────────────────────────────────────────
+test("four-slot contract: Current Location, Leading Jurisdiction, Optimized Structure, Conditional Upside — in that order, distinct economic identities", () => {
+  const base = structure({ structure_id: "base", is_baseline: true, economic_identity: "e-base", npc_with_adjustments_usd: 900 });
+  const lead = structure({ structure_id: "lead", economic_identity: "e-lead", npc_with_adjustments_usd: 500 });
+  const lead2 = structure({ structure_id: "lead2", economic_identity: "e-lead2", npc_with_adjustments_usd: 600,
+    ceiling_status: "CONDITIONAL", potential_npc_usd: 450 });
+  const opt = structure({ structure_id: "opt", economic_identity: "e-opt", classification: "HYBRID_ANCHOR_COMPONENT", npc_with_adjustments_usd: 550 });
+  const alloc = allocated([base, lead, lead2]);
+  alloc.recommended_optimizer_options = [opt];
+  const result = selectAnchorLeadingOptimized(alloc);
+  assert.deepEqual(result.map((s) => s.__slot), ["Current Location", "Leading Jurisdiction", "Optimized Structure", "Conditional Upside"]);
+  assert.deepEqual(result.map((s) => s.structure_id), ["base", "lead", "opt", "lead2"]);
+  assert.equal(new Set(result.map((s) => s.economic_identity)).size, 4);
+  assert.equal(cardStatus(result[2], 2), "OPTIMIZED");
+  assert.equal(cardStatus(result[3], 3), "CONDITIONAL");
+});
+
+test("four-slot contract: with no recommended option, Optimized uses the optimizer's top evaluated alternative, flagged as a reference", () => {
+  const base = structure({ structure_id: "base", is_baseline: true, economic_identity: "e-base" });
+  const lead = structure({ structure_id: "lead", economic_identity: "e-lead" });
+  const evalAlt = structure({ structure_id: "eval", economic_identity: "e-eval", recommendation_status: "EVALUATED_ALTERNATIVE",
+    ceiling_status: "CONDITIONAL", potential_npc_usd: 400 });
+  const alloc = allocated([base, lead]);
+  alloc.evaluated_optimizer_alternatives = [evalAlt];
+  const result = selectAnchorLeadingOptimized(alloc);
+  const optimized = result.find((s) => s.__slot === "Optimized Structure");
+  assert.equal(optimized.structure_id, "eval");
+  assert.equal(optimized.__isOptimizerReference, true);
+  assert.equal(optimized.__isProducerOptimizer, undefined, "a reference alternative never claims a recommendation");
+  assert.equal(cardStatus(optimized, 2), "CONDITIONAL", "a conditional reference is never shown as a confident OPTIMIZED");
+});
+
+test("four-slot contract: an economic identity already shown is never repeated in a later slot", () => {
+  const base = structure({ structure_id: "base", is_baseline: true, economic_identity: "same" });
+  const twin = structure({ structure_id: "twin", economic_identity: "same", ceiling_status: "CONDITIONAL", potential_npc_usd: 1 });
+  const result = selectAnchorLeadingOptimized(allocated([base, twin]));
+  assert.deepEqual(result.map((s) => s.structure_id), ["base"]);
 });
 
 // ── Status vocabulary — exactly ANCHOR/LEADING/OPTIMIZED, positionally

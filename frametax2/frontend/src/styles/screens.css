@@ -2006,3 +2006,7 @@
 .wsx-econ-needed span { flex: none; font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-label); }
 .wsx-econ-needed b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10.5px var(--font-sans); color: var(--wsx-needed); }
 .wsx-econ[data-ceiling-status="CONFIRMED"][data-certainty="CONFIRMED"] .wsx-econ-needed b { color: var(--wsx-sub); font-weight: 500; }
+
+/* OVERVIEW FOUR-SLOT CARDS (2026-10-08): slot kicker and the served maximum-potential contract. */
+.ii-slot { font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: 4px; }
+.ii-metric-primary .ii-metric-value { font-size: 15px; font-weight: 700; }

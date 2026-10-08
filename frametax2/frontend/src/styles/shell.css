@@ -725,7 +725,7 @@
   background-color: var(--phh-bg-color);
   background-image: var(--phh-bg);
   border-top: 1px solid var(--phh-bd-top);
-  border-bottom: 1px solid var(--phh-bd-bot);
+  border-bottom: 1px solid var(--ph-hero-seam, var(--phh-bd-bot));
   box-shadow: var(--phh-inset);
 }
 :root[data-theme="night"] .ph-hero {
