@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Money, scenarioDisplay, buildScenarioLabel, compactIncentiveRate, confidenceStatusLabel, confidenceStatusTone, hasAdministrativeAllocationRisk, flagEmoji, jurisdictionName } from "../lib/format";
 import { readIncentivePotential } from "../lib/incentivePotential";
-import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, qpeOf, resolveGrossBudget, isBaselineStructure } from "../lib/productionOptions";
+import EconomicWell from "./EconomicWell";
+import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, isBaselineStructure } from "../lib/productionOptions";
 import { postJurisdictionPreference, beginEvaluation } from "../api";
 
 // Batched producer-control closeout (2026-09-03), Batch 6: the fact_key
@@ -38,7 +39,7 @@ const OPTIMIZER_CLASSIFICATIONS = new Set([
   "HYBRID_ANCHOR_COMPONENT", "OFFICIAL_COPRODUCTION", "COMBINED_COPRO_HYBRID_STACK", "MULTI_PRINCIPAL_MULTILATERAL",
 ]);
 
-function OptionCard({ structure, cardIndex, baseNpc, grossBudgetUsd, onClick, projectId, onPreferenceSaved }) {
+function OptionCard({ structure, cardIndex, baseNpc, onClick, projectId, onPreferenceSaved }) {
   const classification = classifyStructure(structure);
   // OPTIMIZER_NAVIGATION_LABEL_CLOSEOUT (2026-09-22) — ROOT DEFECT 3: an
   // optimizer-classified Optimized card (Card 4) used scenarioDisplay's
@@ -152,70 +153,36 @@ function OptionCard({ structure, cardIndex, baseNpc, grossBudgetUsd, onClick, pr
     >
       <div className="ii-card-accent" aria-hidden="true" />
       <div className="ii-card-body">
+        <div className="ii-card-head">
         {structure.__slot && <div className="ii-slot">{structure.__slot}</div>}
         <div className="ii-country">
           <span className="ii-country-name">{flags ? `${flags} ${title}` : title}</span>
         </div>
         <div className="ii-status">{status}</div>
-        {structure.__isOptimizerReference && (
-          <div className="ii-structure">Optimizer reference — no recommended option clears the hurdle</div>
-        )}
         {rateLine && <div className="ii-structure">{rateLine}</div>}
-
-        <div className="ii-metrics">
-          <div className="ii-metric">
-            <span className="ii-metric-label">Gross Budget</span>
-            <span className="ii-metric-value mono">
-              {(() => {
-                const gross = resolveGrossBudget(structure, grossBudgetUsd);
-                return gross != null ? <Money value={gross} bare /> : "—";
-              })()}
-            </span>
-          </div>
-          <div className="ii-metric">
-            <span className="ii-metric-label">Qualified Spend</span>
-            <span className="ii-metric-value mono">
-              {structure.is_fully_priced ? <Money value={qpeOf(structure)} bare /> : "—"}
-            </span>
-          </div>
-          {/* Same served maximum-potential / confirmed contract as the Workspace cards, on every
-              card; a structure without the contract keeps its legacy incentive / NPC pair. */}
-          {pot ? (
-            <>
-              <div className="ii-metric ii-metric-primary">
-                <span className="ii-metric-label">Maximum Potential NPC</span>
-                <span className="ii-metric-value mono"><Money value={pot.potentialNpc} bare /></span>
-              </div>
-              <div className="ii-metric">
-                <span className="ii-metric-label">Maximum Potential Incentive</span>
-                <span className="ii-metric-value mono"><Money value={pot.maxIncentive} bare /></span>
-              </div>
-              <div className="ii-metric">
-                <span className="ii-metric-label">Confirmed NPC</span>
-                <span className="ii-metric-value mono"><Money value={pot.confirmedNpc} bare /></span>
-              </div>
-              <div className="ii-metric">
-                <span className="ii-metric-label">Confirmed Incentive</span>
-                <span className="ii-metric-value mono"><Money value={pot.confirmedIncentive} bare /></span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="ii-metric">
-                <span className="ii-metric-label">Incentive</span>
-                <span className="ii-metric-value mono">
-                  {structure.selected_incentive_usd != null ? <Money value={structure.selected_incentive_usd} bare /> : "—"}
-                </span>
-              </div>
-              <div className="ii-metric">
-                <span className="ii-metric-label">Net Production Cost</span>
-                <span className="ii-metric-value mono">
-                  {npc != null ? <Money value={npc} bare /> : "Not priced"}
-                </span>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* Same shared economic well as the Workspace cards; a structure without the served
+            contract keeps its legacy incentive / NPC pair. The production budget is shown once,
+            above the grid, never repeated per card. */}
+        {pot ? (
+          <EconomicWell pot={pot} className="ii-econ" />
+        ) : (
+          <div className="ii-metrics">
+            <div className="ii-metric">
+              <span className="ii-metric-label">Incentive</span>
+              <span className="ii-metric-value mono">
+                {structure.selected_incentive_usd != null ? <Money value={structure.selected_incentive_usd} bare /> : "—"}
+              </span>
+            </div>
+            <div className="ii-metric">
+              <span className="ii-metric-label">Net Production Cost</span>
+              <span className="ii-metric-value mono">
+                {npc != null ? <Money value={npc} bare /> : "Not priced"}
+              </span>
+            </div>
+          </div>
+        )}
 
         {diff != null && (
           <div className="ii-related">
@@ -328,6 +295,10 @@ export default function IncentiveIntelligence({ allocated, onSelect, projectId, 
       {options.length === 0 ? (
         <p className="empty-state">No priced production structures available yet for this production.</p>
       ) : (
+        <>
+        {grossBudgetUsd != null && (
+          <div className="ii-budget"><span>Production Budget</span> <b className="mono"><Money value={grossBudgetUsd} /> USD</b></div>
+        )}
         <div className="ii-grid">
           {options.map((s, i) => (
             <OptionCard
@@ -335,13 +306,13 @@ export default function IncentiveIntelligence({ allocated, onSelect, projectId, 
               structure={s}
               cardIndex={i}
               baseNpc={baseNpc}
-              grossBudgetUsd={grossBudgetUsd}
               onClick={onSelect ? () => onSelect(s) : undefined}
               projectId={projectId}
               onPreferenceSaved={onPreferenceSaved}
             />
           ))}
         </div>
+        </>
       )}
       <ExcludedJurisdictions facts={facts} projectId={projectId} onPreferenceSaved={onPreferenceSaved} />
     </section>

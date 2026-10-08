@@ -697,22 +697,22 @@
 
 /* ART PLATE HERO (2026-10-07; supersedes the Full-Art Hero Rule above at the product owner's request):
    one 160px row: back link, 200x112 landscape art plate (object-fit: cover, edge to edge), title + chips,
-   metric bay (icons pinned top-right). Theme-aware: warm vellum in the day theme, obsidian in the night
-   theme; both use the per-production companion colours ProductionHero.jsx sets (--ph-hero-day-a/b,
-   --ph-hero-night-a/b, and --ph-hero-glow on the lens wash localized behind the plate). The old
+   metric bay (icons pinned top-right). A project-specific cinematic bay in both themes (day slightly
+   lifted): layered base gradient, a bloom behind the plate, a secondary light behind the title, a top
+   chamfer and a bottom vignette, all from the per-production palette ProductionHero.jsx sets. The old
    full-width .ph-hero-art / .ph-hero-scrim rules above are no longer rendered. */
 .ph-hero {
-  --phh-bg: linear-gradient(90deg, var(--ph-hero-day-a, #E8E5DF) 0%, var(--ph-hero-day-b, #F3F1EC) 55%, var(--ph-hero-day-a, #E8E5DF) 100%); --phh-bg-color: var(--ph-hero-day-b, #F3F1EC);
-  --phh-bd-top: rgba(0, 0, 0, 0.05); --phh-bd-bot: #D8D3C8; --phh-inset: inset 0 -8px 16px rgba(60, 50, 30, 0.05);
-  --phh-lens-opacity: 0.55;
-  --phh-title: #1C2D27; --phh-back: #64748B; --phh-back-h: #1C2D27;
-  --phh-chip-bg: rgba(0, 0, 0, 0.05); --phh-chip-bd: rgba(0, 0, 0, 0.1); --phh-chip-fg: #4A5568;
-  --phh-chip-bd-h: rgba(0, 0, 0, 0.25); --phh-chip-fg-h: #1C2D27;
-  --phh-label: #64748B; --phh-value: #1C2D27; --phh-sep: rgba(0, 0, 0, 0.12);
-  --phh-q: #B45309; --phh-q-bg: rgba(245, 144, 30, 0.1); --phh-q-bd: rgba(180, 83, 9, 0.3);
-  --phh-plate-bd: rgba(0, 0, 0, 0.1); --phh-plate-shadow: 0 6px 14px rgba(40, 30, 20, 0.18);
-  --phh-ico-bg: rgba(255, 255, 255, 0.6); --phh-ico-bd: rgba(0, 0, 0, 0.12); --phh-ico-fg: #4A5568;
-  --phh-ico-bd-h: rgba(0, 0, 0, 0.3); --phh-ico-fg-h: #1C2D27;
+  /* A dark cinematic bay in BOTH application themes; the day theme is only slightly lifted. */
+  --phh-lift: rgba(255, 255, 255, 0.045);
+  --phh-bd-top: rgba(255, 255, 255, 0.09); --phh-bd-bot: #0A0C10; --phh-inset: inset 0 -22px 26px -14px rgba(0, 0, 0, 0.55);
+  --phh-title: #FFFFFF; --phh-back: #8A94A6; --phh-back-h: #FFFFFF;
+  --phh-chip-bg: rgba(0, 0, 0, 0.35); --phh-chip-bd: rgba(255, 255, 255, 0.12); --phh-chip-fg: #A7B0BF;
+  --phh-chip-bd-h: rgba(255, 255, 255, 0.3); --phh-chip-fg-h: #FFFFFF;
+  --phh-label: #8A94A6; --phh-value: #FFFFFF; --phh-sep: rgba(247, 243, 232, 0.2);
+  --phh-q: #F5A524; --phh-q-bg: rgba(245, 144, 30, 0.12); --phh-q-bd: rgba(245, 144, 30, 0.28);
+  --phh-plate-bd: rgba(255, 255, 255, 0.12); --phh-plate-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  --phh-ico-bg: rgba(20, 22, 20, 0.38); --phh-ico-bd: rgba(247, 243, 232, 0.25); --phh-ico-fg: rgba(247, 243, 232, 0.85);
+  --phh-ico-bd-h: rgba(247, 243, 232, 0.5); --phh-ico-fg-h: #F7F3E8;
 
   box-sizing: content-box;
   height: 160px;
@@ -722,30 +722,22 @@
   align-items: center;
   padding: 0 24px;
   isolation: isolate;
-  background-color: var(--phh-bg-color);
-  background-image: var(--phh-bg);
+  /* layers: day lift / secondary light behind the title / per-project base gradient. The primary
+     bloom is .ph-hero-lens, localized behind the art plate. Colours come from ProductionHero.jsx. */
+  background-color: var(--ph-base-b, #101419);
+  background-image:
+    linear-gradient(var(--phh-lift), var(--phh-lift)),
+    radial-gradient(ellipse 380px 140px at 560px 45%, var(--ph-second, transparent), transparent 70%),
+    linear-gradient(90deg, var(--ph-base-a, #161B22) 0%, var(--ph-base-b, #101419) 55%, var(--ph-base-c, #13171D) 100%);
   border-top: 1px solid var(--phh-bd-top);
-  border-bottom: 1px solid var(--ph-hero-seam, var(--phh-bd-bot));
+  border-bottom: 1px solid var(--ph-accent, var(--phh-bd-bot));
   box-shadow: var(--phh-inset);
 }
-:root[data-theme="night"] .ph-hero {
-  --phh-bg: linear-gradient(90deg, var(--ph-hero-night-a, #161C24) 0%, var(--ph-hero-night-b, #0F1318) 55%, var(--ph-hero-night-a, #161C24) 100%); --phh-bg-color: var(--ph-hero-night-b, #0F1318);
-  --phh-bd-top: rgba(255, 255, 255, 0.1); --phh-bd-bot: #1A1E26; --phh-inset: inset 0 -10px 20px rgba(0, 0, 0, 0.4);
-  --phh-lens-opacity: 0.85;
-  --phh-title: #FFFFFF; --phh-back: #7C8799; --phh-back-h: #FFFFFF;
-  --phh-chip-bg: rgba(0, 0, 0, 0.4); --phh-chip-bd: rgba(255, 255, 255, 0.1); --phh-chip-fg: #94A3B8;
-  --phh-chip-bd-h: rgba(255, 255, 255, 0.3); --phh-chip-fg-h: #FFFFFF;
-  --phh-label: #7C8799; --phh-value: #FFFFFF; --phh-sep: rgba(247, 243, 232, 0.22);
-  --phh-q: #F5901E; --phh-q-bg: rgba(245, 144, 30, 0.1); --phh-q-bd: rgba(245, 144, 30, 0.2);
-  --phh-plate-bd: rgba(255, 255, 255, 0.1); --phh-plate-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
-  --phh-ico-bg: rgba(20, 22, 20, 0.38); --phh-ico-bd: rgba(247, 243, 232, 0.25); --phh-ico-fg: rgba(247, 243, 232, 0.85);
-  --phh-ico-bd-h: rgba(247, 243, 232, 0.5); --phh-ico-fg-h: #F7F3E8;
-}
-/* localized behind the art plate only (plate sits at 108-308px), restrained */
+:root[data-theme="night"] .ph-hero { --phh-lift: rgba(255, 255, 255, 0); }
+/* primary bloom, localized behind the art plate (plate sits at 108-308px), restrained */
 .ph-hero-lens {
-  position: absolute; left: 48px; top: 0; width: 320px; height: 100%; z-index: -1; pointer-events: none;
-  opacity: var(--phh-lens-opacity);
-  background: radial-gradient(ellipse 50% 55% at 50% 50%, var(--ph-hero-glow, rgba(70, 95, 120, 0.14)), transparent 100%);
+  position: absolute; left: 28px; top: 0; width: 360px; height: 100%; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 50% 62% at 50% 50%, var(--ph-bloom, rgba(110, 130, 150, 0.14)), transparent 100%);
 }
 .ph-hero-plate-neutral { width: 100%; height: 100%; }
 .ph-hero-back {
@@ -805,3 +797,5 @@
 .cg-sidebar .cg-navlink { font-size: 12px; font-weight: 500; letter-spacing: -0.01em; color: #CBD5E1; }
 .cg-sidebar .cg-navlink:hover { color: #FFFFFF; background: rgba(255, 255, 255, 0.05); opacity: 1; }
 .cg-sidebar .cg-navlink.on { color: #FFFFFF; font-weight: 600; border-left-color: #E5B233; }
+/* no-artwork fallback plate sits in the dark bay in both themes: a quiet slate, not the light surface */
+.ph-hero-plate .ph-hero-art-neutral { background: linear-gradient(135deg, #1E252E 0%, #13181E 100%); }

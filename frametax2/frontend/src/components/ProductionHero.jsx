@@ -16,8 +16,8 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 //
 // ART PLATE HERO (2026-10-07, supersedes the Full-Art Hero Rule below at the product owner's request): a
 // 160px hero in one row -- back link, a 200x112 landscape art plate (object-fit: cover, edge to edge; same
-// proportions as Project Library's art), title + chips, then the budget/questions bay. Theme-aware, with a
-// per-production tint from getProjectHeroTheme. No full-width image.
+// proportions as Project Library's art), title + chips, then the budget/questions bay. A dark cinematic bay
+// in both app themes, lit per production from getProjectHeroTheme. No full-width image.
 //
 // (superseded) FULL-ART HERO RULE: the complete
 // approved key art fills the entire Hero artwork rectangle, edge to edge,
@@ -38,20 +38,19 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 // Rule. Do not reintroduce `object-fit: cover`/`contain`, a crop, or a
 // composite here; see CAPABILITY_LEDGER.md for why both were tried and
 // reverted.
-// Hero atmosphere per production -- MANUALLY CURATED companion palettes (not extracted), chosen so each
-// project's own key art stays visually distinct from the header. day/night are [edge, centre] gradient
-// stops; glow is a restrained wash localized behind the art plate; seam tints the header's bottom rule.
-// Matched on the production title. A project without key art (Bad Hombres today) keeps the neutral default.
+// Hero cinematic bay per production -- MANUALLY CURATED from each project's key art. base is the
+// [left, centre, right] gradient; bloom is the localized light behind the art plate; second is a quieter
+// light behind the title; accent tints the bottom rule. Dark in both app themes. Matched on the
+// production title; a project without key art (Bad Hombres today) gets the neutral slate fallback.
 const HERO_THEMES = {
-  // F#K Valentine's Day -- restrained crimson / cream around a saturated red title card.
-  valentine: { day: ["#F1E4DE", "#F8F2EA"], night: ["#2B1215", "#170C0E"], glow: "rgba(178, 34, 46, 0.22)", seam: "rgba(160, 28, 40, 0.45)" },
-  // The Little Utopia -- sea at the edges, warm stone in the centre, a sunset-gold glow and seam.
-  utopia: { day: ["#D7E1E2", "#EEE8DC"], night: ["#10232D", "#1C1A15"], glow: "rgba(214, 160, 66, 0.22)", seam: "rgba(196, 146, 60, 0.5)" },
-  // Lips Like Sugar -- cool blue-black, an electric-blue glow and a restrained red seam (the art's own
-  // blue figure / red accent relationship).
-  sugar: { day: ["#D5DAE4", "#ECEEF2"], night: ["#0B1222", "#06080E"], glow: "rgba(44, 92, 255, 0.20)", seam: "rgba(196, 30, 42, 0.55)" },
+  // F#K Valentine's Day -- deep wine / charcoal, crimson bloom, a restrained warm-cream highlight.
+  valentine: { base: ["#24101A", "#141114", "#1A0F12"], bloom: "rgba(196, 34, 48, 0.30)", second: "rgba(246, 226, 200, 0.07)", accent: "rgba(170, 34, 46, 0.6)" },
+  // The Little Utopia -- harbour blue / charcoal, sunset-gold bloom, a restrained sea-blue light.
+  utopia: { base: ["#10222E", "#121619", "#0F1C24"], bloom: "rgba(228, 166, 72, 0.26)", second: "rgba(64, 136, 178, 0.14)", accent: "rgba(206, 152, 62, 0.5)" },
+  // Lips Like Sugar -- blue-black, electric cyan/cobalt bloom, twilight-violet light, a faint red rule.
+  sugar: { base: ["#0A1124", "#070A14", "#0D0C1E"], bloom: "rgba(36, 150, 255, 0.26)", second: "rgba(118, 76, 196, 0.15)", accent: "rgba(200, 32, 48, 0.45)" },
 };
-const DEFAULT_HERO_THEME = { day: ["#E8E5DF", "#F3F1EC"], night: ["#161C24", "#0F1318"], glow: "rgba(70, 95, 120, 0.14)", seam: null };
+const DEFAULT_HERO_THEME = { base: ["#161B22", "#101419", "#13171D"], bloom: "rgba(110, 130, 150, 0.14)", second: "rgba(90, 110, 130, 0.07)", accent: null };
 function getProjectHeroTheme(title) {
   const t = (title || "").toLowerCase();
   const key = Object.keys(HERO_THEMES).find((k) => t.includes(k));
@@ -118,12 +117,12 @@ export default function ProductionHero({
     <div
       className="ph-hero"
       style={{
-        "--ph-hero-glow": heroTheme.glow,
-        "--ph-hero-day-a": heroTheme.day[0],
-        "--ph-hero-day-b": heroTheme.day[1],
-        "--ph-hero-night-a": heroTheme.night[0],
-        "--ph-hero-night-b": heroTheme.night[1],
-        ...(heroTheme.seam ? { "--ph-hero-seam": heroTheme.seam } : {}),
+        "--ph-base-a": heroTheme.base[0],
+        "--ph-base-b": heroTheme.base[1],
+        "--ph-base-c": heroTheme.base[2],
+        "--ph-bloom": heroTheme.bloom,
+        "--ph-second": heroTheme.second,
+        ...(heroTheme.accent ? { "--ph-accent": heroTheme.accent } : {}),
       }}
     >
       {/* Cinematic lens wash behind the left content (localized behind the art plate; see shell.css ART PLATE HERO block). */}

@@ -13,7 +13,8 @@ import GlobeHoverCard from "../../components/GlobeHoverCard";
 import { alternativeLabel, fitTag, structureStatusDetail } from "../../lib/alternativeLabels";
 import { buildGlobeView, structureTier, activeStructure, resolveSegmentDetail, buildCandidateDetail, buildOpportunityDetail, buildRejectedDetail, OPTIMIZER_FAMILY_LABEL, PRACTICALITY_TIER_LABEL } from "../../lib/globeData";
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
-import { readIncentivePotential, missingFactsSummary, missingFactsTitle } from "../../lib/incentivePotential";
+import { readIncentivePotential } from "../../lib/incentivePotential";
+import EconomicWell from "../../components/EconomicWell";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
 import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
@@ -70,19 +71,6 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // backend's own canonical `classification` field for the active Normal/
 // Optimizer mode — never a second, independently-maintained selection
 // here. See that module's header comment for the exact family mapping.
-const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
-// Card tag beside MAXIMUM POTENTIAL NPC: says plainly when the maximum is not yet confirmed.
-const potentialTag = (pot) =>
-  pot.ceilingStatus === "NOT_ESTABLISHED" ? "Not established"
-    : pot.ceilingStatus === "CONDITIONAL" || pot.certainty === "CONDITIONAL" ? "Conditional"
-      : null;
-// One concise line for NEEDED TO REACH MAXIMUM; authority citations and full detail stay in the Inspector.
-const neededToReachMaximum = (pot) => {
-  if (pot.ceilingStatus === "CONFIRMED" && pot.certainty === "CONFIRMED") return "Nothing — maximum is confirmed";
-  if (pot.ceilingStatus === "CONFIRMED") return "Award confirmation"; // max = confirmed; discretionary award risk open
-  // first clause of the served fact only; the full text is the line's tooltip and the Inspector
-  return missingFactsSummary(pot, 1).split(/ -- | — | \(/)[0];
-};
 
 // Workspace Display Regression: "Other Scenarios" is a real HTML <select>
 // — every option needs its own distinct text, unlike a visible card,
@@ -334,34 +322,8 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
             {!pot && <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>}
           </div>
           {pot ? (
-            // ECONOMIC WELL (2026-10-08): maximum potential NPC is the primary figure (the optimization
-            // target), confirmed NPC directly beneath it. Every value is the served contract verbatim.
-            <div className="wsx-econ" data-certainty={pot.certainty} data-ceiling-status={pot.ceilingStatus}>
-              <div className="wsx-econ-max">
-                <div className="wsx-econ-head">
-                  <span className="wsx-econ-label">Maximum potential NPC</span>
-                  {potentialTag(pot) && <span className="wsx-econ-tag">{potentialTag(pot)}</span>}
-                </div>
-                <div className="wsx-econ-figure"><Money value={pot.potentialNpc} bare /></div>
-                <div className="wsx-econ-line"><span>Maximum potential incentive</span><span className="potential"><Money value={pot.maxIncentive} bare /></span></div>
-              </div>
-              <div className="wsx-econ-confirmed">
-                <div className="wsx-econ-line npc"><span>Confirmed NPC</span><span><Money value={pot.confirmedNpc} bare /></span></div>
-                <div className="wsx-econ-line"><span>Confirmed incentive</span><span className="incentive"><Money value={pot.confirmedIncentive} bare /></span></div>
-              </div>
-              {/* Denominator is the maximum potential incentive: green = confirmed share, amber = the
-                  rest of the maximum. All green only when confirmed equals the maximum. */}
-              {pot.maxIncentive != null && (
-                <div className="wsx-range" role="img" aria-label={`Confirmed ${Math.round(pct(pot.confirmedIncentive, pot.maxIncentive))}% of maximum potential incentive`}>
-                  <u style={{ left: 0, width: `${pct(pot.confirmedIncentive, pot.maxIncentive)}%` }} />
-                  <i style={{ left: `${pct(pot.confirmedIncentive, pot.maxIncentive)}%`, right: 0 }} />
-                </div>
-              )}
-              <div className="wsx-econ-needed" title={missingFactsTitle(pot)}>
-                <span>Needed to reach maximum</span>
-                <b>{neededToReachMaximum(pot)}</b>
-              </div>
-            </div>
+            // ECONOMIC WELL: shared with Overview's cards (components/EconomicWell.jsx).
+            <EconomicWell pot={pot} />
           ) : (
             <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           )}

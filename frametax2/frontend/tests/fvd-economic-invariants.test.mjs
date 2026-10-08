@@ -164,9 +164,13 @@ test("IncentiveIntelligence.jsx (Overview's Top Structures) uses full-precision 
   // rather than reading structure.gross_budget_usd bare — still full-precision
   // Money, never CompactMoney; the resolver call is asserted separately in
   // overview-options.test.mjs.
-  assert.match(iiSrc, /<Money value=\{gross\}/);
-  assert.match(iiSrc, /resolveGrossBudget\(structure, grossBudgetUsd\)/);
+  // Overview closeout (2026-10-08): the production budget is shown ONCE above the four cards (full-
+  // precision Money), never repeated per card; card economics render through the shared EconomicWell.
+  assert.match(iiSrc, /<Money value=\{grossBudgetUsd\} \/> USD/);
+  assert.doesNotMatch(iiSrc, /resolveGrossBudget\(structure/, "no per-card gross budget");
+  assert.match(iiSrc, /<EconomicWell pot=\{pot\}/);
   assert.match(iiSrc, /<Money value=\{npc\}/);
+  assert.doesNotMatch(read("components/EconomicWell.jsx"), /CompactMoney/);
   // Both scenario surfaces must share the SAME formatter — never two
   // independently-maintained money presentations for the same concept.
   assert.match(wsSrc, /<Money value=\{gross\}/);

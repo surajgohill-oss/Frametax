@@ -366,6 +366,9 @@ export function cardStatus(structure, cardIndex) {
     hasAdministrativeAllocationRisk(structure)
     || structure.legal_review_required
     || hasUnconfirmedStackingDeduction(structure)
+    // a structure whose served maximum is still conditional/unresolved never claims LEADING
+    || structure.ceiling_status === "CONDITIONAL" || structure.ceiling_status === "NOT_ESTABLISHED"
+    || structure.economics_certainty === "CONDITIONAL"
   ) return "CONDITIONAL";
   return "LEADING";
 }

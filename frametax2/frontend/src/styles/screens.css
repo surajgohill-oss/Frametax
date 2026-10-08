@@ -1869,7 +1869,7 @@
    Styling only. Light (daytime) values are the default; the night theme overrides the same custom
    properties below. Heights, paddings and the row grid above are untouched; border widths are whole
    pixels so the divider and CONFIRMED NPC stay on one baseline at any device pixel ratio. */
-.wsx-lane {
+.wsx-lane, .ii-card {
   --wsx-mono: "Geist Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
   --wsx-bg: #FCFAF7; --wsx-bg-anchor: color-mix(in srgb, #FCFAF7 96%, #20211F 4%);
   --wsx-bd: #E2E8F0; --wsx-bd-top: #E2E8F0; --wsx-bd-bot: #CBD5E1; --wsx-bd-anchor: rgba(32, 33, 31, 0.55);
@@ -1883,7 +1883,7 @@
   --wsx-track-bg: #EEF1F5; --wsx-track-bd: #D5DBE3; --wsx-led: #0E9F5E; --wsx-glow: drop-shadow(0 0 2px rgba(14, 159, 94, 0.25));
   --wsx-tick: rgba(245, 144, 30, 0.85); --wsx-marker: #1C2D27; --wsx-warn: var(--amber);
 }
-:root[data-theme="night"] .wsx-lane, :root[data-theme="dark"] .wsx-lane, .dark .wsx-lane {
+:root[data-theme="night"] :is(.wsx-lane, .ii-card), :root[data-theme="dark"] :is(.wsx-lane, .ii-card), .dark :is(.wsx-lane, .ii-card) {
   --wsx-bg: linear-gradient(180deg, #181C23 0%, #13161C 100%); --wsx-bg-anchor: color-mix(in srgb, #14171D 96%, #F0EDE6 4%);
   --wsx-bd: #232832; --wsx-bd-top: rgba(255, 255, 255, 0.09); --wsx-bd-bot: #1A1E26; --wsx-bd-anchor: rgba(240, 237, 230, 0.45);
   --wsx-shadow: 0 4px 16px rgba(0, 0, 0, 0.45); --wsx-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.55);
@@ -1943,17 +1943,17 @@
 .wsx-lane .wsx-lead { border-radius: 2px; }
 
 /* risk track: segmented LED instead of the diagonal stripe */
-.wsx-lane .wsx-range { box-sizing: border-box; height: 7px; background: var(--wsx-track-bg); border: 1px solid var(--wsx-track-bd); border-radius: 1px; }
-.wsx-lane .wsx-range u {
+.wsx-econ .wsx-range { box-sizing: border-box; height: 7px; background: var(--wsx-track-bg); border: 1px solid var(--wsx-track-bd); border-radius: 1px; }
+.wsx-econ .wsx-range u {
   opacity: 1;
   background: linear-gradient(90deg, var(--wsx-led) 0 5px, transparent 5px) 0 0 / 7px 100% repeat-x;
   filter: var(--wsx-glow);
 }
-.wsx-lane .wsx-range i {
+.wsx-econ .wsx-range i {
   opacity: 1;
   background: linear-gradient(90deg, var(--wsx-tick) 0 3px, transparent 3px) 0 0 / 5px 100% repeat-x;
 }
-.wsx-lane .wsx-range b { background: var(--wsx-marker); box-shadow: 0 0 0 1px var(--wsx-track-bg); }
+.wsx-econ .wsx-range b { background: var(--wsx-marker); box-shadow: 0 0 0 1px var(--wsx-track-bg); }
 
 /* pre-approval warning row (identified by its inline amber colour; JSX untouched) */
 .wsx-lane .wsx-row[style*="--amber"] { font-family: var(--wsx-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--wsx-warn); }
@@ -1972,10 +1972,10 @@
    directly beneath it; the range bar's denominator is the maximum potential incentive. */
 .wsx-lane .wsx-rows { height: 88px; display: flex; flex-direction: column; }
 .wsx-lane .wsx-rows .wsx-row { flex: 1 1 0; height: auto; min-height: 0; }
-.wsx-lane {
+.wsx-lane, .ii-card {
   --wsx-potential: #B45309; --wsx-needed: #92400E;
 }
-:root[data-theme="night"] .wsx-lane, :root[data-theme="dark"] .wsx-lane, .dark .wsx-lane {
+:root[data-theme="night"] :is(.wsx-lane, .ii-card), :root[data-theme="dark"] :is(.wsx-lane, .ii-card), .dark :is(.wsx-lane, .ii-card) {
   --wsx-potential: #F5A524; --wsx-needed: #F5B759;
 }
 .wsx-econ {
@@ -2001,7 +2001,7 @@
 .wsx-econ-confirmed { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--hairline); }
 .wsx-econ-line.npc span:first-child { font-weight: 600; letter-spacing: 0.1em; }
 .wsx-econ-line.npc span:last-child { font-size: 16px; font-weight: 700; letter-spacing: -0.015em; color: var(--wsx-npc); }
-.wsx-lane .wsx-econ .wsx-range { margin: 6px 0 4px; }
+.wsx-econ .wsx-range { margin: 6px 0 4px; }
 .wsx-econ-needed { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .wsx-econ-needed span { flex: none; font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--wsx-label); }
 .wsx-econ-needed b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10.5px var(--font-sans); color: var(--wsx-needed); }
@@ -2010,3 +2010,20 @@
 /* OVERVIEW FOUR-SLOT CARDS (2026-10-08): slot kicker and the served maximum-potential contract. */
 .ii-slot { font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: 4px; }
 .ii-metric-primary .ii-metric-value { font-size: 15px; font-weight: 700; }
+
+/* OVERVIEW CARDS ON THE SHARED WELL (2026-10-08): fixed-height head so the well starts on the same line
+   in all four cards; in the 190px card each well line stacks its label above its value (the Workspace
+   card is wide enough for one line); the footer rows sit at the card's bottom. */
+.ii-budget { margin: 0 0 10px; font: 600 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); }
+.ii-budget b { margin-left: 6px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--text-primary); }
+.ii-card-head { flex: none; display: flex; flex-direction: column; gap: 7px; height: 80px; overflow: hidden; }
+.ii-card-head .ii-structure { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wsx-econ.ii-econ { padding: 9px 0 0; margin: 0 0 auto; }
+.ii-econ .wsx-econ-line { flex-direction: column; align-items: flex-start; gap: 1px; min-height: 0; margin-top: 3px; }
+.ii-econ .wsx-econ-line span:first-child { font-size: 9px; }
+.ii-econ .wsx-econ-figure { font-size: 26px; margin: 3px 0 1px; }
+.ii-econ .wsx-econ-confirmed { margin-top: 7px; padding-top: 4px; }
+.ii-econ .wsx-econ-needed { flex-direction: column; gap: 1px; }
+.ii-econ .wsx-econ-needed b { max-width: 100%; }
+.ii-econ .wsx-econ-tag { display: none; } /* the card status line directly above already states it */
+.ii-card .ii-program .badge { white-space: normal; }

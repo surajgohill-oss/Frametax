@@ -75,9 +75,11 @@ test("absent / unestablished contract is disclosed, never fabricated", () => {
 });
 
 test("Workspace card and Inspector use the shared reader and perform no arithmetic on the contract", () => {
-  const ws = read("screens/production/Workspace.jsx");
+  // the card's economic well is the shared component Workspace and Overview both render
+  const ws = read("screens/production/Workspace.jsx") + read("components/EconomicWell.jsx");
   const insp = read("shell/Inspector.jsx");
   assert.match(ws, /readIncentivePotential\(structure\)/);
+  assert.match(read("screens/production/Workspace.jsx"), /<EconomicWell pot=\{pot\} \/>/);
   // Card labels (2026-10-08 economic well): maximum potential NPC leads, confirmed NPC beneath it.
   assert.match(ws, /Maximum potential NPC/);
   assert.match(ws, /Maximum potential incentive/);
