@@ -170,10 +170,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     mount.appendChild(renderer.domElement);
 
     // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
-    const ambient = new THREE.AmbientLight(0xffffff, 0.66);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xfff0d8, 1.4);
-    key.position.set(-2.2, 1.7, 2.2);
+    const key = new THREE.DirectionalLight(0xffffff, 1.8);
+    key.position.set(1.2, 1.8, 4.5);
     scene.add(key);
     const fill = new THREE.DirectionalLight(0x6f96c0, 0.28);
     fill.position.set(2.2, -1.2, -1.2);
@@ -189,7 +189,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     group.add(earth);
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(1.014, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.82, depthWrite: false }),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, emissive: new THREE.Color(0x333333) }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
@@ -199,8 +199,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     glow.visible = false;
     group.add(glow);
     const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
-    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.4, 0.3);
-    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.6, 0.24);
+    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.4, 0.45);
+    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.6, 0.36);
     scene.add(rim);
     scene.add(halo);
 
@@ -249,8 +249,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       last = now;
       group.rotation.y += 0.000012 * dt;          // very slow turn of the Earth (~9 min per revolution)
       clouds.rotation.y += 0.00003 * dt;          // the cloud deck drifts ahead of it, independently (~3.5 min per lap)
-      key.position.x = -2.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
-      key.position.y = 1.7 + Math.cos(now / 11000) * 0.12;
+      key.position.x = 1.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
+      key.position.y = 1.8 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
         const p = 0.5 + 0.5 * Math.sin(now / 1500);
         glow.scale.setScalar(1 + 0.3 * p);
