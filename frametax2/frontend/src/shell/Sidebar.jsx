@@ -44,7 +44,7 @@ export default function Sidebar() {
   const overlay = useMemo(
     () => (companyLevel
       ? buildPortfolioMiniOverlay(portfolio ? portfolioRows(portfolio, getLeadingSelection) : [], stageOf)
-      : miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode })),
+      : miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode, ...(selection?.routeColor ? { color: selection.routeColor } : {}) })),
     // leadingVersion is the store's change signal for saved-leader commits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [companyLevel, portfolio, leadingVersion, selection],

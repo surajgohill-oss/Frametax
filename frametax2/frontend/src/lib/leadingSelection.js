@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { getPortfolioGlobe, patchProject } from "../api";
 import { resolveLeadingStructure } from "./leadingResolve";
+import { buildSelectedStructureRoute } from "./globeData";
 
 export { resolveLeadingStructure };
 
@@ -47,6 +48,8 @@ export function publishServedLeading(projectId, state) {
     structure,
     source,
     homeCode: homeCodeOf(allocated),
+    // the principal's served category colour: the same colour the Project Globe draws this structure's route in
+    routeColor: structure ? buildSelectedStructureRoute(allocated, structure).color : null,
     baselineCode: production.jurisdiction_code || null,
     selectionKnown: production.leading_selection != null,
     userSelected,

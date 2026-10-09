@@ -453,7 +453,9 @@ test("GLOBE_THEME is the single source for both themes", () => {
     );
   }
   // Both themes must define the same keys, or one of them is under-calibrated.
-  const themeBlock = /const GLOBE_THEME = \{([\s\S]*?)\n\};/.exec(src);
+  // GLOBE_THEME now lives in lib/globeVisualTokens.js (shared with the compact sidebar globe); Globe3D imports it.
+  assert.match(src, /import \{ GLOBE_THEME \} from "\.\.\/lib\/globeVisualTokens"/);
+  const themeBlock = /const GLOBE_THEME = \{([\s\S]*?)\n\};/.exec(read("lib/globeVisualTokens.js"));
   assert.ok(themeBlock, "GLOBE_THEME block not found");
   const dayKeys = [...themeBlock[1].matchAll(/^\s{4}(\w+):/gm)].map((m) => m[1]);
   const seen = new Map();
@@ -517,7 +519,7 @@ test("neutral land has presence: clearly above the ocean it sits in", async () =
   const { GRAPHITE_HEX } = await import("../src/lib/globeData.js");
   // Untouched countries must not read as empty/black. Compared against the
   // day-mode ocean, which Globe3D declares in GLOBE_THEME.
-  const src = read("components/Globe3D.jsx");
+  const src = read("lib/globeVisualTokens.js");
   const ocean = /GLOBE_THEME = \{[\s\S]*?day: \{[\s\S]*?ocean: "(#[0-9a-fA-F]{6})"/.exec(src);
   assert.ok(ocean, "day ocean colour not found");
   const gap = lum(GRAPHITE_HEX) - lum(ocean[1]);

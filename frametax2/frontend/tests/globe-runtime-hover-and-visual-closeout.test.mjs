@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const globe = readFileSync(new URL("../src/components/Globe3D.jsx", import.meta.url), "utf8");
+const tokens = readFileSync(new URL("../src/lib/globeVisualTokens.js", import.meta.url), "utf8"); // GLOBE_THEME (shared with the compact globe)
 const projectGlobe = readFileSync(new URL("../src/screens/production/ProjectGlobe.jsx", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../src/screens/production/Workspace.jsx", import.meta.url), "utf8");
 const lum = (h) => { const x = h.replace("#", ""); return 0.299 * parseInt(x.slice(0, 2), 16) + 0.587 * parseInt(x.slice(2, 4), 16) + 0.114 * parseInt(x.slice(4, 6), 16); };
@@ -58,7 +59,7 @@ test("category tokens: brighter, ladder preserved, red is oxblood, only the Lead
 });
 
 test("both themes: darker ocean than land with clear separation; land darker than before", () => {
-  const grab = (theme, key) => new RegExp(`${theme}: \\{[\\s\\S]*?${key}: "(#[0-9a-fA-F]{6})"`).exec(globe)[1];
+  const grab = (theme, key) => new RegExp(`${theme}: \\{[\\s\\S]*?${key}: "(#[0-9a-fA-F]{6})"`).exec(tokens)[1];
   for (const theme of ["day", "night"]) {
     const ocean = lum(grab(theme, "ocean"));
     const land = theme === "day" ? lum("#5d7a7e") : lum(grab(theme, "land")); // day land is the GRAPHITE_HEX constant

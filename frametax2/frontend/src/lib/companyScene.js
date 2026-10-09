@@ -66,6 +66,7 @@ export function buildCompanyScene(rows, { stageOf = DEFAULT_STAGE, focusedId = n
 export function buildPortfolioMiniOverlay(rows, stageOf = DEFAULT_STAGE) {
   const markers = [];
   const routes = [];
+  const territories = [];
   let focus = null;
   for (const { project, structure, principal, homeCode } of rows || []) {
     const { hex } = stageOf(project);
@@ -74,6 +75,7 @@ export function buildPortfolioMiniOverlay(rows, stageOf = DEFAULT_STAGE) {
       const c = JURISDICTION_COORDS[code] || JURISDICTION_COORDS[String(code).split("-")[0]];
       if (!c) continue;
       markers.push({ code, principal: code === principal, lat: c.lat, lng: c.lng, color: hex, projectId: project.id });
+      if (!String(code).includes("-")) territories.push({ code, principal: code === principal, color: hex });
       if (!focus && code === principal) focus = { lat: c.lat, lng: c.lng };
     }
     for (const a of structure ? structureArcs(structure, { color: hex, homeCode }) : []) {
@@ -81,5 +83,5 @@ export function buildPortfolioMiniOverlay(rows, stageOf = DEFAULT_STAGE) {
     }
   }
   if (!markers.length) return null;
-  return { key: `portfolio|${markers.map((m) => `${m.projectId}:${m.code}:${m.color}`).join(",")}|${routes.length}`, markers, routes, focus, portfolio: true };
+  return { key: `portfolio|${markers.map((m) => `${m.projectId}:${m.code}:${m.color}`).join(",")}|${routes.length}`, markers, routes, territories, focus, portfolio: true };
 }

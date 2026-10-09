@@ -259,11 +259,13 @@ export function groupByFamily(list) {
 
 // Simplified overlay for the 80px sidebar mini-globe: the principal, the other participants and the same topology
 // edges (relocation / hybrid spokes / co-production peers) as plain coordinates. Null when there is no structure.
-export function miniGlobeOverlay(s, { homeCode = null } = {}) {
+export function miniGlobeOverlay(s, { homeCode = null, color = NEUTRAL_ROUTE_HEX } = {}) {
   if (!s) return null;
   const topo = structureTopology(s, { homeCode });
   const codes = uniq([topo.principal, ...participantsOf(s), ...topo.edges.flatMap((e) => [e.from, e.to])]);
-  const markers = codes.map((code) => ({ code, principal: code === topo.principal, ...coordsOf(code) })).filter((m) => m.lat != null);
-  const routes = topo.edges.map((e) => ({ from: coordsOf(e.from), to: coordsOf(e.to) })).filter((r) => r.from && r.to);
-  return markers.length ? { key: `${s.structure_id}|${codes.join(",")}`, markers, routes } : null;
+  const markers = codes.map((code) => ({ code, principal: code === topo.principal, color, ...coordsOf(code) })).filter((m) => m.lat != null);
+  const routes = topo.edges.map((e) => ({ from: coordsOf(e.from), to: coordsOf(e.to), color })).filter((r) => r.from && r.to);
+  // Country-level territories are filled on the baked texture (sub-national codes stay markers: the 110m map has no admin-1).
+  const territories = markers.filter((m) => !String(m.code).includes("-")).map((m) => ({ code: m.code, principal: m.principal, color }));
+  return markers.length ? { key: `${s.structure_id}|${codes.join(",")}|${color}`, markers, routes, territories } : null;
 }
