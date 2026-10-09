@@ -1,0 +1,15 @@
+row_id,jurisdiction_code,jurisdiction_name,program_slug,program_name,statutory_rate_description,qualification_status,missing_facts_or_conditions,stacking_opportunity,path_to_maximum_optimization,statutory_exclusion_reason,ui_disclosure_state
+PATH-001,CA-ON,"Ontario, Canada",on_ofttc,Ontario Film & Television Tax Credit,35% labor,Qualified,None,Stacks with federal PSTC/CPTC,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-002,CA-ON,"Ontario, Canada",on_opstc,Ontario Production Services Tax Credit,21.5% spend,Qualified,None,Stacks with federal PSTC/CPTC,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-003,CA-ON,"Ontario, Canada",ca_on_ocase,Ontario Computer Animation and Special Effects,20% labor,Conditional,VFX breakdown,Stacks with federal PSTC/CPTC,Allocate 100% post to Ontario,None,FULL_DISCLOSURE
+PATH-004,CA-ON,"Ontario, Canada",ca_federal_cptc,Canadian Film or Video Production Tax Credit,25% labor,Conditional,CAVCO certification points,Standalone rebate,Attach Canadian co-producer,None,FULL_DISCLOSURE
+PATH-005,CA-ON,"Ontario, Canada",ca_federal_pstc,Film or Video Production Services Tax Credit,16% labor,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-006,CA-MB,"Manitoba, Canada",ca_mb_film_video_credit,Manitoba Film & Video Production Tax Credit,30%-38% spend/labor,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-007,CA-NL,"Newfoundland and Labrador, Canada",ca_nl_film_credit,Newfoundland and Labrador Film & Video Tax Credit,32% all-spend,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-008,US-NM,"New Mexico, United States",us_nm_film_credit,New Mexico Film Production Tax Credit,25%-35% spend,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-009,US-CA,"California, United States",ca_film_30,California Film & Television Tax Credit Program 3.0,20%-25% tax credit,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-010,GR,Greece,gr_cash_rebate,EKOME Greece Cash Rebate,40% spend,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-011,MU,Mauritius,mu_edb_incentive,Mauritius Film Rebate Scheme,30%-40% rebate,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-012,BE,Belgium,be_tax_shelter,Belgian Tax Shelter,Up to 42% qualifying spend,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-013,US-NY,"New York, United States",us_ny_film_tax_credit,New York State Film Tax Credit,30% qualified spend,Qualified,None,Standalone rebate,Maximize local hiring,None,FULL_DISCLOSURE
+PATH-014,QA,Qatar,qa_screen_production_incentive,Qatar Screen Production Incentive,Up to 30% rebate,Qualified,None,Stacks with federal PSTC/CPTC,Maximize local hiring,None,FULL_DISCLOSURE
