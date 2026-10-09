@@ -355,3 +355,81 @@ def test_clearing_a_chip_also_clears_the_script_derived_alias_that_feeds_the_sam
     # setting a chip ON never clears anything
     on = derive_production_requirements({"location_categories": _apply_location_overrides(derived, {"beach_coast": True})})
     assert on.environments == before.environments
+
+
+def _script_producible_categories() -> set[str]:
+    from app.services.canonical_project_economics import _DIRECT_LOCATION_CATEGORY_KEYS, _LOCATION_CAPABILITY_TOKEN_TO_CATEGORY_KEY
+
+    return set(_DIRECT_LOCATION_CATEGORY_KEYS) | set(_LOCATION_CAPABILITY_TOKEN_TO_CATEGORY_KEY.values())
+
+
+def test_every_script_producible_requirement_category_is_a_chip_a_declared_alias_or_the_non_location_period():
+    from app.services.canonical_project_economics import _CHIP_ALIAS_REQUIREMENT_CATEGORIES as ALIASES
+
+    covered = set(CHIP_TO_CATEGORY.values()) | {a for v in ALIASES.values() for a in v} | {"period_town"}
+    assert _script_producible_categories() <= covered, sorted(_script_producible_categories() - covered)
+
+
+@pytest.mark.parametrize("chip", list(LOCATION_TAXONOMY))
+def test_a_false_override_suppresses_the_chips_requirement_even_with_every_script_category_present(chip):
+    """Saturate the script side with EVERY category the ontology can produce, then clear one chip: its capability token (and
+    that of any alias category feeding the same requirement) must disappear and no other chip's token may be touched."""
+    from app.calculators.production_requirements import _LOCATION_CATEGORY_TO_CAPABILITY as CAP
+    from app.services.canonical_project_economics import _CHIP_ALIAS_REQUIREMENT_CATEGORIES as ALIASES, _apply_location_overrides
+
+    saturated = {k: {"effective": True, "evidence": ["script"]} for k in _script_producible_categories()}
+    before = derive_production_requirements({"location_categories": saturated})
+    after = derive_production_requirements({"location_categories": _apply_location_overrides(saturated, {chip: False})})
+    cat = CHIP_TO_CATEGORY[chip]
+    cleared = {CAP[cat], *(CAP[a] for a in ALIASES.get(cat, ()))}
+    still_fed = {CAP[k] for k in saturated if k != cat and k not in ALIASES.get(cat, ()) and CAP.get(k)}
+    removed = (before.environments | before.required_capabilities) - (after.environments | after.required_capabilities)
+    assert CAP[cat] not in after.environments | after.required_capabilities or CAP[cat] in still_fed, chip
+    assert removed <= cleared and removed == {t for t in cleared if t not in still_fed and t in before.environments | before.required_capabilities}, (chip, removed)
+
+
+async def test_a_chip_is_on_from_script_evidence_only_when_the_engine_holds_that_requirement(rolled_back_session):
+    """Town / village / snow are recognised by the keyword ontology but reach no requirement category: the chip must not claim
+    them as an applied requirement. A coastal scripted location is applied and stays on."""
+    from app.models.project_location_requirement import ProjectLocationRequirement
+    from app.services.canonical_project_economics import build_ui_location_categories
+
+    session, a, _ = rolled_back_session
+    for i, text in enumerate(("EXT. SMALL TOWN MAIN STREET", "a quiet village", "snowy mountain pass in the arctic", "Mediterranean beach")):
+        session.add(ProjectLocationRequirement(project_id=a.id, description=text, location_key=f"loc-{i}"))
+    await session.flush()
+    ui = await build_ui_location_categories(session, a.id)
+    for slug in ("small_town_suburban", "snow_arctic"):
+        assert ui[slug]["script_value"] is True and ui[slug]["effective"] is False, slug
+    assert ui["beach_coast"]["effective"] is True and ui["mountains_alpine"]["effective"] is True
+    session.add(ProjectLocationRequirement(project_id=a.id, description="x", category_key="small_town_suburban", override=True))
+    await session.flush()
+    assert (await build_ui_location_categories(session, a.id))["small_town_suburban"]["effective"] is True
+
+
+async def test_project_people_write_persists_residency_on_the_canonical_talent_profile_and_reports_skipped_keys(rolled_back_session):
+    """A visible Save never reports success while discarding a value: residency lands on TalentProfile.known_residencies (the
+    store the qualification engine reads) and is served back; a role with several people reports the key as skipped."""
+    import uuid
+
+    from app.api.v1.cineglobe import PeopleAnswers, post_project_people
+    from app.models.project_person import ProjectPerson
+    from app.models.talent import TalentProfile
+
+    session, a, _ = rolled_back_session
+    out = await post_project_people(str(a.id), PeopleAnswers(answers={"director_nationality": "GB", "director_residency": "FR"}), session)
+    assert out["write_result"]["applied"] == ["director_nationality", "director_residency"]
+    assert out["write_result"]["skipped"] == []
+    director = out["directors"][0]
+    assert director["nationality"] == "GB" and director["residency"] == "FR"
+    tp = (await session.execute(select(TalentProfile).where(TalentProfile.id == uuid.UUID(director["person_id"])))).scalar_one()
+    assert tp.known_residencies == [{"jurisdiction_code": "FR", "confirmed": True}]
+    # two people already in one role: nothing is written and the key is reported, never silently dropped
+    for name in ("P1", "P2"):
+        t = TalentProfile(id=uuid.uuid4(), name=name, role="producer")
+        session.add(t)
+        await session.flush()
+        session.add(ProjectPerson(id=uuid.uuid4(), project_id=a.id, talent_id=t.id, role="producer"))
+    await session.flush()
+    again = await post_project_people(str(a.id), PeopleAnswers(answers={"producer_residency": "FR"}), session)
+    assert again["write_result"]["applied"] == [] and again["write_result"]["skipped"] == [{"key": "producer_residency", "reason": "several people share this role"}]

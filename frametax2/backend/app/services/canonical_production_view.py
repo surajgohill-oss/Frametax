@@ -3047,6 +3047,8 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         people[bucket].append({
             "person_id": str(tp.id), "name": tp.name,
             "nationality": tp.primary_nationality,
+            "residency": next((str(e["jurisdiction_code"]).upper() for e in (tp.known_residencies or [])
+                               if isinstance(e, dict) and e.get("jurisdiction_code") and e.get("confirmed") is not False), None),
             "confirmed": pp.is_confirmed,
             "nationality_resolution_status": tp.nationality_resolution_status,
         })

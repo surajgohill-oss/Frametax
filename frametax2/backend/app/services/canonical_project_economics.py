@@ -1109,6 +1109,18 @@ async def build_ui_location_categories(session: AsyncSession, project_id) -> dic
     scripted_descriptions = [r.description for r in rows if r.category_key is None and r.description]
     overrides = {r.category_key: r.override for r in rows if r.category_key is not None}
 
+    # What the ENGINE reads from the script (SA-1 rows with a location_key, through the same ontology bridge): a chip is
+    # only "on" from script evidence when the engine actually holds that requirement. The ontology also recognises
+    # `town`, `village` and `snow_environments`, which reach no requirement category, so showing those chips as on
+    # would claim a requirement the evaluation never applied.
+    engine_cats = _location_categories_from_descriptions(
+        [r.description for r in rows if r.category_key is None and r.location_key is not None and r.description]
+    )
+
+    def _engine_holds(slug: str) -> bool:
+        cat = _TAXONOMY_SLUG_TO_REQUIREMENT_CATEGORY[slug]
+        return any(engine_cats.get(c, {}).get("effective") for c in (cat, *_CHIP_ALIAS_REQUIREMENT_CATEGORIES.get(cat, ())))
+
     evidence_by_slug: dict[str, list[str]] = {}
     for desc in scripted_descriptions:
         for token in abstract_location(desc):
@@ -1122,7 +1134,7 @@ async def build_ui_location_categories(session: AsyncSession, project_id) -> dic
         evidence_list = evidence_by_slug.get(slug)
         script_value = bool(evidence_list) if evidence_list else None
         override = overrides.get(slug)
-        effective = override if override is not None else bool(script_value)
+        effective = override if override is not None else bool(script_value) and _engine_holds(slug)
         out[slug] = {
             "label": label,
             "script_value": script_value,

@@ -719,9 +719,12 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    applied: list[str] = []
+    skipped: list[dict[str, str]] = []
     for key, value in body.answers.items():
         role, _, field_name = key.rpartition("_")
-        if not role or field_name not in ("name", "nationality"):
+        if not role or field_name not in ("name", "nationality", "residency"):
+            skipped.append({"key": key, "reason": "not a project-scoped person field"})
             continue
         rows = (await db.execute(
             select(ProjectPerson, TalentProfile)
@@ -729,7 +732,9 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
             .where(ProjectPerson.project_id == project.id, ProjectPerson.role == role)
         )).all()
         if len(rows) > 1:
-            continue  # multiple people already in this role — no single-field target, never guessed
+            # multiple people already in this role — no single-field target, never guessed
+            skipped.append({"key": key, "reason": "several people share this role"})
+            continue
 
         if rows:
             pp, talent = rows[0]
@@ -738,6 +743,7 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
                 # role returns to genuinely unknown, not a blank string.
                 await db.delete(pp)
                 await db.delete(talent)
+                applied.append(key)
                 continue
         elif value:
             talent = TalentProfile(id=uuid.uuid4(), name="", role=role)
@@ -746,19 +752,25 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
             pp = ProjectPerson(id=uuid.uuid4(), project_id=project.id, talent_id=talent.id, role=role)
             db.add(pp)
         else:
-            continue  # clearing a field with no existing row — nothing to do
+            applied.append(key)  # clearing a field with no existing row — already empty
+            continue
 
         if field_name == "name":
             talent.name = value
         elif field_name == "nationality":
             talent.primary_nationality = value
+        else:
+            # The canonical residency store the qualification engine reads (same shape as the legacy people write).
+            talent.known_residencies = [{"jurisdiction_code": value, "confirmed": True}] if value else []
         pp.is_confirmed = True
         pp.notes = "Producer-confirmed via Production Facts edit."
+        applied.append(key)
 
     await db.commit()
     from app.services.canonical_production_view import build_generic_pkg_and_economics
     sections = await build_generic_pkg_and_economics(db, project_id)
-    return sections["people"]
+    # Every answered key is reported as applied or skipped (with the reason): a caller never has to infer success.
+    return {**sections["people"], "write_result": {"applied": applied, "skipped": skipped}}
 
 
 # Production Page Integrity: the generic producer-controlled project

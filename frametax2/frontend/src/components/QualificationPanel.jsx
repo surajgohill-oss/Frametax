@@ -37,6 +37,7 @@ export function PeopleRow({ role, people, overrides, onSaved, projectId }) {
   const [res, setRes] = useState(override.residency || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   const currentNat = override.nationality || entries[0]?.nationality || "—";
   const currentRes = override.residency || entries[0]?.residency || "—";
@@ -44,13 +45,22 @@ export function PeopleRow({ role, people, overrides, onSaved, projectId }) {
   async function save() {
     setSaving(true);
     setSaved(false);
+    setError("");
     try {
-      // A project route saves to THAT project's own people rows; the legacy
-      // singleton write resolves the in-memory demo engine's project, so it
-      // is reserved for the no-project case. Residency has no project-scoped
-      // store, so it is only sent on the legacy path.
+      // A project route saves to THAT project's own people rows (nationality and residency are both stored on the
+      // person's canonical TalentProfile); the legacy singleton write resolves the in-memory demo engine's project, so it
+      // is reserved for the no-project case. The server reports every key as applied or skipped: never assume success.
       if (projectId) {
-        await postProjectPeople(projectId, { [`${role.key}_nationality`]: nat || null });
+        const out = await postProjectPeople(projectId, {
+          [`${role.key}_nationality`]: nat || null,
+          [`${role.key}_residency`]: res || null,
+        });
+        const skipped = out?.write_result?.skipped || [];
+        if (skipped.length) {
+          setError(skipped[0].reason === "several people share this role"
+            ? "Not saved — several people share this role" : "Not saved");
+          return;
+        }
       } else {
         await postPeople({
           [`${role.key}_nationality`]: nat || null,
@@ -80,6 +90,7 @@ export function PeopleRow({ role, people, overrides, onSaved, projectId }) {
           {saving ? "Saving…" : "Save"}
         </button>
         {saved && <span className="field-saved">Saved</span>}
+        {error && <span className="field-unavailable">{error}</span>}
       </div>
     </div>
   );
@@ -139,7 +150,9 @@ export function StrFactRow({ factKey, meta, current, onSaved, label }) {
 }
 
 export default function QualificationPanel({ people, facts, script, refetch, projectId }) {
-  const answerable = facts.answerable || {};
+  // Production facts are a singleton-engine write (POST /facts); a project route never serves them as answerable, and
+  // never writes them to the singleton.
+  const answerable = projectId ? {} : (facts.answerable || {});
   const answers = facts.answers || {};
 
   return (

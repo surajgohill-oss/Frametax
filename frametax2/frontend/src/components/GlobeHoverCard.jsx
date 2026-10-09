@@ -105,7 +105,7 @@ function SingleJurisdictionContractBody({ hover }) {
     <>
       <div className="hover-field">
         <div className="text-tertiary small">Program</div>
-        <div className="small">{rec.program_name || "Not available"}</div>
+        <div className="small">{hover.programDisplayNames?.length ? hover.programDisplayNames.join(" + ") : (rec.program_name || "Not available")}</div>
       </div>
       <PotentialFields pot={pot} />
       {(rec.hard_failure_reason || rec.headline) && !(rec.category === "CONDITIONAL_ALTERNATIVE" && pot.ceilingStatus === "CONDITIONAL" && attainability(pot).requirement) && (
