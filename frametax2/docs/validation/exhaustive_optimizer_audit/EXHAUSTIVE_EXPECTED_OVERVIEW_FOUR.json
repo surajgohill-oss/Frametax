@@ -1,0 +1,380 @@
+{
+  "LU": {
+    "project_name": "The Little Utopia",
+    "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+    "cards": [
+      {
+        "slot": 1,
+        "slot_title": "Current Location",
+        "structure_id": "7b1b853e-c06c-4769-8348-48d0836752e2",
+        "economic_identity": "c6cb4a738a4246ada02f88b40fb7c5c1367bcda18847ee23e14c50687a9d37ef",
+        "family": "SINGLE_JURISDICTION",
+        "primary_jurisdiction": "MU",
+        "participants": [
+          "MU"
+        ],
+        "programs": [
+          "mu_edb_incentive"
+        ],
+        "confirmed_npc_usd": 3057794.9,
+        "potential_npc_usd": 2622262.2,
+        "confirmed_incentive_usd": 1306598.1,
+        "maximum_incentive_usd": 1742130.8,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Home country baseline anchor structure"
+      },
+      {
+        "slot": 2,
+        "slot_title": "Leading Jurisdiction",
+        "structure_id": "055ff0ea-7c99-46e3-95f0-5ed3eff6837a",
+        "economic_identity": "ef6ace7fb4d5a224850e4c8a232a352f02041c1ace6d34c332aee30f64d5973a",
+        "family": "STACKED_PROGRAMS",
+        "primary_jurisdiction": "CA-ON",
+        "participants": [
+          "CA-ON"
+        ],
+        "programs": [
+          "Ontario Film and Television Tax Credit (OFTTC)",
+          "Ontario Computer Animation and Special Effects Tax Credit (OCASE)"
+        ],
+        "confirmed_npc_usd": 2935974.4,
+        "potential_npc_usd": 2935974.4,
+        "confirmed_incentive_usd": 1428418.6,
+        "maximum_incentive_usd": 1428418.6,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONFIRMED",
+        "selection_rule_applied": "Cheapest fit-confirmed single jurisdiction outranking anchor"
+      },
+      {
+        "slot": 3,
+        "slot_title": "Optimized Structure",
+        "structure_id": "7759f0a1-461d-42fe-a6df-0c452deb9e26",
+        "economic_identity": "ee1adaa7d2da1a498d5f98d29cc2925c244b8ae114fe6f4b53283c27ced0d0fc",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "BE",
+        "participants": [
+          "BE",
+          "CA-MB"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 3607915.08,
+        "potential_npc_usd": 3515567.56,
+        "confirmed_incentive_usd": 1708417.92,
+        "maximum_incentive_usd": 1800765.44,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Top actionable multi-jurisdiction hybrid structure saving cost"
+      },
+      {
+        "slot": 4,
+        "slot_title": "Conditional Upside",
+        "structure_id": "4f431e89-21a5-48c9-93b7-b5a50e64efe8",
+        "economic_identity": "a887e2c6e36508226c372e46e7389d6ad9038e7bd06de706b85ee5215cb5c1e3",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "US-NY",
+        "participants": [
+          "US-NY",
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "New York State Film Tax Credit Program (Production)"
+        ],
+        "confirmed_npc_usd": 3865478.6,
+        "potential_npc_usd": 2652656.2,
+        "confirmed_incentive_usd": 1228214.4,
+        "maximum_incentive_usd": 2441036.8,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Deepest potential ceiling cost reduction with attainable upside"
+      }
+    ]
+  },
+  "FVD": {
+    "project_name": "F#K Valentine's Day",
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "cards": [
+      {
+        "slot": 1,
+        "slot_title": "Current Location",
+        "structure_id": "86555121-5a0c-4b43-8b55-6569819109e9",
+        "economic_identity": "d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737",
+        "family": "SINGLE_JURISDICTION",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR"
+        ],
+        "programs": [
+          "gr_cash_rebate"
+        ],
+        "confirmed_npc_usd": 3072027.16,
+        "potential_npc_usd": 3072027.16,
+        "confirmed_incentive_usd": 1445659.84,
+        "maximum_incentive_usd": 1445659.84,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONFIRMED",
+        "selection_rule_applied": "Home country baseline anchor structure"
+      },
+      {
+        "slot": 2,
+        "slot_title": "Leading Jurisdiction",
+        "structure_id": "0ce5fdb7-82e1-4c9b-bb89-d9b29ebf273d",
+        "economic_identity": "8bff71e64efbc1a1536595c590809a6fa604ccbec0e9064b066b36ae670e3c29",
+        "family": "STACKED_PROGRAMS",
+        "primary_jurisdiction": "CA-ON",
+        "participants": [
+          "CA-ON"
+        ],
+        "programs": [
+          "Canadian Film or Video Production Tax Credit (CPTC)",
+          "Ontario Film and Television Tax Credit (OFTTC)"
+        ],
+        "confirmed_npc_usd": 3043784.77,
+        "potential_npc_usd": 3043784.77,
+        "confirmed_incentive_usd": 1473902.23,
+        "maximum_incentive_usd": 1473902.23,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONFIRMED",
+        "selection_rule_applied": "Cheapest fit-confirmed single jurisdiction outranking anchor"
+      },
+      {
+        "slot": 3,
+        "slot_title": "Optimized Structure",
+        "structure_id": "dcf45b9a-bfce-4d05-bc10-4fc1eff2f530",
+        "economic_identity": "15c0a3cda747cf2bdc23e05c9cdb401c2b038b0dedb0042a3d9b60843601e1f6",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "BE",
+        "participants": [
+          "BE",
+          "CA-MB"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 3512067.66,
+        "potential_npc_usd": 3408046.62,
+        "confirmed_incentive_usd": 1559519.34,
+        "maximum_incentive_usd": 1663540.38,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Top actionable multi-jurisdiction hybrid structure saving cost"
+      },
+      {
+        "slot": 4,
+        "slot_title": "Conditional Upside",
+        "structure_id": "9317ee07-b846-4911-ab37-004aa2636ec3",
+        "economic_identity": "d19dec22a7fee374538876e8893fcfd14777083428afd7fd7e4cb954710aa78d",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "US-NY",
+        "participants": [
+          "US-NY",
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "New York State Film Tax Credit Program (Production)"
+        ],
+        "confirmed_npc_usd": 3713578.7,
+        "potential_npc_usd": 2619871.9,
+        "confirmed_incentive_usd": 1135368.3,
+        "maximum_incentive_usd": 2229075.1,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Deepest potential ceiling cost reduction with attainable upside"
+      }
+    ]
+  },
+  "BH": {
+    "project_name": "Bad Hombres",
+    "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+    "cards": [
+      {
+        "slot": 1,
+        "slot_title": "Current Location",
+        "structure_id": "b75590a1-f580-4e8d-b098-c6f734fe32f9",
+        "economic_identity": "1ba0245f761165782b42af1d7bc6e4ab7db352f4ec46b0406f39077f81a97f92",
+        "family": "SINGLE_JURISDICTION",
+        "primary_jurisdiction": "US-NM",
+        "participants": [
+          "US-NM"
+        ],
+        "programs": [
+          "New Mexico Film Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 1885112.75,
+        "potential_npc_usd": 1526966.6,
+        "confirmed_incentive_usd": 596910.25,
+        "maximum_incentive_usd": 955056.4,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Home country baseline anchor structure"
+      },
+      {
+        "slot": 2,
+        "slot_title": "Leading Jurisdiction",
+        "structure_id": "50dfcf3a-07d9-4de7-aa73-d7a92a227941",
+        "economic_identity": "78fadae54bc99234ae75127a4c33957e9138a3974ac18c9ff0b2da01f98e4f73",
+        "family": "SINGLE_JURISDICTION",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 1407584.55,
+        "potential_npc_usd": 930056.35,
+        "confirmed_incentive_usd": 1074438.45,
+        "maximum_incentive_usd": 1551966.65,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Cheapest fit-confirmed single jurisdiction outranking anchor"
+      },
+      {
+        "slot": 3,
+        "slot_title": "Optimized Structure",
+        "structure_id": "0850a030-734c-45cd-8575-3903b8fcc5df",
+        "economic_identity": "5c1fbca626db2de56c60f98aa70b161385684dd6dc161e830b667067eb4c1513",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "BE"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 1633423.29,
+        "potential_npc_usd": 1175327.53,
+        "confirmed_incentive_usd": 1071199.71,
+        "maximum_incentive_usd": 1529295.47,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Top actionable multi-jurisdiction hybrid structure saving cost"
+      },
+      {
+        "slot": 4,
+        "slot_title": "Conditional Upside",
+        "structure_id": "9c9222ed-f4d8-4053-b99c-5e6307887031",
+        "economic_identity": "5ad260d6c89f3c179bf7f4fb09a3af70123a0b1218d9db8276e2001ebe3cd257",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "US-NM"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "New Mexico Film Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 1408584.55,
+        "potential_npc_usd": 931306.35,
+        "confirmed_incentive_usd": 1073438.45,
+        "maximum_incentive_usd": 1550716.65,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Deepest potential ceiling cost reduction with attainable upside"
+      }
+    ]
+  },
+  "LLS": {
+    "project_name": "Lips Like Sugar",
+    "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+    "cards": [
+      {
+        "slot": 1,
+        "slot_title": "Current Location",
+        "structure_id": "3fcb1603-1ee0-401e-99fc-043855ed7323",
+        "economic_identity": "e8c60c35712faed633d63be33e3575ef74a44fb29895a86b0334e6cae09e2d57",
+        "family": "SINGLE_JURISDICTION",
+        "primary_jurisdiction": "US-CA",
+        "participants": [
+          "US-CA"
+        ],
+        "programs": [
+          "California Film & Television Tax Credit Program 4.0"
+        ],
+        "confirmed_npc_usd": 8524375.1,
+        "potential_npc_usd": 8030192.4,
+        "confirmed_incentive_usd": 3459278.9,
+        "maximum_incentive_usd": 3953461.6,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Home country baseline anchor structure"
+      },
+      {
+        "slot": 2,
+        "slot_title": "Leading Jurisdiction",
+        "structure_id": "ef091955-8f86-41b2-9c4d-35d63c02b4d7",
+        "economic_identity": "78fadae54bc99234ae75127a4c33957e9138a3974ac18c9ff0b2da01f98e4f73",
+        "family": "SINGLE_JURISDICTION",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 7536009.7,
+        "potential_npc_usd": 5559278.9,
+        "confirmed_incentive_usd": 4447644.3,
+        "maximum_incentive_usd": 6424375.1,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Cheapest fit-confirmed single jurisdiction outranking anchor"
+      },
+      {
+        "slot": 3,
+        "slot_title": "Optimized Structure",
+        "structure_id": "ae98991b-88f6-4bee-aafb-cfa29409ffcf",
+        "economic_identity": "5038dba20c7ffa0968de3e93406c48432577a7072ecb06b37c093f53fc0301ec",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "BE"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_npc_usd": 7759809.7,
+        "potential_npc_usd": 5790278.9,
+        "confirmed_incentive_usd": 4446444.3,
+        "maximum_incentive_usd": 6415975.1,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Top actionable multi-jurisdiction hybrid structure saving cost"
+      },
+      {
+        "slot": 4,
+        "slot_title": "Conditional Upside",
+        "structure_id": "52f2f82c-edac-422b-aee5-486f678d5836",
+        "economic_identity": "60dc0a763a461b59b972c3a419e18605db7a5efdb84fa669a0097ef31fcc49f1",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "US-CA"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "California Film & Television Tax Credit Program 4.0"
+        ],
+        "confirmed_npc_usd": 7540009.7,
+        "potential_npc_usd": 5569278.9,
+        "confirmed_incentive_usd": 4443644.3,
+        "maximum_incentive_usd": 6414375.1,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_rule_applied": "Deepest potential ceiling cost reduction with attainable upside"
+      }
+    ]
+  }
+}
