@@ -164,16 +164,18 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       setFailed(true);
       return;
     }
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.35;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(size, size);
     mount.innerHTML = "";
     mount.appendChild(renderer.domElement);
 
     // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
-    const ambient = new THREE.AmbientLight(0xffffff, 0.95);
+    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xffffff, 1.8);
-    key.position.set(1.2, 1.8, 4.5);
+    const key = new THREE.DirectionalLight(0xffffff, 1.4);
+    key.position.set(2.5, 2.0, 4.0);
     scene.add(key);
     const fill = new THREE.DirectionalLight(0x6f96c0, 0.28);
     fill.position.set(2.2, -1.2, -1.2);
@@ -184,7 +186,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
-      new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 150, specular: new THREE.Color("#2b3d57"), emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.3 }),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0 }),
     );
     group.add(earth);
     const clouds = new THREE.Mesh(
@@ -199,8 +201,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     glow.visible = false;
     group.add(glow);
     const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
-    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.4, 0.45);
-    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.6, 0.36);
+    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.4, 0.3);
+    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.6, 0.24);
     scene.add(rim);
     scene.add(halo);
 
@@ -208,7 +210,6 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     cloudTex.colorSpace = THREE.SRGBColorSpace;
     clouds.material.map = cloudTex;
     let earthTex = null;
-    let specTex = null;
     const render = () => renderer.render(scene, camera);
     let cancelled = false;
 
@@ -219,21 +220,18 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       const t = themeOf(night ? "night" : "day");
       rim.material.uniforms.uCool.value.set(t.rim);
       halo.material.uniforms.uCool.value.set(stateRef.current.accent ? mix(t.atmosphere, stateRef.current.accent, 0.4) : t.atmosphere);
-      ambient.intensity = night ? 0.6 : 0.78;
-      key.intensity = night ? 0.85 : 1.0;
+      ambient.intensity = night ? 0.7 : 1.2;
+      key.intensity = night ? 0.9 : 1.4;
       earth.material.color.set(night ? "#c9d6ea" : "#ffffff");
       render();
     };
-    loadMarble().then(({ img, spec }) => {
+    loadMarble().then(({ img }) => {
       if (cancelled) return;
       earthTex = new THREE.Texture(img);
       earthTex.colorSpace = THREE.SRGBColorSpace;
       earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
       earthTex.needsUpdate = true;
-      specTex = new THREE.CanvasTexture(spec);
       earth.material.map = earthTex;
-      earth.material.emissiveMap = earthTex; // self-lit floor so the ocean never collapses to black on the dark stage
-      earth.material.specularMap = specTex;
       earth.material.needsUpdate = true;
       render();
     }).catch(() => { /* imagery unavailable: the plain lit sphere stays, nothing else breaks */ });
@@ -249,8 +247,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       last = now;
       group.rotation.y += 0.000012 * dt;          // very slow turn of the Earth (~9 min per revolution)
       clouds.rotation.y += 0.00003 * dt;          // the cloud deck drifts ahead of it, independently (~3.5 min per lap)
-      key.position.x = 1.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
-      key.position.y = 1.8 + Math.cos(now / 11000) * 0.12;
+      key.position.x = 2.5 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
+      key.position.y = 2.0 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
         const p = 0.5 + 0.5 * Math.sin(now / 1500);
         glow.scale.setScalar(1 + 0.3 * p);
@@ -280,7 +278,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       motionQuery.removeEventListener("change", sync);
       renderer.dispose();
       for (const m of [earth, clouds, glow, rim, halo]) { m.geometry.dispose(); m.material.dispose(); }
-      earthTex?.dispose(); specTex?.dispose(); cloudTex.dispose();
+      earthTex?.dispose(); cloudTex.dispose();
       // dispose() alone leaves the WebGL context lingering until GC; this mounts on every route alongside a production Globe.
       try { renderer.forceContextLoss(); } catch { /* context already lost */ }
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
