@@ -293,12 +293,22 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
   const theme = themeOf(themeKey);
   // The brand stage: near-black navy with the localized maritime bloom directly behind the sphere.
   const accentRim = /^#[0-9a-f]{6}$/i.test(overlay?.accent || "") ? `${overlay.accent}55` : "rgba(50, 130, 240, 0.22)";
+  // The clipped inner stage keeps the planet's edge razor-clean; the glow, edge shade and stage tint live on the unclipped frame
+  // and on a non-interactive overlay above the canvas, so the sphere sits in the rail instead of reading as a cut-out.
+  const frame = {
+    width: size, height: size, position: "relative", boxSizing: "border-box", borderRadius: "50%",
+    border: "1px solid rgba(255, 255, 255, 0.04)",
+    boxShadow: "0 0 24px rgba(30, 90, 160, 0.15), 0 4px 12px rgba(0, 0, 0, 0.4)",
+  };
   const stage = {
-    width: size, height: size, borderRadius: "50%", overflow: "hidden",
+    position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden",
     // A vector circle mask, its own stacking context and a GPU layer: the planet meets the sidebar with a clean edge.
     clipPath: "circle(50% at 50% 50%)", WebkitClipPath: "circle(50% at 50% 50%)", isolation: "isolate", transform: "translateZ(0)",
     background: `radial-gradient(circle at 50% 50%, ${theme.bloom}e6 0%, ${theme.bloom}66 36%, ${theme.backdrop[0]} 74%)`,
-    boxShadow: `inset 0 0 0 0.5px rgba(244, 236, 217, 0.12), inset 0 0 8px ${accentRim}`,
+  };
+  const edge = {
+    position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none",
+    boxShadow: `inset 0 0 12px rgba(0, 0, 0, 0.6), inset 0 0 8px ${accentRim}`,
   };
 
   // Same static CSS fallback Globe3D.jsx uses when WebGL is unavailable.
@@ -312,14 +322,16 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
   return (
     <div
-      ref={mountRef}
       className={`compact-sidebar-globe ${className}`.trim()}
-      style={stage}
+      style={frame}
       role="img"
       aria-label={overlay?.portfolio ? "CineGlobe: the active portfolio" : overlay?.pulse ? "CineGlobe: this project's location" : "CineGlobe"}
       data-principal={overlay?.principalCode || ""}
       data-projects={overlay?.portfolio ? overlay.projects : ""}
       data-accent={overlay?.accent || ""}
-    />
+    >
+      <div ref={mountRef} style={stage} />
+      <div style={edge} />
+    </div>
   );
 }
