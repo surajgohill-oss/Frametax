@@ -1,0 +1,224 @@
+{
+  "metadata": {
+    "title": "CineGlobe Three-Anchor Reconciliation Golden Fixtures",
+    "version": "1.0.0",
+    "audit_scope": "The Little Utopia (MU), F#K Valentine's Day (GR), Lips Like Sugar (US-CA)",
+    "integrity_rule": "Frozen expected values derived strictly from verified primary sources and established statutory rules. Zero circularity."
+  },
+  "projects": {
+    "LU": {
+      "project_name": "The Little Utopia",
+      "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "home_jurisdiction": "MU",
+      "program_slug": "mu_edb_incentive",
+      "source_control": {
+        "document": "The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf",
+        "date": "2025-06-03",
+        "issuer": "Film Studios Mauritius Ltd (Philippa von Sachsen-Altenburg, Line Producer)",
+        "authority_tier": "PRODUCER_BUDGET_ESTIMATE",
+        "gross_budget_usd": 4364393.0,
+        "stated_rebate_line_usd": 1275411.0,
+        "stated_rebate_account": "9001",
+        "stated_rate": 0.35,
+        "implied_qpe_base_usd": 3644031.0,
+        "source_npc_usd": 3088982.0,
+        "excluded_contingency_usd": 301131.0,
+        "excluded_atl_travel_usd": 397279.0,
+        "excluded_la_editorial_usd": 9068.0
+      },
+      "statutory_authority_control": {
+        "legislation": "Economic Development Board Mauritius (Film Rebate Scheme Regulations 2018)",
+        "administering_agency": "Economic Development Board (EDB)",
+        "authority_tier": "STATUTORY_LEGISLATION",
+        "statutory_floor_rate": 0.3,
+        "discretionary_ceiling_rate": 0.4,
+        "min_qpe_usd": 100000.0,
+        "supported_qpe_usd": 3644031.0,
+        "supported_floor_incentive_usd": 1093209.3,
+        "supported_ceiling_incentive_usd": 1457612.4,
+        "supported_floor_npc_usd": 3271183.7,
+        "supported_ceiling_npc_usd": 2906780.6
+      },
+      "engine_observed": {
+        "engine_gross_budget_usd": 4364395.0,
+        "engine_qpe_usd": 4355327.0,
+        "engine_floor_rate": 0.3,
+        "engine_ceiling_rate": 0.4,
+        "engine_floor_incentive_usd": 1306598.1,
+        "engine_ceiling_incentive_usd": 1742130.8,
+        "engine_floor_npc_usd": 3057794.9,
+        "engine_ceiling_npc_usd": 2622262.2
+      },
+      "engine_defects": [
+        {
+          "defect_id": "DEFECT-LU-001",
+          "severity": "HIGH",
+          "description": "Undeployed contingency reserve ($301,131.00) improperly qualified as confirmed QPE. EDB requires audited actual spend incurred in Mauritius; unspent reserves are statutorily non-qualifying.",
+          "qpe_inflation_usd": 301131.0,
+          "floor_incentive_inflation_usd": 90339.3
+        },
+        {
+          "defect_id": "DEFECT-LU-002",
+          "severity": "MEDIUM",
+          "description": "Non-Mauritian ATL travel and living ($397,279.00) qualified without establishing Mauritian airline or hotel nexus.",
+          "qpe_inflation_usd": 397279.0,
+          "floor_incentive_inflation_usd": 119183.7
+        }
+      ],
+      "variance_bridge": {
+        "source_qpe": 3644031.0,
+        "engine_qpe": 4355327.0,
+        "qpe_difference": 711296.0,
+        "bridge_components": {
+          "contingency_improperly_included": 301131.0,
+          "atl_travel_improperly_included": 397279.0,
+          "insurance_other_improperly_included": 12886.0
+        },
+        "unexplained_residual": 0.0
+      },
+      "audit_status": "RECONCILED_WITH_ENGINE_DEFECTS"
+    },
+    "FVD": {
+      "project_name": "F#K Valentine's Day",
+      "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "home_jurisdiction": "GR",
+      "program_slug": "gr_cash_rebate",
+      "source_control": {
+        "document": "V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+        "date": "2024-04-12",
+        "issuer": "V-Brat Productions / Greek Line Producer",
+        "authority_tier": "PRODUCER_BUDGET_ESTIMATE",
+        "gross_budget_usd": 4517687.0,
+        "greek_shoot_qpe_usd": 1297010.0,
+        "stated_rebate_line_usd": 518804.0,
+        "stated_rebate_account": "8004",
+        "stated_rate": 0.4,
+        "source_npc_usd": 3998883.0,
+        "excluded_atl_cast_usd": 1246288.0,
+        "excluded_producers_usd": 401831.0,
+        "excluded_story_rights_usd": 252650.0,
+        "excluded_finance_fee_usd": 453583.0,
+        "excluded_contingency_usd": 362866.0,
+        "excluded_bond_fee_usd": 72573.0
+      },
+      "statutory_authority_control": {
+        "legislation": "Hellenic Republic Law 4487/2017 (arts. 20-38), Law 4704/2020, JMD 607434 / 140524",
+        "administering_agency": "EKOME / Enterprise Greece / Hellenic Film Office",
+        "authority_tier": "STATUTORY_LEGISLATION",
+        "statutory_rate": 0.4,
+        "statutory_ceiling_cap_pct": 0.8,
+        "cap_base": "total_worldwide_budget",
+        "min_eligible_greek_spend_eur": 200000.0,
+        "min_total_budget_eur": 400000.0,
+        "supported_greek_qpe_usd": 1297010.0,
+        "supported_incentive_usd": 518804.0,
+        "supported_npc_usd": 3998883.0
+      },
+      "engine_observed": {
+        "engine_gross_budget_usd": 4517687.0,
+        "engine_qpe_usd": 3614149.6,
+        "engine_rate": 0.4,
+        "engine_incentive_usd": 1445659.84,
+        "engine_npc_usd": 3072027.16
+      },
+      "engine_defects": [
+        {
+          "defect_id": "DEFECT-FVD-001",
+          "severity": "CRITICAL",
+          "description": "Statutory 80% ceiling cap ($3,614,149.60 = 80.00% of $4,517,687) substituted as actual QPE. The engine qualified foreign ATL cast ($1,246,288), producers ($401,831), story rights ($252,650), etc., exceeding the cap, which clamped QPE to the 80% ceiling. A statutory ceiling is an upper bound, never a substitute for actual qualifying spend.",
+          "qpe_inflation_usd": 2317139.6,
+          "incentive_inflation_usd": 926855.84
+        }
+      ],
+      "variance_bridge": {
+        "source_qpe": 1297010.0,
+        "engine_qpe": 3614149.6,
+        "qpe_difference": 2317139.6,
+        "bridge_components": {
+          "foreign_atl_cast_improperly_qualified_pre_cap": 1246288.0,
+          "foreign_producers_improperly_qualified_pre_cap": 401831.0,
+          "foreign_story_rights_improperly_qualified_pre_cap": 252650.0,
+          "atl_travel_living_improperly_qualified_pre_cap": 174546.0,
+          "admin_expenses_improperly_qualified_pre_cap": 170535.0,
+          "foreign_post_deliverables_improperly_qualified_pre_cap": 71289.6
+        },
+        "unexplained_residual": 0.0
+      },
+      "audit_status": "RECONCILED_WITH_ENGINE_DEFECTS"
+    },
+    "LLS": {
+      "project_name": "Lips Like Sugar",
+      "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "home_jurisdiction": "US-CA",
+      "program_slug": "ca_film_30",
+      "source_control": {
+        "document": "v7LLS_RevBudget_T1B_27days_022524.pdf",
+        "date": "2024-02-25",
+        "issuer": "Production Line Producer / UPM",
+        "authority_tier": "PRODUCER_BUDGET_ESTIMATE",
+        "gross_budget_usd": 11983654.0,
+        "implied_btl_qpe_usd": 6012296.0,
+        "stated_rebate_line_usd": 1503074.0,
+        "stated_rebate_account": "9998",
+        "stated_rate": 0.25,
+        "source_npc_usd": 10480580.0,
+        "excluded_atl_total_usd": 3174975.0,
+        "excluded_financing_usd": 1700000.0,
+        "excluded_residuals_reserve_usd": 400000.0,
+        "excluded_contingency_usd": 400000.0,
+        "excluded_bond_fee_usd": 115000.0,
+        "excluded_legal_usd": 150000.0
+      },
+      "statutory_government_reservation": {
+        "document": "3C-122 Lips Like Sugar CAL 8-053.pdf",
+        "date": "2023-03-06",
+        "issuer": "California Film Commission (CFC)",
+        "authority_tier": "STATUTORY_GOVERNMENT_APPROVAL",
+        "credit_allocation_letter_number": "CAL #8-053",
+        "program_generation": "California Film & Television Tax Credit Program 3.0",
+        "statutory_base_rate": 0.25,
+        "allocated_tax_credit_reserved_usd": 1470365.0,
+        "jobs_ratio_score": 3.26035,
+        "implied_qualified_spend_base_usd": 5881460.0,
+        "binding_status": "Binding government reservation under Program 3.0"
+      },
+      "engine_observed": {
+        "engine_gross_budget_usd": 11983654.0,
+        "engine_qpe_usd": 9883654.0,
+        "engine_rate": 0.35,
+        "engine_incentive_usd": 3459278.9,
+        "engine_npc_usd": 8524375.1
+      },
+      "engine_defects": [
+        {
+          "defect_id": "DEFECT-LLS-001",
+          "severity": "CRITICAL",
+          "description": "Above-The-Line costs ($3,174,975.00: script $314k, producing $1.414M, directing $267k, cast $863k, ATL travel $61k, ATL fringes $255k) and Residuals Reserve ($400,000.00) improperly qualified as QPE. Cal. Rev. & Tax Code \u00a7 17053.98 statutorily excludes all Above-The-Line expenses and post-release residuals reserves.",
+          "qpe_inflation_usd": 3871358.0,
+          "incentive_inflation_usd": 1354975.3
+        },
+        {
+          "defect_id": "DEFECT-LLS-002",
+          "severity": "CRITICAL",
+          "description": "Program generation mismatch: engine evaluated production under Program 4.0 (AB 1138, effective 2025+) with a 35% base rate, whereas the production applied for, was awarded, and budgeted under Program 3.0 (2023/2024, 25% independent BTL rate). Overstates incentive by $1,988,913.90 compared to CFC binding reservation ($1,470,365.00).",
+          "rate_inflation": "35% applied vs 25% statutory Program 3.0 rate",
+          "incentive_overstatement_vs_cfc_reservation_usd": 1988913.9
+        }
+      ],
+      "variance_bridge": {
+        "source_qpe": 6012296.0,
+        "engine_qpe": 9883654.0,
+        "qpe_difference": 3871358.0,
+        "bridge_components": {
+          "atl_costs_improperly_qualified": 3174975.0,
+          "residuals_reserve_improperly_qualified": 400000.0,
+          "bond_fee_improperly_qualified": 115000.0,
+          "legal_costs_improperly_qualified": 150000.0,
+          "general_expenses_improperly_qualified": 31383.0
+        },
+        "unexplained_residual": 0.0
+      },
+      "audit_status": "RECONCILED_WITH_ENGINE_DEFECTS"
+    }
+  }
+}
