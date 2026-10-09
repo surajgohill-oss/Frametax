@@ -111,6 +111,10 @@ function SingleJurisdictionContractBody({ hover }) {
       {(rec.hard_failure_reason || rec.headline) && !(rec.category === "CONDITIONAL_ALTERNATIVE" && pot.ceilingStatus === "CONDITIONAL" && attainability(pot).requirement) && (
         <div className="hover-field"><div className="text-tertiary small">Blocker</div><div className="small">{briefly(rec.hard_failure_reason || rec.headline)}</div></div>
       )}
+      {/* A blocked/unavailable record with no served reason text is never silently blank: state the served exit stage. */}
+      {["UNAVAILABLE", "NOT_SUITABLE_FOR_THIS_PRODUCTION", "PROGRAM_DATA_INCOMPLETE"].includes(rec.category) && !(rec.hard_failure_reason || rec.headline) && (
+        <div className="hover-field"><div className="text-tertiary small">Blocker</div><div className="small">{rec.first_exit_stage ? String(rec.first_exit_stage).toLowerCase().replace(/_/g, " ") : "Not stated in the served record"}</div></div>
+      )}
       {(rec.missing_conditions || []).length > 0 && !hover.incentivePotential && pot.ceilingStatus !== "CONDITIONAL" && (
         <div className="hover-field"><div className="text-tertiary small">Missing fact</div><div className="small">{rec.missing_conditions[0]}{rec.missing_conditions.length > 1 ? ` · +${rec.missing_conditions.length - 1} more in Inspector` : ""}</div></div>
       )}

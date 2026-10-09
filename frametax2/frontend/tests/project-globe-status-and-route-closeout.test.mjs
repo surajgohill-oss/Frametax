@@ -87,3 +87,10 @@ test("hover economics: an unpriced jurisdiction still states all four figures fr
   assert.doesNotMatch(src, /"Not priced"\}<\/div><\/div>\s*\)\}\s*\{\(rec\.hard_failure_reason/, "the bare Not priced fallback is gone from the contract body");
   assert.doesNotMatch(src, /Maximum rate/, "no percentage fields on the hover");
 });
+
+test("hover: a blocked/unavailable record with no served reason states its served exit stage, never a blank blocker", () => {
+  const src = readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
+  assert.match(src, /!\(rec\.hard_failure_reason \|\| rec\.headline\) && \(/);
+  assert.match(src, /rec\.first_exit_stage/);
+  assert.match(src, /Not stated in the served record/);
+});
