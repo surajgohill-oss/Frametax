@@ -1,0 +1,246 @@
+{
+  "LU": {
+    "project_name": "The Little Utopia",
+    "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+    "recommended_options_total": 0,
+    "evaluated_alternatives_total": 557,
+    "opportunities_requiring_facts_total": 25,
+    "hard_blocked_total": 0,
+    "dominated_search_total": 0,
+    "summarized_rule_rejected_total": 0,
+    "available_programs_in_selected_jurisdictions": {
+      "MU": [
+        "mu_edb_incentive"
+      ],
+      "GR": [
+        "gr_cash_rebate"
+      ],
+      "US-NM": [
+        "us_nm_film_credit"
+      ],
+      "US-CA": [
+        "ca_film_30"
+      ],
+      "CA-MB": [
+        "ca_mb_film_video_credit"
+      ],
+      "CA-ON": [
+        "on_ofttc",
+        "on_opstc",
+        "ca_on_ocase",
+        "ca_federal_cptc",
+        "ca_federal_pstc"
+      ],
+      "QA": [
+        "qa_screen_production_incentive"
+      ],
+      "CA-NL": [
+        "ca_nl_film_credit"
+      ],
+      "BE": [
+        "be_tax_shelter"
+      ],
+      "IT": [
+        "it_tax_credit_foreign"
+      ],
+      "MT": [
+        "mt_mfc_rebate"
+      ],
+      "RO": [
+        "ro_cash_rebate"
+      ],
+      "BG": [
+        "bg_film_encouragement_act_rebate"
+      ],
+      "HU": [
+        "hu_hipa_rebate"
+      ],
+      "ZA": [
+        "za_dtic_foreign_film"
+      ]
+    }
+  },
+  "FVD": {
+    "project_name": "F#K Valentine's Day",
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "recommended_options_total": 0,
+    "evaluated_alternatives_total": 646,
+    "opportunities_requiring_facts_total": 27,
+    "hard_blocked_total": 0,
+    "dominated_search_total": 0,
+    "summarized_rule_rejected_total": 0,
+    "available_programs_in_selected_jurisdictions": {
+      "MU": [
+        "mu_edb_incentive"
+      ],
+      "GR": [
+        "gr_cash_rebate"
+      ],
+      "US-NM": [
+        "us_nm_film_credit"
+      ],
+      "US-CA": [
+        "ca_film_30"
+      ],
+      "CA-MB": [
+        "ca_mb_film_video_credit"
+      ],
+      "CA-ON": [
+        "on_ofttc",
+        "on_opstc",
+        "ca_on_ocase",
+        "ca_federal_cptc",
+        "ca_federal_pstc"
+      ],
+      "QA": [
+        "qa_screen_production_incentive"
+      ],
+      "CA-NL": [
+        "ca_nl_film_credit"
+      ],
+      "BE": [
+        "be_tax_shelter"
+      ],
+      "IT": [
+        "it_tax_credit_foreign"
+      ],
+      "MT": [
+        "mt_mfc_rebate"
+      ],
+      "RO": [
+        "ro_cash_rebate"
+      ],
+      "BG": [
+        "bg_film_encouragement_act_rebate"
+      ],
+      "HU": [
+        "hu_hipa_rebate"
+      ],
+      "ZA": [
+        "za_dtic_foreign_film"
+      ]
+    }
+  },
+  "BH": {
+    "project_name": "Bad Hombres",
+    "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+    "recommended_options_total": 0,
+    "evaluated_alternatives_total": 275,
+    "opportunities_requiring_facts_total": 25,
+    "hard_blocked_total": 0,
+    "dominated_search_total": 0,
+    "summarized_rule_rejected_total": 0,
+    "available_programs_in_selected_jurisdictions": {
+      "MU": [
+        "mu_edb_incentive"
+      ],
+      "GR": [
+        "gr_cash_rebate"
+      ],
+      "US-NM": [
+        "us_nm_film_credit"
+      ],
+      "US-CA": [
+        "ca_film_30"
+      ],
+      "CA-MB": [
+        "ca_mb_film_video_credit"
+      ],
+      "CA-ON": [
+        "on_ofttc",
+        "on_opstc",
+        "ca_on_ocase",
+        "ca_federal_cptc",
+        "ca_federal_pstc"
+      ],
+      "QA": [
+        "qa_screen_production_incentive"
+      ],
+      "CA-NL": [
+        "ca_nl_film_credit"
+      ],
+      "BE": [
+        "be_tax_shelter"
+      ],
+      "IT": [
+        "it_tax_credit_foreign"
+      ],
+      "MT": [
+        "mt_mfc_rebate"
+      ],
+      "RO": [
+        "ro_cash_rebate"
+      ],
+      "BG": [
+        "bg_film_encouragement_act_rebate"
+      ],
+      "HU": [
+        "hu_hipa_rebate"
+      ],
+      "ZA": [
+        "za_dtic_foreign_film"
+      ]
+    }
+  },
+  "LLS": {
+    "project_name": "Lips Like Sugar",
+    "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+    "recommended_options_total": 0,
+    "evaluated_alternatives_total": 680,
+    "opportunities_requiring_facts_total": 25,
+    "hard_blocked_total": 0,
+    "dominated_search_total": 0,
+    "summarized_rule_rejected_total": 0,
+    "available_programs_in_selected_jurisdictions": {
+      "MU": [
+        "mu_edb_incentive"
+      ],
+      "GR": [
+        "gr_cash_rebate"
+      ],
+      "US-NM": [
+        "us_nm_film_credit"
+      ],
+      "US-CA": [
+        "ca_film_30"
+      ],
+      "CA-MB": [
+        "ca_mb_film_video_credit"
+      ],
+      "CA-ON": [
+        "on_ofttc",
+        "on_opstc",
+        "ca_on_ocase",
+        "ca_federal_cptc",
+        "ca_federal_pstc"
+      ],
+      "QA": [
+        "qa_screen_production_incentive"
+      ],
+      "CA-NL": [
+        "ca_nl_film_credit"
+      ],
+      "BE": [
+        "be_tax_shelter"
+      ],
+      "IT": [
+        "it_tax_credit_foreign"
+      ],
+      "MT": [
+        "mt_mfc_rebate"
+      ],
+      "RO": [
+        "ro_cash_rebate"
+      ],
+      "BG": [
+        "bg_film_encouragement_act_rebate"
+      ],
+      "HU": [
+        "hu_hipa_rebate"
+      ],
+      "ZA": [
+        "za_dtic_foreign_film"
+      ]
+    }
+  }
+}

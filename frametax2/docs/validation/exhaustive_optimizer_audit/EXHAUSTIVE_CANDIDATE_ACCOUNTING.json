@@ -1,0 +1,400 @@
+{
+  "LU": {
+    "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+    "project_name": "The Little Utopia",
+    "fingerprint": "d202f73ad172647767e03651e3b1b025a0593b97781f6747c0cf72ec7d5a1ba6",
+    "engine_version": "canonical-1.105.0",
+    "generated_candidate_count": 223058,
+    "persisted_candidate_count": 977,
+    "aggregated_candidate_count": 222081,
+    "priced_count": 197534,
+    "unpriced_count": 25524,
+    "exact_equality": true,
+    "persisted_by_structure_type": {
+      "hybrid": 728,
+      "full_relocation": 117,
+      "component_relocation": 103,
+      "treaty_coproduction": 25,
+      "multi_program": 3,
+      "single_country": 1
+    },
+    "dominating_references_total": 1,
+    "dominating_references_retained_in_db": 1,
+    "duplicate_economic_identities_count": 0,
+    "aggregate_group_dominance_violations": 0,
+    "by_disposition": {
+      "RULE_REJECTED": 25206,
+      "CO_PRO_OPPORTUNITY": 25,
+      "DOMINATED_WITH_PROOF": 274,
+      "QUALIFICATION_HARD_FAIL": 1,
+      "FEASIBILITY_REVIEW_REQUIRED": 8,
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10
+    },
+    "by_reason": [
+      {
+        "count": 25,
+        "candidate_status": "CO_PRO_OPPORTUNITY",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 274,
+        "candidate_status": "DOMINATED_WITH_PROOF",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 5,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+      },
+      {
+        "count": 2,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "NON_GUARANTEED_SELECTIVE"
+      },
+      {
+        "count": 1,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "SUPERSEDED"
+      },
+      {
+        "count": 1,
+        "candidate_status": "QUALIFICATION_HARD_FAIL",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 2,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 60,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "MINIMUM_SPEND_FAIL"
+      },
+      {
+        "count": 2,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "OTHER_EXPLICIT"
+      },
+      {
+        "count": 7,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "STATUTORY_CONDITIONS_UNMET"
+      },
+      {
+        "count": 25112,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "THRESHOLD_NOT_MET"
+      },
+      {
+        "count": 23,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "UNRESOLVED_NO_AUTHORITY"
+      },
+      {
+        "count": 9,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "PRICING_BLOCKED"
+      },
+      {
+        "count": 1,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+      }
+    ]
+  },
+  "FVD": {
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "project_name": "F#K Valentine's Day",
+    "fingerprint": "34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb",
+    "engine_version": "canonical-1.105.0",
+    "generated_candidate_count": 1215900,
+    "persisted_candidate_count": 2108,
+    "aggregated_candidate_count": 1213792,
+    "priced_count": 253233,
+    "unpriced_count": 962667,
+    "exact_equality": true,
+    "persisted_by_structure_type": {
+      "hybrid": 1821,
+      "component_relocation": 138,
+      "full_relocation": 116,
+      "treaty_coproduction": 27,
+      "multi_program": 5,
+      "single_country": 1
+    },
+    "dominating_references_total": 1,
+    "dominating_references_retained_in_db": 1,
+    "duplicate_economic_identities_count": 0,
+    "aggregate_group_dominance_violations": 0,
+    "by_disposition": {
+      "RULE_REJECTED": 961807,
+      "CO_PRO_OPPORTUNITY": 27,
+      "DOMINATED_WITH_PROOF": 815,
+      "FEASIBILITY_REVIEW_REQUIRED": 8,
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10
+    },
+    "by_reason": [
+      {
+        "count": 27,
+        "candidate_status": "CO_PRO_OPPORTUNITY",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 815,
+        "candidate_status": "DOMINATED_WITH_PROOF",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 5,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+      },
+      {
+        "count": 2,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "NON_GUARANTEED_SELECTIVE"
+      },
+      {
+        "count": 1,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "SUPERSEDED"
+      },
+      {
+        "count": 6,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 109,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "MINIMUM_SPEND_FAIL"
+      },
+      {
+        "count": 4,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "OTHER_EXPLICIT"
+      },
+      {
+        "count": 1380,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "PAIRWISE_INCOMPATIBLE"
+      },
+      {
+        "count": 8,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "STATUTORY_CONDITIONS_UNMET"
+      },
+      {
+        "count": 960251,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "THRESHOLD_NOT_MET"
+      },
+      {
+        "count": 49,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "UNRESOLVED_NO_AUTHORITY"
+      },
+      {
+        "count": 9,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "PRICING_BLOCKED"
+      },
+      {
+        "count": 1,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+      }
+    ]
+  },
+  "BH": {
+    "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+    "project_name": "Bad Hombres",
+    "fingerprint": "f3bec951c9c673f01a710eeeb39133d6df0f7827fb70f48cea4046a9553a877b",
+    "engine_version": "canonical-1.105.0",
+    "generated_candidate_count": 11851,
+    "persisted_candidate_count": 1126,
+    "aggregated_candidate_count": 10725,
+    "priced_count": 11305,
+    "unpriced_count": 546,
+    "exact_equality": true,
+    "persisted_by_structure_type": {
+      "hybrid": 837,
+      "component_relocation": 144,
+      "full_relocation": 116,
+      "treaty_coproduction": 25,
+      "multi_program": 3,
+      "single_country": 1
+    },
+    "dominating_references_total": 1,
+    "dominating_references_retained_in_db": 1,
+    "duplicate_economic_identities_count": 0,
+    "aggregate_group_dominance_violations": 0,
+    "by_disposition": {
+      "RULE_REJECTED": 141,
+      "CO_PRO_OPPORTUNITY": 25,
+      "DOMINATED_WITH_PROOF": 361,
+      "FEASIBILITY_REVIEW_REQUIRED": 8,
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 11
+    },
+    "by_reason": [
+      {
+        "count": 25,
+        "candidate_status": "CO_PRO_OPPORTUNITY",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 361,
+        "candidate_status": "DOMINATED_WITH_PROOF",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 5,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+      },
+      {
+        "count": 2,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "NON_GUARANTEED_SELECTIVE"
+      },
+      {
+        "count": 1,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "SUPERSEDED"
+      },
+      {
+        "count": 5,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 87,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "MINIMUM_SPEND_FAIL"
+      },
+      {
+        "count": 3,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "OTHER_EXPLICIT"
+      },
+      {
+        "count": 8,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "STATUTORY_CONDITIONS_UNMET"
+      },
+      {
+        "count": 38,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "UNRESOLVED_NO_AUTHORITY"
+      },
+      {
+        "count": 10,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "PRICING_BLOCKED"
+      },
+      {
+        "count": 1,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+      }
+    ]
+  },
+  "LLS": {
+    "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+    "project_name": "Lips Like Sugar",
+    "fingerprint": "937fc893b30cf2746a560e385b19fddd1b64b519fb614dd9b8396738a06a5eea",
+    "engine_version": "canonical-1.105.0",
+    "generated_candidate_count": 1298334,
+    "persisted_candidate_count": 2094,
+    "aggregated_candidate_count": 1296240,
+    "priced_count": 1295937,
+    "unpriced_count": 2397,
+    "exact_equality": true,
+    "persisted_by_structure_type": {
+      "hybrid": 1814,
+      "component_relocation": 132,
+      "full_relocation": 117,
+      "treaty_coproduction": 25,
+      "multi_program": 5,
+      "single_country": 1
+    },
+    "dominating_references_total": 1,
+    "dominating_references_retained_in_db": 1,
+    "duplicate_economic_identities_count": 0,
+    "aggregate_group_dominance_violations": 0,
+    "by_disposition": {
+      "RULE_REJECTED": 1530,
+      "CO_PRO_OPPORTUNITY": 25,
+      "DOMINATED_WITH_PROOF": 824,
+      "FEASIBILITY_REVIEW_REQUIRED": 8,
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10
+    },
+    "by_reason": [
+      {
+        "count": 25,
+        "candidate_status": "CO_PRO_OPPORTUNITY",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 824,
+        "candidate_status": "DOMINATED_WITH_PROOF",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 5,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+      },
+      {
+        "count": 2,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "NON_GUARANTEED_SELECTIVE"
+      },
+      {
+        "count": 1,
+        "candidate_status": "FEASIBILITY_REVIEW_REQUIRED",
+        "rejection_reason_class": "SUPERSEDED"
+      },
+      {
+        "count": 6,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": null
+      },
+      {
+        "count": 72,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "MINIMUM_SPEND_FAIL"
+      },
+      {
+        "count": 4,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "OTHER_EXPLICIT"
+      },
+      {
+        "count": 1392,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "PAIRWISE_INCOMPATIBLE"
+      },
+      {
+        "count": 7,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "STATUTORY_CONDITIONS_UNMET"
+      },
+      {
+        "count": 49,
+        "candidate_status": "RULE_REJECTED",
+        "rejection_reason_class": "UNRESOLVED_NO_AUTHORITY"
+      },
+      {
+        "count": 9,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "PRICING_BLOCKED"
+      },
+      {
+        "count": 1,
+        "candidate_status": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "rejection_reason_class": "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+      }
+    ]
+  }
+}

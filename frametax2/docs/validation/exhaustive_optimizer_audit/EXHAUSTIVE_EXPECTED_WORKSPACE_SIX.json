@@ -1,0 +1,650 @@
+{
+  "LU": {
+    "project_name": "The Little Utopia",
+    "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+    "slots": [
+      {
+        "slot": 1,
+        "slot_role": "Slot 1 (Anchor / Baseline)",
+        "structure_id": "7b1b853e-c06c-4769-8348-48d0836752e2",
+        "economic_identity": "c6cb4a738a4246ada02f88b40fb7c5c1367bcda18847ee23e14c50687a9d37ef",
+        "family": "SINGLE_JURISDICTION",
+        "practicality_tier": "N/A",
+        "status": "PRICED",
+        "primary_jurisdiction": "MU",
+        "participants": [
+          "MU"
+        ],
+        "programs": [
+          "mu_edb_incentive"
+        ],
+        "confirmed_incentive_usd": 1306598.1,
+        "maximum_incentive_usd": 1742130.8,
+        "confirmed_npc_usd": 3057794.9,
+        "potential_npc_usd": 2622262.2,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Anchor Current Location"
+      },
+      {
+        "slot": 2,
+        "slot_role": "Slot 2",
+        "structure_id": "bdbcc9b3-df97-4172-8ad0-438f8fd6c1b9",
+        "economic_identity": "a82355f3a2b46ed153be7f6137ed902c642a66fb2d86d55f2de4227040366770",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "MU",
+        "participants": [
+          "MU",
+          "ZA"
+        ],
+        "programs": [
+          "South Africa DTIC Foreign Film & TV Production Incentive"
+        ],
+        "confirmed_incentive_usd": 1306240.1,
+        "maximum_incentive_usd": 1739601.2,
+        "confirmed_npc_usd": 3130842.9,
+        "potential_npc_usd": 2697481.8,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Best Executable Practical"
+      },
+      {
+        "slot": 3,
+        "slot_role": "Slot 3",
+        "structure_id": "5664ac9d-c46e-4b42-b2ef-ffbffc2b1ca5",
+        "economic_identity": "17c86db6b03e25b4e5b05814a842c56a5480eacd8509b57c94fcdd4f82d70473",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "MU",
+        "participants": [
+          "MU",
+          "ZA"
+        ],
+        "programs": [
+          "South Africa DTIC Foreign Film & TV Production Incentive"
+        ],
+        "confirmed_incentive_usd": 1303973.1,
+        "maximum_incentive_usd": 1736880.8,
+        "confirmed_npc_usd": 3133109.9,
+        "potential_npc_usd": 2700202.2,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Practical"
+      },
+      {
+        "slot": 4,
+        "slot_role": "Slot 4",
+        "structure_id": "27dc7ebd-aa66-40e9-a374-b14506d1c771",
+        "economic_identity": "5b725f10f48c7109a8617dfe2ed4b01101237ea42672ca84386f89833276b921",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR",
+          "BG",
+          "RO"
+        ],
+        "programs": [
+          "Bulgarian Film Industry Encouragement Act Cash Rebate",
+          "Romanian Film Office Cash Rebate"
+        ],
+        "confirmed_incentive_usd": 1618695.4,
+        "maximum_incentive_usd": 1618695.4,
+        "confirmed_npc_usd": 3199837.6,
+        "potential_npc_usd": 3199837.6,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONFIRMED",
+        "selection_reason": "Best Executable Advanced"
+      },
+      {
+        "slot": 5,
+        "slot_role": "Slot 5",
+        "structure_id": "5b633e09-c0d7-4f42-82b8-11c178d8ba83",
+        "economic_identity": "920add4b556b858d04c9abf59f7da6d3d2e04151beb7bcdd31270cf6aa5da118",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR",
+          "PL",
+          "RO"
+        ],
+        "programs": [
+          "Polish Film Institute (PISF) Cash Rebate",
+          "Romanian Film Office Cash Rebate"
+        ],
+        "confirmed_incentive_usd": 1618695.4,
+        "maximum_incentive_usd": 1619148.8,
+        "confirmed_npc_usd": 3200897.6,
+        "potential_npc_usd": 3200444.2,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Advanced"
+      },
+      {
+        "slot": 6,
+        "slot_role": "Slot 6",
+        "structure_id": "73ba7a16-b535-490b-bcce-514f80264600",
+        "economic_identity": "73a76f1c6549150dbe03d4257b4f6eaf6facc1f9e32d1520d3126cedb60ed942",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR",
+          "HU",
+          "RO"
+        ],
+        "programs": [
+          "Hungarian Film Incentive (NFI)",
+          "Romanian Film Office Cash Rebate"
+        ],
+        "confirmed_incentive_usd": 1619148.8,
+        "maximum_incentive_usd": 1623086.3,
+        "confirmed_npc_usd": 3201084.2,
+        "potential_npc_usd": 3197146.7,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Highest Ranked Remaining Distinct Executable"
+      }
+    ],
+    "next_excluded_candidate": {
+      "structure_id": "3cba051e-433e-4756-8090-47e21ba16502",
+      "economic_identity": "94213fe799ccd1e698579df5dc3129b0de99fa663972673213a502bdced705c1",
+      "confirmed_npc_usd": 3201084.2,
+      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+    }
+  },
+  "FVD": {
+    "project_name": "F#K Valentine's Day",
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "slots": [
+      {
+        "slot": 1,
+        "slot_role": "Slot 1 (Anchor / Baseline)",
+        "structure_id": "86555121-5a0c-4b43-8b55-6569819109e9",
+        "economic_identity": "d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737",
+        "family": "SINGLE_JURISDICTION",
+        "practicality_tier": "N/A",
+        "status": "PRICED",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR"
+        ],
+        "programs": [
+          "gr_cash_rebate"
+        ],
+        "confirmed_incentive_usd": 1445659.84,
+        "maximum_incentive_usd": 1445659.84,
+        "confirmed_npc_usd": 3072027.16,
+        "potential_npc_usd": 3072027.16,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONFIRMED",
+        "selection_reason": "Anchor Current Location"
+      },
+      {
+        "slot": 2,
+        "slot_role": "Slot 2",
+        "structure_id": "2db13714-9b36-4c59-a2a0-934d0df51740",
+        "economic_identity": "bf4cd818be477ed0fa35c90b073089177e6021936a685f731c7f910ffdedfced",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR",
+          "RO"
+        ],
+        "programs": [
+          "Romanian Film Office Cash Rebate"
+        ],
+        "confirmed_incentive_usd": 1464850.6,
+        "maximum_incentive_usd": 1464850.6,
+        "confirmed_npc_usd": 3063526.4,
+        "potential_npc_usd": 3063526.4,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONFIRMED",
+        "selection_reason": "Best Executable Practical"
+      },
+      {
+        "slot": 3,
+        "slot_role": "Slot 3",
+        "structure_id": "edc33146-54a2-468f-96ec-dbb6e499044b",
+        "economic_identity": "610a63c292ba94528eb9565fb85252a339decbee63d84c49622e040a498293bd",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR",
+          "RO"
+        ],
+        "programs": [
+          "Romanian Film Office Cash Rebate"
+        ],
+        "confirmed_incentive_usd": 1463830.6,
+        "maximum_incentive_usd": 1463830.6,
+        "confirmed_npc_usd": 3064546.4,
+        "potential_npc_usd": 3064546.4,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONFIRMED",
+        "selection_reason": "Second Best Executable Practical"
+      },
+      {
+        "slot": 4,
+        "slot_role": "Slot 4",
+        "structure_id": "60fee7a5-7571-4cc6-ad2a-c37e2f135c3f",
+        "economic_identity": "1bfa4888b306a88eb2da216d81f130288f4bbb3d7b23d675c918241074a49671",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "CA-NL",
+        "participants": [
+          "CA-NL",
+          "BE",
+          "CA-MB"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit",
+          "Newfoundland & Labrador All-Spend Film and Video Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 1488527.5,
+        "maximum_incentive_usd": 1520056.7,
+        "confirmed_npc_usd": 3583019.5,
+        "potential_npc_usd": 3551490.3,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Best Executable Advanced"
+      },
+      {
+        "slot": 5,
+        "slot_role": "Slot 5",
+        "structure_id": "d48b9bc4-46d8-4485-b367-a4af4c8de8bd",
+        "economic_identity": "516458b4fbcbac3b310b21ca2b0766ce6306f460064e84d21166ea210aff6f8e",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "COSTS_MORE",
+        "primary_jurisdiction": "QA",
+        "participants": [
+          "QA",
+          "BE",
+          "CA-MB"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit",
+          "Qatar Screen Production Incentive (QSPI)"
+        ],
+        "confirmed_incentive_usd": 1488527.5,
+        "maximum_incentive_usd": 1873515.9,
+        "confirmed_npc_usd": 3583019.5,
+        "potential_npc_usd": 3198031.1,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Advanced"
+      },
+      {
+        "slot": 6,
+        "slot_role": "Slot 6",
+        "structure_id": "5963d338-bdc6-4b25-af98-0a5aadbde2a8",
+        "economic_identity": "0d086e0dadee612e48a9cd9d0c54618c14fa0fcedb02bfbaf30211ffa726cd6b",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "GR",
+        "participants": [
+          "GR",
+          "HU"
+        ],
+        "programs": [
+          "Hungarian Film Incentive (NFI)"
+        ],
+        "confirmed_incentive_usd": 1464850.6,
+        "maximum_incentive_usd": 1476584.05,
+        "confirmed_npc_usd": 3065196.4,
+        "potential_npc_usd": 3053462.95,
+        "production_fit_status": "STRONG",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Highest Ranked Remaining Distinct Executable"
+      }
+    ],
+    "next_excluded_candidate": {
+      "structure_id": "453aa492-e934-4df2-bb67-38e53e8862bf",
+      "economic_identity": "0c78b9e632933afa1bdbadbe7695431b8946c5d6bbf0e3da46baa4ed2d649d96",
+      "confirmed_npc_usd": 3066216.4,
+      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+    }
+  },
+  "BH": {
+    "project_name": "Bad Hombres",
+    "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+    "slots": [
+      {
+        "slot": 1,
+        "slot_role": "Slot 1 (Anchor / Baseline)",
+        "structure_id": "b75590a1-f580-4e8d-b098-c6f734fe32f9",
+        "economic_identity": "1ba0245f761165782b42af1d7bc6e4ab7db352f4ec46b0406f39077f81a97f92",
+        "family": "SINGLE_JURISDICTION",
+        "practicality_tier": "N/A",
+        "status": "PRICED",
+        "primary_jurisdiction": "US-NM",
+        "participants": [
+          "US-NM"
+        ],
+        "programs": [
+          "New Mexico Film Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 596910.25,
+        "maximum_incentive_usd": 955056.4,
+        "confirmed_npc_usd": 1885112.75,
+        "potential_npc_usd": 1526966.6,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Anchor Current Location"
+      },
+      {
+        "slot": 2,
+        "slot_role": "Slot 2",
+        "structure_id": "0358fe69-d3b8-4393-91fc-7257873e6791",
+        "economic_identity": "cf1368ef3ffdf6b8aaee255c49317d97acfba8acef9254dec6d91b01ea7b9cae",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "US-NM"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "New Mexico Film Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 1052846.85,
+        "maximum_incentive_usd": 1524977.15,
+        "confirmed_npc_usd": 1429176.15,
+        "potential_npc_usd": 957045.85,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Best Executable Practical"
+      },
+      {
+        "slot": 3,
+        "slot_role": "Slot 3",
+        "structure_id": "be116807-e884-4296-bd6b-180b84c09ebb",
+        "economic_identity": "39886231f898947a9bebf68b30c62d258b992155fcf6b059550fff4025ecc1ba",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "US-NM"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "New Mexico Film Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 1051846.85,
+        "maximum_incentive_usd": 1523727.15,
+        "confirmed_npc_usd": 1430176.15,
+        "potential_npc_usd": 958295.85,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Practical"
+      },
+      {
+        "slot": 4,
+        "slot_role": "Slot 4",
+        "structure_id": "615deb82-fb0b-4c0b-82f8-3185920b5b83",
+        "economic_identity": "05313eb88b591a58266e5770eb259fd47e636375813fe7cd6dd0720df95041f0",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-NL",
+        "participants": [
+          "CA-NL",
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "Newfoundland & Labrador All-Spend Film and Video Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 960704.3,
+        "maximum_incentive_usd": 983295.9,
+        "confirmed_npc_usd": 1521318.7,
+        "potential_npc_usd": 1498727.1,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Best Executable Advanced"
+      },
+      {
+        "slot": 5,
+        "slot_role": "Slot 5",
+        "structure_id": "8355afd9-7708-4bb0-a091-4a41b8b2f570",
+        "economic_identity": "2a3fbbecbb32bbfc5b0195780bcd1a14829c5fca7b17318b27e734f84f794446",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "QA",
+        "participants": [
+          "QA",
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "Qatar Screen Production Incentive (QSPI)"
+        ],
+        "confirmed_incentive_usd": 960704.3,
+        "maximum_incentive_usd": 1210764.2,
+        "confirmed_npc_usd": 1521318.7,
+        "potential_npc_usd": 1271258.8,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Advanced"
+      },
+      {
+        "slot": 6,
+        "slot_role": "Slot 6",
+        "structure_id": "a13a5231-c6f6-457b-bbf9-67feab50bd82",
+        "economic_identity": "b5804481c381cea2d3516be4b1c23c9fc2d3e56f3977d078e762e22ef4b6ed9f",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-NL",
+        "participants": [
+          "CA-NL",
+          "CA-MB"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "Newfoundland & Labrador All-Spend Film and Video Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 960454.3,
+        "maximum_incentive_usd": 982045.9,
+        "confirmed_npc_usd": 1521568.7,
+        "potential_npc_usd": 1499977.1,
+        "production_fit_status": "UNKNOWN",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Highest Ranked Remaining Distinct Executable"
+      }
+    ],
+    "next_excluded_candidate": {
+      "structure_id": "2c507970-0adb-41ee-bf0d-12e379c235cf",
+      "economic_identity": "f4566dd045b63a11ebd8addf65d6d8b52d39688bd185165580dda0ceb23997bc",
+      "confirmed_npc_usd": 1521568.7,
+      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+    }
+  },
+  "LLS": {
+    "project_name": "Lips Like Sugar",
+    "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+    "slots": [
+      {
+        "slot": 1,
+        "slot_role": "Slot 1 (Anchor / Baseline)",
+        "structure_id": "3fcb1603-1ee0-401e-99fc-043855ed7323",
+        "economic_identity": "e8c60c35712faed633d63be33e3575ef74a44fb29895a86b0334e6cae09e2d57",
+        "family": "SINGLE_JURISDICTION",
+        "practicality_tier": "N/A",
+        "status": "PRICED",
+        "primary_jurisdiction": "US-CA",
+        "participants": [
+          "US-CA"
+        ],
+        "programs": [
+          "California Film & Television Tax Credit Program 4.0"
+        ],
+        "confirmed_incentive_usd": 3459278.9,
+        "maximum_incentive_usd": 3953461.6,
+        "confirmed_npc_usd": 8524375.1,
+        "potential_npc_usd": 8030192.4,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Anchor Current Location"
+      },
+      {
+        "slot": 2,
+        "slot_role": "Slot 2",
+        "structure_id": "52f2f82c-edac-422b-aee5-486f678d5836",
+        "economic_identity": "60dc0a763a461b59b972c3a419e18605db7a5efdb84fa669a0097ef31fcc49f1",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "US-CA"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "California Film & Television Tax Credit Program 4.0"
+        ],
+        "confirmed_incentive_usd": 4443644.3,
+        "maximum_incentive_usd": 6414375.1,
+        "confirmed_npc_usd": 7540009.7,
+        "potential_npc_usd": 5569278.9,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Best Executable Practical"
+      },
+      {
+        "slot": 3,
+        "slot_role": "Slot 3",
+        "structure_id": "ae98991b-88f6-4bee-aafb-cfa29409ffcf",
+        "economic_identity": "5038dba20c7ffa0968de3e93406c48432577a7072ecb06b37c093f53fc0301ec",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "PRACTICAL_HYBRID",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "BE"
+        ],
+        "programs": [
+          "Belgian Tax Shelter",
+          "Manitoba Film & Video Production Tax Credit"
+        ],
+        "confirmed_incentive_usd": 4446444.3,
+        "maximum_incentive_usd": 6415975.1,
+        "confirmed_npc_usd": 7759809.7,
+        "potential_npc_usd": 5790278.9,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Practical"
+      },
+      {
+        "slot": 4,
+        "slot_role": "Slot 4",
+        "structure_id": "b7dca29d-f454-449a-bf76-27827b7c3a6b",
+        "economic_identity": "548b3f701db70ae8635029646998e64fd5e72d701a3a122788304978344cbb4f",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "US-CA",
+          "US-HI"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "California Film & Television Tax Credit Program 4.0",
+          "Hawaii Film and Digital Media Income Tax Credit"
+        ],
+        "confirmed_incentive_usd": 4417766.9,
+        "maximum_incentive_usd": 6357481.6,
+        "confirmed_npc_usd": 7565887.1,
+        "potential_npc_usd": 5626172.4,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Best Executable Advanced"
+      },
+      {
+        "slot": 5,
+        "slot_role": "Slot 5",
+        "structure_id": "8fb1e5be-8e5d-4a9c-877d-0260097d48cb",
+        "economic_identity": "f7eadfa1a9a6567799c2dde4dd478f69537a705957ec7788724f6e350424b40e",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "CA-AB",
+          "US-CA"
+        ],
+        "programs": [
+          "Alberta Film and Television Tax Credit (FTTC)",
+          "Manitoba Film & Video Production Tax Credit",
+          "California Film & Television Tax Credit Program 4.0"
+        ],
+        "confirmed_incentive_usd": 4417766.9,
+        "maximum_incentive_usd": 6358681.6,
+        "confirmed_npc_usd": 7565887.1,
+        "potential_npc_usd": 5624972.4,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Second Best Executable Advanced"
+      },
+      {
+        "slot": 6,
+        "slot_role": "Slot 6",
+        "structure_id": "2791a108-906b-4289-85ac-d0d242785529",
+        "economic_identity": "1d312387b228a23cec0d73d524893bf4f32f16c407b42c879afcc3de5239e181",
+        "family": "HYBRID_ANCHOR_COMPONENT",
+        "practicality_tier": "ADVANCED_MULTI_JURISDICTION",
+        "status": "EVALUATED_ALTERNATIVE",
+        "primary_jurisdiction": "CA-MB",
+        "participants": [
+          "CA-MB",
+          "MK",
+          "US-CA"
+        ],
+        "programs": [
+          "Manitoba Film & Video Production Tax Credit",
+          "North Macedonia Cash Rebate",
+          "California Film & Television Tax Credit Program 4.0"
+        ],
+        "confirmed_incentive_usd": 4416966.9,
+        "maximum_incentive_usd": 6354681.6,
+        "confirmed_npc_usd": 7566687.1,
+        "potential_npc_usd": 5628972.4,
+        "production_fit_status": "WORKABLE",
+        "ceiling_status": "CONDITIONAL",
+        "selection_reason": "Highest Ranked Remaining Distinct Executable"
+      }
+    ],
+    "next_excluded_candidate": {
+      "structure_id": "db5f2c1a-418b-47c8-ad43-dccd4eec7acf",
+      "economic_identity": "1edb86f6b36c5fdd32e088ba996cf444e049c108439f44bab93aef2552659962",
+      "confirmed_npc_usd": 7566687.1,
+      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+    }
+  }
+}
