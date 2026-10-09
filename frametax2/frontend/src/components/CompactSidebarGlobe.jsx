@@ -172,7 +172,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
     const ambient = new THREE.AmbientLight(0xffffff, 0.66);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xfff0d8, 1.0);
+    const key = new THREE.DirectionalLight(0xfff0d8, 1.4);
     key.position.set(-2.2, 1.7, 2.2);
     scene.add(key);
     const fill = new THREE.DirectionalLight(0x6f96c0, 0.28);
@@ -189,7 +189,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     group.add(earth);
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(1.014, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.82, depthWrite: false }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
