@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { buildCompanyScene, buildPortfolioMiniOverlay } from "../src/lib/companyScene.js";
+import { buildCompanyScene, buildPortfolioAccent } from "../src/lib/companyScene.js";
 import { portfolioRows, resolvePortfolioRow } from "../src/lib/portfolioRows.js";
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
@@ -60,7 +60,7 @@ test("colour is the production STAGE: all-Evaluation projects share the Evaluati
   assert.ok(scene.routeLabels.every((l) => l.color === "#6FA0D6"), "route labels");
   assert.equal(scene.polygonColors.get("US-NM"), "#6FA0D6", "principal territory fill");
   assert.notEqual(scene.polygonColors.get("RO"), "#6FA0D6", "participants are a muted step of the same stage colour");
-  assert.equal(scene.polygonBorders.get("US-NM"), "#ffffff");
+  assert.notEqual(scene.polygonBorders.get("US-NM"), scene.polygonColors.get("US-NM"), "the boundary is a lightened step of the same stage token");
   for (const e of scene.colors.values()) assert.equal(e.hex, "#6FA0D6", "the side-list dot reads the same stage entry");
 });
 
@@ -77,11 +77,15 @@ test("a different stage recolours that project only, and a leader change never c
 
 test("the stage legend lists stages, never productions, and comes from the existing PROJECT_STATUSES", () => {
   const src = readFileSync(join(SRC, "screens/company/CompanyGlobe.jsx"), "utf8");
-  assert.match(src, /ACTIVE_STAGES\.map/);
+  assert.match(src, /activeStages\(\)\.map/);
+  assert.doesNotMatch(src, /company-legend-key/, "no principal/participant sub-key under the four stages");
+  assert.doesNotMatch(readFileSync(join(SRC, "styles/screens.css"), "utf8"), /company-legend-key/);
   assert.doesNotMatch(src, /scene\.legend|portfolioPalette/);
   const stage = readFileSync(join(SRC, "lib/companyStage.js"), "utf8");
   assert.match(stage, /PROJECT_STATUSES/);
   assert.match(stage, /archived/, "archived is excluded from the active-stage legend");
+  assert.match(stage, /--blue/); assert.match(stage, /--silver/); assert.match(stage, /--gold/); assert.match(stage, /--jade/);
+  assert.doesNotMatch(stage, /#6FA0D6|#AFB6C2|#E8C273|#5FBF92/i, "no substitute dark-ground palette: the canonical stage tokens only");
   assert.doesNotMatch(readFileSync(join(SRC, "lib/companyScene.js"), "utf8"), /hash|assignProjectColors|PALETTE/i);
 });
 
@@ -108,15 +112,15 @@ test("replacing one project's leader replaces ONLY that project's geography; not
   assert.equal(resolvePortfolioRow(payload[3]).structure.participants[1], "ZA");
 });
 
-test("sidebar portfolio overlay: every active project in its stage colour from the same rows, principal marked, routes carried", () => {
+test("sidebar portfolio accent: decorative only, the dominant stage's colour from the same rows, no projects plotted", () => {
   const rows = rowsFromPayload(payload);
-  const o = buildPortfolioMiniOverlay(rows, stageOf);
-  assert.equal(new Set(o.markers.map((m) => m.projectId)).size, 4);
-  assert.ok(o.markers.every((m) => m.color === "#6FA0D6"), "mini-globe colour = Company Globe stage colour");
-  assert.equal(o.markers.filter((m) => m.principal).length, 4);
-  assert.equal(o.routes.length, 2);
-  assert.ok(o.focus && o.portfolio);
-  assert.equal(buildPortfolioMiniOverlay([], stageOf), null);
-  const changed = buildPortfolioMiniOverlay(rowsFromPayload(payload.map((p) => (p.project_id === "lu" ? { ...p, leading: { structure: { ...p.leading.structure, participants: ["MU", "IN"], component_allocations: [comp("principal_production", "MU"), comp("post_vfx_package", "IN")] } } } : p))), stageOf);
-  assert.notEqual(changed.key, o.key, "a changed leader changes the overlay key, so the mini-globe rebuilds");
+  const a = buildPortfolioAccent(rows, stageOf);
+  assert.equal(a.accent, "#6FA0D6");
+  assert.equal(a.projects, 4);
+  assert.equal(a.markers, undefined, "no markers or routes are sent to the 80px globe");
+  assert.equal(a.routes, undefined);
+  assert.equal(buildPortfolioAccent([], stageOf), null);
+  const staged = rowsFromPayload(payload.map((p) => (p.project_id === "lu" || p.project_id === "lls" || p.project_id === "fvd" ? { ...p, lifecycle: "PRODUCTION" } : p)));
+  assert.equal(buildPortfolioAccent(staged, stageOf).accent, "#E8C273", "the most common stage wins");
+  assert.notEqual(a.key, buildPortfolioAccent(staged, stageOf).key);
 });

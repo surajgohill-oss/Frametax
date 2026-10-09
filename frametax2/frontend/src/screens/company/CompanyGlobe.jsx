@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
+
+// Follows the app theme switch: the stage tokens (and so every Company Globe colour) change with it.
+function useThemeKey() {
+  const [k, setK] = useState(themeKey);
+  useEffect(() => {
+    const mo = new MutationObserver(() => setK(themeKey()));
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => mo.disconnect();
+  }, []);
+  return k;
+}
+
 import { useNavigate } from "react-router-dom";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildCompanyScene } from "../../lib/companyScene";
 import { portfolioRows } from "../../lib/portfolioRows";
 import { participantsOf } from "../../lib/globeStructure";
-import { ACTIVE_STAGES, stageOf } from "../../lib/companyStage";
+import { activeStages, stageOf, themeKey } from "../../lib/companyStage";
 import { getLeadingSelection, getPortfolio, loadPortfolio, usePortfolio, useLeadingSelectionsVersion } from "../../lib/leadingSelection";
 import { Money, jurisdictionName } from "../../lib/format";
 
@@ -25,6 +37,7 @@ export default function CompanyGlobe() {
   const navigate = useNavigate();
   const portfolio = usePortfolio();
   const leadingVersion = useLeadingSelectionsVersion();
+  const theme = useThemeKey();
   // leadingVersion is the store's change signal: portfolioRows() reads the store, so it must re-run on every change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const rows = useMemo(() => (portfolio ? portfolioRows(portfolio, getLeadingSelection) : null), [portfolio, leadingVersion]);
@@ -40,7 +53,7 @@ export default function CompanyGlobe() {
     return () => { alive = false; };
   }, []);
 
-  const scene = useMemo(() => buildCompanyScene(rows, { stageOf, focusedId }), [rows, focusedId]);
+  const scene = useMemo(() => buildCompanyScene(rows, { stageOf, focusedId }), [rows, focusedId, theme]);
 
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
   if (!rows) return <div className="screen"><Loading /></div>;
@@ -96,14 +109,13 @@ export default function CompanyGlobe() {
         />
         <div className="company-legend" role="list" aria-label="Production stage">
           <div className="company-legend-head">Production stage</div>
-          {ACTIVE_STAGES.map((st) => (
+          {activeStages().map((st) => (
             <div key={st.key} role="listitem" className={`company-legend-row${scene.stageCounts.get(st.key) ? "" : " empty"}`} data-legend-stage={st.key}>
               <span className="company-legend-swatch" style={{ background: st.hex }} />
               <span className="company-legend-title">{st.label}</span>
               <span className="company-legend-stage">{scene.stageCounts.get(st.key) || ""}</span>
             </div>
           ))}
-          <div className="company-legend-key">White edge, large marker: principal · muted fill: participant</div>
         </div>
         {preview && (
           <div className="globe-tooltip">

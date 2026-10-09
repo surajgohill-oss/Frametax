@@ -29,6 +29,27 @@ export function readIncentivePotential(structure) {
   };
 }
 
+// The same shared economics shape read straight off a served single-jurisdiction contract record (canonical fields:
+// confirmed/potential incentive and NPC, ceiling_status, economic_certainty, missing_conditions). Used by the Globe hover for
+// jurisdictions whose own structure is not fully priced, so every hover states all four figures -- null where the backend has
+// none, which the card renders as "Not established" rather than dropping the row. Never a recomputation.
+export function potentialFromContractRecord(rec) {
+  if (!rec || typeof rec !== "object") return null;
+  return {
+    confirmedIncentive: rec.confirmed_incentive_usd ?? null,
+    maxIncentive: rec.potential_incentive_usd ?? null,
+    confirmedNpc: rec.confirmed_npc_usd ?? null,
+    potentialNpc: rec.potential_npc_usd ?? null,
+    upside: null,
+    ceilingStatus: rec.ceiling_status ?? "NOT_ESTABLISHED",
+    certainty: rec.economic_certainty ?? null,
+    missingFacts: (rec.missing_conditions || []).map((d) => (typeof d === "string" ? { description: d, state: "FACT_UNRESOLVED" } : d)),
+    basis: null,
+    confirmedRank: rec.confirmed_rank ?? null,
+    potentialRank: rec.potential_rank ?? null,
+  };
+}
+
 export function certaintyLabel(pot) {
   return (pot && CERTAINTY_LABEL[pot.certainty]) || "Reference only";
 }

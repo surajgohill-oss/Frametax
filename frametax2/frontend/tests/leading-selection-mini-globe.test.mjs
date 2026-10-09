@@ -40,3 +40,15 @@ test("the sidebar mini-globe pauses offscreen/hidden, honours reduced motion and
   assert.match(src, /prefers-reduced-motion: reduce/);
   assert.equal((src.match(/new THREE\.WebGLRenderer/g) || []).length, 1);
 });
+
+test("decorative sidebar globe: no data layers, independent of Globe3D, reduced-motion and hidden-tab aware", () => {
+  const src = read("components/CompactSidebarGlobe.jsx");
+  assert.doesNotMatch(src, /^import .*(Globe3D|three-globe|CSS2D)/m, "no heavyweight engine import");
+  assert.doesNotMatch(src, /QuadraticBezierCurve3|LineBasicMaterial|buildOverlay|\.stroke\(/, "no route lines, markers or boundary strokes");
+  assert.match(src, /prefers-reduced-motion: reduce/);
+  assert.match(src, /document\.hidden/);
+  assert.match(src, /IntersectionObserver/);
+  assert.match(src, /forceContextLoss/);
+  assert.match(src, /bakedFor !== t/, "textures are baked once per theme, never per frame or per overlay change");
+  assert.match(src, /clouds\.rotation\.y \+=/, "the cloud deck drifts independently of the Earth");
+});

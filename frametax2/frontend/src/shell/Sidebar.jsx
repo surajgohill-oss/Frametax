@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { getLeadingSelection, getPortfolio, loadPortfolio, useLeadingSelection, usePortfolio, useLeadingSelectionsVersion } from "../lib/leadingSelection";
-import { buildPortfolioMiniOverlay } from "../lib/companyScene";
+import { buildPortfolioAccent } from "../lib/companyScene";
 import { portfolioRows } from "../lib/portfolioRows";
 import { stageOf } from "../lib/companyStage";
 import { miniGlobeOverlay } from "../lib/globeStructure";
@@ -41,14 +41,17 @@ export default function Sidebar() {
   useEffect(() => {
     if (!getPortfolio()) loadPortfolio().catch(() => {});
   }, [projectId]);
-  const overlay = useMemo(
-    () => (companyLevel
-      ? buildPortfolioMiniOverlay(portfolio ? portfolioRows(portfolio, getLeadingSelection) : [], stageOf)
-      : miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode, ...(selection?.routeColor ? { color: selection.routeColor } : {}) })),
+  const overlay = useMemo(() => {
+    if (companyLevel) return portfolio ? buildPortfolioAccent(portfolioRows(portfolio, getLeadingSelection), stageOf) : null;
+    // Project routes: the same decorative Earth turned to the principal, with one quiet glow there (no topology).
+    const mini = miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode, ...(selection?.routeColor ? { color: selection.routeColor } : {}) });
+    const principal = mini?.markers.find((m) => m.principal) || mini?.markers[0];
+    return principal
+      ? { key: mini.key, principalCode: principal.code, focus: { lat: principal.lat, lng: principal.lng }, pulse: { lat: principal.lat, lng: principal.lng, color: principal.color } }
+      : null;
     // leadingVersion is the store's change signal for saved-leader commits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [companyLevel, portfolio, leadingVersion, selection],
-  );
+  }, [companyLevel, portfolio, leadingVersion, selection]);
   return (
     <nav className="cg-sidebar" aria-label="Application navigation">
       <div className="cg-wordmark serif">Cine<i>Globe</i></div>

@@ -2,14 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLOBE_THEME } from "../lib/globeVisualTokens";
 
-// The 80px sidebar globe: the SAME product as the Company / Project Globe at a smaller scale. It shares the Globe's visual
-// tokens (lib/globeVisualTokens.js: near-black navy stage with its maritime bloom, deep ocean, graphite land with a hairline
-// boundary, cool limb and atmosphere, upper-left key light) but deliberately does NOT mount the heavyweight Globe3D engine:
-// no three-globe, no polygon layers, no CSS2D hit targets, no handlers. One baked equirectangular texture (ocean, land,
-// boundaries, plus the highlighted territories), a Phong sphere, two thin Fresnel shells and a handful of dots and lines.
+// The 80px sidebar globe is a DECORATIVE CineGlobe identity object -- brand, geography and atmosphere -- inspired by a restrained
+// optical view of Earth: tonal deep-maritime ocean, naturalistic land, soft shelf glow, a warm upper-left key light, a cool
+// lower-right atmospheric edge, thin drifting cloud cover and a very slow turn. It deliberately does NOT reproduce data layers
+// (no jurisdiction boundaries, route lines, labels or marker clusters; those belong to the Company and Project Globes).
+//   company routes: the portfolio Earth, with at most a faint aggregate stage-colour accent in the atmosphere;
+//   project routes: the same Earth turned to the principal's location, with one quiet glow there.
 //
-// FROZEN subsystem (2026-07-28), unlocked by the user 2026-10-08 for the leading-structure/portfolio overlay and for the
-// Globe visual-language alignment. Do not import Globe3D or share scene/material objects with it.
+// Independent of the heavyweight Globe3D engine (no three-globe, polygon layers, CSS2D or handlers). One baked texture set per
+// theme, one sphere, a cloud shell and two thin Fresnel shells; nothing is reallocated per frame. Animation runs at ~30fps only
+// while on screen, tab visible and reduced motion off; otherwise single frames are drawn on demand.
+//
+// FROZEN subsystem (2026-07-28), unlocked by the user 2026-10-08. Do not import Globe3D or share scene objects with it.
 function webglAvailable() {
   try {
     const c = document.createElement("canvas");
@@ -23,30 +27,14 @@ function webglAvailable() {
   }
 }
 
-const currentTheme = () => (document.documentElement.getAttribute("data-theme") === "night" ? GLOBE_THEME.night : GLOBE_THEME.day);
+const themeOf = (key) => (key === "night" ? GLOBE_THEME.night : GLOBE_THEME.day);
 
-// At 80px, small islands degenerate into stray pixels. Rings whose bounding box is smaller than this fraction of the texture
-// are dropped, leaving the major landmasses that read as Earth at this scale.
+const W = 1024;
+const H = 512;
+const projectPoint = (lon, lat) => [((lon + 180) / 360) * W, ((90 - lat) / 180) * H];
+
+// At 80px small islands degenerate into stray pixels: drop rings below this fraction of the texture.
 const MIN_RING_EXTENT_FRAC = 0.012;
-
-const projectPoint = (lon, lat, w, h) => [((lon + 180) / 360) * w, ((90 - lat) / 180) * h];
-
-// Breaks the path at antimeridian-crossing jumps instead of drawing a streak across the whole texture.
-function tracePath(ctx, rings, w, h) {
-  for (const ring of rings) {
-    let started = false;
-    let prevLon = null;
-    for (const [lon, lat] of ring) {
-      const [x, y] = projectPoint(lon, lat, w, h);
-      if (!started) { ctx.moveTo(x, y); started = true; }
-      else if (prevLon != null && Math.abs(lon - prevLon) > 180) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-      prevLon = lon;
-    }
-    ctx.closePath();
-  }
-}
-
 function ringIsSignificant(ring) {
   let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
   for (const [lon, lat] of ring) {
@@ -57,122 +45,175 @@ function ringIsSignificant(ring) {
   }
   return (maxLon - minLon) / 360 > MIN_RING_EXTENT_FRAC || (maxLat - minLat) / 180 > MIN_RING_EXTENT_FRAC;
 }
-
 const polygonsOf = (feat) => {
   const g = feat?.geometry;
   if (!g) return [];
   return g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
 };
 
-// Same feature -> country key rule the Globe uses (ISO_A2, with the two Natural Earth -99 fixes).
-const ISO_A2_FIX_BY_ADM0_A3 = { FRA: "FR", NOR: "NO" };
-const isoOf = (feat) => {
-  const raw = feat?.properties?.ISO_A2;
-  return raw && raw !== "-99" ? raw : ISO_A2_FIX_BY_ADM0_A3[feat?.properties?.ADM0_A3] || raw;
-};
-
-// The world geometry is fetched once per page session (own promise, never shared with Globe3D's load state).
-let geoPromise = null;
-const loadGeo = () => {
-  if (!geoPromise) {
-    geoPromise = fetch("/geo/world-110m.geojson")
-      .then((r) => (r.ok ? r.json() : { features: [] }))
-      .catch(() => ({ features: [] }))
-      .then((geo) => (geo.features || []).map((f) => ({ iso: isoOf(f), polys: polygonsOf(f).filter((rings) => rings.length && ringIsSignificant(rings[0])) })));
-  }
-  return geoPromise;
-};
-
-const W = 1024;
-const H = 512;
-const mixToward = (hex, toward, t) => {
-  const a = parseInt(hex.slice(1), 16); const b = parseInt(toward.slice(1), 16);
-  const ch = (i) => Math.round(((a >> i) & 255) + (((b >> i) & 255) - ((a >> i) & 255)) * t).toString(16).padStart(2, "0");
-  return `#${ch(16)}${ch(8)}${ch(0)}`;
-};
-
-// Paints the texture: Globe ocean, graphite land, hairline boundary, then the overlay's territories (principal at full
-// strength with a lighter edge; participants a muted step toward the land colour) -- the Company/Project Globe hierarchy.
-function paintTexture(ctx, features, theme, territories) {
-  ctx.fillStyle = theme.ocean;
-  ctx.fillRect(0, 0, W, H);
-  ctx.lineJoin = "round";
-  const fillAndEdge = (rings, fill, edge, edgeAlpha, lineWidth) => {
-    ctx.beginPath();
-    for (const ring of rings) tracePath(ctx, [ring], W, H);
-    ctx.fillStyle = fill;
-    ctx.fill("evenodd");
-    ctx.globalAlpha = edgeAlpha;
-    ctx.strokeStyle = edge;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  };
-  for (const f of features) for (const rings of f.polys) fillAndEdge(rings, theme.land, theme.stroke, 0.45, 1);
-  const byIso = new Map();
-  for (const t of territories || []) if (!byIso.has(t.code) || t.principal) byIso.set(t.code, t);
-  for (const f of features) {
-    const t = byIso.get(f.iso);
-    if (!t) continue;
-    const fill = t.principal ? t.color : mixToward(t.color, theme.land, 0.3);
-    const edge = t.principal ? "#ffffff" : mixToward(t.color, "#ffffff", 0.5);
-    for (const rings of f.polys) fillAndEdge(rings, fill, edge, t.principal ? 0.95 : 0.7, t.principal ? 2.4 : 1.6);
+// Breaks the path at antimeridian-crossing jumps instead of drawing a streak across the whole texture.
+function tracePolys(ctx, polys, scale = 1) {
+  ctx.beginPath();
+  for (const rings of polys) {
+    for (const ring of rings) {
+      let started = false;
+      let prevLon = null;
+      for (const [lon, lat] of ring) {
+        const [x, y] = projectPoint(lon, lat);
+        if (!started) { ctx.moveTo(x * scale, y * scale); started = true; }
+        else if (prevLon != null && Math.abs(lon - prevLon) > 180) ctx.moveTo(x * scale, y * scale);
+        else ctx.lineTo(x * scale, y * scale);
+        prevLon = lon;
+      }
+      ctx.closePath();
+    }
   }
 }
 
-// Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360), so markers sit on the geography.
+// The world geometry, fetched once per page session (own promise, never shared with Globe3D's load state).
+let landPromise = null;
+const loadLand = () => {
+  if (!landPromise) {
+    landPromise = fetch("/geo/world-110m.geojson")
+      .then((r) => (r.ok ? r.json() : { features: [] }))
+      .catch(() => ({ features: [] }))
+      .then((geo) => (geo.features || []).flatMap((f) => polygonsOf(f).filter((rings) => rings.length && ringIsSignificant(rings[0]))));
+  }
+  return landPromise;
+};
+
+// ── procedural tonal variation (tileable in longitude) ──────────────────────────────────────────
+const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+function valueNoise(u, v, cellsX, cellsY) {
+  const x = u * cellsX; const y = v * cellsY;
+  const x0 = Math.floor(x); const y0 = Math.floor(y);
+  const fx = x - x0; const fy = y - y0;
+  const sx = fx * fx * (3 - 2 * fx); const sy = fy * fy * (3 - 2 * fy);
+  const xa = ((x0 % cellsX) + cellsX) % cellsX; const xb = (xa + 1) % cellsX;
+  const a = hash(xa, y0); const b = hash(xb, y0); const c = hash(xa, y0 + 1); const d = hash(xb, y0 + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+const fbm = (u, v, cx, cy, octaves) => {
+  let amp = 0.5; let sum = 0; let norm = 0;
+  for (let o = 0; o < octaves; o += 1) {
+    sum += amp * valueNoise(u, v, cx * 2 ** o, cy * 2 ** o);
+    norm += amp; amp *= 0.5;
+  }
+  return sum / norm;
+};
+
+const mix = (a, b, t) => {
+  const A = parseInt(a.slice(1), 16); const B = parseInt(b.slice(1), 16);
+  const ch = (i) => Math.round(((A >> i) & 255) + (((B >> i) & 255) - ((A >> i) & 255)) * t).toString(16).padStart(2, "0");
+  return `#${ch(16)}${ch(8)}${ch(0)}`;
+};
+
+// Light/dark noise speckle at the given alphas (composited 'source-atop' so it stays inside existing pixels).
+function noiseLayer(w, h, cx, cy, octaves, darkAlpha, lightAlpha) {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  const img = g.createImageData(w, h);
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const t = (fbm(x / w, y / h, cx, cy, octaves) - 0.5) * 2;
+      const light = t > 0;
+      const i = (y * w + x) * 4;
+      img.data[i] = light ? 255 : 0; img.data[i + 1] = light ? 250 : 8; img.data[i + 2] = light ? 235 : 20;
+      img.data[i + 3] = Math.round(255 * Math.min(1, Math.abs(t)) * (light ? lightAlpha : darkAlpha));
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
+// Earth maps for one theme: colour (ocean + shelf glow + land) and the ocean specular mask.
+function bakeEarth(land, theme) {
+  const color = document.createElement("canvas");
+  color.width = W; color.height = H;
+  const ctx = color.getContext("2d");
+  // Deep maritime ocean: darker toward the poles, teal-lifted in the tropics, anchored on the Globe's own ocean token.
+  const deep = mix(theme.ocean, "#05101c", 0.45);
+  const mid = mix(theme.ocean, "#0e4a66", 0.55);
+  const warm = mix(theme.ocean, "#17687a", 0.5);
+  const og = ctx.createLinearGradient(0, 0, 0, H);
+  og.addColorStop(0, deep); og.addColorStop(0.3, mid); og.addColorStop(0.5, warm); og.addColorStop(0.7, mid); og.addColorStop(1, deep);
+  ctx.fillStyle = og;
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(noiseLayer(256, 128, 5, 3, 4, 0.22, 0.12), 0, 0, W, H);
+  // Soft shallow-water glow around the continents.
+  ctx.save();
+  ctx.shadowColor = "rgba(78, 168, 182, 0.65)";
+  ctx.shadowBlur = 9;
+  tracePolys(ctx, land);
+  ctx.fillStyle = "#000000";
+  ctx.fill("evenodd");
+  ctx.restore();
+  // Naturalistic land by latitude band (polar white, boreal green, temperate olive, subtropical sand, tropical green).
+  const lc = document.createElement("canvas");
+  lc.width = W; lc.height = H;
+  const lx = lc.getContext("2d");
+  const lg = lx.createLinearGradient(0, 0, 0, H);
+  const stops = [[0, "#e4e9ee"], [0.1, "#cfd6d8"], [0.17, "#58664c"], [0.27, "#5f7a4a"], [0.35, "#7d8a50"], [0.41, "#a89560"], [0.46, "#7f8a4c"], [0.5, "#3f6b3e"], [0.56, "#7f8a4c"], [0.62, "#a89560"], [0.7, "#5f7d46"], [0.82, "#5b6a4a"], [0.9, "#d6dcdf"], [1, "#eef1f3"]];
+  for (const [p, c] of stops) lg.addColorStop(p, c);
+  lx.fillStyle = lg;
+  tracePolys(lx, land);
+  lx.fill("evenodd");
+  lx.globalCompositeOperation = "source-atop";
+  lx.drawImage(noiseLayer(256, 128, 7, 4, 4, 0.34, 0.2), 0, 0, W, H);
+  lx.globalCompositeOperation = "source-over";
+  ctx.drawImage(lc, 0, 0);
+  // Specular mask: shiny ocean, matte land.
+  const spec = document.createElement("canvas");
+  spec.width = W / 2; spec.height = H / 2;
+  const sx = spec.getContext("2d");
+  sx.fillStyle = "#ffffff";
+  sx.fillRect(0, 0, spec.width, spec.height);
+  tracePolys(sx, land, 0.5);
+  sx.fillStyle = "#000000";
+  sx.fill("evenodd");
+  return { color, spec };
+}
+
+let cloudCanvas = null;
+function bakeClouds() {
+  if (cloudCanvas) return cloudCanvas;
+  const w = 512; const h = 256;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  const img = g.createImageData(w, h);
+  for (let y = 0; y < h; y += 1) {
+    const lat = (0.5 - y / h) * Math.PI; // more cover in the mid-latitude bands and the ITCZ, less over the subtropics
+    const band = 0.55 + 0.45 * Math.cos(lat * 3.0 + 0.4) ** 2;
+    for (let x = 0; x < w; x += 1) {
+      const n = fbm(x / w, y / h, 5, 3, 5);
+      const a = Math.max(0, Math.min(1, (n * band - 0.44) / 0.2));
+      const i = (y * w + x) * 4;
+      img.data[i] = 255; img.data[i + 1] = 255; img.data[i + 2] = 255;
+      img.data[i + 3] = Math.round(255 * a * a * (3 - 2 * a) * 0.4);
+    }
+  }
+  g.putImageData(img, 0, 0);
+  cloudCanvas = c;
+  return c;
+}
+
+// Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360).
 function surfacePoint(lat, lng, r = 1) {
   const phi = ((lng + 180) * Math.PI) / 180;
   const theta = ((90 - lat) * Math.PI) / 180;
   return new THREE.Vector3(-r * Math.cos(phi) * Math.sin(theta), r * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta));
 }
 
-const NEUTRAL_ROUTE = "#e8dfc8";
-
-// Rebuilds the overlay group's children from { markers, routes }: thin, restrained routes; the principal a larger dot on a
-// white backing, participants smaller dots. Arcs stay below radius 1.07 so nothing reaches the canvas edge.
-function buildOverlay(group, overlay) {
-  for (const child of [...group.children]) {
-    group.remove(child);
-    child.geometry?.dispose();
-    child.material?.dispose();
-  }
-  if (!overlay) return;
-  for (const r of overlay.routes) {
-    const a = surfacePoint(r.from.lat, r.from.lng, 1.006);
-    const b = surfacePoint(r.to.lat, r.to.lng, 1.006);
-    const lift = Math.min(1.07, 1.01 + a.distanceTo(b) * 0.05);
-    const mid = a.clone().add(b).normalize().multiplyScalar(lift);
-    const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
-    group.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)),
-      new THREE.LineBasicMaterial({ color: r.color || NEUTRAL_ROUTE, transparent: true, opacity: 0.8 }),
-    ));
-  }
-  for (const m of overlay.markers) {
-    const pos = surfacePoint(m.lat, m.lng, 1.012);
-    if (m.principal) {
-      const backing = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), new THREE.MeshBasicMaterial({ color: "#ffffff" }));
-      backing.position.copy(pos);
-      group.add(backing);
-    }
-    const dot = new THREE.Mesh(
-      new THREE.SphereGeometry(m.principal ? 0.03 : 0.024, 12, 12),
-      new THREE.MeshBasicMaterial({ color: m.color || NEUTRAL_ROUTE }),
-    );
-    dot.position.copy(surfacePoint(m.lat, m.lng, m.principal ? 1.034 : 1.012));
-    group.add(dot);
-  }
-}
-
-// Soft Fresnel shell (additive, back faces): the Globe's cool limb, kept thin and restrained at this scale.
-function fresnelShell(radius, color, power, intensity) {
+// Fresnel limb shell (additive, back faces): warm ivory toward the upper-left key light, cool maritime toward the lower right.
+function limbShell(radius, cool, warm, power, intensity) {
   return new THREE.Mesh(
     new THREE.SphereGeometry(radius, 40, 40),
     new THREE.ShaderMaterial({
-      uniforms: { uColor: { value: new THREE.Color(color) }, uPower: { value: power }, uIntensity: { value: intensity } },
+      uniforms: { uCool: { value: new THREE.Color(cool) }, uWarm: { value: new THREE.Color(warm) }, uPower: { value: power }, uIntensity: { value: intensity } },
       vertexShader: "varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }",
-      fragmentShader: "uniform vec3 uColor; uniform float uPower; uniform float uIntensity; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), uPower); gl_FragColor = vec4(uColor, f * uIntensity); }",
+      fragmentShader: "uniform vec3 uCool; uniform vec3 uWarm; uniform float uPower; uniform float uIntensity; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), uPower); float w = smoothstep(-0.2, 0.8, dot(normalize(vN.xy + vec2(1e-4)), normalize(vec2(-0.62, 0.78)))); gl_FragColor = vec4(mix(uCool, uWarm, w), f * uIntensity); }",
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       transparent: true,
@@ -182,13 +223,10 @@ function fresnelShell(radius, color, power, intensity) {
 }
 
 /**
- * Compact brand-mark globe for the sidebar identity slot. With an `overlay` (lib/globeStructure.js::miniGlobeOverlay on a
- * project route, lib/companyScene.js::buildPortfolioMiniOverlay on company routes) it shows the active structure(s) the way
- * the full Globe does: territories in the structure's colour (selected-structure status colour on project routes, production
- * stage colour on company routes), principal vs participant hierarchy, restrained routes. null keeps the neutral globe.
- *
- * One render loop only, and only while it is useful: while on screen, tab visible and reduced motion off; otherwise frames
- * are drawn on demand (texture load, overlay or theme change).
+ * Decorative identity globe. `overlay` is { key, focus?: {lat,lng}, pulse?: {lat,lng,color}, accent?: hex }:
+ *   - company routes pass { accent } (aggregate stage colour, tinting only the atmosphere);
+ *   - project routes pass { focus, pulse } (turn to the principal, one quiet glow there);
+ *   - null keeps the plain Earth.
  */
 export default function CompactSidebarGlobe({ size = 80, className = "", overlay = null }) {
   const mountRef = useRef(null);
@@ -196,7 +234,6 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
   const [failed, setFailed] = useState(false);
   const [themeKey, setThemeKey] = useState(() => document.documentElement.getAttribute("data-theme") || "day");
 
-  // The app theme switch changes the Globe's tokens; follow it.
   useEffect(() => {
     const mo = new MutationObserver(() => setThemeKey(document.documentElement.getAttribute("data-theme") || "day"));
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -210,8 +247,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    // d = R / tan(fov/2) with a small margin, so the full circle sits centered with no edge clipping at any size.
-    camera.position.set(0, 0, 2.65);
+    camera.position.set(0, 0, 2.85); // frames the whole circle, halo included, with a small margin
 
     let renderer;
     try {
@@ -225,84 +261,98 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     mount.innerHTML = "";
     mount.appendChild(renderer.domElement);
 
-    // Upper-left warm-ivory key light and a cool maritime fill from the lower right -- the Globe's light direction. Its own
-    // THREE.Light instances, never shared with Globe3D.jsx.
-    scene.add(new THREE.AmbientLight(0xffffff, 0.92));
-    const key = new THREE.DirectionalLight(0xfff1dc, 0.7);
+    // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const key = new THREE.DirectionalLight(0xfff0d8, 1.0);
     key.position.set(-2.2, 1.7, 2.2);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x7f96b0, 0.22);
-    fill.position.set(2, -1, -1.5);
+    const fill = new THREE.DirectionalLight(0x6f96c0, 0.28);
+    fill.position.set(2.2, -1.2, -1.2);
     scene.add(fill);
 
     const group = new THREE.Group();
-    group.rotation.x = -0.22; // gentle fixed tilt so it reads as a sphere at rest
+    group.rotation.x = -0.28;
     scene.add(group);
-
-    const theme = currentTheme();
-    const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 48, 48),
-      new THREE.MeshPhongMaterial({
-        color: 0xffffff,
-        emissive: new THREE.Color(theme.oceanEmissive).multiplyScalar(0.7),
-        shininess: 140,
-        specular: new THREE.Color("#26354b"),
-      }),
+    const earth = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 56, 56),
+      new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 130, specular: new THREE.Color("#33485f") }),
     );
-    group.add(sphere);
-    const overlayGroup = new THREE.Group();
-    group.add(overlayGroup);
-    // Cool limb + faint atmosphere, as the Globe's rim shell and atmosphere, thin at this scale (outside the spinning group).
-    const rim = fresnelShell(1.035, theme.rim, 3.2, 0.34);
-    const atmosphere = fresnelShell(1.1, theme.atmosphere, 4.6, 0.3);
+    group.add(earth);
+    const clouds = new THREE.Mesh(
+      new THREE.SphereGeometry(1.014, 48, 48),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, depthWrite: false }),
+    );
+    group.add(clouds);
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    glow.visible = false;
+    group.add(glow);
+    const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
+    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.0, 0.5);
+    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.2, 0.36);
     scene.add(rim);
-    scene.add(atmosphere);
+    scene.add(halo);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext("2d");
-    const texture = new THREE.CanvasTexture(canvas);
-    // The canvas is authored in sRGB; without this the map is sampled as linear and washes out.
-    texture.colorSpace = THREE.SRGBColorSpace;
-    // 1024px texture on an 80px sphere: anisotropy keeps coastlines from shimmering into mush near the limb.
-    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    sphere.material.map = texture;
-    // Pre-geometry: just the ocean, so the sphere is never a white ball.
-    ctx.fillStyle = theme.ocean;
-    ctx.fillRect(0, 0, W, H);
-    texture.needsUpdate = true;
-
+    const cloudTex = new THREE.CanvasTexture(bakeClouds());
+    cloudTex.colorSpace = THREE.SRGBColorSpace;
+    clouds.material.map = cloudTex;
+    let earthTex = null;
+    let specTex = null;
     const render = () => renderer.render(scene, camera);
     let cancelled = false;
-    const repaint = () => {
-      const { features } = stateRef.current;
-      if (!features) return;
-      const t = currentTheme();
-      paintTexture(ctx, features, t, stateRef.current.territories);
-      sphere.material.emissive.set(t.oceanEmissive).multiplyScalar(0.7);
-      rim.material.uniforms.uColor.value.set(t.rim);
-      atmosphere.material.uniforms.uColor.value.set(t.atmosphere);
-      texture.needsUpdate = true;
+
+    const applyTheme = () => {
+      const land = stateRef.current.land;
+      const t = themeOf(document.documentElement.getAttribute("data-theme"));
+      rim.material.uniforms.uCool.value.set(t.rim);
+      halo.material.uniforms.uCool.value.set(stateRef.current.accent ? mix(t.atmosphere, stateRef.current.accent, 0.4) : t.atmosphere);
+      if (!land) return;
+      // Bake once per theme (cached by key); an overlay change alone never re-bakes.
+      if (stateRef.current.bakedFor !== t) {
+        const baked = bakeEarth(land, t);
+        earthTex?.dispose(); specTex?.dispose();
+        earthTex = new THREE.CanvasTexture(baked.color);
+        earthTex.colorSpace = THREE.SRGBColorSpace;
+        earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        specTex = new THREE.CanvasTexture(baked.spec);
+        earth.material.map = earthTex;
+        earth.material.specularMap = specTex;
+        earth.material.needsUpdate = true;
+        stateRef.current.bakedFor = t;
+      }
       render();
     };
-    loadGeo().then((features) => {
+    loadLand().then((land) => {
       if (cancelled) return;
-      stateRef.current.features = features;
-      repaint();
+      stateRef.current.land = land;
+      applyTheme();
     });
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let onScreen = true;
     let frameId = null;
-    const loop = () => {
-      group.rotation.y += 0.0022;
-      render();
+    let last = 0;
+    const loop = (now) => {
       frameId = requestAnimationFrame(loop);
+      if (now - last < 33) return; // ~30fps is plenty at 80px
+      const dt = last ? Math.min(100, now - last) : 33;
+      last = now;
+      group.rotation.y += 0.00003 * dt;           // very slow turn of the Earth
+      clouds.rotation.y += 0.000018 * dt;         // cloud deck drifts independently
+      key.position.x = -2.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
+      key.position.y = 1.7 + Math.cos(now / 11000) * 0.12;
+      if (glow.visible) {
+        const p = 0.5 + 0.5 * Math.sin(now / 1500);
+        glow.scale.setScalar(1 + 0.3 * p);
+        glow.material.opacity = 0.45 - 0.22 * p;
+      }
+      render();
     };
     const sync = () => {
       const animate = onScreen && !document.hidden && !motionQuery.matches;
-      if (animate && frameId == null) frameId = requestAnimationFrame(loop);
+      if (animate && frameId == null) { last = 0; frameId = requestAnimationFrame(loop); }
       if (!animate && frameId != null) { cancelAnimationFrame(frameId); frameId = null; render(); }
     };
     const observer = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; sync(); });
@@ -312,7 +362,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     render();
     sync();
 
-    stateRef.current = { ...stateRef.current, renderer, group, overlayGroup, render, repaint };
+    stateRef.current = { ...stateRef.current, renderer, group, glow, render, applyTheme };
 
     return () => {
       cancelled = true;
@@ -320,15 +370,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       observer.disconnect();
       document.removeEventListener("visibilitychange", sync);
       motionQuery.removeEventListener("change", sync);
-      buildOverlay(overlayGroup, null);
       renderer.dispose();
-      sphere.geometry.dispose();
-      sphere.material.dispose();
-      rim.geometry.dispose(); rim.material.dispose();
-      atmosphere.geometry.dispose(); atmosphere.material.dispose();
-      texture.dispose();
-      // dispose() alone leaves the WebGL context lingering until GC; this component mounts on every route alongside a
-      // production Globe, so the same zombie-context ceiling applies here.
+      for (const m of [earth, clouds, glow, rim, halo]) { m.geometry.dispose(); m.material.dispose(); }
+      earthTex?.dispose(); specTex?.dispose(); cloudTex.dispose();
+      // dispose() alone leaves the WebGL context lingering until GC; this mounts on every route alongside a production Globe.
       try { renderer.forceContextLoss(); } catch { /* context already lost */ }
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       stateRef.current = {};
@@ -336,29 +381,35 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size]);
 
-  // Overlay and theme changes reuse the existing renderer (no new context, no new loop). A new principal is turned to
-  // face the viewer so the selection is visible at once, including under reduced motion.
+  // Overlay and theme changes reuse the renderer (no new context or loop). A project's principal is turned to face the viewer
+  // so the selection is visible at once, including under reduced motion.
   const overlayKey = overlay?.key || null;
   useEffect(() => {
-    const { group, overlayGroup, render, repaint } = stateRef.current;
-    if (!overlayGroup) return;
-    stateRef.current.territories = overlay?.territories || [];
-    buildOverlay(overlayGroup, overlay);
-    const principal = overlay?.focus || overlay?.markers.find((m) => m.principal);
-    if (principal) {
-      const p = surfacePoint(principal.lat, principal.lng);
+    const { group, glow, render, applyTheme } = stateRef.current;
+    if (!group) return;
+    stateRef.current.accent = overlay?.accent || null;
+    const f = overlay?.focus;
+    if (f) {
+      const p = surfacePoint(f.lat, f.lng);
       group.rotation.y = -Math.atan2(p.x, p.z);
-      // Tilt toward the principal's latitude (bounded) so a high-latitude territory is not left on the limb.
-      group.rotation.x = Math.max(-0.6, Math.min(0.6, (principal.lat * Math.PI) / 180 * 0.8));
+      group.rotation.x = Math.max(-0.6, Math.min(0.6, (f.lat * Math.PI) / 180 * 0.8));
     } else {
-      group.rotation.x = -0.22;
+      group.rotation.x = -0.28;
     }
-    if (repaint) repaint(); else render();
+    if (overlay?.pulse) {
+      glow.position.copy(surfacePoint(overlay.pulse.lat, overlay.pulse.lng, 1.02));
+      glow.material.color.set(overlay.pulse.color || "#ffffff");
+      glow.visible = true;
+    } else {
+      glow.visible = false;
+    }
+    applyTheme();
+    render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlayKey, failed, themeKey]);
 
-  const theme = themeKey === "night" ? GLOBE_THEME.night : GLOBE_THEME.day;
-  // The Globe's stage: near-black navy with the localized maritime bloom directly behind the sphere.
+  const theme = themeOf(themeKey);
+  // The brand stage: near-black navy with the localized maritime bloom directly behind the sphere.
   const stage = {
     width: size, height: size, borderRadius: 14, overflow: "hidden",
     background: `radial-gradient(circle at 50% 50%, ${theme.bloom}e6 0%, ${theme.bloom}66 36%, ${theme.backdrop[0]} 74%)`,
@@ -380,11 +431,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       className={`compact-sidebar-globe ${className}`.trim()}
       style={stage}
       role="img"
-      aria-label={overlay ? (overlay.portfolio ? "CineGlobe: the active portfolio" : "CineGlobe: this project's leading structure") : "CineGlobe"}
-      data-principal={overlay?.markers.find((m) => m.principal)?.code || ""}
-      data-projects={overlay?.portfolio ? new Set(overlay.markers.map((m) => m.projectId)).size : ""}
-      data-participants={overlay ? overlay.markers.map((m) => m.code).join(",") : ""}
-      data-routes={overlay ? overlay.routes.length : 0}
+      aria-label={overlay?.portfolio ? "CineGlobe: the active portfolio" : overlay?.pulse ? "CineGlobe: this project's location" : "CineGlobe"}
+      data-principal={overlay?.principalCode || ""}
+      data-projects={overlay?.portfolio ? overlay.projects : ""}
+      data-accent={overlay?.accent || ""}
     />
   );
 }

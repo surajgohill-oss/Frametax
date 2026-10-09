@@ -4,6 +4,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { SINGLE_JURISDICTION_CATEGORY_SEMANTIC, OPTIMIZER_SEMANTIC, buildSelectedStructureRoute } from "../src/lib/globeData.js";
 import { structureArcs, structureRouteLabels, structureTopology, participantGlobeKeys, NEUTRAL_ROUTE_HEX, FAMILY } from "../src/lib/globeStructure.js";
+import { potentialFromContractRecord, attainability } from "../src/lib/incentivePotential.js";
+import { readFileSync } from "node:fs";
 import { buildPolygonIndex, pickIsoAt, resolvePolygonTarget } from "../src/lib/globePicking.js";
 
 test("category mapping: each served category has its own status colour; Needs Facts is amber and never 'Conditional'", () => {
@@ -70,4 +72,18 @@ test("polygon picking: the smallest containing polygon wins and the marker posit
   // the pointer is inside Texas yet right next to New Mexico's marker position: the polygon under it decides
   assert.equal(resolvePolygonTarget(index, 15, 20.5, pointByIso).iso, "US-TX");
   assert.equal(resolvePolygonTarget(index, 30, 5, pointByIso), null, "a country-only polygon with no represented record yields no hover");
+});
+
+test("hover economics: an unpriced jurisdiction still states all four figures from its served contract record, never a bare 'Not priced'", () => {
+  const rec = { jurisdiction_code: "XX", category: "PROGRAM_DATA_INCOMPLETE", confirmed_incentive_usd: null, potential_incentive_usd: null, confirmed_npc_usd: null, potential_npc_usd: null, ceiling_status: null, missing_conditions: [] };
+  const pot = potentialFromContractRecord(rec);
+  assert.deepEqual([pot.confirmedIncentive, pot.maxIncentive, pot.confirmedNpc, pot.potentialNpc], [null, null, null, null], "absent backend values stay null (rendered 'Not established'), never invented");
+  assert.equal(attainability(pot).headline, "Maximum not established from known facts");
+  const priced = potentialFromContractRecord({ ...rec, confirmed_incentive_usd: 100, potential_incentive_usd: 300, confirmed_npc_usd: 900, potential_npc_usd: 700, ceiling_status: "CONDITIONAL", missing_conditions: ["Producer-election fact -- needed"] });
+  assert.deepEqual([priced.confirmedIncentive, priced.maxIncentive, priced.confirmedNpc, priced.potentialNpc], [100, 300, 900, 700]);
+  assert.match(attainability(priced).headline, /requires 1 fact/);
+  const src = readFileSync(new URL("../src/components/GlobeHoverCard.jsx", import.meta.url), "utf8");
+  assert.match(src, /hover\.incentivePotential \|\| potentialFromContractRecord\(rec\)/);
+  assert.doesNotMatch(src, /"Not priced"\}<\/div><\/div>\s*\)\}\s*\{\(rec\.hard_failure_reason/, "the bare Not priced fallback is gone from the contract body");
+  assert.doesNotMatch(src, /Maximum rate/, "no percentage fields on the hover");
 });

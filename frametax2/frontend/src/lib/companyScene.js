@@ -15,7 +15,6 @@ const mixHex = (a, b, t) => {
 };
 
 const LAND = "#5d7a7e"; // inactive graphite land (GRAPHITE_HEX)
-const PRINCIPAL_EDGE = "#ffffff";
 
 // rows: [{ project:{id,title}, structure, principal, homeCode }]; focusedId optional.
 const DEFAULT_STAGE = () => ({ key: "evaluation", label: "Evaluation", hex: "#6FA0D6" });
@@ -44,7 +43,7 @@ export function buildCompanyScene(rows, { stageOf = DEFAULT_STAGE, focusedId = n
         claimed.set(key, { principal: isPrincipal, projectId: project.id });
         // Secondary participants sit a step toward the land colour so the principal reads as the anchor.
         polygonColors.set(key, isPrincipal ? hex : mixHex(hex, LAND, 0.28));
-        polygonBorders.set(key, isPrincipal ? PRINCIPAL_EDGE : mixHex(hex, "#ffffff", focused ? 0.7 : 0.45));
+        polygonBorders.set(key, mixHex(hex, "#ffffff", isPrincipal ? 0.72 : focused ? 0.62 : 0.45)); // same stage token, lightened
       }
       const coord = JURISDICTION_COORDS[code] || JURISDICTION_COORDS[String(code).split("-")[0]];
       if (!coord) continue;
@@ -62,26 +61,17 @@ export function buildCompanyScene(rows, { stageOf = DEFAULT_STAGE, focusedId = n
   return { points, arcs, routeLabels, polygonColors, polygonBorders, stageCounts, colors };
 }
 
-// Compact overlay for the 80px sidebar globe: every active project in its stage colour (principal larger), plus its routes.
-export function buildPortfolioMiniOverlay(rows, stageOf = DEFAULT_STAGE) {
-  const markers = [];
-  const routes = [];
-  const territories = [];
-  let focus = null;
-  for (const { project, structure, principal, homeCode } of rows || []) {
-    const { hex } = stageOf(project);
-    const codes = [...new Set([principal, ...(structure ? participantsOf(structure) : [])].filter(Boolean))];
-    for (const code of codes) {
-      const c = JURISDICTION_COORDS[code] || JURISDICTION_COORDS[String(code).split("-")[0]];
-      if (!c) continue;
-      markers.push({ code, principal: code === principal, lat: c.lat, lng: c.lng, color: hex, projectId: project.id });
-      if (!String(code).includes("-")) territories.push({ code, principal: code === principal, color: hex });
-      if (!focus && code === principal) focus = { lat: c.lat, lng: c.lng };
-    }
-    for (const a of structure ? structureArcs(structure, { color: hex, homeCode }) : []) {
-      routes.push({ from: { lat: a.startLat, lng: a.startLng }, to: { lat: a.endLat, lng: a.endLng }, color: hex });
-    }
+// The decorative 80px sidebar globe does not plot projects. On company routes it receives only a faint aggregate accent: the stage
+// colour of the most common active stage (same token as the Company Globe), plus the active-project count for accessibility.
+export function buildPortfolioAccent(rows, stageOf = DEFAULT_STAGE) {
+  if (!rows || !rows.length) return null;
+  const counts = new Map();
+  for (const { project } of rows) {
+    const st = stageOf(project);
+    const e = counts.get(st.key) || { hex: st.hex, n: 0 };
+    e.n += 1;
+    counts.set(st.key, e);
   }
-  if (!markers.length) return null;
-  return { key: `portfolio|${markers.map((m) => `${m.projectId}:${m.code}:${m.color}`).join(",")}|${routes.length}`, markers, routes, territories, focus, portfolio: true };
+  const [key, top] = [...counts.entries()].sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]))[0];
+  return { key: `portfolio|${key}|${top.hex}|${rows.length}`, portfolio: true, projects: rows.length, accent: top.hex };
 }

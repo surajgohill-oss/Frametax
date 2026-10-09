@@ -2,7 +2,7 @@ import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJuri
 import { shortBlockerReason } from "../lib/blockerDisposition";
 import { jurisdictionName } from "../lib/format";
 import { FAMILY_META } from "../lib/globeStructure";
-import { attainability, missingFactsTitle } from "../lib/incentivePotential";
+import { attainability, missingFactsTitle, potentialFromContractRecord } from "../lib/incentivePotential";
 
 // Overview Globe hover data parity: extracted verbatim from
 // ProjectGlobe.jsx (the sole prior home of this component) so BOTH the full
@@ -90,7 +90,7 @@ function PotentialFields({ pot, awardRisk = false }) {
       ))}
       <div className="hover-field" data-potential-field="attainability" title={missingFactsTitle(pot)}>
         <div className="small" style={{ fontWeight: 600 }}>{att.headline}</div>
-        {att.requirement && <div className="text-tertiary small">{att.requirement}{att.more > 0 ? ` · +${att.more} more in Inspector` : ""}</div>}
+        {att.requirement && <div className="text-tertiary small">{briefly(att.requirement, 64)}{att.more > 0 ? ` · +${att.more} more in Inspector` : ""}</div>}
       </div>
     </>
   );
@@ -98,20 +98,20 @@ function PotentialFields({ pot, awardRisk = false }) {
 
 function SingleJurisdictionContractBody({ hover }) {
   const rec = hover.contractRecord;
-  const pot = hover.incentivePotential;
+  // The structure's own served potential when it is fully priced, else the contract record's own figures: every hover states
+  // all four economics figures (missing ones read "Not established"), never a bare "Not priced".
+  const pot = hover.incentivePotential || potentialFromContractRecord(rec);
   return (
     <>
       <div className="hover-field">
         <div className="text-tertiary small">Program</div>
         <div className="small">{rec.program_name || "Not available"}</div>
       </div>
-      {pot ? <PotentialFields pot={pot} /> : (
-        <div className="hover-field"><div className="text-tertiary small">Economics</div><div className="small">Not priced</div></div>
-      )}
-      {(rec.hard_failure_reason || rec.headline) && (
+      <PotentialFields pot={pot} />
+      {(rec.hard_failure_reason || rec.headline) && !(rec.category === "CONDITIONAL_ALTERNATIVE" && pot.ceilingStatus === "CONDITIONAL" && attainability(pot).requirement) && (
         <div className="hover-field"><div className="text-tertiary small">Blocker</div><div className="small">{briefly(rec.hard_failure_reason || rec.headline)}</div></div>
       )}
-      {(rec.missing_conditions || []).length > 0 && !pot && (
+      {(rec.missing_conditions || []).length > 0 && !hover.incentivePotential && pot.ceilingStatus !== "CONDITIONAL" && (
         <div className="hover-field"><div className="text-tertiary small">Missing fact</div><div className="small">{rec.missing_conditions[0]}{rec.missing_conditions.length > 1 ? ` · +${rec.missing_conditions.length - 1} more in Inspector` : ""}</div></div>
       )}
     </>
@@ -171,28 +171,21 @@ function OptimizerStructureBody({ hover }) {
     : "Saves vs. Current Location";
   return (
     <>
-      {hover.role && (
+      {/* The structure story (Project Globe) already states role and participants once; surfaces without it state them here. */}
+      {!hover.structureStory && hover.role && (
         <div className="hover-field">
-          <div className="text-tertiary small">Role</div>
+          <div className="text-tertiary small">Role in selected structure</div>
           <div className="small">{hover.role}</div>
         </div>
       )}
-      <div className="hover-field">
-        <div className="text-tertiary small">Participants</div>
-        <div className="small">{(d.participants || []).map(jurisdictionName).join(", ") || "Not available"}</div>
-      </div>
-      {d.incentive_potential ? <PotentialFields pot={d.incentive_potential} /> : (
-        <>
-          <div className="hover-field">
-            <div className="text-tertiary small">Total incentive</div>
-            <div className="small">{d.incentive_usd != null ? formatFullUsd(d.incentive_usd) : "Not available"}</div>
-          </div>
-          <div className="hover-field">
-            <div className="text-tertiary small">NPC</div>
-            <div className="small">{d.npc_usd != null ? formatFullUsd(d.npc_usd) : "Not priced"}</div>
-          </div>
-        </>
+      {!hover.structureStory && (
+        <div className="hover-field">
+          <div className="text-tertiary small">Participants</div>
+          <div className="small">{(d.participants || []).map(jurisdictionName).join(" · ") || "Not available"}</div>
+        </div>
       )}
+      {/* All four figures every time; a figure the backend does not serve reads "Not established", never a dropped row. */}
+      <PotentialFields pot={d.incentive_potential || potentialFromContractRecord({})} />
       {d.recommendation_status && (
         <div className="hover-field">
           <div className="text-tertiary small">{deltaLabel}</div>
@@ -354,12 +347,9 @@ function AggregatedUniverseBody({ hover }) {
 function RouteJurisdictionBody({ hover }) {
   return (
     <>
-      {/* The selected route's own structure economics render once, below (OptimizerStructureBody). */}
-      <JurisdictionRecordBody hover={hover} hidePotential={!!hover.structureDetail?.incentive_potential} />
-      <div className="hover-field">
-        <div className="text-tertiary small">Selected route</div>
-        <div className="small">{hover.role || "Participating jurisdiction"}</div>
-      </div>
+      {/* Concise route hover: category is in the header; role, participants, the four economics figures and one attainability
+          line come from the selected structure (OptimizerStructureBody + StructureStory). The long structure label, status
+          and category counts live in the side list and the Inspector. */}
       <OptimizerStructureBody hover={hover} />
     </>
   );
@@ -379,7 +369,8 @@ function hoverCardStyle(hoverRect, canvasEl) {
   let left = hoverRect.left - box.left + hoverRect.width / 2 + HOVER_CARD_MARGIN;
   let top = hoverRect.top - box.top - 8;
   left = Math.max(HOVER_CARD_MARGIN, Math.min(left, box.width - HOVER_CARD_W - HOVER_CARD_MARGIN));
-  top = Math.max(HOVER_CARD_MARGIN, Math.min(top, box.height - 168));
+  // the card is up to ~300px tall once it carries the four economics figures, role and participants
+  top = Math.max(HOVER_CARD_MARGIN, Math.min(top, box.height - 300));
   return { left, top, width: HOVER_CARD_W };
 }
 
