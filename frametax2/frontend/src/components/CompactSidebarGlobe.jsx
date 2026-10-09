@@ -29,26 +29,6 @@ function webglAvailable() {
 
 const themeOf = (key) => (key === "night" ? GLOBE_THEME.night : GLOBE_THEME.day);
 
-// ── procedural tonal variation (tileable in longitude) ──────────────────────────────────────────
-const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
-function valueNoise(u, v, cellsX, cellsY) {
-  const x = u * cellsX; const y = v * cellsY;
-  const x0 = Math.floor(x); const y0 = Math.floor(y);
-  const fx = x - x0; const fy = y - y0;
-  const sx = fx * fx * (3 - 2 * fx); const sy = fy * fy * (3 - 2 * fy);
-  const xa = ((x0 % cellsX) + cellsX) % cellsX; const xb = (xa + 1) % cellsX;
-  const a = hash(xa, y0); const b = hash(xb, y0); const c = hash(xa, y0 + 1); const d = hash(xb, y0 + 1);
-  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
-}
-const fbm = (u, v, cx, cy, octaves) => {
-  let amp = 0.5; let sum = 0; let norm = 0;
-  for (let o = 0; o < octaves; o += 1) {
-    sum += amp * valueNoise(u, v, cx * 2 ** o, cy * 2 ** o);
-    norm += amp; amp *= 0.5;
-  }
-  return sum / norm;
-};
-
 const mix = (a, b, t) => {
   const A = parseInt(a.slice(1), 16); const B = parseInt(b.slice(1), 16);
   const ch = (i) => Math.round(((A >> i) & 255) + (((B >> i) & 255) - ((A >> i) & 255)) * t).toString(16).padStart(2, "0");
@@ -84,31 +64,52 @@ const loadMarble = () => {
 };
 
 let cloudCanvas = null;
+// Deterministic, high-contrast cloud deck (~38% cover): a Southern Ocean cyclone, mid-latitude / ITCZ bands, and a clear Sahara break.
 function bakeClouds() {
   if (cloudCanvas) return cloudCanvas;
-  const w = 512; const h = 256;
   const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  const g = c.getContext("2d");
-  const img = g.createImageData(w, h);
-  for (let y = 0; y < h; y += 1) {
-    const lat = (0.5 - y / h) * Math.PI; // more cover in the mid-latitude bands and the ITCZ, less over the subtropics
-    const band = 0.55 + 0.45 * Math.cos(lat * 3.0 + 0.4) ** 2;
-    for (let x = 0; x < w; x += 1) {
-      const n = fbm(x / w, y / h, 5, 3, 5);
-      const a = Math.max(0, Math.min(1, (n * band - 0.40) / 0.2));
-      const i = (y * w + x) * 4;
-      img.data[i] = 255; img.data[i + 1] = 255; img.data[i + 2] = 255;
-      img.data[i + 3] = Math.round(255 * a * a * (3 - 2 * a) * 0.95);
-    }
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, 512, 256);
+
+  ctx.save();
+  ctx.translate(260, 200);
+  for (let a = 0; a < Math.PI * 3; a += 0.15) {
+    const r = a * 7.5;
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.85 - a * 0.08)})`;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.6, 4 + a * 1.8, 0, Math.PI * 2);
+    ctx.fill();
   }
-  g.putImageData(img, 0, 0);
+  ctx.restore();
+
+  const bands = [
+    { y: 70, count: 18, minR: 8, maxR: 16 },
+    { y: 130, count: 24, minR: 10, maxR: 20 },
+    { y: 185, count: 20, minR: 12, maxR: 26 },
+  ];
+  bands.forEach(({ y, count, minR, maxR }) => {
+    for (let i = 0; i < count; i += 1) {
+      const x = (i * (512 / count) + (i % 3) * 12) % 512;
+      if (x > 210 && x < 280 && y < 120) continue; // Sahara clear-sky break
+      const rad = minR + (i % 5) * ((maxR - minR) / 5);
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      grad.addColorStop(0, "rgba(255, 255, 255, 0.92)");
+      grad.addColorStop(0.45, "rgba(255, 255, 255, 0.65)");
+      grad.addColorStop(0.7, "rgba(255, 255, 255, 0.15)");
+      grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rad * 1.6, rad * 0.7, (i % 4) * 0.25 - 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
   cloudCanvas = c;
   return c;
 }
 
-// A small positive x tilts the north pole toward the camera, as in the reference photo.
-const BASE_TILT = 0.1;
+// Negative x tilts the south pole toward the camera (Antarctica / Southern Ocean visible).
+const BASE_TILT = -0.28;
 
 // Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360).
 function surfacePoint(lat, lng, r = 1) {
@@ -186,7 +187,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const group = new THREE.Group();
     group.rotation.x = BASE_TILT;
-    { const face = surfacePoint(8, -82); group.rotation.y = -Math.atan2(face.x, face.z); } // opens on the Americas, as in the reference photo
+    { const face = surfacePoint(4, 24); group.rotation.y = -Math.atan2(face.x, face.z); } // opens on Africa / Arabia, as in the Apollo 17 frame
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
@@ -205,8 +206,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     glow.visible = false;
     group.add(glow);
     const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
-    const rim = limbShell(1.03, t0.rim, "#6aa8f0", 3.0, 0.5);
-    const halo = limbShell(1.11, t0.atmosphere, "#6aa8f0", 4.0, 0.34);
+    const rim = limbShell(1.03, t0.rim, "#6aa8f0", 3.5, 0.15);
+    const halo = limbShell(1.11, t0.atmosphere, "#6aa8f0", 4.6, 0.1);
     scene.add(rim);
     scene.add(halo);
 
