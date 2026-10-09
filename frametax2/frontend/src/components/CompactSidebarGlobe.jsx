@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLOBE_THEME } from "../lib/globeVisualTokens";
+import marbleUrl from "../assets/earth/blue-marble-1024.jpg"; // NASA Blue Marble, see assets/earth/ATTRIBUTION.md
 
-// The 80px sidebar globe is a DECORATIVE CineGlobe identity object -- brand, geography and atmosphere -- inspired by a restrained
-// optical view of Earth: tonal deep-maritime ocean, naturalistic land, soft shelf glow, a warm upper-left key light, a cool
-// lower-right atmospheric edge, thin drifting cloud cover and a very slow turn. It deliberately does NOT reproduce data layers
-// (no jurisdiction boundaries, route lines, labels or marker clusters; those belong to the Company and Project Globes).
-//   company routes: the portfolio Earth, with at most a faint aggregate stage-colour accent in the atmosphere;
-//   project routes: the same Earth turned to the principal's location, with one quiet glow there.
+// The 80px sidebar globe is a DECORATIVE CineGlobe identity object -- brand, geography and atmosphere -- a restrained optical view of
+// Earth: NASA Blue Marble imagery (bundled locally, 1024px; no remote imagery, no API key), a soft ocean specular response, a
+// warm upper-left key light, a cool atmospheric limb, a separate translucent cloud shell drifting faster than the Earth turns,
+// and a very slow rotation. It deliberately does NOT reproduce data layers (no boundaries, routes, labels or marker clusters;
+// those belong to the Company and Project Globes). Project routes may add ONE extremely quiet glow at the principal.
 //
-// Independent of the heavyweight Globe3D engine (no three-globe, polygon layers, CSS2D or handlers). One baked texture set per
-// theme, one sphere, a cloud shell and two thin Fresnel shells; nothing is reallocated per frame. Animation runs at ~30fps only
+// Independent of the heavyweight Globe3D engine. One renderer per mount; the decoded image and the derived ocean mask / cloud
+// canvases are cached at module level, so a remount only uploads textures to its own context. Animation runs at ~30fps only
 // while on screen, tab visible and reduced motion off; otherwise single frames are drawn on demand.
 //
 // FROZEN subsystem (2026-07-28), unlocked by the user 2026-10-08. Do not import Globe3D or share scene objects with it.
@@ -28,59 +28,6 @@ function webglAvailable() {
 }
 
 const themeOf = (key) => (key === "night" ? GLOBE_THEME.night : GLOBE_THEME.day);
-
-const W = 1024;
-const H = 512;
-const projectPoint = (lon, lat) => [((lon + 180) / 360) * W, ((90 - lat) / 180) * H];
-
-// At 80px small islands degenerate into stray pixels: drop rings below this fraction of the texture.
-const MIN_RING_EXTENT_FRAC = 0.012;
-function ringIsSignificant(ring) {
-  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
-  for (const [lon, lat] of ring) {
-    if (lon < minLon) minLon = lon;
-    if (lon > maxLon) maxLon = lon;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-  }
-  return (maxLon - minLon) / 360 > MIN_RING_EXTENT_FRAC || (maxLat - minLat) / 180 > MIN_RING_EXTENT_FRAC;
-}
-const polygonsOf = (feat) => {
-  const g = feat?.geometry;
-  if (!g) return [];
-  return g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
-};
-
-// Breaks the path at antimeridian-crossing jumps instead of drawing a streak across the whole texture.
-function tracePolys(ctx, polys, scale = 1) {
-  ctx.beginPath();
-  for (const rings of polys) {
-    for (const ring of rings) {
-      let started = false;
-      let prevLon = null;
-      for (const [lon, lat] of ring) {
-        const [x, y] = projectPoint(lon, lat);
-        if (!started) { ctx.moveTo(x * scale, y * scale); started = true; }
-        else if (prevLon != null && Math.abs(lon - prevLon) > 180) ctx.moveTo(x * scale, y * scale);
-        else ctx.lineTo(x * scale, y * scale);
-        prevLon = lon;
-      }
-      ctx.closePath();
-    }
-  }
-}
-
-// The world geometry, fetched once per page session (own promise, never shared with Globe3D's load state).
-let landPromise = null;
-const loadLand = () => {
-  if (!landPromise) {
-    landPromise = fetch("/geo/world-110m.geojson")
-      .then((r) => (r.ok ? r.json() : { features: [] }))
-      .catch(() => ({ features: [] }))
-      .then((geo) => (geo.features || []).flatMap((f) => polygonsOf(f).filter((rings) => rings.length && ringIsSignificant(rings[0]))));
-  }
-  return landPromise;
-};
 
 // ── procedural tonal variation (tileable in longitude) ──────────────────────────────────────────
 const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
@@ -108,72 +55,33 @@ const mix = (a, b, t) => {
   return `#${ch(16)}${ch(8)}${ch(0)}`;
 };
 
-// Light/dark noise speckle at the given alphas (composited 'source-atop' so it stays inside existing pixels).
-function noiseLayer(w, h, cx, cy, octaves, darkAlpha, lightAlpha) {
-  const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  const g = c.getContext("2d");
-  const img = g.createImageData(w, h);
-  for (let y = 0; y < h; y += 1) {
-    for (let x = 0; x < w; x += 1) {
-      const t = (fbm(x / w, y / h, cx, cy, octaves) - 0.5) * 2;
-      const light = t > 0;
-      const i = (y * w + x) * 4;
-      img.data[i] = light ? 255 : 0; img.data[i + 1] = light ? 250 : 8; img.data[i + 2] = light ? 235 : 20;
-      img.data[i + 3] = Math.round(255 * Math.min(1, Math.abs(t)) * (light ? lightAlpha : darkAlpha));
-    }
+// Decoded Blue Marble image + the ocean specular mask derived from it (blue-dominant pixels = water), cached per page session.
+let marblePromise = null;
+const loadMarble = () => {
+  if (!marblePromise) {
+    marblePromise = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        c.width = 512; c.height = 256;
+        const g = c.getContext("2d");
+        g.drawImage(img, 0, 0, 512, 256);
+        const d = g.getImageData(0, 0, 512, 256);
+        for (let i = 0; i < d.data.length; i += 4) {
+          const r = d.data[i]; const gg = d.data[i + 1]; const b = d.data[i + 2];
+          const ocean = b > r + 10 && b >= gg - 6 && r < 110;
+          const v = ocean ? 255 : 0;
+          d.data[i] = v; d.data[i + 1] = v; d.data[i + 2] = v; d.data[i + 3] = 255;
+        }
+        g.putImageData(d, 0, 0);
+        resolve({ img, spec: c });
+      };
+      img.onerror = reject;
+      img.src = marbleUrl;
+    });
   }
-  g.putImageData(img, 0, 0);
-  return c;
-}
-
-// Earth maps for one theme: colour (ocean + shelf glow + land) and the ocean specular mask.
-function bakeEarth(land, theme) {
-  const color = document.createElement("canvas");
-  color.width = W; color.height = H;
-  const ctx = color.getContext("2d");
-  // Deep maritime ocean: darker toward the poles, teal-lifted in the tropics, anchored on the Globe's own ocean token.
-  const deep = mix(theme.ocean, "#05101c", 0.45);
-  const mid = mix(theme.ocean, "#0e4a66", 0.55);
-  const warm = mix(theme.ocean, "#17687a", 0.5);
-  const og = ctx.createLinearGradient(0, 0, 0, H);
-  og.addColorStop(0, deep); og.addColorStop(0.3, mid); og.addColorStop(0.5, warm); og.addColorStop(0.7, mid); og.addColorStop(1, deep);
-  ctx.fillStyle = og;
-  ctx.fillRect(0, 0, W, H);
-  ctx.drawImage(noiseLayer(256, 128, 5, 3, 4, 0.22, 0.12), 0, 0, W, H);
-  // Soft shallow-water glow around the continents.
-  ctx.save();
-  ctx.shadowColor = "rgba(78, 168, 182, 0.65)";
-  ctx.shadowBlur = 9;
-  tracePolys(ctx, land);
-  ctx.fillStyle = "#000000";
-  ctx.fill("evenodd");
-  ctx.restore();
-  // Naturalistic land by latitude band (polar white, boreal green, temperate olive, subtropical sand, tropical green).
-  const lc = document.createElement("canvas");
-  lc.width = W; lc.height = H;
-  const lx = lc.getContext("2d");
-  const lg = lx.createLinearGradient(0, 0, 0, H);
-  const stops = [[0, "#e4e9ee"], [0.1, "#cfd6d8"], [0.17, "#58664c"], [0.27, "#5f7a4a"], [0.35, "#7d8a50"], [0.41, "#a89560"], [0.46, "#7f8a4c"], [0.5, "#3f6b3e"], [0.56, "#7f8a4c"], [0.62, "#a89560"], [0.7, "#5f7d46"], [0.82, "#5b6a4a"], [0.9, "#d6dcdf"], [1, "#eef1f3"]];
-  for (const [p, c] of stops) lg.addColorStop(p, c);
-  lx.fillStyle = lg;
-  tracePolys(lx, land);
-  lx.fill("evenodd");
-  lx.globalCompositeOperation = "source-atop";
-  lx.drawImage(noiseLayer(256, 128, 7, 4, 4, 0.34, 0.2), 0, 0, W, H);
-  lx.globalCompositeOperation = "source-over";
-  ctx.drawImage(lc, 0, 0);
-  // Specular mask: shiny ocean, matte land.
-  const spec = document.createElement("canvas");
-  spec.width = W / 2; spec.height = H / 2;
-  const sx = spec.getContext("2d");
-  sx.fillStyle = "#ffffff";
-  sx.fillRect(0, 0, spec.width, spec.height);
-  tracePolys(sx, land, 0.5);
-  sx.fillStyle = "#000000";
-  sx.fill("evenodd");
-  return { color, spec };
-}
+  return marblePromise;
+};
 
 let cloudCanvas = null;
 function bakeClouds() {
@@ -191,7 +99,7 @@ function bakeClouds() {
       const a = Math.max(0, Math.min(1, (n * band - 0.44) / 0.2));
       const i = (y * w + x) * 4;
       img.data[i] = 255; img.data[i + 1] = 255; img.data[i + 2] = 255;
-      img.data[i + 3] = Math.round(255 * a * a * (3 - 2 * a) * 0.4);
+      img.data[i + 3] = Math.round(255 * a * a * (3 - 2 * a) * 0.6);
     }
   }
   g.putImageData(img, 0, 0);
@@ -262,7 +170,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     mount.appendChild(renderer.domElement);
 
     // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
-    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const ambient = new THREE.AmbientLight(0xffffff, 0.66);
+    scene.add(ambient);
     const key = new THREE.DirectionalLight(0xfff0d8, 1.0);
     key.position.set(-2.2, 1.7, 2.2);
     scene.add(key);
@@ -275,23 +184,23 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
-      new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 130, specular: new THREE.Color("#33485f") }),
+      new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 150, specular: new THREE.Color("#2b3d57"), emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.3 }),
     );
     group.add(earth);
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(1.014, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, depthWrite: false }),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.05, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
+      new THREE.SphereGeometry(0.04, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }),
     );
     glow.visible = false;
     group.add(glow);
     const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
-    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.0, 0.5);
-    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.2, 0.36);
+    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.4, 0.3);
+    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.6, 0.24);
     scene.add(rim);
     scene.add(halo);
 
@@ -303,32 +212,31 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     const render = () => renderer.render(scene, camera);
     let cancelled = false;
 
+    // Theme: atmosphere tint, light levels and a slightly cooler Earth at night. The Earth/ocean-mask textures are uploaded ONCE per
+    // mount (when the cached image resolves); a theme or overlay change never re-uploads or re-bakes anything.
     const applyTheme = () => {
-      const land = stateRef.current.land;
-      const t = themeOf(document.documentElement.getAttribute("data-theme"));
+      const night = document.documentElement.getAttribute("data-theme") === "night";
+      const t = themeOf(night ? "night" : "day");
       rim.material.uniforms.uCool.value.set(t.rim);
       halo.material.uniforms.uCool.value.set(stateRef.current.accent ? mix(t.atmosphere, stateRef.current.accent, 0.4) : t.atmosphere);
-      if (!land) return;
-      // Bake once per theme (cached by key); an overlay change alone never re-bakes.
-      if (stateRef.current.bakedFor !== t) {
-        const baked = bakeEarth(land, t);
-        earthTex?.dispose(); specTex?.dispose();
-        earthTex = new THREE.CanvasTexture(baked.color);
-        earthTex.colorSpace = THREE.SRGBColorSpace;
-        earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        specTex = new THREE.CanvasTexture(baked.spec);
-        earth.material.map = earthTex;
-        earth.material.specularMap = specTex;
-        earth.material.needsUpdate = true;
-        stateRef.current.bakedFor = t;
-      }
+      ambient.intensity = night ? 0.6 : 0.78;
+      key.intensity = night ? 0.85 : 1.0;
+      earth.material.color.set(night ? "#c9d6ea" : "#ffffff");
       render();
     };
-    loadLand().then((land) => {
+    loadMarble().then(({ img, spec }) => {
       if (cancelled) return;
-      stateRef.current.land = land;
-      applyTheme();
-    });
+      earthTex = new THREE.Texture(img);
+      earthTex.colorSpace = THREE.SRGBColorSpace;
+      earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      earthTex.needsUpdate = true;
+      specTex = new THREE.CanvasTexture(spec);
+      earth.material.map = earthTex;
+      earth.material.emissiveMap = earthTex; // self-lit floor so the ocean never collapses to black on the dark stage
+      earth.material.specularMap = specTex;
+      earth.material.needsUpdate = true;
+      render();
+    }).catch(() => { /* imagery unavailable: the plain lit sphere stays, nothing else breaks */ });
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let onScreen = true;
@@ -339,14 +247,14 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       if (now - last < 33) return; // ~30fps is plenty at 80px
       const dt = last ? Math.min(100, now - last) : 33;
       last = now;
-      group.rotation.y += 0.00003 * dt;           // very slow turn of the Earth
-      clouds.rotation.y += 0.000018 * dt;         // cloud deck drifts independently
+      group.rotation.y += 0.000012 * dt;          // very slow turn of the Earth (~9 min per revolution)
+      clouds.rotation.y += 0.00003 * dt;          // the cloud deck drifts ahead of it, independently (~3.5 min per lap)
       key.position.x = -2.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
       key.position.y = 1.7 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
         const p = 0.5 + 0.5 * Math.sin(now / 1500);
         glow.scale.setScalar(1 + 0.3 * p);
-        glow.material.opacity = 0.45 - 0.22 * p;
+        glow.material.opacity = 0.3 - 0.16 * p;
       }
       render();
     };

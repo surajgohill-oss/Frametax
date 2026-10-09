@@ -82,11 +82,11 @@ test("the stage legend lists stages, never productions, and comes from the exist
   assert.doesNotMatch(readFileSync(join(SRC, "styles/screens.css"), "utf8"), /company-legend-key/);
   assert.doesNotMatch(src, /scene\.legend|portfolioPalette/);
   const stage = readFileSync(join(SRC, "lib/companyStage.js"), "utf8");
-  assert.match(stage, /PROJECT_STATUSES/);
-  assert.match(stage, /archived/, "archived is excluded from the active-stage legend");
-  assert.match(stage, /--blue/); assert.match(stage, /--silver/); assert.match(stage, /--gold/); assert.match(stage, /--jade/);
-  assert.doesNotMatch(stage, /#6FA0D6|#AFB6C2|#E8C273|#5FBF92/i, "no substitute dark-ground palette: the canonical stage tokens only");
+  assert.match(stage, /productionStageVisual/);
+  assert.doesNotMatch(stage, /--blue|--silver|--gold|--jade|useProjectStatus/, "not inferred from the generic blue/silver/gold/jade tiers");
   assert.doesNotMatch(readFileSync(join(SRC, "lib/companyScene.js"), "utf8"), /hash|assignProjectColors|PALETTE/i);
+  const sv = readFileSync(join(SRC, "lib/productionStageVisual.js"), "utf8");
+  assert.match(src, /globe-legend-vertical company-stage-legend/, "the established chrome-free legend classes");
 });
 
 test("replacing one project's leader replaces ONLY that project's geography; nothing stale is kept", () => {
@@ -123,4 +123,21 @@ test("sidebar portfolio accent: decorative only, the dominant stage's colour fro
   const staged = rowsFromPayload(payload.map((p) => (p.project_id === "lu" || p.project_id === "lls" || p.project_id === "fvd" ? { ...p, lifecycle: "PRODUCTION" } : p)));
   assert.equal(buildPortfolioAccent(staged, stageOf).accent, "#E8C273", "the most common stage wins");
   assert.notEqual(a.key, buildPortfolioAccent(staged, stageOf).key);
+});
+
+test("canonical production-stage colour sequence", async () => {
+  const { STAGE_VISUAL, ACTIVE_STAGE_ORDER, activeStageVisuals } = await import("../src/lib/productionStageVisual.js");
+  assert.deepEqual(ACTIVE_STAGE_ORDER.map((k) => [k, STAGE_VISUAL[k].hex]), [["evaluation", "#5E86B2"], ["development", "#D4A63F"], ["production", "#3F9A68"], ["completed", "#B8C96A"]]);
+  assert.equal(STAGE_VISUAL.archived.hex, "#68717C");
+  assert.deepEqual(activeStageVisuals().map((s) => s.label), ["Evaluation", "Development", "Production", "Completed"], "archived is not on the active legend");
+  assert.deepEqual(Object.values(STAGE_VISUAL).filter((s) => s.check).map((s) => s.key), ["completed"], "only Completed carries the check");
+});
+
+test("the legend has no plate and no principal/participant key", () => {
+  const css = readFileSync(join(SRC, "styles/screens.css"), "utf8");
+  const block = /\.globe-legend-vertical \{[\s\S]*?\n\}/.exec(css)[0];
+  assert.match(block, /background: none/); assert.match(block, /backdrop-filter: none/); assert.match(block, /border: none/); assert.match(block, /box-shadow: none/); assert.match(block, /pointer-events: none/);
+  assert.doesNotMatch(css, /\.company-legend\b/);
+  const src = readFileSync(join(SRC, "screens/company/CompanyGlobe.jsx"), "utf8");
+  assert.doesNotMatch(src, /company-legend|White edge|participant:/);
 });

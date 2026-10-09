@@ -2067,19 +2067,9 @@
   box-shadow: 0 0 0 5px rgba(244, 236, 217, 0.22);
 }
 
-/* COMPANY GLOBE legend (2026-10-08): generated from the same rows and palette as the scene; sits inside the canvas, bottom-left,
-   never over the side panel or the Inspector. */
-.company-legend {
-  position: absolute; left: var(--sp-4); bottom: var(--sp-4); z-index: 4; display: flex; flex-direction: column; gap: 5px;
-  padding: 9px 11px; border-radius: var(--radius-md); max-width: 260px;
-  /* The canonical stage tokens are theme-specific (dark inks by day, light tones at night), so the panel follows the theme too. */
-  background: rgba(250, 247, 240, 0.92); border: 0.5px solid rgba(60, 54, 44, 0.2);
-  color: #2a2620; font-size: 11px; pointer-events: none;
-}
-:root[data-theme="night"] .company-legend { background: rgba(12, 16, 24, 0.78); border-color: rgba(244, 236, 217, 0.18); color: #e9e4d8; backdrop-filter: blur(8px); }
-.company-legend-head { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
-.company-legend-row { display: flex; align-items: baseline; gap: 7px; }
-.company-legend-row.empty { opacity: 0.5; }
-.company-legend-swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; align-self: center; }
-.company-legend-title { font-weight: 600; }
-.company-legend-stage { margin-left: auto; padding-left: 8px; opacity: 0.6; }
+/* COMPANY GLOBE stage legend: the established chrome-free .globe-legend-vertical treatment (no plate, blur, border or shadow box),
+   anchored bottom-left because the hover tooltip owns the top-left of this canvas. */
+.globe-legend-vertical.company-stage-legend { top: auto; bottom: 14px; }
+.glv-heading { font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.7; margin-bottom: 1px; }
+.glv-count { margin-left: 4px; opacity: 0.6; }
+.glv-check { margin-left: 3px; font-size: 10px; opacity: 0.8; }

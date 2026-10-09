@@ -49,6 +49,8 @@ test("decorative sidebar globe: no data layers, independent of Globe3D, reduced-
   assert.match(src, /document\.hidden/);
   assert.match(src, /IntersectionObserver/);
   assert.match(src, /forceContextLoss/);
-  assert.match(src, /bakedFor !== t/, "textures are baked once per theme, never per frame or per overlay change");
+  assert.match(src, /blue-marble-1024\.jpg/, "bundled NASA Blue Marble, no remote imagery");
+  assert.doesNotMatch(src, /https?:\/\/|bakeEarth|loadLand/, "no network imagery and no per-theme re-bake");
+  assert.equal((src.match(/new THREE\.Texture\(img\)/g) || []).length, 1, "the Earth texture is uploaded once per mount");
   assert.match(src, /clouds\.rotation\.y \+=/, "the cloud deck drifts independently of the Earth");
 });
