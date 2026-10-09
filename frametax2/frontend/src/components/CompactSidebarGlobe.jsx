@@ -96,10 +96,10 @@ function bakeClouds() {
     const band = 0.55 + 0.45 * Math.cos(lat * 3.0 + 0.4) ** 2;
     for (let x = 0; x < w; x += 1) {
       const n = fbm(x / w, y / h, 5, 3, 5);
-      const a = Math.max(0, Math.min(1, (n * band - 0.44) / 0.2));
+      const a = Math.max(0, Math.min(1, (n * band - 0.40) / 0.2));
       const i = (y * w + x) * 4;
       img.data[i] = 255; img.data[i + 1] = 255; img.data[i + 2] = 255;
-      img.data[i + 3] = Math.round(255 * a * a * (3 - 2 * a) * 0.6);
+      img.data[i + 3] = Math.round(255 * a * a * (3 - 2 * a) * 0.95);
     }
   }
   g.putImageData(img, 0, 0);
@@ -107,8 +107,8 @@ function bakeClouds() {
   return c;
 }
 
-// Negative x tilts the south pole toward the camera (Antarctica visible, as in the Apollo 17 frame).
-const BASE_TILT = -0.38;
+// A small positive x tilts the north pole toward the camera, as in the reference photo.
+const BASE_TILT = 0.1;
 
 // Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360).
 function surfacePoint(lat, lng, r = 1) {
@@ -177,8 +177,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
     const ambient = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xffffff, 1.4);
-    key.position.set(2.5, 2.0, 4.0);
+    const key = new THREE.DirectionalLight(0xffffff, 1.6);
+    key.position.set(0.2, 0.3, 3.8);
     scene.add(key);
     const fill = new THREE.DirectionalLight(0x6f96c0, 0.28);
     fill.position.set(2.2, -1.2, -1.2);
@@ -186,16 +186,16 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const group = new THREE.Group();
     group.rotation.x = BASE_TILT;
-    { const africa = surfacePoint(4, 20); group.rotation.y = -Math.atan2(africa.x, africa.z); } // opens on Africa / the Atlantic, as in the Apollo 17 frame
+    { const face = surfacePoint(8, -82); group.rotation.y = -Math.atan2(face.x, face.z); } // opens on the Americas, as in the reference photo
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0 }),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, emissive: new THREE.Color(0x0a1428), emissiveIntensity: 0.25 }),
     );
     group.add(earth);
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(1.014, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, emissive: new THREE.Color(0x333333) }),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, emissive: new THREE.Color(0x333333) }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
@@ -205,8 +205,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     glow.visible = false;
     group.add(glow);
     const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
-    const rim = limbShell(1.03, t0.rim, "#f4ead6", 3.4, 0.3);
-    const halo = limbShell(1.11, t0.atmosphere, "#f4ead6", 4.6, 0.24);
+    const rim = limbShell(1.03, t0.rim, "#6aa8f0", 3.0, 0.5);
+    const halo = limbShell(1.11, t0.atmosphere, "#6aa8f0", 4.0, 0.34);
     scene.add(rim);
     scene.add(halo);
 
@@ -225,7 +225,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       rim.material.uniforms.uCool.value.set(t.rim);
       halo.material.uniforms.uCool.value.set(stateRef.current.accent ? mix(t.atmosphere, stateRef.current.accent, 0.4) : t.atmosphere);
       ambient.intensity = night ? 0.7 : 1.2;
-      key.intensity = night ? 0.9 : 1.4;
+      key.intensity = night ? 0.9 : 1.6;
       earth.material.color.set(night ? "#c9d6ea" : "#ffffff");
       render();
     };
@@ -251,8 +251,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       last = now;
       group.rotation.y += 0.000012 * dt;          // very slow turn of the Earth (~9 min per revolution)
       clouds.rotation.y += 0.00003 * dt;          // the cloud deck drifts ahead of it, independently (~3.5 min per lap)
-      key.position.x = 2.5 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
-      key.position.y = 2.0 + Math.cos(now / 11000) * 0.12;
+      key.position.x = 0.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
+      key.position.y = 0.3 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
         const p = 0.5 + 0.5 * Math.sin(now / 1500);
         glow.scale.setScalar(1 + 0.3 * p);
