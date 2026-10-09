@@ -71,6 +71,25 @@ ALLOWED_STACK_DISPOSITIONS = {
     'UNPROVEN_RUNTIME_CONSTRUCTIBILITY'
 }
 
+
+ALLOWED_DATA_LABELS = {
+    'PRIMARY_DOCUMENT_VALUE',
+    'DOCUMENTED_LINE_SCHEDULE',
+    'INDEPENDENT_RECONSTRUCTED_FROM_RAW_LINES',
+    'IMPLIED_FROM_INCENTIVE_AND_RATE',
+    'IMPLEMENTATION_VALUE_UNDER_AUDIT',
+    'PERSISTED_OR_SERVED_COMPARISON_ONLY',
+    'NOT_ESTABLISHED',
+    'AUDIT_ARTIFACT_WITHDRAWN'
+}
+
+DISALLOWED_AS_INDEPENDENT_INPUTS = {
+    'IMPLEMENTATION_VALUE_UNDER_AUDIT',
+    'PERSISTED_OR_SERVED_COMPARISON_ONLY',
+    'NOT_ESTABLISHED',
+    'AUDIT_ARTIFACT_WITHDRAWN'
+}
+
 ALLOWED_VERIFICATION_STATUSES = {
     'INDEPENDENTLY VERIFIED',
     'SERVED VALUE ONLY — NOT INDEPENDENTLY VERIFIED',
@@ -440,6 +459,180 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
             if "8,126,528" not in content or "WITHDRAWN" not in content:
                 errors.append("Audit report missing formal withdrawal of $8,126,528 QPE finding.")
 
+
+    # 16. Audit Lineage Matrix
+    lineage_path = os.path.join(base_dir, "AUDIT_LINEAGE_AND_INVALIDATION_MATRIX.csv")
+    if not os.path.exists(lineage_path):
+        errors.append(f"Missing file: {lineage_path}")
+    else:
+        with open(lineage_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) < 10:
+                errors.append(f"Audit lineage matrix has {len(reader)} rows < expected minimum 10.")
+            for r in reader:
+                if not r.get('artifact') or not r.get('owner_engine') or not r.get('current_validity'):
+                    errors.append(f"Lineage row missing mandatory fields: {r}")
+
+    # 17. Four-Project Source Register
+    fps_path = os.path.join(base_dir, "FOUR_PROJECT_SOURCE_REGISTER.csv")
+    if not os.path.exists(fps_path):
+        errors.append(f"Missing file: {fps_path}")
+    else:
+        with open(fps_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            projs = {r['project'] for r in reader}
+            for p in ('The Little Utopia', "F#K Valentine's Day", 'Lips Like Sugar', 'Bad Hombres'):
+                if p not in projs:
+                    errors.append(f"Four-project source register missing project: {p}")
+            for idx, r in enumerate(reader, 1):
+                lbl = r.get('data_label')
+                if lbl not in ALLOWED_DATA_LABELS:
+                    errors.append(f"Source register row {idx} has invalid data_label: {lbl}")
+                if lbl in DISALLOWED_AS_INDEPENDENT_INPUTS and r.get('is_directly_comparable') == 'TRUE':
+                    errors.append(f"Source register row {idx} ({r.get('document')}) uses implementation/unresolved label as directly comparable independent input.")
+
+    # 18. Four-Project Temporal Rule Matrix
+    fpt_path = os.path.join(base_dir, "FOUR_PROJECT_TEMPORAL_RULE_MATRIX.csv")
+    if not os.path.exists(fpt_path):
+        errors.append(f"Missing file: {fpt_path}")
+    else:
+        with open(fpt_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) < 8:
+                errors.append(f"Temporal rule matrix has {len(reader)} rows < expected 8.")
+            for idx, r in enumerate(reader, 1):
+                if not r.get('control_or_effective_date'):
+                    errors.append(f"Temporal matrix row {idx} missing effective date.")
+                if not r.get('program_generation'):
+                    errors.append(f"Temporal matrix row {idx} missing program generation.")
+
+    # 19. Four-Project Line Classification
+    fpl_path = os.path.join(base_dir, "FOUR_PROJECT_LINE_CLASSIFICATION.csv")
+    if not os.path.exists(fpl_path):
+        errors.append(f"Missing file: {fpl_path}")
+    else:
+        with open(fpl_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 158:
+                errors.append(f"Four-project line classification has {len(reader)} rows != expected 158 (LU=36, FVD=32, LLS=56, BH=34).")
+            # Enforce non-resident cast exclusion in New Mexico
+            for r in reader:
+                if r.get('project') == 'Bad Hombres' and r.get('account') == '1400':
+                    if r.get('independent_authority_treatment') != 'EXCLUDED':
+                        errors.append("Bad Hombres line 1400 (Cast) improperly qualified non-resident performing artists.")
+
+    # 20. Four-Project Anchor Variance Bridges
+    fpb_path = os.path.join(base_dir, "FOUR_PROJECT_ANCHOR_VARIANCE_BRIDGES.csv")
+    if not os.path.exists(fpb_path):
+        errors.append(f"Missing file: {fpb_path}")
+    else:
+        with open(fpb_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            for p in ('The Little Utopia', "F#K Valentine's Day", 'Lips Like Sugar', 'Bad Hombres'):
+                p_rows = [r for r in reader if r['project'] == p]
+                if not p_rows:
+                    errors.append(f"Variance bridge missing project: {p}")
+                    continue
+                last_step = p_rows[-1]
+                if "Residual" not in last_step.get('bridge_step', '') or last_step.get('dollar_amount') != '0.00':
+                    errors.append(f"Project {p} bridge does not close with $0.00 unexplained residual: {last_step}")
+
+    # 21. Four-Project Pathway Coverage
+    fpw_path = os.path.join(base_dir, "FOUR_PROJECT_PATHWAY_COVERAGE.csv")
+    if not os.path.exists(fpw_path):
+        errors.append(f"Missing file: {fpw_path}")
+    else:
+        with open(fpw_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) < 10:
+                errors.append(f"Pathway coverage has {len(reader)} pathways < expected minimum 10.")
+            pw_ids = {r['pathway_id'] for r in reader}
+            for req_pw in ('PATH-SINGLE-BASELINE', 'PATH-RELOCATION-STANDALONE', 'PATH-COMPONENT-RELOCATION-2LEG', 'PATH-HYBRID-3LEG-UPLIFT'):
+                if req_pw not in pw_ids:
+                    errors.append(f"Pathway coverage missing required pathway: {req_pw}")
+
+    # 22. Four-Project Persisted Scenario Audit
+    fpsc_path = os.path.join(base_dir, "FOUR_PROJECT_PERSISTED_SCENARIO_AUDIT.csv")
+    if not os.path.exists(fpsc_path):
+        errors.append(f"Missing file: {fpsc_path}")
+    else:
+        with open(fpsc_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 400:
+                errors.append(f"Persisted scenario audit has {len(reader)} rows != expected 400 (100 per project).")
+            # Verify mapped pathways
+            valid_pws = {'PATH-SINGLE-BASELINE', 'PATH-RELOCATION-STANDALONE', 'PATH-COMPONENT-RELOCATION-2LEG', 'PATH-HYBRID-2LEG', 'PATH-HYBRID-3LEG-UPLIFT', 'PATH-HYBRID-3LEG-FLAT', 'PATH-HYBRID-4LEG-MULTI', 'PATH-MULTI-PROGRAM-STACK', 'PATH-HYBRID-GENERAL'}
+            for idx, r in enumerate(reader, 1):
+                pw = r.get('pathway_id')
+                if pw not in valid_pws:
+                    errors.append(f"Scenario row {idx} maps to invalid pathway: {pw}")
+
+    # 23. Four-Project Program Reachability
+    fpr_path = os.path.join(base_dir, "FOUR_PROJECT_PROGRAM_REACHABILITY.csv")
+    if not os.path.exists(fpr_path):
+        errors.append(f"Missing file: {fpr_path}")
+    else:
+        with open(fpr_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 297:
+                errors.append(f"Program reachability has {len(reader)} rows != expected 297.")
+
+    # 24. Four-Project Stacking Audit
+    fpsa_path = os.path.join(base_dir, "FOUR_PROJECT_STACKING_AND_OVERLAP_AUDIT.csv")
+    if not os.path.exists(fpsa_path):
+        errors.append(f"Missing file: {fpsa_path}")
+    else:
+        with open(fpsa_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) < 300:
+                errors.append(f"Stacking audit has {len(reader)} rows < expected 300.")
+
+    # 25. Four-Project Optimizer Selection Audit
+    fpse_path = os.path.join(base_dir, "FOUR_PROJECT_OPTIMIZER_SELECTION_AUDIT.csv")
+    if not os.path.exists(fpse_path):
+        errors.append(f"Missing file: {fpse_path}")
+    else:
+        with open(fpse_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 40:
+                errors.append(f"Optimizer selection audit has {len(reader)} rows != expected 40 (24 Workspace + 16 Overview).")
+            for r in reader:
+                if r.get('is_duplicate_identity') == 'TRUE':
+                    errors.append(f"Duplicate identity detected in selection audit: {r}")
+
+    # 26. Defect Root Cause and Blast Radius
+    fpd_path = os.path.join(base_dir, "DEFECT_ROOT_CAUSE_AND_BLAST_RADIUS.csv")
+    if not os.path.exists(fpd_path):
+        errors.append(f"Missing file: {fpd_path}")
+    else:
+        with open(fpd_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            def_ids = {r['defect_id'] for r in reader}
+            for expected_def in ('DEF-LU-001', 'DEF-FVD-001', 'DEF-LLS-001', 'DEF-BH-001', 'DEF-TEMPORAL-001', 'DEF-AUDIT-001', 'DEF-AUDIT-002', 'DEF-ENGINE-001', 'DEF-UI-001'):
+                if expected_def not in def_ids:
+                    errors.append(f"Defect blast radius missing defect: {expected_def}")
+
+    # 27. Permanent Controls Document
+    perm_path = os.path.join(base_dir, "PERMANENT_CALCULATION_ACCEPTANCE_CONTROLS.md")
+    if not os.path.exists(perm_path):
+        errors.append(f"Missing file: {perm_path}")
+    else:
+        with open(perm_path, mode="r", encoding="utf-8") as f:
+            content = f.read()
+            for c_num in range(1, 13):
+                if f"Control {c_num}:" not in content:
+                    errors.append(f"Permanent controls document missing Control {c_num}.")
+
+    # 28. Final Handoff Document
+    handoff_path = os.path.join(base_dir, "FINAL_AG_EVIDENCE_HANDOFF_TO_CODEX.md")
+    if not os.path.exists(handoff_path):
+        errors.append(f"Missing file: {handoff_path}")
+    else:
+        with open(handoff_path, mode="r", encoding="utf-8") as f:
+            content = f.read()
+            if "READY_FOR_CODEX_ADJUDICATION: YES" not in content:
+                errors.append("Final handoff document missing: READY_FOR_CODEX_ADJUDICATION: YES.")
+
     return (len(errors) == 0, errors)
 
 
@@ -456,7 +649,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 15
+    nc_total = 21
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -825,6 +1018,159 @@ def run_negative_controls():
             nc_passed += 1
         else:
             print("    -> FAIL: Validator failed to catch missing defect tracking.")
+
+
+        # -------------------------------------------------------------
+        # Negative Control 16: Rejection of Served Value as Independent Input
+        # -------------------------------------------------------------
+        print("  [NC 16/21] Testing rejection of served value used as independent input...")
+        src_reg_f = os.path.join(tmpdir, "FOUR_PROJECT_SOURCE_REGISTER.csv")
+        with open(src_reg_f, "r", encoding="utf-8") as f:
+            s_rows = list(csv.DictReader(f))
+        orig_s = dict(s_rows[0])
+        s_rows[0]['data_label'] = 'IMPLEMENTATION_VALUE_UNDER_AUDIT'
+        s_rows[0]['is_directly_comparable'] = 'TRUE'
+        with open(src_reg_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(s_rows[0].keys()))
+            w.writeheader()
+            w.writerows(s_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught served value misclassified as comparable independent input.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch served value as independent input.")
+        s_rows[0] = orig_s
+        with open(src_reg_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(s_rows[0].keys()))
+            w.writeheader()
+            w.writerows(s_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 17: Rejection of Implied QPE Labeled Documented
+        # -------------------------------------------------------------
+        print("  [NC 17/21] Testing rejection of invalid data label in source register...")
+        with open(src_reg_f, "r", encoding="utf-8") as f:
+            s_rows = list(csv.DictReader(f))
+        orig_s = dict(s_rows[2])
+        s_rows[2]['data_label'] = 'INVALID_FABRICATED_LABEL'
+        with open(src_reg_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(s_rows[0].keys()))
+            w.writeheader()
+            w.writerows(s_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught invalid data label.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch invalid data label.")
+        s_rows[2] = orig_s
+        with open(src_reg_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(s_rows[0].keys()))
+            w.writeheader()
+            w.writerows(s_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 18: Rejection of Non-Resident Cast Qualified in NM
+        # -------------------------------------------------------------
+        print("  [NC 18/21] Testing rejection of non-resident lead cast qualified in New Mexico...")
+        fpl_f = os.path.join(tmpdir, "FOUR_PROJECT_LINE_CLASSIFICATION.csv")
+        with open(fpl_f, "r", encoding="utf-8") as f:
+            l_rows = list(csv.DictReader(f))
+        bh_cast_idx = next(i for i, r in enumerate(l_rows) if r.get('project') == 'Bad Hombres' and r.get('account') == '1400')
+        orig_l = dict(l_rows[bh_cast_idx])
+        l_rows[bh_cast_idx]['independent_authority_treatment'] = 'QUALIFIED'
+        with open(fpl_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(l_rows[0].keys()))
+            w.writeheader()
+            w.writerows(l_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught non-resident lead cast qualified in NM.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch non-resident cast qualification.")
+        l_rows[bh_cast_idx] = orig_l
+        with open(fpl_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(l_rows[0].keys()))
+            w.writeheader()
+            w.writerows(l_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 19: Rejection of Unexplained Residual in Four-Project Bridge
+        # -------------------------------------------------------------
+        print("  [NC 19/21] Testing rejection of unexplained residual in Bad Hombres bridge...")
+        fpb_f = os.path.join(tmpdir, "FOUR_PROJECT_ANCHOR_VARIANCE_BRIDGES.csv")
+        with open(fpb_f, "r", encoding="utf-8") as f:
+            b_rows = list(csv.DictReader(f))
+        bh_last_idx = next(i for i, r in enumerate(b_rows) if r.get('project') == 'Bad Hombres' and 'Residual' in r.get('bridge_step', ''))
+        orig_b = dict(b_rows[bh_last_idx])
+        b_rows[bh_last_idx]['dollar_amount'] = '1000.00'
+        with open(fpb_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(b_rows[0].keys()))
+            w.writeheader()
+            w.writerows(b_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught non-zero unexplained residual in Bad Hombres bridge.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch unexplained residual.")
+        b_rows[bh_last_idx] = orig_b
+        with open(fpb_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(b_rows[0].keys()))
+            w.writeheader()
+            w.writerows(b_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 20: Rejection of Unmapped Calculation Pathway
+        # -------------------------------------------------------------
+        print("  [NC 20/21] Testing rejection of unmapped calculation pathway...")
+        fpsc_f = os.path.join(tmpdir, "FOUR_PROJECT_PERSISTED_SCENARIO_AUDIT.csv")
+        with open(fpsc_f, "r", encoding="utf-8") as f:
+            sc_rows = list(csv.DictReader(f))
+        orig_sc = dict(sc_rows[0])
+        sc_rows[0]['pathway_id'] = 'PATH-UNKNOWN-ROGUE-UNAUDITED'
+        with open(fpsc_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(sc_rows[0].keys()))
+            w.writeheader()
+            w.writerows(sc_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught unmapped calculation pathway.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch unmapped pathway.")
+        sc_rows[0] = orig_sc
+        with open(fpsc_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(sc_rows[0].keys()))
+            w.writeheader()
+            w.writerows(sc_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 21: Rejection of Missing Effective Date in Temporal Matrix
+        # -------------------------------------------------------------
+        print("  [NC 21/21] Testing rejection of missing effective date in temporal matrix...")
+        fpt_f = os.path.join(tmpdir, "FOUR_PROJECT_TEMPORAL_RULE_MATRIX.csv")
+        with open(fpt_f, "r", encoding="utf-8") as f:
+            t_rows = list(csv.DictReader(f))
+        orig_t = dict(t_rows[0])
+        t_rows[0]['control_or_effective_date'] = ''
+        with open(fpt_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(t_rows[0].keys()))
+            w.writeheader()
+            w.writerows(t_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught missing effective date in temporal matrix.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch missing effective date.")
+        t_rows[0] = orig_t
+        with open(fpt_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(t_rows[0].keys()))
+            w.writeheader()
+            w.writerows(t_rows)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
