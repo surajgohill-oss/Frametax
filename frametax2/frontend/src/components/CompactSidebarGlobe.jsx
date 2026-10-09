@@ -64,46 +64,47 @@ const loadMarble = () => {
 };
 
 let cloudCanvas = null;
-// Deterministic, high-contrast cloud deck (~38% cover): a Southern Ocean cyclone, mid-latitude / ITCZ bands, and a clear Sahara break.
+// Fibrous satellite cloud deck: hundreds of fine strokes along the ITCZ and the mid-latitude storm tracks, a tight Southern Ocean
+// vortex, and a clear Sahara. Seeded, so every load draws the same sky.
 function bakeClouds() {
   if (cloudCanvas) return cloudCanvas;
+  let seed = 20260705;
+  const rand = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const c = document.createElement("canvas");
   c.width = 512; c.height = 256;
   const ctx = c.getContext("2d");
   ctx.clearRect(0, 0, 512, 256);
 
-  ctx.save();
-  ctx.translate(260, 200);
-  for (let a = 0; a < Math.PI * 3; a += 0.15) {
-    const r = a * 7.5;
-    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.85 - a * 0.08)})`;
+  for (let i = 0; i < 450; i += 1) {
+    const band = rand();
+    let y;
+    if (band < 0.4) y = 120 + (rand() - 0.5) * 35;
+    else if (band < 0.7) y = 180 + (rand() - 0.5) * 45;
+    else y = 65 + (rand() - 0.5) * 30;
+    const x = rand() * 512;
+    if (x > 215 && x < 285 && y > 70 && y < 130) continue; // Sahara stays visible
+    const w = 3 + rand() * 10;
+    const h = 1.5 + rand() * 3.5;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((rand() - 0.5) * 0.4);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + rand() * 0.5})`;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.6, 4 + a * 1.8, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, w, h, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(270, 205);
+  for (let a = 0; a < Math.PI * 4; a += 0.08) {
+    const r = a * 3.2;
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.75 - a * 0.06)})`;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.5, 1.8 + rand() * 2.2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
-
-  const bands = [
-    { y: 70, count: 18, minR: 8, maxR: 16 },
-    { y: 130, count: 24, minR: 10, maxR: 20 },
-    { y: 185, count: 20, minR: 12, maxR: 26 },
-  ];
-  bands.forEach(({ y, count, minR, maxR }) => {
-    for (let i = 0; i < count; i += 1) {
-      const x = (i * (512 / count) + (i % 3) * 12) % 512;
-      if (x > 210 && x < 280 && y < 120) continue; // Sahara clear-sky break
-      const rad = minR + (i % 5) * ((maxR - minR) / 5);
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, rad);
-      grad.addColorStop(0, "rgba(255, 255, 255, 0.92)");
-      grad.addColorStop(0.45, "rgba(255, 255, 255, 0.65)");
-      grad.addColorStop(0.7, "rgba(255, 255, 255, 0.15)");
-      grad.addColorStop(1, "rgba(255, 255, 255, 0)");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.ellipse(x, y, rad * 1.6, rad * 0.7, (i % 4) * 0.25 - 0.3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  });
   cloudCanvas = c;
   return c;
 }
@@ -176,10 +177,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     mount.appendChild(renderer.domElement);
 
     // Warm upper-left key, cool lower-right fill. Its own lights, never shared with Globe3D.
-    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+    const ambient = new THREE.AmbientLight(0xffffff, 1.3);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
-    key.position.set(0.2, 0.3, 3.8);
+    const key = new THREE.DirectionalLight(0xffffff, 1.8);
+    key.position.set(0.1, 0.2, 4.0);
     scene.add(key);
     const fill = new THREE.DirectionalLight(0x6f96c0, 0.28);
     fill.position.set(2.2, -1.2, -1.2);
@@ -191,12 +192,12 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, emissive: new THREE.Color(0x0a1428), emissiveIntensity: 0.25 }),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, emissive: new THREE.Color(0x124a8a), emissiveIntensity: 0.3 }),
     );
     group.add(earth);
     const clouds = new THREE.Mesh(
-      new THREE.SphereGeometry(1.014, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false, emissive: new THREE.Color(0x333333) }),
+      new THREE.SphereGeometry(1.004, 48, 48),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, emissive: new THREE.Color(0x333333) }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
@@ -208,6 +209,9 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
     const rim = limbShell(1.03, t0.rim, "#6aa8f0", 3.5, 0.15);
     const halo = limbShell(1.11, t0.atmosphere, "#6aa8f0", 4.6, 0.1);
+    // The additive 3D shells left a muddy fringe on the alpha canvas: kept (theme/accent code still addresses them) but hidden;
+    // the limb is now a CSS glow on the container.
+    rim.visible = false; halo.visible = false;
     scene.add(rim);
     scene.add(halo);
 
@@ -225,8 +229,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       const t = themeOf(night ? "night" : "day");
       rim.material.uniforms.uCool.value.set(t.rim);
       halo.material.uniforms.uCool.value.set(stateRef.current.accent ? mix(t.atmosphere, stateRef.current.accent, 0.4) : t.atmosphere);
-      ambient.intensity = night ? 0.7 : 1.2;
-      key.intensity = night ? 0.9 : 1.6;
+      ambient.intensity = night ? 0.7 : 1.3;
+      key.intensity = night ? 0.9 : 1.8;
       earth.material.color.set(night ? "#c9d6ea" : "#ffffff");
       render();
     };
@@ -252,8 +256,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       last = now;
       group.rotation.y += 0.000012 * dt;          // very slow turn of the Earth (~9 min per revolution)
       clouds.rotation.y += 0.00003 * dt;          // the cloud deck drifts ahead of it, independently (~3.5 min per lap)
-      key.position.x = 0.2 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
-      key.position.y = 0.3 + Math.cos(now / 11000) * 0.12;
+      key.position.x = 0.1 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
+      key.position.y = 0.2 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
         const p = 0.5 + 0.5 * Math.sin(now / 1500);
         glow.scale.setScalar(1 + 0.3 * p);
@@ -324,7 +328,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
   const stage = {
     width: size, height: size, borderRadius: 14, overflow: "hidden",
     background: `radial-gradient(circle at 50% 50%, ${theme.bloom}e6 0%, ${theme.bloom}66 36%, ${theme.backdrop[0]} 74%)`,
-    boxShadow: "inset 0 0 0 0.5px rgba(244, 236, 217, 0.12)",
+    boxShadow: `inset 0 0 0 0.5px rgba(244, 236, 217, 0.12), 0 0 10px ${/^#[0-9a-f]{6}$/i.test(overlay?.accent || "") ? `${overlay.accent}38` : "rgba(50, 130, 240, 0.18)"}`,
   };
 
   // Same static CSS fallback Globe3D.jsx uses when WebGL is unavailable.
