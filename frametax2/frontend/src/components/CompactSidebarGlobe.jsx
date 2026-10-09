@@ -29,12 +29,6 @@ function webglAvailable() {
 
 const themeOf = (key) => (key === "night" ? GLOBE_THEME.night : GLOBE_THEME.day);
 
-const mix = (a, b, t) => {
-  const A = parseInt(a.slice(1), 16); const B = parseInt(b.slice(1), 16);
-  const ch = (i) => Math.round(((A >> i) & 255) + (((B >> i) & 255) - ((A >> i) & 255)) * t).toString(16).padStart(2, "0");
-  return `#${ch(16)}${ch(8)}${ch(0)}`;
-};
-
 // Decoded Blue Marble image + the ocean specular mask derived from it (blue-dominant pixels = water), cached per page session.
 let marblePromise = null;
 const loadMarble = () => {
@@ -119,22 +113,6 @@ function surfacePoint(lat, lng, r = 1) {
   return new THREE.Vector3(-r * Math.cos(phi) * Math.sin(theta), r * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta));
 }
 
-// Fresnel limb shell (additive, back faces): warm ivory toward the upper-left key light, cool maritime toward the lower right.
-function limbShell(radius, cool, warm, power, intensity) {
-  return new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 40, 40),
-    new THREE.ShaderMaterial({
-      uniforms: { uCool: { value: new THREE.Color(cool) }, uWarm: { value: new THREE.Color(warm) }, uPower: { value: power }, uIntensity: { value: intensity } },
-      vertexShader: "varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }",
-      fragmentShader: "uniform vec3 uCool; uniform vec3 uWarm; uniform float uPower; uniform float uIntensity; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), uPower); float w = smoothstep(-0.2, 0.8, dot(normalize(vN.xy + vec2(1e-4)), normalize(vec2(-0.62, 0.78)))); gl_FragColor = vec4(mix(uCool, uWarm, w), f * uIntensity); }",
-      side: THREE.BackSide,
-      blending: THREE.AdditiveBlending,
-      transparent: true,
-      depthWrite: false,
-    }),
-  );
-}
-
 /**
  * Decorative identity globe. `overlay` is { key, focus?: {lat,lng}, pulse?: {lat,lng,color}, accent?: hex }:
  *   - company routes pass { accent } (aggregate stage colour, tinting only the atmosphere);
@@ -160,7 +138,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0, 2.85); // frames the whole circle, halo included, with a small margin
+    camera.position.set(0, 0, 2.85); // frames the whole circle with a small margin
 
     let renderer;
     try {
@@ -206,14 +184,6 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     );
     glow.visible = false;
     group.add(glow);
-    const t0 = themeOf(document.documentElement.getAttribute("data-theme"));
-    const rim = limbShell(1.03, t0.rim, "#6aa8f0", 3.5, 0.15);
-    const halo = limbShell(1.11, t0.atmosphere, "#6aa8f0", 4.6, 0.1);
-    // The additive 3D shells left a muddy fringe on the alpha canvas: kept (theme/accent code still addresses them) but hidden;
-    // the limb is now a CSS glow on the container.
-    rim.visible = false; halo.visible = false;
-    scene.add(rim);
-    scene.add(halo);
 
     const cloudTex = new THREE.CanvasTexture(bakeClouds());
     cloudTex.colorSpace = THREE.SRGBColorSpace;
@@ -222,13 +192,10 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     const render = () => renderer.render(scene, camera);
     let cancelled = false;
 
-    // Theme: atmosphere tint, light levels and a slightly cooler Earth at night. The Earth/ocean-mask textures are uploaded ONCE per
+    // Theme: light levels and a slightly cooler Earth at night. The Earth/ocean-mask textures are uploaded ONCE per
     // mount (when the cached image resolves); a theme or overlay change never re-uploads or re-bakes anything.
     const applyTheme = () => {
       const night = document.documentElement.getAttribute("data-theme") === "night";
-      const t = themeOf(night ? "night" : "day");
-      rim.material.uniforms.uCool.value.set(t.rim);
-      halo.material.uniforms.uCool.value.set(stateRef.current.accent ? mix(t.atmosphere, stateRef.current.accent, 0.4) : t.atmosphere);
       ambient.intensity = night ? 0.7 : 1.3;
       key.intensity = night ? 0.9 : 1.8;
       earth.material.color.set(night ? "#c9d6ea" : "#ffffff");
@@ -286,7 +253,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       document.removeEventListener("visibilitychange", sync);
       motionQuery.removeEventListener("change", sync);
       renderer.dispose();
-      for (const m of [earth, clouds, glow, rim, halo]) { m.geometry.dispose(); m.material.dispose(); }
+      for (const m of [earth, clouds, glow]) { m.geometry.dispose(); m.material.dispose(); }
       earthTex?.dispose(); cloudTex.dispose();
       // dispose() alone leaves the WebGL context lingering until GC; this mounts on every route alongside a production Globe.
       try { renderer.forceContextLoss(); } catch { /* context already lost */ }
@@ -325,10 +292,13 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
   const theme = themeOf(themeKey);
   // The brand stage: near-black navy with the localized maritime bloom directly behind the sphere.
+  const accentRim = /^#[0-9a-f]{6}$/i.test(overlay?.accent || "") ? `${overlay.accent}55` : "rgba(50, 130, 240, 0.22)";
   const stage = {
-    width: size, height: size, borderRadius: 14, overflow: "hidden",
+    width: size, height: size, borderRadius: "50%", overflow: "hidden",
+    // A vector circle mask, its own stacking context and a GPU layer: the planet meets the sidebar with a clean edge.
+    clipPath: "circle(50% at 50% 50%)", WebkitClipPath: "circle(50% at 50% 50%)", isolation: "isolate", transform: "translateZ(0)",
     background: `radial-gradient(circle at 50% 50%, ${theme.bloom}e6 0%, ${theme.bloom}66 36%, ${theme.backdrop[0]} 74%)`,
-    boxShadow: `inset 0 0 0 0.5px rgba(244, 236, 217, 0.12), 0 0 10px ${/^#[0-9a-f]{6}$/i.test(overlay?.accent || "") ? `${overlay.accent}38` : "rgba(50, 130, 240, 0.18)"}`,
+    boxShadow: `inset 0 0 0 0.5px rgba(244, 236, 217, 0.12), inset 0 0 8px ${accentRim}`,
   };
 
   // Same static CSS fallback Globe3D.jsx uses when WebGL is unavailable.
