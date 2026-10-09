@@ -3,49 +3,31 @@ import { useNavigate } from "react-router-dom";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildCompanyScene } from "../../lib/companyScene";
-import { participantsOf, principalOf } from "../../lib/globeStructure";
-import { libraryStageKey } from "../../lib/libraryStatus";
+import { portfolioRows } from "../../lib/portfolioRows";
+import { participantsOf } from "../../lib/globeStructure";
+import { ACTIVE_STAGES, stageOf } from "../../lib/companyStage";
 import { getLeadingSelection, getPortfolio, loadPortfolio, usePortfolio, useLeadingSelectionsVersion } from "../../lib/leadingSelection";
-import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
 import { Money, jurisdictionName } from "../../lib/format";
 
 // COMPANY GLOBE (2026-10-08): every ALL ACTIVE project (Evaluation and later; Submitted and Archived excluded, the same
 // predicate the Project Library uses), each drawn from its own persisted leading structure (Project.leading_structure_id,
 // else the optimizer's rank #1 exactly as the Project Globe resolves it) with the proven topology: principal marker,
-// every participant, relocation / hybrid / co-production routes. Colour is the established project-STAGE tier
-// (PROJECT_STATUSES.tier -> the same CSS tokens the Library's stage dot uses), not the Project Globe's jurisdiction status.
+// every participant, relocation / hybrid / co-production routes. Colour is the project's PRODUCTION STAGE (PROJECT_STATUSES
+// tiers via lib/companyStage.js: evaluation blue, development silver, production gold, completed jade); the stage is also written text.
 // ONE request (GET /cineglobe/portfolio/globe, shared with the sidebar mini-globe through lib/leadingSelection.js) feeds the
 // side list and the Globe from the same atomic payload; there is no per-project /state fan-out and it never evaluates.
-const TIER_TOKEN = { blue: "--blue", silver: "--silver", gold: "--gold", jade: "--jade", charcoal: "--charcoal" };
-const stageHex = (stageKey) => {
-  const tier = PROJECT_STATUSES.find((s) => s.key === stageKey)?.tier || "blue";
-  const css = getComputedStyle(document.documentElement).getPropertyValue(TIER_TOKEN[tier]).trim();
-  return css || "#8c96a4";
-};
-
 // The structure each project shows is read from the shared leading selection (the producer's saved choice, else the
 // canonical leader, else baseline only when no evaluated structure exists), so a "Set as Leading" anywhere replaces that
 // one project's markers, routes and Inspector at once.
-function withLeading(row) {
-  const sel = getLeadingSelection(row.project_id);
-  const structure = sel ? sel.structure : row.leading?.structure ?? null;
-  const principal = structure ? principalOf(structure) : row.baseline_jurisdiction;
-  return {
-    project: { id: row.project_id, title: row.title, lifecycle: row.lifecycle, is_served_production: true },
-    grossBudgetUsd: row.gross_budget_usd, homeCode: row.home_code, structure, principal,
-    selectionKnown: sel ? !!sel.selectionKnown : true,
-    userSelected: sel ? !!sel.userSelected : !!row.leading?.user_selected,
-    unavailable: sel ? !!sel.unavailable : !!row.leading?.unavailable,
-  };
-}
+const stageLabel = (project) => stageOf(project).label;
 
 export default function CompanyGlobe() {
   const navigate = useNavigate();
   const portfolio = usePortfolio();
   const leadingVersion = useLeadingSelectionsVersion();
-  // leadingVersion is the store's change signal: withLeading() reads the store, so it must re-run on every change.
+  // leadingVersion is the store's change signal: portfolioRows() reads the store, so it must re-run on every change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const rows = useMemo(() => (portfolio ? portfolio.projects.map(withLeading) : null), [portfolio, leadingVersion]);
+  const rows = useMemo(() => (portfolio ? portfolioRows(portfolio, getLeadingSelection) : null), [portfolio, leadingVersion]);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState(null);
   const [focusedId, setFocusedId] = useState(null);
@@ -58,7 +40,7 @@ export default function CompanyGlobe() {
     return () => { alive = false; };
   }, []);
 
-  const scene = useMemo(() => buildCompanyScene(rows, (project) => stageHex(libraryStageKey(project))), [rows]);
+  const scene = useMemo(() => buildCompanyScene(rows, { stageOf, focusedId }), [rows, focusedId]);
 
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
   if (!rows) return <div className="screen"><Loading /></div>;
@@ -76,12 +58,17 @@ export default function CompanyGlobe() {
           preview, click to focus, click again (or Open) to enter the production.
         </p>
         {rows.map(({ project, structure, principal }) => (
-          <div key={project.id} className={`portfolio-chip ${focusedId === project.id ? "active" : ""}`} onClick={() => setFocusedId(project.id)}>
-            <span className="dot" style={{ background: stageHex(libraryStageKey(project)) }} />
+          <div
+            key={project.id}
+            className={`portfolio-chip ${focusedId === project.id ? "active" : ""}`}
+            style={focusedId === project.id ? { borderColor: stageOf(project).hex, boxShadow: `inset 3px 0 0 ${stageOf(project).hex}` } : undefined}
+            onClick={() => setFocusedId(project.id)}
+          >
+            <span className="dot" data-project-color={stageOf(project).hex} style={{ background: stageOf(project).hex }} />
             <div>
               <div className="row-title">{project.title}</div>
               <div className="row-sub">
-                {PROJECT_STATUSES.find((s) => s.key === libraryStageKey(project))?.label}
+                {stageLabel(project)}
                 {principal ? ` · ${jurisdictionName(principal)}${structure ? "" : " (baseline)"}` : ""}
               </div>
             </div>
@@ -93,6 +80,8 @@ export default function CompanyGlobe() {
         <Globe3D
           points={scene.points}
           polygonColors={scene.polygonColors}
+          polygonBorders={scene.polygonBorders}
+          pointRadius={(d) => (d.principal ? 0.7 : 0.45)}
           arcs={scene.arcs}
           routeLabels={scene.routeLabels}
           height={560}
@@ -105,6 +94,17 @@ export default function CompanyGlobe() {
             else if (pt?.projectId) setFocusedId(pt.projectId);
           }}
         />
+        <div className="company-legend" role="list" aria-label="Production stage">
+          <div className="company-legend-head">Production stage</div>
+          {ACTIVE_STAGES.map((st) => (
+            <div key={st.key} role="listitem" className={`company-legend-row${scene.stageCounts.get(st.key) ? "" : " empty"}`} data-legend-stage={st.key}>
+              <span className="company-legend-swatch" style={{ background: st.hex }} />
+              <span className="company-legend-title">{st.label}</span>
+              <span className="company-legend-stage">{scene.stageCounts.get(st.key) || ""}</span>
+            </div>
+          ))}
+          <div className="company-legend-key">White edge, large marker: principal · muted fill: participant</div>
+        </div>
         {preview && (
           <div className="globe-tooltip">
             <strong>{preview.name}</strong>
@@ -124,7 +124,7 @@ export default function CompanyGlobe() {
           <p className="inspector-eyebrow">Production preview</p>
           <h3>{focused.project.title}</h3>
           <dl className="kv-list">
-            <div><dt>Stage</dt><dd>{PROJECT_STATUSES.find((s) => s.key === libraryStageKey(focused.project))?.label}</dd></div>
+            <div><dt>Stage</dt><dd>{stageLabel(focused.project)}</dd></div>
             <div><dt>{focused.structure ? "Principal jurisdiction" : "Baseline jurisdiction"}</dt><dd>{jurisdictionName(focused.principal)}</dd></div>
             {focused.structure && <div><dt>Participants</dt><dd>{participantsOf(focused.structure).map(jurisdictionName).join(", ")}</dd></div>}
             {focused.selectionKnown && <div><dt>Leading</dt><dd>{focused.unavailable ? "Your selection is no longer available — canonical leader shown" : focused.userSelected ? "Your selection" : focused.structure ? "Canonical leader" : "No evaluated structure"}</dd></div>}

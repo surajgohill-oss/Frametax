@@ -166,13 +166,13 @@ function buildOverlay(group, overlay) {
     const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
     group.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)),
-      new THREE.LineBasicMaterial({ color: OVERLAY_ROUTE, transparent: true, opacity: 0.9 }),
+      new THREE.LineBasicMaterial({ color: r.color || OVERLAY_ROUTE, transparent: true, opacity: 0.9 }),
     ));
   }
   for (const m of overlay.markers) {
     const dot = new THREE.Mesh(
       new THREE.SphereGeometry(m.principal ? 0.055 : 0.036, 12, 12),
-      new THREE.MeshBasicMaterial({ color: m.principal ? OVERLAY_PRINCIPAL : OVERLAY_SECONDARY }),
+      new THREE.MeshBasicMaterial({ color: m.color || (m.principal ? OVERLAY_PRINCIPAL : OVERLAY_SECONDARY) }),
     );
     dot.position.copy(surfacePoint(m.lat, m.lng, 1.01));
     group.add(dot);
@@ -323,7 +323,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     const { group, overlayGroup, render } = stateRef.current;
     if (!overlayGroup) return;
     buildOverlay(overlayGroup, overlay);
-    const principal = overlay?.markers.find((m) => m.principal);
+    const principal = overlay?.focus || overlay?.markers.find((m) => m.principal);
     if (principal) {
       const p = surfacePoint(principal.lat, principal.lng);
       group.rotation.y = -Math.atan2(p.x, p.z);
@@ -352,8 +352,9 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       className={`compact-sidebar-globe ${className}`.trim()}
       style={{ width: size, height: size }}
       role="img"
-      aria-label={overlay ? "CineGlobe: this project's leading structure" : "CineGlobe"}
+      aria-label={overlay ? (overlay.portfolio ? "CineGlobe: the active portfolio" : "CineGlobe: this project's leading structure") : "CineGlobe"}
       data-principal={overlay?.markers.find((m) => m.principal)?.code || ""}
+      data-projects={overlay?.portfolio ? new Set(overlay.markers.map((m) => m.projectId)).size : ""}
       data-participants={overlay ? overlay.markers.map((m) => m.code).join(",") : ""}
       data-routes={overlay ? overlay.routes.length : 0}
     />

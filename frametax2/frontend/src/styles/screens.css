@@ -2066,3 +2066,19 @@
   outline: 2px solid #f4ecd9; outline-offset: 2px; border-radius: 50%;
   box-shadow: 0 0 0 5px rgba(244, 236, 217, 0.22);
 }
+
+/* COMPANY GLOBE legend (2026-10-08): generated from the same rows and palette as the scene; sits inside the canvas, bottom-left,
+   never over the side panel or the Inspector. */
+.company-legend {
+  position: absolute; left: var(--sp-4); bottom: var(--sp-4); z-index: 4; display: flex; flex-direction: column; gap: 5px;
+  padding: 9px 11px; border-radius: var(--radius-md); max-width: 260px;
+  background: rgba(12, 16, 24, 0.74); border: 0.5px solid rgba(244, 236, 217, 0.18); backdrop-filter: blur(8px);
+  color: #e9e4d8; font-size: 11px; pointer-events: none;
+}
+.company-legend-head { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(233, 228, 216, 0.6); }
+.company-legend-row { display: flex; align-items: baseline; gap: 7px; }
+.company-legend-row.empty { opacity: 0.5; }
+.company-legend-swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; align-self: center; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.company-legend-title { font-weight: 600; }
+.company-legend-stage { margin-left: auto; padding-left: 8px; color: rgba(233, 228, 216, 0.6); }
+.company-legend-key { margin-top: 3px; padding-top: 5px; border-top: 0.5px solid rgba(244, 236, 217, 0.16); color: rgba(233, 228, 216, 0.6); font-size: 10px; }

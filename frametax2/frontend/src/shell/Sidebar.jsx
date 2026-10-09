@@ -1,6 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { getPortfolio, loadPortfolio, useLeadingSelection } from "../lib/leadingSelection";
+import { getLeadingSelection, getPortfolio, loadPortfolio, useLeadingSelection, usePortfolio, useLeadingSelectionsVersion } from "../lib/leadingSelection";
+import { buildPortfolioMiniOverlay } from "../lib/companyScene";
+import { portfolioRows } from "../lib/portfolioRows";
+import { stageOf } from "../lib/companyStage";
 import { miniGlobeOverlay } from "../lib/globeStructure";
 import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
@@ -29,13 +32,22 @@ export default function Sidebar() {
   // surface reads; no request of its own). Elsewhere, or with no evaluated structure, it stays the neutral emblem.
   const projectId = useLocation().pathname.match(/^\/projects\/([^/]+)/)?.[1] || null;
   const selection = useLeadingSelection(projectId);
+  // Company-level routes (Company Globe and the rest of COMPANY nav) show the whole active portfolio from the SAME aggregate
+  // payload; project routes keep the selected project's own structure.
+  const companyLevel = !projectId;
+  const portfolio = usePortfolio();
+  const leadingVersion = useLeadingSelectionsVersion();
   // The one aggregate portfolio read (shared single-flight with Company Globe), once per session -- never a full /state.
   useEffect(() => {
-    if (projectId && !getPortfolio()) loadPortfolio().catch(() => {});
+    if (!getPortfolio()) loadPortfolio().catch(() => {});
   }, [projectId]);
   const overlay = useMemo(
-    () => miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode }),
-    [selection],
+    () => (companyLevel
+      ? buildPortfolioMiniOverlay(portfolio ? portfolioRows(portfolio, getLeadingSelection) : [], stageOf)
+      : miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode })),
+    // leadingVersion is the store's change signal for saved-leader commits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [companyLevel, portfolio, leadingVersion, selection],
   );
   return (
     <nav className="cg-sidebar" aria-label="Application navigation">

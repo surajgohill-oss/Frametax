@@ -2077,6 +2077,7 @@ export default function Globe3D({
           labelEls.set(key, el);
         }
         el.textContent = l.text;
+        if (l.color) { el.style.color = l.color; el.style.borderColor = l.color; }
         el.__label = l;
       }
     };
