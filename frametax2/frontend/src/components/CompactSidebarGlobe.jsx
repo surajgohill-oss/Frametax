@@ -107,6 +107,9 @@ function bakeClouds() {
   return c;
 }
 
+// Negative x tilts the south pole toward the camera (Antarctica visible, as in the Apollo 17 frame).
+const BASE_TILT = -0.38;
+
 // Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360).
 function surfacePoint(lat, lng, r = 1) {
   const phi = ((lng + 180) * Math.PI) / 180;
@@ -182,7 +185,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     scene.add(fill);
 
     const group = new THREE.Group();
-    group.rotation.x = -0.28;
+    group.rotation.x = BASE_TILT;
+    { const africa = surfacePoint(4, 20); group.rotation.y = -Math.atan2(africa.x, africa.z); } // opens on Africa / the Atlantic, as in the Apollo 17 frame
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
@@ -300,7 +304,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       group.rotation.y = -Math.atan2(p.x, p.z);
       group.rotation.x = Math.max(-0.6, Math.min(0.6, (f.lat * Math.PI) / 180 * 0.8));
     } else {
-      group.rotation.x = -0.28;
+      group.rotation.x = BASE_TILT;
     }
     if (overlay?.pulse) {
       glow.position.copy(surfacePoint(overlay.pulse.lat, overlay.pulse.lng, 1.02));
