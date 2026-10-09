@@ -4,11 +4,12 @@ Company Globe used to fetch each project's full served state (~34 MB, 8-30 s api
 module is the smallest extension to the existing canonical served owner (canonical_production_view): it reads that
 owner once per project/generation, keeps a compact structure snapshot keyed by (engine_version, input fingerprint) on the
 project row, and serves every active project's leading structure in a single response. It never evaluates (no
-evaluate_project, no FX refresh) and never re-derives a structure: the leader is the served view's own
-canonical_selected_structure_id / leading_conditional_structure, and a producer's "Set as Leading" choice wins.
+evaluate_project, no FX refresh) and never re-derives a structure: a project is drawn at its ANCHOR (Current Location)
+until the producer explicitly chooses "Set as Leading"; only that explicit, still-available choice replaces the anchor, and
+clearing it returns to the anchor. The canonical-selected and leading-conditional structures are deliberately NOT substituted
+(a co-production or other structure never appears on the Company Globe unprompted).
 
-Leading precedence: explicit user selection -> canonical selected (rank 1) -> canonical leading-conditional ->
-baseline jurisdiction only when no valid evaluated structure exists.
+Leading precedence (product rule): explicit user selection -> anchor / baseline jurisdiction.
 """
 from __future__ import annotations
 
@@ -87,14 +88,11 @@ def snapshot_is_current(snapshot: dict | None, *, engine_version: str, fingerpri
 
 
 def resolve_leader(snapshot: dict, *, user_structure_id: str | None, user_selected: bool) -> tuple[dict | None, str]:
-    """(structure, source). Pure: the precedence contract."""
+    """(structure, source). Pure: the precedence contract. Explicit choice, else the anchor (structure None = baseline only);
+    never the canonical-selected or leading-conditional structure."""
     by_id = {s["structure_id"]: s for s in snapshot.get("structures", [])}
     if user_selected and user_structure_id and user_structure_id in by_id:
         return by_id[user_structure_id], "user"
-    for key, source in (("canonical_structure_id", "canonical"), ("conditional_structure_id", "canonical_conditional")):
-        sid = snapshot.get(key)
-        if sid and sid in by_id:
-            return by_id[sid], source
     return None, "baseline"
 
 

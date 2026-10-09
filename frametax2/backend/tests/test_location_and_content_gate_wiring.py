@@ -336,3 +336,22 @@ def test_period_is_a_script_signal_not_a_location_capability_and_never_affects_f
     r = derive_production_requirements({"script_requirements": {"period": {"value": True, "evidence": "p"}}})
     assert "period_environments" in r.environments
     assert pf.classify_jurisdiction_fit("GR", r) == (pf.FIT_UNKNOWN, ["NO_REQUIREMENTS_ON_FILE"]) or pf.classify_jurisdiction_fit("GR", r)[0] in pf.FIT_CONFIRMED_STATUSES
+
+
+def test_clearing_a_chip_also_clears_the_script_derived_alias_that_feeds_the_same_requirement():
+    """Little Utopia regression: the script derived `mediterranean` (a category with no chip) which also requires
+    coastal_environments, so clearing Beach / Coast changed nothing. The cleared chip now removes its aliases too."""
+    from app.services.canonical_project_economics import _apply_location_overrides
+
+    derived = {"beach_coast": {"effective": True, "evidence": ["x"]}, "mediterranean": {"effective": True, "evidence": ["y"]},
+               "island": {"effective": True, "evidence": ["z"]}}
+    before = derive_production_requirements({"location_categories": derived})
+    assert "coastal_environments" in before.environments and "island_environments" in before.environments
+    after = derive_production_requirements({"location_categories": _apply_location_overrides(derived, {"beach_coast": False})})
+    assert "coastal_environments" not in after.environments, "clearing Beach / Coast must remove the coastal requirement"
+    assert "island_environments" in after.environments, "an unrelated alias is untouched"
+    after2 = derive_production_requirements({"location_categories": _apply_location_overrides(derived, {"island_tropical": False})})
+    assert "island_environments" not in after2.environments and "coastal_environments" in after2.environments
+    # setting a chip ON never clears anything
+    on = derive_production_requirements({"location_categories": _apply_location_overrides(derived, {"beach_coast": True})})
+    assert on.environments == before.environments

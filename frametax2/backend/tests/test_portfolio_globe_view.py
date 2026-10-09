@@ -40,17 +40,18 @@ def test_snapshot_includes_optimizer_pool_candidates_a_producer_can_select():
     assert resolve_leader(snap, user_structure_id="multi", user_selected=True)[0]["participants"] == ["MU", "ZA", "KE"]
 
 
-def test_leader_precedence_user_then_canonical_then_conditional_then_baseline():
+def test_leader_is_the_explicit_choice_else_the_anchor_never_a_canonical_or_conditional_substitute():
     snap = build_snapshot(_view(), engine_version="e1", fingerprint="f1")
     assert resolve_leader(snap, user_structure_id="other", user_selected=True)[1] == "user"
-    # no user choice -> the canonical leading-conditional structure, never baseline merely because nothing was chosen
-    assert resolve_leader(snap, user_structure_id=None, user_selected=False) == (snap["structures"][1], "canonical_conditional")
+    # no explicit choice -> the anchor (structure None), even though a leading-conditional structure is served
+    assert snap["conditional_structure_id"] == "cond"
+    assert resolve_leader(snap, user_structure_id=None, user_selected=False) == (None, "baseline")
     snap["canonical_structure_id"] = "other"
-    assert resolve_leader(snap, user_structure_id=None, user_selected=False)[1] == "canonical"
-    # a choice that is no longer in the generation falls back safely to the canonical leader
-    assert resolve_leader(snap, user_structure_id="gone", user_selected=True)[1] == "canonical"
-    empty = {"structures": [], "canonical_structure_id": None, "conditional_structure_id": None}
-    assert resolve_leader(empty, user_structure_id=None, user_selected=False) == (None, "baseline")
+    assert resolve_leader(snap, user_structure_id=None, user_selected=False) == (None, "baseline"), "canonical selection is not substituted"
+    # a choice that is no longer in the generation returns to the anchor (disclosed as unavailable by the caller)
+    assert resolve_leader(snap, user_structure_id="gone", user_selected=True) == (None, "baseline")
+    # clearing the choice returns to the anchor
+    assert resolve_leader(snap, user_structure_id="other", user_selected=False) == (None, "baseline")
 
 
 def test_compact_structure_never_invents_fields():

@@ -21,14 +21,14 @@ test("Company Globe and the sidebar read ONE aggregate payload: no per-project /
   assert.match(read("api.js"), /_portfolioInFlight \|\|=/, "concurrent callers share one in-flight request");
 });
 
-test("leading precedence: saved choice, canonical selection, canonical leading-conditional, else baseline only", () => {
+test("leading rule: explicit Set as Leading, else the anchor; canonical and leading-conditional structures are never substituted", () => {
   const structures = [{ structure_id: "a" }, { structure_id: "b" }, { structure_id: "c" }];
   const allocated = { structures, canonical_selected_structure_id: null, leading_conditional_structure: { structure_id: "b" } };
   assert.deepEqual(resolveLeadingStructure(allocated, "c"), { structure: structures[2], source: "user" });
-  assert.deepEqual(resolveLeadingStructure(allocated, null), { structure: structures[1], source: "canonical_conditional" });
-  assert.equal(resolveLeadingStructure({ ...allocated, canonical_selected_structure_id: "a" }, null).source, "canonical");
+  assert.deepEqual(resolveLeadingStructure(allocated, null), { structure: null, source: "baseline" }, "a served leading-conditional structure is not drawn unprompted");
+  assert.deepEqual(resolveLeadingStructure({ ...allocated, canonical_selected_structure_id: "a" }, null), { structure: null, source: "baseline" }, "nor the canonical selection");
   const pool = { ...allocated, optimizer_candidates: [{ structure_id: "multi", participants: ["X", "Y", "Z"] }] };
   assert.equal(resolveLeadingStructure(pool, "multi").structure.participants.length, 3, "a choice from the optimizer pool resolves");
-  assert.equal(resolveLeadingStructure(allocated, "gone").source, "canonical_conditional", "a vanished choice falls back, never remaps");
-  assert.deepEqual(resolveLeadingStructure({ structures, canonical_selected_structure_id: null }, null), { structure: null, source: "baseline" });
+  assert.deepEqual(resolveLeadingStructure(allocated, "gone"), { structure: null, source: "baseline" }, "a vanished choice returns to the anchor, never remaps");
+  assert.deepEqual(resolveLeadingStructure(allocated, undefined), { structure: null, source: "baseline" }, "clearing the choice returns to the anchor");
 });

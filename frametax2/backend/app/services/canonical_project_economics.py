@@ -918,9 +918,20 @@ async def _location_override_rows(session: AsyncSession, project_id) -> dict[str
     return {slug: bool(value) for slug, value in rows}
 
 
+#: Script-derived requirement categories that have NO producer chip of their own but feed the SAME requirement as a chip
+#: (the ontology emits `mediterranean` for coastal text and `island` for island text). A producer who clears the chip must clear
+#: the requirement the chip stands for, or the control would silently do nothing (Little Utopia: clearing Beach / Coast left
+#: `mediterranean` demanding coastal_environments). Keyed by the chip's requirement category.
+_CHIP_ALIAS_REQUIREMENT_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "beach_coast": ("mediterranean",),
+    "island_tropical": ("island",),
+}
+
+
 def _apply_location_overrides(location_categories: dict[str, dict], overrides: dict[str, bool]) -> dict[str, dict]:
     """Layer the producer's confirmed overrides over the script-derived categories: an override
-    is the effective value (True adds the requirement, False removes a script-derived one)."""
+    is the effective value (True adds the requirement, False removes a script-derived one, including the
+    script-derived alias categories that feed the same chip's requirement)."""
     out = {k: {"effective": v["effective"], "evidence": list(v["evidence"])} for k, v in location_categories.items()}
     for slug, value in overrides.items():
         key = _TAXONOMY_SLUG_TO_REQUIREMENT_CATEGORY.get(slug)
@@ -930,6 +941,10 @@ def _apply_location_overrides(location_categories: dict[str, dict], overrides: d
         entry["effective"] = bool(value)
         if value:
             entry["evidence"].append("Producer-confirmed location requirement")
+        else:
+            for alias in _CHIP_ALIAS_REQUIREMENT_CATEGORIES.get(key, ()):
+                if alias in out:
+                    out[alias]["effective"] = False
     return out
 
 
@@ -1051,6 +1066,8 @@ _LOCATION_ONTOLOGY_TOKEN_TO_TAXONOMY_SLUG: dict[str, str] = {
     "beach_coast": "beach_coast",
     "marine_open_water": "marine_open_water",
     "island": "island_tropical",
+    # `mediterranean` feeds coastal_environments exactly like Beach / Coast, so the chip must show what the engine requires
+    "mediterranean": "beach_coast",
     "tropical_environments": "island_tropical",
     "forest_environments": "forest_woodland",
     "desert_environments": "desert_arid",
@@ -1061,7 +1078,7 @@ _LOCATION_ONTOLOGY_TOKEN_TO_TAXONOMY_SLUG: dict[str, str] = {
     "village": "small_town_suburban",
     "rural_environments": "rural_countryside",
     "historic_architecture": "historic_old_world",
-    # harbor_marina, river, lake, mediterranean, coastal_environments,
+    # harbor_marina, river, lake, coastal_environments,
     # open_water_filming, tropical (alone), agricultural, industrial,
     # residential, period_environments: no LOCATION_TAXONOMY slug exists
     # for these — correctly excluded, never forced into an unrelated

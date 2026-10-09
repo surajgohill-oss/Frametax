@@ -225,8 +225,8 @@ export default function ProjectGlobe() {
   const hoverIndex = hoverCycle.key === hoverKey ? Math.min(hoverCycle.index, Math.max(0, hoverList.length - 1)) : 0;
   const previewStructure = hoverList[hoverIndex] || null;
   const lockedStructure = lockedIdentity ? structureByIdentity.get(lockedIdentity) || null : null;
-  // At rest (nothing previewed or locked) the Globe shows the project's leading structure: the persisted "Set as
-  // Leading" choice, else the canonical leader -- the same selection Company Globe and the sidebar mini-globe show.
+  // At rest (nothing previewed or locked) the Globe shows the project's explicit "Set as Leading" choice, else its anchor
+  // (no route) -- the same selection Company Globe and the sidebar mini-globe show.
   const restingStructure = useMemo(
     () => activeStructure(allocated, leadingStructureId) || resolveLeadingStructure(allocated, null).structure,
     [allocated, leadingStructureId],

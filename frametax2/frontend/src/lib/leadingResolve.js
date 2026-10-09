@@ -1,5 +1,5 @@
-// Leading precedence for a served state: the producer's saved choice (when it is still in the served page), else the
-// canonical selected structure (rank 1), else the canonical leading-conditional structure, else none (baseline only).
+// Leading precedence for a served state: the producer's explicit "Set as Leading" choice (when it is still served), else the
+// anchor / Current Location (structure null = baseline only).
 export function resolveLeadingStructure(allocated, userLeadingId) {
   const structures = allocated?.structures || [];
   const byId = new Map(structures.map((s) => [s.structure_id, s]));
@@ -8,9 +8,8 @@ export function resolveLeadingStructure(allocated, userLeadingId) {
     ? byId.get(userLeadingId) || (allocated?.optimizer_candidates || []).find((s) => s.structure_id === userLeadingId)
     : null;
   if (chosen) return { structure: chosen, source: "user" };
-  const canonical = allocated?.canonical_selected_structure_id;
-  if (canonical && byId.has(canonical)) return { structure: byId.get(canonical), source: "canonical" };
-  const conditional = allocated?.leading_conditional_structure?.structure_id;
-  if (conditional && byId.has(conditional)) return { structure: byId.get(conditional), source: "canonical_conditional" };
+  // PRODUCT RULE: a project sits at its anchor (Current Location) until the producer explicitly chooses "Set as Leading";
+  // clearing the choice, or a choice that no longer exists, returns to the anchor. The canonical-selected and
+  // leading-conditional structures are never substituted (a co-production never appears unprompted).
   return { structure: null, source: "baseline" };
 }

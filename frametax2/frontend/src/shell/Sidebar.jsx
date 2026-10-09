@@ -4,6 +4,7 @@ import { getLeadingSelection, getPortfolio, loadPortfolio, useLeadingSelection, 
 import { buildPortfolioAccent } from "../lib/companyScene";
 import { portfolioRows } from "../lib/portfolioRows";
 import { stageOf } from "../lib/companyStage";
+import { JURISDICTION_COORDS } from "../lib/jurisdictions";
 import { miniGlobeOverlay } from "../lib/globeStructure";
 import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
@@ -46,9 +47,10 @@ export default function Sidebar() {
     // Project routes: the same decorative Earth turned to the principal, with one quiet glow there (no topology).
     const mini = miniGlobeOverlay(selection?.structure, { homeCode: selection?.homeCode, ...(selection?.routeColor ? { color: selection.routeColor } : {}) });
     const principal = mini?.markers.find((m) => m.principal) || mini?.markers[0];
-    return principal
-      ? { key: mini.key, principalCode: principal.code, focus: { lat: principal.lat, lng: principal.lng }, pulse: { lat: principal.lat, lng: principal.lng, color: principal.color } }
-      : null;
+    if (principal) return { key: mini.key, principalCode: principal.code, focus: { lat: principal.lat, lng: principal.lng }, pulse: { lat: principal.lat, lng: principal.lng, color: principal.color } };
+    // No explicit "Set as Leading": the project sits at its anchor (Current Location), the same rule Company Globe applies.
+    const base = selection?.baselineCode ? (JURISDICTION_COORDS[selection.baselineCode] || JURISDICTION_COORDS[String(selection.baselineCode).split("-")[0]]) : null;
+    return base ? { key: `anchor|${selection.baselineCode}`, principalCode: selection.baselineCode, focus: { lat: base.lat, lng: base.lng }, pulse: { lat: base.lat, lng: base.lng, color: "#ffffff" } } : null;
     // leadingVersion is the store's change signal for saved-leader commits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyLevel, portfolio, leadingVersion, selection]);

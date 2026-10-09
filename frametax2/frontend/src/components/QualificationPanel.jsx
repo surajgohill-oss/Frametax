@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { postPeople, postFacts } from "../api";
+import { postPeople, postProjectPeople, postFacts } from "../api";
 import { PERSON_ROLES } from "../lib/personRoles";
 
 // Every editable control here maps to a REAL backend mutation
@@ -30,7 +30,7 @@ function Iso2Input({ value, onChange }) {
   );
 }
 
-export function PeopleRow({ role, people, overrides, onSaved }) {
+export function PeopleRow({ role, people, overrides, onSaved, projectId }) {
   const entries = people[role.dataKey] || [];
   const override = overrides[role.key] || { nationality: null, residency: null };
   const [nat, setNat] = useState(override.nationality || "");
@@ -45,10 +45,18 @@ export function PeopleRow({ role, people, overrides, onSaved }) {
     setSaving(true);
     setSaved(false);
     try {
-      await postPeople({
-        [`${role.key}_nationality`]: nat || null,
-        [`${role.key}_residency`]: res || null,
-      });
+      // A project route saves to THAT project's own people rows; the legacy
+      // singleton write resolves the in-memory demo engine's project, so it
+      // is reserved for the no-project case. Residency has no project-scoped
+      // store, so it is only sent on the legacy path.
+      if (projectId) {
+        await postProjectPeople(projectId, { [`${role.key}_nationality`]: nat || null });
+      } else {
+        await postPeople({
+          [`${role.key}_nationality`]: nat || null,
+          [`${role.key}_residency`]: res || null,
+        });
+      }
       setSaved(true);
       onSaved();
     } finally {
@@ -130,7 +138,7 @@ export function StrFactRow({ factKey, meta, current, onSaved, label }) {
   );
 }
 
-export default function QualificationPanel({ people, facts, script, refetch }) {
+export default function QualificationPanel({ people, facts, script, refetch, projectId }) {
   const answerable = facts.answerable || {};
   const answers = facts.answers || {};
 
@@ -145,7 +153,7 @@ export default function QualificationPanel({ people, facts, script, refetch }) {
       <p className="field-label" style={{ marginBottom: 4, fontWeight: 500 }}>People — nationality / residency</p>
       <div className="row-list" style={{ marginBottom: 14 }}>
         {ROLES.map((role) => (
-          <PeopleRow key={role.key} role={role} people={people} overrides={people.overrides || {}} onSaved={refetch} />
+          <PeopleRow key={role.key} role={role} people={people} overrides={people.overrides || {}} onSaved={refetch} projectId={projectId} />
         ))}
       </div>
 

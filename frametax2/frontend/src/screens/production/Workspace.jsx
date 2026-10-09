@@ -742,7 +742,7 @@ export default function Workspace() {
               <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} />
             )}
             {qTab === "inputs" && (
-              <QualificationPanel people={data.people} facts={data.facts} script={pkg.script} refetch={refetch} />
+              <QualificationPanel people={data.people} facts={data.facts} script={pkg.script} refetch={refetch} projectId={projectId} />
             )}
           </aside>
         ) : (
