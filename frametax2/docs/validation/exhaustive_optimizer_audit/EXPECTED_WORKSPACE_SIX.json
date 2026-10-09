@@ -2,6 +2,8 @@
   "LU": {
     "project_name": "The Little Utopia",
     "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+    "fingerprint": "d202f73ad172647767e03651e3b1b025a0593b97781f6747c0cf72ec7d5a1ba6",
+    "engine_version": "canonical-1.105.0",
     "slots": [
       {
         "slot": 1,
@@ -157,12 +159,14 @@
       "structure_id": "3cba051e-433e-4756-8090-47e21ba16502",
       "economic_identity": "94213fe799ccd1e698579df5dc3129b0de99fa663972673213a502bdced705c1",
       "confirmed_npc_usd": 3201084.2,
-      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+      "exclusion_reason": "Outranked in curated rack"
     }
   },
   "FVD": {
     "project_name": "F#K Valentine's Day",
     "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "fingerprint": "34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb",
+    "engine_version": "canonical-1.105.0",
     "slots": [
       {
         "slot": 1,
@@ -318,12 +322,14 @@
       "structure_id": "453aa492-e934-4df2-bb67-38e53e8862bf",
       "economic_identity": "0c78b9e632933afa1bdbadbe7695431b8946c5d6bbf0e3da46baa4ed2d649d96",
       "confirmed_npc_usd": 3066216.4,
-      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+      "exclusion_reason": "Outranked in curated rack"
     }
   },
   "BH": {
     "project_name": "Bad Hombres",
     "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+    "fingerprint": "f3bec951c9c673f01a710eeeb39133d6df0f7827fb70f48cea4046a9553a877b",
+    "engine_version": "canonical-1.105.0",
     "slots": [
       {
         "slot": 1,
@@ -478,12 +484,14 @@
       "structure_id": "2c507970-0adb-41ee-bf0d-12e379c235cf",
       "economic_identity": "f4566dd045b63a11ebd8addf65d6d8b52d39688bd185165580dda0ceb23997bc",
       "confirmed_npc_usd": 1521568.7,
-      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+      "exclusion_reason": "Outranked in curated rack"
     }
   },
   "LLS": {
     "project_name": "Lips Like Sugar",
     "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+    "fingerprint": "937fc893b30cf2746a560e385b19fddd1b64b519fb614dd9b8396738a06a5eea",
+    "engine_version": "canonical-1.105.0",
     "slots": [
       {
         "slot": 1,
@@ -644,7 +652,7 @@
       "structure_id": "db5f2c1a-418b-47c8-ad43-dccd4eec7acf",
       "economic_identity": "1edb86f6b36c5fdd32e088ba996cf444e049c108439f44bab93aef2552659962",
       "confirmed_npc_usd": 7566687.1,
-      "exclusion_reason": "Outranked by higher priority slot candidates in curated rack"
+      "exclusion_reason": "Outranked in curated rack"
     }
   }
 }

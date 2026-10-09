@@ -1,0 +1,15 @@
+sample_id,project_name,project_id,budget_filename,line_item_count,total_budget_usd,atl_percentage,btl_percentage,labor_percentage,travel_transport_percentage,post_vfx_percentage,optimizer_btl_assumption_consistent,optimizer_post_routing_viable,empirical_crosscheck_finding
+LIB-001,Rocky Mountain,191f1422-79a1-4a6c-a3fb-cafa0c2c2343,rockymountainbudget.pdf,50,18752479.0,0.0,0.0,10.8,4.2,22.5,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-002,Lips Like Sugar,ab10b319-978e-44d3-9331-af2a5f2cccc2,v7LLS_RevBudget_T1B_27days_022524.pdf,46,11983654.0,0.0,0.0,35.7,0.5,5.3,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-003,The Little Utopia,fa5cade5-0669-4816-bfe6-72146f8d3bae,The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf,44,4364393.0,0.0,0.0,4.4,19.1,0.2,QUALIFIED_BY_GENRE,LOW_POST_COMPONENT,Atypical allocation profile
+LIB-004,Twilight of the Dead,92167170-9e42-4bbb-9754-877ce1692b8a,Twilight of the Dead Budget Top Sheet.pdf,42,8546272.0,0.0,0.0,18.0,0.6,4.9,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-005,Going Places,dee8feca-7b94-4330-ac19-79969e8facb8,GOING PLACES Budget V5.3.pdf,40,7301947.0,0.0,0.0,25.3,2.2,2.3,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-006,10 Double Zero,3519feda-d280-435f-badc-1e4c788a2cb3,10DZ Budget 081219v1.pdf,36,11139616.0,0.0,0.0,21.5,2.9,8.2,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-007,Underwater,f1292c56-0288-4575-91ec-1f00081f07a0,Underwater Budget 9-3 (1).pdf,35,7998944.0,0.0,0.0,25.1,1.7,5.8,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-008,The Cure,f3c1a6f1-a357-407f-8072-7dfbba87ceae,THE CURE Full Budget Jan 2024 (dragged).pdf,35,2144178.0,0.0,0.0,29.1,0.0,1.9,QUALIFIED_BY_GENRE,LOW_POST_COMPONENT,Atypical allocation profile
+LIB-009,Bad Hombres,4355ae88-a636-4c18-af60-ad73b2646124,BadHombresBudget.v2.pdf,34,2482023.0,0.0,0.0,59.6,4.5,2.9,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-010,F#K Valentine's Day,6c6f1c13-2d49-4bbc-bafb-2a12efa93112,V-BRAT_V8_Greece_041224 TOPSHEET.pdf,34,4517687.0,0.0,0.0,44.5,6.0,3.5,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-011,Baron Samedi,fcbb9190-5b9c-4af8-96fa-359fce1cf79a,Baron Samedi Budget v2_9 LA Budget.pdf,33,3041182.0,0.0,0.0,25.8,4.2,2.0,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-012,Interference,565744c5-86fd-4c1d-bdb5-fdd4b910d0b0,Interference v1-6 NJ Budget.pdf,32,3575812.0,0.0,0.0,40.8,3.3,2.9,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
+LIB-013,The System,e1f2444d-4eac-410e-9c92-45637b8f2ae0,The System Budget v2.8.pdf,31,4324058.0,0.0,0.0,24.0,5.9,0.9,QUALIFIED_BY_GENRE,LOW_POST_COMPONENT,Atypical allocation profile
+LIB-014,All My Friends Are Dead,e3f50d06-68c5-4d36-8b3a-e1f87e5c7a44,3. AMFAD BUDGET_v3_01.13.23_$1.4USD.pdf,29,1409418.0,0.0,0.0,23.4,1.1,4.7,QUALIFIED_BY_GENRE,YES,Atypical allocation profile
