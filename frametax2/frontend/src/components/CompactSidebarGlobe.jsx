@@ -138,7 +138,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0, 2.1); // close in: the planet overfills the circle ~1.27x, so continents read larger and the limb is cropped
+    camera.position.set(0, 0, 2.68); // the planet (cloud shell included) fills ~98% of the circle, so the continents sit true to the circumference
 
     let renderer;
     try {
@@ -222,7 +222,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       const dt = last ? Math.min(100, now - last) : 33;
       last = now;
       group.rotation.y += 0.0000524 * dt;         // one full turn of the Earth in ~2 minutes
-      clouds.rotation.y += -0.0000044 * dt;        // own drift; the clouds ride the Earth group, so this keeps their on-screen speed at 0.000048/ms
+      clouds.rotation.y += 0.00002 * dt;           // the cloud deck drifts ahead of the Earth (on-screen ~0.0000724/ms, about a 1.4 min lap)
       key.position.x = 0.1 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
       key.position.y = 0.2 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
