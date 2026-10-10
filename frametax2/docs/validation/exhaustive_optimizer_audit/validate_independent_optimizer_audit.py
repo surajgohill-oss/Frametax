@@ -769,6 +769,24 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "Bad Hombres",
                 "Lips Like Sugar",
                 "ANCHOR ACCEPTANCE GATE REMAINS OPEN",
+                "NY_AG_BDE0FEE_ADJUDICATION.md",
+                "NY-A01",
+                "NY-A02",
+                "NY-A03",
+                "NY-A04",
+                "NY-A05",
+                "NY-A06",
+                "NY-A07",
+                "NY-A08",
+                "NY-A09",
+                "NY-A10",
+                "DISC-NY-001",
+                "DISC-NY-002",
+                "DISC-NY-003",
+                "DISC-NY-004",
+                "DISC-NY-005",
+                "DISC-NY-006",
+                "DISC-NY-007",
             )
             for tok in nya_tokens:
                 if tok not in content:
@@ -802,6 +820,18 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                             errors.append(f"Excluded cost line qualified in New York QPE: {r}")
                     if r['qualifies_standalone_post_31'] == 'Y' and r['ny_statutory_treatment'] != 'QUALIFIED_POST_PRODUCTION':
                         errors.append(f"Non-post expense improperly qualified for Section 31 post credit: {r}")
+                    # Enforce on-set production sound disaggregation from Section 31
+                    if 'PRODUCTION SOUND' in r['description'] and 'POST' not in r['description'].upper():
+                        if r['qualifies_standalone_post_31'] == 'Y' or float(r['standalone_post_qpe_usd']) != 0.0:
+                            errors.append(f"On-set production sound improperly qualified under Section 31: {r}")
+                        if r['ny_statutory_treatment'] != 'QUALIFIED_BTL_PHYSICAL':
+                            errors.append(f"On-set production sound must be QUALIFIED_BTL_PHYSICAL: {r}")
+                # Enforce complete exclusion of LLS financing fees
+                if p == 'Lips Like Sugar':
+                    for r in p_rows:
+                        if r['account_code'] in ('6500', '6600', '6700'):
+                            if r['ny_statutory_treatment'] != 'EXCLUDED_NON_QUALIFYING' or float(r['downstate_qpe_usd']) != 0.0:
+                                errors.append(f"LLS financing account {r['account_code']} must be EXCLUDED_NON_QUALIFYING: {r}")
 
     # 36. Four-Anchor QPE Issue Register Reconciliation
     irr_path = os.path.join(base_dir, "FOUR_ANCHOR_QPE_ISSUE_REGISTER_RECONCILIATION.md")
@@ -860,7 +890,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 34
+    nc_total = 37
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1671,6 +1701,77 @@ def run_negative_controls():
             w = csv.DictWriter(f, fieldnames=list(orig_fgr[0].keys()))
             w.writeheader()
             w.writerows(orig_fgr)
+
+        # -------------------------------------------------------------
+        # Negative Control 35: Rejection of On-Set Production Sound in NY § 31 Post Credit
+        # -------------------------------------------------------------
+        print("  [NC 35/37] Testing rejection of on-set production sound qualified for NY § 31 post credit...")
+        with open(nym_f, "r", encoding="utf-8") as f:
+            nym_rows = list(csv.DictReader(f))
+        orig_nym = [dict(r) for r in nym_rows]
+        for r in nym_rows:
+            if r['project_title'] == 'The Little Utopia' and r['account_code'] == '3200':
+                r['qualifies_standalone_post_31'] = 'Y'
+                r['standalone_post_qpe_usd'] = '69532.00'
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(nym_rows[0].keys()))
+            w.writeheader()
+            w.writerows(nym_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught on-set production sound qualified under Section 31.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch on-set production sound qualified under Section 31.")
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_nym[0].keys()))
+            w.writeheader()
+            w.writerows(orig_nym)
+
+        # -------------------------------------------------------------
+        # Negative Control 36: Rejection of Omitted LLS Bridge Financing Fee in Exclusions
+        # -------------------------------------------------------------
+        print("  [NC 36/37] Testing rejection of omitted LLS bridge financing fee in exclusions...")
+        with open(nym_f, "r", encoding="utf-8") as f:
+            nym_rows = list(csv.DictReader(f))
+        orig_nym = [dict(r) for r in nym_rows]
+        for r in nym_rows:
+            if r['project_title'] == 'Lips Like Sugar' and r['account_code'] == '6600':
+                r['ny_statutory_treatment'] = 'QUALIFIED_BTL_PHYSICAL'
+                r['downstate_qpe_usd'] = '250000.00'
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(nym_rows[0].keys()))
+            w.writeheader()
+            w.writerows(nym_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught omitted LLS bridge financing fee in exclusions.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch omitted LLS bridge financing fee in exclusions.")
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_nym[0].keys()))
+            w.writeheader()
+            w.writerows(orig_nym)
+
+        # -------------------------------------------------------------
+        # Negative Control 37: Rejection of Missing NY Adjudication Token in Report
+        # -------------------------------------------------------------
+        print("  [NC 37/37] Testing rejection of missing NY adjudication reference in audit report...")
+        nya_f = os.path.join(tmpdir, "NEW_YORK_INCENTIVES_AND_UPSTATE_AUDIT.md")
+        with open(nya_f, "r", encoding="utf-8") as f:
+            orig_nya = f.read()
+        tampered_nya = orig_nya.replace("NY_AG_BDE0FEE_ADJUDICATION.md", "SOME_OTHER_DOC.md")
+        with open(nya_f, "w", encoding="utf-8") as f:
+            f.write(tampered_nya)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught missing NY adjudication reference.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch missing NY adjudication reference.")
+        with open(nya_f, "w", encoding="utf-8") as f:
+            f.write(orig_nya)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
