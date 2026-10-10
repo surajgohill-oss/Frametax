@@ -2526,7 +2526,7 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
             "effective_date": "2026-03-31", "legacy_usd_value": None,
         },
         "programme_envelope": {
-            "amount": 400_000_000, "currency": "MXN", "basis": "Total programme envelope distributed from entry into force until 2030-09-30 (not an annual appropriation)",
+            "amount": 400_000_000, "currency": "MXN", "basis": "ANNUAL cap on the total tax incentive the Technical Committee may authorize (the Decreto text: 'el monto total ANUAL del estimulo fiscal ... no excedera de 400 millones de pesos'); the scheme runs from entry into force until 2030-09-30. Supersedes an earlier one-time-envelope reading -- see the doctrine record's escalation note (PROJECT_OPEN_ITEM_RECOVERY F-05)",
             "source": "Presidential Decree and Guidelines, Diario Oficial de la Federación 2026-03-30 (via Baker McKenzie analysis)",
             "effective_date": "2026-03-31", "legacy_usd_value": None,
         },

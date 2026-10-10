@@ -71,7 +71,7 @@ from app.data.program_slug_aliases import canonical_slug as _canonical_program_s
 #: nl_film_production_incentive, th_film_incentive, us_or_opif,
 #: us_tx_miip, za_nfvf_rebate) and the new RateCondition amount_fact_*/
 #: required_boolean_fact_key executable-gate mechanism.
-PROGRAM_RATE_RULES_VERSION = "1.5.0"
+PROGRAM_RATE_RULES_VERSION = "1.5.1"  # 1.5.1: PROJECT_OPEN_ITEM_RECOVERY US/CA/MX repairs -- RI USD7m and MX MXN40m per-project caps now applied; see the data-module notes
 
 
 @dataclass(frozen=True)
@@ -1917,6 +1917,36 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
               "Office incentive page -- already cited in this program's own doctrine "
               "record's SourceProvenance.citation_detail)",
         source_ref="film.nv.gov-official",
+    ),
+    # PROJECT_OPEN_ITEM_RECOVERY F-04 (US/Canada/Mexico scope): Rhode Island's per-project cap was
+    # recorded in the doctrine record as "not modeled by this schema" and the $40M ANNUAL program cap
+    # was the only dollar bound applied, so a large qualifying spend priced past the per-project cap.
+    # The cap mechanism exists now; apply the retained USD figure. The statutory waiver (a
+    # qualifying production may be waived) has no retained dollar ceiling, so it is NOT modeled --
+    # the cap stays conservative and the waiver stays a disclosed unmodeled condition.
+    "us_ri_film_credit": IncentiveValueCapRule(
+        program_slug="us_ri_film_credit", cap_currency="USD", cap_native_amount=7_000_000.0,
+        description="Per-project cap: USD7,000,000 of credits per production (waivable for "
+                     "qualifying productions; the waiver is not modeled).",
+        quote="Per-project cap $7,000,000 (waivable for qualifying productions) (film.ri.gov, "
+              "official Rhode Island Film & TV Office page -- already cited in this program's "
+              "own doctrine record's SourceProvenance.citation_detail)",
+        source_ref="film.ri.gov-official",
+    ),
+    # PROJECT_OPEN_ITEM_RECOVERY F-05: Mexico's per-project cap was retained (doctrine citation and
+    # requirements profile: "MXN 40 million per beneficiary/production", "Cap per project") but never
+    # applied, so a large Mexico candidate priced an uncapped credit. Native MXN, converted only
+    # through the canonical FX context (MXN is now a tracked currency); an unavailable MXN rate fails
+    # the segment closed, never uncapped. The figure is law-firm-summarized (Baker McKenzie, KPMG);
+    # the Decreto defers per-project figures to a Lineamientos document not yet read, so the
+    # authority tier is unchanged.
+    "mx_federal_film_incentive_2026": IncentiveValueCapRule(
+        program_slug="mx_federal_film_incentive_2026", cap_currency="MXN", cap_native_amount=40_000_000.0,
+        description="Cap per project / beneficiary: MXN 40,000,000 of tax credit.",
+        quote="Individual cap 'MXN 40 million per beneficiary/production' (bakermckenzie.com, "
+              "corroborated by KPMG and FisherBroyles; DOF Decreto 2026-02-16 defers the per-project "
+              "figures to the Lineamientos)",
+        source_ref="bakermckenzie.com-mexico-2026-incentive+dof.gob.mx-decreto-2026-02-16-official",
     ),
 }
 

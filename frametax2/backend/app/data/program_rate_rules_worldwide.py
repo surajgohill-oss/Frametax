@@ -4309,6 +4309,17 @@ MX_DOCTRINE = register(DoctrineRecord(
         DoctrineRateTier(
             tier_id="mx-flat-30", rate=0.30, is_band_ceiling=False,
             conditions=(RateCondition(
+                condition_id="mx-min-spend-native-mxn",
+                description="Minimum qualifying Mexico spend for a feature / narrative / animation "
+                            "title: MXN 40,000,000 (documentary MXN 20,000,000; animation/VFX/post-only "
+                            "MXN 5,000,000), evaluated natively in MXN against the segment's QPE via "
+                            "the canonical FX context -- unresolved, never assumed met, while no MXN "
+                            "rate is on file",
+                quote="Min spend 'MXN 40 million' (feature/narrative/animation) "
+                      "(bakermckenzie.com; Presidential Decree and Guidelines, DOF 2026-03-30)",
+                kind="project_fact_dependent_eligibility",
+                fx_native_currency="MXN", fx_native_threshold_amount=40_000_000.0),
+                RateCondition(
                 condition_id="mx-national-supply-requirement",
                 description="Requires >=70% national supply and Technical "
                             "Committee certification — a national-supply-"
@@ -4886,11 +4897,12 @@ US_RI_DOCTRINE = register(DoctrineRecord(
                     condition_id="us-ri-min-spend-waiver-and-caps-not-modeled",
                     description="Min spend / 51%-in-state requirement "
                                 "waived entirely at $10M+ QPE within 12 "
-                                "months; separate $7M per-project cap "
-                                "(waivable) exists alongside the $40M "
-                                "annual program cap -- neither waiver "
-                                "condition nor the second cap is "
-                                "pre-evaluable or modeled by this schema",
+                                "months; the $7M per-project cap is applied "
+                                "as a conservative dollar cap "
+                                "(IncentiveValueCapRule) alongside the $40M "
+                                "annual program cap, but its waiver and the "
+                                "min-spend waiver are not pre-evaluable and "
+                                "stay unmodeled",
                     quote="waived if $10 million or more in qualified "
                           "expenses are spent within a twelve-month "
                           "period... $7 million per-project cap "
@@ -6098,12 +6110,15 @@ US_WA_DOCTRINE = register(DoctrineRecord(
     program_name="Washington State Motion Picture Competitiveness Program",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=500_000.0,
-    annual_cap_usd=3_500_000.0, requires_cultural_test=False,
+    annual_cap_usd=15_000_000.0, requires_cultural_test=False,
     citation="greenslate.com (corroborated): '30% to 35% cash rebate... "
               "additional 10% cash back with one of two Enhanced "
               "Incentives... can stack to 45%.' Corrects the prior "
-              "catalog's stale 15% base figure. Annual fund ~$3.5M, "
-              "competitive/oversubscribed (Washington Filmworks).",
+              "catalog's stale 15% base figure. Annual fund: the secondary "
+              "aggregator's '~$3.5M' is superseded by the primary Washington "
+              "Filmworks PIP Guidelines (rev. 2025-06-24), USD 15,000,000 "
+              "annual funding renewing each January (the retained "
+              "ProgramRequirementsProfile evidence); competitive/oversubscribed.",
     source_ref="greenslate.com-washington",
     provenance=SourceProvenance(
         issuing_authority="Washington Filmworks (administrator of the Motion Picture Competitiveness Program); statutory basis Chapter 43.365 RCW",
@@ -6188,7 +6203,7 @@ US_NC_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-NC", program_slug="us_nc_film_entertainment_grant",
     program_name="North Carolina Film & Entertainment Grant",
     confidence_tier="VERIFIED", incentive_type="cash_rebate",
-    is_refundable=None, is_transferable=False, min_spend_usd=1_713_710.79,
+    is_refundable=None, is_transferable=False, min_spend_usd=1_500_000.0,
     annual_cap_usd=31_000_000.0, requires_cultural_test=False,
     citation="commerce.nc.gov/grants-incentives/film-industry-grants (NC "
               "Department of Commerce, official, fetched directly): grant "
@@ -6214,7 +6229,7 @@ US_NC_DOCTRINE = register(DoctrineRecord(
                              "programs in this registry.",
     ),
     tiers=(DoctrineRateTier(tier_id="us-nc-ceiling-25", rate=0.25, is_band_ceiling=True,
-                             min_qpe_usd=1_713_710.79,
+                             min_qpe_usd=1_500_000.0,
                              conditions=(RateCondition(
                                  condition_id="us-nc-min-spend-feature",
                                  description="Minimum spend for feature "
@@ -6224,7 +6239,21 @@ US_NC_DOCTRINE = register(DoctrineRecord(
                                              "not separately modeled",
                                  quote="at least $1.5 million "
                                        "(commerce.nc.gov)",
-                                 kind="min_qpe_usd", threshold_usd=1_713_710.79),)),),
+                                 kind="min_qpe_usd", threshold_usd=1_500_000.0),
+                                 # PROJECT_OPEN_ITEM_RECOVERY F-03: this record's own interpretation note says "up to
+                                 # 25%" is a discretionary ceiling "same treatment as other 'up to' programs", but the
+                                 # tier carried only the (satisfied) minimum-spend gate, so the floorless-ceiling guard
+                                 # never fired and NC priced a CONFIRMED 25% floor while Maryland and South Carolina,
+                                 # worded the same way, were correctly blocked.
+                                 RateCondition(
+                                 condition_id="us-nc-up-to-25-discretionary",
+                                 description="The grant rate is stated as 'up to 25%' of qualified "
+                                             "expenses; the awarded rate is at the Department of "
+                                             "Commerce's discretion and no guaranteed floor rate is "
+                                             "stated",
+                                 quote="grant rate 'up to 25%' on qualified expenses "
+                                       "(commerce.nc.gov)",
+                                 kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(US_NC_DOCTRINE))
 
@@ -6517,7 +6546,7 @@ US_CT_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-CT", program_slug="us_ct_film_tax_credit",
     program_name="Connecticut Film Tax Credit",
     confidence_tier="VERIFIED", incentive_type="tax_credit",
-    is_refundable=None, is_transferable=True, min_spend_usd=113_710.79,
+    is_refundable=None, is_transferable=True, min_spend_usd=100_000.0,
     annual_cap_usd=None, requires_cultural_test=False,
     citation="portal.ct.gov/DECD (Connecticut Department of Economic and "
              "Community Development, official, fetched directly): "
@@ -6541,11 +6570,11 @@ US_CT_DOCTRINE = register(DoctrineRecord(
     ),
     tiers=(
         DoctrineRateTier(tier_id="us-ct-tier-10", rate=0.10, is_band_ceiling=False,
-                          min_qpe_usd=113_710.79),
+                          min_qpe_usd=100_000.0),
         DoctrineRateTier(tier_id="us-ct-tier-15", rate=0.15, is_band_ceiling=False,
-                          min_qpe_usd=568_553.96),
+                          min_qpe_usd=500_000.0),
         DoctrineRateTier(tier_id="us-ct-tier-30", rate=0.30, is_band_ceiling=False,
-                          min_qpe_usd=1_137_107.92),
+                          min_qpe_usd=1_000_000.0),
     ),
 ))
 register_rate_rules(rate_rules_for(US_CT_DOCTRINE))
@@ -7075,9 +7104,13 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
               "TV series all at 30%.)' Confirms catalog's 25% figure as "
               "one tier, clarifies 30% applies to features/mini-series/TV series.",
     source_ref="thereactionlab.com-new-brunswick",
+    # The 30% tier is selected by production TYPE (a satisfied production_type condition for a
+    # feature), not a discretionary "up to" band: flagging it is_band_ceiling=True made the segment
+    # report a 25% floor while the structure's confirmed figure used 30% (the register-disclosed
+    # inconsistency, PROJECT_OPEN_ITEM_RECOVERY F-01).
     tiers=(DoctrineRateTier(tier_id="ca-nb-general-25", rate=0.25, is_band_ceiling=False),
            DoctrineRateTier(tier_id="ca-nb-feature-miniseries-tv-30",
-                             rate=0.30, is_band_ceiling=True,
+                             rate=0.30, is_band_ceiling=False,
                              conditions=(RateCondition(
                                  condition_id="ca-nb-project-type-30pct",
                                  description="30% applies to features, "

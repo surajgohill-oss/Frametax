@@ -252,6 +252,13 @@ _JURISDICTION_CURRENCY: dict[str, str] = {
     # lookup, so the plain "US"/"CA" entries below cover every US state and
     # Canadian province candidate this production's optimizer can propose.
     "US": "USD", "CA": "CAD",
+    # PROJECT_OPEN_ITEM_RECOVERY F-05: mx_federal_film_incentive_2026 carries a native MXN 40m
+    # per-project cap and a native MXN 40m minimum spend, both converted through CanonicalFXContext.
+    # ALL_TRACKED_CURRENCIES is derived from this map, so MXN must be listed or a successful live
+    # refresh would never fetch it and every Mexico candidate would fail closed. No rate is invented
+    # here (the live provider supplies it); until a snapshot carries MXN the cap/threshold stay
+    # unresolved, never uncapped.
+    "MX": "MXN",
 }
 
 #: Every currency CineGlobe's canonical jurisdiction registry can ever

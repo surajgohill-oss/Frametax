@@ -61,7 +61,10 @@ def _classification_rules_digest() -> str:
 #: counted as spend/QPE, but no longer invisible to project-evidence
 #: reconciliation. Output-affecting (a new field is populated for real
 #: existing budgets), so already-routed BudgetDocuments must be re-parsed.
-BUDGET_PARSER_VERSION = f"budget-1.5.0+rules.{_classification_rules_digest()}"
+#: 1.5.1 (PROJECT_OPEN_ITEM_RECOVERY F-07): the Movie Magic detail matcher also reads the un-hyphenated "CODE  DESCRIPTION"
+#: headings and the un-numbered "Total Fringes" sub-line (Little Utopia / Bad Hombres exports) -- output-affecting
+#: (source_subaccounts for those budgets), so already-routed documents must be re-parsed.
+BUDGET_PARSER_VERSION = f"budget-1.5.1+rules.{_classification_rules_digest()}"
 
 
 @dataclass
@@ -465,18 +468,40 @@ def _movie_magic_subaccounts(pages: list[str]) -> dict[str, list[dict]]:
     parents = {}
     parent = child = None
     description = ""
+    fringe_recorded = False
     for page_ref, page in enumerate(pages, 1):
         rows = [row.strip() for row in page.splitlines() if row.strip()]
         for idx, row in enumerate(rows):
-            heading = re.match(r"^(\d{4}|\d{2}-\d{2})\s+-\s+(.+)$", row)
+            # Movie Magic detail headings come in two exports: "CODE - DESCRIPTION" (hyphenated) and
+            # "CODE  DESCRIPTION" (no hyphen, two or more spaces -- Little Utopia / Bad Hombres). The topsheet lists
+            # code and description on separate rows, so the same-row two-space form is detail-page only.
+            heading = (re.match(r"^(\d{4}|\d{2}-\d{2})\s+-\s+(.+)$", row)
+                       or re.match(r"^(\d{4})\s{2,}(\S.*)$", row))
             if heading:
                 parent = heading.group(1)
                 parents.setdefault(parent, [])
                 child = None
+                fringe_recorded = False
                 continue
-            if parent and _ACCT_CODE_ANY_RE.fullmatch(row) and row != parent and idx + 1 < len(rows):
+            if row.startswith("Account Total for"):
+                child = None
+                continue
+            # A fringes sub-line ("1199 / Total Fringes / ... / $11,431") has no "Total" row of its own: its amount is
+            # the first $ value after it. Record it so the authored children conserve the parent total.
+            if (child and not fringe_recorded and description.lower().startswith("total fringes")
+                    and re.match(r"^[($£€]", row)):
+                amount = _parse_amount(row)
+                if amount is not None:
+                    parents[parent].append({"account_code": child, "description": description,
+                        "amount_usd": amount, "page_ref": page_ref})
+                    fringe_recorded = True
+                    child = None
+                continue
+            if (parent and _ACCT_CODE_ANY_RE.fullmatch(row) and row != parent and idx + 1 < len(rows)
+                    and row[:2] == parent[:2]):
                 child = row
                 description = rows[idx + 1]
+                fringe_recorded = False
                 continue
             if child and row.lower() == "total" and idx + 1 < len(rows):
                 raw = rows[idx + 1]
