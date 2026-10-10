@@ -4394,3 +4394,7 @@ User explicitly requires investigation and recording of EVERY discrepancy/failur
 ## NY AG AUDIT ADJUDICATION — 2026-10-10
 
 AG bde0fee covers four budgets/158 rows but totals are NOT_ACCEPTED. Primary-source/code review confirms production/post-pair rule conflict, missing post percentage/VFX gateways and geographic rate distinctions; additional source and comparison defects in AG's evidence are recorded in NY_AG_BDE0FEE_ADJUDICATION.md and the single four-anchor issue register. Includes LLS$1.25m financing omission, LU declared gross, on-set/post sound distinction and non-identical BH comparison. Source-config conflicts are not proof of every claimed runtime impact. No production code/DB/evaluation changed; anchor acceptance and Greece investigation remain open.
+
+## AG GREECE RECONCILIATION FOLLOW-UP — 2026-10-10
+
+AG1edb718 correctly retracts proven-Greece-overstatement/implied-QPE assertions but its new schedule is NOT_ACCEPTED. Evidence-linked findings recorded in AG_1EDB718_GREECE_ADJUDICATION.md and the single issue register. Critical new source check: LU/BH PDFs contain actual detail; current MovieMagic detail matcher captures none because parent headings lack its required hyphen. Parser gross/account preservation remains valid; detail acceptance Q09 remains OPEN with canonical-owner repair assigned. Repeated Greek insurance/bond blanket exclusion, vague temporal principal-fee caps, LLS mixed-role errors and unsupported live/temporal implementation claims remain open. No evaluator/data/code changed.
