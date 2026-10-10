@@ -58,26 +58,44 @@ Status: RECONCILED AGAINST PRIMARY STATUTES & RECONSTRUCTION CONTROLS; CALCULATI
 
 ### 1. Greece (F#K Valentine's Day / FVD): Full 34-Account & $926,855.84 Reconciliation
 - **34-Account Reconstruction Matrix (`FVD_GREECE_34_ACCOUNT_RECONSTRUCTION.csv`):** Every leaf account (1100–7905) re-evaluated against Law 4487/2017, KYA 607434 Annex B, and Law 5105/2024. Gross production cost = $4,517,687.00 across 34 leaf lines.
-- **Project-Level Contingency Election Ordering:** Account 7902 `CONTINGENCY : 10%` ($362,866.00) is deducted at the project level *before* jurisdiction eligibility:
+- **Actual Project Contingency Election Ground Truth (CBA-009 / Part 19-20):** In `project_facts`, only Little Utopia has `contingency_expected_utilization_pct = 100.0%`; FVD, BH, and LLS are **genuinely unset (`None`)**. Under CBA-009 and `qualification_derivation.py`, unset contingency is excluded from QPE as an unspent liability reserve (`MISSING_PRODUCTION_FACT`), deducting Account 7902 `CONTINGENCY : 10%` ($362,866.00) at the project level prior to jurisdiction rules:
   $$\$4,517,687.00 - \$362,866.00 = \mathbf{\$4,154,821.00}$$
-  This $4,154,821.00 baseline matches byte-for-byte the exact QPE served across all 29 alternative candidate structures (AU-NSW through ZA) in `CODEX_FVD_TOP6_SERVED_TRACE.md` (canonical-1.2.1, fingerprint `bb48c6e76623545f7718ebff65cfd14bfd8ff47ea4c6cbd07ec6a5b7473ae79f`).
-- **Jurisdiction-Specific Greek QPE Clamping:** Finance fee (Acct 7901 $453,583.00) excluded, giving pre-cap spend of $\$4,154,821.00 - \$453,583.00 = \$3,701,238.00$ (or $\$3,628,665.00$ without bond). Clamped to statutory 80.00% budget cap ($3,614,149.60 = 0.80 \times \$4,517,687.00$) yielding incentive $\$1,445,659.84$ ($0.40 \times \$3,614,149.60$) and NPC $\$3,072,027.16$ in Structure `e8649797-b143-40d7-978b-35bf7ca07cc1`.
+  This $4,154,821.00 baseline matches the unadjusted global spend base prior to jurisdiction-specific exclusions across candidate structures.
+- **Current Served Generation & Greek QPE Clamping:** For Greece (`gr_cash_rebate`), finance fee (Acct 7901 $453,583.00) is excluded under Law 4487/2017 Art. 20 and KYA 607434 Annex B, reducing pre-cap spend to $\$4,154,821.00 - \$453,583.00 = \$3,701,238.00$. Clamped to the statutory 80.00% budget cap ($3,614,149.60 = 0.80 \times \$4,517,687.00$) under Law 4487/2017 Art. 26(1), yielding incentive $\$1,445,659.84$ ($0.40 \times \$3,614,149.60$) and NPC $\$3,072,027.16$ in Structure `86555121-5a0c-4b43-8b55-6569819109e9` (fingerprint `34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb`, economic identity `d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737`, engine `canonical-1.105.0`, superseding historical August 2026 trace `bb48c6e...`).
 - **Separation of Producer Rebate Line 8004:** Embedded estimate line 8004 `Greek Estimate Cash Rebate (40%)` -$518,804.00 is situated at the foot of the topsheet below gross costs. Stated Gross Budget = $4,517,687.00; Producer Net Budget = $3,998,883.00. Preserving separation prevents gross distortion and double netting.
 - **Correction of Insurance & Completion Bond (GR-A01):** Blanket exclusion rejected. Acct 7200 ($50,329) and Acct 7905 ($72,573) are eligible production expenses subject to combined 5.0% statutory cap under historical Law 4487/2017 Art. 26(2)(a) and current KYA 607434 Annex B.3(i).
 - **Correction of Versioned Principal Fee Caps (GR-A02):**
   * Historical Regime (Law 4487/2017 Art. 26(2)(b)): 35.0% cap on director, scriptwriter, and max 2 lead actors. Producer fees under cross-border service contracts non-qualifying (Art. 26(2)(c)).
   * Current Regime (KYA 607434 Annex B.3(ii)): 30.0% cap on directors, scriptwriters, and actors.
-- **Deep Investigation of $926,855.84 Difference (GR-A03):** Established as an unevidenced structural planning model variance between an unproven 100% relocation candidate ($3,614,149.60 QPE / $1,445,659.84 rebate) and an unproven partial split-location service shoot estimate ($1,297,010.00 base [28.71% of gross] / $518,804.00 rebate). Exact legal QPE is genuinely `NOT ESTABLISHED — MISSING LOCAL SPEND SCHEDULE`.
+- **Deep Investigation of $926,855.84 Difference & Full Retraction of Unsupported Claims:**
+  * Prior conjectures asserting an "Albuquerque, New Mexico shoot", "2–3 week European exterior split shoot", or "Greek production services contract" are **formally and fully retracted**. None of these appear in `V-BRAT_V8_Greece_041224 TOPSHEET.pdf`.
+  * The $926,855.84 difference is an unevidenced structural planning model divergence between an unproven 100% relocation candidate ($3,614,149.60 QPE / $1,445,659.84 rebate) and an unitemized producer estimate line (Account 8004 -$518,804.00, implied $1,297,010.00 base [28.71% of gross]). Exact legal QPE is genuinely `NOT ESTABLISHED — MISSING LOCAL SPEND SCHEDULE`.
 
-### 2. New York: Full Resolution of DISC-NY-001..007 & NY-A01..A10
+### 2. New York: Adjudication Analysis & Supported Corrections (DISC-NY-001..007 & NY-A01..A10)
 - **Anti-Stacking Exclusivity (`DISC-NY-001`):** NY Tax Law § 31*2(a)(1) explicitly bars taxpayers eligible for Section 24 from Section 31 post credit for the same film. Corrected to `mutually_exclusive`.
 - **Disaggregated Post Gateways (`DISC-NY-002`, `NY-A06`):** Gateway 1 (lesser of $1M or 75% post spend) vs Gateway 2 (VFX: lesser of $500k/10% upstate or $3M/20% downstate).
 - **Post Rates & Upstate Labor Uplift (`DISC-NY-003`, `NY-A07`):** 30% downstate MCTD base, 35% upstate facility, plus additional 10% upstate post labor (§ 31*2(a)(3)).
 - **ATL Labor Ceilings (`DISC-NY-004`, `NY-A08`):** $500k/person individual cap, max 2 producers, and aggregate 40% BTL+Post ceiling under § 24(b)(1). Disallowed ATL: LLS $799,903.40; FVD $1,327,450.60; BH $1,155,265.40.
 - **Statutory Exclusions (`DISC-NY-005`):** Non-qualifying development, rights, financing, insurance, marketing, and distribution excluded under § 24(b)(2).
-- **Upstate Production Uplift Boundaries (`DISC-NY-006`, `NY-A05`):** MCTD includes 12 counties (NYC 5 + Nassau, Suffolk, Westchester, Rockland, Putnam, Orange, Dutchess). Dutchess, Orange, Putnam do NOT qualify for upstate production uplift. Principal photography gate requires **> 50%** shoot days upstate. ATL excluded from +10% uplift. Formula: $(0.30 \times Q_{\text{ATL, allowed}}) + (0.40 \times Q_{\text{BTL+Post, upstate}})$.
+- **Upstate & Regional Labor Uplift Boundaries (§ 24(a)(5) / `DISC-NY-006`, `NY-A05`):** Paragraph (5) of subdivision (a) of Section 24 explicitly enumerates eligible counties for the additional 10% credit. **Dutchess, Orange, and Putnam are statutorily included and eligible** under § 24(a)(5). ATL compensation is statutorily excluded from § 24(a)(5) and qualifies only for the 30% base credit under § 24(a)(2). Non-labor upstate expansion under ESD rules requires **> 50%** principal photography shoot days upstate. Formula: $(0.30 \times Q_{\text{ATL, allowed}}) + (0.40 \times Q_{\text{BTL+Post, upstate}})$.
 - **Refundability (`DISC-NY-007`):** Fully refundable under § 24(c).
 - **Financing & Sound Preservations (`NY-A01`, `NY-A03`):** LLS financing ($1,700,000 across Accts 6500, 6600, 6700) preserved in gross/NPC, excluded from QPE. On-set sound across all 4 budgets categorized as `QUALIFIED_BTL_PHYSICAL`, excluded from Section 31 post credit.
 - **Controlling Gross & Identical Allocations (`NY-A02`, `NY-A04`):** LU declared controlling gross ($4,364,393.00) preserved against $2 leafsum rounding; BH hybrid vs relocation comparisons reconciled with $0.00 unexplained residual.
 - **Role Dispositions & Fingerprint Provenance (`NY-A09`, `NY-A10`):** Counterfactual budgets treated as conditional planning models; candidate fingerprints verified from saved traces with zero cold evaluations.
+
+### 3. Open Gate Status, Remaining Blockers & Dollar Impacts
+- **Four-Anchor Gate Status:** **STRICTLY OPEN** (`STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN`). Premature closure claims are formally reopened.
+- **Remaining Blockers:**
+  1. FVD Greece missing local spend schedule (DEF-FVD-001; exact legal QPE is `NOT ESTABLISHED`).
+  2. Bad Hombres non-resident cast withholding proof (AN-A05; $1,032,202 line requires proof).
+  3. LLS California mixed accounts payee records (AN-A01).
+  4. Movie Magic subaccount detail coverage gap (Q09 / PAR-A01).
+  5. Stale persisted database records pending authorized production regeneration.
+- **Dollar Impacts:**
+  * FVD Greece planning variance: +$926,855.84 incentive ($2,317,139.60 base variance).
+  * LLS NY financing exclusion: -$1,750,000.00 QPE reduction (-$525,000.00 credit impact).
+  * BH NY ATL 40% cap disallowance: -$1,155,265.40 QPE disallowance (-$346,579.62 credit impact).
+  * FVD NY ATL 40% cap disallowance: -$1,327,450.60 QPE disallowance (-$398,235.18 credit impact).
+  * LLS NY ATL 40% cap disallowance: -$799,903.40 QPE disallowance (-$239,971.02 credit impact).
+  * Standalone post false rejections: 82 candidate aggregates affected.
 

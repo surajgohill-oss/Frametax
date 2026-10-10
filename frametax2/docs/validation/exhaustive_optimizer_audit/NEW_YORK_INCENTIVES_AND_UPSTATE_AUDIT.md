@@ -35,7 +35,7 @@ This revision fully incorporates and rectifies every finding set forth in `docs/
 | **NY-A02** | LU Gross / NPC Leafsum Discrepancy | **CORRECTED BASELINE**: Documented that The Little Utopia declared controlling gross budget is **$4,364,393.00**, while the leaf account sum is **$4,364,395.00** ($2.00 source rounding variance). NPC is strictly calculated against declared controlling gross $4,364,393.00 ($4,364,393.00 - Incentive). | **CORRECTED & RECONCILED** |
 | **NY-A03** | Production Sound Treated as Post | **CORRECTED DISAGGREGATION**: Submitted script previously selected any description with `'SOUND'` as post. On-set production sound accounts (LU 3200 $69,532; FVD 3200 $26,458; BH 3400 $16,845; LLS 3400 $87,067) are physical BTL production spend, NOT post. Reclassified as `QUALIFIED_BTL_PHYSICAL` and excluded from Section 31 post credit. | **CORRECTED & RECONCILED** |
 | **NY-A04** | BH Hybrid vs Relocation Comparison | **METHODOLOGICAL RECONCILIATION**: Reconstructed both comparisons with $0.00 residual: (1) Identical 100% Relocation Control ($2,482,023.00 Gross): CineGlobe QPE $2,387,641 vs Audited QPE $1,049,844.60 = +$1,337,796.40 overstatement; (2) Identical Component Relocation ($2,369,065.00 Allocated Gross where $112,958 post package is carved out): CineGlobe QPE $2,274,683 vs Audited QPE $912,161.60 = +$1,362,521.40 overstatement. | **CORRECTED & RECONCILED** |
-| **NY-A05** | Production County & Day Boundary | **CORRECTED STATUTORY DEFINITIONS**: MCTD contains 12 counties (NYC 5 counties + Nassau, Suffolk, Westchester, Rockland, Putnam, Orange, Dutchess). Dutchess, Orange, and Putnam are IN the MCTD and do NOT qualify for upstate production uplift! Day boundary gate is **MORE THAN 50%** (> 50%, not $\ge 50\%$). ATL compensation strictly excluded from +10% uplift under § 24(a)(2). Upstate credit formula: $(0.30 \times Q_{\text{ATL, allowed}}) + (0.40 \times Q_{\text{BTL+Post, upstate}})$. | **CORRECTED & RECONCILED** |
+| **NY-A05** | Production County & Day Boundary (§ 24(a)(5)) | **CORRECTED STATUTORY COUNTY & LABOR DEFINITION**: Paragraph (5) of subdivision (a) of Section 24 explicitly enumerates the counties eligible for the additional 10% credit. **Dutchess, Orange, and Putnam ARE STATUTORILY ENUMERATED AND ELIGIBLE** under § 24(a)(5)! Prior statements asserting their exclusion conflated MCTD transit boundaries (applicable to § 31*2 post facilities) with the § 24(a)(5) statutory list. Furthermore, § 24(a)(5) is strictly a **wages/salary-based labor uplift** on BTL crew labor: wages paid to writers, directors, composers, producers, and performers are statutorily excluded. ATL receives only the 30% base credit under § 24(a)(2). Non-labor upstate expansion under ESD rules requires **MORE THAN 50%** (> 50%, not $\ge 50\%$) principal photography shoot days upstate. Upstate credit formula: $(0.30 \times Q_{\text{ATL, allowed}}) + (0.40 \times Q_{\text{BTL+Post, upstate}})$. | **CORRECTED & RECONCILED** |
 | **NY-A06** | Post / VFX Gateway Conflation | **DISAGGREGATED STATUTORY GATEWAYS**: Evaluated both Section 31 statutory gateways distinctly: Gateway 1 (General Post: lesser of $1M or 75% of total post spend) and Gateway 2 (VFX/Animation: lesser of $3M or 20% downstate; lesser of $500k or 10% upstate). Evaluated all 4 source budgets under both pathways. | **CORRECTED & RECONCILED** |
 | **NY-A07** | Post Labor Uplift Modeling | **DISCLOSED LABOR UPLIFT LIMB**: Modeled the additional 10% post labor uplift under Section 31(a)(3) for upstate facilities. Documented that actual labor vs facility rental breakdown cannot be proven from high-level accounts and remains conditional. | **CORRECTED & RECONCILED** |
 | **NY-A08** | Current vs 2023 Individual Cap Scopes | **TEMPORAL SCOPES SEPARATED**: Delineated pre-2023 regime (ATL generally excluded) from current post-April 1, 2023 regime (ATL capped at $500k/person, max 2 producers, and aggregate 40% of BTL+Post). Retained missing talent contracts as conditional. | **CORRECTED & RECONCILED** |
@@ -51,18 +51,18 @@ The Empire State Film Production Credit is codified under NY Tax Law § 24 and r
 
 #### 1. Statutory Rate Structure & Upstate Geography
 - **Base Credit:** **30.0%** of qualified production costs incurred in New York State (§ 24(a)(1)).
-- **Upstate Uplift (+10.0%):** An additional 10.0% credit (effective **40.0%** rate) is provided under § 24(a)(2) on qualified production expenditures incurred in designated counties outside the Metropolitan Commuter Transportation District (MCTD).
-  - *Metropolitan Commuter Transportation District (MCTD Counties — Downstate):*
-    - New York City (5 counties): New York (Manhattan), Kings (Brooklyn), Queens, Bronx, Richmond (Staten Island).
-    - Suburban Downstate (7 counties): Nassau, Suffolk, Westchester, Rockland, Putnam, Orange, and Dutchess.
-    - **Crucial Boundary Correction:** Dutchess, Orange, and Putnam counties belong to the MCTD. Therefore, they do **NOT** qualify for the upstate production uplift under § 24(a)(2).
-  - *Designated Upstate Counties:* All 50 New York State counties outside the MCTD (e.g., Albany, Erie, Monroe, Onondaga, Ulster, Sullivan, Greene).
-  - *Principal Photography Day Gate:* The production must shoot **MORE THAN 50%** of its principal photography days in designated upstate counties (> 50%, not $\ge 50\%$). If the production has fewer than 5 principal photography days, 100% of shooting days must be upstate.
-  - *Exclusion of ATL from Upstate Uplift:*
-    > *"an additional credit equal to ten percent of the qualified production costs, **other than wages and other compensation paid to writers, directors, producers, and performers**, incurred in the production of a qualified film..."* (NY Tax Law § 24(a)(2)).
-    - **Controlling Statutory Rule:** Above-The-Line wages are statutorily barred from receiving the +10% upstate uplift. ATL compensation receives ONLY the 30.0% base credit rate.
-    - **Corrected Upstate Formula:**
-      $$\text{Upstate Credit} = (0.30 \times Q_{\text{ATL, allowed}}) + (0.40 \times Q_{\text{BTL+Post, upstate}})$$
+- **Upstate & Regional Labor Uplift (+10.0% under § 24(a)(5)):**
+  - An additional 10.0% credit (effective **40.0%** rate) is provided under NY Tax Law § 24(a)(5) on wages or salaries paid to individuals directly employed by a qualified film production company for services performed in specific statutorily enumerated counties (budget $\ge \$500,000$).
+  - **Statutory County Enumeration:** Paragraph (5) of subdivision (a) of Section 24 expressly enumerates eligible counties: Albany, Allegany, Broome, Cattaraugus, Cayuga, Chautauqua, Chemung, Chenango, Clinton, Columbia, Cortland, Delaware, **Dutchess**, Erie, Essex, Franklin, Fulton, Genesee, Greene, Hamilton, Herkimer, Jefferson, Lewis, Livingston, Madison, Monroe, Montgomery, Niagara, Oneida, Onondaga, Ontario, **Orange**, Orleans, Oswego, Otsego, **Putnam**, Rensselaer, Saratoga, Schenectady, Schoharie, Schuyler, Seneca, St. Lawrence, Steuben, Sullivan, Tioga, Tompkins, Ulster, Warren, Washington, Wayne, Wyoming, and Yates.
+  - **Statutory Inclusion of Dutchess, Orange, and Putnam:** Although Dutchess, Orange, and Putnam belong to the Metropolitan Commuter Transportation District (MCTD) for general MTA/sales tax purposes and are treated as downstate for post-production facility rates under § 31*2, **they are explicitly enumerated in NY Tax Law § 24(a)(5)** and qualify for the additional 10% production wage credit. Only the 5 NYC counties (New York, Kings, Queens, Bronx, Richmond), Nassau, Suffolk, Westchester, and Rockland are excluded from § 24(a)(5).
+  - **Statutory Exclusion of ATL Wages from § 24(a)(5):**
+    > *"provided, however, that such credit shall not apply to wages or salaries paid to writers, directors, composers, producers and performers (other than background actors with no scripted lines)..."* (NY Tax Law § 24(a)(5)).
+    - Above-The-Line wages are statutorily barred from the additional 10% uplift; ATL compensation receives strictly the 30.0% base credit rate under § 24(a)(2).
+  - **Labor Limb vs. Non-Labor Limb Gate:**
+    - *Labor Limb (§ 24(a)(5)):* Wage/salary-based credit on qualifying BTL crew employed in enumerated counties.
+    - *Non-Labor Expansion Gate:* Under ESD guidelines, to expand the additional 10% credit beyond labor to non-labor qualified production costs, the production must shoot **MORE THAN 50%** of its principal photography days in designated upstate/regional counties (> 50%, not $\ge 50\%$). If the production has fewer than 5 principal photography days, 100% of shooting days must be upstate.
+  - **Corrected Upstate Formula:**
+    $$\text{Upstate Credit} = (0.30 \times Q_{\text{ATL, allowed}}) + (0.40 \times Q_{\text{BTL+Post, upstate}})$$
 - **Music Scoring Uplift:** Additional **10.0%** credit on qualified music production/scoring costs incurred in New York State, provided at least 5 musicians participate in the recording sessions (§ 24(a)(2)).
 - **Refundability:** Fully refundable tax credit under NY Tax Law § 24(c).
 - **Annual Funding Cap:** Statewide aggregate statutory allocation of **$700,000,000** annually through taxable years beginning before 2035.
@@ -401,15 +401,41 @@ In accordance with PROJECT_RULES.md, all independent derivations disclose explic
 
 ---
 
-## 6. FOUR-ANCHOR ACCEPTANCE GATE DISPOSITION
+## 6. FOUR-ANCHOR ACCEPTANCE GATE DISPOSITION & ADJUDICATION STATUS
 
-**STATUS: ANCHOR ACCEPTANCE GATE REMAINS OPEN**
+**STATUS: ANCHOR ACCEPTANCE GATE REMAINS OPEN** (STRICTLY OPEN)
 
 **Disposition Formulation:**
 `ADMISSIBLE AS CANONICAL RULE & PARSER REPAIR; PRODUCTION REGENERATION PENDING EXPLICIT AUTHORIZATION`
 
-The calculations and statutory rules derived in this report represent the independent, source-grounded expectations for New York State film and post-production incentives, fully reconciling the findings of `docs/validation/NY_AG_BDE0FEE_ADJUDICATION.md`. In strict compliance with audit governance rules:
+The calculations and statutory rules derived in this report represent the independent, source-grounded expectations for New York State film and post-production incentives, fully reconciling the findings of `docs/validation/NY_AG_BDE0FEE_ADJUDICATION.md`. False closure claims are explicitly rejected and reopened.
+
+### A. Supported Corrections Established by Primary Authority
+1. **Statutory Anti-Stacking Exclusivity (§ 31*2(a)(1) / DISC-NY-001):** NY Tax Law § 31*2 explicitly bars taxpayers eligible for Section 24 from claiming Section 31 for the same film. Corrected stacking relationship to `mutually_exclusive`.
+2. **Disaggregated Post / VFX Gateways (§ 31*2(a)(2) / DISC-NY-002, NY-A06):** Reconstructed Gateway 1 (General post: lesser of $1M or 75% of total post spend) and Gateway 2 (VFX/Animation: lesser of $500k or 10% worldwide VFX spend for upstate, or $3M / 20% for downstate).
+3. **Statutory County Enumeration & Inclusion (§ 24(a)(5) / NY-A05):** Paragraph (5) of subdivision (a) of Section 24 explicitly enumerates eligible counties for the additional 10% credit. **Dutchess, Orange, and Putnam are statutorily included and eligible** under § 24(a)(5), correcting prior erroneous claims based on MCTD transit boundaries.
+4. **Statutory ATL Wage Exclusion (§ 24(a)(5)):** The additional 10% credit under § 24(a)(5) strictly applies to BTL crew wages/salaries; compensation paid to writers, directors, composers, producers, and performers is statutorily excluded and receives only the 30% base credit under § 24(a)(2).
+5. **Versioned ATL Ceilings (§ 24(b)(1) / DISC-NY-004, NY-A08):** Pre-April 1, 2023 ATL was 100% excluded; Post-April 1, 2023 ATL is capped at $500,000/person, max 2 producers, and aggregate 40% BTL ceiling.
+6. **Production Sound Disaggregation (NY-A03):** On-set sound across all 4 budgets categorized as `QUALIFIED_BTL_PHYSICAL` and excluded from Section 31 post credit.
+7. **LLS Financing Preservation (NY-A01):** LLS financing fees ($1,700,000 across Accts 6500, 6600, 6700) preserved in gross/NPC and excluded from QPE, reducing BTL base by $1.25M and ATL cap by $500k.
+8. **Controlling Gross Baselines (NY-A02):** LU declared controlling gross ($4,364,393.00) preserved against $2.00 leafsum rounding.
+
+### B. Remaining Blockers
+1. **Missing Shooting Day & Territorial Breakdown:** Budgets lack county-level shooting day breakdowns; > 50% principal photography day gate for non-labor expansion remains unproven.
+2. **Missing Individual Talent Contracts:** Aggregate cast and producer lines prevent empirical certification of individual $500,000 per-person caps and the 2-producer rule without contracts.
+3. **Missing Post-Production Facility Invoices:** Specific qualified facility locations and labor vs. equipment splits are not established in raw budget files.
+4. **Canonical Budget Parser Subaccount Detail Gap (Q09 / PAR-A01):** Parser drops subaccount rows for LU (60pp) and BH (43pp) PDFs due to unhyphenated headers.
+5. **Persisted Engine State Pending Regeneration:** Production database contains stale generations; production regeneration remains held pending explicit authorization.
+
+### C. Reconciled Dollar Impacts
+- **LLS Financing & ATL Cap Impact:** -$1,750,000.00 QPE reduction (Financing -$1,250,000 from BTL base, resulting in -$500,000 reduction in 40% ATL ceiling); credit impact is -$525,000.00.
+- **BH ATL 40% Cap Disallowance:** -$1,155,265.40 disallowed from QPE (-$346,579.62 credit impact).
+- **FVD ATL 40% Cap Disallowance:** -$1,327,450.60 disallowed from QPE (-$398,235.18 credit impact).
+- **LLS ATL 40% Cap Disallowance:** -$799,903.40 disallowed from QPE (-$239,971.02 credit impact).
+- **Post False Rejections (82 candidate aggregates):** All 82 candidates falsely rejected under flat $1M rule; under statutory 75% rule, all 4 budgets qualify for standalone post evaluation.
+
+In strict compliance with audit governance rules:
 - Strictly zero production code (`backend/app/`, `frontend/`) has been modified.
 - Strictly zero project records or database tables have been mutated.
 - Strictly zero cold evaluations or project regenerations have been executed.
-- The four-anchor acceptance gate remains strictly **OPEN** until optimizer rules are updated and regenerated under explicit authorization.
+- The four-anchor acceptance gate remains strictly **OPEN**.

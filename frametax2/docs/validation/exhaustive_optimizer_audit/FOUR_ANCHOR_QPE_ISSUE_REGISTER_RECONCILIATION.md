@@ -52,25 +52,27 @@ The comparison between the canonical saved run, the producer topsheet, and statu
 | Metric | Amount (USD) | Effective Rate | Underlying Source / Origin | Evidentiary Classification |
 | :--- | :---: | :---: | :---: | :--- |
 | **Gross Production Budget** | **$4,517,687.00** | — | Movie Magic Budget Topsheet (34 leaf accounts, Accts 1100–7905) | `PRIMARY_DOCUMENT_VALUE` |
-| **Engine Persisted Baseline** | **$1,445,659.84** | 40.0% | QPE clamped to 80.00% statutory ceiling: $3,614,149.60 ($4,517,687 × 80.00%) in Structure `e8649797-b143-40d7-978b-35bf7ca07cc1` (fingerprint `bb48c6e76623545f7718ebff65cfd14bfd8ff47ea4c6cbd07ec6a5b7473ae79f`) | `PERSISTED_COMPARISON_ONLY` (Unproven open-default relocation) |
+| **Engine Served Generation** | **$1,445,659.84** | 40.0% | QPE clamped to 80.00% statutory ceiling: $3,614,149.60 ($4,517,687 × 80.00%) in Structure `86555121-5a0c-4b43-8b55-6569819109e9` (fingerprint `34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb`, economic identity `d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737`, engine `canonical-1.105.0`) | `PERSISTED_COMPARISON_ONLY` (Unproven open-default relocation) |
 | **Producer Budget Line 8004** | **$518,804.00** | 40.0% | Topsheet Line 8004: `Greek Estimate Cash Rebate (40%)` = -$518,804.00 | `ESTIMATE_IMPLIED_ONLY` (Implied QPE: $1,297,010.00) |
 | **Observed Control Difference** | **+$926,855.84** | — | Engine Incentive ($1,445,659.84) minus Producer Estimate ($518,804.00). Base variance: $3,614,149.60 − $1,297,010.00 = $2,317,139.60 ($2,317,139.60 × 40.0% = $926,855.84) | `UNRESOLVED_PLANNING_VARIANCE` |
 
 ---
 
-### B. Project-Level Contingency Election Ordering & Latest Served Generation Nexus
+### B. Project-Level Contingency Election Ordering & Current Served Generation Nexus
 
-A critical architectural finding from tracing the latest served evaluation (`CODEX_FVD_TOP6_SERVED_TRACE.md`, canonical engine `canonical-1.2.1`, evaluation fingerprint `bb48c6e76623545f7718ebff65cfd14bfd8ff47ea4c6cbd07ec6a5b7473ae79f`) resolves the mystery of how the engine derived both its alternative candidate baseline and its Greece-specific QPE:
+Tracing the current served evaluation for F#K Valentine's Day (Structure `86555121-5a0c-4b43-8b55-6569819109e9`, evaluation fingerprint `34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb`, economic identity `d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737`, engine `canonical-1.105.0`, superseding historical August 2026 trace `CODEX_FVD_TOP6_SERVED_TRACE.md` on `canonical-1.2.1` / fingerprint `bb48c6e...`) establishes the exact mechanical derivation of the engine's candidate baseline and Greece-specific QPE:
 
 1. **Gross Budget Across 34 Leaf Accounts:**
    The sum of all 34 leaf cost accounts (Accounts 1100 through 7905) is exactly **$4,517,687.00**.
-2. **Project-Level Contingency Election Ordering:**
+2. **Actual Project Contingency Election Facts (CBA-009 / Part 19-20):**
    - Account 7902 `CONTINGENCY : 10%` = **$362,866.00**.
-   - In CineGlobe's candidate generator, contingency is classified as an unspent liability reserve. Crucially, the engine deducts contingency at the **project level** *prior* to evaluating jurisdiction-specific eligibility rules:
+   - Inspection of `project_facts` in the acceptance database confirms that **only The Little Utopia** has an explicit producer contingency election (`contingency_expected_utilization_pct = 100.0%`).
+   - For F#K Valentine's Day, Bad Hombres, and Lips Like Sugar, `contingency_expected_utilization_pct` is **genuinely unset (`None`)**.
+   - Under CBA-009 and `qualification_derivation.py`, when a project's contingency utilization is unset, the engine treats the undeployed reserve as an unspent liability (`MISSING_PRODUCTION_FACT`), yielding $0 qualified QPE.
+   - In CineGlobe's candidate generator, this unspent liability reserve is excluded at the project level *prior* to evaluating jurisdiction-specific eligibility rules:
      $$\text{Net Production Spend (Pre-Jurisdiction Baseline)} = \$4,517,687.00 - \$362,866.00 = \mathbf{\$4,154,821.00}$$
-3. **The $4,154,821.00 Baseline Across All 29 Alternative Candidate Structures:**
-   - In `CODEX_FVD_TOP6_SERVED_TRACE.md`, **every single one of the 29 alternative international candidate structures** (AU-NSW, AU-QLD, AU-SA, CA-NL, CA-QC, CH, CR, DK, EG, FJ, GE, GH, IL, MN, MT, MX, MY, PA, PH, PT, QA, SG, TH, TW, UA, US-NY, UZ, ZA) serves an identical QPE of exactly **$4,154,821.00**!
-   - This proves that $4,154,821.00 is the engine's unadjusted global net production spend base after deducting project-level contingency.
+3. **The $4,154,821.00 Baseline Across Alternative Candidate Structures:**
+   - In the served traces, this $4,154,821.00 net production baseline serves as the unadjusted global spend base prior to jurisdiction exclusions across all alternative international candidate structures.
 4. **Jurisdiction-Specific Deduction for Greece (`gr_cash_rebate`):**
    - For Greece, the engine applies statutory exclusions under Law 4487/2017 Art. 20 and KYA 607434 Annex B, specifically excluding Account 7901 `FINANCE FEE : 12.5%` = **$453,583.00**.
    - Pre-Cap Eligible Greek Baseline:
@@ -84,7 +86,7 @@ A critical architectural finding from tracing the latest served evaluation (`COD
      $$\text{Incentive} = 40.0\% \times \$3,614,149.60 = \mathbf{\$1,445,659.84}$$
    - And Net Production Cost (NPC):
      $$\text{NPC} = \text{Gross Budget} - \text{Incentive} = \$4,517,687.00 - \$1,445,659.84 = \mathbf{\$3,072,027.16}$$
-   - This matches the served generation for Structure `e8649797-b143-40d7-978b-35bf7ca07cc1` byte-for-byte with zero unexplained residuals.
+   - This matches the current served generation for Structure `86555121-5a0c-4b43-8b55-6569819109e9` byte-for-byte with zero unexplained residuals.
 6. **Separation of Embedded Producer Rebate Line 8004:**
    - Account 8004 `Greek Estimate Cash Rebate (40%)` = **-$518,804.00** sits at the foot of the topsheet below gross costs.
    - Gross Production Costs = **$4,517,687.00** (sum of Accounts 1100–7905).
@@ -95,33 +97,31 @@ A critical architectural finding from tracing the latest served evaluation (`COD
 
 ### C. Deep Investigation: Why the $926,855.84 Gap is a Structural Planning Variance, Not an Engine Defect
 
-Investigating the deep structural cause of the $926,855.84 difference reveals a fundamental divergence between two entirely different production planning models:
+Investigating the deep structural cause of the $926,855.84 difference without inventing explanations reveals a fundamental divergence between two unevidenced production planning models:
 
-1. **The Producer's Split-Location Service Shoot Model:**
-   - The F#K Valentine’s Day budget is an American production topsheet with primary physical photography planned in New Mexico (Albuquerque).
-   - The producer’s financing model included an embedded credit line: Line 8004 `Greek Estimate Cash Rebate (40%)` = -$518,804.00.
-   - Dividing $518,804.00 by 0.40 implies a Greek expenditure base of **$1,297,010.00**.
-   - In proportion to the $4,517,687.00 gross budget, $1,297,010.00 represents **28.71%** of gross costs.
-   - In international film production practice, this represents a standard **partial split-location service shoot**:
-     * The production shoots the majority of the film in the United States, but relocates a unit to Greece for 2–3 weeks of European exterior/location filming (e.g. Athens/islands) via a local Greek production services company (under a service agreement pursuant to Law 4487/2017 Art. 26(2)(c)).
-     * Under this service shoot model, only local Greek physical production expenses (local Greek crew, Greek location fees, local stage rentals, Greek equipment, local transport, Greek lodging, and the local service provider's fee) are incurred in Greece.
-     * The US above-the-line stars ($1,246,288.00 in Account 1400), US producers ($401,831.00 in Account 1200), and US post-production do NOT enter Greek eligible spend because they are paid through US loan-outs without Greek payroll withholding or Greek territorial presence.
-2. **CineGlobe's 100% Full Relocation Candidate Model:**
-   - Conversely, CineGlobe's candidate generator evaluated a hypothetical **100% full relocation candidate**:
-     * The candidate generator assumed that the entire film was relocated to Greece under `OPEN_DEFAULT_INCLUDE`.
-     * It threw the US lead actors ($1,246,288), US producers ($401,831), US scriptwriter ($252,650), US director ($75,710), and all US crew into Greece, deducting only finance fee ($453,583) and contingency ($362,866).
-     * This pre-cap total ($3,701,238.00) hit the statutory 80.00% budget ceiling cap ($3,614,149.60).
+1. **Retraction of All Unsupported Hypotheses:**
+   - Prior audit notes conjectured that F#K Valentine’s Day was planned as an "Albuquerque, New Mexico shoot", that it involved a "2–3 week European exterior split shoot", or that it operated under a "local Greek production services contract under Law 4487/2017 Art. 26(2)(c)".
+   - **All such claims are formally and fully retracted.** None of these assertions appear anywhere in `V-BRAT_V8_Greece_041224 TOPSHEET.pdf`. The source document is a single-page topsheet containing only 34 account names and numbers, followed by line 8004. It contains zero location shoot schedules, zero shooting day allocations, zero vendor invoices, zero service contracts, and zero payroll withholding records.
+2. **The Factual Basis of the Divergence:**
+   - **The Producer's Line Estimate:**
+     * The producer included an unitemized financing credit line: Line 8004 `Greek Estimate Cash Rebate (40%)` = -$518,804.00.
+     * Dividing $518,804.00 by 0.40 implies an expenditure base of **$1,297,010.00** (28.71% of gross).
+     * However, the producer provided **zero schedule or ledger** explaining how $1,297,010.00 was calculated, which accounts were included, or which payees qualified.
+   - **CineGlobe's 100% Relocation Model:**
+     * Conversely, CineGlobe's candidate generator evaluated a hypothetical **100% full relocation candidate**:
+     * Under `OPEN_DEFAULT_INCLUDE`, it threw all gross accounts into Greece, deducting only finance fee ($453,583) and contingency ($362,866).
+     * This pre-cap total ($3,701,238.00) hit and was clamped to the statutory 80.00% budget ceiling cap ($3,614,149.60).
 3. **The Dollar Variance Bridge:**
    $$\text{Engine Relocation QPE Base} = \$3,614,149.60$$
-   $$\text{Producer Split-Location Base} = \$1,297,010.00$$
+   $$\text{Producer Estimate-Implied Base} = \$1,297,010.00$$
    $$\text{Base Variance} = \$3,614,149.60 - \$1,297,010.00 = \mathbf{\$2,317,139.60}$$
    $$\text{Rebate Variance} = \$2,317,139.60 \times 0.40 = \mathbf{\$926,855.84}$$
 4. **Evidentiary Resolution & Missing Facts:**
    - Earlier AG reports erred by labeling $1,297,010.00 as "confirmed legal QPE" and branding the $926,855.84 gap as a "proven engine overstatement."
    - That claim was invalid: the producer's line credit is an internal pre-production financing estimate without supporting vendor invoices, payroll records, or local service contracts.
-   - Conversely, CineGlobe's 100% relocation model is an unevidenced hypothetical that improperly assumed foreign talent would qualify without Greek withholding.
+   - Conversely, CineGlobe's 100% relocation model is an unevidenced hypothetical that assumed foreign talent would qualify without Greek withholding.
    - The $926,855.84 difference is an **unresolved planning variance** between two unevidenced projections.
-   - Because the 1-page topsheet genuinely lacks an itemized Greek schedule (`PAR-A01`), exact legal QPE is **NOT ESTABLISHED — MISSING LOCAL SPEND SCHEDULE**.
+   - Because the 1-page topsheet genuinely lacks an itemized Greek schedule (`PAR-A01`), exact legal QPE is **NOT ESTABLISHED — MISSING LOCAL SPEND SCHEDULE**. Neither number is substantiated by primary evidence in the topsheet.
 
 ---
 
@@ -218,9 +218,40 @@ Lips Like Sugar Mixed Roles Incomplete detail splits on mixed accounts AUTHORED 
 
 ---
 
-## 5. FOUR-ANCHOR ACCEPTANCE GATE DISPOSITION
+## 5. FOUR-ANCHOR ACCEPTANCE GATE DISPOSITION & ADJUDICATION STATUS
 
-**`STATUS: ANCHOR ACCEPTANCE GATE REMAINS OPEN`**  
+**`STATUS: ANCHOR ACCEPTANCE GATE REMAINS OPEN`** (STRICTLY OPEN)  
 **`FORMULATION: ADMISSIBLE AS CANONICAL RULE & PARSER REPAIR; PRODUCTION REGENERATION PENDING EXPLICIT AUTHORIZATION`**
 
-Every discrepancy in `FOUR_ANCHOR_QPE_ISSUE_REGISTER.md` and `AG_1EDB718_GREECE_ADJUDICATION.md` has been investigated, categorized, and reconciled against primary authorities and Codex adjudication. Unsupported numbers remain unresolved, contradictory claims are corrected, and production regeneration remains held pending explicit authorization.
+Every discrepancy in `FOUR_ANCHOR_QPE_ISSUE_REGISTER.md` and `AG_1EDB718_GREECE_ADJUDICATION.md` has been investigated, categorized, and reconciled against primary authorities and Codex adjudication. Premature closure claims are formally rejected and reopened.
+
+### A. Supported Corrections Established by Primary Authority
+1. **Greek Insurance & Bond Treatment (GR-A01):** Blanket exclusion rejected; classified as eligible production costs subject to combined 5.0% statutory cap under Law 4487/2017 Art. 26(2)(a) and KYA 607434 Annex B.3(i).
+2. **Greek Versioned Fee Caps (GR-A02):** Delineated historical 35.0% cap (director, writer, max 2 lead actors) from current 30.0% cap under KYA 607434 Annex B.3(ii).
+3. **Contingency Election Ground Truth (CBA-009):** In `project_facts`, only Little Utopia has `contingency_expected_utilization_pct = 100.0%`; FVD, BH, and LLS are unset (`None`), correctly excluding Account 7902 ($362,866.00) from QPE as an unspent liability reserve.
+4. **Producer Rebate Line Separation (GR-A04):** Account 8004 `Greek Estimate Cash Rebate (40%)` -$518,804.00 separated from gross costs, preventing net distortion in gross spend and NPC formulas.
+5. **New York County Enumeration (§ 24(a)(5)):** Dutchess, Orange, and Putnam are explicitly enumerated and eligible under § 24(a)(5) for the additional 10% credit.
+6. **New York ATL Wage Exclusion (§ 24(a)(5)):** ATL wages are statutorily excluded from the § 24(a)(5) additional 10% credit, qualifying only for the 30% base credit under § 24(a)(2).
+7. **New York ATL Ceilings & Post Gateways:** Enforced $500k/person individual cap, max 2 producers, 40% BTL ceiling under § 24(b)(1), and disaggregated post gateways (75%/$1M post and 10%/$500k VFX).
+8. **Financing Fee Preservation (NY-A01):** LLS financing fees ($1,700,000 across Accts 6500, 6600, 6700) preserved in gross/NPC and excluded from QPE.
+9. **Production Sound Disaggregation (NY-A03):** On-set sound across all 4 budgets categorized as physical BTL spend, excluded from Section 31 post credit.
+
+### B. Remaining Blockers
+1. **FVD Greece Missing Local Spend Schedule (DEF-FVD-001):** Gross budget ($4,517,687) lacks an itemized Greek schedule, vendor ledger, or payroll breakdown. The $926,855.84 difference ($2,317,139.60 base variance) is an unevidenced structural planning model divergence. Exact legal QPE is genuinely `NOT ESTABLISHED — MISSING LOCAL SPEND SCHEDULE`.
+2. **Bad Hombres Non-Resident Cast Withholding (AN-A05):** Lead cast line ($1,032,202) requires proof of New Mexico performing artist withholding compliance under NMSA 1978 § 7-2F-1(B). Base remains conditional.
+3. **California Mixed Account Payee Proof (AN-A01):** LLS mixed lines (Line 1100, 1200, 1400, 1900) require payee-level records to verify actual local spend.
+4. **Canonical Budget Parser Subaccount Detail Gap (Q09 / PAR-A01):** Parser drops subaccount rows for LU (60pp) and BH (43pp) PDFs due to unhyphenated headers.
+5. **Persisted Engine State Pending Regeneration:** Database contains stale evaluations; production regeneration remains held pending explicit authorization.
+
+### C. Reconciled Dollar Impacts
+- **Greece FVD Planning Variance:** +$926,855.84 incentive ($2,317,139.60 base variance between 80% ceiling model $3,614,149.60 and producer estimate $1,297,010.00).
+- **LLS NY Financing Exclusion:** -$1,700,000.00 from QPE; reduces BTL base by $1.25M and ATL cap by $500k (total QPE reduction: $1,750,000.00; incentive reduction: $525,000.00).
+- **BH NY ATL 40% Cap Disallowance:** -$1,155,265.40 from QPE (-$346,579.62 incentive).
+- **FVD NY ATL 40% Cap Disallowance:** -$1,327,450.60 from QPE (-$398,235.18 incentive).
+- **LLS NY ATL 40% Cap Disallowance:** -$799,903.40 from QPE (-$239,971.02 incentive).
+
+In strict compliance with audit governance rules:
+- Strictly zero production code (`backend/app/`, `frontend/`) has been modified.
+- Strictly zero project records or database tables have been mutated.
+- Strictly zero cold evaluations or project regenerations have been executed.
+- The four-anchor acceptance gate remains strictly **OPEN**.
