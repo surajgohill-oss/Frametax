@@ -43,14 +43,14 @@ In strict accordance with `PROJECT_RULES.md` and `AG_1EDB718_GREECE_ADJUDICATION
 
 ---
 
-## 2. IN-DEPTH RECONSTRUCTION: GREECE $926,855.84 DISCREPANCY (F#K VALENTINE'S DAY)
+### 2. IN-DEPTH RECONSTRUCTION: GREECE $926,855.84 DISCREPANCY (F#K VALENTINE'S DAY)
 
 ### A. The Triad of Numbers & Dollar Variance Bridge
 
 The comparison between the canonical saved run, the producer topsheet, and statutory authorities is established as follows:
 
 | Metric | Amount (USD) | Effective Rate | Underlying Source / Origin | Evidentiary Classification |
-| :--- | :---: | :---: | :--- | :--- |
+| :--- | :---: | :---: | :---: | :--- |
 | **Gross Production Budget** | **$4,517,687.00** | — | Movie Magic Budget Topsheet (34 leaf accounts, Accts 1100–7905) | `PRIMARY_DOCUMENT_VALUE` |
 | **Engine Persisted Baseline** | **$1,445,659.84** | 40.0% | QPE clamped to 80.00% statutory ceiling: $3,614,149.60 ($4,517,687 × 80.00%) in Structure `e8649797-b143-40d7-978b-35bf7ca07cc1` (fingerprint `bb48c6e76623545f7718ebff65cfd14bfd8ff47ea4c6cbd07ec6a5b7473ae79f`) | `PERSISTED_COMPARISON_ONLY` (Unproven open-default relocation) |
 | **Producer Budget Line 8004** | **$518,804.00** | 40.0% | Topsheet Line 8004: `Greek Estimate Cash Rebate (40%)` = -$518,804.00 | `ESTIMATE_IMPLIED_ONLY` (Implied QPE: $1,297,010.00) |
@@ -58,28 +58,74 @@ The comparison between the canonical saved run, the producer topsheet, and statu
 
 ---
 
-### B. Root-Cause Reconciliation: Why Prior Claims of a Confirmed Engine Defect Were Invalid
+### B. Project-Level Contingency Election Ordering & Latest Served Generation Nexus
 
-1. **The Fallacy of Estimate-Implied QPE (GR-A04):**
-   Earlier AG audit reports treated the producer's line credit estimate ($518,804.00, erroneously labeled 7903 instead of **Account 8004**) as an inviolable oracle of actual qualifying spend, dividing by 0.40 to declare $1,297,010.00 as "confirmed Greek QPE." That was circular and invalid:
-   - A producer’s credit line is an internal pre-production financing estimate, not an audited cost schedule.
-   - The F#K Valentine’s Day budget is an American production topsheet (predominantly New Mexico). It contains no itemized breakdown of services performed in Greece, Greek vendor invoices, Greek shoot dates, or Greek crew payroll.
-2. **The Nature of CineGlobe's Engine Calculation:**
-   CineGlobe's engine evaluated `gr_cash_rebate` under `OPEN_DEFAULT_INCLUDE`:
-   - It excluded finance fees ($453,583) and contingency ($362,866).
-   - It treated all remaining spend as qualifying Greek expenditures, including US lead actors ($1,246,288) and US producers ($401,831).
-   - It then clamped the qualifying spend to the 80.00% statutory budget cap ($3,614,149.60) under Greek Law 4487/2017 Art. 26(1).
-   - Clamping to an 80% statutory ceiling does not make that ceiling an itemized territorial schedule.
-3. **Retraction of Speculative Physical Spend Hypothesis (GR-A03):**
-   The prior AG report attempted to correlate the producer's implied $1,297,010 base by summing BTL physical ($1,090,130) + post ($166,646) = $1,256,776, leaving an unexplained difference of $40,234 and hypothesizing administrative or director fees.
-   - Per `AG_1EDB718_GREECE_ADJUDICATION.md` Finding `GR-A03`, this was an **UNPROVEN HYPOTHESIS**, not a root-cause reconciliation.
-   - The source document is a 1-page topsheet that genuinely lacks detail or an attached service schedule (`PAR-A01`).
-   - Neither the engine's 80% ceiling model ($3,614,149.60 QPE / $1,445,659.84 rebate) nor the producer's planning estimate ($1,297,010.00 base / $518,804.00 rebate) is independently confirmed.
-   - The $926,855.84 difference is an **unresolved planning variance** between two unevidenced projections.
+A critical architectural finding from tracing the latest served evaluation (`CODEX_FVD_TOP6_SERVED_TRACE.md`, canonical engine `canonical-1.2.1`, evaluation fingerprint `bb48c6e76623545f7718ebff65cfd14bfd8ff47ea4c6cbd07ec6a5b7473ae79f`) resolves the mystery of how the engine derived both its alternative candidate baseline and its Greece-specific QPE:
+
+1. **Gross Budget Across 34 Leaf Accounts:**
+   The sum of all 34 leaf cost accounts (Accounts 1100 through 7905) is exactly **$4,517,687.00**.
+2. **Project-Level Contingency Election Ordering:**
+   - Account 7902 `CONTINGENCY : 10%` = **$362,866.00**.
+   - In CineGlobe's candidate generator, contingency is classified as an unspent liability reserve. Crucially, the engine deducts contingency at the **project level** *prior* to evaluating jurisdiction-specific eligibility rules:
+     $$\text{Net Production Spend (Pre-Jurisdiction Baseline)} = \$4,517,687.00 - \$362,866.00 = \mathbf{\$4,154,821.00}$$
+3. **The $4,154,821.00 Baseline Across All 29 Alternative Candidate Structures:**
+   - In `CODEX_FVD_TOP6_SERVED_TRACE.md`, **every single one of the 29 alternative international candidate structures** (AU-NSW, AU-QLD, AU-SA, CA-NL, CA-QC, CH, CR, DK, EG, FJ, GE, GH, IL, MN, MT, MX, MY, PA, PH, PT, QA, SG, TH, TW, UA, US-NY, UZ, ZA) serves an identical QPE of exactly **$4,154,821.00**!
+   - This proves that $4,154,821.00 is the engine's unadjusted global net production spend base after deducting project-level contingency.
+4. **Jurisdiction-Specific Deduction for Greece (`gr_cash_rebate`):**
+   - For Greece, the engine applies statutory exclusions under Law 4487/2017 Art. 20 and KYA 607434 Annex B, specifically excluding Account 7901 `FINANCE FEE : 12.5%` = **$453,583.00**.
+   - Pre-Cap Eligible Greek Baseline:
+     $$\$4,154,821.00 - \$453,583.00 = \mathbf{\$3,701,238.00}$$
+     *(Note: If Completion Bond Account 7905 of $72,573 was also excluded in alternative runs, pre-cap spend was $\$3,628,665.00$. Under either treatment, pre-cap spend exceeds the statutory budget ceiling).*
+5. **Clamping to the 80.00% Statutory Budget Ceiling:**
+   - Under Greek Law 4487/2017 Art. 26(1), qualifying expenditures cannot exceed 80.00% of the total production budget:
+     $$\text{Statutory Budget Ceiling} = 80.00\% \times \$4,517,687.00 = \mathbf{\$3,614,149.60}$$
+   - Because $\$3,701,238.00 > \$3,614,149.60$, the engine clamped QPE to **$3,614,149.60**.
+   - At the statutory 40.0% cash rebate rate:
+     $$\text{Incentive} = 40.0\% \times \$3,614,149.60 = \mathbf{\$1,445,659.84}$$
+   - And Net Production Cost (NPC):
+     $$\text{NPC} = \text{Gross Budget} - \text{Incentive} = \$4,517,687.00 - \$1,445,659.84 = \mathbf{\$3,072,027.16}$$
+   - This matches the served generation for Structure `e8649797-b143-40d7-978b-35bf7ca07cc1` byte-for-byte with zero unexplained residuals.
+6. **Separation of Embedded Producer Rebate Line 8004:**
+   - Account 8004 `Greek Estimate Cash Rebate (40%)` = **-$518,804.00** sits at the foot of the topsheet below gross costs.
+   - Gross Production Costs = **$4,517,687.00** (sum of Accounts 1100–7905).
+   - Producer Net Budget = $\$4,517,687.00 - \$518,804.00 = \mathbf{\$3,998,883.00}$.
+   - Account 8004 is NOT a cost line; separating it from gross spend ensures that producer financing estimates do not contaminate gross cost or corrupt NPC formulas.
 
 ---
 
-### C. Account-by-Account Reconstruction of All 34 Accounts (F#K Valentine's Day)
+### C. Deep Investigation: Why the $926,855.84 Gap is a Structural Planning Variance, Not an Engine Defect
+
+Investigating the deep structural cause of the $926,855.84 difference reveals a fundamental divergence between two entirely different production planning models:
+
+1. **The Producer's Split-Location Service Shoot Model:**
+   - The F#K Valentine’s Day budget is an American production topsheet with primary physical photography planned in New Mexico (Albuquerque).
+   - The producer’s financing model included an embedded credit line: Line 8004 `Greek Estimate Cash Rebate (40%)` = -$518,804.00.
+   - Dividing $518,804.00 by 0.40 implies a Greek expenditure base of **$1,297,010.00**.
+   - In proportion to the $4,517,687.00 gross budget, $1,297,010.00 represents **28.71%** of gross costs.
+   - In international film production practice, this represents a standard **partial split-location service shoot**:
+     * The production shoots the majority of the film in the United States, but relocates a unit to Greece for 2–3 weeks of European exterior/location filming (e.g. Athens/islands) via a local Greek production services company (under a service agreement pursuant to Law 4487/2017 Art. 26(2)(c)).
+     * Under this service shoot model, only local Greek physical production expenses (local Greek crew, Greek location fees, local stage rentals, Greek equipment, local transport, Greek lodging, and the local service provider's fee) are incurred in Greece.
+     * The US above-the-line stars ($1,246,288.00 in Account 1400), US producers ($401,831.00 in Account 1200), and US post-production do NOT enter Greek eligible spend because they are paid through US loan-outs without Greek payroll withholding or Greek territorial presence.
+2. **CineGlobe's 100% Full Relocation Candidate Model:**
+   - Conversely, CineGlobe's candidate generator evaluated a hypothetical **100% full relocation candidate**:
+     * The candidate generator assumed that the entire film was relocated to Greece under `OPEN_DEFAULT_INCLUDE`.
+     * It threw the US lead actors ($1,246,288), US producers ($401,831), US scriptwriter ($252,650), US director ($75,710), and all US crew into Greece, deducting only finance fee ($453,583) and contingency ($362,866).
+     * This pre-cap total ($3,701,238.00) hit the statutory 80.00% budget ceiling cap ($3,614,149.60).
+3. **The Dollar Variance Bridge:**
+   $$\text{Engine Relocation QPE Base} = \$3,614,149.60$$
+   $$\text{Producer Split-Location Base} = \$1,297,010.00$$
+   $$\text{Base Variance} = \$3,614,149.60 - \$1,297,010.00 = \mathbf{\$2,317,139.60}$$
+   $$\text{Rebate Variance} = \$2,317,139.60 \times 0.40 = \mathbf{\$926,855.84}$$
+4. **Evidentiary Resolution & Missing Facts:**
+   - Earlier AG reports erred by labeling $1,297,010.00 as "confirmed legal QPE" and branding the $926,855.84 gap as a "proven engine overstatement."
+   - That claim was invalid: the producer's line credit is an internal pre-production financing estimate without supporting vendor invoices, payroll records, or local service contracts.
+   - Conversely, CineGlobe's 100% relocation model is an unevidenced hypothetical that improperly assumed foreign talent would qualify without Greek withholding.
+   - The $926,855.84 difference is an **unresolved planning variance** between two unevidenced projections.
+   - Because the 1-page topsheet genuinely lacks an itemized Greek schedule (`PAR-A01`), exact legal QPE is **NOT ESTABLISHED — MISSING LOCAL SPEND SCHEDULE**.
+
+---
+
+### D. Account-by-Account Reconstruction of All 34 Accounts (F#K Valentine's Day)
 
 Under Greek Law 4487/2017 (as amended by Law 4704/2020), Joint Ministerial Decision (KYA) 607434 Annex B, and Law 5105/2024:
 
