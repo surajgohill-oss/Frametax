@@ -72,37 +72,36 @@ function bakeClouds() {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, 512, 256);
 
-  // Cloud MASSES, not scattered flecks: ~28 systems along the ITCZ and the two storm tracks, each a soft base with a dense core of
-  // overlapping strokes, so the deck reads as connected banks with open ocean and a clear Sahara between them.
-  const bandY = [120, 180, 65];
+  // Cloud systems: 22 masses at random places along the weather belts (random belt, random longitude, random size, shape, tilt and
+  // density), so the deck reads as weather rather than a pattern. No soft base under them (it read as a haze); the strokes are the cloud.
+  const bandY = [120, 180, 65, 150, 95];
   const gauss = () => (rand() + rand() + rand() - 1.5) / 1.5;
-  for (let k = 0; k < 28; k += 1) {
-    const by = bandY[k % 3];
-    const cy = by + (rand() - 0.5) * 30;
-    const cx = (k * 512 / 28 + rand() * 14) % 512;
+  const centers = [];
+  for (let attempts = 0; centers.length < 22 && attempts < 400; attempts += 1) {
+    const cy = bandY[Math.floor(rand() * bandY.length)] + (rand() - 0.5) * 44;
+    const cx = rand() * 512;
     if (cx > 205 && cx < 295 && cy > 70 && cy < 135) continue; // Sahara stays visible
-    const rad = 16 + rand() * 14;
-    const base = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad * 1.5);
-    base.addColorStop(0, "rgba(255, 255, 255, 0.2)");
-    base.addColorStop(0.6, "rgba(255, 255, 255, 0.08)");
-    base.addColorStop(1, "rgba(255, 255, 255, 0)");
-    ctx.fillStyle = base;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rad * 1.7, rad * 0.8, (rand() - 0.5) * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    for (let i = 0; i < 34; i += 1) {
-      const x = cx + gauss() * rad * 1.5;
-      const y = cy + gauss() * rad * 0.6;
+    if (centers.some(([x, y]) => Math.hypot(x - cx, (y - cy) * 1.6) < 26)) continue;
+    centers.push([cx, cy]);
+  }
+  centers.forEach(([cx, cy]) => {
+    const rad = 10 + rand() * 24;
+    const tilt = (rand() - 0.5) * 0.6;
+    const squash = 0.35 + rand() * 0.5;
+    const count = 14 + Math.floor(rand() * 26);
+    for (let i = 0; i < count; i += 1) {
+      const gx = gauss() * rad * 1.5;
+      const gy = gauss() * rad * squash;
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate((rand() - 0.5) * 0.4);
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.45 + rand() * 0.45})`;
+      ctx.translate(cx + gx * Math.cos(tilt) - gy * Math.sin(tilt), cy + gx * Math.sin(tilt) + gy * Math.cos(tilt));
+      ctx.rotate(tilt + (rand() - 0.5) * 0.6);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + rand() * 0.5})`;
       ctx.beginPath();
-      ctx.ellipse(0, 0, 3 + rand() * 7, 1.2 + rand() * 2.6, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, 2.5 + rand() * 8, 1 + rand() * 2.8, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
-  }
+  });
 
   ctx.save();
   ctx.translate(270, 205);
@@ -153,7 +152,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0, 2.68); // the planet (cloud shell included) fills ~98% of the circle, so the continents sit true to the circumference
+    camera.position.set(0, 0, 2.58); // the planet slightly overfills the circle, so no sliver of backdrop shows at the rim
 
     let renderer;
     try {
