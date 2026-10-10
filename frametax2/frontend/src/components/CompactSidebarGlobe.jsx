@@ -58,42 +58,44 @@ const loadMarble = () => {
 };
 
 let cloudCanvas = null;
-// Macro cloud deck for an 80px globe: three sweeping weather fronts with a soft parallel echo, and one clean Southern Ocean spiral.
-// No fine strokes (they alias into fuzz at this size) and large clear gaps so the land stays readable.
+// Fibrous satellite cloud deck: hundreds of fine strokes along the ITCZ and the mid-latitude storm tracks, a tight Southern Ocean
+// vortex, and a clear Sahara. Seeded, so every load draws the same sky.
 function bakeClouds() {
   if (cloudCanvas) return cloudCanvas;
+  let seed = 20260705;
+  const rand = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const c = document.createElement("canvas");
   c.width = 512; c.height = 256;
   const ctx = c.getContext("2d");
   ctx.clearRect(0, 0, 512, 256);
-  // A round-capped line, drawn as overlapping filled discs along the cubic curve (the file keeps no stroked paths).
-  const bezierBand = (y0, c1y, c2y, y1, width, rgba) => {
-    ctx.fillStyle = rgba;
-    for (let t = 0; t <= 1; t += 1 / 256) {
-      const u = 1 - t;
-      const x = 3 * u * u * t * 170 + 3 * u * t * t * 340 + t * t * t * 512;
-      const y = u * u * u * y0 + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * y1;
-      ctx.beginPath();
-      ctx.arc(x, y, width / 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  };
-  const bands = [
-    { y: 60, amp: 25, width: 6, op: 0.85 },
-    { y: 110, amp: 15, width: 4, op: 0.6 },
-    { y: 190, amp: 35, width: 8, op: 0.9 },
-  ];
-  bands.forEach((b) => {
-    bezierBand(b.y, b.y - b.amp, b.y + b.amp * 1.5, b.y, b.width, `rgba(255, 255, 255, ${b.op})`);
-    bezierBand(b.y + 12, b.y - b.amp + 8, b.y + b.amp * 1.5 + 12, b.y + 12, b.width * 0.5, `rgba(255, 255, 255, ${b.op * 0.5})`);
-  });
-  ctx.save();
-  ctx.translate(280, 200);
-  for (let a = 0; a < Math.PI * 4.5; a += 0.15) {
-    const r = a * 4;
+
+  for (let i = 0; i < 700; i += 1) {
+    const band = rand();
+    let y;
+    if (band < 0.4) y = 120 + (rand() - 0.5) * 35;
+    else if (band < 0.7) y = 180 + (rand() - 0.5) * 45;
+    else y = 65 + (rand() - 0.5) * 30;
+    const x = rand() * 512;
+    if (x > 215 && x < 285 && y > 70 && y < 130) continue; // Sahara stays visible
+    const w = 1.5 + rand() * 5;
+    const h = 0.7 + rand() * 1.8;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((rand() - 0.5) * 0.4);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + rand() * 0.5})`;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.6, 2.5 + a * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.9 - a * 0.05)})`;
+    ctx.ellipse(0, 0, w, h, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(270, 205);
+  for (let a = 0; a < Math.PI * 4; a += 0.08) {
+    const r = a * 3.2;
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.75 - a * 0.06)})`;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.5, 0.9 + rand() * 1.1, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
@@ -101,8 +103,8 @@ function bakeClouds() {
   return c;
 }
 
-// Negative x tilts the south pole toward the camera (Antarctica / Southern Ocean visible).
-const BASE_TILT = -0.28;
+// Positive x tilts the north pole toward the camera, so North America sits across the middle of the disk.
+const BASE_TILT = 0.55;
 
 // Same equirectangular mapping SphereGeometry uses for its UVs (u = (lon + 180) / 360).
 function surfacePoint(lat, lng, r = 1) {
@@ -164,7 +166,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const group = new THREE.Group();
     group.rotation.x = BASE_TILT;
-    { const face = surfacePoint(4, 24); group.rotation.y = -Math.atan2(face.x, face.z); } // opens on Africa / Arabia, as in the Apollo 17 frame
+    { const face = surfacePoint(40, -98); group.rotation.y = -Math.atan2(face.x, face.z); } // opens on North America
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
@@ -173,7 +175,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     group.add(earth);
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(1.004, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false, emissive: new THREE.Color(0x333333) }),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, emissive: new THREE.Color(0x333333) }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
