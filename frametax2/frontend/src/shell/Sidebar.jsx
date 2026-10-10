@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getLeadingSelection, getPortfolio, loadPortfolio, useLeadingSelection, usePortfolio, useLeadingSelectionsVersion } from "../lib/leadingSelection";
 import { buildPortfolioAccent } from "../lib/companyScene";
 import { portfolioRows } from "../lib/portfolioRows";
@@ -31,6 +31,7 @@ const COMPANY_NAV = [
 export default function Sidebar() {
   // On a project route the identity globe shows that project's leading structure (the shared selection every Globe
   // surface reads; no request of its own). Elsewhere, or with no evaluated structure, it stays the neutral emblem.
+  const navigate = useNavigate();
   const projectId = useLocation().pathname.match(/^\/projects\/([^/]+)/)?.[1] || null;
   const selection = useLeadingSelection(projectId);
   // Company-level routes (Company Globe and the rest of COMPANY nav) show the whole active portfolio from the SAME aggregate
@@ -63,7 +64,14 @@ export default function Sidebar() {
           its own error boundary: this is a WebGL renderer mounted on every
           route, so a context/init failure must degrade to the CSS
           placeholder rather than blank the entire application shell. */}
-      <div className="cg-identity-globe" aria-hidden="true">
+      <div
+        className="cg-identity-globe"
+        role="link"
+        tabIndex={0}
+        aria-label="Open the Company Globe"
+        onClick={() => navigate("/company/globe")}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate("/company/globe"); } }}
+      >
         <ErrorBoundary label="sidebar-globe" fallback={null}>
           <CompactSidebarGlobe size={126} overlay={overlay} />
         </ErrorBoundary>

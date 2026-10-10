@@ -792,7 +792,8 @@
 /* SIDEBAR TYPOGRAPHY (2026-10-09): editorial scale. Mono tracked-uppercase section headers (13px), 16px links with a little more air
    between them, and COMPANY pushed clear of the globe and tagline. The rail is dark in both themes, so the light-on-dark slate values
    apply in both. The globe frame is allowed to show its soft glow outside the 80px box. */
-.cg-sidebar .cg-identity-globe { overflow: visible; }
+.cg-sidebar .cg-identity-globe { overflow: visible; cursor: pointer; }
+.cg-sidebar .cg-identity-globe:focus-visible { outline: 2px solid #E5B233; outline-offset: 6px; border-radius: 50%; }
 .cg-sidebar .cg-tagline + .cg-group { margin-top: 56px; }
 .cg-sidebar .cg-group { font-family: var(--font-mono); font-size: 13px; font-weight: 600; letter-spacing: 0.2em; color: #64748B; padding: 4px 20px; margin-bottom: 16px; }
 .cg-sidebar .cg-group ~ .cg-group { margin-top: 24px; padding-top: 16px; }
