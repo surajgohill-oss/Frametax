@@ -284,3 +284,19 @@ class SourceIdentityControls(unittest.TestCase):
         line = BudgetLine("1100", "SCRIPT", 1000, spend_category="atl_writer", line_id="source-a")
         inputs = ProjectEconomicInputs("synthetic", "synthetic", "US-CA", "feature_film", 1000, 1000, [line], {"1100":"atl_writer"}, frozenset(), frozenset())
         self.assertNotEqual(_compute_fingerprint(inputs), _compute_fingerprint(replace(inputs, budget_lines=[replace(line, line_id="source-b")])))
+
+
+class RefreshCategoryControls(unittest.TestCase):
+    def test_refresh_preserves_known_source_label_but_corrects_publicity(self):
+        from types import SimpleNamespace as Row
+        from app.services.material_routing import _preserve_recognized_source_categories
+        from app.ingestion.budget_parser import ParsedLineItem, classify_parsed_items, BudgetParseResult
+        old = [Row(description=d, amount_usd=a, currency_code="USD", spend_category="btl_crew_labor", atl_btl="btl", is_labor=True, is_fixed=False, compensation_type="cash") for d,a in [("2000 PRODUCTION STAFF",1000),("7100 PUBLICITY",100)]]
+        parsed=classify_parsed_items(BudgetParseResult("synthetic", "USD", 1100, None, [ParsedLineItem(description=x.description, amount_usd=x.amount_usd, currency_code="USD", department=None, amount_raw=str(x.amount_usd), source_row=1, source_page=None) for x in old]))
+        retained=_preserve_recognized_source_categories(parsed.line_items, old)
+        self.assertEqual(retained,["2000 PRODUCTION STAFF"])
+        self.assertEqual(parsed.line_items[0].spend_category,"btl_crew_labor")
+        self.assertEqual(parsed.line_items[1].spend_category,"general_administration")
+        parsed.line_items[0].amount_usd=1001
+        parsed.line_items[0].spend_category="miscellaneous"
+        self.assertEqual(_preserve_recognized_source_categories(parsed.line_items, old),[])

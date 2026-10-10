@@ -72,6 +72,36 @@ def _read_source_text(local_path: Path) -> str | None:
     return None
 
 
+def _preserve_recognized_source_categories(parsed_items, previous_items):
+    """A source-identical row must not lose its category to an unknown fallback.
+
+    Explicit new classification still wins (including publicity). Ambiguous
+    duplicate rows never borrow classifications. This retains stored evidence,
+    not an assertion that a spending category proves legal eligibility.
+    """
+    from collections import Counter
+    def key(item):
+        return (item.description, float(item.amount_usd or 0), item.currency_code)
+    old_counts = Counter(key(item) for item in previous_items)
+    new_counts = Counter(key(item) for item in parsed_items)
+    previous = {key(item): item for item in previous_items}
+    retained = []
+    for item in parsed_items:
+        identity = key(item)
+        old = previous.get(identity)
+        if old is None or old_counts[identity] != 1 or new_counts[identity] != 1:
+            continue
+        prior_category = getattr(old.spend_category, "value", old.spend_category)
+        if item.spend_category != "miscellaneous" or prior_category in (None, "miscellaneous"):
+            continue
+        for attr in ("spend_category", "atl_btl", "is_labor", "is_fixed", "compensation_type"):
+            value = getattr(old, attr)
+            setattr(item, attr, getattr(value, "value", value))
+        item.classification_rule = "retained source-identical stored classification; parser fallback unrecognized"
+        retained.append(item.description)
+    return retained
+
+
 async def _route_budget(
     session: AsyncSession, *, project: Project, version: DocumentVersion, local_path: Path,
 ) -> str:
@@ -160,11 +190,17 @@ async def _route_budget(
     classified = classify_parsed_items(result)
 
     if existing is not None:
+        previous_items = list((await session.execute(
+            select(BudgetLineItem).where(BudgetLineItem.budget_document_id == existing.id)
+        )).scalars().all())
+        retained_categories = _preserve_recognized_source_categories(classified.line_items, previous_items)
         # Stale reparse succeeded — refresh the SAME row in place (never
         # a second BudgetDocument for this DocumentVersion) and replace
         # its line items atomically, only now that the new parse is
         # confirmed to have real output.
         budget_doc = existing
+        if retained_categories:
+            budget_doc.notes = (budget_doc.notes or "") + "\nSource-identical stored categories retained where parser fallback was unrecognized: " + "; ".join(retained_categories)
         budget_doc.filename = version.original_filename or local_path.name
         budget_doc.file_type = suffix.lstrip(".")
         budget_doc.storage_path = version.storage_path

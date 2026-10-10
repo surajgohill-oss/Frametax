@@ -24,10 +24,12 @@ Source-shaped independent LLS writing control: $300,000 writer fee + $12,500 pub
 
 ## Verification
 
-26 new controls passed across netting/signs, source detail, actual pricing caps, eligible-subset uplifts, 16 qualification-rule mutation checks, isolated persistence and fingerprint changes. Existing targeted parser checks: 55 passed. Allocation/classification checks: 42 passed. Green nodes were not repeated; failed nodes were repaired and rerun individually. Test database only: frametax2_pytest, migration 0081. Persistence used a synthetic temporary table and rolled back. No cold project evaluation, live backend restart, or acceptance database mutation occurred.
+27 new controls passed across netting/signs, source detail, actual pricing caps, eligible-subset uplifts, 16 qualification-rule mutation checks, isolated persistence and fingerprint changes. Existing targeted parser checks: 55 passed. Allocation/classification checks: 42 passed. Green nodes were not repeated; failed nodes were repaired and rerun individually. Test database only: frametax2_pytest, migration 0081. Persistence used a synthetic temporary table and rolled back. No cold project evaluation, live backend restart, or acceptance database mutation occurred.
 
 The four-anchor issue register owns remaining dispositions. These checks prove bounded implementation behavior, not exact legal QPE or served-project acceptance.
 
 ## Recovered category history
 
 The existing `backend/app/data/little_utopia_real_budget.py:LITTLE_UTOPIA_REAL_SPEND_CATEGORY` explains the curated crew/equipment/location classifications that a fresh generic parse can lose. Its comments explicitly leave publicity without an override for legal qualification, so it does not justify the persisted crew classification. This historical map is evidence, not a new production-specific calculator or permission to infer every mixed account's legal QPE. Refresh must preserve reviewed source categories with their provenance and separately correct publicity; a blind delete/reclassify is not accepted.
+
+The canonical material-routing refresh now retains an existing recognized category only when the new parser falls back to miscellaneous on a unique source-identical description/amount/currency row. Explicit fresh classifications win, so publicity is corrected. Changed amounts and ambiguous duplicate identities never borrow a category. Retention is recorded in budget-document notes. Synthetic preservation/correction/change-of-source control passed; no live refresh occurred.
