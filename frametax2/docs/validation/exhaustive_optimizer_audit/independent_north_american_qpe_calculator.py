@@ -790,12 +790,19 @@ def run_comprehensive_audit():
                 doctrine_str = "MUTUALLY_EXCLUSIVE_STACK"
                 country_str = "US"
                 
-                delta_inc = 0.0 if actual_status in ("UNPRICED_OR_MISSING", "RULE_REJECTED") else "N/A"
-                delta_npc = 0.0 if actual_status in ("UNPRICED_OR_MISSING", "RULE_REJECTED") else "N/A"
+                delta_inc = "N/A"
+                delta_npc = "N/A"
                 
-                disposition_id = "STATUTORILY_PROHIBITED_STACK (NY Tax Law § 31(2)(a)(1))"
-                remediation_status = "VERIFIED_AGREEMENT"
-                root_cause = "NY Tax Law § 31(2)(a)(1) explicitly commands that a taxpayer eligible for Section 24 is ineligible for Section 31. Neither independent nor engine prices the unlawful stack; verified agreement."
+                disposition_id = "COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)"
+                remediation_status = "COMPARISON_NOT_ESTABLISHED"
+                root_cause = (
+                    "NY Tax Law § 31(2)(a)(1) & 5 NYCRR § 240.3(c) establish an absolute taxpayer/film-level bar "
+                    "against claiming § 31 post credit if eligible for § 24. While independent calculation rejects the "
+                    "stack (GATE_REJECTED), engine did not generate a candidate in saved results (STACK_NOT_GENERATED). "
+                    "Furthermore, engine rule registry contains confirmed defect DISC-NY-001 allowing distinct costs "
+                    "(stacking_rules.py:617). Missing candidate alone cannot establish VERIFIED_AGREEMENT; "
+                    "comparison not established pending canonical repair of DISC-NY-001."
+                )
             elif "ca_federal_cptc" in prog_slugs or "on_ofttc" in prog_slugs:
                 exp_status = "NOT_ESTABLISHED"
                 gate_reason = "MISSING_CAVCO_CERTIFICATION (Statutory CPTC/OFTTC domestic eligibility requires CAVCO certification points >= 6/10 and Canadian copyright control; missing certification is unknown under Rule 3, not proven rejection)"
@@ -899,6 +906,84 @@ def run_comprehensive_audit():
     out_md = "docs/validation/exhaustive_optimizer_audit/NORTH_AMERICAN_DISCREPANCY_REGISTER.md"
     generate_markdown_report(matrix_rows, discrepancies, out_md)
     print(f"Successfully wrote discrepancy report to {out_md}")
+    
+    # Run Automated Integrity & Subtotal Recomputation Checks
+    verify_audit_integrity(matrix_rows, evidence)
+
+def verify_audit_integrity(matrix_rows: List[Dict], evidence: Dict[str, Any]):
+    """
+    Automated self-audit integrity verification:
+    1. Recomputes each reported subtotal from original source accounts, confirming zero balancing residual.
+    2. Enforces evidenced dispositions for missing candidates (no missing candidate may claim VERIFIED_AGREEMENT).
+    3. Specifically verifies LU NY operands ($3,142,324.00, $141,165.00, $3,283,489.00) and NY stack disposition.
+    """
+    print("\n--- RUNNING AUDIT INTEGRITY AND SUBTOTAL RECOMPUTATION CHECKS ---")
+    
+    # 1. Subtotal recomputations from source accounts
+    for p_code in ("LU", "FVD", "BH", "LLS"):
+        lines = evidence[p_code]["lines"]
+        summary = summarize_project_lines(lines)
+        btl_post = round(summary["btl_prod"] + summary["btl_travel"] + summary["onset_sound"] + 
+                         summary["total_post"] + summary["btl_fringes"], 2)
+        ceiling_40 = round(0.40 * btl_post, 2)
+        creative_atl = round(min(summary["atl_writer"], 500000.0) + min(summary["atl_director"], 500000.0) + 
+                             summary["atl_cast"] + min(summary["atl_producer"], 1000000.0), 2)
+        allowed_atl = min(creative_atl, ceiling_40)
+        expected_qpe = round(btl_post + allowed_atl, 2)
+        expected_credit = round(expected_qpe * 0.30, 2)
+        
+        if p_code == "LU":
+            assert btl_post == 3142324.00, f"LU BTL+Post recomputation failed: {btl_post} != 3142324.00"
+            assert creative_atl == 141165.00, f"LU creative ATL recomputation failed: {creative_atl} != 141165.00"
+            assert ceiling_40 == 1256929.60, f"LU 40% ceiling recomputation failed: {ceiling_40} != 1256929.60"
+            assert expected_qpe == 3283489.00, f"LU Expected QPE recomputation failed: {expected_qpe} != 3283489.00"
+            assert expected_credit == 985046.70, f"LU Expected Credit recomputation failed: {expected_credit} != 985046.70"
+            
+            # Find LU ny_state_film row in matrix
+            lu_ny = next(r for r in matrix_rows if r["project_code"] == "LU" and r["program_slug"] == "ny_state_film")
+            assert float(lu_ny["expected_qpe_usd"]) == 3283489.00
+            assert float(lu_ny["expected_base_incentive_usd"]) == 985046.70
+            assert float(lu_ny["actual_incentive_usd"]) == 1216258.80
+            assert float(lu_ny["delta_incentive_usd"]) == 231212.10
+            assert "3,283,489.00" in lu_ny["root_cause_analysis"]
+            assert "231,212.10" in lu_ny["root_cause_analysis"]
+            print("  [PASS] LU NY source accounts subtotal independently verified: BTL+Post=$3,142,324.00, QPE=$3,283,489.00 (zero balancing residual)")
+        elif p_code == "FVD":
+            assert btl_post == 1256776.00
+            assert ceiling_40 == 502710.40
+            assert expected_qpe == 1759486.40
+            assert expected_credit == 527845.92
+            print("  [PASS] FVD NY source accounts subtotal independently verified: BTL+Post=$1,256,776.00, QPE=$1,759,486.40")
+        elif p_code == "BH":
+            assert btl_post == 749889.00
+            assert ceiling_40 == 299955.60
+            assert expected_qpe == 1049844.60
+            assert expected_credit == 314953.38
+            print("  [PASS] BH NY source accounts subtotal independently verified: BTL+Post=$749,889.00, QPE=$1,049,844.60")
+        elif p_code == "LLS":
+            assert btl_post == 5853484.00
+            assert ceiling_40 == 2341393.60
+            assert expected_qpe == 8194877.60
+            assert expected_credit == 2458463.28
+            print("  [PASS] LLS NY source accounts subtotal independently verified: BTL+Post=$5,853,484.00, QPE=$8,194,877.60")
+            
+    # 2. Evidenced dispositions for missing candidates
+    for r in matrix_rows:
+        if r["matched_structure_id"] == "N/A" or r["actual_status"] in ("UNPRICED_OR_MISSING", "STACK_NOT_GENERATED"):
+            if r["remediation_code_status"] == "VERIFIED_AGREEMENT":
+                raise AssertionError(f"Integrity violation: Missing candidate for {r['project_code']} / {r['program_slug']} claimed VERIFIED_AGREEMENT!")
+            assert r["remediation_code_status"] in ("COMPARISON_NOT_ESTABLISHED", "NOT_ESTABLISHED_EMPIRICAL_GAP"), \
+                f"Missing candidate must have evidenced disposition, got {r['remediation_code_status']}"
+                
+        if r["program_slug"] == "stack_ny_prod_post":
+            assert r["remediation_code_status"] == "COMPARISON_NOT_ESTABLISHED", \
+                f"NY stack must be COMPARISON_NOT_ESTABLISHED, got {r['remediation_code_status']}"
+            assert r["defect_or_disposition_id"] == "COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)"
+            assert "DISC-NY-001" in r["root_cause_analysis"]
+            assert "VERIFIED_AGREEMENT" not in r["remediation_code_status"]
+            
+    print("  [PASS] Evidenced dispositions for missing candidates verified (zero false VERIFIED_AGREEMENT on missing candidates)")
+    print("  [PASS] NY stack § 24 + § 31 reconciled against dated primary authority & confirmed rule defect DISC-NY-001")
 
 def generate_markdown_report(rows: List[Dict], discrepancies: List[Dict], out_md: str):
     with open(out_md, "w") as f:
@@ -948,9 +1033,8 @@ def generate_markdown_report(rows: List[Dict], discrepancies: List[Dict], out_md
         f.write("4. **`COMPARISON_NOT_ESTABLISHED` (Structure Not in Saved Results):**\n")
         f.write("   * `us_ny_post_production_credit`: 4 rows (component-only structure; no full relocation structure in saved DB).\n")
         f.write("   * Missing Canadian Stacks: 4 rows (stacks not generated by engine in LU and BH).\n")
-        f.write("5. **`VERIFIED_AGREEMENT` (Primary Authority & Non-Generation Alignment):**\n")
-        f.write("   * `stack_ny_prod_post`: 4 rows. NY Tax Law § 31(2)(a)(1) & 5 NYCRR § 240.3(c) command that a taxpayer eligible for Section 24 is ineligible for Section 31. Prohibited stack is `GATE_REJECTED` by independent calculator ($0.00 QPE, $0.00 credit) and engine non-generation (`STACK_NOT_GENERATED`), resulting in verified agreement.\n")
-        f.write("6. **`SCENARIO_SPEND_BASE_VARIANCE`:**\n")
+        f.write("   * `stack_ny_prod_post`: 4 rows (no stack candidate generated by engine; missing candidate cannot establish VERIFIED_AGREEMENT while underlying rule DISC-NY-001 permits distinct-cost pairing contrary to § 31(2)(a)(1)).\n")
+        f.write("5. **`SCENARIO_SPEND_BASE_VARIANCE`:**\n")
         f.write("   * 41 rows on open-spend programs where the engine's generic relocation spend base differed from independent source-derived relocation baselines.\n\n")
         f.write("---\n\n")
         
@@ -974,12 +1058,12 @@ def generate_markdown_report(rows: List[Dict], discrepancies: List[Dict], out_md
         f.write("## 4. Detailed Account-Level Reconciliations\n\n")
         f.write("### 4.1 New York State Film Production Credit (§ 24) Breakdown & NY Stack (§ 31)\n")
         f.write("* **Statutory Scope of Eligible ATL:** Under NY Tax Law § 24(b)(1) (as amended by Part D, Ch. 59, Laws of 2023, effective April 1, 2023), eligible Above-The-Line costs include writers, directors, composers, performers, and up to 2 producers, capped at $500,000 per person and an aggregate limit of 40% of all other qualified production costs (BTL physical + post-production).\n")
-        f.write("* **The Little Utopia:** BTL+Post = $3,141,324.00; 40% ceiling = $1,256,529.60; author ATL (Writer) = $141,165.00 <= ceiling and under $500k cap. Allowed ATL = $141,165.00. Expected QPE = **$3,283,489.00**; Expected Credit = **$985,046.70**. Actual Engine Qualified = $4,054,196.00 (gross less unspent contingency, qualifying non-qualifying finance, insurance, and admin lines); Actual Credit = $1,216,258.80. Delta: **+$770,707.00 QPE / +$231,212.10 Credit** (`NA-DEFECT-01`).\n")
+        f.write("* **The Little Utopia:** BTL+Post = $3,142,324.00; 40% ceiling = $1,256,929.60; author ATL (Script $5,050.00 + Cast $136,115.00) = $141,165.00 <= ceiling and under $500k cap. Allowed ATL = $141,165.00. Expected QPE = **$3,283,489.00**; Expected Credit = **$985,046.70**. Actual Engine Qualified = $4,054,196.00 (gross less unspent contingency, qualifying non-qualifying finance, insurance, and admin lines); Actual Credit = $1,216,258.80. Delta: **+$770,707.00 QPE / +$231,212.10 Credit** (`NA-DEFECT-01`).\n")
         f.write("* **F#K Valentine's Day:** BTL+Post = $1,256,776.00; 40% ceiling = $502,710.40; author ATL (Cast) = $1,976,479.00 > ceiling. Allowed ATL = $502,710.40. Expected QPE = **$1,759,486.40**; Expected Credit = **$527,845.92**. Actual Engine Qualified = $3,701,238.00; Actual Credit = $1,110,371.40. Delta: **+$1,941,751.60 QPE / +$582,525.48 Credit** (`NA-DEFECT-01`).\n")
         f.write("* **Bad Hombres:** BTL+Post = $749,889.00; 40% ceiling = $299,955.60; author ATL = $1,448,902.00 > ceiling. Allowed ATL = $299,955.60. Expected QPE = **$1,049,844.60**; Expected Credit = **$314,953.38**. Actual Engine Qualified = $2,327,641.00; Actual Credit = $698,292.30. Delta: **+$1,277,796.40 QPE / +$383,338.92 Credit** (`NA-DEFECT-01`).\n")
         f.write("* **Lips Like Sugar:** BTL+Post = $5,853,484.00; 40% ceiling = $2,341,393.60; author ATL = $2,859,123.00 > ceiling. Allowed ATL = $2,341,393.60. Expected QPE = **$8,194,877.60**; Expected Credit = **$2,458,463.28**. Actual Engine Qualified = $9,483,654.00; Actual Credit = $2,845,096.20. Delta: **+$1,288,776.40 QPE / +$386,632.92 Credit** (`NA-DEFECT-01`).\n")
         f.write("* **Irreducible Empirical Blocker:** On FVD, BH, and LLS, aggregate cast and producer lines exceed $500,000 without itemized general ledger payee contracts. While the 40% aggregate cap is modeled independently, individual per-person caps and the statutory 2-producer limit remain blocked under `MISSING_INDIVIDUAL_TALENT_CONTRACTS`.\n")
-        f.write("* **New York Multi-Program Stack Mutual Exclusivity:** Under NY Tax Law § 31(2)(a)(1) & 5 NYCRR § 240.3(c), any taxpayer eligible for Section 24 film production credit is statutorily ineligible for Section 31 post-production credit. Stacking `ny_state_film` and `us_ny_post_production_credit` (`stack_ny_prod_post`) is strictly prohibited by statute. Both the independent calculator ($0.00 QPE, $0.00 credit) and the engine (`STACK_NOT_GENERATED`) reject this stack, establishing `VERIFIED_AGREEMENT` across all 4 anchors.\n\n")
+        f.write("* **New York Multi-Program Stack Reconciliation (§ 24 + § 31 vs. DISC-NY-001):** Under NY Tax Law § 31(2)(a)(1) & 5 NYCRR § 240.3(c), any taxpayer eligible for Section 24 film production credit is statutorily ineligible for Section 31 post-production credit. Stacking `ny_state_film` and `us_ny_post_production_credit` (`stack_ny_prod_post`) is strictly barred at the taxpayer/film level. The independent calculator models expected QPE as $0.00 (`GATE_REJECTED`). However, the engine's rule registry (`backend/app/optimization/stacking_rules.py:617`) contains confirmed defect `DISC-NY-001`, which erroneously permits distinct-cost pairing (`same_cost_prohibited_distinct_costs_allowed`). In saved generation `canonical-1.106.0`, the engine did not generate a stack candidate for these projects (`STACK_NOT_GENERATED`). A missing saved candidate alone CANNOT establish `VERIFIED_AGREEMENT`, especially when the underlying engine rule is defective. The stack is reclassified as **`COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)`**, pending canonical repair of `DISC-NY-001` in `stacking_rules.py` by Codex.\n\n")
         
         f.write("### 4.2 California Film & TV Tax Credit (Program 4.0 BTL) Breakdown\n")
         f.write("* **FVD Reconciliation ($603,665.65 vs $1,295,433.30):**\n")
