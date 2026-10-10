@@ -1,0 +1,457 @@
+{
+  "validation_date": "2026-10-09",
+  "scope": "Documentation/evidence consistency only; not production economic or UI acceptance",
+  "all_checks_passed": true,
+  "check_count": 65,
+  "checks": [
+    {
+      "check": "all19AGchangedfilesmanifest",
+      "passed": true,
+      "detail": 19
+    },
+    {
+      "check": "AGfilehash:AUDIT_LINEAGE_AND_INVALIDATION_MATRIX.csv",
+      "passed": true,
+      "detail": "05375407bec069746741d2d263e4c29f9ba7402d1bd9f96923ade9630258d504"
+    },
+    {
+      "check": "AGfilehash:DEFECT_ROOT_CAUSE_AND_BLAST_RADIUS.csv",
+      "passed": true,
+      "detail": "742a3129caa19af16434fc17cf58d77b5da28199c3bc85ef5dd8a6ed83b4df6b"
+    },
+    {
+      "check": "AGfilehash:FINAL_AG_EVIDENCE_HANDOFF_TO_CODEX.md",
+      "passed": true,
+      "detail": "10251398bbd468f81472dabb38eb42eeadecef62ad64eedd6131d728396cb90c"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_ANCHOR_VARIANCE_BRIDGES.csv",
+      "passed": true,
+      "detail": "7eac91feb212fdd16203dffba99f847e27224f1906e6781b08199a9711e81592"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_LINE_CLASSIFICATION.csv",
+      "passed": true,
+      "detail": "be88a61a765d7ca84501f2cdacdaeacc36d606849d0d0e8787a8d26d03bd87bc"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_OPTIMIZER_SELECTION_AUDIT.csv",
+      "passed": true,
+      "detail": "5266a30205e0b98bfa806bde87bcd4b14bd77361e0d3f9483782453b987a5de1"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_PATHWAY_COVERAGE.csv",
+      "passed": true,
+      "detail": "28b280a9ff346662c4378f9ceae9ad4bcd44338c0d28e76ad9a6b5d444d48691"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_PERSISTED_SCENARIO_AUDIT.csv",
+      "passed": true,
+      "detail": "42ad8f694a2ba09e1178800f8bb4dca0c399806608e976d67f14eb17aea514f5"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_PROGRAM_REACHABILITY.csv",
+      "passed": true,
+      "detail": "cdc14fa6ff7dcc8a98ce061071cf40fafb3fd384813dbe9394f2c806893e3e41"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_SOURCE_REGISTER.csv",
+      "passed": true,
+      "detail": "509938cb1970d09d33158e32fb0c024b761e220a12cd7745fa9df1c11d143006"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_STACKING_AND_OVERLAP_AUDIT.csv",
+      "passed": true,
+      "detail": "948ce1b5d02f121d67f50b0057365038954837e99c491f94400100a1869876e2"
+    },
+    {
+      "check": "AGfilehash:FOUR_PROJECT_TEMPORAL_RULE_MATRIX.csv",
+      "passed": true,
+      "detail": "8ce62fe3f3c49d971974979f950f814f122c3b9969ea7a3d73a57ec21e1bd66f"
+    },
+    {
+      "check": "AGfilehash:PERMANENT_CALCULATION_ACCEPTANCE_CONTROLS.md",
+      "passed": true,
+      "detail": "3e80ceff7a46afe5611569c56e685923de84cdc9c7afab4be62112fb9771602d"
+    },
+    {
+      "check": "AGfilehash:UNPROVEN_AND_DEFECT_REGISTER.csv",
+      "passed": true,
+      "detail": "897184f0ef45831106f395ef70f8106a3ece707cc16374401c3b81cd1c49a17b"
+    },
+    {
+      "check": "AGfilehash:build_four_project_audit_artifacts.py",
+      "passed": true,
+      "detail": "544812c83ad978746ec2c963ed682400be63c9aff69df7d847a21605b8070b5a"
+    },
+    {
+      "check": "AGfilehash:make_final_handoff_doc.py",
+      "passed": true,
+      "detail": "e9ecf18e5c8c6bfff49ec14ff0663f926136d3ee4dedb58352c39aabfaecd976"
+    },
+    {
+      "check": "AGfilehash:make_four_project_artifacts.py",
+      "passed": true,
+      "detail": "45872fb9d7160d6a9966a886351b1c4fe6c6d42f65648368da370e5f0e5a0fca"
+    },
+    {
+      "check": "AGfilehash:make_permanent_controls_doc.py",
+      "passed": true,
+      "detail": "e79b5de9b3cf2a42352581111602f453c3e01d82cc45451d98a85bbb273d1683"
+    },
+    {
+      "check": "AGfilehash:validate_independent_optimizer_audit.py",
+      "passed": true,
+      "detail": "58b74c8ac8fe3b6a47fff2a4deccc042f2362f62729116ffc91ef87f3b320162"
+    },
+    {
+      "check": "all1716CSVrowsdisposed",
+      "passed": true,
+      "detail": {
+        "rows": 1716,
+        "files": 12
+      }
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_SOURCE_REGISTER.csv",
+      "passed": true,
+      "detail": 10
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_TEMPORAL_RULE_MATRIX.csv",
+      "passed": true,
+      "detail": 8
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_LINE_CLASSIFICATION.csv",
+      "passed": true,
+      "detail": 158
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_ANCHOR_VARIANCE_BRIDGES.csv",
+      "passed": true,
+      "detail": 54
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_PATHWAY_COVERAGE.csv",
+      "passed": true,
+      "detail": 12
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_PERSISTED_SCENARIO_AUDIT.csv",
+      "passed": true,
+      "detail": 400
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_PROGRAM_REACHABILITY.csv",
+      "passed": true,
+      "detail": 297
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_STACKING_AND_OVERLAP_AUDIT.csv",
+      "passed": true,
+      "detail": 392
+    },
+    {
+      "check": "rowhashandcoverage:FOUR_PROJECT_OPTIMIZER_SELECTION_AUDIT.csv",
+      "passed": true,
+      "detail": 40
+    },
+    {
+      "check": "rowhashandcoverage:DEFECT_ROOT_CAUSE_AND_BLAST_RADIUS.csv",
+      "passed": true,
+      "detail": 9
+    },
+    {
+      "check": "rowhashandcoverage:AUDIT_LINEAGE_AND_INVALIDATION_MATRIX.csv",
+      "passed": true,
+      "detail": 14
+    },
+    {
+      "check": "rowhashandcoverage:UNPROVEN_AND_DEFECT_REGISTER.csv",
+      "passed": true,
+      "detail": 322
+    },
+    {
+      "check": "158originalPDFamountchecks",
+      "passed": true,
+      "detail": "158 passed"
+    },
+    {
+      "check": "correctprojectlinecounts",
+      "passed": true,
+      "detail": {
+        "Bad Hombres": 34,
+        "F#K Valentine's Day": 34,
+        "Lips Like Sugar": 46,
+        "The Little Utopia": 44
+      }
+    },
+    {
+      "check": "sourcesumsandLU2dollardiscrepancy",
+      "passed": true,
+      "detail": {
+        "Bad Hombres": "2482023.00",
+        "F#K Valentine's Day": "4517687.00",
+        "Lips Like Sugar": "11983654.00",
+        "The Little Utopia": "4364395.00"
+      }
+    },
+    {
+      "check": "unique158rawlineidentities",
+      "passed": true,
+      "detail": 158
+    },
+    {
+      "check": "duplicate4900preserved",
+      "passed": true,
+      "detail": "two source ordinals"
+    },
+    {
+      "check": "eightcontextswithhonestunknown",
+      "passed": true,
+      "detail": 8
+    },
+    {
+      "check": "42materialclaims",
+      "passed": true,
+      "detail": 42
+    },
+    {
+      "check": "9submittedplus3specificdefects",
+      "passed": true,
+      "detail": 12
+    },
+    {
+      "check": "230raw67alias297keys",
+      "passed": true,
+      "detail": 297
+    },
+    {
+      "check": "currentretained6305priced3855generated2749143",
+      "passed": true,
+      "detail": "6305/3855/2749143"
+    },
+    {
+      "check": "noindependentdominanceacceptance",
+      "passed": true,
+      "detail": "conservation only"
+    },
+    {
+      "check": "finalDBexactreadonly",
+      "passed": true,
+      "detail": [
+        "frametax2_claude_optimizer_acceptance_20260919",
+        "on"
+      ]
+    },
+    {
+      "check": "fourfinalDBcountsandfingerprintsmatch",
+      "passed": true,
+      "detail": [
+        977,
+        2108,
+        1126,
+        2094
+      ]
+    },
+    {
+      "check": "400exist396copiedzeroaccepted",
+      "passed": true,
+      "detail": {
+        "rows": 400,
+        "current_ids_observed": 400,
+        "nonbaseline_copied_expectations": 396,
+        "pathway_label_counts": {
+          "PATH-COMPONENT-RELOCATION-2LEG": 42,
+          "PATH-SINGLE-BASELINE": 4,
+          "PATH-MULTI-PROGRAM-STACK": 2,
+          "PATH-HYBRID-3LEG-FLAT": 20,
+          "PATH-HYBRID-3LEG-UPLIFT": 284,
+          "PATH-RELOCATION-STANDALONE": 4,
+          "PATH-HYBRID-4LEG-MULTI": 39,
+          "PATH-HYBRID-2LEG": 5
+        },
+        "disposition_counts": {
+          "CONDITIONAL_UNCONFIRMED": 348,
+          "ENGINE_DEFECT_OVERQUALIFIED (DEF-LU-001)": 1,
+          "VERIFIED_MATCH": 48,
+          "ENGINE_DEFECT_OVERQUALIFIED (DEF-FVD-001)": 1,
+          "ENGINE_DEFECT_OVERQUALIFIED (DEF-LLS-001 / DEF-TEMPORAL-001)": 1,
+          "ENGINE_DEFECT_OVERQUALIFIED (DEF-BH-001)": 1
+        },
+        "complete_independent_economic_controls_accepted": 0
+      }
+    },
+    {
+      "check": "sampleslotuniquenessonly",
+      "passed": true,
+      "detail": "eight project/surface groups"
+    },
+    {
+      "check": "AGbaselineand21ownnegativechecks",
+      "passed": true,
+      "detail": "AGvalidatorpassed"
+    },
+    {
+      "check": "fourfabricationsacceptedprovesgateinsufficiency",
+      "passed": true,
+      "detail": [
+        "scenario_false_independent_amount",
+        "stack_false_child_base",
+        "source_fake_qpe",
+        "temporal_fake_rate"
+      ]
+    },
+    {
+      "check": "twelveprimaryauthoritydownloads",
+      "passed": true,
+      "detail": 12
+    },
+    {
+      "check": "frontendtesthonestfailure",
+      "passed": true,
+      "detail": "11/1"
+    },
+    {
+      "check": "nobackendDBtestrun",
+      "passed": true,
+      "detail": "isolatedDBrequired"
+    },
+    {
+      "check": "noevaluationorproductionedit",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "check": "advancedtipvisualonlyrecorded",
+      "passed": true,
+      "detail": "8329055"
+    },
+    {
+      "check": "mainhonestgate",
+      "passed": true,
+      "detail": "rejectacceptanceallowboundedimplementation"
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_DEFECTS.csv",
+      "passed": true,
+      "detail": 12
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_ANCHORS.csv",
+      "passed": true,
+      "detail": 8
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_PROGRAMS.csv",
+      "passed": true,
+      "detail": 297
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_LINES.csv",
+      "passed": true,
+      "detail": 158
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv",
+      "passed": true,
+      "detail": 42
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv",
+      "passed": true,
+      "detail": 1716
+    },
+    {
+      "check": "LFnormalizationpreservesCSV:CODEX_FINAL_AG_ADJUDICATION_LINEAGE.csv",
+      "passed": true,
+      "detail": 19
+    },
+    {
+      "check": "staged_diff_whitespace",
+      "passed": true,
+      "detail": "git diff --cached --check clean after LF normalization"
+    },
+    {
+      "check": "staged_documentation_only",
+      "passed": true,
+      "detail": "15 files, all under required documentation prefix"
+    }
+  ],
+  "validated_file_hashes": [
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION.md",
+      "sha256": "c16b91909f6e2fde54a67687845773d7b4fec14dd9e25d82c14e92bfe0c63e8d",
+      "bytes": 31831
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_AG_ARTIFACT_MANIFEST.json",
+      "sha256": "181b0ace1087d5dcebb1098d7264886181fa48da324a07686275212a6d2c2022",
+      "bytes": 10341
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv",
+      "sha256": "53dffeb5e33303d9af3d0641530b2120baffdbcd3126110687a0d2b2d3a0da3f",
+      "bytes": 897727
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_ANCHORS.csv",
+      "sha256": "6abaa403821743a78b8d2735f931adc00629016c8c5e5da26db50a01b22d551b",
+      "bytes": 4957
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv",
+      "sha256": "bbf306cfe036f81ee4e5c2d5103dfe63a344c2f6b6761a08bf40a86111be6403",
+      "bytes": 12932
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_CLAUDE_REPAIR_PLAN.md",
+      "sha256": "b404bf8140d2d5c269b12c82cc8b924dd81859b051c3ecc0009815bdb07dfce3",
+      "bytes": 6645
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_CONTROLS.md",
+      "sha256": "43b3322bef4fdd733ce78e2a003ea7e02ac8aeabedc05fad799024815a7d4eb2",
+      "bytes": 14334
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_DEFECTS.csv",
+      "sha256": "af529a4516fdbaea7a50d966229df74401c18664d6c3496ec112a5364b48bafa",
+      "bytes": 4950
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_EVIDENCE.json",
+      "sha256": "5a3f10c22ddf4aaf5dfddc9d0da4bda804f543b20cf2d6619533e0d813ccaed5",
+      "bytes": 41264
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_LINEAGE.csv",
+      "sha256": "a9fa9e977a4a35b774b9afeba2a81ff057c405f9fc35ce32fcee0da851f6a5dd",
+      "bytes": 7673
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_LINES.csv",
+      "sha256": "d5f79d6f1b32732fd662aac2974e2475c9c72b2fbfdc8538ab41cd08ab24f57b",
+      "bytes": 81542
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_METHOD.md",
+      "sha256": "78bd2c87df2d9f99e8c02231d312bda773132249e398b02d6c88b9e9dd629334",
+      "bytes": 7780
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_PROGRAMS.csv",
+      "sha256": "221aa5d2dbff430b1b166ab41017629258c2e60edc2c70c5dc82e4f3191b2aa2",
+      "bytes": 102275
+    },
+    {
+      "file": "CODEX_FINAL_AG_ADJUDICATION_SOURCE_CHECKS.json",
+      "sha256": "369409c936cac313dbef2480ae2b116b9e3e4a5b16c8df92d3625bd8c0f839ca",
+      "bytes": 30084
+    }
+  ],
+  "validation_file_self_hash_excluded": true,
+  "known_test_failure": "frontend route-hover source regex: 11 passed, 1 failed",
+  "production_acceptance_granted": false
+}

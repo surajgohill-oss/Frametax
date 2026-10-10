@@ -1,0 +1,1124 @@
+{
+  "audit_date": "2026-10-09",
+  "package_disposition": "REJECT_AS_INDEPENDENT_ECONOMIC_ACCEPTANCE",
+  "implementation_may_begin": true,
+  "implementation_commit": "ee53fb28178907c4f2d234f41ee812a62f926b4b",
+  "ag_commit": "59ea903c8418534019d86989699924434cbd7b89",
+  "audit_branch": "codex/final-ag-calculation-adjudication",
+  "documentation_only": true,
+  "database_access": "Read-only transactions; bounded summaries and 500-row keyset retained metadata; no evaluation, writes or API regeneration.",
+  "original_sources": [
+    {
+      "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "project": "The Little Utopia",
+      "budget_document_id": "b06185a9-9f48-41f7-9fa8-182a95926824",
+      "document": "The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf",
+      "storage_relative_path": "little-utopia/The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf",
+      "sha256": "4b98f8236a4a6029a2da8fb6495c71c83586141ebe8ece8d0ec6dc99b1ac698c",
+      "pdf_pages": 60,
+      "source_kind": "PRODUCER_BUDGET",
+      "gross_usd": "4364393.00",
+      "pdf_metadata_dates": {
+        "creationDate": "D:20250603152509Z",
+        "modDate": "D:20260309194947-07'00'"
+      }
+    },
+    {
+      "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "project": "F#K Valentine's Day",
+      "budget_document_id": "29419055-9720-4e77-a673-020e3a87e3c8",
+      "document": "V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+      "storage_relative_path": "f-k-valentine-s-day/V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+      "sha256": "253e80e987a0aa3c06110dcbc5f6c99fd20042579603a94e29039c1e0a72eaa1",
+      "pdf_pages": 1,
+      "source_kind": "PRODUCER_BUDGET",
+      "gross_usd": "4517687.00",
+      "pdf_metadata_dates": {
+        "creationDate": "D:20240413041153Z00'00'",
+        "modDate": "D:20240413041153Z00'00'"
+      }
+    },
+    {
+      "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+      "project": "Bad Hombres",
+      "budget_document_id": "14401d09-eaec-483b-a27d-eed9a7149fe7",
+      "document": "BadHombresBudget.v2.pdf",
+      "storage_relative_path": "bad-hombres/BadHombresBudget.v2.pdf",
+      "sha256": "ed82085623884192e03e11f45087e4b899721e3e104bb91cdd86ca953cf323c7",
+      "pdf_pages": 43,
+      "source_kind": "PRODUCER_BUDGET",
+      "gross_usd": "2482023.00",
+      "pdf_metadata_dates": {
+        "creationDate": "D:20220104160945Z",
+        "modDate": "D:20220110120709-08'00'"
+      }
+    },
+    {
+      "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "project": "Lips Like Sugar",
+      "budget_document_id": "6ae1bbec-f8f2-432b-a09f-9d9c8833944b",
+      "document": "v7LLS_RevBudget_T1B_27days_022524.pdf",
+      "storage_relative_path": "lips-like-sugar/v7LLS_RevBudget_T1B_27days_022524.pdf",
+      "sha256": "37814d8b33358fd7bf52331bb969f7e3b78dc6e61b49ad363e96bd3a001b8af7",
+      "pdf_pages": 52,
+      "source_kind": "PRODUCER_BUDGET",
+      "gross_usd": "11983654.00",
+      "pdf_metadata_dates": {
+        "creationDate": "D:20240226021904Z",
+        "modDate": "D:20260713155533-07'00'"
+      }
+    },
+    {
+      "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "project": "Lips Like Sugar",
+      "document": "3C-122 Lips Like Sugar CAL 8-053.pdf",
+      "storage_relative_path": "lips-like-sugar/3C-122 Lips Like Sugar CAL 8-053.pdf",
+      "sha256": "67a37f9cd9270ca122ffc4bd7d4d34a5695cf668bdb8a6efc754deb17f56f752",
+      "pdf_pages": 3,
+      "source_kind": "OFFICIAL_CONDITIONAL_ALLOCATION",
+      "date": "2023-03-06",
+      "incentive_usd": "1470365.00",
+      "application_budget_not_supplied": true,
+      "qpe_usd": null,
+      "category": "Independent Film $10m & Under",
+      "not_a_final_cost_certificate": true
+    }
+  ],
+  "primary_authorities": [
+    {
+      "source_id": "MU2020",
+      "url": "https://edbmauritius.org/wp-content/uploads/2022/10/Guideline-Online-Application-FRS.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "3c1dad5b2e99b0a7a709804adf1dc5923d5e65dea311088ce27db0af9a54d5ef",
+      "pages": 12,
+      "bytes": 332464,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "CA3QEC",
+      "url": "https://film.ca.gov/wp-content/uploads/2025/07/3-0-QEC2.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "d660dd967c912d5ce1e5b484007e303d9077f406fe9aa33f8cab81ec8b2c1010",
+      "pages": 42,
+      "bytes": 869049,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "CA3REG",
+      "url": "https://cdn.film.ca.gov/wp-content/uploads/2023/12/3-0-Current-Regulations.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "ec27181b6803dd5730584787f25321b36efb67ace66d86e40ec369c34cd603c1",
+      "pages": 34,
+      "bytes": 734027,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "CA4QEC",
+      "url": "https://film.ca.gov/wp-content/uploads/2025/10/Program4.0QEC.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "668714defb3d54199c22d45820d1f024bead42ff10ab1e3eb0bbe6af25146343",
+      "pages": 47,
+      "bytes": 589029,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "CA4GUIDE",
+      "url": "https://cdn.film.ca.gov/wp-content/uploads/2025/08/4.0-Program-Guidelines-1.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "60df75f7ed2b1ba56d053c8f4ddca63b1ecc586d77dca953aad26cb41b510310",
+      "pages": 46,
+      "bytes": 583592,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "NM2019",
+      "url": "https://www.nmlegis.gov/Sessions/19%20Regular/final/SB0002.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "1a3fa562f4b1037c934b1d9eaac98f14b6b5ad9aa93523d427485abb498cc02c",
+      "pages": 51,
+      "bytes": 96533,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "NMFYI2025",
+      "url": "https://realfile.tax.newmexico.gov/FYI-370.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "ccca7520ef46e1502653075ac5d4fb49bcf8280de8dc7c145fd531ec3c879f99",
+      "pages": 20,
+      "bytes": 457484,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "NM2026",
+      "url": "https://www.nmlegis.gov/Sessions/26%20Regular/final/HB0291.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "e763bdaa6fbf057278bef9eb7d91091ec0af151b008018c5766c56072b3fe765",
+      "pages": 61,
+      "bytes": 157824,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "GR2021",
+      "url": "https://www.ekkomed.gr/wp-content/uploads/2022/12/1.LAW-4487.17.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "deabc311f79cc0e459e44052b5a0da3d4742ae4b136fbdcc306374e12db8e684",
+      "pages": 15,
+      "bytes": 290370,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "GR2023",
+      "url": "https://www.ekkomed.gr/wp-content/uploads/2023/07/LAW-5043_2023-ART-61-63_GGIA91-13.04.2023_en.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "791b59923f10c76298a895f5f3ff23f1bad8277319e9ac9f9c1d98a1e2cc94da",
+      "pages": 66,
+      "bytes": 593511,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "GR2026",
+      "url": "https://www.ekkomed.gr/wp-content/uploads/2026/02/KYA-607434-FTV.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "9b16095cb19e0794e2d04d01f931f7160c6fbdea134f80e80d89b4e999ef4f97",
+      "pages": 102,
+      "bytes": 1616440,
+      "status": "RETRIEVED"
+    },
+    {
+      "source_id": "GR2026AMEND",
+      "url": "https://www.ekkomed.gr/wp-content/uploads/2026/05/ΚΥΑ-140524_-FTV.pdf",
+      "retrieved_at_utc": "2026-10-09",
+      "sha256": "e206ae951abecb2d02c871361eca9abd2a931f36adcf714435ba727fc40d1a10",
+      "pages": 6,
+      "bytes": 1710257,
+      "status": "RETRIEVED"
+    }
+  ],
+  "current_generation_fingerprints": {
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": "d202f73ad172647767e03651e3b1b025a0593b97781f6747c0cf72ec7d5a1ba6",
+    "6c6f1c13-2d49-4bbc-bafb-2a12efa93112": "34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb",
+    "4355ae88-a636-4c18-af60-ad73b2646124": "ccff05ec483a6567ad40ab9e7bc409e70e33244ea6c9e16da89510d06e9bfecc",
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": "937fc893b30cf2746a560e385b19fddd1b64b519fb614dd9b8396738a06a5eea"
+  },
+  "anchor_engine_comparisons": [
+    {
+      "project": "The Little Utopia",
+      "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "structure_id": "7b1b853e-c06c-4769-8348-48d0836752e2",
+      "economic_identity": "c6cb4a738a4246ada02f88b40fb7c5c1367bcda18847ee23e14c50687a9d37ef",
+      "fingerprint": "d202f73ad172647767e03651e3b1b025a0593b97781f6747c0cf72ec7d5a1ba6",
+      "engine_version": "canonical-1.105.0",
+      "label": "PERSISTED_OR_SERVED_COMPARISON_ONLY",
+      "gross_usd": "4364393.00",
+      "precap_qpe_trace_usd": "4355327.00",
+      "postcap_qpe_usd": "4355327.00",
+      "floor_incentive_usd": "1306598.10",
+      "maximum_incentive_usd": "1742130.80",
+      "floor_npc_usd": "3057794.90",
+      "incentive_cap_field_usd": null,
+      "source_estimate_gap_usd": "31187.10",
+      "cfc_allocation_gap_usd": null,
+      "independent_exact_qpe_usd": null,
+      "independent_exact_incentive_usd": null,
+      "independent_economic_residual_status": "NOT_ESTABLISHED"
+    },
+    {
+      "project": "F#K Valentine's Day",
+      "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "structure_id": "86555121-5a0c-4b43-8b55-6569819109e9",
+      "economic_identity": "d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737",
+      "fingerprint": "34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb",
+      "engine_version": "canonical-1.105.0",
+      "label": "PERSISTED_OR_SERVED_COMPARISON_ONLY",
+      "gross_usd": "4517687.00",
+      "precap_qpe_trace_usd": "3701238.00",
+      "postcap_qpe_usd": "3614149.60",
+      "floor_incentive_usd": "1445659.84",
+      "maximum_incentive_usd": "1445659.84",
+      "floor_npc_usd": "3072027.16",
+      "incentive_cap_field_usd": null,
+      "source_estimate_gap_usd": "926855.84",
+      "cfc_allocation_gap_usd": null,
+      "independent_exact_qpe_usd": null,
+      "independent_exact_incentive_usd": null,
+      "independent_economic_residual_status": "NOT_ESTABLISHED"
+    },
+    {
+      "project": "Bad Hombres",
+      "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+      "structure_id": "b75590a1-f580-4e8d-b098-c6f734fe32f9",
+      "economic_identity": "1ba0245f761165782b42af1d7bc6e4ab7db352f4ec46b0406f39077f81a97f92",
+      "fingerprint": "ccff05ec483a6567ad40ab9e7bc409e70e33244ea6c9e16da89510d06e9bfecc",
+      "engine_version": "canonical-1.105.0",
+      "label": "PERSISTED_OR_SERVED_COMPARISON_ONLY",
+      "gross_usd": "2482023.00",
+      "precap_qpe_trace_usd": "2387641.00",
+      "postcap_qpe_usd": "2387641.00",
+      "floor_incentive_usd": "596910.25",
+      "maximum_incentive_usd": "955056.40",
+      "floor_npc_usd": "1885112.75",
+      "incentive_cap_field_usd": 140000000.0,
+      "source_estimate_gap_usd": null,
+      "cfc_allocation_gap_usd": null,
+      "independent_exact_qpe_usd": null,
+      "independent_exact_incentive_usd": null,
+      "independent_economic_residual_status": "NOT_ESTABLISHED"
+    },
+    {
+      "project": "Lips Like Sugar",
+      "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "structure_id": "3fcb1603-1ee0-401e-99fc-043855ed7323",
+      "economic_identity": "e8c60c35712faed633d63be33e3575ef74a44fb29895a86b0334e6cae09e2d57",
+      "fingerprint": "937fc893b30cf2746a560e385b19fddd1b64b519fb614dd9b8396738a06a5eea",
+      "engine_version": "canonical-1.105.0",
+      "label": "PERSISTED_OR_SERVED_COMPARISON_ONLY",
+      "gross_usd": "11983654.00",
+      "precap_qpe_trace_usd": "9883654.00",
+      "postcap_qpe_usd": "9883654.00",
+      "floor_incentive_usd": "3459278.90",
+      "maximum_incentive_usd": "3953461.60",
+      "floor_npc_usd": "8524375.10",
+      "incentive_cap_field_usd": 120000000.0,
+      "source_estimate_gap_usd": "1956204.90",
+      "cfc_allocation_gap_usd": "1988913.90",
+      "independent_exact_qpe_usd": null,
+      "independent_exact_incentive_usd": null,
+      "independent_economic_residual_status": "NOT_ESTABLISHED"
+    }
+  ],
+  "census": [
+    {
+      "project": "The Little Utopia",
+      "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "input_fingerprint": "d202f73ad172647767e03651e3b1b025a0593b97781f6747c0cf72ec7d5a1ba6",
+      "engine_version": "canonical-1.105.0",
+      "retained_rows": 977,
+      "priced_unique_economic_identities": 659,
+      "aggregate_group_count": 5354,
+      "aggregate_candidate_count": 222081,
+      "generated_denominator": 223058,
+      "retained_status_counts": {
+        "QUALIFICATION_HARD_FAIL": 1,
+        "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10,
+        "FEASIBILITY_REVIEW_REQUIRED": 8,
+        "DOMINATED_WITH_PROOF": 274,
+        "CO_PRO_OPPORTUNITY": 25,
+        "PRICED": 659
+      },
+      "retained_structure_type_counts": {
+        "full_relocation": 117,
+        "hybrid": 728,
+        "treaty_coproduction": 25,
+        "multi_program": 3,
+        "component_relocation": 103,
+        "single_country": 1
+      },
+      "aggregate_status_type_reason_counts": [
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "component_relocation",
+          "reason_class": null,
+          "count": 17
+        },
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "hybrid",
+          "reason_class": null,
+          "count": 196858
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "MINIMUM_SPEND_FAIL",
+          "count": 60
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "OTHER_EXPLICIT",
+          "count": 2
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "full_relocation",
+          "reason_class": "STATUTORY_CONDITIONS_UNMET",
+          "count": 7
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "hybrid",
+          "reason_class": "THRESHOLD_NOT_MET",
+          "count": 25112
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "multi_program",
+          "reason_class": null,
+          "count": 2
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "same_jurisdiction_group_stack",
+          "reason_class": "UNRESOLVED_NO_AUTHORITY",
+          "count": 23
+        }
+      ],
+      "conservation_verified": true,
+      "independent_dominance_verified": false,
+      "independent_complete_universe_verified": false
+    },
+    {
+      "project": "F#K Valentine's Day",
+      "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "input_fingerprint": "34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb",
+      "engine_version": "canonical-1.105.0",
+      "retained_rows": 2108,
+      "priced_unique_economic_identities": 1248,
+      "aggregate_group_count": 6152,
+      "aggregate_candidate_count": 1213792,
+      "generated_denominator": 1215900,
+      "retained_status_counts": {
+        "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10,
+        "FEASIBILITY_REVIEW_REQUIRED": 8,
+        "DOMINATED_WITH_PROOF": 815,
+        "CO_PRO_OPPORTUNITY": 27,
+        "PRICED": 1248
+      },
+      "retained_structure_type_counts": {
+        "full_relocation": 116,
+        "hybrid": 1821,
+        "treaty_coproduction": 27,
+        "component_relocation": 138,
+        "multi_program": 5,
+        "single_country": 1
+      },
+      "aggregate_status_type_reason_counts": [
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "component_relocation",
+          "reason_class": null,
+          "count": 109
+        },
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "hybrid",
+          "reason_class": null,
+          "count": 251876
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "MINIMUM_SPEND_FAIL",
+          "count": 109
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "OTHER_EXPLICIT",
+          "count": 4
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "full_relocation",
+          "reason_class": "STATUTORY_CONDITIONS_UNMET",
+          "count": 8
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "hybrid",
+          "reason_class": "PAIRWISE_INCOMPATIBLE",
+          "count": 1380
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "hybrid",
+          "reason_class": "THRESHOLD_NOT_MET",
+          "count": 960251
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "multi_program",
+          "reason_class": null,
+          "count": 6
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "same_jurisdiction_group_stack",
+          "reason_class": "UNRESOLVED_NO_AUTHORITY",
+          "count": 49
+        }
+      ],
+      "conservation_verified": true,
+      "independent_dominance_verified": false,
+      "independent_complete_universe_verified": false
+    },
+    {
+      "project": "Bad Hombres",
+      "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+      "input_fingerprint": "ccff05ec483a6567ad40ab9e7bc409e70e33244ea6c9e16da89510d06e9bfecc",
+      "engine_version": "canonical-1.105.0",
+      "retained_rows": 1126,
+      "priced_unique_economic_identities": 721,
+      "aggregate_group_count": 5053,
+      "aggregate_candidate_count": 10725,
+      "generated_denominator": 11851,
+      "retained_status_counts": {
+        "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 11,
+        "FEASIBILITY_REVIEW_REQUIRED": 8,
+        "DOMINATED_WITH_PROOF": 361,
+        "CO_PRO_OPPORTUNITY": 25,
+        "PRICED": 721
+      },
+      "retained_structure_type_counts": {
+        "full_relocation": 116,
+        "hybrid": 837,
+        "treaty_coproduction": 25,
+        "multi_program": 3,
+        "component_relocation": 144,
+        "single_country": 1
+      },
+      "aggregate_status_type_reason_counts": [
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "component_relocation",
+          "reason_class": null,
+          "count": 36
+        },
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "hybrid",
+          "reason_class": null,
+          "count": 10548
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "MINIMUM_SPEND_FAIL",
+          "count": 87
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "OTHER_EXPLICIT",
+          "count": 3
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "full_relocation",
+          "reason_class": "STATUTORY_CONDITIONS_UNMET",
+          "count": 8
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "multi_program",
+          "reason_class": null,
+          "count": 5
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "same_jurisdiction_group_stack",
+          "reason_class": "UNRESOLVED_NO_AUTHORITY",
+          "count": 38
+        }
+      ],
+      "conservation_verified": true,
+      "independent_dominance_verified": false,
+      "independent_complete_universe_verified": false
+    },
+    {
+      "project": "Lips Like Sugar",
+      "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "input_fingerprint": "937fc893b30cf2746a560e385b19fddd1b64b519fb614dd9b8396738a06a5eea",
+      "engine_version": "canonical-1.105.0",
+      "retained_rows": 2094,
+      "priced_unique_economic_identities": 1227,
+      "aggregate_group_count": 5892,
+      "aggregate_candidate_count": 1296240,
+      "generated_denominator": 1298334,
+      "retained_status_counts": {
+        "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10,
+        "FEASIBILITY_REVIEW_REQUIRED": 8,
+        "DOMINATED_WITH_PROOF": 824,
+        "CO_PRO_OPPORTUNITY": 25,
+        "PRICED": 1227
+      },
+      "retained_structure_type_counts": {
+        "full_relocation": 117,
+        "hybrid": 1814,
+        "treaty_coproduction": 25,
+        "component_relocation": 132,
+        "multi_program": 5,
+        "single_country": 1
+      },
+      "aggregate_status_type_reason_counts": [
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "component_relocation",
+          "reason_class": null,
+          "count": 160
+        },
+        {
+          "candidate_status": "PRICED",
+          "structure_type": "hybrid",
+          "reason_class": null,
+          "count": 1294550
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "MINIMUM_SPEND_FAIL",
+          "count": 72
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "component_relocation",
+          "reason_class": "OTHER_EXPLICIT",
+          "count": 4
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "full_relocation",
+          "reason_class": "STATUTORY_CONDITIONS_UNMET",
+          "count": 7
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "hybrid",
+          "reason_class": "PAIRWISE_INCOMPATIBLE",
+          "count": 1392
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "multi_program",
+          "reason_class": null,
+          "count": 6
+        },
+        {
+          "candidate_status": "RULE_REJECTED",
+          "structure_type": "same_jurisdiction_group_stack",
+          "reason_class": "UNRESOLVED_NO_AUTHORITY",
+          "count": 49
+        }
+      ],
+      "conservation_verified": true,
+      "independent_dominance_verified": false,
+      "independent_complete_universe_verified": false
+    }
+  ],
+  "inventory": {
+    "raw_program_records": 230,
+    "alias_or_binding_keys": 67,
+    "combined_keys": 297,
+    "raw_programs": [
+      "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "acpfilms_fund",
+      "ae_ad_film_rebate",
+      "ae_dxb_dpip",
+      "al_cash_rebate",
+      "ar_incaa_incentive",
+      "at_fisa_plus",
+      "au_location_offset",
+      "au_nsw_pdv_rebate",
+      "au_nsw_screen",
+      "au_pdv_offset",
+      "au_producer_offset",
+      "au_qld_pdv_rebate",
+      "au_qld_screen_qld",
+      "au_sa_pdv_rebate",
+      "au_screen_production",
+      "au_vic_vicscreen",
+      "ba_film_incentive",
+      "bb_film_incentive",
+      "bc_interactive_digital_media_tax_credit_idmtc",
+      "bd_film_incentive",
+      "be_tax_shelter",
+      "bg_film_encouragement_act_rebate",
+      "bh_film_incentive",
+      "br_ancine_incentive",
+      "bs_film_incentive",
+      "bt_film_incentive",
+      "bw_film_commission",
+      "by_film_incentive",
+      "ca_ab_fttc",
+      "ca_bc_dave",
+      "ca_bc_pstc",
+      "ca_cmf",
+      "ca_federal_cptc",
+      "ca_federal_pstc",
+      "ca_film_30",
+      "ca_mb_film_video_credit",
+      "ca_nb_film_tax_credit",
+      "ca_nl_all_spend_credit",
+      "ca_ns_production_incentive_fund",
+      "ca_qc_pstc",
+      "ca_sk_creative_saskatchewan_grant",
+      "ccm_tourism_film_facilitation",
+      "ch_pics_national_rebate",
+      "cl_corfo_incentive",
+      "cm_film_incentive",
+      "cn_film_incentive",
+      "co_film_in_colombia",
+      "cr_film_incentive",
+      "cr_tax_return_incentive",
+      "cy_film_rebate",
+      "cz_film_incentive",
+      "cz_film_incentive_animation",
+      "de_dfff",
+      "de_fff_bayern",
+      "de_nrw_filmstiftung",
+      "dk_film_incentive",
+      "dk_production_rebate",
+      "do_film_commission_incentive",
+      "ec_film_incentive",
+      "ee_film_estonia_rebate",
+      "eg_empc_cashback",
+      "eg_film_incentive",
+      "es_tax_credit_foreign",
+      "et_film_commission",
+      "eu_media_fund",
+      "fi_business_finland_incentive",
+      "film_i_vast",
+      "fj_film_rebate",
+      "fr_cnc_production",
+      "fr_trip",
+      "ga_film_incentive",
+      "gb_bfi_production",
+      "gb_iftc_enhanced_avec",
+      "gb_sct_screen_fund",
+      "gb_wls_screen_fund",
+      "ge_film_rebate",
+      "gh_film_incentive",
+      "gh_film_tax_incentive",
+      "gr_cash_rebate",
+      "gt_film_commission",
+      "gy_film_commission",
+      "hk_film_dev_fund",
+      "hr_cash_rebate",
+      "hu_hipa_rebate",
+      "ibermedia_programme",
+      "iceland_post_production_visual_effects_and_animation_incentive",
+      "id_film_incentive",
+      "ie_section_481",
+      "il_film_incentive",
+      "il_foreign_production_fund",
+      "in_national_film",
+      "in_nfdc_coproduction",
+      "is_film_reimbursement_scheme",
+      "it_tax_credit_foreign",
+      "jm_film_incentive",
+      "jo_rfc_rebate",
+      "jp_vipo_location_incentive",
+      "ke_film_incentive",
+      "kh_film_incentive",
+      "korea_kocca_animation_production_support",
+      "kr_kofic_location_incentive",
+      "kw_film_incentive",
+      "kz_investment_subsidy",
+      "lk_film_incentive",
+      "lt_film_centre_cash_rebate",
+      "lu_filmfund_tax_shelter_rebate",
+      "lv_national_film_centre_incentive",
+      "ma_ccm_rebate",
+      "me_cash_rebate",
+      "mk_cash_rebate",
+      "mn_film_commission",
+      "mn_production_incentive",
+      "mt_mfc_rebate",
+      "mu_edb_incentive",
+      "mv_film_incentive",
+      "mx_eficine_incentive",
+      "mx_federal_film_incentive_2026",
+      "my_finas_rebate",
+      "mz_film_incentive",
+      "na_film_commission",
+      "new_zealand_screen_production_grant_—_international_post_vfx",
+      "ng_film_incentive",
+      "nl_film_production_incentive",
+      "nl_hbf",
+      "no_film_incentive",
+      "nohfc_production_fund",
+      "nordic_ftvf",
+      "ny_state_film",
+      "nz_spg_international",
+      "om_film_commission",
+      "on_ofttc",
+      "on_opstc",
+      "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+      "pa_film_incentive",
+      "pa_film_rebate",
+      "pe_film_incentive",
+      "ph_fdcp_flip",
+      "pk_pfc_rebate",
+      "pl_pisf_cash_rebate",
+      "proposed_australia_producer_offset_separate_statutory_program",
+      "proposed_canada_british_columbia_film_incentive_bc_fibc",
+      "proposed_colombia_cina_audiovisual_investment_certificate",
+      "proposed_germany_german_motion_picture_fund_gmpf",
+      "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
+      "proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits",
+      "proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction",
+      "proposed_spain_navarre_navarre_audiovisual_production_tax_credit",
+      "proposed_united_kingdom_enhanced_avec_independent_film_tax_credit_iftc",
+      "proposed_united_kingdom_uk_global_screen_fund_international_co_production",
+      "proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive",
+      "proposed_united_states_missouri_motion_media_production_tax_credit",
+      "proposed_united_states_montana_media_tax_credit",
+      "proposed_united_states_new_jersey_garden_state_film_and_digital_media_jobs_act_film_credit",
+      "proposed_united_states_new_york_empire_state_independent_film_production_credit",
+      "proposed_united_states_new_york_film_tax_credit_post_production",
+      "proposed_united_states_ohio_ohio_motion_picture_tax_credit",
+      "proposed_united_states_west_virginia_west_virginia_film_production_tax_credit",
+      "pt_scri_pt_cash_rebate",
+      "pt_scri_pt_medium_budget",
+      "qa_dfi_fund",
+      "qa_film_incentive",
+      "qa_screen_production_incentive",
+      "ro_film_office_cash_rebate",
+      "rs_film_commission_cash_rebate",
+      "ru_film_incentive",
+      "rw_film_incentive",
+      "sa_film_commission_rebate",
+      "sc_film_incentive",
+      "screenskills_production_workforce_development",
+      "se_production_rebate",
+      "sg_imda_film_fund",
+      "sg_made_with_singapore_rebate",
+      "si_cash_rebate",
+      "singapore_imda_digital_media_development_fund",
+      "sk_avf_production_incentive",
+      "sn_film_incentive",
+      "th_film_incentive",
+      "th_prd_foreign_digital_content_incentive",
+      "tn_film_incentive",
+      "tourism_ireland___fáilte_ireland_production_support",
+      "tr_film_incentive",
+      "tt_production_expenditure_rebate",
+      "tw_bamid_rebate",
+      "tz_film_incentive",
+      "ua_cash_rebate",
+      "ug_film_commission",
+      "uk_avec",
+      "us_al_film_incentive",
+      "us_az_motion_picture_production",
+      "us_co_film_incentive",
+      "us_ct_film_tax_credit",
+      "us_ga_film_credit",
+      "us_hi_film_digital_media_credit",
+      "us_il_film_production_services_credit",
+      "us_itvs_fund",
+      "us_ky_keiia",
+      "us_la_film_incentive",
+      "us_ma_film_tax_credit",
+      "us_md_film_production_activity_credit",
+      "us_mn_film_production_credit",
+      "us_ms_advantage_film_program",
+      "us_nc_film_entertainment_grant",
+      "us_nm_film_credit",
+      "us_nv_film_credit",
+      "us_ny_post_production_credit",
+      "us_ok_film_enhancement_rebate",
+      "us_or_opif",
+      "us_pa_film_production_credit",
+      "us_pr_film_incentives_act",
+      "us_ri_film_credit",
+      "us_sc_film_production_credit",
+      "us_sundance_doc",
+      "us_tn_performance_grant",
+      "us_tx_miip",
+      "us_ut_motion_picture_incentive",
+      "us_va_motion_picture_credit",
+      "us_wa_motion_picture_competitiveness",
+      "uy_acau_cash_rebate",
+      "uy_tax_credit_2026",
+      "uy_xxi_incentive",
+      "uz_film_incentive",
+      "uz_film_rebate",
+      "vipo_animation_and_content_support",
+      "vn_film_incentive",
+      "za_dac_fund",
+      "za_dtic_foreign_film",
+      "za_nfvf_rebate",
+      "zm_film_commission",
+      "zw_film_commission"
+    ],
+    "alias_resolution": {
+      "mt_mfc_cash_rebate": "mt_mfc_rebate",
+      "gr_ekome_rebate": "gr_cash_rebate",
+      "fj_film_incentive": "fj_film_rebate",
+      "my_film_incentive": "my_finas_rebate",
+      "ge_film_incentive": "ge_film_rebate",
+      "proposed_canada_quebec_refundable_tax_credit_for_film_production_services": "ca_qc_pstc",
+      "us_ca_film_credit": "ca_film_30",
+      "us_ny_film_credit": "ny_state_film",
+      "ca_on_opstc": "on_opstc",
+      "inv-ca-on-ontario-production-services-tax-credit-opstc": "on_opstc",
+      "nz_spgi": "nz_spg_international",
+      "ae_dpip": "ae_dxb_dpip",
+      "al_film_incentive": "al_cash_rebate",
+      "bc_pstc": "ca_bc_pstc",
+      "bg_film_incentive": "bg_film_encouragement_act_rebate",
+      "ca_mb_fvptc": "ca_mb_film_video_credit",
+      "ca_nb_film_credit": "ca_nb_film_tax_credit",
+      "ca_ns_pif": "ca_ns_production_incentive_fund",
+      "ca_sk_production_grant": "ca_sk_creative_saskatchewan_grant",
+      "co_film_colombia": "co_film_in_colombia",
+      "do_film_incentive": "do_film_commission_incentive",
+      "ee_film_incentive": "ee_film_estonia_rebate",
+      "fi_film_incentive": "fi_business_finland_incentive",
+      "is_film_reimbursement": "is_film_reimbursement_scheme",
+      "jp_film_incentive": "jp_vipo_location_incentive",
+      "kr_film_incentive": "kr_kofic_location_incentive",
+      "kz_film_incentive": "kz_investment_subsidy",
+      "la_film_production": "us_la_film_incentive",
+      "lt_film_incentive": "lt_film_centre_cash_rebate",
+      "lu_film_incentive": "lu_filmfund_tax_shelter_rebate",
+      "lv_film_incentive": "lv_national_film_centre_incentive",
+      "me_film_incentive": "me_cash_rebate",
+      "mk_film_incentive": "mk_cash_rebate",
+      "nl_nfpi": "nl_film_production_incentive",
+      "nm_film_production": "us_nm_film_credit",
+      "or_opif": "us_or_opif",
+      "pl_film_incentive": "pl_pisf_cash_rebate",
+      "proposed_canada_film_or_video_production_services_tax_credit_pstc": "ca_federal_pstc",
+      "qc_film_production": "ca_qc_pstc",
+      "ca_nl_production_fund": "ca_nl_all_spend_credit",
+      "pt_film_incentive": "pt_scri_pt_cash_rebate",
+      "proposed_united_arab_emirates_abu_dhabi_abu_dhabi_35_production_rebate": "ae_ad_film_rebate",
+      "ro_cnc_rebate": "ro_film_office_cash_rebate",
+      "rs_film_rebate": "rs_film_commission_cash_rebate",
+      "sa_sfc_rebate": "sa_film_commission_rebate",
+      "se_film_incentive": "se_production_rebate",
+      "si_film_incentive": "si_cash_rebate",
+      "sk_film_incentive": "sk_avf_production_incentive",
+      "tt_film_incentive": "tt_production_expenditure_rebate",
+      "us_az_film_credit": "us_az_motion_picture_production",
+      "us_ct_film_credit": "us_ct_film_tax_credit",
+      "us_hi_film_tax_credit": "us_hi_film_digital_media_credit",
+      "us_il_film_credit": "us_il_film_production_services_credit",
+      "us_ma_film_credit": "us_ma_film_tax_credit",
+      "us_md_film_credit": "us_md_film_production_activity_credit",
+      "us_mn_film_credit": "us_mn_film_production_credit",
+      "us_ms_film_credit": "us_ms_advantage_film_program",
+      "us_nc_film_grant": "us_nc_film_entertainment_grant",
+      "us_nv_film_incentive": "us_nv_film_credit",
+      "us_ok_ofer": "us_ok_film_enhancement_rebate",
+      "us_pa_film_credit": "us_pa_film_production_credit",
+      "us_pr_film_incentive": "us_pr_film_incentives_act",
+      "us_sc_film_credit": "us_sc_film_production_credit",
+      "us_tn_film_incentive": "us_tn_performance_grant",
+      "us_ut_film_incentive": "us_ut_motion_picture_incentive",
+      "us_va_film_credit": "us_va_motion_picture_credit",
+      "us_wa_mpcp": "us_wa_motion_picture_competitiveness"
+    },
+    "not_a_complete_global_legal_universe": true
+  },
+  "scenario_sample": {
+    "rows": 400,
+    "current_ids_observed": 400,
+    "nonbaseline_copied_expectations": 396,
+    "pathway_label_counts": {
+      "PATH-COMPONENT-RELOCATION-2LEG": 42,
+      "PATH-SINGLE-BASELINE": 4,
+      "PATH-MULTI-PROGRAM-STACK": 2,
+      "PATH-HYBRID-3LEG-FLAT": 20,
+      "PATH-HYBRID-3LEG-UPLIFT": 284,
+      "PATH-RELOCATION-STANDALONE": 4,
+      "PATH-HYBRID-4LEG-MULTI": 39,
+      "PATH-HYBRID-2LEG": 5
+    },
+    "disposition_counts": {
+      "CONDITIONAL_UNCONFIRMED": 348,
+      "ENGINE_DEFECT_OVERQUALIFIED (DEF-LU-001)": 1,
+      "VERIFIED_MATCH": 48,
+      "ENGINE_DEFECT_OVERQUALIFIED (DEF-FVD-001)": 1,
+      "ENGINE_DEFECT_OVERQUALIFIED (DEF-LLS-001 / DEF-TEMPORAL-001)": 1,
+      "ENGINE_DEFECT_OVERQUALIFIED (DEF-BH-001)": 1
+    },
+    "complete_independent_economic_controls_accepted": 0
+  },
+  "selection_sample_uniqueness_checks": [
+    {
+      "project": "Bad Hombres",
+      "surface": "OVERVIEW_FOUR",
+      "slot_count": 4,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "Bad Hombres",
+      "surface": "WORKSPACE_SIX",
+      "slot_count": 6,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "F#K Valentine's Day",
+      "surface": "OVERVIEW_FOUR",
+      "slot_count": 4,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "F#K Valentine's Day",
+      "surface": "WORKSPACE_SIX",
+      "slot_count": 6,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "Lips Like Sugar",
+      "surface": "OVERVIEW_FOUR",
+      "slot_count": 4,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "Lips Like Sugar",
+      "surface": "WORKSPACE_SIX",
+      "slot_count": 6,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "The Little Utopia",
+      "surface": "OVERVIEW_FOUR",
+      "slot_count": 4,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    },
+    {
+      "project": "The Little Utopia",
+      "surface": "WORKSPACE_SIX",
+      "slot_count": 6,
+      "economic_identity_unique": true,
+      "complete_universe_selection_accepted": false
+    }
+  ],
+  "artifact_validator_falsification": {
+    "baseline": [
+      true,
+      []
+    ],
+    "ag_negative_control_result": true,
+    "ag_negative_control_output": "o unexplained residual in Bad Hombres bridge.\n  [NC 20/21] Testing rejection of unmapped calculation pathway...\n    -> PASS: Validator correctly caught unmapped calculation pathway.\n  [NC 21/21] Testing rejection of missing effective date in temporal matrix...\n    -> PASS: Validator correctly caught missing effective date in temporal matrix.\n\nNEGATIVE CONTROLS SUMMARY: 21/21 PASSED (100% SUCCESS)\n",
+    "independent_probes": [
+      {
+        "name": "scenario_false_independent_amount",
+        "file": "FOUR_PROJECT_PERSISTED_SCENARIO_AUDIT.csv",
+        "row": 1,
+        "field": "independent_confirmed_incentive_usd",
+        "before": "1306240.10",
+        "after": "987654321.00",
+        "validator_accepted": true,
+        "errors": []
+      },
+      {
+        "name": "stack_false_child_base",
+        "file": "FOUR_PROJECT_STACKING_AND_OVERLAP_AUDIT.csv",
+        "row": 1,
+        "field": "child_claim_base_usd",
+        "before": "1309318.50",
+        "after": "987654321.00",
+        "validator_accepted": true,
+        "errors": []
+      },
+      {
+        "name": "source_fake_qpe",
+        "file": "FOUR_PROJECT_SOURCE_REGISTER.csv",
+        "row": 1,
+        "field": "qpe_or_base",
+        "before": "3644031.00",
+        "after": "987654321.00",
+        "validator_accepted": true,
+        "errors": []
+      },
+      {
+        "name": "temporal_fake_rate",
+        "file": "FOUR_PROJECT_TEMPORAL_RULE_MATRIX.csv",
+        "row": 1,
+        "field": "base_rate",
+        "before": "30.0%",
+        "after": "99.0%",
+        "validator_accepted": true,
+        "errors": []
+      }
+    ]
+  },
+  "frontend_test": {
+    "path": "frontend/tests/incentive-potential-presentation.test.mjs",
+    "implementation_commit": "ee53fb28178907c4f2d234f41ee812a62f926b4b",
+    "passed": 11,
+    "failed": 1,
+    "failure_location": 127,
+    "failure": "source regex requiring hidePotential at route hover",
+    "economic_runtime_defect_proved": false
+  },
+  "backend_test_failures": {
+    "ag_reported": 4,
+    "independently_rerun": false,
+    "reason": "Tests invoke evaluate_project; an isolated DB is required; no shared DB writes were authorized."
+  },
+  "independent_exact_economics": {
+    "LU": "NOT_ESTABLISHED",
+    "FVD": "NOT_ESTABLISHED",
+    "LLS": "NOT_ESTABLISHED",
+    "BH": "NOT_ESTABLISHED"
+  },
+  "production_mutations": 0,
+  "cold_evaluations": 0,
+  "production_code_edits": 0,
+  "planning_fact_evidence": [
+    {
+      "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "fact_key": "contingency_expected_utilization_pct",
+      "value": "100.0",
+      "source_type": "recovered_demo_state",
+      "review_status": "approved",
+      "source_location": "Production election, no partial-utilization evidence on file",
+      "not_actual_incurred_cost_evidence": true
+    }
+  ],
+  "final_database_recheck": {
+    "database": "frametax2_claude_optimizer_acceptance_20260919",
+    "mode": "READ ONLY",
+    "counts": [
+      {
+        "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+        "input_fingerprint": "d202f73ad172647767e03651e3b1b025a0593b97781f6747c0cf72ec7d5a1ba6",
+        "retained_count": 977
+      },
+      {
+        "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+        "input_fingerprint": "34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb",
+        "retained_count": 2108
+      },
+      {
+        "project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+        "input_fingerprint": "ccff05ec483a6567ad40ab9e7bc409e70e33244ea6c9e16da89510d06e9bfecc",
+        "retained_count": 1126
+      },
+      {
+        "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+        "input_fingerprint": "937fc893b30cf2746a560e385b19fddd1b64b519fb614dd9b8396738a06a5eea",
+        "retained_count": 2094
+      }
+    ],
+    "discarded_recheck": "Shared default database was inadvertently connected read-only; returned zero matching generations and is excluded from audit evidence; no writes.",
+    "connection_verified": [
+      "frametax2_claude_optimizer_acceptance_20260919",
+      "on"
+    ]
+  },
+  "final_observed_remote_implementation": {
+    "commit": "832905569ece7cd0f6f4207998d7177a55c88a72",
+    "audited_target_remains": "ee53fb28178907c4f2d234f41ee812a62f926b4b",
+    "changed_paths_since_target": [
+      "frametax2/frontend/src/components/CompactSidebarGlobe.jsx",
+      "frametax2/frontend/src/screens/company/CompanyGlobe.jsx",
+      "frametax2/frontend/src/shell/Sidebar.jsx",
+      "frametax2/frontend/src/styles/shell.css"
+    ],
+    "calculation_owners_unchanged": true,
+    "new_visual_acceptance_granted": false
+  }
+}

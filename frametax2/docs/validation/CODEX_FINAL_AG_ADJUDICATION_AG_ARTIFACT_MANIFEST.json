@@ -1,0 +1,171 @@
+{
+  "ag_commit": "59ea903c8418534019d86989699924434cbd7b89",
+  "implementation_commit": "ee53fb28178907c4f2d234f41ee812a62f926b4b",
+  "changed_artifact_count": 19,
+  "artifacts": [
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/AUDIT_LINEAGE_AND_INVALIDATION_MATRIX.csv",
+      "sha256": "05375407bec069746741d2d263e4c29f9ba7402d1bd9f96923ade9630258d504",
+      "bytes": 6809,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 14,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/DEFECT_ROOT_CAUSE_AND_BLAST_RADIUS.csv",
+      "sha256": "742a3129caa19af16434fc17cf58d77b5da28199c3bc85ef5dd8a6ed83b4df6b",
+      "bytes": 6919,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 9,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FINAL_AG_EVIDENCE_HANDOFF_TO_CODEX.md",
+      "sha256": "10251398bbd468f81472dabb38eb42eeadecef62ad64eedd6131d728396cb90c",
+      "bytes": 15152,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_ANCHOR_VARIANCE_BRIDGES.csv",
+      "sha256": "7eac91feb212fdd16203dffba99f847e27224f1906e6781b08199a9711e81592",
+      "bytes": 12053,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 54,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_LINE_CLASSIFICATION.csv",
+      "sha256": "be88a61a765d7ca84501f2cdacdaeacc36d606849d0d0e8787a8d26d03bd87bc",
+      "bytes": 43533,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 158,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_OPTIMIZER_SELECTION_AUDIT.csv",
+      "sha256": "5266a30205e0b98bfa806bde87bcd4b14bd77361e0d3f9483782453b987a5de1",
+      "bytes": 14645,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 40,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_PATHWAY_COVERAGE.csv",
+      "sha256": "28b280a9ff346662c4378f9ceae9ad4bcd44338c0d28e76ad9a6b5d444d48691",
+      "bytes": 4259,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 12,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_PERSISTED_SCENARIO_AUDIT.csv",
+      "sha256": "42ad8f694a2ba09e1178800f8bb4dca0c399806608e976d67f14eb17aea514f5",
+      "bytes": 135589,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 400,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_PROGRAM_REACHABILITY.csv",
+      "sha256": "cdc14fa6ff7dcc8a98ce061071cf40fafb3fd384813dbe9394f2c806893e3e41",
+      "bytes": 85936,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 297,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_SOURCE_REGISTER.csv",
+      "sha256": "509938cb1970d09d33158e32fb0c024b761e220a12cd7745fa9df1c11d143006",
+      "bytes": 6574,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 10,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_STACKING_AND_OVERLAP_AUDIT.csv",
+      "sha256": "948ce1b5d02f121d67f50b0057365038954837e99c491f94400100a1869876e2",
+      "bytes": 118536,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 392,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/FOUR_PROJECT_TEMPORAL_RULE_MATRIX.csv",
+      "sha256": "8ce62fe3f3c49d971974979f950f814f122c3b9969ea7a3d73a57ec21e1bd66f",
+      "bytes": 6064,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 8,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/PERMANENT_CALCULATION_ACCEPTANCE_CONTROLS.md",
+      "sha256": "3e80ceff7a46afe5611569c56e685923de84cdc9c7afab4be62112fb9771602d",
+      "bytes": 14100,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/UNPROVEN_AND_DEFECT_REGISTER.csv",
+      "sha256": "897184f0ef45831106f395ef70f8106a3ece707cc16374401c3b81cd1c49a17b",
+      "bytes": 138926,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "csv_rows": 322,
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/build_four_project_audit_artifacts.py",
+      "sha256": "544812c83ad978746ec2c963ed682400be63c9aff69df7d847a21605b8070b5a",
+      "bytes": 1726,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/make_final_handoff_doc.py",
+      "sha256": "e9ecf18e5c8c6bfff49ec14ff0663f926136d3ee4dedb58352c39aabfaecd976",
+      "bytes": 15480,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/make_four_project_artifacts.py",
+      "sha256": "45872fb9d7160d6a9966a886351b1c4fe6c6d42f65648368da370e5f0e5a0fca",
+      "bytes": 137146,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/make_permanent_controls_doc.py",
+      "sha256": "e79b5de9b3cf2a42352581111602f453c3e01d82cc45451d98a85bbb273d1683",
+      "bytes": 14442,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    },
+    {
+      "path_at_ag_commit": "frametax2/docs/validation/exhaustive_optimizer_audit/validate_independent_optimizer_audit.py",
+      "sha256": "58b74c8ac8fe3b6a47fff2a4deccc042f2362f62729116ffc91ef87f3b320162",
+      "bytes": 64039,
+      "reviewed": true,
+      "disposition": "REJECT_AS_INDEPENDENT_ACCEPTANCE_RETAIN_NARROW_SOURCE_OR_CENSUS_EVIDENCE",
+      "material_claim_disposition_reference": "CODEX_FINAL_AG_ADJUDICATION_CLAIMS.csv; CODEX_FINAL_AG_ADJUDICATION_AG_ROWS.csv; CODEX_FINAL_AG_ADJUDICATION.md"
+    }
+  ]
+}
