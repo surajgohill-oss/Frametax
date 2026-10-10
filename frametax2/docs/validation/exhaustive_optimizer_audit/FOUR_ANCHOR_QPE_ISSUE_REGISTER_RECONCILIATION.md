@@ -51,8 +51,8 @@ The comparison between the canonical saved run, the producer topsheet, and statu
 
 | Metric | Amount (USD) | Effective Rate | Underlying Source / Origin | Evidentiary Classification |
 | :--- | :---: | :---: | :---: | :--- |
-| **Gross Production Budget** | **$4,517,687.00** | — | Movie Magic Budget Topsheet (34 leaf accounts, Accts 1100–7905) | `PRIMARY_DOCUMENT_VALUE` |
-| **Engine Served Generation** | **$1,445,659.84** | 40.0% | QPE clamped to 80.00% statutory ceiling: $3,614,149.60 ($4,517,687 × 80.00%) in Structure `86555121-5a0c-4b43-8b55-6569819109e9` (fingerprint `34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb`, economic identity `d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737`, engine `canonical-1.105.0`) | `PERSISTED_COMPARISON_ONLY` (Unproven open-default relocation) |
+| **Gross Production Budget** | **$4,517,687.00** | — | Movie Magic Budget Topsheet (34 leaf accounts, Accts 1100–7905; Header: "PRELIMINARY BUDGET - GREECE, Location: Greece, Total Shoot 18 Days, SAG (7 roles), Non Union Crew") | `PRIMARY_DOCUMENT_VALUE` |
+| **Engine Served Generation** | **$1,445,659.84** | 40.0% | QPE clamped to 80.00% statutory ceiling: $3,614,149.60 ($4,517,687 × 80.00%) in FVD baseline structure (evaluation fingerprint `3759a2edf4b42701abc80a495c492e6f9e191bdf9994836ff8c1ba41ddbac0fd`, engine `canonical-1.106.0`, live refresh 2026-10-10) | `PERSISTED_COMPARISON_ONLY` (Unproven open-default relocation) |
 | **Producer Budget Line 8004** | **$518,804.00** | 40.0% | Topsheet Line 8004: `Greek Estimate Cash Rebate (40%)` = -$518,804.00 | `ESTIMATE_IMPLIED_ONLY` (Implied QPE: $1,297,010.00) |
 | **Observed Control Difference** | **+$926,855.84** | — | Engine Incentive ($1,445,659.84) minus Producer Estimate ($518,804.00). Base variance: $3,614,149.60 − $1,297,010.00 = $2,317,139.60 ($2,317,139.60 × 40.0% = $926,855.84) | `UNRESOLVED_PLANNING_VARIANCE` |
 
@@ -60,13 +60,13 @@ The comparison between the canonical saved run, the producer topsheet, and statu
 
 ### B. Project-Level Contingency Election Ordering & Current Served Generation Nexus
 
-Tracing the current served evaluation for F#K Valentine's Day (Structure `86555121-5a0c-4b43-8b55-6569819109e9`, evaluation fingerprint `34a2d030f24dd1f55a999ab83cd763b30899bb5f0fd025e696402da68d7af9bb`, economic identity `d73dd2fc00240afd41ad2813aa9b557ccf2cc40e98920b1ec842ad96d0a0f737`, engine `canonical-1.105.0`, superseding historical August 2026 trace `CODEX_FVD_TOP6_SERVED_TRACE.md` on `canonical-1.2.1` / fingerprint `bb48c6e...`) establishes the exact mechanical derivation of the engine's candidate baseline and Greece-specific QPE:
+Tracing the current served evaluation for F#K Valentine's Day (evaluation fingerprint `3759a2edf4b42701abc80a495c492e6f9e191bdf9994836ff8c1ba41ddbac0fd`, engine `canonical-1.106.0`, refreshed 2026-10-10 on acceptance database `frametax2_claude_optimizer_acceptance_20260919` under Alembic migration 0081) establishes the exact mechanical derivation of the engine's candidate baseline and Greece-specific QPE:
 
 1. **Gross Budget Across 34 Leaf Accounts:**
-   The sum of all 34 leaf cost accounts (Accounts 1100 through 7905) is exactly **$4,517,687.00**.
-2. **Actual Project Contingency Election Facts (CBA-009 / Part 19-20):**
+   The sum of all 34 leaf cost accounts (Accounts 1100 through 7905) is exactly **$4,517,687.00**. The topsheet header explicitly reads: `"PRELIMINARY BUDGET - GREECE, Location: Greece, Total Shoot 18 Days, SAG (7 roles), Non Union Crew"`. It is NOT "zero shooting days"; however, the 1-page topsheet genuinely lacks itemized account/payee line schedules, vendor invoices, and tax residency proof.
+2. **Actual Project Contingency Election Facts (CBA-009 / Part 19-20 / R39):**
    - Account 7902 `CONTINGENCY : 10%` = **$362,866.00**.
-   - Inspection of `project_facts` in the acceptance database confirms that **only The Little Utopia** has an explicit producer contingency election (`contingency_expected_utilization_pct = 100.0%`).
+   - Inspection of `project_facts` in the acceptance database confirms that **only The Little Utopia** has an explicit contingency election (`contingency_expected_utilization_pct = 100.0%`), where the provenance is recorded as `source_type = 'recovered_demo_state'` and `source_location = 'Production election, no partial-utilization evidence on file (see little_utopia_real_budget.py LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT)'`.
    - For F#K Valentine's Day, Bad Hombres, and Lips Like Sugar, `contingency_expected_utilization_pct` is **genuinely unset (`None`)**.
    - Under CBA-009 and `qualification_derivation.py`, when a project's contingency utilization is unset, the engine treats the undeployed reserve as an unspent liability (`MISSING_PRODUCTION_FACT`), yielding $0 qualified QPE.
    - In CineGlobe's candidate generator, this unspent liability reserve is excluded at the project level *prior* to evaluating jurisdiction-specific eligibility rules:
@@ -86,7 +86,7 @@ Tracing the current served evaluation for F#K Valentine's Day (Structure `865551
      $$\text{Incentive} = 40.0\% \times \$3,614,149.60 = \mathbf{\$1,445,659.84}$$
    - And Net Production Cost (NPC):
      $$\text{NPC} = \text{Gross Budget} - \text{Incentive} = \$4,517,687.00 - \$1,445,659.84 = \mathbf{\$3,072,027.16}$$
-   - This matches the current served generation for Structure `86555121-5a0c-4b43-8b55-6569819109e9` byte-for-byte with zero unexplained residuals.
+   - This matches the current served generation under `canonical-1.106.0` (fingerprint `3759a2edf4b42701abc80a495c492e6f9e191bdf9994836ff8c1ba41ddbac0fd`) byte-for-byte with zero unexplained residuals.
 6. **Separation of Embedded Producer Rebate Line 8004:**
    - Account 8004 `Greek Estimate Cash Rebate (40%)` = **-$518,804.00** sits at the foot of the topsheet below gross costs.
    - Gross Production Costs = **$4,517,687.00** (sum of Accounts 1100–7905).
@@ -231,8 +231,8 @@ Every discrepancy in `FOUR_ANCHOR_QPE_ISSUE_REGISTER.md` and `AG_1EDB718_GREECE_
 3. **Contingency Election Ground Truth (CBA-009):** In `project_facts`, only Little Utopia has `contingency_expected_utilization_pct = 100.0%`; FVD, BH, and LLS are unset (`None`), correctly excluding Account 7902 ($362,866.00) from QPE as an unspent liability reserve.
 4. **Producer Rebate Line Separation (GR-A04):** Account 8004 `Greek Estimate Cash Rebate (40%)` -$518,804.00 separated from gross costs, preventing net distortion in gross spend and NPC formulas.
 5. **New York County Enumeration (§ 24(a)(5)):** Dutchess, Orange, and Putnam are explicitly enumerated and eligible under § 24(a)(5) for the additional 10% credit.
-6. **New York ATL Wage Exclusion (§ 24(a)(5)):** ATL wages are statutorily excluded from the § 24(a)(5) additional 10% credit, qualifying only for the 30% base credit under § 24(a)(2).
-7. **New York ATL Ceilings & Post Gateways:** Enforced $500k/person individual cap, max 2 producers, 40% BTL ceiling under § 24(b)(1), and disaggregated post gateways (75%/$1M post and 10%/$500k VFX).
+6. **New York ATL Treatment (§ 24(b)(1) & § 24(a)(5)):** Under Part D, Chapter 59 of Laws of 2023, eligible ATL (writers, directors, composers, performers) is admitted into qualified production costs subject to the $500,000/person cap, max 2 producers, and aggregate 40% BTL ceiling. The statutory wage exclusion previously quoted was drawn from post-production § 31*2(a)(6).
+7. **New York ATL Ceilings & Post Gateways:** Enforced $500k/person individual cap, max 2 producers, 40% BTL ceiling under § 24(b)(1), and disaggregated post gateways (75%/$1M post under § 31*2(a)(2)(i) and 10%/$500k VFX under § 31*2(a)(3)(ii) without geographic split).
 8. **Financing Fee Preservation (NY-A01):** LLS financing fees ($1,700,000 across Accts 6500, 6600, 6700) preserved in gross/NPC and excluded from QPE.
 9. **Production Sound Disaggregation (NY-A03):** On-set sound across all 4 budgets categorized as physical BTL spend, excluded from Section 31 post credit.
 
