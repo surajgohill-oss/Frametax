@@ -297,8 +297,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
   // and on a non-interactive overlay above the canvas, so the sphere sits in the rail instead of reading as a cut-out.
   const frame = {
     width: size, height: size, position: "relative", boxSizing: "border-box", borderRadius: "50%",
-    border: "1px solid rgba(255, 255, 255, 0.04)",
-    boxShadow: "0 0 24px rgba(30, 90, 160, 0.15), 0 4px 12px rgba(0, 0, 0, 0.4)",
+    border: "1px solid rgba(255, 255, 255, 0.03)",
+    boxShadow: "0 0 28px rgba(30, 90, 160, 0.18)",
   };
   const stage = {
     position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden",
@@ -308,7 +308,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
   };
   const edge = {
     position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none",
-    boxShadow: `inset 0 0 12px rgba(0, 0, 0, 0.6), inset 0 0 8px ${accentRim}`,
+    boxShadow: `inset 0 0 16px rgba(0, 0, 0, 0.7), inset 0 0 8px ${accentRim}`,
   };
 
   // Same static CSS fallback Globe3D.jsx uses when WebGL is unavailable.
