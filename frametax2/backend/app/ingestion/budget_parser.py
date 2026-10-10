@@ -53,14 +53,15 @@ def _classification_rules_digest() -> str:
     return digest.hexdigest()[:12]
 
 
-#: Bumped to 1.4.0: `_register()`'s rebate-exclusion guard now captures the
+#: 1.5.0 unifies spreadsheet netting separation and preserves signed amounts.
+#: 1.4.0: `_register()`'s rebate-exclusion guard captures the
 #: producer's own stated incentive/rebate estimate line (e.g. "EDB Rebate at
 #: 35%", "Greek Estimate Cash Rebate (40%)") onto BudgetParseResult.source_
 #: incentive_estimates instead of silently discarding it -- still never
 #: counted as spend/QPE, but no longer invisible to project-evidence
 #: reconciliation. Output-affecting (a new field is populated for real
 #: existing budgets), so already-routed BudgetDocuments must be re-parsed.
-BUDGET_PARSER_VERSION = f"budget-1.4.0+rules.{_classification_rules_digest()}"
+BUDGET_PARSER_VERSION = f"budget-1.5.0+rules.{_classification_rules_digest()}"
 
 
 @dataclass
@@ -75,6 +76,7 @@ class ParsedLineItem:
     is_llm_extracted: bool = False
     extraction_confidence: float | None = None
     llm_extracted_raw: dict | None = None
+    source_subaccounts: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -116,8 +118,8 @@ def _parse_amount(s: str) -> float | None:
     if not s:
         return None
     s = s.strip()
-    negative = s.startswith("(") and s.endswith(")")
-    if negative:
+    negative = (s.startswith("(") and s.endswith(")")) or bool(re.match(r"^[\$£€]?\s*-|^-\s*[\$£€]?", s))
+    if s.startswith("(") and s.endswith(")"):
         s = s[1:-1]
     s = s.replace(",", "")
     m = _AMOUNT_RE.search(s)
@@ -133,6 +135,24 @@ def _parse_amount(s: str) -> float | None:
         return -value if negative else value
     except (ValueError, AttributeError):
         return None
+
+
+def _separate_spreadsheet_evidence(result: BudgetParseResult) -> BudgetParseResult:
+    """Keep producer netting assumptions and totals outside cost lines."""
+    costs = []
+    for item in result.line_items:
+        if _is_budget_netting(item.description):
+            if not re.search(r"net\s+total", item.description, re.IGNORECASE):
+                result.source_incentive_estimates.append(SourceIncentiveEstimate(
+                    account_code=None, description=item.description,
+                    amount_usd=item.amount_usd or 0.0, page_ref=item.source_page,
+                ))
+            continue
+        costs.append(item)
+    result.line_items = costs
+    result.line_count = len(costs)
+    result.total_budget_raw = sum(item.amount_usd or 0.0 for item in costs) if costs else None
+    return result
 
 
 def parse_budget_csv(
@@ -201,7 +221,7 @@ def parse_budget_csv(
             source_page=None,
         ))
 
-    return BudgetParseResult(
+    return _separate_spreadsheet_evidence(BudgetParseResult(
         filename=filename,
         currency_code=currency_code,
         total_budget_raw=total if items else None,
@@ -209,7 +229,7 @@ def parse_budget_csv(
         line_items=items,
         parse_warnings=warnings,
         line_count=len(items),
-    )
+    ))
 
 
 def parse_budget_xlsx(
@@ -336,7 +356,7 @@ def parse_budget_xlsx(
     if not items:
         warnings.append("No line items could be parsed from the XLSX worksheet")
 
-    return BudgetParseResult(
+    return _separate_spreadsheet_evidence(BudgetParseResult(
         filename=filename,
         currency_code=currency_code,
         total_budget_raw=total if items else None,
@@ -344,7 +364,7 @@ def parse_budget_xlsx(
         line_items=items,
         parse_warnings=warnings,
         line_count=len(items),
-    )
+    ))
 
 
 # ─── Film budget account-number format ────────────────────────────────────────
@@ -398,6 +418,13 @@ _REBATE_EXCLUSION_RE = re.compile(
     re.IGNORECASE,
 )
 
+def _is_budget_netting(description: str) -> bool:
+    # A credit financing fee is an expense, not the credit receipt itself.
+    if re.search(r"\b(financ(?:e|ing)|bridge|interest|application|audit)\b.*\b(fee|cost|expense)s?\b", description, re.IGNORECASE):
+        return False
+    return bool(_REBATE_EXCLUSION_RE.search(description))
+
+
 # Pure group-subtotal / grand-summary sentinel lines on the top sheet — these
 # aggregate other accounts already being summed individually and must never
 # be registered as their own leaf account (would double-count spend).
@@ -431,6 +458,35 @@ def _acct_code_match(line: str) -> re.Match | None:
 def _acct_code_inline_match(line: str) -> re.Match | None:
     """Match 'CODE  DESCRIPTION' on one line, either convention."""
     return _ACCT_CODE_INLINE_RE.match(line)
+
+
+def _movie_magic_subaccounts(pages: list[str]) -> dict[str, list[dict]]:
+    """Preserve authored detail totals, never sum detail and topsheet together."""
+    parents = {}
+    parent = child = None
+    description = ""
+    for page_ref, page in enumerate(pages, 1):
+        rows = [row.strip() for row in page.splitlines() if row.strip()]
+        for idx, row in enumerate(rows):
+            heading = re.match(r"^(\d{4}|\d{2}-\d{2})\s+-\s+(.+)$", row)
+            if heading:
+                parent = heading.group(1)
+                parents.setdefault(parent, [])
+                child = None
+                continue
+            if parent and _ACCT_CODE_ANY_RE.fullmatch(row) and row != parent and idx + 1 < len(rows):
+                child = row
+                description = rows[idx + 1]
+                continue
+            if child and row.lower() == "total" and idx + 1 < len(rows):
+                raw = rows[idx + 1]
+                if re.match(r"^[($£€]", raw):
+                    amount = _parse_amount(raw)
+                    if amount is not None:
+                        parents[parent].append({"account_code": child, "description": description,
+                            "amount_usd": amount, "page_ref": page_ref})
+                        child = None
+    return parents
 
 
 def _parse_film_budget(
@@ -481,7 +537,7 @@ def _parse_film_budget(
         i = start
 
         def _register(acct: str, desc: str, amt: float, page_ref: int | None) -> None:
-            if _REBATE_EXCLUSION_RE.search(desc):
+            if _is_budget_netting(desc):
                 # Never counted as spend (see _REBATE_EXCLUSION_RE's own
                 # doctrine comment) -- but the producer's own stated
                 # incentive/rebate estimate is real project evidence, not
@@ -501,7 +557,7 @@ def _parse_film_budget(
         while i < len(lines):
             line = lines[i]
             # Rebate/credit/net-total lines are budget assumptions — skip entirely
-            if _REBATE_EXCLUSION_RE.search(line):
+            if _is_budget_netting(line):
                 i += 1
                 continue
             m_inline = _acct_code_inline_match(line)
@@ -635,6 +691,7 @@ def _parse_film_budget(
         m = re.match(rf"({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", key)
         return m.group(1) if m else None
 
+    source_subaccounts = _movie_magic_subaccounts(pages)
     items: list[ParsedLineItem] = []
     for row_num, (key, (desc, amt, page_ref)) in enumerate(sorted(acct_totals.items())):
         base_acct = _base_acct(key)
@@ -646,6 +703,7 @@ def _parse_film_budget(
             currency_code=currency_code,
             source_row=row_num,
             source_page=page_ref,
+            source_subaccounts=source_subaccounts.get(base_acct, []),
         ))
 
     computed_total = sum(i.amount_usd for i in items if i.amount_usd)
@@ -717,6 +775,7 @@ def parse_budget_from_text(
 
     items: list[ParsedLineItem] = []
     warnings: list[str] = []
+    incentive_estimates: list[SourceIncentiveEstimate] = []
     current_dept: str | None = None
     total_budget: float | None = None
     row_num = 0
@@ -728,7 +787,16 @@ def parse_budget_from_text(
                 continue
 
             # Skip rebate/credit/net-total lines — budget assumptions, not gross spend
-            if _REBATE_EXCLUSION_RE.search(line):
+            if _is_budget_netting(line):
+                if not re.search(r"net\s+total", line, re.IGNORECASE):
+                    # Prefer a currency-marked figure; a percentage in the
+                    # description is not the monetary amount.
+                    amounts = list(re.finditer(r"(?:\(\s*[$£€]?\s*|-?[$£€]\s*-?)\s*[\d,]+(?:\.\d{1,2})?\)?", line))
+                    if amounts:
+                        raw = amounts[-1].group(0)
+                        amount = _parse_amount(raw)
+                        if amount is not None:
+                            incentive_estimates.append(SourceIncentiveEstimate(None, line, amount, page_num))
                 continue
 
             # Detect total-budget sentinel lines (skip, capture value if present)
@@ -764,6 +832,7 @@ def parse_budget_from_text(
         line_items=items,
         parse_warnings=warnings,
         line_count=len(items),
+        source_incentive_estimates=incentive_estimates,
     )
 
 

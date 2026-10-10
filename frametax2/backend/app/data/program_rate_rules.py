@@ -71,7 +71,7 @@ from app.data.program_slug_aliases import canonical_slug as _canonical_program_s
 #: nl_film_production_incentive, th_film_incentive, us_or_opif,
 #: us_tx_miip, za_nfvf_rebate) and the new RateCondition amount_fact_*/
 #: required_boolean_fact_key executable-gate mechanism.
-PROGRAM_RATE_RULES_VERSION = "1.4.0"
+PROGRAM_RATE_RULES_VERSION = "1.5.0"
 
 
 @dataclass(frozen=True)
@@ -1800,8 +1800,20 @@ class IncentiveValueCapRule:
     # the cap always applies unconditionally, unchanged.
     cap_requires_evidence_fact_key: str | None = None
 
+    # A higher statutory ceiling requires an evidenced approval, not an application.
+    exception_approval_fact_key: str | None = None
+    exception_cap_native_amount: float | None = None
+
 
 INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
+    "gr_cash_rebate": IncentiveValueCapRule(
+        program_slug="gr_cash_rebate", cap_currency="EUR", cap_native_amount=8_000_000.0,
+        description="Ordinary per-work grant cap EUR 8m; EUR 10m only on evidenced strategic-project ministerial approval.",
+        quote="Article 4(2): grant shall not exceed EUR 8,000,000 per audiovisual work. Article 23(1): excess up to EUR 10,000,000 may be approved for strategic investment plans by joint ministerial decision.",
+        source_ref="EKKOMED-KYA-607434-2026-Articles4-23",
+        exception_approval_fact_key="gr_strategic_project_joint_ministerial_approval",
+        exception_cap_native_amount=10_000_000.0,
+    ),
     "cz_film_incentive": IncentiveValueCapRule(
         program_slug="cz_film_incentive", cap_currency="CZK", cap_native_amount=450_000_000.0,
         description="Maximum incentive per project: CZK 450,000,000, applied to the "
@@ -2790,3 +2802,35 @@ def resolve_program_rate(
         qpe_basis_line_components=qpe_basis_line_components,
         incentive_uplift_multiplier=incentive_uplift_multiplier,
     )
+
+
+@dataclass(frozen=True)
+class EligibleSubsetUpliftRule:
+    uplift_id: str
+    rate: float
+    eligible_categories: frozenset[str] | None = None
+    excluded_categories: frozenset[str] = frozenset()
+    exclusive_group: str | None = None
+    eligible_production_types: frozenset[str] | None = None
+    excluded_fact: str | None = None
+    source_ref: str = ""
+
+
+# Bases require line-specific evidenced USD portions. A whole-program rate
+# confirmation cannot stand in for the qualified subset or its predicates.
+SUBSET_UPLIFT_RULES = {
+    "ca_film_30": (
+        EligibleSubsetUpliftRule("outside_la_zone", .05, source_ref="CFC Program 4.0 Guidelines Jan 2026 III.2: applicable-period qualified out-of-zone expenses; prorate mixed-use goods"),
+        EligibleSubsetUpliftRule("local_hire_outside_la", .10, eligible_categories=frozenset({"btl_crew_labor", "btl_resident_labor", "payroll_fringes"}), source_ref="CFC Program 4.0 Guidelines Jan 2026 III.3: qualified resident wages, residence AND work outside LA zone; proof required"),
+        EligibleSubsetUpliftRule("qualified_vfx", .05, eligible_categories=frozenset({"vfx"}), excluded_fact="ca_film_independent_category", source_ref="CFC Program 4.0 Guidelines Jan 2026 III.1: eligible non-independent/TV category; $10m CA VFX OR 75% worldwide VFX; eligible vendor categories"),
+    ),
+    "us_nm_film_credit": (
+        EligibleSubsetUpliftRule("rural_location", .10, excluded_categories=frozenset({"btl_nonresident_labor"}), source_ref="TRD FYI-370 July 2025 p4: qualifying rural-location goods/services; rental prorating; excludes nonresident BTL"),
+        EligibleSubsetUpliftRule("qualified_facility", .05, exclusive_group="tv_or_facility", source_ref="TRD FYI-370 July 2025 p4: expenses incurred IN qualified facility, not purchases merely brought there"),
+        EligibleSubsetUpliftRule("qualified_tv", .05, exclusive_group="tv_or_facility", eligible_production_types=frozenset({"tv_series", "television_series", "tv_pilot", "television_pilot"}), source_ref="TRD FYI-370 July 2025 p4: qualifying pilot or ordered six-episode series; $50k NM per episode; cannot stack facility 5%"),
+    ),
+}
+
+
+def get_subset_uplift_rules(program_slug: str) -> tuple[EligibleSubsetUpliftRule, ...]:
+    return SUBSET_UPLIFT_RULES.get(_canonical_program_slug(program_slug), ())

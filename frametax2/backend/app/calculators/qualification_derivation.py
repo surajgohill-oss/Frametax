@@ -124,6 +124,8 @@ class BudgetLine:
     spend_category: str | None = None
     is_memo: bool = False
     line_id: str = field(default_factory=lambda: uuid.uuid4().hex)
+    source_subaccounts: tuple[dict, ...] = ()
+    source_atl_btl: str | None = None
 
 
 @dataclass(frozen=True)
@@ -274,6 +276,50 @@ def derive_qualification_register(
                   f"{label} work/spend is incurred outside {jur} — territorial "
                   f"nexus fails.{suffix}")
             continue
+
+        # Source detail refines a mixed topsheet only when every authored
+        # subaccount total conserves the parent exactly. No balancing line.
+        from app.data.program_slug_aliases import canonical_slug
+        if canonical_slug(program_slug) == "ca_film_30" and category == "payroll_fringes" and line.source_atl_btl == "atl":
+            _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                  QualificationConfidence.LOW, AuthorityBasis.FACT_DEPENDENT,
+                  "CFC Program 4.0 QEC Jan 2026: fringes follow the qualified underlying compensation; this ATL total mixes excluded and eligible roles.",
+                  evidence="Fringe allocation linked to eligible underlying payees/compensation.",
+                  upside=round(amt * rate, 2), grey_reason=GreyReason.MISSING_PRODUCTION_FACT)
+            continue
+        if canonical_slug(program_slug) == "ca_film_30" and category in FACT_SPLIT_CATEGORIES and line.source_subaccounts:
+            import math
+            from app.data.program_spend_rules import california_source_subaccount_treatment
+            children = line.source_subaccounts
+            valid = all(isinstance(x.get("amount_usd"), (int, float)) and math.isfinite(x["amount_usd"]) and x["amount_usd"] >= 0 for x in children)
+            valid = valid and len({x.get("account_code") for x in children}) == len(children)
+            valid = valid and abs(sum(x["amount_usd"] for x in children) - amt) <= .005
+            if valid and amt > 0:
+                groups = {True: 0.0, False: 0.0, None: 0.0}
+                explanations = []
+                for child in children:
+                    state, conditional_cap = california_source_subaccount_treatment(category, child["description"])
+                    value = child["amount_usd"]
+                    if state is None and conditional_cap is not None:
+                        groups[None] += min(value, conditional_cap)
+                        groups[False] += max(0.0, value - conditional_cap)
+                    else:
+                        groups[state] += value
+                    explanations.append(f"{child['account_code']} {child['description']}: ${value:,.2f}")
+                original_amount = amt
+                for state, value in groups.items():
+                    if value <= 0:
+                        continue
+                    amt = value
+                    _acct(QualificationState.QUALIFIES if state is True else QualificationState.EXCLUDED if state is False else QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                        QualificationConfidence.HIGH if state is not None else QualificationConfidence.LOW,
+                        AuthorityBasis.EXPLICIT_STATUTE if state is not None else AuthorityBasis.FACT_DEPENDENT,
+                        "CFC Program 4.0 QEC Jan 2026, Writing/Producer/Director/Cast charts; conserving source detail: " + "; ".join(explanations),
+                        evidence="Role/service, vendor/payment or underlying compensation evidence for remaining mixed portions." if state is None else None,
+                        upside=round(value * rate, 2) if state is None else None,
+                        grey_reason=GreyReason.MIXED_ACCOUNT if state is None else None)
+                amt = original_amount
+                continue
 
         # 4. Statutory rule.
         qualifies = rule.qualifies if rule is not None else None

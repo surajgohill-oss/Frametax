@@ -68,6 +68,9 @@ class BudgetLineItem(Base):
     budget_document_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("budget_documents.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    # Original detail totals; separate from topsheet costs to avoid duplication.
+    source_subaccounts: Mapped[list | None] = mapped_column(JSONB)
+
     # Classification
     department: Mapped[str | None] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text, nullable=False)

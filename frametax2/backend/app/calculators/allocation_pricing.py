@@ -286,6 +286,8 @@ def _segment_lines(
             spend_category=a.spend_category or spend_category_by_code.get(a.account_code),
             is_memo=False,
             line_id=a.line_id or f"{a.account_code}:{a.jurisdiction_code}",
+            source_subaccounts=a.source_subaccounts,
+            source_atl_btl=a.source_atl_btl,
         )
         for a in sorted(allocations, key=lambda a: a.account_code)
     ]
@@ -415,6 +417,13 @@ def _resolve_incentive_dollar_cap(
                 )
         effective_cap = native_cap
         cap_basis_suffix = ""
+        if (
+            native_cap.exception_approval_fact_key is not None
+            and native_cap.exception_approval_fact_key in (evidenced_requirement_facts or frozenset())
+            and native_cap.exception_cap_native_amount is not None
+        ):
+            effective_cap = _dataclasses_replace(native_cap, cap_native_amount=native_cap.exception_cap_native_amount)
+            cap_basis_suffix = ", statutory exception approval evidenced"
         # Codex final wiring remediation (P0-NL-001, third pass): a
         # PER-COMPANY PER-PERIOD cap must consume prior awards already
         # granted this SAME period to this SAME canonical company's
@@ -511,7 +520,7 @@ def _resolve_incentive_dollar_cap(
         candidates.append((
             round(conversion.target_amount, 2), "per_project_native",
             f"IncentiveValueCapRule ({native_cap.cap_currency} "
-            f"{native_cap.cap_native_amount:,.0f} @ {conversion.rate_used} "
+            f"{effective_cap.cap_native_amount:,.0f} @ {conversion.rate_used} "
             f"{native_cap.cap_currency}/USD, {conversion.rate_date}){cap_basis_suffix}",
         ))
 
@@ -519,6 +528,71 @@ def _resolve_incentive_dollar_cap(
         return None, None, None, None, None
     cap_usd, cap_type, basis = min(candidates, key=lambda c: c[0])
     return cap_usd, cap_type, basis, None, None
+
+
+def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts):
+    """Price only evidenced portions; missing portions remain disclosed bounds.
+
+    Each amount key is uplift_basis:<program>:<uplift>:<source line id>, and
+    the SAME key must be in evidenced_facts to attest its rule predicates.
+    Never infer a subset from a program-wide approval or a gross subtotal.
+    """
+    import math
+    from app.data.program_rate_rules import get_subset_uplift_rules
+    rules = get_subset_uplift_rules(slug)
+    if not rules or (slug == "ca_film_30" and production_type != "feature_film"):
+        return None
+    facts = evidenced_facts or frozenset()
+    amounts = amount_facts or {}
+    qualifying = {}
+    for item in register:
+        if item.state == QualificationState.QUALIFIES:
+            qualifying[item.line_id] = qualifying.get(item.line_id, 0.0) + item.amount_usd
+    if len({line.line_id for line in lines}) != len(lines):
+        raise ValueError("Subset uplift requires unique source line identities within a segment")
+    floor_parts = {}
+    potential_parts = {}
+    conditions = []
+    for rule in rules:
+        if rule.eligible_production_types and production_type not in rule.eligible_production_types:
+            continue
+        if rule.excluded_fact and rule.excluded_fact in facts:
+            continue
+        confirmed = potential = 0.0
+        missing = []
+        for line in lines:
+            category = line.spend_category or "miscellaneous"
+            qualified = qualifying.get(line.line_id, 0.0)
+            if not qualified or category in rule.excluded_categories:
+                continue
+            if rule.eligible_categories is not None and category not in rule.eligible_categories:
+                continue
+            key = f"uplift_basis:{slug}:{rule.uplift_id}:{line.line_id}"
+            amount = amounts.get(key)
+            if key in facts and amount is not None:
+                if not math.isfinite(amount) or amount < 0 or amount > qualified + .005:
+                    raise ValueError(f"{key}: evidenced subset must be finite and within its qualified line amount")
+                confirmed += amount
+                potential += amount
+            else:
+                potential += qualified
+                missing.append(line.line_id)
+        group = rule.exclusive_group or rule.uplift_id
+        floor_parts[group] = max(floor_parts.get(group, 0.0), confirmed * rule.rate)
+        potential_parts[group] = max(potential_parts.get(group, 0.0), min(qpe, potential) * rule.rate)
+        if missing:
+            conditions.append({"condition_id": f"{slug}:{rule.uplift_id}:qualified_subset",
+                "description": rule.source_ref,
+                "kind": "qualified_subset_uplift", "condition_state": "UNRESOLVED",
+                "satisfied": None, "note": "Requires evidenced rule-compliant portions for source lines: " + ", ".join(missing)})
+    # A QE cap can constrain which lines enter the claim. Without a claim
+    # selection, attested raw subsets cannot create an over-cap uplift.
+    raw_qpe = sum(qualifying.values())
+    if raw_qpe > qpe + .005 and any(floor_parts.values()):
+        raise ValueError("Subset uplift with a capped QPE base requires an explicit qualified claim-line selection")
+    floor = round(qpe * base_rate + sum(floor_parts.values()), 2)
+    potential = round(qpe * base_rate + sum(potential_parts.values()), 2)
+    return floor, potential, tuple(conditions)
 
 
 def price_segment(
@@ -1408,6 +1482,19 @@ def price_segment(
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
     )
 
+    subset_conditions = ()
+    try:
+        subset_pricing = _price_subset_uplifts(slug, lines, register, qpe, rr.floor_rate,
+            production_type, amount_facts, evidenced_requirement_facts)
+    except ValueError as exc:
+        return SegmentEconomics(jurisdiction_code=jurisdiction_code, program_slug=slug,
+            claims_incentive=True, allocated_usd=allocated, account_codes=codes,
+            executable=False, qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+            doctrine=doctrine.value, blockers=(str(exc),))
+    if subset_pricing is not None:
+        floor_incentive_usd, ceiling_incentive_usd, subset_conditions = subset_pricing
+        ceiling_requires_confirmation = bool(subset_conditions)
+
     # ── Cluster 7: dollar caps constrain the INCENTIVE ───────────────────
     # Canonical sequence: qualifying base x rate (+ uplift) = gross
     # incentive, THEN the applicable dollar cap clips it. Applied after the
@@ -1481,7 +1568,7 @@ def price_segment(
         claims_incentive=True, allocated_usd=allocated,
         account_codes=codes, executable=True,
         qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
-        rate_floor=rr.floor_rate, rate_ceiling=rr.modeled_rate,
+        rate_floor=rr.floor_rate, rate_ceiling=(ceiling_incentive_usd / qpe if subset_pricing is not None and qpe else rr.modeled_rate),
         is_band_ceiling=rr.is_band_ceiling, statutory_basis=rr.basis,
         incentive_floor_usd=floor_incentive_usd,
         incentive_ceiling_usd=ceiling_incentive_usd,
@@ -1490,7 +1577,7 @@ def price_segment(
         notes=cap_notes,
         ceiling_requires_confirmation=ceiling_requires_confirmation,
         ceiling_conditions=(
-            tuple(
+            subset_conditions if subset_pricing is not None else tuple(
                 {
                     "condition_id": e.condition_id,
                     "description": e.description,

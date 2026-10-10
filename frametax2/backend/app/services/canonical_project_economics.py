@@ -660,6 +660,8 @@ async def build_project_economic_inputs(
         lines.append(BudgetLine(
             account_code=code, description=label, amount_usd=amount,
             spend_category=category, is_memo=False, line_id=str(item.id),
+            source_subaccounts=tuple(item.source_subaccounts or ()),
+            source_atl_btl=getattr(item.atl_btl, "value", item.atl_btl),
         ))
 
     if not lines:

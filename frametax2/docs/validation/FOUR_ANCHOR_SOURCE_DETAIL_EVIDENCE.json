@@ -1,0 +1,3392 @@
+[
+  {
+    "project": "LU",
+    "source_path": "/Users/Suraj/.cineglobe/storage/little-utopia/The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf",
+    "sha256": "4b98f8236a4a6029a2da8fb6495c71c83586141ebe8ece8d0ec6dc99b1ac698c",
+    "parser_version": "budget-1.5.0+rules.eaef9e583fc5",
+    "gross": 4364393,
+    "leaf_sum": 4364395.0,
+    "source_estimates": [
+      {
+        "account_code": "9001",
+        "description": "EDB Rebate at 35%",
+        "amount_usd": 1275411.0,
+        "page_ref": null
+      }
+    ],
+    "lines": [
+      {
+        "account_code": "1000",
+        "description": "1000 DEVELOPMENT",
+        "amount_usd": 0.0,
+        "category": "miscellaneous",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1100",
+        "description": "1100 SCRIPT",
+        "amount_usd": 5050.0,
+        "category": "atl_writer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1200",
+        "description": "1200 PRODUCERS UNIT",
+        "amount_usd": 0.0,
+        "category": "atl_producer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1300",
+        "description": "1300 DIRECTION",
+        "amount_usd": 0.0,
+        "category": "atl_director",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1400",
+        "description": "1400 CAST",
+        "amount_usd": 136115.0,
+        "category": "atl_cast",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1600",
+        "description": "1600 ATL TRAVEL & LIVING",
+        "amount_usd": 397279.0,
+        "category": "travel",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2000",
+        "description": "2000 PRODUCTION STAFF",
+        "amount_usd": 321594.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2100",
+        "description": "2100 EXTRA TALENT",
+        "amount_usd": 21981.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2200",
+        "description": "2200 SET DESIGN",
+        "amount_usd": 65873.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2300",
+        "description": "2300 SET CONSTRUCTION",
+        "amount_usd": 107628.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2400",
+        "description": "2400 SET DRESSING",
+        "amount_usd": 154826.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2500",
+        "description": "2500 PROPERTIES",
+        "amount_usd": 68854.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2600",
+        "description": "2600 PICTURE VEHICLES AND ANIMALS",
+        "amount_usd": 215218.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2700",
+        "description": "2700 WARDROBE",
+        "amount_usd": 58815.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2800",
+        "description": "2800 MAKE-UP & HAIR",
+        "amount_usd": 51809.0,
+        "category": "btl_crew_labor",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2900",
+        "description": "2900 SET OPERATIONS",
+        "amount_usd": 90679.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3000",
+        "description": "3000 ELECTRICAL",
+        "amount_usd": 155375.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3100",
+        "description": "3100 CAMERA",
+        "amount_usd": 288729.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3200",
+        "description": "3200 PRODUCTION SOUND",
+        "amount_usd": 69532.0,
+        "category": "production_sound",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3300",
+        "description": "3300 SPECIAL EFFECTS & MARINE",
+        "amount_usd": 99837.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3400",
+        "description": "3400 LOCATION EXPENSE",
+        "amount_usd": 496232.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3500",
+        "description": "3500 AERIAL/DRONE UNIT",
+        "amount_usd": 16215.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3600",
+        "description": "3600 TRANSPORTATION",
+        "amount_usd": 321899.0,
+        "category": "btl_transportation",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3700",
+        "description": "3700 STAGE & OFFICE RENTALS",
+        "amount_usd": 27732.0,
+        "category": "btl_stage_facility",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3800",
+        "description": "3800 PRODUCTION LAB & MEDIA MANAGEMENT",
+        "amount_usd": 9674.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3900",
+        "description": "3900 BTL TRAVEL & LIVING",
+        "amount_usd": 438254.0,
+        "category": "travel",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4000",
+        "description": "4000 SPECIAL SHOOT UNITS",
+        "amount_usd": 0.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5000",
+        "description": "5000 EDITORIAL",
+        "amount_usd": 9068.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5100",
+        "description": "5100 EDITORIAL - USA",
+        "amount_usd": 0.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5200",
+        "description": "5200 SOUND POST PRODUCTION",
+        "amount_usd": 0.0,
+        "category": "sound",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5300",
+        "description": "5300 PICTURE POST PRODUCTION",
+        "amount_usd": 0.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5400",
+        "description": "5400 GRAPHICS / TITLES / STOCK FOOTAGE",
+        "amount_usd": 0.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5500",
+        "description": "5500 DELIVERABLES",
+        "amount_usd": 0.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "6000",
+        "description": "6000 MUSIC",
+        "amount_usd": 0.0,
+        "category": "music",
+        "atl_btl": "post",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "6100",
+        "description": "6100 VFX DEPARTMENT",
+        "amount_usd": 52500.0,
+        "category": "vfx",
+        "atl_btl": "post",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "6500",
+        "description": "6500 USA ADMIN COSTS",
+        "amount_usd": 0.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7000",
+        "description": "7000 ADMINISTRATIVE EXPENSES",
+        "amount_usd": 297593.0,
+        "category": "general_administration",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7100",
+        "description": "7100 PUBLICITY",
+        "amount_usd": 24348.0,
+        "category": "general_administration",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7200",
+        "description": "7200 INSURANCE",
+        "amount_usd": 12374.0,
+        "category": "insurance",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7300",
+        "description": "7300 MARKETING",
+        "amount_usd": 0.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7800",
+        "description": "7800 FINANCE & LEGAL",
+        "amount_usd": 0.0,
+        "category": "finance_costs",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "8100",
+        "description": "8100 Insurance : 1.2%",
+        "amount_usd": 48181.0,
+        "category": "insurance",
+        "atl_btl": "other",
+        "department": "Below The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "8200",
+        "description": "8200 Bond : 0.0%",
+        "amount_usd": 0.0,
+        "category": "completion_bond",
+        "atl_btl": "other",
+        "department": "Below The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "8300",
+        "description": "8300 Contigency : 7.5%",
+        "amount_usd": 301131.0,
+        "category": "contingency",
+        "atl_btl": "other",
+        "department": "Below The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      }
+    ]
+  },
+  {
+    "project": "FVD",
+    "source_path": "/Users/Suraj/.cineglobe/storage/f-k-valentine-s-day/V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+    "sha256": "253e80e987a0aa3c06110dcbc5f6c99fd20042579603a94e29039c1e0a72eaa1",
+    "parser_version": "budget-1.5.0+rules.eaef9e583fc5",
+    "gross": 4517687,
+    "leaf_sum": 4517687.0,
+    "source_estimates": [
+      {
+        "account_code": "8004",
+        "description": "Greek Estimate Cash Rebate (40%)",
+        "amount_usd": -518804.0,
+        "page_ref": null
+      }
+    ],
+    "lines": [
+      {
+        "account_code": "1100",
+        "description": "1100 STORY / RIGHTS / CONTINUITY",
+        "amount_usd": 252650.0,
+        "category": "atl_writer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1200",
+        "description": "1200 PRODUCERS",
+        "amount_usd": 401831.0,
+        "category": "atl_producer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1300",
+        "description": "1300 DIRECTOR",
+        "amount_usd": 75710.0,
+        "category": "atl_director",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1400",
+        "description": "1400 CAST",
+        "amount_usd": 1246288.0,
+        "category": "atl_cast",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1600",
+        "description": "1600 ATL TRAVEL / LIVING",
+        "amount_usd": 174546.0,
+        "category": "travel",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2000",
+        "description": "2000 PRODUCTION STAFF",
+        "amount_usd": 168353.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2100",
+        "description": "2100 EXTRA TALENT",
+        "amount_usd": 31595.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2200",
+        "description": "2200 SET DESIGN",
+        "amount_usd": 32773.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2400",
+        "description": "2400 SET DRESSING",
+        "amount_usd": 46418.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2500",
+        "description": "2500 PROPERTY",
+        "amount_usd": 41199.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2600",
+        "description": "2600 PICTURE VEHICLES / ANIMALS",
+        "amount_usd": 5709.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2700",
+        "description": "2700 WARDROBE",
+        "amount_usd": 67504.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2800",
+        "description": "2800 MAKEUP & HAIR",
+        "amount_usd": 32830.0,
+        "category": "btl_crew_labor",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2900",
+        "description": "2900 SET OPERATIONS",
+        "amount_usd": 54691.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3000",
+        "description": "3000 ELECTRIC",
+        "amount_usd": 62009.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3100",
+        "description": "3100 CAMERA",
+        "amount_usd": 144422.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3200",
+        "description": "3200 PRODUCTION SOUND",
+        "amount_usd": 26458.0,
+        "category": "production_sound",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3400",
+        "description": "3400 LOCATIONS",
+        "amount_usd": 178356.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3600",
+        "description": "3600 TRANSPORTATION",
+        "amount_usd": 81123.0,
+        "category": "btl_transportation",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3700",
+        "description": "3700 OFFICE STUDIO RENTALS",
+        "amount_usd": 17042.0,
+        "category": "btl_stage_facility",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3800",
+        "description": "3800 PRODUCTION FILM & LAB",
+        "amount_usd": 3114.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3900",
+        "description": "3900 BTL TRAVEL & LIVING",
+        "amount_usd": 96534.0,
+        "category": "travel",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4600",
+        "description": "4600 VISUAL EFFECTS",
+        "amount_usd": 10000.0,
+        "category": "vfx",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5000",
+        "description": "5000 EDITORIAL",
+        "amount_usd": 78475.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5100",
+        "description": "5100 MUSIC",
+        "amount_usd": 10200.0,
+        "category": "music",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5200",
+        "description": "5200 POST PRODUCTION SOUND",
+        "amount_usd": 46471.0,
+        "category": "sound",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5400",
+        "description": "5400 MAIN & END TITLES",
+        "amount_usd": 1500.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5600",
+        "description": "5600 DIGITAL INTERMEDIATE",
+        "amount_usd": 15000.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "5700",
+        "description": "5700 DELIVERABLES",
+        "amount_usd": 5000.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7000",
+        "description": "7000 ADMINISTRATIVE EXPENSES",
+        "amount_usd": 170535.0,
+        "category": "general_administration",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7200",
+        "description": "7200 INSURANCE",
+        "amount_usd": 50329.0,
+        "category": "insurance",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7901",
+        "description": "7901 FINANCE FEE  : 12.5%",
+        "amount_usd": 453583.0,
+        "category": "finance_costs",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7902",
+        "description": "7902 CONTINGENCY : 10%",
+        "amount_usd": 362866.0,
+        "category": "contingency",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7905",
+        "description": "7905 BOND : 2%",
+        "amount_usd": 72573.0,
+        "category": "completion_bond",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      }
+    ]
+  },
+  {
+    "project": "BH",
+    "source_path": "/Users/Suraj/.cineglobe/storage/bad-hombres/BadHombresBudget.v2.pdf",
+    "sha256": "ed82085623884192e03e11f45087e4b899721e3e104bb91cdd86ca953cf323c7",
+    "parser_version": "budget-1.5.0+rules.eaef9e583fc5",
+    "gross": 2482023,
+    "leaf_sum": 2482023.0,
+    "source_estimates": [],
+    "lines": [
+      {
+        "account_code": "1100",
+        "description": "1100 STORY, RIGHTS & CONTINUITY",
+        "amount_usd": 74531.0,
+        "category": "atl_writer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1200",
+        "description": "1200 PRODUCERS UNIT",
+        "amount_usd": 267169.0,
+        "category": "atl_producer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1300",
+        "description": "1300 DIRECTOR",
+        "amount_usd": 75000.0,
+        "category": "atl_director",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1400",
+        "description": "1400 CAST",
+        "amount_usd": 1032202.0,
+        "category": "atl_cast",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1500",
+        "description": "1500 TRAVEL & LIVING COSTS",
+        "amount_usd": 80850.0,
+        "category": "travel",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "1600",
+        "description": "1600 SAG DEPOSIT / RESIDUAL RESERVE",
+        "amount_usd": 60000.0,
+        "category": "residuals_reserve",
+        "atl_btl": "other",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2000",
+        "description": "2000 PRODUCTION",
+        "amount_usd": 114906.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2100",
+        "description": "2100 EXTRAS & CROWDS",
+        "amount_usd": 6235.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2200",
+        "description": "2200 ART DIRECTION",
+        "amount_usd": 26252.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2300",
+        "description": "2300 SET CONSTRUCTION",
+        "amount_usd": 4282.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2400",
+        "description": "2400 SET OPERATIONS",
+        "amount_usd": 35171.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2500",
+        "description": "2500 SPECIAL EFFECTS",
+        "amount_usd": 22009.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2600",
+        "description": "2600 SET DRESSING",
+        "amount_usd": 16037.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2700",
+        "description": "2700 PROPERTY",
+        "amount_usd": 25334.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2800",
+        "description": "2800 PICTURE VEHICLES & ANIMALS",
+        "amount_usd": 22000.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2900",
+        "description": "2900 WARDROBE",
+        "amount_usd": 28651.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3000",
+        "description": "3000 MAKEUP & HAIR",
+        "amount_usd": 29204.0,
+        "category": "btl_crew_labor",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3200",
+        "description": "3200 LIGHTING",
+        "amount_usd": 35025.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3300",
+        "description": "3300 CAMERA",
+        "amount_usd": 71964.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3400",
+        "description": "3400 PRODUCTION SOUND",
+        "amount_usd": 16845.0,
+        "category": "production_sound",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3500",
+        "description": "3500 TRANSPORTATION",
+        "amount_usd": 51631.0,
+        "category": "btl_transportation",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3600",
+        "description": "3600 LOCATION",
+        "amount_usd": 99125.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3700",
+        "description": "3700 STAGE & FACILITIES",
+        "amount_usd": 1000.0,
+        "category": "btl_stage_facility",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "3800",
+        "description": "3800 BTL TRAVEL & LIVING",
+        "amount_usd": 31260.0,
+        "category": "travel",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4300",
+        "description": "4300 FILM EDITING",
+        "amount_usd": 31018.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4500",
+        "description": "4500 PRODUCTION FILM/LAB/DAILIES",
+        "amount_usd": 2000.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4600",
+        "description": "4600 MUSIC",
+        "amount_usd": 5000.0,
+        "category": "music",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4700",
+        "description": "4700 POST PRODUCTION SOUND",
+        "amount_usd": 35515.0,
+        "category": "sound",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4800",
+        "description": "4800 POST PRODUCTION FILM & LABORATORY",
+        "amount_usd": 39425.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "6700",
+        "description": "6700 INSURANCE",
+        "amount_usd": 0.0,
+        "category": "insurance",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "6800",
+        "description": "6800 GENERAL EXPENSE",
+        "amount_usd": 0.0,
+        "category": "general_administration",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7600",
+        "description": "7600 LEGAL AND ACCOUNTING",
+        "amount_usd": 24000.0,
+        "category": "legal_accounting",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7700",
+        "description": "7700 INSURANCE",
+        "amount_usd": 24000.0,
+        "category": "insurance",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "CONTINGENCY",
+        "description": "CONTINGENCY",
+        "amount_usd": 94382.0,
+        "category": "contingency",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      }
+    ]
+  },
+  {
+    "project": "LLS",
+    "source_path": "/Users/Suraj/.cineglobe/storage/lips-like-sugar/v7LLS_RevBudget_T1B_27days_022524.pdf",
+    "sha256": "37814d8b33358fd7bf52331bb969f7e3b78dc6e61b49ad363e96bd3a001b8af7",
+    "parser_version": "budget-1.5.0+rules.eaef9e583fc5",
+    "gross": 11983654,
+    "leaf_sum": 11983654.0,
+    "source_estimates": [
+      {
+        "account_code": "9998",
+        "description": "Tax Incentive 25%* BTL  (No Disc)",
+        "amount_usd": -1503074.0,
+        "page_ref": null
+      }
+    ],
+    "lines": [
+      {
+        "account_code": "1100",
+        "description": "1100 SCRIPT",
+        "amount_usd": 314153.0,
+        "category": "atl_writer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [
+          {
+            "account_code": "1106",
+            "description": "STORY RIGHTS",
+            "amount_usd": 0.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1109",
+            "description": "WRITER FEES",
+            "amount_usd": 300000.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1110",
+            "description": "PUBLICATION",
+            "amount_usd": 12500.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1124",
+            "description": "RESEARCH",
+            "amount_usd": 1350.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1150",
+            "description": "DUPLICATION",
+            "amount_usd": 303.0,
+            "page_ref": 4
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "1200",
+        "description": "1200 PRODUCING",
+        "amount_usd": 1414198.0,
+        "category": "atl_producer",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [
+          {
+            "account_code": "1203",
+            "description": "EXECUTIVE PRODUCERS",
+            "amount_usd": 0.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1206",
+            "description": "PRODUCERS",
+            "amount_usd": 1259000.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1209",
+            "description": "CO-PRODUCERS",
+            "amount_usd": 0.0,
+            "page_ref": 4
+          },
+          {
+            "account_code": "1215",
+            "description": "LINE PRODUCER",
+            "amount_usd": 151198.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1218",
+            "description": "ASSOCIATE PRODUCER",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1224",
+            "description": "PRODUCER'S ASSISTANTS",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1230",
+            "description": "SALES AGENCY FEE",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1235",
+            "description": "DEVELOPMENT COSTS",
+            "amount_usd": 4000.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1296",
+            "description": "OTHER COSTS",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1297",
+            "description": "STUDIO CHARGES",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "1300",
+        "description": "1300 DIRECTING",
+        "amount_usd": 267384.0,
+        "category": "atl_director",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [
+          {
+            "account_code": "1303",
+            "description": "DIRECTOR",
+            "amount_usd": 267384.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1306",
+            "description": "SECOND UNIT DIRECTOR",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1309",
+            "description": "DIALOGUE COACH",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1312",
+            "description": "CHOREOGRAPHER",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1315",
+            "description": "DIRECTOR'S ASSISTANT",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          },
+          {
+            "account_code": "1397",
+            "description": "OFFICE EXPENSES",
+            "amount_usd": 0.0,
+            "page_ref": 5
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "1400",
+        "description": "1400 CAST",
+        "amount_usd": 863388.0,
+        "category": "atl_cast",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [
+          {
+            "account_code": "1403",
+            "description": "STARS & LEADS",
+            "amount_usd": 320000.0,
+            "page_ref": 6
+          },
+          {
+            "account_code": "1415",
+            "description": "SUPPORTING CAST",
+            "amount_usd": 224705.0,
+            "page_ref": 7
+          },
+          {
+            "account_code": "1418",
+            "description": "DAY PLAYERS",
+            "amount_usd": 73244.0,
+            "page_ref": 9
+          },
+          {
+            "account_code": "1430",
+            "description": "LOOPING",
+            "amount_usd": 3474.0,
+            "page_ref": 9
+          },
+          {
+            "account_code": "1431",
+            "description": "LOOPING - WALLA GROUP",
+            "amount_usd": 0.0,
+            "page_ref": 9
+          },
+          {
+            "account_code": "1433",
+            "description": "STUNT COORDINATOR",
+            "amount_usd": 24123.0,
+            "page_ref": 10
+          },
+          {
+            "account_code": "1439",
+            "description": "STUNT PERFORMERS",
+            "amount_usd": 98353.0,
+            "page_ref": 11
+          },
+          {
+            "account_code": "1440",
+            "description": "INTIMACY COORDINATOR",
+            "amount_usd": 3474.0,
+            "page_ref": 11
+          },
+          {
+            "account_code": "1441",
+            "description": "REHEARSALS",
+            "amount_usd": 0.0,
+            "page_ref": 11
+          },
+          {
+            "account_code": "1454",
+            "description": "CASTING DIRECTOR",
+            "amount_usd": 41750.0,
+            "page_ref": 12
+          },
+          {
+            "account_code": "1457",
+            "description": "CASTING STAFF",
+            "amount_usd": 0.0,
+            "page_ref": 12
+          },
+          {
+            "account_code": "1471",
+            "description": "STAR COSTS",
+            "amount_usd": 74265.0,
+            "page_ref": 12
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "1500",
+        "description": "1500 ATL TRAVEL & LIVING",
+        "amount_usd": 60561.0,
+        "category": "travel",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [
+          {
+            "account_code": "1512",
+            "description": "PRODUCER TRAVEL",
+            "amount_usd": 30436.0,
+            "page_ref": 12
+          },
+          {
+            "account_code": "1521",
+            "description": "DIRECTOR TRAVEL",
+            "amount_usd": 0.0,
+            "page_ref": 12
+          },
+          {
+            "account_code": "1530",
+            "description": "CAST TRAVEL",
+            "amount_usd": 30125.0,
+            "page_ref": 13
+          },
+          {
+            "account_code": "1533",
+            "description": "STUNTS TRAVEL",
+            "amount_usd": 0.0,
+            "page_ref": 13
+          },
+          {
+            "account_code": "1515",
+            "description": "DIRECTOR'S ASST TRAVEL",
+            "amount_usd": 0.0,
+            "page_ref": 13
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "1900",
+        "description": "1900 Total Fringes",
+        "amount_usd": 255291.0,
+        "category": "payroll_fringes",
+        "atl_btl": "atl",
+        "department": "Above The Line",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "2000",
+        "description": "2000 PRODUCTION STAFF",
+        "amount_usd": 608606.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2001",
+            "description": "UNIT PRODUCTION MANAGER",
+            "amount_usd": 0.0,
+            "page_ref": 13
+          },
+          {
+            "account_code": "2005",
+            "description": "PRODUCTION SUPERVISOR",
+            "amount_usd": 75500.0,
+            "page_ref": 13
+          },
+          {
+            "account_code": "2010",
+            "description": "FIRST ASSISTANT DIRECTOR",
+            "amount_usd": 65500.0,
+            "page_ref": 13
+          },
+          {
+            "account_code": "2011",
+            "description": "KEY 2ND ASSISTANT DIRECTOR",
+            "amount_usd": 33078.0,
+            "page_ref": 14
+          },
+          {
+            "account_code": "2012",
+            "description": "2ND 2ND ASSISTANT DIRECTOR",
+            "amount_usd": 18700.0,
+            "page_ref": 14
+          },
+          {
+            "account_code": "2019",
+            "description": "SCRIPT SUPERVISOR",
+            "amount_usd": 17700.0,
+            "page_ref": 14
+          },
+          {
+            "account_code": "2021",
+            "description": "LOCATION MANAGER",
+            "amount_usd": 51449.0,
+            "page_ref": 14
+          },
+          {
+            "account_code": "2022",
+            "description": "ASST LOCATION MANAGER",
+            "amount_usd": 55222.0,
+            "page_ref": 15
+          },
+          {
+            "account_code": "2023",
+            "description": "SCOUTING",
+            "amount_usd": 12740.0,
+            "page_ref": 15
+          },
+          {
+            "account_code": "2024",
+            "description": "LOCATIONS PA",
+            "amount_usd": 22100.0,
+            "page_ref": 15
+          },
+          {
+            "account_code": "2025",
+            "description": "PRODUCTION ASSISTANTS",
+            "amount_usd": 60894.0,
+            "page_ref": 16
+          },
+          {
+            "account_code": "2031",
+            "description": "PRODUCTION ACCOUNTANT",
+            "amount_usd": 49800.0,
+            "page_ref": 16
+          },
+          {
+            "account_code": "2032",
+            "description": "FIRST ASSISTANT ACCOUNTANT",
+            "amount_usd": 32850.0,
+            "page_ref": 17
+          },
+          {
+            "account_code": "2032",
+            "description": "PAYROLL ACCOUNTANT",
+            "amount_usd": 19950.0,
+            "page_ref": 17
+          },
+          {
+            "account_code": "2034",
+            "description": "ACCOUNTING CLERK",
+            "amount_usd": 0.0,
+            "page_ref": 17
+          },
+          {
+            "account_code": "2042",
+            "description": "PRODUCTION COORDINATOR",
+            "amount_usd": 27689.0,
+            "page_ref": 17
+          },
+          {
+            "account_code": "2043",
+            "description": "ASST PRODUCTION COORDINATOR",
+            "amount_usd": 23455.0,
+            "page_ref": 17
+          },
+          {
+            "account_code": "2044",
+            "description": "PRODUCTION SECRETARY",
+            "amount_usd": 0.0,
+            "page_ref": 17
+          },
+          {
+            "account_code": "2046",
+            "description": "OFFICE PRODUCTION ASSISTANTS",
+            "amount_usd": 11754.0,
+            "page_ref": 18
+          },
+          {
+            "account_code": "2070",
+            "description": "WELFARE WORKER / TEACHER",
+            "amount_usd": 1600.0,
+            "page_ref": 18
+          },
+          {
+            "account_code": "2092",
+            "description": "BOX RENTALS",
+            "amount_usd": 6625.0,
+            "page_ref": 18
+          },
+          {
+            "account_code": "2094",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 22000.0,
+            "page_ref": 18
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2100",
+        "description": "2100 BACKGROUND PERFORMERS",
+        "amount_usd": 203715.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2103",
+            "description": "BACKGROUND PERFORMERS UNION",
+            "amount_usd": 152152.0,
+            "page_ref": 18
+          },
+          {
+            "account_code": "2106",
+            "description": "BACKGROUND PERFORMERS NON-UNION",
+            "amount_usd": 18700.0,
+            "page_ref": 18
+          },
+          {
+            "account_code": "2121",
+            "description": "SPECIAL ABILITY",
+            "amount_usd": 0.0,
+            "page_ref": 19
+          },
+          {
+            "account_code": "2124",
+            "description": "STAND INS",
+            "amount_usd": 32863.0,
+            "page_ref": 19
+          },
+          {
+            "account_code": "2130",
+            "description": "DANCERS / SKATERS",
+            "amount_usd": 0.0,
+            "page_ref": 19
+          },
+          {
+            "account_code": "2133",
+            "description": "SIDELINE MUSICIANS",
+            "amount_usd": 0.0,
+            "page_ref": 19
+          },
+          {
+            "account_code": "2136",
+            "description": "WELFARE WORKER / TEACHER",
+            "amount_usd": 0.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2142",
+            "description": "BACKGROUND FITTINGS/WARDROBE/MAKEUP",
+            "amount_usd": 0.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2151",
+            "description": "WET / SNOW / SMOKE WORK",
+            "amount_usd": 0.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2195",
+            "description": "MILEAGE",
+            "amount_usd": 0.0,
+            "page_ref": 20
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2200",
+        "description": "2200 ART DIRECTION",
+        "amount_usd": 141390.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2203",
+            "description": "PRODUCTION DESIGNER",
+            "amount_usd": 50500.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2206",
+            "description": "ART DIRECTOR",
+            "amount_usd": 31500.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2209",
+            "description": "ASSISTANT ART DIRECTOR",
+            "amount_usd": 0.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2212",
+            "description": "ART DEPT. COORDINATOR",
+            "amount_usd": 21764.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2218",
+            "description": "SET DESIGNER/DRAFTSMAN",
+            "amount_usd": 0.0,
+            "page_ref": 20
+          },
+          {
+            "account_code": "2215",
+            "description": "ART DEPT. ASSISTANT",
+            "amount_usd": 11101.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2221",
+            "description": "ANIMATION/DRAWINGS",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2227",
+            "description": "STORYBOARD ARTIST",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2233",
+            "description": "GRAPHICS",
+            "amount_usd": 15000.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2239",
+            "description": "RESEARCH MATERIAL",
+            "amount_usd": 500.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2240",
+            "description": "CLEARANCES",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2242",
+            "description": "BLUEPRINTS",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2290",
+            "description": "PURCHASES",
+            "amount_usd": 5000.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2291",
+            "description": "RENTALS",
+            "amount_usd": 1500.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2297",
+            "description": "ART DEPARTMENT OFFICE",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2292",
+            "description": "BOX RENTALS",
+            "amount_usd": 4525.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2294",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2300",
+        "description": "2300 SET CONSTRUCTION",
+        "amount_usd": 0.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2301",
+            "description": "CONSTRUCTION COORDINATOR",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2302",
+            "description": "GENERAL FOREMAN",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2303",
+            "description": "PAINT FOREMAN",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2304",
+            "description": "CONSTRUCTION GRIP",
+            "amount_usd": 0.0,
+            "page_ref": 21
+          },
+          {
+            "account_code": "2305",
+            "description": "CONSTRUCTION SETS - LABOR",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2306",
+            "description": "PAINT LABOR",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2340",
+            "description": "STAGE CONSTRUCTION-MATERIAL",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2345",
+            "description": "STAGE CONSTRUCTION-PAINT",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2350",
+            "description": "BACKINGS",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2355",
+            "description": "GREENS",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2357",
+            "description": "SCAFFOLDS",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2358",
+            "description": "WAREHOUSE RENTAL/MILL",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          },
+          {
+            "account_code": "2370",
+            "description": "BOX RENTALS",
+            "amount_usd": 0.0,
+            "page_ref": 22
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2400",
+        "description": "2400 SET STRIKING",
+        "amount_usd": 8000.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2403",
+            "description": "STRIKE",
+            "amount_usd": 5000.0,
+            "page_ref": 23
+          },
+          {
+            "account_code": "2406",
+            "description": "STORAGE",
+            "amount_usd": 3000.0,
+            "page_ref": 23
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2500",
+        "description": "2500 SET OPERATIONS",
+        "amount_usd": 353954.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2503",
+            "description": "KEY GRIP",
+            "amount_usd": 17230.0,
+            "page_ref": 23
+          },
+          {
+            "account_code": "2506",
+            "description": "BEST BOY GRIP",
+            "amount_usd": 15647.0,
+            "page_ref": 23
+          },
+          {
+            "account_code": "2509",
+            "description": "DOLLY GRIP",
+            "amount_usd": 13956.0,
+            "page_ref": 23
+          },
+          {
+            "account_code": "2512",
+            "description": "COMPANY GRIPS",
+            "amount_usd": 70630.0,
+            "page_ref": 24
+          },
+          {
+            "account_code": "2536",
+            "description": "CRAFT SERVICES FOREPERSON",
+            "amount_usd": 16231.0,
+            "page_ref": 24
+          },
+          {
+            "account_code": "2538",
+            "description": "CRAFT SERVICES ASSIST",
+            "amount_usd": 11036.0,
+            "page_ref": 24
+          },
+          {
+            "account_code": "2542",
+            "description": "MISC LABOR",
+            "amount_usd": 16590.0,
+            "page_ref": 24
+          },
+          {
+            "account_code": "2545",
+            "description": "FIRST AID",
+            "amount_usd": 14448.0,
+            "page_ref": 24
+          },
+          {
+            "account_code": "2551",
+            "description": "CRANE RENTALS",
+            "amount_usd": 40000.0,
+            "page_ref": 25
+          },
+          {
+            "account_code": "2554",
+            "description": "DOLLY RENTAL",
+            "amount_usd": 7020.0,
+            "page_ref": 25
+          },
+          {
+            "account_code": "2557",
+            "description": "CRAFT SERVICE PURCHASES",
+            "amount_usd": 39050.0,
+            "page_ref": 25
+          },
+          {
+            "account_code": "2591",
+            "description": "SET OPS - RENTALS",
+            "amount_usd": 64800.0,
+            "page_ref": 25
+          },
+          {
+            "account_code": "2590",
+            "description": "SET OPS - PURCHASES",
+            "amount_usd": 19391.0,
+            "page_ref": 25
+          },
+          {
+            "account_code": "2592",
+            "description": "BOX RENTALS",
+            "amount_usd": 5925.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2593",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 2000.0,
+            "page_ref": 26
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2600",
+        "description": "2600 SPECIAL EFFECTS",
+        "amount_usd": 17610.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2603",
+            "description": "SPECIAL EFFECTS SUPERVISOR",
+            "amount_usd": 5100.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2606",
+            "description": "2ND COMPANY SFX SUPERVISOR",
+            "amount_usd": 3760.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2609",
+            "description": "SFX FOREMEN",
+            "amount_usd": 0.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2612",
+            "description": "SFX LABOR",
+            "amount_usd": 0.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2615",
+            "description": "SFX RIGGING LABOR",
+            "amount_usd": 0.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2618",
+            "description": "SFX MANUFACTURING LABOR",
+            "amount_usd": 0.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2624",
+            "description": "SFX SHOP RENTAL",
+            "amount_usd": 0.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2690",
+            "description": "SFX PURCHASES",
+            "amount_usd": 3500.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2691",
+            "description": "SFX EQUIPMENT RENTAL",
+            "amount_usd": 3500.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2692",
+            "description": "BOX RENTALS",
+            "amount_usd": 750.0,
+            "page_ref": 26
+          },
+          {
+            "account_code": "2693",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 1000.0,
+            "page_ref": 27
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2700",
+        "description": "2700 SET DECORATION",
+        "amount_usd": 446342.0,
+        "category": "btl_set_construction",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2703",
+            "description": "SET DECORATOR",
+            "amount_usd": 34650.0,
+            "page_ref": 27
+          },
+          {
+            "account_code": "2706",
+            "description": "LEADPERSON",
+            "amount_usd": 22104.0,
+            "page_ref": 27
+          },
+          {
+            "account_code": "2712",
+            "description": "SWING GANG",
+            "amount_usd": 101568.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2718",
+            "description": "SET DEC BUYER",
+            "amount_usd": 6070.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2785",
+            "description": "GOLDROOM",
+            "amount_usd": 1500.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2790",
+            "description": "SET DRESSINGS PURCHASES",
+            "amount_usd": 132700.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2791",
+            "description": "SET DRESSINGS RENTALS",
+            "amount_usd": 135000.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2792",
+            "description": "BOX RENTALS",
+            "amount_usd": 8250.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2793",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 1500.0,
+            "page_ref": 28
+          },
+          {
+            "account_code": "2794",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 3000.0,
+            "page_ref": 29
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2800",
+        "description": "2800 PROPERTY DEPARTMENT",
+        "amount_usd": 75740.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2803",
+            "description": "PROPERTY MASTER",
+            "amount_usd": 23932.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2806",
+            "description": "ASSISTANT PROPERTY MASTER",
+            "amount_usd": 21733.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2809",
+            "description": "THIRD PROPERTY ASSISTANTS",
+            "amount_usd": 0.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2815",
+            "description": "WEAPON MASTER",
+            "amount_usd": 0.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2816",
+            "description": "ASSISTANT WEAPON MASTER",
+            "amount_usd": 0.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2818",
+            "description": "PROPERTY MANUFACTURERS",
+            "amount_usd": 0.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2830",
+            "description": "WEAPON RENTALS",
+            "amount_usd": 0.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2890",
+            "description": "PROPERTY PURCHASES",
+            "amount_usd": 9000.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2891",
+            "description": "PROPERTY RENTALS",
+            "amount_usd": 15000.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2892",
+            "description": "BOX RENTALS",
+            "amount_usd": 3775.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2893",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 1000.0,
+            "page_ref": 29
+          },
+          {
+            "account_code": "2894",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 1300.0,
+            "page_ref": 30
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "2900",
+        "description": "2900 ANIMALS & PICTURE VEHICLES",
+        "amount_usd": 90988.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "2906",
+            "description": "ANIMAL TRAINERS",
+            "amount_usd": 1288.0,
+            "page_ref": 30
+          },
+          {
+            "account_code": "2909",
+            "description": "AHA",
+            "amount_usd": 0.0,
+            "page_ref": 30
+          },
+          {
+            "account_code": "2912",
+            "description": "ANIMALS",
+            "amount_usd": 450.0,
+            "page_ref": 30
+          },
+          {
+            "account_code": "2930",
+            "description": "PICTURE VEHICLES",
+            "amount_usd": 87250.0,
+            "page_ref": 30
+          },
+          {
+            "account_code": "2993",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 2000.0,
+            "page_ref": 30
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3000",
+        "description": "3000 WARDROBE DEPARTMENT",
+        "amount_usd": 204612.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3003",
+            "description": "COSTUME DESIGNER",
+            "amount_usd": 44100.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3015",
+            "description": "COSTUME SUPERVISOR",
+            "amount_usd": 26708.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3018",
+            "description": "KEY COSTUMERS",
+            "amount_usd": 22984.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3021",
+            "description": "ADDITIONAL COSTUMERS",
+            "amount_usd": 32115.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3036",
+            "description": "ALTERATIONS & REPAIRS",
+            "amount_usd": 0.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3039",
+            "description": "CLEANING",
+            "amount_usd": 3375.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3042",
+            "description": "WARDROBE SHOP RENTAL",
+            "amount_usd": 6240.0,
+            "page_ref": 31
+          },
+          {
+            "account_code": "3045",
+            "description": "WARDROBE EXPENDABLES & SUPPLIES",
+            "amount_usd": 1890.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3090",
+            "description": "WARDROBE PURCHASES",
+            "amount_usd": 34000.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3091",
+            "description": "WARDROBE RENTALS",
+            "amount_usd": 25000.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3092",
+            "description": "BOX RENTALS",
+            "amount_usd": 4650.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3093",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 1000.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3094",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 2550.0,
+            "page_ref": 32
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3100",
+        "description": "3100 MAKEUP & HAIR DEPARTMENT",
+        "amount_usd": 76175.0,
+        "category": "btl_crew_labor",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3103",
+            "description": "KEY HAIR STYLIST",
+            "amount_usd": 13912.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3104",
+            "description": "ASSISTANT HAIR STYLIST",
+            "amount_usd": 12296.0,
+            "page_ref": 32
+          },
+          {
+            "account_code": "3109",
+            "description": "ADDL. HAIR STYLISTS",
+            "amount_usd": 4304.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3112",
+            "description": "HAIR PURCHASES",
+            "amount_usd": 1350.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3115",
+            "description": "HAIR RENTALS",
+            "amount_usd": 0.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3118",
+            "description": "WIGS PURCHASES & RENTALS",
+            "amount_usd": 5000.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3121",
+            "description": "KEY MAKEUP ARTIST",
+            "amount_usd": 13912.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3124",
+            "description": "ASSISTANT MAKEUP ARTIST",
+            "amount_usd": 12296.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3127",
+            "description": "ADDL. MAKEUP ARTISTS",
+            "amount_usd": 4304.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3133",
+            "description": "SPECIAL MAKEUP",
+            "amount_usd": 2331.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3190",
+            "description": "MAKEUP PURCHASES",
+            "amount_usd": 2460.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3191",
+            "description": "MAKEUP RENTALS",
+            "amount_usd": 0.0,
+            "page_ref": 33
+          },
+          {
+            "account_code": "3192",
+            "description": "BOX RENTALS",
+            "amount_usd": 3010.0,
+            "page_ref": 34
+          },
+          {
+            "account_code": "3193",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 1000.0,
+            "page_ref": 34
+          },
+          {
+            "account_code": "3194",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 0.0,
+            "page_ref": 34
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3200",
+        "description": "3200 ELECTRIC DEPARTMENT",
+        "amount_usd": 178768.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3203",
+            "description": "GAFFER",
+            "amount_usd": 17230.0,
+            "page_ref": 34
+          },
+          {
+            "account_code": "3209",
+            "description": "BEST BOY ELECTRIC",
+            "amount_usd": 15647.0,
+            "page_ref": 34
+          },
+          {
+            "account_code": "3212",
+            "description": "SET LIGHTING TECHNICIANS",
+            "amount_usd": 59349.0,
+            "page_ref": 35
+          },
+          {
+            "account_code": "3215",
+            "description": "ADDL. LIGHTING TECHNICIANS / RIGGING",
+            "amount_usd": 0.0,
+            "page_ref": 35
+          },
+          {
+            "account_code": "3290",
+            "description": "ELECTRIC EXPENDABLES",
+            "amount_usd": 3852.0,
+            "page_ref": 35
+          },
+          {
+            "account_code": "3291",
+            "description": "ELECTRIC PACKAGE RENTAL",
+            "amount_usd": 75240.0,
+            "page_ref": 35
+          },
+          {
+            "account_code": "3292",
+            "description": "BOX RENTALS",
+            "amount_usd": 5450.0,
+            "page_ref": 35
+          },
+          {
+            "account_code": "3293",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 2000.0,
+            "page_ref": 35
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3300",
+        "description": "3300 CAMERA DEPARTMENT",
+        "amount_usd": 323509.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3301",
+            "description": "DIRECTOR OF PHOTOGRAPHY",
+            "amount_usd": 37600.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3303",
+            "description": "A CAMERA OPERATOR",
+            "amount_usd": 15926.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3306",
+            "description": "B CAMERA OPERATOR",
+            "amount_usd": 15926.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3306",
+            "description": "C CAMERA OPERATOR",
+            "amount_usd": 0.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3309",
+            "description": "STEADICAM",
+            "amount_usd": 8464.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3315",
+            "description": "A CAMERA - 1ST ASSISTANT CAMERA",
+            "amount_usd": 18505.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3318",
+            "description": "B CAMERA - 1ST ASSISTANT CAMERA",
+            "amount_usd": 18505.0,
+            "page_ref": 36
+          },
+          {
+            "account_code": "3324",
+            "description": "A CAMERA - 2ND ASSISTANT CAMERA",
+            "amount_usd": 15082.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3327",
+            "description": "B CAMERA - 2ND ASSISTANT CAMERA",
+            "amount_usd": 15082.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3329",
+            "description": "C CAMERA - 1ST ASSISTANT CAMERA",
+            "amount_usd": 0.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3331",
+            "description": "C CAMERA - 2ND ASSISTANT CAMERA",
+            "amount_usd": 0.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3333",
+            "description": "CAMERA LOADER",
+            "amount_usd": 13753.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3335",
+            "description": "DIGITAL IMAGING TECHNICIAN",
+            "amount_usd": 0.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3342",
+            "description": "MISC LABOR",
+            "amount_usd": 0.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3343",
+            "description": "STILLS PHOTOGRAPHER",
+            "amount_usd": 10674.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3345",
+            "description": "STEADICAM EQUIPMENT",
+            "amount_usd": 10000.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3390",
+            "description": "CAMERA PURCHASES",
+            "amount_usd": 2667.0,
+            "page_ref": 37
+          },
+          {
+            "account_code": "3391",
+            "description": "CAMERA PACKAGE RENTAL",
+            "amount_usd": 129800.0,
+            "page_ref": 38
+          },
+          {
+            "account_code": "3392",
+            "description": "BOX RENTALS",
+            "amount_usd": 9525.0,
+            "page_ref": 38
+          },
+          {
+            "account_code": "3393",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 2000.0,
+            "page_ref": 38
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3400",
+        "description": "3400 PRODUCTION SOUND",
+        "amount_usd": 87067.0,
+        "category": "production_sound",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3403",
+            "description": "PRODUCTION SOUND MIXER",
+            "amount_usd": 16376.0,
+            "page_ref": 38
+          },
+          {
+            "account_code": "3406",
+            "description": "BOOM OPERATOR",
+            "amount_usd": 11958.0,
+            "page_ref": 38
+          },
+          {
+            "account_code": "3409",
+            "description": "SOUND UTILITY",
+            "amount_usd": 11542.0,
+            "page_ref": 38
+          },
+          {
+            "account_code": "3415",
+            "description": "VIDEO ASSIST",
+            "amount_usd": 14911.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3430",
+            "description": "SET COMMUNICATIONS",
+            "amount_usd": 8100.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3433",
+            "description": "VIDEO ASSIST EQUIPMENT",
+            "amount_usd": 6750.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3491",
+            "description": "SOUND EQUIPMENT RENTAL",
+            "amount_usd": 13500.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3490",
+            "description": "SOUND EXPENDABLES",
+            "amount_usd": 1755.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3492",
+            "description": "BOX RENTALS",
+            "amount_usd": 675.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3493",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 1500.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3494",
+            "description": "CAR EXPENSES/ALLOWANCES",
+            "amount_usd": 0.0,
+            "page_ref": 39
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3500",
+        "description": "3500 TRANSPORTATION DEPARTMENT",
+        "amount_usd": 547205.0,
+        "category": "btl_transportation",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3503",
+            "description": "TRANSPORTATION COORDINATOR",
+            "amount_usd": 25200.0,
+            "page_ref": 39
+          },
+          {
+            "account_code": "3506",
+            "description": "TRANSPORTATION CAPTAIN",
+            "amount_usd": 29414.0,
+            "page_ref": 40
+          },
+          {
+            "account_code": "3512",
+            "description": "DRIVERS",
+            "amount_usd": 280049.0,
+            "page_ref": 41
+          },
+          {
+            "account_code": "3533",
+            "description": "PRODUCTION VEHICLES",
+            "amount_usd": 140647.0,
+            "page_ref": 42
+          },
+          {
+            "account_code": "3551",
+            "description": "FUEL CHARGES",
+            "amount_usd": 62060.0,
+            "page_ref": 43
+          },
+          {
+            "account_code": "3557",
+            "description": "SUPPLIES",
+            "amount_usd": 1000.0,
+            "page_ref": 43
+          },
+          {
+            "account_code": "3558",
+            "description": "DOT COMPLIANCE",
+            "amount_usd": 3500.0,
+            "page_ref": 43
+          },
+          {
+            "account_code": "3560",
+            "description": "PUMPING",
+            "amount_usd": 2835.0,
+            "page_ref": 43
+          },
+          {
+            "account_code": "3593",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 2500.0,
+            "page_ref": 43
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3600",
+        "description": "3600 LOCATION DEPARTMENT",
+        "amount_usd": 500376.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3612",
+            "description": "SITE RENTAL FEES",
+            "amount_usd": 160440.0,
+            "page_ref": 43
+          },
+          {
+            "account_code": "3615",
+            "description": "PERMITS",
+            "amount_usd": 10700.0,
+            "page_ref": 44
+          },
+          {
+            "account_code": "3620",
+            "description": "PARKING",
+            "amount_usd": 20250.0,
+            "page_ref": 44
+          },
+          {
+            "account_code": "3621",
+            "description": "SECURITY",
+            "amount_usd": 54000.0,
+            "page_ref": 44
+          },
+          {
+            "account_code": "3624",
+            "description": "FIRE SAFETY",
+            "amount_usd": 33005.0,
+            "page_ref": 44
+          },
+          {
+            "account_code": "3630",
+            "description": "POLICE",
+            "amount_usd": 27423.0,
+            "page_ref": 44
+          },
+          {
+            "account_code": "3639",
+            "description": "CATERER",
+            "amount_usd": 19436.0,
+            "page_ref": 44
+          },
+          {
+            "account_code": "3642",
+            "description": "CATERING HELPERS",
+            "amount_usd": 40421.0,
+            "page_ref": 45
+          },
+          {
+            "account_code": "3645",
+            "description": "CATERING MEALS",
+            "amount_usd": 78656.0,
+            "page_ref": 45
+          },
+          {
+            "account_code": "3691",
+            "description": "LOCATION RENTALS",
+            "amount_usd": 49045.0,
+            "page_ref": 45
+          },
+          {
+            "account_code": "3693",
+            "description": "LOSS & DAMAGE",
+            "amount_usd": 2000.0,
+            "page_ref": 45
+          },
+          {
+            "account_code": "3696",
+            "description": "CLEANUP SERVICES/RESTORATION",
+            "amount_usd": 5000.0,
+            "page_ref": 45
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3700",
+        "description": "3700 PRODUCTION STOCK & DAILIES",
+        "amount_usd": 189550.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3703",
+            "description": "FILM STOCK",
+            "amount_usd": 175000.0,
+            "page_ref": 45
+          },
+          {
+            "account_code": "3706",
+            "description": "PRODUCTION HARD DRIVES",
+            "amount_usd": 14550.0,
+            "page_ref": 46
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3800",
+        "description": "3800 BTL TRAVEL & LIVING",
+        "amount_usd": 0.0,
+        "category": "travel",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3801",
+            "description": "AIRFARES",
+            "amount_usd": 0.0,
+            "page_ref": 46
+          },
+          {
+            "account_code": "3802",
+            "description": "HOTEL",
+            "amount_usd": 0.0,
+            "page_ref": 46
+          },
+          {
+            "account_code": "3803",
+            "description": "PER DIEM",
+            "amount_usd": 0.0,
+            "page_ref": 46
+          },
+          {
+            "account_code": "3804",
+            "description": "CAR RENTALS",
+            "amount_usd": 0.0,
+            "page_ref": 46
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "3900",
+        "description": "3900 2ND UNIT",
+        "amount_usd": 40000.0,
+        "category": "miscellaneous",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "3901",
+            "description": "2ND UNIT COSTS",
+            "amount_usd": 40000.0,
+            "page_ref": 46
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "4400",
+        "description": "4400 VISUAL EFFECTS",
+        "amount_usd": 40000.0,
+        "category": "vfx",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4404",
+            "description": "VISUAL EFFECTS",
+            "amount_usd": 40000.0,
+            "page_ref": 46
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "4500",
+        "description": "4500 EDITING",
+        "amount_usd": 145410.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4509",
+            "description": "POST PRODUCTION SUPERVISOR",
+            "amount_usd": 25000.0,
+            "page_ref": 47
+          },
+          {
+            "account_code": "4503",
+            "description": "EDITOR",
+            "amount_usd": 67900.0,
+            "page_ref": 47
+          },
+          {
+            "account_code": "4506",
+            "description": "ASSISTANT EDITOR",
+            "amount_usd": 33110.0,
+            "page_ref": 47
+          },
+          {
+            "account_code": "4518",
+            "description": "SYSTEM RENTAL",
+            "amount_usd": 19400.0,
+            "page_ref": 47
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "4600",
+        "description": "4600 MUSIC",
+        "amount_usd": 206774.0,
+        "category": "music",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4603",
+            "description": "SCORE",
+            "amount_usd": 37500.0,
+            "page_ref": 47
+          },
+          {
+            "account_code": "4609",
+            "description": "MUSIC EDITOR",
+            "amount_usd": 4274.0,
+            "page_ref": 47
+          },
+          {
+            "account_code": "4609",
+            "description": "MUSIC SUPERVISOR",
+            "amount_usd": 15000.0,
+            "page_ref": 47
+          },
+          {
+            "account_code": "4639",
+            "description": "SONG LICENSING",
+            "amount_usd": 150000.0,
+            "page_ref": 47
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "4700",
+        "description": "4700 POST-PRODUCTION SOUND",
+        "amount_usd": 39520.0,
+        "category": "sound",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4740",
+            "description": "POST SOUND PACKAGE",
+            "amount_usd": 39520.0,
+            "page_ref": 47
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "4800",
+        "description": "4800 POST-PRODUCTION FILM & LAB",
+        "amount_usd": 215475.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4803",
+            "description": "STOCK FOOTAGE",
+            "amount_usd": 75000.0,
+            "page_ref": 48
+          },
+          {
+            "account_code": "4859",
+            "description": "DAILIES",
+            "amount_usd": 67950.0,
+            "page_ref": 48
+          },
+          {
+            "account_code": "4860",
+            "description": "COLOR, CONFORM, ONLINE AND LAYBACK",
+            "amount_usd": 72525.0,
+            "page_ref": 48
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "4900",
+        "description": "4900 Total Fringes",
+        "amount_usd": 1023115.0,
+        "category": "payroll_fringes",
+        "atl_btl": "btl",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4903",
+            "description": "MAIN/OPENING & END  TITLES",
+            "amount_usd": 10500.0,
+            "page_ref": 48
+          }
+        ],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "4900",
+        "description": "4900 MAIN AND END TITLES",
+        "amount_usd": 10500.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Production",
+        "source_subaccounts": [
+          {
+            "account_code": "4903",
+            "description": "MAIN/OPENING & END  TITLES",
+            "amount_usd": 10500.0,
+            "page_ref": 48
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "5800",
+        "description": "5800 DELIVERABLES",
+        "amount_usd": 10775.0,
+        "category": "post_production",
+        "atl_btl": "post",
+        "department": "Post Production",
+        "source_subaccounts": [
+          {
+            "account_code": "5801",
+            "description": "DELIVERABLES",
+            "amount_usd": 10775.0,
+            "page_ref": 49
+          },
+          {
+            "account_code": "5898",
+            "description": "MISCELLANEOUS",
+            "amount_usd": 0.0,
+            "page_ref": 49
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "5900",
+        "description": "5900 Total Fringes",
+        "amount_usd": 68308.0,
+        "category": "payroll_fringes",
+        "atl_btl": "btl",
+        "department": "Post Production",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "6100",
+        "description": "6100 PUBLICITY",
+        "amount_usd": 0.0,
+        "category": "general_administration",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6101",
+            "description": "EPK",
+            "amount_usd": 0.0,
+            "page_ref": 49
+          },
+          {
+            "account_code": "6102",
+            "description": "PHOTO APPROVAL SERVICE",
+            "amount_usd": 0.0,
+            "page_ref": 49
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6200",
+        "description": "6200 LEGAL COSTS",
+        "amount_usd": 150000.0,
+        "category": "legal_accounting",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6201",
+            "description": "LEGAL COSTS",
+            "amount_usd": 150000.0,
+            "page_ref": 49
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6300",
+        "description": "6300 INSURANCE",
+        "amount_usd": 106000.0,
+        "category": "insurance",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6301",
+            "description": "CAST EXAMS",
+            "amount_usd": 1500.0,
+            "page_ref": 49
+          },
+          {
+            "account_code": "6307",
+            "description": "INSURANCE PACKAGE DEAL",
+            "amount_usd": 104500.0,
+            "page_ref": 50
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6400",
+        "description": "6400 GENERAL EXPENSE",
+        "amount_usd": 84195.0,
+        "category": "general_administration",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6414",
+            "description": "OFFICE RENTAL",
+            "amount_usd": 39750.0,
+            "page_ref": 50
+          },
+          {
+            "account_code": "6415",
+            "description": "OFFICE SUPPLIES",
+            "amount_usd": 2550.0,
+            "page_ref": 50
+          },
+          {
+            "account_code": "6418",
+            "description": "BANK FEES",
+            "amount_usd": 16500.0,
+            "page_ref": 50
+          },
+          {
+            "account_code": "6421",
+            "description": "SHIPPING & POSTAGE",
+            "amount_usd": 4750.0,
+            "page_ref": 50
+          },
+          {
+            "account_code": "6424",
+            "description": "OFFICE EQUIPMENT RENTAL",
+            "amount_usd": 2700.0,
+            "page_ref": 51
+          },
+          {
+            "account_code": "6425",
+            "description": "PRODUCTION FEE",
+            "amount_usd": 5000.0,
+            "page_ref": 51
+          },
+          {
+            "account_code": "6455",
+            "description": "AUDIT",
+            "amount_usd": 8500.0,
+            "page_ref": 51
+          },
+          {
+            "account_code": "6460",
+            "description": "LLC SET UP",
+            "amount_usd": 4445.0,
+            "page_ref": 51
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6500",
+        "description": "6500 FINANCING FEES",
+        "amount_usd": 450000.0,
+        "category": "finance_costs",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6501",
+            "description": "FINANCING FEES",
+            "amount_usd": 450000.0,
+            "page_ref": 51
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6600",
+        "description": "6600 BRIDGE",
+        "amount_usd": 250000.0,
+        "category": "finance_costs",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6601",
+            "description": "BRIDGE",
+            "amount_usd": 250000.0,
+            "page_ref": 51
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6700",
+        "description": "6700 BANKING FEE",
+        "amount_usd": 1000000.0,
+        "category": "finance_costs",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6701",
+            "description": "INTEREST RESERVE",
+            "amount_usd": 1000000.0,
+            "page_ref": 51
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6800",
+        "description": "6800 RESIDUALS RESERVE",
+        "amount_usd": 400000.0,
+        "category": "residuals_reserve",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [
+          {
+            "account_code": "6801",
+            "description": "GUILD RESIDUALS",
+            "amount_usd": 400000.0,
+            "page_ref": 51
+          }
+        ],
+        "detail_conserves_parent": true
+      },
+      {
+        "account_code": "6900",
+        "description": "6900 Total Fringes",
+        "amount_usd": 0.0,
+        "category": "payroll_fringes",
+        "atl_btl": "btl",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7100",
+        "description": "7100 Contingency",
+        "amount_usd": 400000.0,
+        "category": "contingency",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      },
+      {
+        "account_code": "7200",
+        "description": "7200 Bond Fee",
+        "amount_usd": 115000.0,
+        "category": "completion_bond",
+        "atl_btl": "other",
+        "department": "Other",
+        "source_subaccounts": [],
+        "detail_conserves_parent": false
+      }
+    ]
+  }
+]

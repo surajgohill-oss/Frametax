@@ -1,0 +1,110 @@
+[
+  {
+    "source_id": "MU2020",
+    "url": "https://edbmauritius.org/wp-content/uploads/2022/10/Guideline-Online-Application-FRS.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "3c1dad5b2e99b0a7a709804adf1dc5923d5e65dea311088ce27db0af9a54d5ef",
+    "pages": 12,
+    "bytes": 332464,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "CA3QEC",
+    "url": "https://film.ca.gov/wp-content/uploads/2025/07/3-0-QEC2.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "d660dd967c912d5ce1e5b484007e303d9077f406fe9aa33f8cab81ec8b2c1010",
+    "pages": 42,
+    "bytes": 869049,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "CA3REG",
+    "url": "https://cdn.film.ca.gov/wp-content/uploads/2023/12/3-0-Current-Regulations.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "ec27181b6803dd5730584787f25321b36efb67ace66d86e40ec369c34cd603c1",
+    "pages": 34,
+    "bytes": 734027,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "CA4QEC",
+    "url": "https://film.ca.gov/wp-content/uploads/2025/10/Program4.0QEC.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "668714defb3d54199c22d45820d1f024bead42ff10ab1e3eb0bbe6af25146343",
+    "pages": 47,
+    "bytes": 589029,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "CA4GUIDE",
+    "url": "https://cdn.film.ca.gov/wp-content/uploads/2025/08/4.0-Program-Guidelines-1.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "60df75f7ed2b1ba56d053c8f4ddca63b1ecc586d77dca953aad26cb41b510310",
+    "pages": 46,
+    "bytes": 583592,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "NM2019",
+    "url": "https://www.nmlegis.gov/Sessions/19%20Regular/final/SB0002.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "1a3fa562f4b1037c934b1d9eaac98f14b6b5ad9aa93523d427485abb498cc02c",
+    "pages": 51,
+    "bytes": 96533,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "NMFYI2025",
+    "url": "https://realfile.tax.newmexico.gov/FYI-370.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "ccca7520ef46e1502653075ac5d4fb49bcf8280de8dc7c145fd531ec3c879f99",
+    "pages": 20,
+    "bytes": 457484,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "NM2026",
+    "url": "https://www.nmlegis.gov/Sessions/26%20Regular/final/HB0291.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "e763bdaa6fbf057278bef9eb7d91091ec0af151b008018c5766c56072b3fe765",
+    "pages": 61,
+    "bytes": 157824,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "GR2021",
+    "url": "https://www.ekkomed.gr/wp-content/uploads/2022/12/1.LAW-4487.17.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "deabc311f79cc0e459e44052b5a0da3d4742ae4b136fbdcc306374e12db8e684",
+    "pages": 15,
+    "bytes": 290370,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "GR2023",
+    "url": "https://www.ekkomed.gr/wp-content/uploads/2023/07/LAW-5043_2023-ART-61-63_GGIA91-13.04.2023_en.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "791b59923f10c76298a895f5f3ff23f1bad8277319e9ac9f9c1d98a1e2cc94da",
+    "pages": 66,
+    "bytes": 593511,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "GR2026",
+    "url": "https://www.ekkomed.gr/wp-content/uploads/2026/02/KYA-607434-FTV.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "9b16095cb19e0794e2d04d01f931f7160c6fbdea134f80e80d89b4e999ef4f97",
+    "pages": 102,
+    "bytes": 1616440,
+    "status": "RETRIEVED"
+  },
+  {
+    "source_id": "GR2026AMEND",
+    "url": "https://www.ekkomed.gr/wp-content/uploads/2026/05/\u039a\u03a5\u0391-140524_-FTV.pdf",
+    "retrieved_at_utc": "2026-10-09",
+    "sha256": "e206ae951abecb2d02c871361eca9abd2a931f36adcf714435ba727fc40d1a10",
+    "pages": 6,
+    "bytes": 1710257,
+    "status": "RETRIEVED"
+  }
+]

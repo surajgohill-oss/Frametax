@@ -256,6 +256,8 @@ class AccountAllocation:
     # explicitly rather than requiring a later consumer to re-derive it
     # from the collision-prone spend_category_by_code[account_code] map.
     spend_category: str | None = None
+    source_subaccounts: tuple[dict, ...] = ()
+    source_atl_btl: str | None = None
 
 
 @dataclass
@@ -411,7 +413,7 @@ def derive_account_allocation(
             for jur, pct in sorted(spec.account_splits[line.account_code].items()):
                 assignments.append(AccountAllocation(
                     account_code=line.account_code,
-                    line_id=line.line_id,
+                    line_id=line.line_id, source_subaccounts=line.source_subaccounts, source_atl_btl=line.source_atl_btl,
                     description=line.description,
                     amount_usd=round(line.amount_usd * pct, 2),
                     component=component,
@@ -444,7 +446,7 @@ def derive_account_allocation(
                 continue
             assignments.append(AccountAllocation(
                 account_code=line.account_code,
-                line_id=line.line_id,
+                line_id=line.line_id, source_subaccounts=line.source_subaccounts, source_atl_btl=line.source_atl_btl,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -503,7 +505,7 @@ def derive_account_allocation(
                     else AssignmentKind.RECOMMENDED)
             assignments.append(_memo_alloc(("a3", line.line_id, jur, provenance, overrides_stated, stated_location_code, stated_location_authority, category), lambda: AccountAllocation(
                 account_code=line.account_code,
-                line_id=line.line_id,
+                line_id=line.line_id, source_subaccounts=line.source_subaccounts, source_atl_btl=line.source_atl_btl,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -526,7 +528,7 @@ def derive_account_allocation(
         if line.account_code in stated_outside_accounts:
             assignments.append(AccountAllocation(
                 account_code=line.account_code,
-                line_id=line.line_id,
+                line_id=line.line_id, source_subaccounts=line.source_subaccounts, source_atl_btl=line.source_atl_btl,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -551,7 +553,7 @@ def derive_account_allocation(
         if component in LOCATION_BOUND_COMPONENTS:
             assignments.append(_memo_alloc(("a5", line.line_id, spec.primary_jurisdiction, category), lambda: AccountAllocation(
                 account_code=line.account_code,
-                line_id=line.line_id,
+                line_id=line.line_id, source_subaccounts=line.source_subaccounts, source_atl_btl=line.source_atl_btl,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -569,7 +571,7 @@ def derive_account_allocation(
         # 6. default -> primary (recommended)
         assignments.append(_memo_alloc(("a6", line.line_id, spec.primary_jurisdiction, category), lambda: AccountAllocation(
             account_code=line.account_code,
-            line_id=line.line_id,
+            line_id=line.line_id, source_subaccounts=line.source_subaccounts, source_atl_btl=line.source_atl_btl,
             description=line.description,
             amount_usd=line.amount_usd,
             component=component,

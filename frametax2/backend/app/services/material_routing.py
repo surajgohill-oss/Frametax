@@ -210,6 +210,7 @@ async def _route_budget(
             cash_amount_usd=item.amount_usd,
             source_row=item.source_row,
             source_page=item.source_page,
+            source_subaccounts=item.source_subaccounts or None,
             atl_btl=getattr(item, "atl_btl", ATLBTLCategory.BTL.value),
             spend_category=getattr(item, "spend_category", None),
             is_labor=getattr(item, "is_labor", False),

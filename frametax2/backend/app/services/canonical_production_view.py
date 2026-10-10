@@ -3016,6 +3016,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
                     "spend_category": getattr(item.spend_category, "value", item.spend_category),
                     "department": item.department,
                     "atl_btl": getattr(item.atl_btl, "value", item.atl_btl),
+                    "source_subaccounts": list(item.source_subaccounts or []),
                 }
                 for item in line_items_for_breakdown
             ],

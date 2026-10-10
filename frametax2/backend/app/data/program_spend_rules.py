@@ -46,7 +46,7 @@ from __future__ import annotations
 #: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
 #: so a QPE-category/territorial-treatment change invalidates cached
 #: served evaluations. Bump on any material change.
-PROGRAM_SPEND_RULES_VERSION = "1.2.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
+PROGRAM_SPEND_RULES_VERSION = "1.3.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
 
 import enum
 from dataclasses import dataclass
@@ -869,3 +869,37 @@ def get_program_rules(program_slug: str) -> dict[str, SpendRule]:
 
 def get_rule(program_slug: str, spend_category: str) -> SpendRule | None:
     return _ALL_RULES.get(program_slug, {}).get(spend_category)
+
+
+def california_source_subaccount_treatment(parent_category: str, description: str):
+    """QEC Jan 2026 source-label treatment: (qualified state, conditional cap).
+
+    None is a fact gap, never a blanket inclusion. The role exception cap
+    does not establish the role or qualifying services by itself.
+    """
+    import re
+    label = description.lower().strip()
+    if parent_category == "atl_writer":
+        if re.search(r"research|duplication|writer.?s? assistants?|script coordinator|script timing", label):
+            return True, None
+        if re.search(r"writer fees?|publication|story rights|packaging|copyright|registration", label):
+            return False, None
+    elif parent_category == "atl_producer":
+        if re.search(r"executive producers?|line producer|associate producer", label):
+            return None, 100_000.0  # qualifying additional BTL credit/services required
+        if re.search(r"assistants?|secretar|drivers?|trailers?", label):
+            return True, None
+        if re.fullmatch(r"(?:co-)?producers?", label) or "overhead" in label:
+            return False, None
+    elif parent_category == "atl_director":
+        if re.search(r"assistant|secretary|driver|dialogue coach|acting coach|intimacy|technical advisor", label):
+            return True, None
+        if re.fullmatch(r"(?:second unit )?director", label):
+            return False, None
+    elif parent_category == "atl_cast":
+        if re.search(r"stunt|casting director|casting staff|intimacy coordinator", label):
+            return True, None
+        if re.search(r"stars.*leads|supporting cast|day players|principal cast", label):
+            # Expenses need vendor/payment facts; compensation is NQ.
+            return (None, None) if "expense" in label else (False, None)
+    return None, None
