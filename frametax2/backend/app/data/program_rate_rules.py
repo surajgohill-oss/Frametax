@@ -71,7 +71,7 @@ from app.data.program_slug_aliases import canonical_slug as _canonical_program_s
 #: nl_film_production_incentive, th_film_incentive, us_or_opif,
 #: us_tx_miip, za_nfvf_rebate) and the new RateCondition amount_fact_*/
 #: required_boolean_fact_key executable-gate mechanism.
-PROGRAM_RATE_RULES_VERSION = "1.5.2"  # 1.5.2: Greek category share caps (5% insurance/guarantees, 30% principal fees) from KYA 607434 Annex B.3 -- QpeShareCapRule. 1.5.1: PROJECT_OPEN_ITEM_RECOVERY US/CA/MX repairs -- RI USD7m and MX MXN40m per-project caps now applied; see the data-module notes
+PROGRAM_RATE_RULES_VERSION = "1.5.3"  # 1.5.3 (CR-03/CR-04): principal-fee group scope reconciled to Annex II 1.1-1.5 (known writer/director, proxy cast, unresolved music).  # 1.5.2: Greek category share caps (5% insurance/guarantees, 30% principal fees) from KYA 607434 Annex B.3 -- QpeShareCapRule. 1.5.1: PROJECT_OPEN_ITEM_RECOVERY US/CA/MX repairs -- RI USD7m and MX MXN40m per-project caps now applied; see the data-module notes
 
 
 @dataclass(frozen=True)
@@ -1703,6 +1703,13 @@ class QpeShareCapRule:
     description: str
     quote: str
     source_ref: str
+    # Membership the budget cannot settle. ``proxy_categories`` are placed INSIDE the group as a whole-account proxy (the
+    # lower QPE envelope); ``outside_unresolved_categories`` stay outside it as a planning value (the upper envelope for
+    # that account). Neither is an exact member count: both are disclosed as unresolved, with the fact that would settle them.
+    proxy_categories: frozenset[str] = frozenset()
+    outside_unresolved_categories: frozenset[str] = frozenset()
+    unresolved_fact_id: str | None = None
+    unresolved_note: str = ""
 
 
 QPE_SHARE_CAP_RULES: dict[str, tuple[QpeShareCapRule, ...]] = {
@@ -1718,13 +1725,22 @@ QPE_SHARE_CAP_RULES: dict[str, tuple[QpeShareCapRule, ...]] = {
         ),
         QpeShareCapRule(
             program_slug="gr_cash_rebate", group_id="principal_fees",
-            categories=frozenset({"atl_writer", "atl_director", "atl_cast"}), cap_pct=0.30,
-            description="Fees of the director, the screenwriter and the two leading actors count up to 30% of the total eligible "
-                        "production cost. Current text only: the producer is not in the group (Annex II lists the producer fee "
-                        "as an ordinary ATL category) and the historical 35% group of Law 4487/2017 Art. 26(2)(b) (which also "
-                        "contains the producer and music) applies to plans governed by that text. Account 1400 holds more than "
-                        "the two leads; with no payee split the whole account is placed inside the group (the conservative "
-                        "reading) and the portion above the cap is conditional on that split.",
+            categories=frozenset({"atl_writer", "atl_director"}), cap_pct=0.30,
+            proxy_categories=frozenset({"atl_cast"}), outside_unresolved_categories=frozenset({"music"}),
+            unresolved_fact_id="gr-principal-fee-membership",
+            unresolved_note=(
+                "Annex II 1.1 (screenwriter) and 1.2 (director) are known members by category. Annex II 1.4 counts only lead roles "
+                "A' and B': the cast account also holds supporting cast (2.2) and extras (2.3), which are outside the group, so "
+                "the whole cast account is placed inside the group as a proxy (lower QPE envelope) until the lead-role split is "
+                "evidenced. Annex II 1.5 is the composer's fee for ORIGINAL composition (a member), 6.8 is production services for "
+                "original music and songs (ordinary cost), and B.2(vii) makes copyright and licences on pre-existing music "
+                "ineligible; the budget's music account does not separate them, so it stays outside the group as a planning "
+                "value (upper envelope for that account) and its dollars are reported as unresolved membership, not as exact."),
+            description="Music rights (the composer's fee for original composition, Annex II 1.5), the fee of the director and the "
+                        "screenwriter, and the fees of the two leading actors count up to 30% of the total eligible production "
+                        "cost. Current text only: the producer (1.3) is not in the group and the historical 35% group of Law "
+                        "4487/2017 Art. 26(2)(b) (which also contains the producer and music) applies to plans governed by "
+                        "that text.",
             quote="Annex B.3(ii): music rights and the fee of the director, the screenwriter and the two leading actors are "
                   "counted up to thirty percent (30%) of the total eligible cost and may not exceed that percentage (KYA 607434, "
                   "Gazette B' 87/14.01.2026).",

@@ -46,7 +46,7 @@ from __future__ import annotations
 #: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
 #: so a QPE-category/territorial-treatment change invalidates cached
 #: served evaluations. Bump on any material change.
-PROGRAM_SPEND_RULES_VERSION = "1.4.0"  # 1.4.0 (2026-10-10): Greece -- explicit contingency rule (KYA 607434 Annex B.2(viii)/Annex II).  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
+PROGRAM_SPEND_RULES_VERSION = "1.5.0"  # 1.5.0 (CR-02): Greek contingency prerequisites (Action A, eligible deployed category, 10% allowance) as evidenced facts.  # 1.4.0 (2026-10-10): Greece -- explicit contingency rule (KYA 607434 Annex B.2(viii)/Annex II).  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
 
 import enum
 from dataclasses import dataclass
@@ -868,14 +868,64 @@ GR_CASH_REBATE_RULES: tuple[SpendRule, ...] = (
             "to 10% for unforeseen situations in Action A only. An expense settles only when incurred, paid and invoiced "
             "(Annex B.1), so the reserve is conditional on deployment and on the beneficiary being an Action A applicant. "
             "The retained Law 4487/2017 Art. 26 is silent on contingency. The category therefore qualifies as a rule, and the "
-            "producer's expected-utilization fact decides how much of the reserve is projected as incurred (unset = conditional)."
+            "producer's expected-utilization fact decides how much of the reserve is projected as incurred (unset = conditional). "
+            "The election is not legal evidence: Action A status and the eligible deployed category are separate evidenced "
+            "prerequisites (CONTINGENCY_PREREQUISITE_RULES); without them the reserve stays conditional."
         ),
     ),
 )
 
+@dataclass(frozen=True)
+class ContingencyPrerequisite:
+    """A legal prerequisite of a program's contingency category that the producer's deployment election cannot supply.
+    ``satisfied_fact_key`` / ``failed_fact_key`` are evidenced-program-fact ids (positive evidence only reaches the pricer, so
+    a known failure is its own evidenced fact). Neither present = the prerequisite is an open project fact."""
+    prerequisite_id: str
+    description: str
+    satisfied_fact_key: str
+    failed_fact_key: str
+
+
+@dataclass(frozen=True)
+class ContingencyPrerequisiteRule:
+    program_slug: str
+    prerequisites: tuple[ContingencyPrerequisite, ...]
+    category_limit_pct: float | None        # allowance ceiling as a share of the cost categories that carry an allowance
+    limit_base_excluded_categories: frozenset[str]   # categories with no allowance line (outside the limit base)
+    source_ref: str
+
+
+CONTINGENCY_PREREQUISITE_RULES: dict[str, ContingencyPrerequisiteRule] = {
+    "gr_cash_rebate": ContingencyPrerequisiteRule(
+        program_slug="gr_cash_rebate",
+        prerequisites=(
+            ContingencyPrerequisite(
+                "gr-action-a-applicant",
+                "Applicant is an Action A (large/foreign) beneficiary; contingency categories are eligible only for Action A "
+                "(KYA 607434 Annex B.2(viii)).",
+                "gr_action_a_applicant_evidenced", "gr_action_a_not_applicant_evidenced"),
+            ContingencyPrerequisite(
+                "gr-contingency-deployed-category",
+                "The reserve is deployed into an eligible Annex II cost category within that category's contingency allowance "
+                "(maximum 10% of the category), as incurred, paid and invoiced expense (Annex II; Annex B.1).",
+                "gr_contingency_category_eligible_evidenced", "gr_contingency_category_ineligible_evidenced"),
+        ),
+        category_limit_pct=0.10,
+        # Annex II gives categories 2-7 a contingency allowance line; category 1 (above the line) has none.
+        limit_base_excluded_categories=frozenset(
+            {"atl_writer", "atl_director", "atl_producer", "atl_cast", "atl_rights", "atl_other"}),
+        source_ref=_GR_KYA_REF,
+    ),
+}
+
+
 _ALL_RULES: dict[str, dict[str, SpendRule]] = {}
 for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES, *CA_FILM_RULES, *GR_CASH_REBATE_RULES):
     _ALL_RULES.setdefault(_rule.program_slug, {})[_rule.spend_category] = _rule
+
+
+def get_contingency_prerequisites(program_slug: str) -> ContingencyPrerequisiteRule | None:
+    return CONTINGENCY_PREREQUISITE_RULES.get(program_slug)
 
 
 def get_program_rules(program_slug: str) -> dict[str, SpendRule]:

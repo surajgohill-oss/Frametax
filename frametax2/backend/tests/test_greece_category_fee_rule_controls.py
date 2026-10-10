@@ -8,7 +8,11 @@ Annex I Table A), never from an engine or AG output:
   * the director, the screenwriter and the two leading actors count up to 30% of the TOTAL eligible cost (the producer is not in
     the group), where the total includes the capped group itself, so Q = other + min(ins, 0.05 Q) + min(fees, 0.30 Q);
   * eligible expense never exceeds 80% of the total production cost of the work (the worldwide budget total).
-The part of a capped group above its cap is conditional (unresolved), never silently dropped and never confirmed."""
+Excess of a KNOWN member category (insurance, bond, writer, director) is legally disallowed: excluded, kept in the cap trace.
+Only excess that depends on an unresolved membership (the cast account, which also holds supporting cast) is conditional, and
+a music account whose composer/services/licence split is unknown is reported as unresolved membership with an exactness
+envelope. Contingency needs evidenced Action A and eligible deployed-category prerequisites; the producer's election is not
+evidence, and deployed reserve is limited to 10% of the non-ATL eligible base once (KYA 607434 Annex B.2(viii), Annex II)."""
 from __future__ import annotations
 
 import pytest
@@ -25,7 +29,7 @@ BTL, INS, BOND, WRITER, DIRECTOR, CAST, PRODUCER = (
     "btl_crew_labor", "insurance", "completion_bond", "atl_writer", "atl_director", "atl_cast", "atl_producer")
 
 
-def _gr(lines, gross, contingency_pct=None):
+def _gr(lines, gross, contingency_pct=None, evidenced=None):
     allocs = [
         AccountAllocation(
             account_code=code, description=desc, amount_usd=amt, component="production", jurisdiction_code="GR",
@@ -36,7 +40,8 @@ def _gr(lines, gross, contingency_pct=None):
     return price_segment(
         jurisdiction_code="GR", program_slug="gr_cash_rebate", allocations=allocs,
         spend_category_by_code={code: cat for code, _d, _a, cat in lines}, offshore_payroll_accounts=frozenset(),
-        production_type="feature_film", gross_budget_usd=gross, contingency_expected_utilization_pct=contingency_pct)
+        production_type="feature_film", gross_budget_usd=gross, contingency_expected_utilization_pct=contingency_pct,
+        evidenced_requirement_facts=frozenset(evidenced or ()))
 
 
 # other 1,000,000; insurance 20,000 + bond 10,000; writer 100,000 + director 100,000 + cast 900,000 (fee group 1,100,000)
@@ -63,13 +68,51 @@ def test_the_producer_fee_is_outside_the_current_thirty_percent_group():
     assert seg.qpe_usd == pytest.approx(q, abs=0.02)
 
 
-def test_insurance_and_guarantees_are_capped_at_five_percent_of_the_total():
+def test_known_insurance_and_guarantee_excess_is_excluded_not_conditional():
     lines = [("3100", "CAMERA", 1_000_000.0, BTL), ("7200", "INSURANCE", 300_000.0, INS), ("7905", "BOND", 200_000.0, BOND)]
     seg = _gr(lines, gross=2_000_000.0)
     q = 1_000_000.0 / (1 - 0.05)                               # Q = 1,000,000 + 0.05 Q
     assert seg.qpe_usd == pytest.approx(q, abs=0.02)
-    assert seg.unresolved_usd == pytest.approx(500_000.0 - 0.05 * q, abs=0.02)
-    assert [g["group_id"] for g in seg.qpe_share_cap_groups] == ["insurance_and_guarantees"]
+    assert seg.excluded_usd == pytest.approx(500_000.0 - 0.05 * q, abs=0.02)   # disallowed by the 5% cap, whatever the payees
+    assert seg.unresolved_usd == 0.0                           # no payee fact can waive the cap: nothing is upside
+    (group,) = seg.qpe_share_cap_groups
+    assert group["group_id"] == "insurance_and_guarantees" and group["raw_usd"] == 500_000.0   # source dollars kept in the trace
+    assert group["definite_excess_usd"] == pytest.approx(500_000.0 - 0.05 * q, abs=0.02) and group["conditional_excess_usd"] == 0.0
+    assert not [p for p in seg.presumed_facts if p["condition_id"] == "gr-principal-fee-membership"]
+
+
+def test_known_writer_and_director_excess_is_excluded_and_only_the_cast_account_excess_is_conditional():
+    lines = [("3100", "CAMERA", 1_000_000.0, BTL), ("1100", "SCRIPT", 600_000.0, WRITER), ("1300", "DIRECTOR", 600_000.0, DIRECTOR)]
+    seg = _gr(lines, gross=3_000_000.0)
+    q = 1_000_000.0 / (1 - 0.30)                               # known members alone already exceed 30%
+    assert seg.qpe_usd == pytest.approx(q, abs=0.02)
+    assert seg.excluded_usd == pytest.approx(1_200_000.0 - 0.30 * q, abs=0.02) and seg.unresolved_usd == 0.0
+    cast = _gr(lines + [("1400", "CAST", 100_000.0, CAST)], gross=3_000_000.0)
+    (group,) = cast.qpe_share_cap_groups
+    q_upper = (1_000_000.0 + 100_000.0) / 0.70                 # cast entirely outside the group: the smallest possible excess
+    q_proxy = 1_000_000.0 / 0.70                               # cast entirely inside the group: the served lower envelope
+    assert group["definite_excess_usd"] == pytest.approx(1_200_000.0 - 0.30 * q_upper, abs=0.02)   # certain under any split
+    assert group["excess_usd"] == pytest.approx(1_300_000.0 - 0.30 * q_proxy, abs=0.02)
+    assert group["conditional_excess_usd"] == pytest.approx(group["excess_usd"] - group["definite_excess_usd"], abs=0.02)
+    assert cast.excluded_usd == pytest.approx(group["definite_excess_usd"], abs=0.02)
+    assert cast.unresolved_usd == pytest.approx(group["conditional_excess_usd"], abs=0.02)   # may exceed the cast account itself
+    assert cast.qpe_usd == pytest.approx(q_proxy, abs=0.05)
+
+
+def test_music_stays_outside_the_group_but_its_unresolved_membership_and_envelope_are_disclosed():
+    base = _gr(BASE, gross=3_200_000.0)
+    seg = _gr(BASE + [("6000", "MUSIC", 200_000.0, "music")], gross=3_200_000.0)
+    assert seg.qpe_usd == pytest.approx((1_030_000.0 + 200_000.0) / 0.70, abs=0.02)   # music planned as ordinary cost
+    (m,) = [p for p in seg.presumed_facts if p["condition_id"] == "gr-principal-fee-membership"]
+    assert m["exact"] is False
+    assert {(u["category"], u["treatment"]) for u in m["unresolved_members"]} == {
+        ("atl_cast", "inside_group_proxy"), ("music", "outside_group_planning_value")}
+    env = m["total_eligible_envelope_usd"]
+    assert env["lower"] <= env["served"] <= env["upper"] and env["upper"] - env["lower"] > 0
+    # a music account too small to move the eligible total is not reported as an open membership
+    assert not [p for p in _gr([("3100", "CAMERA", 1_000_000.0, BTL), ("6000", "MUSIC", 5_000.0, "music")],
+                               gross=2_000_000.0).presumed_facts if p["condition_id"] == "gr-principal-fee-membership"]
+    assert base.qpe_usd > 0
 
 
 def test_a_cap_that_does_not_bind_changes_nothing():
@@ -100,22 +143,54 @@ def test_share_caps_and_the_eighty_percent_limit_are_resolved_together():
     assert seg.qpe_cap_applied_usd > 0                         # the rest of the reduction is the 80% limit itself
 
 
-def test_contingency_is_conditional_until_the_producer_states_deployment():
-    lines = BASE + [("7902", "CONTINGENCY", 300_000.0, "contingency")]
-    unset = _gr(lines, gross=3_300_000.0)
-    fees_q = (1_030_000.0) / 0.70
-    assert unset.qpe_usd == pytest.approx(fees_q, abs=0.02)                              # reserve is not in the confirmed base
-    assert unset.unresolved_usd == pytest.approx(1_100_000.0 - 0.30 * fees_q + 300_000.0, abs=0.02)
-    full = _gr(lines, gross=3_300_000.0, contingency_pct=100.0)
-    assert full.qpe_usd == pytest.approx((1_030_000.0 + 300_000.0) / 0.70, abs=0.02)      # 100% deployed = ordinary eligible cost
-    half = _gr(lines, gross=3_300_000.0, contingency_pct=50.0)
-    assert half.qpe_usd == pytest.approx((1_030_000.0 + 150_000.0) / 0.70, abs=0.02)
-    assert half.excluded_usd == pytest.approx(150_000.0)                                 # the undeployed half is not incurred spend
+ACTION_A, DEPLOYED_OK = "gr_action_a_applicant_evidenced", "gr_contingency_category_eligible_evidenced"
+NOT_ACTION_A, DEPLOYED_BAD = "gr_action_a_not_applicant_evidenced", "gr_contingency_category_ineligible_evidenced"
+CONT = [("3100", "CAMERA", 1_000_000.0, BTL), ("7902", "CONTINGENCY", 500_000.0, "contingency")]
+
+
+def _cont(pct, evidenced):
+    return _gr(CONT, gross=2_000_000.0, contingency_pct=pct, evidenced=evidenced)
+
+
+def test_a_contingency_election_is_not_evidence_that_the_reserve_qualifies():
+    for evidence in (set(), {ACTION_A}, {DEPLOYED_OK}):       # either prerequisite missing = conditional
+        seg = _cont(100.0, evidence)
+        assert seg.qpe_usd == pytest.approx(1_000_000.0) and seg.unresolved_usd == pytest.approx(500_000.0)
+        assert seg.excluded_usd == 0.0
+
+
+def test_known_ineligible_contingency_prerequisites_fail_the_reserve_and_contradictory_evidence_stays_conditional():
+    for evidence in ({NOT_ACTION_A, DEPLOYED_OK}, {ACTION_A, DEPLOYED_BAD}):
+        seg = _cont(100.0, evidence)
+        assert seg.qpe_usd == pytest.approx(1_000_000.0) and seg.excluded_usd == pytest.approx(500_000.0)
+        assert seg.unresolved_usd == 0.0                       # known failure is excluded even with no election
+    assert _cont(None, {NOT_ACTION_A, DEPLOYED_OK}).excluded_usd == pytest.approx(500_000.0)
+    contradictory = _cont(100.0, {ACTION_A, NOT_ACTION_A, DEPLOYED_OK})
+    assert contradictory.unresolved_usd == pytest.approx(500_000.0) and contradictory.excluded_usd == 0.0
+
+
+def test_evidenced_contingency_is_limited_to_ten_percent_of_the_non_atl_base_once_at_each_deployment_level():
+    ok = {ACTION_A, DEPLOYED_OK}
+    full = _cont(100.0, ok)                                    # 500,000 deployed, bound 10% x 1,000,000 = 100,000
+    assert full.qpe_usd == pytest.approx(1_100_000.0) and full.excluded_usd == pytest.approx(400_000.0)
+    assert full.contingency_allowance_applied_usd == pytest.approx(400_000.0) and full.unresolved_usd == 0.0
+    half = _cont(50.0, ok)                                     # 250,000 deployed: undeployed 250,000 + over-bound 150,000
+    assert half.qpe_usd == pytest.approx(1_100_000.0) and half.excluded_usd == pytest.approx(400_000.0)
+    assert half.contingency_allowance_applied_usd == pytest.approx(150_000.0)
+    none = _cont(0.0, ok)
+    assert none.qpe_usd == pytest.approx(1_000_000.0) and none.excluded_usd == pytest.approx(500_000.0)
+    assert none.contingency_allowance_applied_usd == 0.0
+    unset = _cont(None, ok)                                    # prerequisites evidenced, deployment still a project fact
+    assert unset.qpe_usd == pytest.approx(1_000_000.0) and unset.unresolved_usd == pytest.approx(500_000.0)
+    small = _gr([CONT[0], ("7902", "CONTINGENCY", 50_000.0, "contingency")], gross=2_000_000.0, contingency_pct=100.0, evidenced=ok)
+    assert small.qpe_usd == pytest.approx(1_050_000.0) and small.contingency_allowance_applied_usd == 0.0   # inside the bound
+    assert full.qpe_usd + full.excluded_usd == pytest.approx(1_500_000.0)   # gross reserve unchanged: every dollar accounted
 
 
 def test_the_unevidenced_greek_incurrence_presumption_is_disclosed_without_changing_the_rate():
     seg = _gr(BASE, gross=3_000_000.0)
-    assert {p["condition_id"] for p in seg.presumed_facts} == {"gr-local-incurrence-schedule", "gr-application-date-and-regime"}
+    assert {p["condition_id"] for p in seg.presumed_facts} == {
+        "gr-local-incurrence-schedule", "gr-application-date-and-regime", "gr-principal-fee-membership"}
     assert seg.rate_floor == pytest.approx(0.40) and seg.rate_ceiling == pytest.approx(0.40) and not seg.ceiling_requires_confirmation
 
 
@@ -131,7 +206,10 @@ def test_programs_without_share_rules_are_untouched():
 def test_the_retained_records_carry_the_dated_primary_figures():
     rules = {r.group_id: r for r in QPE_SHARE_CAP_RULES["gr_cash_rebate"]}
     assert rules["insurance_and_guarantees"].cap_pct == 0.05 and rules["principal_fees"].cap_pct == 0.30
-    assert rules["principal_fees"].categories == frozenset({"atl_writer", "atl_director", "atl_cast"})   # no producer
+    pf = rules["principal_fees"]
+    assert pf.categories == frozenset({"atl_writer", "atl_director"})       # Annex II 1.1, 1.2; the producer (1.3) is outside
+    assert pf.proxy_categories == frozenset({"atl_cast"}) and pf.outside_unresolved_categories == frozenset({"music"})
+    assert "1.5" in pf.unresolved_note and "6.8" in pf.unresolved_note and "B.2(vii)" in pf.unresolved_note
     assert "14.01.2026" in rules["principal_fees"].quote and "Annex B.3(ii)" in rules["principal_fees"].quote
     contingency = get_program_rules("gr_cash_rebate")["contingency"]
     assert contingency.qualifies is True and "B.2(viii)" in contingency.notes and "Action A" in contingency.notes

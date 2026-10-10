@@ -158,6 +158,7 @@ class SegmentEconomics:
     # Unresolved NON-gating conditions of the winning (non-band) tier: facts the modeled figure presumes without evidence
     # (e.g. Greece: the Greek-incurrence schedule, the application date/regime). Disclosure only -- never changes the rate.
     presumed_facts: tuple[dict, ...] = ()
+    contingency_allowance_applied_usd: float = 0.0
     qpe_dollar_limit_usd: float | None = None
     qpe_dollar_limit_basis: str | None = None
     # The programme's whole annual allocation is NOT a per-project cap: it is disclosed here and is never reported as
@@ -744,6 +745,7 @@ def price_segment(
             c for c in offshore_payroll_accounts if c in {l.account_code for l in lines}
         ),
         contingency_expected_utilization_pct=contingency_expected_utilization_pct,
+        evidenced_facts=frozenset(evidenced_requirement_facts or ()),
         # SCENARIO default (project-wide rule): relocated BTL labour is locally hired unless overridden.
         scenario_local_btl=bool(
             home_jurisdiction_code and jurisdiction_code != home_jurisdiction_code and not scenario_btl_nonlocal
@@ -771,84 +773,183 @@ def price_segment(
     # still conserves every dollar and nothing is silently dropped.
     qpe_share_cap_applied = 0.0
     qpe_share_cap_groups: list[dict] = []
+    contingency_allowance_applied = 0.0
+    membership_presumptions: list[dict] = []
     _share_rules = get_qpe_share_caps(slug)
-    if _share_rules:
+    from app.data.program_spend_rules import get_contingency_prerequisites
+    _cont_rule = get_contingency_prerequisites(slug)
+
+    def _totals(reg):
+        return (
+            round(sum(a.amount_usd for a in reg if a.state == QualificationState.QUALIFIES), 2),
+            round(sum(a.amount_usd for a in reg if a.state == QualificationState.EXCLUDED), 2),
+            round(sum(a.amount_usd for a in reg if a.state in (
+                QualificationState.GREY_AREA_REQUIRES_AUTHORITY, QualificationState.STRUCTURING_OPPORTUNITY)), 2),
+        )
+
+    _cat_by_line: dict = {}
+    if _share_rules or _cont_rule is not None:
         from app.calculators.classify_budget_line_items import classify_line_item as _classify_line
         _cat_by_line = {
             l.line_id: (l.spend_category or _classify_line(l.description).spend_category.value) for l in lines
         }
-        _raw = {r.group_id: 0.0 for r in _share_rules}
-        for _a in register:
-            if _a.state == QualificationState.QUALIFIES:
-                for _r in _share_rules:
-                    if _cat_by_line.get(_a.line_id) in _r.categories:
-                        _raw[_r.group_id] += _a.amount_usd
-        _grouped = sum(_raw.values())
-        _uncapped = qpe - _grouped
-        _limit = None
+
+    # Contingency allowance ceiling (KYA 607434 Annex II: each category's contingency allowance is at most 10% of that
+    # category). Categories 2-7 carry an allowance and category 1 (above the line) does not, so the sum of the allowances can
+    # never exceed the share of the non-ATL eligible base: the part above that bound is excluded as a certainty. Applied once,
+    # to the deployed (incurred) amount only; where the deployed reserve sits inside the bound, the per-category fit is the
+    # evidenced prerequisite ``gr_contingency_category_eligible_evidenced``, not an assumption made here.
+    if _cont_rule is not None and _cont_rule.category_limit_pct is not None:
+        _is_cont = lambda a: _cat_by_line.get(a.line_id) == "contingency"
+        _cont_total = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES and _is_cont(a))
+        _limit_base = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+                          and not _is_cont(a) and _cat_by_line.get(a.line_id) not in _cont_rule.limit_base_excluded_categories)
+        _cont_limit = _cont_rule.category_limit_pct * _limit_base
+        if _cont_total > _cont_limit + 0.005:
+            _keep = _cont_limit / _cont_total
+            _reg2 = []
+            for _a in register:
+                if _a.state == QualificationState.QUALIFIES and _is_cont(_a):
+                    _kept = round(_a.amount_usd * _keep, 2)
+                    _over = round(_a.amount_usd - _kept, 2)
+                    _reg2.append(_dataclasses_replace(_a, amount_usd=_kept, financial_impact_usd=_kept))
+                    if _over > 0:
+                        _reg2.append(_dataclasses_replace(
+                            _a, amount_usd=_over, financial_impact_usd=_over, state=QualificationState.EXCLUDED,
+                            confidence=QualificationConfidence.HIGH, authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
+                            reason=(f"Deployed contingency above the {_cont_rule.category_limit_pct:.0%} allowance ceiling of the "
+                                    f"categories that carry one ({_cont_rule.source_ref}); excluded, not conditional."),
+                            grey_reason=None, incentive_upside_usd=None))
+                else:
+                    _reg2.append(_a)
+            register = _reg2
+            contingency_allowance_applied = round(_cont_total - _cont_limit, 2)
+            qpe, excluded, unresolved = _totals(register)
+
+    # Category share caps (QpeShareCapRule). The statutes cap a group of categories at a share of the TOTAL eligible cost, which
+    # includes the group itself, so the allowed total is the greatest fixed point of
+    #   Q = min(limit, uncapped + sum_g min(raw_g, cap_g * Q))
+    # where ``limit`` is the program's percentage QpeCapRule ceiling (Greece: 80% of the worldwide total cost) when one exists.
+    # Excess above a cap is legally disallowed for every KNOWN member (excluded, source dollars preserved in the cap trace).
+    # Only the excess that depends on an unresolved membership (a proxy account holding both members and non-members) stays
+    # conditional; it is monotone in the unresolved share, so the known-members-only excess is the certain part.
+    if _share_rules:
         _pre_cap_rule = get_qpe_cap(slug)
+        _limit = None
         if _pre_cap_rule is not None:
             _pre_base = gross_budget_usd if _pre_cap_rule.cap_base == "total_worldwide_budget" else allocated
             if _pre_base is not None:
                 _limit = _pre_base * _pre_cap_rule.cap_pct
 
-        def _allowed_total(q: float) -> float:
-            total = _uncapped + sum(min(_raw[r.group_id], r.cap_pct * q) for r in _share_rules)
-            return min(total, _limit) if _limit is not None else total
+        def _role(rule, cat):
+            return ("known" if cat in rule.categories else "proxy" if cat in rule.proxy_categories
+                    else "outside" if cat in rule.outside_unresolved_categories else None)
 
-        _q = _uncapped + _grouped
-        if _limit is not None:
-            _q = min(_q, _limit)
-        for _ in range(1000):
-            _q_next = _allowed_total(_q)
-            if abs(_q_next - _q) < 1e-9:
-                _q = _q_next
-                break
-            _q = _q_next
-        _ratio = {}
+        def _solve(raw, uncapped):
+            q = uncapped + sum(raw.values())
+            q = min(q, _limit) if _limit is not None else q
+            for _ in range(1000):
+                nxt = uncapped + sum(min(raw[r.group_id], r.cap_pct * q) for r in _share_rules)
+                nxt = min(nxt, _limit) if _limit is not None else nxt
+                if abs(nxt - q) < 1e-9:
+                    return nxt
+                q = nxt
+            return q
+
+        _sums = {r.group_id: {"known": 0.0, "proxy": 0.0, "outside": 0.0} for r in _share_rules}
+        for _a in register:
+            if _a.state == QualificationState.QUALIFIES:
+                for _r in _share_rules:
+                    _k = _role(_r, _cat_by_line.get(_a.line_id))
+                    if _k:
+                        _sums[_r.group_id][_k] += _a.amount_usd
+        _q_total = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES)
+        _known = {g: v["known"] for g, v in _sums.items()}
+        _served = {g: v["known"] + v["proxy"] for g, v in _sums.items()}
+        _uncapped_served = _q_total - sum(_served.values())          # outside-unresolved stays ordinary
+        _q_served = _solve(_served, _uncapped_served)
+        _q_known_only = _solve(_known, _q_total - sum(_known.values()))
+        _q_all_inside = _solve({g: v["known"] + v["proxy"] + v["outside"] for g, v in _sums.items()},
+                               _q_total - sum(v["known"] + v["proxy"] + v["outside"] for v in _sums.values()))
+        _definite, _conditional, _cond_known, _cond_proxy = {}, {}, {}, {}
         for _r in _share_rules:
-            _group_raw = _raw[_r.group_id]
-            _allowed = min(_group_raw, _r.cap_pct * _q)
-            _ratio[_r.group_id] = (_allowed / _group_raw) if _group_raw > 0 else 1.0
-            if _group_raw > 0 and _allowed < _group_raw - 0.005:
+            _g = _r.group_id
+            _total_excess = max(0.0, _served[_g] - min(_served[_g], _r.cap_pct * _q_served))
+            _def = max(0.0, _known[_g] - min(_known[_g], _r.cap_pct * _q_known_only))
+            _definite[_g] = min(_def, _total_excess)
+            _conditional[_g] = max(0.0, _total_excess - _definite[_g])
+            # Conditional excess sits on the unresolved account first; what it cannot hold (a proxy account that lowers the
+            # total enough to push KNOWN members over their cap) is conditional on the same split, never certain.
+            _cond_proxy[_g] = min(_conditional[_g], _sums[_g]["proxy"])
+            _cond_known[_g] = _conditional[_g] - _cond_proxy[_g]
+            if _total_excess > 0.005:
                 qpe_share_cap_groups.append({
-                    "group_id": _r.group_id, "cap_pct": _r.cap_pct, "raw_usd": round(_group_raw, 2),
-                    "allowed_usd": round(_allowed, 2), "excess_usd": round(_group_raw - _allowed, 2),
-                    "total_eligible_basis_usd": round(_q, 2), "source_ref": _r.source_ref,
+                    "group_id": _g, "cap_pct": _r.cap_pct, "raw_usd": round(_served[_g], 2),
+                    "allowed_usd": round(_served[_g] - _total_excess, 2), "excess_usd": round(_total_excess, 2),
+                    "definite_excess_usd": round(_definite[_g], 2), "conditional_excess_usd": round(_conditional[_g], 2),
+                    "total_eligible_basis_usd": round(_q_served, 2), "source_ref": _r.source_ref,
+                })
+        # Unresolved membership: disclosed whenever the unresolved accounts could move the eligible total, so the served
+        # figure is never read as an exact count even when no excess is shown.
+        for _r in _share_rules:
+            _g = _r.group_id
+            _members = [{"category": c, "amount_usd": round(_sums[_g][k], 2),
+                         "treatment": "inside_group_proxy" if k == "proxy" else "outside_group_planning_value"}
+                        for k, cats in (("proxy", _r.proxy_categories), ("outside", _r.outside_unresolved_categories))
+                        for c in sorted(cats) if _sums[_g][k] > 0.005]
+            if _members and _q_known_only - _q_all_inside > 0.005:
+                membership_presumptions.append({
+                    "condition_id": _r.unresolved_fact_id or f"{_g}-membership", "description": _r.description,
+                    "quote": _r.quote, "state": "CLAIM_BASE_UNRESOLVED", "note": _r.unresolved_note,
+                    "group_id": _g, "unresolved_members": _members,
+                    "total_eligible_envelope_usd": {"lower": round(_q_all_inside, 2), "upper": round(_q_known_only, 2),
+                                                    "served": round(_q_served, 2)},
+                    "exact": False,
                 })
         if qpe_share_cap_groups:
             _split_register = []
             for _a in register:
-                _hit = next((_r for _r in _share_rules
-                             if _a.state == QualificationState.QUALIFIES
-                             and _cat_by_line.get(_a.line_id) in _r.categories
-                             and _ratio[_r.group_id] < 1.0), None)
+                _hit = _role_k = None
+                if _a.state == QualificationState.QUALIFIES:
+                    for _r in _share_rules:
+                        _k = _role(_r, _cat_by_line.get(_a.line_id))
+                        if _k in ("known", "proxy"):
+                            _hit, _role_k = _r, _k
+                            break
                 if _hit is None:
                     _split_register.append(_a)
                     continue
-                _kept = round(_a.amount_usd * _ratio[_hit.group_id], 2)
-                _over = round(_a.amount_usd - _kept, 2)
+                _g = _hit.group_id
+                _raw_role = _sums[_g]["known" if _role_k == "known" else "proxy"]
+                _def_amt = round(_a.amount_usd * _definite[_g] / _raw_role, 2) if _role_k == "known" else 0.0
+                _cond_amt = round(_a.amount_usd * (_cond_known if _role_k == "known" else _cond_proxy)[_g] / _raw_role, 2)
+                if _def_amt <= 0 and _cond_amt <= 0:
+                    _split_register.append(_a)
+                    continue
+                _kept = round(_a.amount_usd - _def_amt - _cond_amt, 2)
                 _split_register.append(_dataclasses_replace(_a, amount_usd=_kept, financial_impact_usd=_kept))
-                if _over > 0:
+                if _def_amt > 0:
                     _split_register.append(_dataclasses_replace(
-                        _a, amount_usd=_over, financial_impact_usd=_over,
+                        _a, amount_usd=_def_amt, financial_impact_usd=_def_amt, state=QualificationState.EXCLUDED,
+                        confidence=QualificationConfidence.HIGH, authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
+                        reason=(f"{_hit.description} This portion exceeds the {_hit.cap_pct:.0%} cap of the total eligible cost "
+                                f"({_hit.source_ref}) under every possible split of the unresolved accounts; the category is a "
+                                "known member of the capped group, so the excess is disallowed, not conditional and not upside."),
+                        grey_reason=None, incentive_upside_usd=None))
+                if _cond_amt > 0:
+                    _split_register.append(_dataclasses_replace(
+                        _a, amount_usd=_cond_amt, financial_impact_usd=_cond_amt,
                         state=QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
                         confidence=QualificationConfidence.LOW, authority_basis=AuthorityBasis.FACT_DEPENDENT,
                         reason=(f"{_hit.description} This portion exceeds the {_hit.cap_pct:.0%} cap of the total eligible cost "
-                                f"({_hit.source_ref}); it is conditional on which payees fall inside the capped group, not excluded."),
-                        resolving_evidence="Payee-level split of the account (which payments are the capped roles) and the resulting "
-                                           "total eligible cost.",
+                                f"({_hit.source_ref}) only if the unresolved cast account falls inside the capped group; "
+                                "that account holds both members and non-members, so the portion is conditional on the split."),
+                        resolving_evidence="Payee-level split of the unresolved account (which payments are the capped roles).",
                         incentive_upside_usd=0.0, grey_reason=GreyReason.MISSING_PRODUCTION_FACT,
                     ))
             register = _split_register
             qpe_share_cap_applied = round(sum(g["excess_usd"] for g in qpe_share_cap_groups), 2)
-            qpe = round(sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES), 2)
-            excluded = round(sum(a.amount_usd for a in register if a.state == QualificationState.EXCLUDED), 2)
-            unresolved = round(sum(
-                a.amount_usd for a in register
-                if a.state in (QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
-                               QualificationState.STRUCTURING_OPPORTUNITY)
-            ), 2)
+            qpe, excluded, unresolved = _totals(register)
 
     # Incentive/Optimizer Core Closeout: program-level QPE eligible-spend
     # cap (e.g. UK/Greece 80%), applied to the QPE base BEFORE rate
@@ -1703,7 +1804,8 @@ def price_segment(
         qpe_dollar_cap_applied_usd=qpe_dollar_cap_applied,
         qpe_share_cap_applied_usd=qpe_share_cap_applied,
         qpe_share_cap_groups=tuple(qpe_share_cap_groups),
-        presumed_facts=presumed_facts,
+        presumed_facts=presumed_facts + tuple(membership_presumptions),
+        contingency_allowance_applied_usd=contingency_allowance_applied,
         qpe_dollar_limit_usd=qpe_dollar_limit,
         qpe_dollar_limit_basis=qpe_dollar_basis,
         annual_fund_budget_usd=_annual_fund_budget_usd(slug),

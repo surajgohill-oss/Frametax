@@ -213,7 +213,7 @@ def build_single_jurisdiction_contract(
             e = best_per_jurisdiction.get(code) or {}
             fit_source = direct_fit or e
             fit, fit_reasons = fit_source.get("production_fit_status"), list(fit_source.get("production_fit_reasons") or [])
-            conditions = [m.get("description") or m.get("fact_key") for m in (e.get("ceiling_missing_facts") or [])]
+            conditions = [m.get("description") or m.get("fact_key") for m in (*(e.get("ceiling_missing_facts") or []), *(e.get("claim_base_missing_facts") or []))]
             if _fit_known(fit_source) and fit not in FIT_CONFIRMED_STATUSES and fit != FIT_WEAK:
                 conditions.append("Location fit unconfirmed (capability data cannot assess): " + ", ".join(fit_reasons or ["CAPABILITY_UNKNOWN"]))
             rec.update(

@@ -168,6 +168,9 @@ class ProductionFacts:
     #: otherwise. It never rewrites the source budget's residency and never claims the actual production has
     #: local labour; ATL, cast and any producer/director nationality or residency stay separately evidenced.
     scenario_local_btl: bool = False
+    #: Evidenced program-fact ids (positive evidence only). A contingency election is a deployment expectation, not legal
+    #: evidence: a program's contingency prerequisites (get_contingency_prerequisites) are settled only by these facts.
+    evidenced_facts: frozenset[str] = frozenset()
 
     def work_outside(self, account_code: str, category: str) -> bool:
         if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
@@ -339,6 +342,26 @@ def derive_qualification_register(
         # for any program whose rule says this category qualifies — never
         # hard-coded to Mauritius, never hard-coded to any other program.
         if category == "contingency" and qualifies is True:
+            from app.data.program_spend_rules import get_contingency_prerequisites
+            _pre = get_contingency_prerequisites(canonical_slug(program_slug))
+            _failed, _open, _contradicted = [], [], []
+            for _p in (_pre.prerequisites if _pre else ()):
+                _ok, _bad = _p.satisfied_fact_key in facts.evidenced_facts, _p.failed_fact_key in facts.evidenced_facts
+                (_contradicted if _ok and _bad else _failed if _bad else _open if not _ok else []).append(_p)
+            if _failed and not _contradicted:
+                _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH, AuthorityBasis.EXPLICIT_STATUTE,
+                      f"{rule.notes} Evidenced as not met: " + "; ".join(p.description for p in _failed))
+                continue
+            if _open or _contradicted:
+                _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                      QualificationConfidence.LOW, AuthorityBasis.FACT_DEPENDENT,
+                      f"{rule.notes} The expected-utilization election is a deployment expectation, not evidence that the "
+                      "reserve qualifies. Unresolved prerequisite(s): "
+                      + "; ".join(p.description for p in (*_open, *_contradicted))
+                      + (" (the evidence supplied contradicts itself for the last " f"{len(_contradicted)})" if _contradicted else ""),
+                      evidence="; ".join(f"{p.satisfied_fact_key} / {p.failed_fact_key}" for p in (*_open, *_contradicted)),
+                      upside=round(amt * rate, 2), grey_reason=GreyReason.MISSING_PRODUCTION_FACT)
+                continue
             pct = facts.contingency_expected_utilization_pct
             if pct is None:
                 # Genuine missing PROJECT FACT — never silently assumed as

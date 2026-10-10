@@ -97,6 +97,28 @@ def _missing_facts_for_leg(leg: dict) -> list[dict]:
     return facts
 
 
+def _claim_base_facts(legs: list[dict]) -> list[dict]:
+    """Facts the priced CLAIM BASE presumes (qualifying spend, incurrence, application regime, capped-group membership).
+    Distinct from the rate-ceiling conditions above: the statutory rate can be certain while the base it applies to is
+    not. They never change a number; they only keep the leg from being served as CONFIRMED economics."""
+    out: list[dict] = []
+    for leg in legs:
+        for p in leg.get("presumed_facts") or []:
+            if not isinstance(p, dict):
+                continue
+            out.append({
+                "fact_id": p.get("condition_id"), "description": p.get("description"),
+                "state": p.get("state"), "note": p.get("note"),
+                "program_slug": leg["program_slug"], "jurisdiction_code": leg["jurisdiction_code"],
+                "affects_usd": leg["confirmed_usd"],
+                **({"exact": p["exact"]} if "exact" in p else {}),
+                **({"unresolved_members": p["unresolved_members"]} if p.get("unresolved_members") else {}),
+                **({"total_eligible_envelope_usd": p["total_eligible_envelope_usd"]}
+                   if p.get("total_eligible_envelope_usd") else {}),
+            })
+    return out
+
+
 def _legs_from_trace(trace: dict) -> tuple[str, list[dict]] | None:
     """Return (method, legs) from the persisted trace, or None if it carries no
     per-leg floor/ceiling data. Each leg: confirmed_usd, maximum_usd (>= confirmed)."""
@@ -122,6 +144,7 @@ def _legs_from_trace(trace: dict) -> tuple[str, list[dict]] | None:
                 "rate_maximum": seg.get("rate_ceiling"),
                 "conditional": conditional,
                 "ceiling_conditions": seg.get("ceiling_conditions") or [],
+                "presumed_facts": seg.get("presumed_facts") or [],
             })
         return ("SEGMENT_TIERS", legs) if legs else None
     components = trace.get("component_allocations") or []
@@ -164,6 +187,7 @@ def _legs_from_trace(trace: dict) -> tuple[str, list[dict]] | None:
             "rate_maximum": None,
             "conditional": uplift > _RECONCILE_TOLERANCE_USD / 100.0,
             "ceiling_conditions": comp.get("ceiling_conditions") or [],
+            "presumed_facts": comp.get("presumed_facts") or [],
             "component": comp.get("component"),
             "adjustment_blocks_maximum": blocked,
         })
@@ -196,6 +220,8 @@ def build_incentive_potential(
         "ceiling_missing_facts": [],
         "ceiling_basis": {"method": "NONE", "legs": [], "note": None},
         "economics_certainty": CERTAINTY_REFERENCE_ONLY,
+        "claim_base_missing_facts": [],
+        "claim_base_certainty": None,
     }
     if not is_priced or confirmed_floor is None or confirmed_npc is None:
         base["ceiling_basis"]["note"] = "Structure is not fully priced; no confirmed or maximum economics are served."
@@ -213,6 +239,10 @@ def build_incentive_potential(
         )
         return base
     method, legs = extracted
+    claim_facts = _claim_base_facts(legs)
+    base["claim_base_missing_facts"] = claim_facts
+    base["claim_base_certainty"] = CERTAINTY_CONDITIONAL if claim_facts else CERTAINTY_CONFIRMED
+    review = legal_review_required or administrative_allocation_risk or bool(claim_facts)
 
     blocked_legs = [l for l in legs if l.get("adjustment_blocks_maximum")]
     if blocked_legs:
@@ -232,10 +262,7 @@ def build_incentive_potential(
                 for l in blocked_legs
             ],
         }
-        base["economics_certainty"] = (
-            CERTAINTY_CONDITIONAL if (legal_review_required or administrative_allocation_risk)
-            else CERTAINTY_CONFIRMED
-        )
+        base["economics_certainty"] = CERTAINTY_CONDITIONAL if review else CERTAINTY_CONFIRMED
         return base
     legs_confirmed = round(sum(l["confirmed_usd"] for l in legs), 2)
     legs_upside = round(sum(max(0.0, l["maximum_usd"] - l["confirmed_usd"]) for l in legs), 2)
@@ -254,10 +281,7 @@ def build_incentive_potential(
                 "no maximum is established."
             ),
         }
-        base["economics_certainty"] = (
-            CERTAINTY_CONDITIONAL if (legal_review_required or administrative_allocation_risk)
-            else CERTAINTY_CONFIRMED
-        )
+        base["economics_certainty"] = CERTAINTY_CONDITIONAL if review else CERTAINTY_CONFIRMED
         return base
     # A structure-level adjustment with NO conditional leg cannot move the maximum: with every
     # leg already at its ceiling, the priced incentive IS the maximum.
@@ -300,7 +324,7 @@ def build_incentive_potential(
         },
         "economics_certainty": (
             CERTAINTY_CONDITIONAL
-            if (conditional or legal_review_required or administrative_allocation_risk)
+            if (conditional or review)
             else CERTAINTY_CONFIRMED
         ),
     })

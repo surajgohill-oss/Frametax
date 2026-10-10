@@ -31,7 +31,7 @@ _STRUCTURE_FIELDS = (
     "participants", "treaty_slug", "is_baseline", "is_fully_priced", "economic_identity", "scenario_category",
     "production_fit_status", "npc_with_adjustments_usd", "npc_conservative_usd", "selected_incentive_usd",
     "confirmed_incentive_floor_usd", "maximum_supported_incentive_usd", "confirmed_npc_usd", "potential_npc_usd",
-    "potential_upside_usd", "ceiling_status", "economics_certainty",
+    "potential_upside_usd", "ceiling_status", "economics_certainty", "claim_base_certainty",
 )
 
 
