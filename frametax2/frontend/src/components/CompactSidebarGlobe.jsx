@@ -138,7 +138,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0, 2.68); // the planet (cloud shell included) fills ~98% of the circle
+    camera.position.set(0, 0, 2.1); // close in: the planet overfills the circle ~1.27x, so continents read larger and the limb is cropped
 
     let renderer;
     try {
