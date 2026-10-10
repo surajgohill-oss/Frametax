@@ -67,7 +67,10 @@ function bakeClouds() {
   const c = document.createElement("canvas");
   c.width = 512; c.height = 256;
   const ctx = c.getContext("2d");
-  ctx.clearRect(0, 0, 512, 256);
+  // Opaque black ground, white clouds: the canvas is used as an ALPHA map (grey level = cloud density). An RGBA texture with
+  // transparent-black texels filters toward black at every cloud edge, which is what drew the dark halo around the clouds.
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, 512, 256);
 
   // Cloud MASSES, not scattered flecks: ~28 systems along the ITCZ and the two storm tracks, each a soft base with a dense core of
   // overlapping strokes, so the deck reads as connected banks with open ocean and a clear Sahara between them.
@@ -80,8 +83,8 @@ function bakeClouds() {
     if (cx > 205 && cx < 295 && cy > 70 && cy < 135) continue; // Sahara stays visible
     const rad = 16 + rand() * 14;
     const base = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad * 1.5);
-    base.addColorStop(0, "rgba(255, 255, 255, 0.42)");
-    base.addColorStop(0.6, "rgba(255, 255, 255, 0.2)");
+    base.addColorStop(0, "rgba(255, 255, 255, 0.2)");
+    base.addColorStop(0.6, "rgba(255, 255, 255, 0.08)");
     base.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.fillStyle = base;
     ctx.beginPath();
@@ -187,7 +190,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     group.add(earth);
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(1.004, 48, 48),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false, emissive: new THREE.Color(0x333333) }),
+      new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false, emissive: new THREE.Color(0x333333) }),
     );
     group.add(clouds);
     const glow = new THREE.Mesh(
@@ -198,8 +201,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     group.add(glow);
 
     const cloudTex = new THREE.CanvasTexture(bakeClouds());
-    cloudTex.colorSpace = THREE.SRGBColorSpace;
-    clouds.material.map = cloudTex;
+    clouds.material.alphaMap = cloudTex;
+    clouds.material.needsUpdate = true;
     let earthTex = null;
     const render = () => renderer.render(scene, camera);
     let cancelled = false;
