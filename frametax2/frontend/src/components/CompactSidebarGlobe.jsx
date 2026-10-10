@@ -69,24 +69,36 @@ function bakeClouds() {
   const ctx = c.getContext("2d");
   ctx.clearRect(0, 0, 512, 256);
 
-  for (let i = 0; i < 700; i += 1) {
-    const band = rand();
-    let y;
-    if (band < 0.4) y = 120 + (rand() - 0.5) * 35;
-    else if (band < 0.7) y = 180 + (rand() - 0.5) * 45;
-    else y = 65 + (rand() - 0.5) * 30;
-    const x = rand() * 512;
-    if (x > 215 && x < 285 && y > 70 && y < 130) continue; // Sahara stays visible
-    const w = 1.5 + rand() * 5;
-    const h = 0.7 + rand() * 1.8;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate((rand() - 0.5) * 0.4);
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + rand() * 0.5})`;
+  // Cloud MASSES, not scattered flecks: ~28 systems along the ITCZ and the two storm tracks, each a soft base with a dense core of
+  // overlapping strokes, so the deck reads as connected banks with open ocean and a clear Sahara between them.
+  const bandY = [120, 180, 65];
+  const gauss = () => (rand() + rand() + rand() - 1.5) / 1.5;
+  for (let k = 0; k < 28; k += 1) {
+    const by = bandY[k % 3];
+    const cy = by + (rand() - 0.5) * 30;
+    const cx = (k * 512 / 28 + rand() * 14) % 512;
+    if (cx > 205 && cx < 295 && cy > 70 && cy < 135) continue; // Sahara stays visible
+    const rad = 16 + rand() * 14;
+    const base = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad * 1.5);
+    base.addColorStop(0, "rgba(255, 255, 255, 0.42)");
+    base.addColorStop(0.6, "rgba(255, 255, 255, 0.2)");
+    base.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = base;
     ctx.beginPath();
-    ctx.ellipse(0, 0, w, h, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rad * 1.7, rad * 0.8, (rand() - 0.5) * 0.3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
+    for (let i = 0; i < 34; i += 1) {
+      const x = cx + gauss() * rad * 1.5;
+      const y = cy + gauss() * rad * 0.6;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((rand() - 0.5) * 0.4);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.45 + rand() * 0.45})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 3 + rand() * 7, 1.2 + rand() * 2.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   ctx.save();
@@ -221,8 +233,8 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       if (now - last < 33) return; // ~30fps is plenty at 80px
       const dt = last ? Math.min(100, now - last) : 33;
       last = now;
-      group.rotation.y += 0.0000524 * dt;         // one full turn of the Earth in ~2 minutes
-      clouds.rotation.y += 0.00002 * dt;           // the cloud deck drifts ahead of the Earth (on-screen ~0.0000724/ms, about a 1.4 min lap)
+      group.rotation.y += 0.0000524 * dt;         // one full turn of the Earth in ~2 minutes (speed LOCKED by the user, 2026-10-10)
+      clouds.rotation.y += 0.00002 * dt;           // the cloud deck drifts ahead of the Earth (on-screen ~0.0000724/ms, about a 1.4 min lap; LOCKED 2026-10-10)
       key.position.x = 0.1 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
       key.position.y = 0.2 + Math.cos(now / 11000) * 0.12;
       if (glow.visible) {
