@@ -77,6 +77,7 @@ from app.data.program_rate_rules import (
     _fx_native_amount,
     _infer_amount_fact_currency,
     get_qpe_cap,
+    get_qpe_dollar_cap,
     get_rate_rules,
     resolve_program_rate,
 )
@@ -141,6 +142,14 @@ class SegmentEconomics:
     # between the confirmed floor and the maximum.
     ceiling_conditions: tuple[dict, ...] = ()
     qpe_cap_applied_usd: float = 0.0   # amount excluded by a program-level QPE cap (e.g. GB/GR 80%)
+    # Dollar limit on the qualified-expenditure BASE (e.g. California $120M non-independent / $20M independent): a base limit, distinct
+    # from the incentive cap below and from the programme's annual fund.
+    qpe_dollar_cap_applied_usd: float = 0.0
+    qpe_dollar_limit_usd: float | None = None
+    qpe_dollar_limit_basis: str | None = None
+    # The programme's whole annual allocation is NOT a per-project cap: it is disclosed here and is never reported as
+    # incentive_cap_usd (it remains a true upper bound on one production's payout, but not a project entitlement limit).
+    annual_fund_budget_usd: float | None = None
     # Cluster 7 (dollar caps). A percentage QPE cap (above) limits the BASE;
     # these limit the INCENTIVE itself, applied after base x rate. Both are
     # canonical fields that already existed but never constrained served
@@ -281,6 +290,25 @@ def _segment_lines(
         for a in sorted(allocations, key=lambda a: a.account_code)
     ]
 
+
+
+def _annual_fund_budget_usd(slug: str) -> float | None:
+    """The programme's whole annual allocation, disclosed on its own: it is not a per-project cap and is never reported as
+    one (see SegmentEconomics.annual_fund_budget_usd)."""
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    from app.data.program_requirements import get_program_requirements
+
+    values: list[float] = []
+    profile = get_program_requirements(slug)
+    if profile is not None and getattr(profile, "annual_program_cap_usd", None):
+        values.append(float(profile.annual_program_cap_usd))
+    try:
+        record = get_doctrine(slug)
+    except Exception:
+        record = None
+    if record is not None and getattr(record, "annual_cap_usd", None):
+        values.append(float(record.annual_cap_usd))
+    return min(values) if values else None
 
 
 def _resolve_incentive_dollar_cap(
@@ -665,6 +693,24 @@ def price_segment(
             if qpe > cap_ceiling:
                 qpe_cap_applied = round(qpe - cap_ceiling, 2)
                 qpe = cap_ceiling
+
+    # Dollar limit on the qualified-expenditure base: applied to the base BEFORE the rate (and before the incentive-dollar cap).
+    qpe_dollar_cap_applied = 0.0
+    qpe_dollar_limit = None
+    qpe_dollar_basis = None
+    _dollar_cap_rule = get_qpe_dollar_cap(slug)
+    if _dollar_cap_rule is not None:
+        _independent = bool(
+            _dollar_cap_rule.independent_fact
+            and _dollar_cap_rule.independent_fact in (evidenced_requirement_facts or frozenset())
+        )
+        if _independent and _dollar_cap_rule.independent_limit_usd is not None:
+            qpe_dollar_limit, qpe_dollar_basis = _dollar_cap_rule.independent_limit_usd, "independent_category_evidenced"
+        else:
+            qpe_dollar_limit, qpe_dollar_basis = _dollar_cap_rule.default_limit_usd, "non_independent_default"
+        if qpe > qpe_dollar_limit:
+            qpe_dollar_cap_applied = round(qpe - qpe_dollar_limit, 2)
+            qpe = qpe_dollar_limit
 
     # Codex final three-program conservation repair (P0-ZA-001, fifth
     # pass): "absent scalar rejects instead of deriving." A program
@@ -1459,7 +1505,11 @@ def price_segment(
             if ceiling_requires_confirmation else ()
         ),
         qpe_cap_applied_usd=qpe_cap_applied,
-        incentive_cap_usd=cap_usd,
+        qpe_dollar_cap_applied_usd=qpe_dollar_cap_applied,
+        qpe_dollar_limit_usd=qpe_dollar_limit,
+        qpe_dollar_limit_basis=qpe_dollar_basis,
+        annual_fund_budget_usd=_annual_fund_budget_usd(slug),
+        incentive_cap_usd=None if cap_type == "annual_program" else cap_usd,
         incentive_cap_type=cap_type,
         incentive_cap_basis=cap_basis,
         incentive_uncapped_usd=incentive_uncapped_usd,

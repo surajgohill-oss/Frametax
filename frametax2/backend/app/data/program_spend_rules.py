@@ -46,7 +46,7 @@ from __future__ import annotations
 #: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
 #: so a QPE-category/territorial-treatment change invalidates cached
 #: served evaluations. Bump on any material change.
-PROGRAM_SPEND_RULES_VERSION = "1.1.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."
+PROGRAM_SPEND_RULES_VERSION = "1.2.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
 
 import enum
 from dataclasses import dataclass
@@ -795,10 +795,69 @@ ES_RULES: tuple[SpendRule, ...] = (
 )
 
 
+# ── California Film & Television Tax Credit Program 4.0 ────────────────────
+# Primary source: California Film Commission, "Qualified Expenditure Chart, California Film & Television Tax Credit Program 4.0"
+# (January 2026), https://film.ca.gov/wp-content/uploads/2025/10/Program4.0QEC.pdf. The chart tags every budget line item QW / QE /
+# NQ. The ATL compensation accounts of a topsheet are MIXED: the chart tags the writer, producer / executive producer / line
+# producer / associate producer, director and principal-cast COMPENSATION "NQ" (not qualified), while research, script timing and
+# duplication, script coordinators, writer / producer / director assistants, secretaries, casting directors and stunt
+# coordinators in the same departments are QE / QW. A topsheet account therefore can neither wholly qualify nor wholly drop: it is
+# a GENUINE mixed account (qualifies=None -> GREY / MIXED_ACCOUNT), which keeps it out of the confirmed floor and visible as
+# conditional upside until an itemized subline breakdown separates the NQ compensation from the qualifying remainder. Legal costs
+# are the same shape ("Legal Expenses related to Financing" is NQ; other legal is QE). Fringes follow their labor ("On qualified
+# labor only"); linking a fringe account to its labor lines needs subline data this vocabulary does not carry, so fringes are not
+# changed here. The chart's narrow exceptions (e.g. an executive / line producer who is also credited as UPM may be QW, capped at
+# $100K) are exactly the facts a subline breakdown would establish.
+_CA_QEC_REF = "CFC-Program-4.0-QEC-2026-01"
+_CA_ATL_MIXED_NOTE = (
+    "California Program 4.0 Qualified Expenditure Chart (Jan 2026): {nq} are tagged NQ (not qualified), while {qual} in the same "
+    "department are QE / QW. This topsheet account mixes both, so it cannot be treated as wholly qualifying or wholly "
+    "excluded; it stays out of the confirmed floor and is disclosed as conditional upside pending an itemized subline "
+    "breakdown. Source: California Film Commission, Qualified Expenditure Chart, Program 4.0, January 2026."
+)
+_CA_LEGAL_NOTE = (
+    "California Program 4.0 Qualified Expenditure Chart (Jan 2026): 'Legal Expenses related to Financing' are NQ while other "
+    "legal expenses (labor relations, minor confirmation, music) are QE. A combined legal account is mixed and needs an "
+    "itemized breakdown. Source: California Film Commission, Qualified Expenditure Chart, Program 4.0, January 2026."
+)
+
+def _ca(cat: str, notes: str) -> SpendRule:
+    return SpendRule(
+        program_slug="ca_film_30", spend_category=cat, qualifies=None,
+        territorial_only=True, confidence_tier="VERIFIED", notes=notes, source_ref=_CA_QEC_REF,
+    )
+
+_CA_RESIDUALS_NOTE = (
+    "California Film & Television Tax Credit Program 4.0 Program Guidelines (Jan 1, 2026), Non-Qualified Expenditures: "
+    "'Expenses, including wages, related to new use, reuse, clip use, licensing, secondary markets, residual compensation or "
+    "the creation of any ancillary product' are not qualified. A residuals reserve is residual compensation, so it is "
+    "EXCLUDED from the qualifying base (it may still count toward the 75%-spent-in-California eligibility test). Source: "
+    "California Film Commission, Program 4.0 Program Guidelines, Non-Qualified Expenditures, item 2."
+)
+
+CA_FILM_RULES: tuple[SpendRule, ...] = (
+    _ca("atl_writer", _CA_ATL_MIXED_NOTE.format(
+        nq="writers' compensation, story rights and acquisition expenses",
+        qual="research, script timing, script duplication, script coordinators, writer assistants and script clearance research")),
+    _ca("atl_producer", _CA_ATL_MIXED_NOTE.format(
+        nq="producer, executive producer, line producer, associate producer and similar compensation",
+        qual="producer assistants, secretaries and drivers")),
+    _ca("atl_director", _CA_ATL_MIXED_NOTE.format(
+        nq="director and second-unit director compensation",
+        qual="director assistants, secretaries, technical advisors and drivers")),
+    _ca("atl_cast", _CA_ATL_MIXED_NOTE.format(
+        nq="principal cast, voices and singers compensation",
+        qual="casting directors and other cast-department staff")),
+    _ca("legal_accounting", _CA_LEGAL_NOTE),
+    SpendRule(program_slug="ca_film_30", spend_category="residuals_reserve", qualifies=False, territorial_only=True,
+              confidence_tier="VERIFIED", notes=_CA_RESIDUALS_NOTE, source_ref="CFC-Program-4.0-Guidelines-2026-01"),
+)
+
+
 # ── Registry ────────────────────────────────────────────────────────────────
 
 _ALL_RULES: dict[str, dict[str, SpendRule]] = {}
-for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES):
+for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES, *CA_FILM_RULES):
     _ALL_RULES.setdefault(_rule.program_slug, {})[_rule.spend_category] = _rule
 
 

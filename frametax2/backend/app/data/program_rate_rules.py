@@ -1651,6 +1651,41 @@ def get_qpe_cap(program_slug: str) -> QpeCapRule | None:
     return QPE_CAP_RULES.get(program_slug)
 
 
+# ── Dollar limit on the QUALIFIED-EXPENDITURE BASE (not on the incentive, not the annual fund) ───────────────────
+# A programme can cap how much qualified expenditure the rate applies to (California: "The 35% tax credit applies up to a
+# maximum of $120 million of qualified expenditures"; independent film "35% of qualified expenditures, applied to a maximum
+# of $20 million"). That is an eligible-base limit: distinct from the annual fund, from a limit on the credit itself, and
+# from a percentage-of-budget cap. The independent limit applies only when the independent-film category is evidenced for the
+# production (an independent producer may also elect the non-independent category, so it is never inferred); absent that
+# fact, the non-independent limit is the applicable one.
+@dataclass(frozen=True)
+class QpeDollarCapRule:
+    program_slug: str
+    default_limit_usd: float
+    independent_limit_usd: float | None
+    independent_fact: str | None
+    description: str
+    quote: str
+    source_ref: str
+
+
+QPE_DOLLAR_CAP_RULES: dict[str, QpeDollarCapRule] = {
+    "ca_film_30": QpeDollarCapRule(
+        program_slug="ca_film_30", default_limit_usd=120_000_000.0, independent_limit_usd=20_000_000.0,
+        independent_fact="ca_film_independent_category",
+        description="California Program 4.0 qualified-expenditure limit: $120M non-independent, $20M independent film.",
+        quote="'The 35% tax credit applies up to a maximum of $120 million of qualified expenditures' (non-independent); "
+              "'Independent Film applicants are eligible to receive 35% of qualified expenditures, applied to a maximum of $20 "
+              "million of the qualified expenditure budget' (CA Film Commission, Program 4.0 Program Guidelines, Jan 1, 2026).",
+        source_ref="CFC-Program-4.0-Guidelines-2026-01",
+    ),
+}
+
+
+def get_qpe_dollar_cap(program_slug: str) -> QpeDollarCapRule | None:
+    return QPE_DOLLAR_CAP_RULES.get(program_slug)
+
+
 # ── Native-currency INCENTIVE-VALUE cap (Codex final-nine remediation) ──────
 #
 # Distinct from QpeCapRule above: QpeCapRule caps the ELIGIBLE SPEND BASE

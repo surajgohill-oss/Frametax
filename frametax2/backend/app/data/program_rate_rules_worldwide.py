@@ -2134,7 +2134,8 @@ US_CA_DOCTRINE = register(DoctrineRecord(
     min_spend_usd=None,   # not confirmed for Program 4.0 specifically —
                            # the old Program 3.0 $1M threshold not carried
                            # forward unverified
-    annual_cap_usd=120_000_000.0,
+    annual_cap_usd=750_000_000.0,   # the programme's annual allocation ($750M/yr); the $120M / $20M figures are per-project
+                                      # QUALIFIED-EXPENDITURE limits (QpeDollarCapRule), not an annual fund
     requires_cultural_test=False,
     citation=_US_CA_CITATION,
     source_ref="CA-AB132-AB1138-Program4.0",
