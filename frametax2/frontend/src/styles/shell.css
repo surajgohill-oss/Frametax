@@ -789,14 +789,14 @@
 .ph-hero .ph-hero-topbar .ph-ico { background: var(--phh-ico-bg); border-color: var(--phh-ico-bd); color: var(--phh-ico-fg); }
 .ph-hero .ph-hero-topbar .ph-ico:hover { border-color: var(--phh-ico-bd-h); color: var(--phh-ico-fg-h); }
 
-/* SIDEBAR TYPOGRAPHY (2026-10-09): editorial scale. Mono tracked-uppercase section headers (12px), 15px links with a little more air
+/* SIDEBAR TYPOGRAPHY (2026-10-09): editorial scale. Mono tracked-uppercase section headers (13px), 16px links with a little more air
    between them, and COMPANY pushed clear of the globe and tagline. The rail is dark in both themes, so the light-on-dark slate values
    apply in both. The globe frame is allowed to show its soft glow outside the 80px box. */
 .cg-sidebar .cg-identity-globe { overflow: visible; }
-.cg-sidebar .cg-tagline + .cg-group { margin-top: 44px; }
-.cg-sidebar .cg-group { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; color: #64748B; padding: 4px 20px; margin-bottom: 16px; }
+.cg-sidebar .cg-tagline + .cg-group { margin-top: 56px; }
+.cg-sidebar .cg-group { font-family: var(--font-mono); font-size: 13px; font-weight: 600; letter-spacing: 0.2em; color: #64748B; padding: 4px 20px; margin-bottom: 16px; }
 .cg-sidebar .cg-group ~ .cg-group { margin-top: 24px; padding-top: 16px; }
-.cg-sidebar .cg-navlink { padding-top: 12px; padding-bottom: 12px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; color: #CBD5E1; }
+.cg-sidebar .cg-navlink { padding-top: 12px; padding-bottom: 12px; font-size: 16px; font-weight: 500; letter-spacing: -0.01em; color: #CBD5E1; }
 .cg-sidebar .cg-navlink + .cg-navlink { margin-top: 4px; }
 .cg-sidebar .cg-navlink:hover { color: #FFFFFF; background: rgba(255, 255, 255, 0.05); opacity: 1; }
 .cg-sidebar .cg-navlink.on { color: #FFFFFF; font-weight: 600; border-left-color: #E5B233; }
