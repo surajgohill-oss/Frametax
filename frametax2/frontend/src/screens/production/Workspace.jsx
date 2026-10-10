@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
@@ -126,6 +126,37 @@ function scenarioOptionLabel(structure) {
 // + lib/todayCompute.js buildLeaderFxItems, now used by both Workspace
 // and Overview — one FX engine, not two. See FXStrip.jsx's own header
 // comment for the full contract.
+
+// Autofit title: starts at `max` px and shrinks (down to `min`) until the text fits its fixed box, re-fitting when the box resizes.
+function FitName({ children, title, max = 22, min = 11, className = "wsx-nm" }) {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const overflows = () => el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
+    const shrink = (from, to) => {
+      let size = from;
+      el.style.fontSize = `${size}px`;
+      while (size > to && overflows()) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+      return !overflows();
+    };
+    // One line first (never a flag stranded above its name); wrap onto the second row only when one line cannot hold it.
+    const fit = () => {
+      el.style.whiteSpace = "nowrap";
+      if (shrink(max, Math.max(min, max - 6))) return;
+      el.style.whiteSpace = "normal";
+      shrink(max - 2, min);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [children, max, min]);
+  return <div ref={ref} className={`${className} wsx-fit`} title={title}>{children}</div>;
+}
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPriced, optimizerLeadingId = null, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
@@ -282,6 +313,18 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
   // click or Enter/Space anywhere on the card opens the SAME existing
   // Inspector with this SAME structure. Footer/leading-action buttons
   // stop propagation so Compare/Set-as-leading don't ALSO fire Inspect.
+  const isOptimizerCard = OPTIMIZER_CLASSIFICATIONS.has(structure.classification);
+  const titleTip = [flags ? `${flags} ${name}` : name, familyLabel ? [familyLabel, tierLabel].filter(Boolean).join(" · ") : null].filter(Boolean).join(" — ");
+  const headerActions = (
+    <div className="wsx-lh-act">
+      {isLeading ? (
+        <button className="wsx-lead is-leading" disabled>● Current leading</button>
+      ) : (
+        <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure); }}>◈ Set as leading</button>
+      )}
+      <span className="wsx-badge" title={isReference ? referenceExplanationText(structure.recommendation_reason) : undefined}>{badge}</span>
+    </div>
+  );
   const openInspect = () => onInspect(structure);
   const handleCardKeyDown = (e) => {
     if (e.target !== e.currentTarget) return; // let inner buttons handle their own keys
@@ -300,22 +343,21 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
       onClick={openInspect}
       onKeyDown={handleCardKeyDown}
     >
-      <div className="wsx-lh">
+      <div className={`wsx-lh${isOptimizerCard ? " multi" : ""}`}>
         <div className="wsx-lh-id">
-          {/* Title: up to two lines, full title (and the real family / tier for an optimizer structure) in the tooltip.
+          {/* Title: autofit inside a fixed box (full title and, for an optimizer structure, the real family / tier in the tooltip).
               No rate or percentage on the card face -- those stay in the Inspector. */}
-          <div
-            className="wsx-nm"
-            title={[flags ? `${flags} ${name}` : name, familyLabel ? [familyLabel, tierLabel].filter(Boolean).join(" · ") : null].filter(Boolean).join(" — ")}
-          >{flags ? `${flags} ${name}` : name}</div>
-          <div className="wsx-lh-act">
-            {isLeading ? (
-              <button className="wsx-lead is-leading" disabled>● Current leading</button>
-            ) : (
-              <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure); }}>◈ Set as leading</button>
-            )}
-            <span className="wsx-badge" title={isReference ? referenceExplanationText(structure.recommendation_reason) : undefined}>{badge}</span>
-          </div>
+          {isOptimizerCard ? (
+            <>
+              <div className="wsx-lh-top">{headerActions}</div>
+              <FitName max={20} title={titleTip}>{flags ? `${flags} ${name}` : name}</FitName>
+            </>
+          ) : (
+            <>
+              <FitName max={22} title={titleTip}>{flags ? `${flags} ${name}` : name}</FitName>
+              {headerActions}
+            </>
+          )}
         </div>
       </div>
 

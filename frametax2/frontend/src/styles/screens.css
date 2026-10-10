@@ -2150,3 +2150,20 @@
 .wsx-lh-act { flex: none; align-items: flex-start; }
 .wsx-lh-act .wsx-badge { align-self: flex-start; line-height: 22px; margin: 0; }
 .wsx-lane .wsx-econ-max { text-align: center; }
+
+/* CARD REFINEMENT 5: autofit titles (22px single, 20px optimizer) in a fixed box; optimizer cards get a two-row header: flags with
+   the leading action and status on top, the full routing title below. Every card in a rack shares the taller header when any
+   optimizer card is present so the rows beneath stay aligned. */
+.wsx-lh-id .wsx-fit { display: block; -webkit-line-clamp: unset; -webkit-box-orient: unset; height: 56px; line-height: 1.12; overflow: hidden; word-break: break-word; }
+.wsx-lh-id .wsx-fit { align-self: center; }
+.wsx-lh { height: 64px; min-height: 64px; }
+.wsx-lane.anchor .wsx-lh { height: 62px; min-height: 62px; }
+.wsx-lh.multi .wsx-lh-id { flex-direction: column; align-items: stretch; gap: 6px; }
+.wsx-lh-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wsx-flags { font-size: 17px; line-height: 22px; white-space: nowrap; }
+.wsx-lh.multi .wsx-lh-id .wsx-fit { height: 44px; align-self: stretch; }
+.wsx-rack:has(.wsx-lh.multi) .wsx-lh { height: 98px; min-height: 98px; }
+.wsx-rack:has(.wsx-lh.multi) .wsx-lane.anchor .wsx-lh { height: 96px; min-height: 96px; }
+
+.wsx-lh-top { justify-content: flex-end; }
+.wsx-lh-top .wsx-lh-act { flex: none; }

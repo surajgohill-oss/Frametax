@@ -82,6 +82,9 @@ export function activeStructure(allocated, leadingStructureId, extraPool = null)
     const found = extraPool.find((s) => s.structure_id === leadingStructureId);
     if (found) return found;
   }
+  // No producer selection: the production's own anchor (current-location baseline) is the default leading structure.
+  const anchor = allocated.structures.find((s) => s.is_baseline);
+  if (anchor) return anchor;
   if (allocated.canonical_selected_structure_id && byId.has(allocated.canonical_selected_structure_id)) {
     return byId.get(allocated.canonical_selected_structure_id);
   }
