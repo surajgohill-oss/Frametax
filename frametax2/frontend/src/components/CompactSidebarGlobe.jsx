@@ -85,7 +85,7 @@ function bakeClouds() {
     centers.push([cx, cy]);
   }
   centers.forEach(([cx, cy]) => {
-    const rad = 10 + rand() * 24;
+    const rad = 8 + rand() * 19;
     const tilt = (rand() - 0.5) * 0.6;
     const squash = 0.35 + rand() * 0.5;
     const count = 14 + Math.floor(rand() * 26);
@@ -97,7 +97,7 @@ function bakeClouds() {
       ctx.rotate(tilt + (rand() - 0.5) * 0.6);
       ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + rand() * 0.5})`;
       ctx.beginPath();
-      ctx.ellipse(0, 0, 2.5 + rand() * 8, 1 + rand() * 2.8, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, 2 + rand() * 6.4, 0.8 + rand() * 2.2, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
