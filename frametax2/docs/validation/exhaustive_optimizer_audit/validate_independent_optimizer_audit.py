@@ -633,6 +633,72 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
             if "READY_FOR_CODEX_ADJUDICATION: YES" not in content:
                 errors.append("Final handoff document missing: READY_FOR_CODEX_ADJUDICATION: YES.")
 
+    # 29. Four-Project Budget Categorization Matrix
+    fpm_path = os.path.join(base_dir, "FOUR_PROJECT_BUDGET_CATEGORIZATION_MATRIX.csv")
+    if not os.path.exists(fpm_path):
+        errors.append(f"Missing file: {fpm_path}")
+    else:
+        with open(fpm_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 158:
+                errors.append(f"Budget categorization matrix has {len(reader)} rows != expected 158 (LU=44, FVD=34, BH=34, LLS=46).")
+            projs = {r['project_title'] for r in reader}
+            for p in ('The Little Utopia', "F#K Valentine's Day", 'Lips Like Sugar', 'Bad Hombres'):
+                if p not in projs:
+                    errors.append(f"Budget categorization matrix missing project: {p}")
+            for idx, r in enumerate(reader, 1):
+                if r.get('detail_or_subtotal') != 'LEAF_ACCOUNT':
+                    errors.append(f"Row {idx} ({r.get('description')}) has invalid detail_or_subtotal: {r.get('detail_or_subtotal')}")
+                if r.get('producer_incentive_line') != 'FALSE':
+                    errors.append(f"Row {idx} ({r.get('description')}) has producer_incentive_line={r.get('producer_incentive_line')}! (Must remain separate from gross budget leaf items)")
+                if "TOTAL" in r.get('description', '').upper() and not any(k in r.get('description', '') for k in ("Total Fringes", "DELIVERABLES")):
+                    errors.append(f"Subtotal/group rollup detected as leaf item in row {idx}: {r.get('description')}")
+
+    # 30. Cross-Format Incentive Isolation Audit
+    cfi_path = os.path.join(base_dir, "CROSS_FORMAT_INCENTIVE_ISOLATION_AUDIT.csv")
+    if not os.path.exists(cfi_path):
+        errors.append(f"Missing file: {cfi_path}")
+    else:
+        with open(cfi_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 4:
+                errors.append(f"Cross-format incentive audit has {len(reader)} rows != expected 4.")
+            for r in reader:
+                if r.get('project_short_name') in ('LU', 'FVD', 'LLS') and "DEF-XFORMAT-001" not in r.get('csv_parser_status', ''):
+                    errors.append(f"Project {r.get('project_short_name')} must track defect DEF-XFORMAT-001 in CSV parser!")
+
+    # 31. Comprehensive Budget Categorization Audit Report
+    bca_path = os.path.join(base_dir, "BUDGET_CATEGORIZATION_AND_MOVIE_MAGIC_AUDIT.md")
+    if not os.path.exists(bca_path):
+        errors.append(f"Missing file: {bca_path}")
+    else:
+        with open(bca_path, mode="r", encoding="utf-8") as f:
+            content = f.read()
+            req_tokens = (
+                "The Little Utopia",
+                "F#K Valentine's Day",
+                "Bad Hombres",
+                "Lips Like Sugar",
+                "BPI-001",
+                "BPI-002",
+                "BPI-003",
+                "DEF-XFORMAT-001",
+                "UF-LU-001",
+                "UF-FVD-001",
+                "UF-BH-001",
+                "UF-LLS-001",
+                "_REBATE_EXCLUSION_RE",
+                "source_incentive_estimates",
+                "Movie Magic",
+                "4,364,395",
+                "4,517,687",
+                "2,482,023",
+                "11,983,654",
+            )
+            for tok in req_tokens:
+                if tok not in content:
+                    errors.append(f"BUDGET_CATEGORIZATION_AND_MOVIE_MAGIC_AUDIT.md missing required token: '{tok}'")
+
     return (len(errors) == 0, errors)
 
 
@@ -649,7 +715,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 21
+    nc_total = 24
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1171,6 +1237,80 @@ def run_negative_controls():
             w = csv.DictWriter(f, fieldnames=list(t_rows[0].keys()))
             w.writeheader()
             w.writerows(t_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 22: Rejection of Group Rollup in Categorization Matrix
+        # -------------------------------------------------------------
+        print("  [NC 22/24] Testing rejection of group rollup included as leaf line in categorization matrix...")
+        fpm_f = os.path.join(tmpdir, "FOUR_PROJECT_BUDGET_CATEGORIZATION_MATRIX.csv")
+        with open(fpm_f, "r", encoding="utf-8") as f:
+            m_rows = list(csv.DictReader(f))
+        orig_m = dict(m_rows[0])
+        m_rows[0]['description'] = 'TOTAL ABOVE THE LINE'
+        with open(fpm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(m_rows[0].keys()))
+            w.writeheader()
+            w.writerows(m_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught group rollup included as leaf line.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch group rollup.")
+        m_rows[0] = orig_m
+        with open(fpm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(m_rows[0].keys()))
+            w.writeheader()
+            w.writerows(m_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 23: Rejection of Producer Rebate Line Inside Gross Spend
+        # -------------------------------------------------------------
+        print("  [NC 23/24] Testing rejection of producer rebate line included as gross spend...")
+        with open(fpm_f, "r", encoding="utf-8") as f:
+            m_rows = list(csv.DictReader(f))
+        orig_m2 = dict(m_rows[1])
+        m_rows[1]['producer_incentive_line'] = 'TRUE'
+        with open(fpm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(m_rows[0].keys()))
+            w.writeheader()
+            w.writerows(m_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught producer rebate line inside gross spend.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch producer rebate line.")
+        m_rows[1] = orig_m2
+        with open(fpm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(m_rows[0].keys()))
+            w.writeheader()
+            w.writerows(m_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 24: Rejection of Undisclosed Cross-Format CSV Defect
+        # -------------------------------------------------------------
+        print("  [NC 24/24] Testing rejection of undisclosed cross-format CSV defect...")
+        cfi_f = os.path.join(tmpdir, "CROSS_FORMAT_INCENTIVE_ISOLATION_AUDIT.csv")
+        with open(cfi_f, "r", encoding="utf-8") as f:
+            c_rows = list(csv.DictReader(f))
+        orig_c = dict(c_rows[0])
+        c_rows[0]['csv_parser_status'] = 'ALL_GOOD_NO_DEFECT'
+        with open(cfi_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(c_rows[0].keys()))
+            w.writeheader()
+            w.writerows(c_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught undisclosed cross-format CSV defect.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch undisclosed cross-format defect.")
+        c_rows[0] = orig_c
+        with open(cfi_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(c_rows[0].keys()))
+            w.writeheader()
+            w.writerows(c_rows)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
