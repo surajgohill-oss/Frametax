@@ -65,7 +65,7 @@ export default function Sidebar() {
           placeholder rather than blank the entire application shell. */}
       <div className="cg-identity-globe" aria-hidden="true">
         <ErrorBoundary label="sidebar-globe" fallback={null}>
-          <CompactSidebarGlobe size={80} overlay={overlay} />
+          <CompactSidebarGlobe size={92} overlay={overlay} />
         </ErrorBoundary>
       </div>
       <div className="cg-tagline mono">The Production Atlas</div>

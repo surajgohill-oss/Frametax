@@ -76,11 +76,11 @@
 /* Engraved brand mark, not a glowing orb — no halo, no glow behind it. It
    should sit directly on the rail the way a stamped emblem would. */
 .cg-identity-globe {
-  width: 80px;
-  height: 80px;
-  min-height: 80px;
-  flex: 0 0 80px;
-  margin: 0 auto 16px;
+  width: 92px;
+  height: 92px;
+  min-height: 92px;
+  flex: 0 0 92px;
+  margin: 0 auto 20px;
   border-radius: 50%;
   overflow: hidden;
 }
