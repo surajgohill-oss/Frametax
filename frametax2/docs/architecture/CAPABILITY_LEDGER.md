@@ -4390,3 +4390,7 @@ The single `docs/validation/FOUR_ANCHOR_QPE_ISSUE_REGISTER.md` records rejected 
 ## AUDIT FAILURE FOLLOW-THROUGH — 2026-10-10
 
 User explicitly requires investigation and recording of EVERY discrepancy/failure/blocker. PROJECT_RULES.md now defines evidence, owner, next action, supported disposition and an open acceptance gate until resolution. Greece's $926,855.84 control difference remains OPEN and has a source-account/temporal/local-spend investigation plan in FOUR_ANCHOR_QPE_ISSUE_REGISTER.md; it is not assumed to be an engine overstatement. Latest AG contradictions, Vercel errors and evaluator timing evidence gaps remain recorded rather than discarded. This does not authorize new cold evaluations or claim anchor acceptance.
+
+## NY AG AUDIT ADJUDICATION — 2026-10-10
+
+AG bde0fee covers four budgets/158 rows but totals are NOT_ACCEPTED. Primary-source/code review confirms production/post-pair rule conflict, missing post percentage/VFX gateways and geographic rate distinctions; additional source and comparison defects in AG's evidence are recorded in NY_AG_BDE0FEE_ADJUDICATION.md and the single four-anchor issue register. Includes LLS$1.25m financing omission, LU declared gross, on-set/post sound distinction and non-identical BH comparison. Source-config conflicts are not proof of every claimed runtime impact. No production code/DB/evaluation changed; anchor acceptance and Greece investigation remain open.
