@@ -2141,3 +2141,12 @@
 .wsx-lane .wsx-econ-mfni .wsx-econ-line span:first-child, .wsx-lane .wsx-econ-mfni .wsx-econ-line span:last-child { font: 500 16px/24px var(--font-sans); letter-spacing: 0; }
 .wsx-lane .wsx-econ-mfni .wsx-econ-line span:last-child { font-family: var(--wsx-mono); }
 .wsx-lane .wsx-econ-need { margin-top: 14px; }
+
+/* CARD REFINEMENT 4: one header row (territory left, leading action + status right, top-aligned); territory 17px; hero centered. */
+.wsx-lh { height: 56px; min-height: 56px; }
+.wsx-lane.anchor .wsx-lh { height: 54px; min-height: 54px; }
+.wsx-lh-id { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.wsx-lh-id .wsx-nm { flex: 1; min-width: 0; font-size: 17px; }
+.wsx-lh-act { flex: none; align-items: flex-start; }
+.wsx-lh-act .wsx-badge { align-self: flex-start; line-height: 22px; margin: 0; }
+.wsx-lane .wsx-econ-max { text-align: center; }
