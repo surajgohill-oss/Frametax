@@ -803,6 +803,47 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                     if r['qualifies_standalone_post_31'] == 'Y' and r['ny_statutory_treatment'] != 'QUALIFIED_POST_PRODUCTION':
                         errors.append(f"Non-post expense improperly qualified for Section 31 post credit: {r}")
 
+    # 36. Four-Anchor QPE Issue Register Reconciliation
+    irr_path = os.path.join(base_dir, "FOUR_ANCHOR_QPE_ISSUE_REGISTER_RECONCILIATION.md")
+    if not os.path.exists(irr_path):
+        errors.append(f"Missing file: {irr_path}")
+    else:
+        with open(irr_path, mode="r", encoding="utf-8") as f:
+            content = f.read()
+            irr_tokens = (
+                "FOUR_ANCHOR_QPE_ISSUE_REGISTER.md",
+                "Q01", "Q02", "Q03", "Q04", "Q05", "Q06", "Q07", "Q08", "Q09", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15",
+                "926,855.84",
+                "UNRESOLVED_PLANNING_VARIANCE",
+                "ESTIMATE_IMPLIED_ONLY",
+                "CONDITIONAL ON CAST WITHHOLDING PROOF",
+                "Law 4487/2017",
+                "Law 5105/2024",
+                "ANCHOR ACCEPTANCE GATE REMAINS OPEN",
+            )
+            for tok in irr_tokens:
+                if tok not in content:
+                    errors.append(f"FOUR_ANCHOR_QPE_ISSUE_REGISTER_RECONCILIATION.md missing required token: '{tok}'")
+
+    # 37. FVD Greece 34-Account Reconstruction Matrix
+    fgr_path = os.path.join(base_dir, "FVD_GREECE_34_ACCOUNT_RECONSTRUCTION.csv")
+    if not os.path.exists(fgr_path):
+        errors.append(f"Missing file: {fgr_path}")
+    else:
+        with open(fgr_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 34:
+                errors.append(f"FVD_GREECE_34_ACCOUNT_RECONSTRUCTION.csv has {len(reader)} rows != expected 34.")
+            gross_total = sum(float(r['amount_usd']) for r in reader)
+            if abs(gross_total - 4517687.00) > 0.01:
+                errors.append(f"FVD Greece reconstruction sum ${gross_total:,.2f} != expected $4,517,687.00.")
+            for r in reader:
+                if r['territorial_evidence_state'] != 'MISSING_LOCAL_SPEND_SCHEDULE':
+                    errors.append(f"FVD Greece row {r.get('account_code')} must indicate MISSING_LOCAL_SPEND_SCHEDULE: {r}")
+                if r['account_code'] in ('7901', '7902', '7905', '7200'):
+                    if r['is_statutorily_excluded'] != 'TRUE':
+                        errors.append(f"FVD non-qualifying line {r.get('account_code')} not marked is_statutorily_excluded=TRUE: {r}")
+
     return (len(errors) == 0, errors)
 
 
@@ -819,7 +860,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 31
+    nc_total = 34
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1569,6 +1610,67 @@ def run_negative_controls():
             w = csv.DictWriter(f, fieldnames=list(orig_nym[0].keys()))
             w.writeheader()
             w.writerows(orig_nym)
+
+        # -------------------------------------------------------------
+        # Negative Control 32: Rejection of Calling Greece Difference a Confirmed Golden Overstatement
+        # -------------------------------------------------------------
+        print("  [NC 32/34] Testing rejection of calling Greece difference a confirmed golden overstatement...")
+        irr_f = os.path.join(tmpdir, "FOUR_ANCHOR_QPE_ISSUE_REGISTER_RECONCILIATION.md")
+        with open(irr_f, "r", encoding="utf-8") as f:
+            irr_text = f.read()
+        tampered_irr = irr_text.replace("UNRESOLVED_PLANNING_VARIANCE", "CONFIRMED_ENGINE_OVERSTATEMENT_OF_GOLDEN_BASE")
+        with open(irr_f, "w", encoding="utf-8") as f:
+            f.write(tampered_irr)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught unproven Greece confirmed overstatement claim.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch unproven Greece confirmed overstatement claim.")
+        with open(irr_f, "w", encoding="utf-8") as f:
+            f.write(irr_text)
+
+        # -------------------------------------------------------------
+        # Negative Control 33: Rejection of Missing Bad Hombres Cast Withholding Condition
+        # -------------------------------------------------------------
+        print("  [NC 33/34] Testing rejection of missing Bad Hombres cast withholding condition...")
+        tampered_irr2 = irr_text.replace("CONDITIONAL ON CAST WITHHOLDING PROOF", "UNCONDITIONALLY CONFIRMED IN FULL")
+        with open(irr_f, "w", encoding="utf-8") as f:
+            f.write(tampered_irr2)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught missing Bad Hombres cast withholding condition.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch missing Bad Hombres cast withholding condition.")
+        with open(irr_f, "w", encoding="utf-8") as f:
+            f.write(irr_text)
+
+        # -------------------------------------------------------------
+        # Negative Control 34: Rejection of Improperly Qualified Finance Costs in FVD Greece Matrix
+        # -------------------------------------------------------------
+        print("  [NC 34/34] Testing rejection of improperly qualified finance costs in FVD Greece matrix...")
+        fgr_f = os.path.join(tmpdir, "FVD_GREECE_34_ACCOUNT_RECONSTRUCTION.csv")
+        with open(fgr_f, "r", encoding="utf-8") as f:
+            fgr_rows = list(csv.DictReader(f))
+        orig_fgr = [dict(r) for r in fgr_rows]
+        for r in fgr_rows:
+            if r['account_code'] == '7901':
+                r['is_statutorily_excluded'] = 'FALSE'
+        with open(fgr_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(fgr_rows[0].keys()))
+            w.writeheader()
+            w.writerows(fgr_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught improperly qualified Greek finance costs.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch improperly qualified Greek finance costs.")
+        with open(fgr_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_fgr[0].keys()))
+            w.writeheader()
+            w.writerows(orig_fgr)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
