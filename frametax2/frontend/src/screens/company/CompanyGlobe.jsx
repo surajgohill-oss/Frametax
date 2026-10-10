@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildCompanyScene } from "../../lib/companyScene";
@@ -121,6 +122,9 @@ export default function CompanyGlobe() {
 
       {focused && (
         <div className="globe-screen-inspector">
+          <button className="inspector-close" onClick={() => setFocusedId(null)} aria-label="Close preview">
+            <X size={16} />
+          </button>
           <p className="inspector-eyebrow">Production preview</p>
           <h3>{focused.project.title}</h3>
           <dl className="kv-list">
