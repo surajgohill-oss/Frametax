@@ -73,13 +73,15 @@ def test_writer_role_never_globally_mandatory_across_new_and_existing_data():
 # ── Second research batch, 2026-08-19 (same pass, continued) ────────────
 
 def test_greece_cultural_test_points_confirmed_real():
-    """gr_cash_rebate (FVD's own home program) -- confirmed via
-    Saturation.io, fixersingreece.gr, and Lexology's Law 5105/2024 legal
-    summary: min 20 of 50 points (fiction/documentary)."""
+    """gr_cash_rebate (FVD's own home program). The 20-of-50 figure first recorded here came from secondary sources
+    (Saturation.io, fixersingreece.gr, Lexology's Law 5105/2024 summary). The retained primary text -- KYA 607434, Gazette B'
+    87/14.01.2026, Annex I Table A, with Art. 11(2)(delta) -- requires at least 23 of 50 points for a fiction work (script 20
+    max, personnel 15 max, production/post in Greece 15 max). The threshold of a plan filed under an earlier regime is not
+    established by any retained primary text."""
     p = get_program_requirements("gr_cash_rebate")
     assert p.cultural_test_required is True
     assert p.cultural_test_points == 50
-    assert p.cultural_test_threshold == 20
+    assert p.cultural_test_threshold == 23
     assert "cultural_test_animation_points" in p.additional_facts
 
 

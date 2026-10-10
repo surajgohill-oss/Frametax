@@ -46,7 +46,7 @@ from __future__ import annotations
 #: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
 #: so a QPE-category/territorial-treatment change invalidates cached
 #: served evaluations. Bump on any material change.
-PROGRAM_SPEND_RULES_VERSION = "1.3.0"  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
+PROGRAM_SPEND_RULES_VERSION = "1.4.0"  # 1.4.0 (2026-10-10): Greece -- explicit contingency rule (KYA 607434 Annex B.2(viii)/Annex II).  # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- classified us_ny_post_production_credit as CLOSED_POSITIVE_LIST (post_production/sound/vfx only), fixing a real scope-mismatch defect where the program's absent doctrine classification silently defaulted to OPEN_DEFAULT_INCLUDE and over-included an entire relocated production's full budget as "post-production costs."  # 1.2.0 (2026-10-10): California Program 4.0 -- explicit mixed-account rows for the ATL compensation accounts and legal (CFC Qualified Expenditure Chart, Jan 2026).
 
 import enum
 from dataclasses import dataclass
@@ -856,8 +856,25 @@ CA_FILM_RULES: tuple[SpendRule, ...] = (
 
 # ── Registry ────────────────────────────────────────────────────────────────
 
+_GR_KYA_REF = "KYA-607434-2026-01-14-Annex-B2-viii"
+GR_CASH_REBATE_RULES: tuple[SpendRule, ...] = (
+    SpendRule(
+        program_slug="gr_cash_rebate", spend_category="contingency", qualifies=True, territorial_only=True,
+        confidence_tier="VERIFIED", source_ref=_GR_KYA_REF,
+        notes=(
+            "Greek Joint Ministerial Decision 607434 (Gazette B' 87/14.01.2026), Annex B.2(viii): contingency ('unforeseen "
+            "expense') categories are eligible only for Action A (large and foreign beneficiaries); Annex II lists a "
+            "contingency allowance per cost category (maximum 10% of the category) and allows the eligible budget to rise by up "
+            "to 10% for unforeseen situations in Action A only. An expense settles only when incurred, paid and invoiced "
+            "(Annex B.1), so the reserve is conditional on deployment and on the beneficiary being an Action A applicant. "
+            "The retained Law 4487/2017 Art. 26 is silent on contingency. The category therefore qualifies as a rule, and the "
+            "producer's expected-utilization fact decides how much of the reserve is projected as incurred (unset = conditional)."
+        ),
+    ),
+)
+
 _ALL_RULES: dict[str, dict[str, SpendRule]] = {}
-for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES, *CA_FILM_RULES):
+for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES, *CA_FILM_RULES, *GR_CASH_REBATE_RULES):
     _ALL_RULES.setdefault(_rule.program_slug, {})[_rule.spend_category] = _rule
 
 

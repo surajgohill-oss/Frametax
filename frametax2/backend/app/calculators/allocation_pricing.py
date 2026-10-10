@@ -67,7 +67,10 @@ from app.calculators.qualification_derivation import (
     derive_qualification_register,
 )
 from app.calculators.qualification_model import (
+    AuthorityBasis,
+    GreyReason,
     MU_TERRITORIAL_TEXT,
+    QualificationConfidence,
     QualificationState,
     _ALTERNATIVE_TERRITORIAL_TEXT,
 )
@@ -76,8 +79,11 @@ from app.data.authority_coverage_registry import get_coverage_status
 from app.data.program_rate_rules import (
     _fx_native_amount,
     _infer_amount_fact_currency,
+    CONDITION_STATE_SCRIPT_FACT_REQUIRED,
+    CONDITION_STATE_USER_FACT_REQUIRED,
     get_qpe_cap,
     get_qpe_dollar_cap,
+    get_qpe_share_caps,
     get_rate_rules,
     resolve_program_rate,
 )
@@ -145,6 +151,13 @@ class SegmentEconomics:
     # Dollar limit on the qualified-expenditure BASE (e.g. California $120M non-independent / $20M independent): a base limit, distinct
     # from the incentive cap below and from the programme's annual fund.
     qpe_dollar_cap_applied_usd: float = 0.0
+    # Category share caps (e.g. Greece: insurance/guarantees 5%, principal fees 30% of the TOTAL eligible cost): the part of a capped
+    # group above its cap is conditional (unresolved), not excluded -- which payees sit inside the group is a production fact.
+    qpe_share_cap_applied_usd: float = 0.0
+    qpe_share_cap_groups: tuple[dict, ...] = ()
+    # Unresolved NON-gating conditions of the winning (non-band) tier: facts the modeled figure presumes without evidence
+    # (e.g. Greece: the Greek-incurrence schedule, the application date/regime). Disclosure only -- never changes the rate.
+    presumed_facts: tuple[dict, ...] = ()
     qpe_dollar_limit_usd: float | None = None
     qpe_dollar_limit_basis: str | None = None
     # The programme's whole annual allocation is NOT a per-project cap: it is disclosed here and is never reported as
@@ -749,6 +762,93 @@ def price_segment(
         if a.state in (QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
                        QualificationState.STRUCTURING_OPPORTUNITY)
     ), 2)
+
+    # Category share caps (QpeShareCapRule). The statutes cap a group of categories at a share of the TOTAL eligible cost, which
+    # includes the group itself, so the allowed total is the greatest fixed point of
+    #   Q = min(limit, uncapped + sum_g min(raw_g, cap_g * Q))
+    # where ``limit`` is the program's percentage QpeCapRule ceiling (Greece: 80% of the worldwide total cost) when one exists.
+    # The excess of a capped group is moved from QUALIFIES to a conditional (grey) portion on the same lines, so the register
+    # still conserves every dollar and nothing is silently dropped.
+    qpe_share_cap_applied = 0.0
+    qpe_share_cap_groups: list[dict] = []
+    _share_rules = get_qpe_share_caps(slug)
+    if _share_rules:
+        from app.calculators.classify_budget_line_items import classify_line_item as _classify_line
+        _cat_by_line = {
+            l.line_id: (l.spend_category or _classify_line(l.description).spend_category.value) for l in lines
+        }
+        _raw = {r.group_id: 0.0 for r in _share_rules}
+        for _a in register:
+            if _a.state == QualificationState.QUALIFIES:
+                for _r in _share_rules:
+                    if _cat_by_line.get(_a.line_id) in _r.categories:
+                        _raw[_r.group_id] += _a.amount_usd
+        _grouped = sum(_raw.values())
+        _uncapped = qpe - _grouped
+        _limit = None
+        _pre_cap_rule = get_qpe_cap(slug)
+        if _pre_cap_rule is not None:
+            _pre_base = gross_budget_usd if _pre_cap_rule.cap_base == "total_worldwide_budget" else allocated
+            if _pre_base is not None:
+                _limit = _pre_base * _pre_cap_rule.cap_pct
+
+        def _allowed_total(q: float) -> float:
+            total = _uncapped + sum(min(_raw[r.group_id], r.cap_pct * q) for r in _share_rules)
+            return min(total, _limit) if _limit is not None else total
+
+        _q = _uncapped + _grouped
+        if _limit is not None:
+            _q = min(_q, _limit)
+        for _ in range(1000):
+            _q_next = _allowed_total(_q)
+            if abs(_q_next - _q) < 1e-9:
+                _q = _q_next
+                break
+            _q = _q_next
+        _ratio = {}
+        for _r in _share_rules:
+            _group_raw = _raw[_r.group_id]
+            _allowed = min(_group_raw, _r.cap_pct * _q)
+            _ratio[_r.group_id] = (_allowed / _group_raw) if _group_raw > 0 else 1.0
+            if _group_raw > 0 and _allowed < _group_raw - 0.005:
+                qpe_share_cap_groups.append({
+                    "group_id": _r.group_id, "cap_pct": _r.cap_pct, "raw_usd": round(_group_raw, 2),
+                    "allowed_usd": round(_allowed, 2), "excess_usd": round(_group_raw - _allowed, 2),
+                    "total_eligible_basis_usd": round(_q, 2), "source_ref": _r.source_ref,
+                })
+        if qpe_share_cap_groups:
+            _split_register = []
+            for _a in register:
+                _hit = next((_r for _r in _share_rules
+                             if _a.state == QualificationState.QUALIFIES
+                             and _cat_by_line.get(_a.line_id) in _r.categories
+                             and _ratio[_r.group_id] < 1.0), None)
+                if _hit is None:
+                    _split_register.append(_a)
+                    continue
+                _kept = round(_a.amount_usd * _ratio[_hit.group_id], 2)
+                _over = round(_a.amount_usd - _kept, 2)
+                _split_register.append(_dataclasses_replace(_a, amount_usd=_kept, financial_impact_usd=_kept))
+                if _over > 0:
+                    _split_register.append(_dataclasses_replace(
+                        _a, amount_usd=_over, financial_impact_usd=_over,
+                        state=QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                        confidence=QualificationConfidence.LOW, authority_basis=AuthorityBasis.FACT_DEPENDENT,
+                        reason=(f"{_hit.description} This portion exceeds the {_hit.cap_pct:.0%} cap of the total eligible cost "
+                                f"({_hit.source_ref}); it is conditional on which payees fall inside the capped group, not excluded."),
+                        resolving_evidence="Payee-level split of the account (which payments are the capped roles) and the resulting "
+                                           "total eligible cost.",
+                        incentive_upside_usd=0.0, grey_reason=GreyReason.MISSING_PRODUCTION_FACT,
+                    ))
+            register = _split_register
+            qpe_share_cap_applied = round(sum(g["excess_usd"] for g in qpe_share_cap_groups), 2)
+            qpe = round(sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES), 2)
+            excluded = round(sum(a.amount_usd for a in register if a.state == QualificationState.EXCLUDED), 2)
+            unresolved = round(sum(
+                a.amount_usd for a in register
+                if a.state in (QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                               QualificationState.STRUCTURING_OPPORTUNITY)
+            ), 2)
 
     # Incentive/Optimizer Core Closeout: program-level QPE eligible-spend
     # cap (e.g. UK/Greece 80%), applied to the QPE base BEFORE rate
@@ -1482,6 +1582,14 @@ def price_segment(
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
     )
 
+    presumed_facts = tuple(
+        {"condition_id": e.condition_id, "description": e.description, "quote": e.quote,
+         "state": e.condition_state, "note": e.note}
+        for e in rr.conditions_evaluated
+        if e.satisfied is not True and not rr.is_band_ceiling
+        and e.condition_state in (CONDITION_STATE_USER_FACT_REQUIRED, CONDITION_STATE_SCRIPT_FACT_REQUIRED)
+    )
+
     subset_conditions = ()
     try:
         subset_pricing = _price_subset_uplifts(slug, lines, register, qpe, rr.floor_rate,
@@ -1593,6 +1701,9 @@ def price_segment(
         ),
         qpe_cap_applied_usd=qpe_cap_applied,
         qpe_dollar_cap_applied_usd=qpe_dollar_cap_applied,
+        qpe_share_cap_applied_usd=qpe_share_cap_applied,
+        qpe_share_cap_groups=tuple(qpe_share_cap_groups),
+        presumed_facts=presumed_facts,
         qpe_dollar_limit_usd=qpe_dollar_limit,
         qpe_dollar_limit_basis=qpe_dollar_basis,
         annual_fund_budget_usd=_annual_fund_budget_usd(slug),

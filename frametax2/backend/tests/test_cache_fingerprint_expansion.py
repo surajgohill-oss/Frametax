@@ -24,7 +24,7 @@ def _inputs(**overrides) -> ProjectEconomicInputs:
         production_type="feature_film",
         gross_budget_usd=1_000_000.0,
         leaf_account_sum_usd=1_000_000.0,
-        budget_lines=[BudgetLine("1000", "Cast", 500_000.0, spend_category="atl_cast")],
+        budget_lines=[BudgetLine("1000", "Cast", 500_000.0, spend_category="atl_cast", line_id="fixed-source-line-1000")],  # the fingerprint hashes line identity by design, so identical inputs need a fixed id
         spend_category_by_code={"1000": "atl_cast"},
         accounts_outside_jurisdiction=frozenset(),
         offshore_payroll_accounts=frozenset(),

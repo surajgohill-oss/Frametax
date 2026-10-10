@@ -410,14 +410,19 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     # a real state rather than RULE_DATA_INCOMPLETE. Never a fabricated
     # category split where none was researched.
     "gr_cash_rebate": CulturalPointTable(
-        program_slug="gr_cash_rebate", total_points=50, threshold=20,
-        completeness=TABLE_AUTHORITY_INCOMPLETE,  # one aggregate built from secondary sources, no criteria (Codex audit 4db2cea)
+        program_slug="gr_cash_rebate", total_points=50, threshold=23,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # threshold is primary (below); the criteria stay one aggregate, not executable
         criteria=(
             _c("gr_aggregate", CATEGORY_OTHER, FACT_USER, 50, role="entity",
                description="Aggregate Greek/European cultural-content and personnel test "
                            "(category-by-category breakdown not published in sources checked)"),
         ),
-        source_note="Saturation.io, fixersingreece.gr, Lexology Law 5105/2024 summary.",
+        source_note="Threshold: KYA 607434 (Gazette B' 87/14.01.2026) Annex I Table A -- a fiction work needs at least 23 of 50 points "
+                    "(A script 20 max, B personnel 15 max, C production/post in Greece 15 max); Art. 11(2)(delta) requires the minimum "
+                    "score. The earlier 20-of-50 figure came from secondary sources (Saturation.io, fixersingreece.gr, Lexology Law "
+                    "5105/2024 summary) and is not in the retained primary texts; the threshold of a plan filed under an earlier "
+                    "regime (Law 5105/2024 A' 61, KYA 6376/2025) is NOT_ESTABLISHED. Annex I criteria are retained but not yet "
+                    "encoded as executable facts.",
     ),
     "hr_cash_rebate": CulturalPointTable(
         program_slug="hr_cash_rebate", total_points=34, threshold=12,

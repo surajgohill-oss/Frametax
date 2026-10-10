@@ -1397,7 +1397,7 @@ register(ProgramRequirementsProfile(
     # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
     # Confirmed cultural test exists and is a real points structure — see
     # additional_facts for the fiction/documentary vs animation split.
-    cultural_test_required=True, cultural_test_points=50, cultural_test_threshold=20,
+    cultural_test_required=True, cultural_test_points=50, cultural_test_threshold=23,  # KYA 607434 Annex I Table A (B' 87/14.01.2026): >=23 of 50 for fiction; earlier 20 was secondary-sourced
     preapproval_mandatory=True,      # application must be submitted before production/post-production begins in Greece
     application_deadline=TimingFact(
         value="Application must be submitted no later than 10 days before the beginning of "

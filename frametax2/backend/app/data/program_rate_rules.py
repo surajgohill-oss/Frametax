@@ -71,7 +71,7 @@ from app.data.program_slug_aliases import canonical_slug as _canonical_program_s
 #: nl_film_production_incentive, th_film_incentive, us_or_opif,
 #: us_tx_miip, za_nfvf_rebate) and the new RateCondition amount_fact_*/
 #: required_boolean_fact_key executable-gate mechanism.
-PROGRAM_RATE_RULES_VERSION = "1.5.1"  # 1.5.1: PROJECT_OPEN_ITEM_RECOVERY US/CA/MX repairs -- RI USD7m and MX MXN40m per-project caps now applied; see the data-module notes
+PROGRAM_RATE_RULES_VERSION = "1.5.2"  # 1.5.2: Greek category share caps (5% insurance/guarantees, 30% principal fees) from KYA 607434 Annex B.3 -- QpeShareCapRule. 1.5.1: PROJECT_OPEN_ITEM_RECOVERY US/CA/MX repairs -- RI USD7m and MX MXN40m per-project caps now applied; see the data-module notes
 
 
 @dataclass(frozen=True)
@@ -1138,8 +1138,10 @@ IE_RATE_RULES: tuple[RateRule, ...] = (
 )
 
 _GR_CITATION = (
-    "Greece Cash Rebate for International Productions. Rate (40%, flat, "
-    "no cultural test) sourced via jurisdiction_comparison.py GREECE "
+    "Greece Cash Rebate for International Productions. Rate (40%, flat; "
+    "fiction works must also score at least 23 of 50 cultural-criteria "
+    "points -- KYA 607434 Annex I Table A, see cultural_point_tables) "
+    "sourced via jurisdiction_comparison.py GREECE "
     "profile (Enterprise Greece / Greek Film Centre, enterprisegreece.gov.gr). "
     "Minimum-spend threshold and the 80% eligible-spend cap (see "
     "program_rate_rules.QPE_CAP_RULES['gr_cash_rebate']) updated per the "
@@ -1170,6 +1172,35 @@ GR_RATE_RULES: tuple[RateRule, ...] = (
                       "film (JMD 607434 art. 6 threshold table, as amended by JMD "
                       "140524)",
                 kind="min_qpe_usd", threshold_usd=228_104.80,
+            ),
+            # PROJECT_OPEN_ITEM_RECOVERY G-09 / Q40: the served Greek QPE presumes every non-excluded account is incurred in the
+            # Greek territory (the statute taxes only expenses "incurred in the Greek territory"; no per-account Greek-incurrence
+            # schedule exists in any retained record). Disclose that presumption instead of presenting it as confirmed. Non-gating:
+            # it names the missing facts without blocking or changing the modeled rate.
+            RateCondition(
+                condition_id="gr-local-incurrence-schedule",
+                description="Eligible expenses must be incurred in the Greek territory and be paid and invoiced to the beneficiary "
+                            "(KYA 607434 Annex B.1, B.2). The modeled QPE presumes every non-excluded account is Greek-incurred; "
+                            "foreign-issued invoices for the director and the two leads are available only above EUR 8,000,000 of "
+                            "eligible expense (Law 4487/2017 Art. 26(3) as amended by Law 5043/2023 Art. 61; KYA Art. 5(2)) and, "
+                            "for Action A, only where the work was performed entirely in Greece (Annex IV evidence rules).",
+                quote="eligible expenses are production expenses 'incurred in the Greek Territory' (Law 4487/2017 Art. 26(1)); "
+                      "'implemented in the Greek territory' (KYA 607434 Art. 5(1))",
+                kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="gr_local_incurrence_schedule_evidenced",
+                gates_tier_eligibility=False,
+            ),
+            RateCondition(
+                condition_id="gr-application-date-and-regime",
+                description="Eligibility starts on the application submission date; works that began earlier make the whole plan "
+                            "ineligible except preparatory production work (KYA 607434 Art. 5(3)). The governing text depends on "
+                            "that date: Law 4487/2017 as amended by Law 5043/2023 (A' 91/13.04.2023), Law 5105/2024 (A' 61) with "
+                            "KYA 6376/2025, or KYA 607434 (B' 87/14.01.2026). The modeled caps use the current KYA.",
+                quote="'The start date of eligibility of expenses is the date of submission of the funding application' "
+                      "(KYA 607434 Art. 5(3))",
+                kind="project_fact_dependent_eligibility",
+                required_boolean_fact_key="gr_application_date_and_regime_evidenced",
+                gates_tier_eligibility=False,
             ),
         ),
         confidence_tier="VERIFIED",
@@ -1590,7 +1621,17 @@ QPE_CAP_RULES: dict[str, QpeCapRule] = {
     "gr_cash_rebate": QpeCapRule(
         program_slug="gr_cash_rebate", cap_pct=0.80, cap_base="total_worldwide_budget",
         description="Eligible Greek production expenditure is capped at 80% "
-                     "of the production's total (worldwide) production cost.",
+                     "of the production's total (worldwide) production cost. "
+                     "Denominator: the text says only 'total production cost' "
+                     "(Law 4487/2017 Art. 26(1); KYA 607434 Art. 5(1) and the "
+                     "GBER Art. 54 definition at p.101 -- 'the total cost of "
+                     "production of the audiovisual works'); the exclusions of "
+                     "lending cost, bank expenses, taxes, duties and promotion "
+                     "(Art. 26(2)(c)-(d); Annex B.3(iii)-(iv)) are scoped to the "
+                     "ELIGIBLE total, not to the denominator. The canonical base "
+                     "is therefore the full budget total incl. financing; the "
+                     "narrower readings (gross less financing, or the Annex II "
+                     "category total) are disclosed sensitivities, not adopted.",
         quote=_GR_CAP_QUOTE, source_ref="JMD-607434-arts-4-5",
     ),
     # Final Consolidated Backend Correction + Global Structuring
@@ -1645,6 +1686,56 @@ QPE_CAP_RULES: dict[str, QpeCapRule] = {
         source_ref="codex-bounded-remediation-cz-film-incentive-formulaic-spec",
     ),
 }
+
+
+@dataclass(frozen=True)
+class QpeShareCapRule:
+    """A group of spend categories that may count only up to ``cap_pct`` of the program's TOTAL eligible cost.
+
+    The total is the capped total itself (the statutes cap a group at a share of the total eligible production cost, which
+    includes that group), so the cap is resolved as a greatest fixed point together with any percentage QpeCapRule limit.
+    The part above the cap is not excluded: which individual payees fall inside the capped group is a production fact the
+    topsheet does not carry, so the excess is reported as conditional (unresolved), never as lost or as confirmed."""
+    program_slug: str
+    group_id: str
+    categories: frozenset[str]
+    cap_pct: float
+    description: str
+    quote: str
+    source_ref: str
+
+
+QPE_SHARE_CAP_RULES: dict[str, tuple[QpeShareCapRule, ...]] = {
+    "gr_cash_rebate": (
+        QpeShareCapRule(
+            program_slug="gr_cash_rebate", group_id="insurance_and_guarantees",
+            categories=frozenset({"insurance", "completion_bond"}), cap_pct=0.05,
+            description="Insurance premiums and guarantee costs count in full up to 5% of the total eligible production cost.",
+            quote="Annex B.3(i): premiums and guarantee costs are counted in their entirety, with maximum eligible expense the "
+                  "corresponding 5% of the total eligible production cost (KYA 607434, Gazette B' 87/14.01.2026); the same 5% "
+                  "appears in Law 4487/2017 Art. 26(2)(a).",
+            source_ref="KYA-607434-2026-01-14-Annex-B3-i",
+        ),
+        QpeShareCapRule(
+            program_slug="gr_cash_rebate", group_id="principal_fees",
+            categories=frozenset({"atl_writer", "atl_director", "atl_cast"}), cap_pct=0.30,
+            description="Fees of the director, the screenwriter and the two leading actors count up to 30% of the total eligible "
+                        "production cost. Current text only: the producer is not in the group (Annex II lists the producer fee "
+                        "as an ordinary ATL category) and the historical 35% group of Law 4487/2017 Art. 26(2)(b) (which also "
+                        "contains the producer and music) applies to plans governed by that text. Account 1400 holds more than "
+                        "the two leads; with no payee split the whole account is placed inside the group (the conservative "
+                        "reading) and the portion above the cap is conditional on that split.",
+            quote="Annex B.3(ii): music rights and the fee of the director, the screenwriter and the two leading actors are "
+                  "counted up to thirty percent (30%) of the total eligible cost and may not exceed that percentage (KYA 607434, "
+                  "Gazette B' 87/14.01.2026).",
+            source_ref="KYA-607434-2026-01-14-Annex-B3-ii",
+        ),
+    ),
+}
+
+
+def get_qpe_share_caps(program_slug: str) -> tuple[QpeShareCapRule, ...]:
+    return QPE_SHARE_CAP_RULES.get(program_slug, ())
 
 
 def get_qpe_cap(program_slug: str) -> QpeCapRule | None:

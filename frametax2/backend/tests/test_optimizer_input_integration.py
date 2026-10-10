@@ -544,10 +544,17 @@ class TestExecutableJurisdictionKnowledge:
         from app.calculators.qualification_model import (
             build_little_utopia_register_for_jurisdiction, QualificationState,
         )
-        for code, slug in [("MT", "mt_mfc_rebate"), ("IE", "ie_section_481"), ("GR", "gr_cash_rebate")]:
+        for code, slug in [("MT", "mt_mfc_rebate"), ("IE", "ie_section_481")]:
             reg = build_little_utopia_register_for_jurisdiction(code, slug, 0.30)
             excluded = {a.account_code for a in reg if a.state == QualificationState.EXCLUDED}
             assert excluded == {"5000", "5100", "5200", "5300", "5400", "5500", "6500", "8300"}
+        # Greece is no longer in that group: KYA 607434 (B' 87/14.01.2026) Annex B.2(viii) and Annex II make contingency
+        # allowances eligible for Action A (settled only on incurred cost), so the explicit Greek contingency rule keeps the
+        # stated-outside accounts excluded but leaves 8300 CONDITIONAL on the producer's deployment fact, not excluded.
+        reg = build_little_utopia_register_for_jurisdiction("GR", "gr_cash_rebate", 0.30)
+        excluded = {a.account_code for a in reg if a.state == QualificationState.EXCLUDED}
+        assert excluded == {"5000", "5100", "5200", "5300", "5400", "5500", "6500"}
+        assert {a.account_code: a.state for a in reg}["8300"] == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
 
     def test_rate_rules_reflect_real_sourced_profile_data(self):
         from app.data.program_rate_rules import resolve_program_rate
