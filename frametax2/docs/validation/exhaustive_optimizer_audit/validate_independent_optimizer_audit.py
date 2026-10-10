@@ -699,6 +699,53 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 if tok not in content:
                     errors.append(f"BUDGET_CATEGORIZATION_AND_MOVIE_MAGIC_AUDIT.md missing required token: '{tok}'")
 
+    # 32. Codex d0e01e2 Independent Audit Report
+    cda_path = os.path.join(base_dir, "CODEX_D0E01E2_INDEPENDENT_AUDIT_REPORT.md")
+    if not os.path.exists(cda_path):
+        errors.append(f"Missing file: {cda_path}")
+    else:
+        with open(cda_path, mode="r", encoding="utf-8") as f:
+            content = f.read()
+            cda_tokens = (
+                "d0e01e285edb8baed4cf1517a4250b6ba6b0051b",
+                "Formal Retraction of California Control Contradiction",
+                "Formal Retraction of Bad Hombres SAG Reserve Contradiction",
+                "Q01", "Q02", "Q03", "Q04", "Q05", "Q06", "Q07", "Q08", "Q09", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15",
+                "_is_budget_netting",
+                "_separate_spreadsheet_evidence",
+                "_price_subset_uplifts",
+                "EligibleSubsetUpliftRule",
+                "IncentiveValueCapRule",
+                "8,000,000",
+                "10,000,000",
+            )
+            for tok in cda_tokens:
+                if tok not in content:
+                    errors.append(f"CODEX_D0E01E2_INDEPENDENT_AUDIT_REPORT.md missing required token: '{tok}'")
+
+    # 33. Four-Anchor Codex d0e01e2 Disposition Matrix
+    cdm_path = os.path.join(base_dir, "FOUR_ANCHOR_CODEX_D0E01E2_DISPOSITION_MATRIX.csv")
+    if not os.path.exists(cdm_path):
+        errors.append(f"Missing file: {cdm_path}")
+    else:
+        with open(cdm_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 158:
+                errors.append(f"FOUR_ANCHOR_CODEX_D0E01E2_DISPOSITION_MATRIX.csv has {len(reader)} rows != expected 158.")
+            for r in reader:
+                if r.get('project_name') == 'Bad Hombres' and r.get('account_code') == '1600':
+                    if r.get('confirmed_qpe_usd') != '0.00' or r.get('missing_fact_disclosure') != 'MISSING_PRODUCTION_FACT':
+                        errors.append(f"Bad Hombres Line 1600 must have confirmed_qpe_usd='0.00' and missing_fact_disclosure='MISSING_PRODUCTION_FACT': {r}")
+                if r.get('project_name') == 'Lips Like Sugar' and r.get('account_code') == '1100':
+                    if r.get('confirmed_qpe_usd') != '1653.00' or r.get('excluded_usd') != '312500.00':
+                        errors.append(f"Lips Like Sugar Line 1100 must have confirmed_qpe_usd='1653.00' and excluded_usd='312500.00': {r}")
+                if r.get('project_name') == 'Lips Like Sugar' and r.get('account_code') == '1900':
+                    if r.get('confirmed_qpe_usd') != '0.00':
+                        errors.append(f"Lips Like Sugar Line 1900 (ATL fringes) must have confirmed_qpe_usd='0.00': {r}")
+                if r.get('project_name') == 'The Little Utopia' and r.get('account_code') == '7100':
+                    if r.get('spend_category') != 'general_administration':
+                        errors.append(f"The Little Utopia Line 7100 must be general_administration: {r}")
+
     return (len(errors) == 0, errors)
 
 
@@ -715,7 +762,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 24
+    nc_total = 28
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1311,6 +1358,91 @@ def run_negative_controls():
             w = csv.DictWriter(f, fieldnames=list(c_rows[0].keys()))
             w.writeheader()
             w.writerows(c_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 25: Rejection of California Historical 20% Contradiction
+        # -------------------------------------------------------------
+        print("  [NC 25/28] Testing rejection of California historical 20% contradiction...")
+        car_f = os.path.join(tmpdir, "CODEX_D0E01E2_INDEPENDENT_AUDIT_REPORT.md")
+        with open(car_f, "r", encoding="utf-8") as f:
+            car_text = f.read()
+        tampered_car = car_text.replace("Formal Retraction of California Control Contradiction", "Reaffirming California 20% Reservation Control")
+        with open(car_f, "w", encoding="utf-8") as f:
+            f.write(tampered_car)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught unretracted California 20% contradiction.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch California 20% contradiction.")
+        with open(car_f, "w", encoding="utf-8") as f:
+            f.write(car_text)
+
+        # -------------------------------------------------------------
+        # Negative Control 26: Rejection of Bad Hombres $60,000 SAG Reserve in Confirmed QPE
+        # -------------------------------------------------------------
+        print("  [NC 26/28] Testing rejection of Bad Hombres $60,000 SAG reserve in confirmed QPE...")
+        cdm_f = os.path.join(tmpdir, "FOUR_ANCHOR_CODEX_D0E01E2_DISPOSITION_MATRIX.csv")
+        with open(cdm_f, "r", encoding="utf-8") as f:
+            cdm_rows = list(csv.DictReader(f))
+        bh_1600_idx = next(i for i, r in enumerate(cdm_rows) if r.get('project_name') == 'Bad Hombres' and r.get('account_code') == '1600')
+        orig_bh = dict(cdm_rows[bh_1600_idx])
+        cdm_rows[bh_1600_idx]['confirmed_qpe_usd'] = '60000.00'
+        with open(cdm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(cdm_rows[0].keys()))
+            w.writeheader()
+            w.writerows(cdm_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught Bad Hombres SAG reserve in confirmed QPE.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch Bad Hombres SAG reserve in confirmed QPE.")
+        cdm_rows[bh_1600_idx] = orig_bh
+        with open(cdm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(cdm_rows[0].keys()))
+            w.writeheader()
+            w.writerows(cdm_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 27: Rejection of Non-Conserving LLS Line 1100 Inclusion
+        # -------------------------------------------------------------
+        print("  [NC 27/28] Testing rejection of non-conserving LLS Line 1100 qualification...")
+        lls_1100_idx = next(i for i, r in enumerate(cdm_rows) if r.get('project_name') == 'Lips Like Sugar' and r.get('account_code') == '1100')
+        orig_lls = dict(cdm_rows[lls_1100_idx])
+        cdm_rows[lls_1100_idx]['confirmed_qpe_usd'] = '314153.00'
+        cdm_rows[lls_1100_idx]['excluded_usd'] = '0.00'
+        with open(cdm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(cdm_rows[0].keys()))
+            w.writeheader()
+            w.writerows(cdm_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught non-conserving LLS Line 1100 over-qualification.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch non-conserving LLS Line 1100 over-qualification.")
+        cdm_rows[lls_1100_idx] = orig_lls
+        with open(cdm_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(cdm_rows[0].keys()))
+            w.writeheader()
+            w.writerows(cdm_rows)
+
+        # -------------------------------------------------------------
+        # Negative Control 28: Rejection of Greek Ordinary Cap Exceeding EUR 8,000,000
+        # -------------------------------------------------------------
+        print("  [NC 28/28] Testing rejection of Greek ordinary cap exceeding EUR 8,000,000...")
+        tampered_car2 = car_text.replace("8,000,000", "15,000,000")
+        with open(car_f, "w", encoding="utf-8") as f:
+            f.write(tampered_car2)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught Greek cap tampering.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch Greek cap tampering.")
+        with open(car_f, "w", encoding="utf-8") as f:
+            f.write(car_text)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
