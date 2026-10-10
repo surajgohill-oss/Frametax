@@ -136,7 +136,7 @@ function OptionCard({ structure, cardIndex, onClick, projectId, onPreferenceSave
         <div className="ii-country">
           <span className="ii-country-name" title={flags ? `${flags} ${title}` : title}>{flags ? `${flags} ${title}` : title}</span>
         </div>
-        <div className="ii-status">{status}</div>
+        <div className="ii-status" title={status}>{status}</div>
         </div>
 
         {/* Same shared economic well as the Workspace cards; a structure without the served

@@ -2073,3 +2073,41 @@
 .glv-heading { font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.7; margin-bottom: 1px; }
 .glv-count { margin-left: 4px; opacity: 0.6; }
 .glv-check { margin-left: 3px; font-size: 10px; opacity: 0.8; }
+
+/* CARD REFINEMENT (2026-10-10, docs/validation/WORKSPACE_CARD_REDESIGN_DEFERRED_SPEC.md): Workspace + Overview cards only.
+   White fill, thin #E2E8F0 border, no heavy shadow; sans labels, mono tabular dollars; status in the header; slightly wider
+   Workspace cards with equal outer gutters. No markup order, data, handler or calculation change beyond the card face. */
+.wsx-rack { grid-template-columns: repeat(3, minmax(0, 344px)); justify-content: center; padding: 20px 18px; gap: 18px; }
+@container wsx-station (max-width: 1023px) { .wsx-rack { grid-template-columns: repeat(2, minmax(0, 344px)); } }
+@container wsx-station (max-width: 685px) { .wsx-rack { grid-template-columns: minmax(0, 344px); } }
+.wsx-splitv .lcol .wsx-rack { padding: 0; grid-template-columns: 1fr; justify-content: stretch; }
+:root:not([data-theme="night"]):not([data-theme="dark"]) :is(.wsx-lane, .ii-card) {
+  --wsx-bg: #FFFFFF; --wsx-bg-anchor: #FFFFFF; --wsx-bd: #E2E8F0; --wsx-bd-top: #E2E8F0; --wsx-bd-bot: #E2E8F0;
+  --wsx-shadow: none; --wsx-shadow-hover: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+:root:not([data-theme="night"]):not([data-theme="dark"]) .ii-card { background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: none; }
+.wsx-lane { min-height: 0; }
+.wsx-lane:hover { transform: none; }
+.wsx-lh { height: 54px; min-height: 54px; padding: 10px 16px 6px; }
+.wsx-lane.anchor .wsx-lh { height: 52px; min-height: 52px; }
+.wsx-lh-id { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.wsx-nm { flex: 1; min-width: 0; width: auto; height: 2.5em; font: 600 15px/1.25 var(--font-sans); letter-spacing: 0; }
+.wsx-lh .wsx-badge { flex: none; align-self: flex-start; margin-top: 1px; font: 700 12px/1.25 var(--font-sans); letter-spacing: 0.01em; white-space: nowrap; text-align: right; }
+.ii-card .ii-country-name { font: 600 15px/1.25 var(--font-sans); height: 2.5em; }
+.ii-card .ii-status { font: 700 12px/16px var(--font-sans); letter-spacing: 0.01em; text-transform: none; }
+.ii-card-head { height: 72px; gap: 2px; }
+.wsx-econ { padding-top: 2px; }
+.wsx-econ-max { height: 50px; }
+.wsx-econ-line.npc { height: 22px; }
+.wsx-econ-line.npc span:first-child { font-weight: 500; }
+.wsx-econ-line.npc span:last-child { font: 500 16px/22px var(--wsx-mono); letter-spacing: 0; }
+.wsx-econ-incentives { margin-top: 2px; }
+.wsx-bar-wrap { margin-top: 4px; }
+.wsx-bar .amber { background: repeating-linear-gradient(135deg, var(--amber) 0 4px, color-mix(in srgb, var(--amber) 38%, #FFFFFF) 4px 8px); }
+.wsx-econ-mfni { margin-top: 4px; }
+.wsx-econ-need { margin-top: 4px; }
+.wsx-qs { margin-top: 2px; }
+.wsx-foot { padding: 6px 16px 8px; min-height: 0; }
+.wsx-lead-act { padding: 0 16px 10px; min-height: 0; }
+.wsx-lane .wsx-foot button { font: 600 13px var(--font-sans); text-transform: none; letter-spacing: 0; color: #1E293B; }
+.ii-econ .wsx-econ-mfni .wsx-econ-line:first-child span:first-child { height: auto; }

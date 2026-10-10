@@ -338,8 +338,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
       )}
 
       <div className="wsx-foot">
-        <button onClick={(e) => { e.stopPropagation(); openInspect(); }}>Inspect</button>
-        <button onClick={(e) => { e.stopPropagation(); onCompare(structure); }}>Compare</button>
+        <button onClick={(e) => { e.stopPropagation(); openInspect(); }}>Inspect structure</button>
       </div>
       <div className="wsx-lead-act">
         {isLeading ? (
