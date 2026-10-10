@@ -69,7 +69,7 @@ function bakeClouds() {
   const ctx = c.getContext("2d");
   ctx.clearRect(0, 0, 512, 256);
 
-  for (let i = 0; i < 450; i += 1) {
+  for (let i = 0; i < 700; i += 1) {
     const band = rand();
     let y;
     if (band < 0.4) y = 120 + (rand() - 0.5) * 35;
@@ -77,8 +77,8 @@ function bakeClouds() {
     else y = 65 + (rand() - 0.5) * 30;
     const x = rand() * 512;
     if (x > 215 && x < 285 && y > 70 && y < 130) continue; // Sahara stays visible
-    const w = 3 + rand() * 10;
-    const h = 1.5 + rand() * 3.5;
+    const w = 1.5 + rand() * 5;
+    const h = 0.7 + rand() * 1.8;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate((rand() - 0.5) * 0.4);
@@ -95,7 +95,7 @@ function bakeClouds() {
     const r = a * 3.2;
     ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.75 - a * 0.06)})`;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.5, 1.8 + rand() * 2.2, 0, Math.PI * 2);
+    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.5, 0.9 + rand() * 1.1, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
@@ -170,7 +170,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
     scene.add(group);
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(1, 56, 56),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, emissive: new THREE.Color(0x124a8a), emissiveIntensity: 0.3 }),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, emissive: new THREE.Color(0x1655a0), emissiveIntensity: 0.35 }),
     );
     group.add(earth);
     const clouds = new THREE.Mesh(
