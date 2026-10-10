@@ -2111,3 +2111,26 @@
 .wsx-lead-act { padding: 0 16px 10px; min-height: 0; }
 .wsx-lane .wsx-foot button { font: 600 13px var(--font-sans); text-transform: none; letter-spacing: 0; color: #1E293B; }
 .ii-econ .wsx-econ-mfni .wsx-econ-line:first-child span:first-child { height: auto; }
+
+/* CARD REFINEMENT 2 (2026-10-10): half-size gutters with wider cards; "Set as leading" sits in the header beside the status; no
+   Inspect button (the whole card opens the Inspector); more air between the hero, rows and bar. Workspace cards only. */
+.wsx-rack { grid-template-columns: repeat(3, minmax(0, 360px)); padding: 20px 9px; gap: 9px; }
+@container wsx-station (max-width: 1023px) { .wsx-rack { grid-template-columns: repeat(2, minmax(0, 360px)); } }
+@container wsx-station (max-width: 685px) { .wsx-rack { grid-template-columns: minmax(0, 360px); } }
+.wsx-lh { height: 78px; min-height: 78px; }
+.wsx-lane.anchor .wsx-lh { height: 76px; min-height: 76px; }
+.wsx-lh-id { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px; }
+.wsx-lh-act { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.wsx-lh-act .wsx-badge { margin: 0; }
+.wsx-lh-act .wsx-lead { width: auto; height: 22px; padding: 0 8px; font: 600 11px var(--font-sans); letter-spacing: 0; white-space: nowrap; background: #F8FAFC; border: 1px solid #D0D5DD; color: #1E293B; border-radius: 2px; }
+.wsx-lh-act .wsx-lead:hover { background: #EDF2F7; border-color: #94A3B8; }
+.wsx-lh-act .wsx-lead.is-leading { color: #B45309; border-color: #E2E8F0; background: transparent; }
+.wsx-lane .wsx-econ { padding: 8px 18px 16px; }
+.wsx-lane .wsx-econ-max { height: 66px; }
+.wsx-lane .wsx-econ-line { height: 22px; }
+.wsx-lane .wsx-econ-line.npc { height: 26px; }
+.wsx-lane .wsx-econ-incentives { margin-top: 12px; }
+.wsx-lane .wsx-bar-wrap { margin-top: 14px; }
+.wsx-lane .wsx-econ-mfni { margin-top: 14px; }
+.wsx-lane .wsx-econ-need { margin-top: 14px; }
+.wsx-lane .wsx-qs { margin-top: 10px; }

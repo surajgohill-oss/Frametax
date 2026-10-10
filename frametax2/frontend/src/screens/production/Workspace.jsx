@@ -308,7 +308,14 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
             className="wsx-nm"
             title={[flags ? `${flags} ${name}` : name, familyLabel ? [familyLabel, tierLabel].filter(Boolean).join(" · ") : null].filter(Boolean).join(" — ")}
           >{flags ? `${flags} ${name}` : name}</div>
-          <span className="wsx-badge" title={isReference ? referenceExplanationText(structure.recommendation_reason) : undefined}>{badge}</span>
+          <div className="wsx-lh-act">
+            {isLeading ? (
+              <button className="wsx-lead is-leading" disabled>● Current leading</button>
+            ) : (
+              <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure); }}>◈ Set as leading</button>
+            )}
+            <span className="wsx-badge" title={isReference ? referenceExplanationText(structure.recommendation_reason) : undefined}>{badge}</span>
+          </div>
         </div>
       </div>
 
@@ -337,16 +344,6 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
         </div>
       )}
 
-      <div className="wsx-foot">
-        <button onClick={(e) => { e.stopPropagation(); openInspect(); }}>Inspect structure</button>
-      </div>
-      <div className="wsx-lead-act">
-        {isLeading ? (
-          <button className="wsx-lead is-leading" disabled>● Current leading structure</button>
-        ) : (
-          <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure); }}>◈ Set as leading</button>
-        )}
-      </div>
     </div>
   );
 }
