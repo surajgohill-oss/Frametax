@@ -221,7 +221,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "", overlay
       if (now - last < 33) return; // ~30fps is plenty at 80px
       const dt = last ? Math.min(100, now - last) : 33;
       last = now;
-      group.rotation.y += 0.000012 * dt;          // very slow turn of the Earth (~9 min per revolution)
+      group.rotation.y += 0.0000144 * dt;         // slow turn of the Earth (~7.3 min per revolution)
       clouds.rotation.y += 0.00003 * dt;          // the cloud deck drifts ahead of it, independently (~3.5 min per lap)
       key.position.x = 0.1 + Math.sin(now / 9000) * 0.28; // slow light response across the ocean specular
       key.position.y = 0.2 + Math.cos(now / 11000) * 0.12;
