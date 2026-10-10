@@ -12,7 +12,7 @@ import { attainability, missingFactsTitle } from "../lib/incentivePotential";
 const fmt = (v) => `$${Math.round(v).toLocaleString("en-US")}`;
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
-export default function EconomicWell({ pot, awardRisk = false, className = "" }) {
+export default function EconomicWell({ pot, awardRisk = false, className = "", qualifiedSpend }) {
   const att = attainability(pot, awardRisk);
   const hasMax = pot.maxIncentive != null && pot.maxIncentive > 0;
   // jade = confirmed / maximum; amber = the unconfirmed delta / maximum (the remainder). All jade only when confirmed
@@ -32,6 +32,13 @@ export default function EconomicWell({ pot, awardRisk = false, className = "" })
       <div className="wsx-econ-incentives">
         <div className="wsx-econ-line"><span>Confirmed incentive</span><span className="incentive"><Money value={pot.confirmedIncentive} bare /></span></div>
         <div className="wsx-econ-line"><span>Maximum-potential incentive</span><span><Money value={pot.maxIncentive} bare /></span></div>
+        {qualifiedSpend !== undefined && (
+          <div className="wsx-econ-line"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
+        )}
+      </div>
+      {/* MFNI: not wired. One honest row; no post-MFNI figure and no editor until a canonical adjustment owner is served. */}
+      <div className="wsx-econ-mfni" data-mfni="not-modeled">
+        <div className="wsx-econ-line"><span>MFNI</span><span>Not yet modeled</span></div>
       </div>
       <div className="wsx-bar-wrap">
         <div
@@ -48,10 +55,6 @@ export default function EconomicWell({ pot, awardRisk = false, className = "" })
           <span className="jade">{jade > 0 ? <Money value={pot.confirmedIncentive} /> : ""}</span>
           <span className="amber">{amber > 0 && pot.upside != null ? <>+<Money value={pot.upside} /></> : ""}</span>
         </div>
-      </div>
-      {/* MFNI: not wired. One honest row; no post-MFNI figure and no editor until a canonical adjustment owner is served. */}
-      <div className="wsx-econ-mfni" data-mfni="not-modeled">
-        <div className="wsx-econ-line"><span>MFNI</span><span>Not yet modeled</span></div>
       </div>
       <div className="wsx-econ-need" data-attainability={att.headline} title={missingFactsTitle(pot)}>
         <div className="wsx-econ-need-head">{att.headline}</div>

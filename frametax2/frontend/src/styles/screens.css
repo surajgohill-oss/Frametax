@@ -2134,3 +2134,10 @@
 .wsx-lane .wsx-econ-mfni { margin-top: 14px; }
 .wsx-lane .wsx-econ-need { margin-top: 14px; }
 .wsx-lane .wsx-qs { margin-top: 10px; }
+
+/* CARD REFINEMENT 3: qualified spend joins the incentive rows; order is hero, NPC, incentives + qualified spend, MFNI (16px), bar,
+   requirement/warning last. */
+.wsx-lane .wsx-econ-mfni .wsx-econ-line { height: 24px; }
+.wsx-lane .wsx-econ-mfni .wsx-econ-line span:first-child, .wsx-lane .wsx-econ-mfni .wsx-econ-line span:last-child { font: 500 16px/24px var(--font-sans); letter-spacing: 0; }
+.wsx-lane .wsx-econ-mfni .wsx-econ-line span:last-child { font-family: var(--wsx-mono); }
+.wsx-lane .wsx-econ-need { margin-top: 14px; }

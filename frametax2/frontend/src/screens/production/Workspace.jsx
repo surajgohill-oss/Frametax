@@ -325,8 +325,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
             <>
               {/* ECONOMIC WELL v2: shared with Overview's cards (components/EconomicWell.jsx). Gross budget is not
                   repeated here; qualified spend is quiet subordinate context below the well, never before NPC. */}
-              <EconomicWell pot={pot} awardRisk={hasAdministrativeAllocationRisk(structure)} />
-              <div className="wsx-qs"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
+              <EconomicWell pot={pot} awardRisk={hasAdministrativeAllocationRisk(structure)} qualifiedSpend={qualifiedSpend} />
             </>
           ) : (
             <div className="wsx-rows">
