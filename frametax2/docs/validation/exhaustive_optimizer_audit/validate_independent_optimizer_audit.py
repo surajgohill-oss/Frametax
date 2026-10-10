@@ -849,6 +849,11 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "CONDITIONAL ON CAST WITHHOLDING PROOF",
                 "Law 4487/2017",
                 "Law 5105/2024",
+                "KYA 607434",
+                "8004",
+                "35.0%",
+                "30.0%",
+                "combined 5.0% cap",
                 "ANCHOR ACCEPTANCE GATE REMAINS OPEN",
             )
             for tok in irr_tokens:
@@ -870,9 +875,18 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
             for r in reader:
                 if r['territorial_evidence_state'] != 'MISSING_LOCAL_SPEND_SCHEDULE':
                     errors.append(f"FVD Greece row {r.get('account_code')} must indicate MISSING_LOCAL_SPEND_SCHEDULE: {r}")
-                if r['account_code'] in ('7901', '7902', '7905', '7200'):
+                if r['account_code'] in ('7901', '7902'):
                     if r['is_statutorily_excluded'] != 'TRUE':
                         errors.append(f"FVD non-qualifying line {r.get('account_code')} not marked is_statutorily_excluded=TRUE: {r}")
+                if r['account_code'] in ('7200', '7905'):
+                    if r['is_statutorily_excluded'] != 'FALSE':
+                        errors.append(f"FVD insurance/bond line {r.get('account_code')} must NOT be blanket excluded (is_statutorily_excluded must be FALSE): {r}")
+                    if r['statutory_treatment_greece'] != 'ELIGIBLE_SUBJECT_TO_5PCT_CAP':
+                        errors.append(f"FVD insurance/bond line {r.get('account_code')} must be ELIGIBLE_SUBJECT_TO_5PCT_CAP: {r}")
+                if r['account_code'] in ('1200', '1300'):
+                    reason = r.get('exclusion_or_restriction_reason', '')
+                    if '35.0%' not in reason or '30.0%' not in reason:
+                        errors.append(f"FVD principal fee line {r.get('account_code')} must cite versioned 35.0% and 30.0% fee caps: {r}")
 
     return (len(errors) == 0, errors)
 
@@ -890,7 +904,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 37
+    nc_total = 38
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1705,7 +1719,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 35: Rejection of On-Set Production Sound in NY § 31 Post Credit
         # -------------------------------------------------------------
-        print("  [NC 35/37] Testing rejection of on-set production sound qualified for NY § 31 post credit...")
+        print("  [NC 35/38] Testing rejection of on-set production sound qualified for NY § 31 post credit...")
         with open(nym_f, "r", encoding="utf-8") as f:
             nym_rows = list(csv.DictReader(f))
         orig_nym = [dict(r) for r in nym_rows]
@@ -1731,7 +1745,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 36: Rejection of Omitted LLS Bridge Financing Fee in Exclusions
         # -------------------------------------------------------------
-        print("  [NC 36/37] Testing rejection of omitted LLS bridge financing fee in exclusions...")
+        print("  [NC 36/38] Testing rejection of omitted LLS bridge financing fee in exclusions...")
         with open(nym_f, "r", encoding="utf-8") as f:
             nym_rows = list(csv.DictReader(f))
         orig_nym = [dict(r) for r in nym_rows]
@@ -1757,7 +1771,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 37: Rejection of Missing NY Adjudication Token in Report
         # -------------------------------------------------------------
-        print("  [NC 37/37] Testing rejection of missing NY adjudication reference in audit report...")
+        print("  [NC 37/38] Testing rejection of missing NY adjudication reference in audit report...")
         nya_f = os.path.join(tmpdir, "NEW_YORK_INCENTIVES_AND_UPSTATE_AUDIT.md")
         with open(nya_f, "r", encoding="utf-8") as f:
             orig_nya = f.read()
@@ -1772,6 +1786,32 @@ def run_negative_controls():
             print("    -> FAIL: Validator failed to catch missing NY adjudication reference.")
         with open(nya_f, "w", encoding="utf-8") as f:
             f.write(orig_nya)
+
+        # -------------------------------------------------------------
+        # Negative Control 38: Rejection of Blanket Exclusion of Insurance in FVD Greece Matrix
+        # -------------------------------------------------------------
+        print("  [NC 38/38] Testing rejection of blanket exclusion of Greek insurance...")
+        fgr_f = os.path.join(tmpdir, "FVD_GREECE_34_ACCOUNT_RECONSTRUCTION.csv")
+        with open(fgr_f, "r", encoding="utf-8") as f:
+            fgr_rows = list(csv.DictReader(f))
+        orig_fgr = [dict(r) for r in fgr_rows]
+        for r in fgr_rows:
+            if r['account_code'] == '7200':
+                r['is_statutorily_excluded'] = 'TRUE'
+        with open(fgr_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(fgr_rows[0].keys()))
+            w.writeheader()
+            w.writerows(fgr_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught blanket exclusion of Greek insurance.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch blanket exclusion of Greek insurance.")
+        with open(fgr_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_fgr[0].keys()))
+            w.writeheader()
+            w.writerows(orig_fgr)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
