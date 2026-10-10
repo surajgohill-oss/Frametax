@@ -746,6 +746,63 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                     if r.get('spend_category') != 'general_administration':
                         errors.append(f"The Little Utopia Line 7100 must be general_administration: {r}")
 
+    # 34. New York Incentives and Upstate Audit Report
+    nya_path = os.path.join(base_dir, "NEW_YORK_INCENTIVES_AND_UPSTATE_AUDIT.md")
+    if not os.path.exists(nya_path):
+        errors.append(f"Missing file: {nya_path}")
+    else:
+        with open(nya_path, mode="r", encoding="utf-8") as f:
+            content = f.read()
+            nya_tokens = (
+                "NY Tax Law § 24",
+                "NY Tax Law § 31",
+                "5 NYCRR Part 170",
+                "Chapter 59 of the Laws of 2023",
+                "provided, however, that a taxpayer that is eligible for a credit under section twenty-four of this article shall not be eligible for a credit under this section",
+                "Mutual Exclusivity",
+                "40% Aggregate Ceiling",
+                "$500,000 per person",
+                "Downstate NY Full Relocation",
+                "Upstate NY Full Relocation",
+                "The Little Utopia",
+                "F#K Valentine",
+                "Bad Hombres",
+                "Lips Like Sugar",
+                "ANCHOR ACCEPTANCE GATE REMAINS OPEN",
+            )
+            for tok in nya_tokens:
+                if tok not in content:
+                    errors.append(f"NEW_YORK_INCENTIVES_AND_UPSTATE_AUDIT.md missing required token: '{tok}'")
+
+    # 35. New York Four-Project Scenario Matrix
+    nym_path = os.path.join(base_dir, "NEW_YORK_FOUR_PROJECT_SCENARIO_MATRIX.csv")
+    if not os.path.exists(nym_path):
+        errors.append(f"Missing file: {nym_path}")
+    else:
+        with open(nym_path, mode="r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) != 158:
+                errors.append(f"NEW_YORK_FOUR_PROJECT_SCENARIO_MATRIX.csv has {len(reader)} rows != expected 158.")
+            projs = {r['project_title'] for r in reader}
+            for p in ('The Little Utopia', "F#K Valentine's Day", 'Lips Like Sugar', 'Bad Hombres'):
+                if p not in projs:
+                    errors.append(f"New York scenario matrix missing project: {p}")
+            # Enforce ATL 40% aggregate ceiling and non-qualifying exclusions
+            for p in projs:
+                p_rows = [r for r in reader if r['project_title'] == p]
+                btl_post_base = sum(float(r['amount_usd']) for r in p_rows if r['ny_statutory_treatment'] in ('QUALIFIED_BTL_PHYSICAL', 'QUALIFIED_POST_PRODUCTION'))
+                max_atl = 0.40 * btl_post_base
+                actual_atl_qpe = sum(float(r['downstate_qpe_usd']) for r in p_rows if 'ATL' in r['ny_statutory_treatment'])
+                if actual_atl_qpe > max_atl + 0.05:
+                    errors.append(f"Project {p} New York QPE violates 40% ATL ceiling: actual ATL ${actual_atl_qpe:,.2f} > max allowable ${max_atl:,.2f}")
+                # Enforce that non-qualifying rows have 0 QPE
+                for r in p_rows:
+                    if r['ny_statutory_treatment'] == 'EXCLUDED_NON_QUALIFYING':
+                        if float(r['downstate_qpe_usd']) != 0.0 or float(r['upstate_qpe_usd']) != 0.0:
+                            errors.append(f"Excluded cost line qualified in New York QPE: {r}")
+                    if r['qualifies_standalone_post_31'] == 'Y' and r['ny_statutory_treatment'] != 'QUALIFIED_POST_PRODUCTION':
+                        errors.append(f"Non-post expense improperly qualified for Section 31 post credit: {r}")
+
     return (len(errors) == 0, errors)
 
 
@@ -762,7 +819,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 28
+    nc_total = 31
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1443,6 +1500,75 @@ def run_negative_controls():
             print("    -> FAIL: Validator failed to catch Greek cap tampering.")
         with open(car_f, "w", encoding="utf-8") as f:
             f.write(car_text)
+
+        # -------------------------------------------------------------
+        # Negative Control 29: Rejection of Missing NY § 24/§ 31 Mutual Exclusivity
+        # -------------------------------------------------------------
+        print("  [NC 29/31] Testing rejection of missing NY statutory mutual exclusivity token...")
+        nya_f = os.path.join(tmpdir, "NEW_YORK_INCENTIVES_AND_UPSTATE_AUDIT.md")
+        with open(nya_f, "r", encoding="utf-8") as f:
+            nya_text = f.read()
+        tampered_nya = nya_text.replace("provided, however, that a taxpayer that is eligible for a credit under section twenty-four of this article shall not be eligible for a credit under this section", "taxpayers may freely stack section twenty-four and section thirty-one on distinct costs")
+        with open(nya_f, "w", encoding="utf-8") as f:
+            f.write(tampered_nya)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught tampering of NY statutory mutual exclusivity.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch tampering of NY statutory mutual exclusivity.")
+        with open(nya_f, "w", encoding="utf-8") as f:
+            f.write(nya_text)
+
+        # -------------------------------------------------------------
+        # Negative Control 30: Rejection of NY ATL 40% Aggregate Ceiling Violation
+        # -------------------------------------------------------------
+        print("  [NC 30/31] Testing rejection of NY ATL 40% aggregate ceiling violation...")
+        nym_f = os.path.join(tmpdir, "NEW_YORK_FOUR_PROJECT_SCENARIO_MATRIX.csv")
+        with open(nym_f, "r", encoding="utf-8") as f:
+            nym_rows = list(csv.DictReader(f))
+        orig_nym = [dict(r) for r in nym_rows]
+        # Boost FVD ATL lines to exceed 40% ceiling
+        for r in nym_rows:
+            if r['project_title'] == "F#K Valentine's Day" and 'ATL' in r['ny_statutory_treatment']:
+                r['downstate_qpe_usd'] = r['amount_usd']  # uncap ATL to full $1.898M
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(nym_rows[0].keys()))
+            w.writeheader()
+            w.writerows(nym_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught NY ATL 40% ceiling violation.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch NY ATL 40% ceiling violation.")
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_nym[0].keys()))
+            w.writeheader()
+            w.writerows(orig_nym)
+
+        # -------------------------------------------------------------
+        # Negative Control 31: Rejection of Non-Post Expense Qualified for NY § 31 Post Credit
+        # -------------------------------------------------------------
+        print("  [NC 31/31] Testing rejection of non-post expense qualified for NY § 31 post credit...")
+        tampered_nym2 = [dict(r) for r in orig_nym]
+        for r in tampered_nym2:
+            if r['project_title'] == 'The Little Utopia' and r['account_code'] == '2200':
+                r['qualifies_standalone_post_31'] = 'Y'
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(tampered_nym2[0].keys()))
+            w.writeheader()
+            w.writerows(tampered_nym2)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught non-post expense qualified under Section 31.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch non-post expense qualified under Section 31.")
+        with open(nym_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_nym[0].keys()))
+            w.writeheader()
+            w.writerows(orig_nym)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total

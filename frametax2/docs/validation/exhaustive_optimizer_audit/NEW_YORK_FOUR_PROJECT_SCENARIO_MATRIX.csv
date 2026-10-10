@@ -1,0 +1,159 @@
+project_title,account_code,description,amount_usd,engine_category,ny_statutory_treatment,statutory_authority_citation,treatment_rationale,qualifies_downstate_prod_24,qualifies_upstate_prod_24,qualifies_standalone_post_31,downstate_qpe_usd,upstate_qpe_usd,standalone_post_qpe_usd
+The Little Utopia,1000,1000 DEVELOPMENT,0.00,miscellaneous,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Development / Story Rights Acquisition,N,N,N,0.00,0.00,0.00
+The Little Utopia,7100,7100 PUBLICITY,24348.00,general_administration,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Publicity / Marketing / Distribution,N,N,N,0.00,0.00,0.00
+The Little Utopia,7200,7200 INSURANCE,12374.00,insurance,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+The Little Utopia,7300,7300 MARKETING,0.00,miscellaneous,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Publicity / Marketing / Distribution,N,N,N,0.00,0.00,0.00
+The Little Utopia,7800,7800 FINANCE & LEGAL,0.00,finance_costs,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Financing / Lender Fees,N,N,N,0.00,0.00,0.00
+The Little Utopia,8100,8100 Insurance : 1.2%,48181.00,insurance,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+The Little Utopia,8200,8200 Bond : 0.0%,0.00,completion_bond,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+The Little Utopia,8300,8300 Contigency : 7.5%,301131.00,contingency,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); 5 NYCRR § 170.2,Contingency / Escrow Reserve (unspent liability),N,N,N,0.00,0.00,0.00
+The Little Utopia,2000,2000 PRODUCTION STAFF,321594.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,321594.00,321594.00,0.00
+The Little Utopia,2100,2100 EXTRA TALENT,21981.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,21981.00,21981.00,0.00
+The Little Utopia,2200,2200 SET DESIGN,65873.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,65873.00,65873.00,0.00
+The Little Utopia,2300,2300 SET CONSTRUCTION,107628.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,107628.00,107628.00,0.00
+The Little Utopia,2400,2400 SET DRESSING,154826.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,154826.00,154826.00,0.00
+The Little Utopia,2500,2500 PROPERTIES,68854.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,68854.00,68854.00,0.00
+The Little Utopia,2600,2600 PICTURE VEHICLES AND ANIMALS,215218.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,215218.00,215218.00,0.00
+The Little Utopia,2700,2700 WARDROBE,58815.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,58815.00,58815.00,0.00
+The Little Utopia,2800,2800 MAKE-UP & HAIR,51809.00,btl_crew_labor,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,51809.00,51809.00,0.00
+The Little Utopia,2900,2900 SET OPERATIONS,90679.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,90679.00,90679.00,0.00
+The Little Utopia,3000,3000 ELECTRICAL,155375.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,155375.00,155375.00,0.00
+The Little Utopia,3100,3100 CAMERA,288729.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,288729.00,288729.00,0.00
+The Little Utopia,3300,3300 SPECIAL EFFECTS & MARINE,99837.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,99837.00,99837.00,0.00
+The Little Utopia,3400,3400 LOCATION EXPENSE,496232.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,496232.00,496232.00,0.00
+The Little Utopia,3500,3500 AERIAL/DRONE UNIT,16215.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,16215.00,16215.00,0.00
+The Little Utopia,3600,3600 TRANSPORTATION,321899.00,btl_transportation,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,321899.00,321899.00,0.00
+The Little Utopia,3700,3700 STAGE & OFFICE RENTALS,27732.00,btl_stage_facility,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,27732.00,27732.00,0.00
+The Little Utopia,3900,3900 BTL TRAVEL & LIVING,438254.00,travel,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,438254.00,438254.00,0.00
+The Little Utopia,4000,4000 SPECIAL SHOOT UNITS,0.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+The Little Utopia,6000,6000 MUSIC,0.00,music,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+The Little Utopia,6500,6500 USA ADMIN COSTS,0.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+The Little Utopia,7000,7000 ADMINISTRATIVE EXPENSES,297593.00,general_administration,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,297593.00,297593.00,0.00
+The Little Utopia,3200,3200 PRODUCTION SOUND,69532.00,production_sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,69532.00,69532.00,69532.00
+The Little Utopia,3800,3800 PRODUCTION LAB & MEDIA MANAGEMENT,9674.00,miscellaneous,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,9674.00,9674.00,9674.00
+The Little Utopia,5000,5000 EDITORIAL,9068.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,9068.00,9068.00,9068.00
+The Little Utopia,5100,5100 EDITORIAL - USA,0.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,0.00,0.00,0.00
+The Little Utopia,5200,5200 SOUND POST PRODUCTION,0.00,sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,0.00,0.00,0.00
+The Little Utopia,5300,5300 PICTURE POST PRODUCTION,0.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,0.00,0.00,0.00
+The Little Utopia,5400,5400 GRAPHICS / TITLES / STOCK FOOTAGE,0.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,0.00,0.00,0.00
+The Little Utopia,5500,5500 DELIVERABLES,0.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,0.00,0.00,0.00
+The Little Utopia,6100,6100 VFX DEPARTMENT,52500.00,vfx,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,52500.00,52500.00,52500.00
+The Little Utopia,1100,1100 SCRIPT,5050.00,atl_writer,QUALIFIED_ATL_COMPENSATION,NY Tax Law § 24(b)(2),ATL within 40% BTL aggregate ceiling ($500k individual check passed),Y,Y,N,5050.00,5050.00,0.00
+The Little Utopia,1200,1200 PRODUCERS UNIT,0.00,atl_producer,QUALIFIED_ATL_COMPENSATION,NY Tax Law § 24(b)(2),ATL within 40% BTL aggregate ceiling ($500k individual check passed),Y,Y,N,0.00,0.00,0.00
+The Little Utopia,1300,1300 DIRECTION,0.00,atl_director,QUALIFIED_ATL_COMPENSATION,NY Tax Law § 24(b)(2),ATL within 40% BTL aggregate ceiling ($500k individual check passed),Y,Y,N,0.00,0.00,0.00
+The Little Utopia,1400,1400 CAST,136115.00,atl_cast,QUALIFIED_ATL_COMPENSATION,NY Tax Law § 24(b)(2),ATL within 40% BTL aggregate ceiling ($500k individual check passed),Y,Y,N,136115.00,136115.00,0.00
+The Little Utopia,1600,1600 ATL TRAVEL & LIVING,397279.00,travel,QUALIFIED_ATL_COMPENSATION,NY Tax Law § 24(b)(2),ATL within 40% BTL aggregate ceiling ($500k individual check passed),Y,Y,N,397279.00,397279.00,0.00
+F#K Valentine's Day,1100,1100 STORY / RIGHTS / CONTINUITY,252650.00,atl_writer,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Development / Story Rights Acquisition,N,N,N,0.00,0.00,0.00
+F#K Valentine's Day,7200,7200 INSURANCE,50329.00,insurance,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+F#K Valentine's Day,7901,7901 FINANCE FEE  : 12.5%,453583.00,finance_costs,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Financing / Lender Fees,N,N,N,0.00,0.00,0.00
+F#K Valentine's Day,7902,7902 CONTINGENCY : 10%,362866.00,contingency,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); 5 NYCRR § 170.2,Contingency / Escrow Reserve (unspent liability),N,N,N,0.00,0.00,0.00
+F#K Valentine's Day,7905,7905 BOND : 2%,72573.00,completion_bond,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+F#K Valentine's Day,2000,2000 PRODUCTION STAFF,168353.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,168353.00,168353.00,0.00
+F#K Valentine's Day,2100,2100 EXTRA TALENT,31595.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,31595.00,31595.00,0.00
+F#K Valentine's Day,2200,2200 SET DESIGN,32773.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,32773.00,32773.00,0.00
+F#K Valentine's Day,2400,2400 SET DRESSING,46418.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,46418.00,46418.00,0.00
+F#K Valentine's Day,2500,2500 PROPERTY,41199.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,41199.00,41199.00,0.00
+F#K Valentine's Day,2600,2600 PICTURE VEHICLES / ANIMALS,5709.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,5709.00,5709.00,0.00
+F#K Valentine's Day,2700,2700 WARDROBE,67504.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,67504.00,67504.00,0.00
+F#K Valentine's Day,2800,2800 MAKEUP & HAIR,32830.00,btl_crew_labor,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,32830.00,32830.00,0.00
+F#K Valentine's Day,2900,2900 SET OPERATIONS,54691.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,54691.00,54691.00,0.00
+F#K Valentine's Day,3000,3000 ELECTRIC,62009.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,62009.00,62009.00,0.00
+F#K Valentine's Day,3100,3100 CAMERA,144422.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,144422.00,144422.00,0.00
+F#K Valentine's Day,3400,3400 LOCATIONS,178356.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,178356.00,178356.00,0.00
+F#K Valentine's Day,3600,3600 TRANSPORTATION,81123.00,btl_transportation,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,81123.00,81123.00,0.00
+F#K Valentine's Day,3700,3700 OFFICE STUDIO RENTALS,17042.00,btl_stage_facility,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,17042.00,17042.00,0.00
+F#K Valentine's Day,3900,3900 BTL TRAVEL & LIVING,96534.00,travel,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,96534.00,96534.00,0.00
+F#K Valentine's Day,5100,5100 MUSIC,10200.00,music,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,10200.00,10200.00,0.00
+F#K Valentine's Day,7000,7000 ADMINISTRATIVE EXPENSES,170535.00,general_administration,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,170535.00,170535.00,0.00
+F#K Valentine's Day,3200,3200 PRODUCTION SOUND,26458.00,production_sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,26458.00,26458.00,26458.00
+F#K Valentine's Day,3800,3800 PRODUCTION FILM & LAB,3114.00,miscellaneous,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,3114.00,3114.00,3114.00
+F#K Valentine's Day,4600,4600 VISUAL EFFECTS,10000.00,vfx,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,10000.00,10000.00,10000.00
+F#K Valentine's Day,5000,5000 EDITORIAL,78475.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,78475.00,78475.00,78475.00
+F#K Valentine's Day,5200,5200 POST PRODUCTION SOUND,46471.00,sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,46471.00,46471.00,46471.00
+F#K Valentine's Day,5400,5400 MAIN & END TITLES,1500.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,1500.00,1500.00,1500.00
+F#K Valentine's Day,5600,5600 DIGITAL INTERMEDIATE,15000.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,15000.00,15000.00,15000.00
+F#K Valentine's Day,5700,5700 DELIVERABLES,5000.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,5000.00,5000.00,5000.00
+F#K Valentine's Day,1200,1200 PRODUCERS,401831.00,atl_producer,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (30.0744%) due to 40% BTL ceiling; $280,982.84 disallowed",PARTIAL,PARTIAL,N,120848.16,120848.16,0.00
+F#K Valentine's Day,1300,1300 DIRECTOR,75710.00,atl_director,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (30.0744%) due to 40% BTL ceiling; $52,940.69 disallowed",PARTIAL,PARTIAL,N,22769.31,22769.31,0.00
+F#K Valentine's Day,1400,1400 CAST,1246288.00,atl_cast,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (30.0744%) due to 40% BTL ceiling; $871,474.68 disallowed",PARTIAL,PARTIAL,N,374813.32,374813.32,0.00
+F#K Valentine's Day,1600,1600 ATL TRAVEL / LIVING,174546.00,travel,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (30.0744%) due to 40% BTL ceiling; $122,052.38 disallowed",PARTIAL,PARTIAL,N,52493.62,52493.62,0.00
+Bad Hombres,1100,"1100 STORY, RIGHTS & CONTINUITY",74531.00,atl_writer,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Development / Story Rights Acquisition,N,N,N,0.00,0.00,0.00
+Bad Hombres,1600,1600 SAG DEPOSIT / RESIDUAL RESERVE,60000.00,residuals_reserve,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); 5 NYCRR § 170.2,Contingency / Escrow Reserve (unspent liability),N,N,N,0.00,0.00,0.00
+Bad Hombres,6700,6700 INSURANCE,0.00,insurance,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+Bad Hombres,7600,7600 LEGAL AND ACCOUNTING,24000.00,legal_accounting,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Legal & Accounting Fees,N,N,N,0.00,0.00,0.00
+Bad Hombres,7700,7700 INSURANCE,24000.00,insurance,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+Bad Hombres,CONTINGENCY,CONTINGENCY,94382.00,contingency,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); 5 NYCRR § 170.2,Contingency / Escrow Reserve (unspent liability),N,N,N,0.00,0.00,0.00
+Bad Hombres,2000,2000 PRODUCTION,114906.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,114906.00,114906.00,0.00
+Bad Hombres,2100,2100 EXTRAS & CROWDS,6235.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,6235.00,6235.00,0.00
+Bad Hombres,2200,2200 ART DIRECTION,26252.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,26252.00,26252.00,0.00
+Bad Hombres,2300,2300 SET CONSTRUCTION,4282.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,4282.00,4282.00,0.00
+Bad Hombres,2400,2400 SET OPERATIONS,35171.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,35171.00,35171.00,0.00
+Bad Hombres,2500,2500 SPECIAL EFFECTS,22009.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,22009.00,22009.00,0.00
+Bad Hombres,2600,2600 SET DRESSING,16037.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,16037.00,16037.00,0.00
+Bad Hombres,2700,2700 PROPERTY,25334.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,25334.00,25334.00,0.00
+Bad Hombres,2800,2800 PICTURE VEHICLES & ANIMALS,22000.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,22000.00,22000.00,0.00
+Bad Hombres,2900,2900 WARDROBE,28651.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,28651.00,28651.00,0.00
+Bad Hombres,3000,3000 MAKEUP & HAIR,29204.00,btl_crew_labor,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,29204.00,29204.00,0.00
+Bad Hombres,3200,3200 LIGHTING,35025.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,35025.00,35025.00,0.00
+Bad Hombres,3300,3300 CAMERA,71964.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,71964.00,71964.00,0.00
+Bad Hombres,3500,3500 TRANSPORTATION,51631.00,btl_transportation,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,51631.00,51631.00,0.00
+Bad Hombres,3600,3600 LOCATION,99125.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,99125.00,99125.00,0.00
+Bad Hombres,3700,3700 STAGE & FACILITIES,1000.00,btl_stage_facility,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,1000.00,1000.00,0.00
+Bad Hombres,3800,3800 BTL TRAVEL & LIVING,31260.00,travel,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,31260.00,31260.00,0.00
+Bad Hombres,4600,4600 MUSIC,5000.00,music,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,5000.00,5000.00,0.00
+Bad Hombres,6800,6800 GENERAL EXPENSE,0.00,general_administration,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+Bad Hombres,3400,3400 PRODUCTION SOUND,16845.00,production_sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,16845.00,16845.00,16845.00
+Bad Hombres,4300,4300 FILM EDITING,31018.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,31018.00,31018.00,31018.00
+Bad Hombres,4500,4500 PRODUCTION FILM/LAB/DAILIES,2000.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,2000.00,2000.00,2000.00
+Bad Hombres,4700,4700 POST PRODUCTION SOUND,35515.00,sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,35515.00,35515.00,35515.00
+Bad Hombres,4800,4800 POST PRODUCTION FILM & LABORATORY,39425.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,39425.00,39425.00,39425.00
+Bad Hombres,1200,1200 PRODUCERS UNIT,267169.00,atl_producer,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (20.6124%) due to 40% BTL ceiling; $212,099.13 disallowed",PARTIAL,PARTIAL,N,55069.87,55069.87,0.00
+Bad Hombres,1300,1300 DIRECTOR,75000.00,atl_director,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (20.6124%) due to 40% BTL ceiling; $59,540.72 disallowed",PARTIAL,PARTIAL,N,15459.28,15459.28,0.00
+Bad Hombres,1400,1400 CAST,1032202.00,atl_cast,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (20.6124%) due to 40% BTL ceiling; $819,440.66 disallowed",PARTIAL,PARTIAL,N,212761.34,212761.34,0.00
+Bad Hombres,1500,1500 TRAVEL & LIVING COSTS,80850.00,travel,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (20.6124%) due to 40% BTL ceiling; $64,184.90 disallowed",PARTIAL,PARTIAL,N,16665.10,16665.10,0.00
+Lips Like Sugar,6100,6100 PUBLICITY,0.00,general_administration,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Publicity / Marketing / Distribution,N,N,N,0.00,0.00,0.00
+Lips Like Sugar,6200,6200 LEGAL COSTS,150000.00,legal_accounting,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Legal & Accounting Fees,N,N,N,0.00,0.00,0.00
+Lips Like Sugar,6300,6300 INSURANCE,106000.00,insurance,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+Lips Like Sugar,6500,6500 FINANCING FEES,450000.00,finance_costs,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Financing / Lender Fees,N,N,N,0.00,0.00,0.00
+Lips Like Sugar,6800,6800 RESIDUALS RESERVE,400000.00,residuals_reserve,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); 5 NYCRR § 170.2,Contingency / Escrow Reserve (unspent liability),N,N,N,0.00,0.00,0.00
+Lips Like Sugar,7100,7100 Contingency,400000.00,contingency,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); 5 NYCRR § 170.2,Contingency / Escrow Reserve (unspent liability),N,N,N,0.00,0.00,0.00
+Lips Like Sugar,7200,7200 Bond Fee,115000.00,completion_bond,EXCLUDED_NON_QUALIFYING,NY Tax Law § 24(b)(2); ESD Film Guidelines § 2,Insurance / Completion Bond (non-production cost),N,N,N,0.00,0.00,0.00
+Lips Like Sugar,2000,2000 PRODUCTION STAFF,608606.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,608606.00,608606.00,0.00
+Lips Like Sugar,2100,2100 BACKGROUND PERFORMERS,203715.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,203715.00,203715.00,0.00
+Lips Like Sugar,2200,2200 ART DIRECTION,141390.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,141390.00,141390.00,0.00
+Lips Like Sugar,2300,2300 SET CONSTRUCTION,0.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+Lips Like Sugar,2400,2400 SET STRIKING,8000.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,8000.00,8000.00,0.00
+Lips Like Sugar,2500,2500 SET OPERATIONS,353954.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,353954.00,353954.00,0.00
+Lips Like Sugar,2600,2600 SPECIAL EFFECTS,17610.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,17610.00,17610.00,0.00
+Lips Like Sugar,2700,2700 SET DECORATION,446342.00,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,446342.00,446342.00,0.00
+Lips Like Sugar,2800,2800 PROPERTY DEPARTMENT,75740.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,75740.00,75740.00,0.00
+Lips Like Sugar,2900,2900 ANIMALS & PICTURE VEHICLES,90988.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,90988.00,90988.00,0.00
+Lips Like Sugar,3000,3000 WARDROBE DEPARTMENT,204612.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,204612.00,204612.00,0.00
+Lips Like Sugar,3100,3100 MAKEUP & HAIR DEPARTMENT,76175.00,btl_crew_labor,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,76175.00,76175.00,0.00
+Lips Like Sugar,3200,3200 ELECTRIC DEPARTMENT,178768.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,178768.00,178768.00,0.00
+Lips Like Sugar,3300,3300 CAMERA DEPARTMENT,323509.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,323509.00,323509.00,0.00
+Lips Like Sugar,3500,3500 TRANSPORTATION DEPARTMENT,547205.00,btl_transportation,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,547205.00,547205.00,0.00
+Lips Like Sugar,3600,3600 LOCATION DEPARTMENT,500376.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,500376.00,500376.00,0.00
+Lips Like Sugar,3800,3800 BTL TRAVEL & LIVING,0.00,travel,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+Lips Like Sugar,3900,3900 2ND UNIT,40000.00,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,40000.00,40000.00,0.00
+Lips Like Sugar,4600,4600 MUSIC,206774.00,music,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,206774.00,206774.00,0.00
+Lips Like Sugar,4900,4900 Total Fringes,1023115.00,payroll_fringes,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,1023115.00,1023115.00,0.00
+Lips Like Sugar,5900,5900 Total Fringes,68308.00,payroll_fringes,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,68308.00,68308.00,0.00
+Lips Like Sugar,6400,6400 GENERAL EXPENSE,84195.00,general_administration,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,84195.00,84195.00,0.00
+Lips Like Sugar,6600,6600 BRIDGE,250000.00,finance_costs,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,250000.00,250000.00,0.00
+Lips Like Sugar,6700,6700 BANKING FEE,1000000.00,finance_costs,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,1000000.00,1000000.00,0.00
+Lips Like Sugar,6900,6900 Total Fringes,0.00,payroll_fringes,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a),Qualified BTL Physical Production Expense,Y,Y,N,0.00,0.00,0.00
+Lips Like Sugar,3400,3400 PRODUCTION SOUND,87067.00,production_sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,87067.00,87067.00,87067.00
+Lips Like Sugar,3700,3700 PRODUCTION STOCK & DAILIES,189550.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,189550.00,189550.00,189550.00
+Lips Like Sugar,4400,4400 VISUAL EFFECTS,40000.00,vfx,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,40000.00,40000.00,40000.00
+Lips Like Sugar,4500,4500 EDITING,145410.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,145410.00,145410.00,145410.00
+Lips Like Sugar,4700,4700 POST-PRODUCTION SOUND,39520.00,sound,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,39520.00,39520.00,39520.00
+Lips Like Sugar,4800,4800 POST-PRODUCTION FILM & LAB,215475.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,215475.00,215475.00,215475.00
+Lips Like Sugar,4900,4900 MAIN AND END TITLES,10500.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,10500.00,10500.00,10500.00
+Lips Like Sugar,5800,5800 DELIVERABLES,10775.00,post_production,QUALIFIED_POST_PRODUCTION,NY Tax Law § 24(a) / § 31(a),Qualified Post-Production Expense,Y,Y,Y,10775.00,10775.00,10775.00
+Lips Like Sugar,1100,1100 SCRIPT,314153.00,atl_writer,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (90.5541%) due to 40% BTL ceiling; $29,674.42 disallowed",PARTIAL,PARTIAL,N,284478.58,284478.58,0.00
+Lips Like Sugar,1200,1200 PRODUCING,1414198.00,atl_producer,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (90.5541%) due to 40% BTL ceiling; $133,583.03 disallowed",PARTIAL,PARTIAL,N,1280614.97,1280614.97,0.00
+Lips Like Sugar,1300,1300 DIRECTING,267384.00,atl_director,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (90.5541%) due to 40% BTL ceiling; $25,256.69 disallowed",PARTIAL,PARTIAL,N,242127.31,242127.31,0.00
+Lips Like Sugar,1400,1400 CAST,863388.00,atl_cast,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (90.5541%) due to 40% BTL ceiling; $81,554.34 disallowed",PARTIAL,PARTIAL,N,781833.66,781833.66,0.00
+Lips Like Sugar,1500,1500 ATL TRAVEL & LIVING,60561.00,travel,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (90.5541%) due to 40% BTL ceiling; $5,720.50 disallowed",PARTIAL,PARTIAL,N,54840.50,54840.50,0.00
+Lips Like Sugar,1900,1900 Total Fringes,255291.00,payroll_fringes,PARTIAL_ATL_CAPPED_BY_40PCT_CEILING,NY Tax Law § 24(b)(2),"ATL prorated (90.5541%) due to 40% BTL ceiling; $24,114.41 disallowed",PARTIAL,PARTIAL,N,231176.59,231176.59,0.00
