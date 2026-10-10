@@ -3962,6 +3962,10 @@ def _segment_dicts(pricing) -> list[dict]:
             # their adjudicated state, so a producer can see which gates are
             # satisfied, failed or still unresolved rather than only a number.
             "requirement_trace": list(getattr(s, "requirement_trace", ()) or ()),
+            "qpe_dollar_cap_applied_usd": getattr(s, "qpe_dollar_cap_applied_usd", 0.0),
+            "qpe_dollar_limit_usd": getattr(s, "qpe_dollar_limit_usd", None),
+            "qpe_dollar_limit_basis": getattr(s, "qpe_dollar_limit_basis", None),
+            "annual_fund_budget_usd": getattr(s, "annual_fund_budget_usd", None),
             "incentive_cap_usd": getattr(s, "incentive_cap_usd", None),
             "incentive_cap_type": getattr(s, "incentive_cap_type", None),
             "incentive_uncapped_usd": getattr(s, "incentive_uncapped_usd", None),

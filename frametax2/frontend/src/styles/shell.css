@@ -76,11 +76,11 @@
 /* Engraved brand mark, not a glowing orb — no halo, no glow behind it. It
    should sit directly on the rail the way a stamped emblem would. */
 .cg-identity-globe {
-  width: 80px;
-  height: 80px;
-  min-height: 80px;
-  flex: 0 0 80px;
-  margin: 0 auto 16px;
+  width: 126px;
+  height: 126px;
+  min-height: 126px;
+  flex: 0 0 126px;
+  margin: 0 auto 20px;
   border-radius: 50%;
   overflow: hidden;
 }
@@ -789,12 +789,16 @@
 .ph-hero .ph-hero-topbar .ph-ico { background: var(--phh-ico-bg); border-color: var(--phh-ico-bd); color: var(--phh-ico-fg); }
 .ph-hero .ph-hero-topbar .ph-ico:hover { border-color: var(--phh-ico-bd-h); color: var(--phh-ico-fg-h); }
 
-/* SIDEBAR TYPOGRAPHY (2026-10-07): section headers and links match the tracked-uppercase / compact
-   sans hierarchy used in the Workspace cards. The rail is dark in both themes, so the light-on-dark
-   slate values apply in both. Spacing and links are unchanged. */
-.cg-sidebar .cg-group { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: #94A3B8; padding: 4px 20px; margin-bottom: 4px; }
-.cg-sidebar .cg-group ~ .cg-group { margin-top: 16px; padding-top: 16px; }
-.cg-sidebar .cg-navlink { font-size: 12px; font-weight: 500; letter-spacing: -0.01em; color: #CBD5E1; }
+/* SIDEBAR TYPOGRAPHY (2026-10-09): editorial scale. Mono tracked-uppercase section headers (13px), 16px links with a little more air
+   between them, and COMPANY pushed clear of the globe and tagline. The rail is dark in both themes, so the light-on-dark slate values
+   apply in both. The globe frame is allowed to show its soft glow outside the 80px box. */
+.cg-sidebar .cg-identity-globe { overflow: visible; cursor: pointer; }
+.cg-sidebar .cg-identity-globe:focus-visible { outline: 2px solid #E5B233; outline-offset: 6px; border-radius: 50%; }
+.cg-sidebar .cg-tagline + .cg-group { margin-top: 56px; }
+.cg-sidebar .cg-group { font-family: var(--font-mono); font-size: 13px; font-weight: 600; letter-spacing: 0.2em; color: #64748B; padding: 4px 20px; margin-bottom: 16px; }
+.cg-sidebar .cg-group ~ .cg-group { margin-top: 24px; padding-top: 16px; }
+.cg-sidebar .cg-navlink { padding-top: 12px; padding-bottom: 12px; font-size: 16px; font-weight: 500; letter-spacing: -0.01em; color: #CBD5E1; }
+.cg-sidebar .cg-navlink + .cg-navlink { margin-top: 4px; }
 .cg-sidebar .cg-navlink:hover { color: #FFFFFF; background: rgba(255, 255, 255, 0.05); opacity: 1; }
 .cg-sidebar .cg-navlink.on { color: #FFFFFF; font-weight: 600; border-left-color: #E5B233; }
 /* no-artwork fallback plate sits in the dark bay in both themes: a quiet slate, not the light surface */

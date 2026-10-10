@@ -100,7 +100,7 @@ CASHFLOW_CATEGORIES = frozenset({"finance_costs"})
 # reading (a real legal-interpretation question), NOT because a rule row
 # is missing. Distinct from the "no rule at all" path, which is governed
 # by the program's QualificationDoctrine.
-FACT_SPLIT_CATEGORIES = frozenset({"legal_accounting"})
+FACT_SPLIT_CATEGORIES = frozenset({"legal_accounting", "atl_writer", "atl_producer", "atl_director", "atl_cast"})
 
 
 @dataclass(frozen=True)
@@ -393,6 +393,21 @@ def derive_qualification_register(
         # branch — app.calculators.contingency_treatment re-tags it with
         # its destination category before this function ever sees it, so
         # it is priced under that category's own rule/doctrine instead.
+        # A residuals reserve / deposit (e.g. a SAG deposit) is likewise budgeted money, not proof of an incurred qualified
+        # cost: a later deployed service expense is counted once, under its own line. A genuine FACT gap, not an exclusion: out of
+        # the confirmed floor, visible as conditional upside until actual incurrence is established.
+        if category == "residuals_reserve" and rule is None:
+            _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                  QualificationConfidence.LOW, AuthorityBasis.STRUCTURAL_DEFINITION,
+                  f"{jur} program '{program_slug}': a residuals reserve or deposit is a budgeted amount, not an incurred "
+                  "production expenditure. It is kept out of the confirmed qualifying base until the actual payment "
+                  "(and the service it paid for) is established, then counted exactly once under that cost's own category.",
+                  evidence="Actual incurred / deployed payment of the reserved residual or deposit obligation, and the "
+                           "category and territory of the service it paid for.",
+                  upside=round(amt * rate, 2),
+                  grey_reason=GreyReason.MISSING_PRODUCTION_FACT)
+            continue
+
         if category == "contingency" and rule is None:
             _acct(QualificationState.EXCLUDED, QualificationConfidence.MEDIUM,
                   AuthorityBasis.STRUCTURAL_DEFINITION,

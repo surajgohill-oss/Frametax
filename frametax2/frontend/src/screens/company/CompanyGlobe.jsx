@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildCompanyScene } from "../../lib/companyScene";
@@ -56,7 +57,7 @@ export default function CompanyGlobe() {
         <h1 className="serif" style={{ fontSize: 20 }}>Portfolio</h1>
         <p className="text-tertiary small">
           {rows.length} active {rows.length === 1 ? "project" : "projects"}, each at its leading structure. Hover a marker for a
-          preview, click to focus, click again (or Open) to enter the production.
+          preview, click it to enter the production.
         </p>
         {rows.map(({ project, structure, principal }) => (
           <div
@@ -91,8 +92,7 @@ export default function CompanyGlobe() {
           obscuredRightPx={focused ? 320 : 0}
           onPointHover={(pt) => setPreview(pt)}
           onPointClick={(pt) => {
-            if (pt?.projectId && pt.projectId === focusedId) openProject(pt.projectId);
-            else if (pt?.projectId) setFocusedId(pt.projectId);
+            if (pt?.projectId) openProject(pt.projectId);
           }}
         />
         {/* Chrome-free, exactly like the Project Globe legend (.globe-legend-vertical): dots and labels over the stage, no plate. */}
@@ -115,13 +115,16 @@ export default function CompanyGlobe() {
                 Max-potential NPC <Money value={preview.pot.potentialNpc} /> · Confirmed NPC <Money value={preview.pot.confirmedNpc} />
               </div>
             )}
-            <div className="text-tertiary small">Click to focus · click again to open</div>
+            <div className="text-tertiary small">Click to open</div>
           </div>
         )}
       </div>
 
       {focused && (
         <div className="globe-screen-inspector">
+          <button className="inspector-close" onClick={() => setFocusedId(null)} aria-label="Close preview">
+            <X size={16} />
+          </button>
           <p className="inspector-eyebrow">Production preview</p>
           <h3>{focused.project.title}</h3>
           <dl className="kv-list">

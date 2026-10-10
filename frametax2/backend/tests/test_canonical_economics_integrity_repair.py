@@ -459,7 +459,10 @@ def test_a_non_binding_dollar_cap_does_not_clip():
     that actually prices."""
     seg = _probe_segment_amount("us_nm_film_credit", 11_000_000.0)
     assert seg.executable is True
-    assert seg.incentive_cap_usd == pytest.approx(140_000_000.0)
+    # AG adjudication repair (cap families): the annual allocation is the programme's FUND, not a per-project incentive cap, so it
+    # is disclosed as annual_fund_budget_usd and never reported as incentive_cap_usd. A non-binding bound still never clips.
+    assert seg.incentive_cap_usd is None
+    assert seg.annual_fund_budget_usd == pytest.approx(140_000_000.0)
     assert seg.incentive_cap_applied_usd == 0.0
     assert seg.incentive_uncapped_usd is None
 
