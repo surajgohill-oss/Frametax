@@ -142,43 +142,20 @@ async def isolated_project():
         yield session, await create_synthetic_project(session)
 
 
-#: A synthetic budget WITH a vfx line makes the evaluator enumerate ~170k hybrid candidates (about four minutes, measured). Those tests
-#: stay on synthetic, rolled-back records but are opt-in: set CINEGLOBE_RUN_HEAVY_SYNTHETIC=1 to run them.
-HEAVY_SYNTHETIC_ENV = "CINEGLOBE_RUN_HEAVY_SYNTHETIC"
-HEAVY_LINES = DEFAULT_LINES + (("6100", "VFX", "vfx", "post", 300_000.0), ("6000", "MUSIC", "music", "post", 120_000.0))
+#: A synthetic budget WITH a vfx line makes the evaluator enumerate ~170k hybrid candidates (about two minutes with an MU home, measured; far longer with a GR home plus music), so the one check
+#: that needs it lives OUTSIDE the default suite, in tests/heavy_synthetic/ (run it by explicit path); it is not a skipped test.
+HEAVY_LINES = DEFAULT_LINES + (("6100", "VFX", "vfx", "post", 300_000.0),)
 
 
-def heavy_synthetic_enabled() -> bool:
-    import os
-    return os.environ.get(HEAVY_SYNTHETIC_ENV) == "1"
-
-
-requires_heavy_synthetic = pytest.mark.skipif(
-    not heavy_synthetic_enabled(), reason=f"~4 minute synthetic evaluation (vfx-driven hybrid search); set {HEAVY_SYNTHETIC_ENV}=1 to run")
-
-
-#: Tests that assert FROZEN BASELINES of the four real productions cannot be synthetic. They run only when explicitly authorised, only
-#: against a database that contains those productions (set DATABASE_URL to it), and inside a READ ONLY transaction: any write fails.
-REAL_READS_ENV = "CINEGLOBE_ALLOW_REAL_PRODUCTION_READS"
-requires_real_production_reads = pytest.mark.skipif(
-    __import__("os").environ.get(REAL_READS_ENV) != "1",
-    reason=f"asserts frozen real-production baselines; set {REAL_READS_ENV}=1 with DATABASE_URL on a database that holds them (read-only)")
-
-
-@asynccontextmanager
-async def real_readonly_session():
-    async with engine.connect() as conn:
-        outer = await conn.begin()
-        await conn.execute(text("SET TRANSACTION READ ONLY"))
-        session = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
-        try:
-            yield session
-        finally:
-            await session.close()
-            await outer.rollback()
-
-
-@pytest.fixture
-async def real_readonly_db():
-    async with real_readonly_session() as session:
-        yield session
+async def served_structures(session: AsyncSession, project_id: str) -> list[dict]:
+    """Every served structure entry, paging through the bounded (100-per-page) candidate pages until has_more is false."""
+    from app.services.canonical_production_view import build_production_and_structures
+    entries: list[dict] = []
+    offset = 0
+    while True:
+        allocated = (await build_production_and_structures(session, project_id, candidate_offset=offset))["structures"]["allocated_structures"]
+        entries += allocated["structures"]
+        page = allocated["candidates_page"]
+        if not page["has_more"]:
+            return entries
+        offset += page["limit"]

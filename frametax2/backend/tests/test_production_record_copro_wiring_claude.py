@@ -49,7 +49,7 @@ from app.services.canonical_project_economics import ProjectEconomicInputs
 # Synthetic records only (tests/isolated_records.py): rolled-back transaction on the isolated test database plus a guard that refuses
 # any write naming an existing project. This file used to evaluate and write to the real Little Utopia and Bad Hombres projects.
 from tests.isolated_records import (  # noqa: E402
-    DEFAULT_LINES, add_synthetic_people, create_synthetic_project, isolated_session)
+    DEFAULT_LINES, add_synthetic_people, create_synthetic_project, isolated_session, served_structures)
 
 SYNTHETIC_PEOPLE = (("writer", "Synthetic Writer", "GB", True), ("director", "Synthetic Director", "AU", True))
 
@@ -349,8 +349,7 @@ async def test_served_treaty_structure_exposes_the_personnel_gate_contract(db: A
     try:
         result = await ce.evaluate_project(db, project_id)
         assert result["status"] == "EVALUATION_COMPLETE"
-        # The served 100-structure page ranks an opportunity with incomplete authority data last, so the contract is read from the
-        # persisted trace row the served view is built from (same fields), not from page position.
+        # The persisted trace row the served view is built from.
         from app.models.production import ProductionStructure, StructureCalculationResult
         fp = await ce.current_generation_fingerprint(db, project_id)
         served = (await db.execute(
@@ -371,6 +370,11 @@ async def test_served_treaty_structure_exposes_the_personnel_gate_contract(db: A
         # is confirmed -> QUALIFIES via the writer.
         assert e["personnel_gate_state"] == QUAL_QUALIFIES
         assert e["personnel_satisfied_requirements"]
+        # And the SERVED view (every page of the bounded 100-per-page list) carries the same contract for the opportunity.
+        served_entries = [x for x in await served_structures(db, project_id) if x.get("treaty_slug") == treaty_slug]
+        assert len(served_entries) == 1, "the synthetic treaty opportunity must be served (paged) exactly once"
+        assert served_entries[0]["personnel_gate_state"] == QUAL_QUALIFIES
+        assert served_entries[0]["personnel_satisfied_requirements"]
     finally:
         del te._BILATERAL[frozenset({"MU", "GB"})]       # the only global state touched; every DB row rolls back
 
