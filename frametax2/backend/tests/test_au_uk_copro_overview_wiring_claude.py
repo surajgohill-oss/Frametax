@@ -41,44 +41,40 @@ from app.calculators.canonical_treaty_bridge import (
     RESOLUTION_UNRESOLVED_FACTS,
     evaluate_bilateral_coproduction_opportunity,
 )
-from app.db.session import engine
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services import canonical_evaluation as ce
 
-LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
-FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
-BAD_HOMBRES_PROJECT_ID = "4355ae88-a636-4c18-af60-ad73b2646124"
-LIPS_LIKE_SUGAR_PROJECT_ID = "ab10b319-978e-44d3-9331-af2a5f2cccc2"
-ALL_FOUR = {
-    "Little Utopia": LITTLE_UTOPIA_PROJECT_ID,
-    "F#K Valentine's Day": FVD_PROJECT_ID,
-    "Bad Hombres": BAD_HOMBRES_PROJECT_ID,
-    "Lips Like Sugar": LIPS_LIKE_SUGAR_PROJECT_ID,
-}
+# Synthetic records only (tests/isolated_records.py): a rolled-back transaction on the isolated test database, with a guard that
+# refuses any write naming an existing project. This file used to evaluate and write to the four real productions.
+from tests.isolated_records import (  # noqa: E402
+    DEFAULT_LINES, add_synthetic_people, create_synthetic_project, isolated_session)
+
+# Synthetic stand-in for the co-production scenario the real project exercised: MU base, a confirmed GB writer and
+# AU director, and confirmed US producers (producer nationality never gates the uk-au structure).
+# No vfx line: a vfx component makes the hybrid search explode (>100 s); the co-pro scenario does not need one.
+COPRO_LINES = DEFAULT_LINES
+COPRO_PEOPLE = (
+    ("writer", "Synthetic Writer", "GB", True), ("director", "Synthetic Director", "AU", True),
+    ("producer", "Synthetic Producer One", "US", True), ("producer", "Synthetic Producer Two", "US", True),
+)
 
 
 @pytest.fixture
 async def db():
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+    async with isolated_session() as session:
         yield session
 
 
 @pytest.fixture
-async def little_utopia_evaluated(db: AsyncSession):
-    """CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION, Task 1: the two DB-
-    level tests below read a StructureCalculationResult row keyed on the
-    CURRENT ce.ENGINE_VERSION and this project's CURRENT input
-    fingerprint. Depending on some OTHER test file (elsewhere in the
-    suite, or a prior run) having already called evaluate_project() for
-    Little Utopia was a real test-isolation defect -- this file must
-    create its own required state, not assume another file's ordering.
-    This fixture evaluates Little Utopia fresh, in this file, every time
-    either dependent test runs, so the suite passes on a first clean run
-    regardless of file/test order in the overall run."""
-    await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    return LITTLE_UTOPIA_PROJECT_ID
+async def synthetic_copro_evaluated(db: AsyncSession):
+    """Creates (and evaluates, inside the rolled-back transaction) its OWN synthetic co-production project, so no test here depends
+    on another file's ordering or on any real production."""
+    pid = await create_synthetic_project(db, lines=COPRO_LINES)
+    await add_synthetic_people(db, pid, COPRO_PEOPLE)
+    await ce.evaluate_project(db, pid)
+    return pid
 
 
 # ---------------------------------------------------------------------------
@@ -237,8 +233,8 @@ def test_conditional_scenario_prices_uk_avec_and_au_producer_offset_at_the_treat
 # D — live-DB / served-view proof against Little Utopia's real Production Record
 # ---------------------------------------------------------------------------
 
-async def test_little_utopia_uk_au_bilateral_is_served_conditional_with_real_priced_economics(
-    db: AsyncSession, little_utopia_evaluated: str,
+async def test_synthetic_uk_au_bilateral_is_served_conditional_with_priced_economics(
+    db: AsyncSession, synthetic_copro_evaluated: str,
 ):
     """Real, live, end-to-end proof (the same live state the browser test
     read via GET /projects/{id}/state): Little Utopia's real, confirmed
@@ -246,14 +242,14 @@ async def test_little_utopia_uk_au_bilateral_is_served_conditional_with_real_pri
     AVAILABLE, with real priced conditional economics — never a verified
     recommendation (candidate_status stays CO_PRO_OPPORTUNITY,
     is_baseline/is_directly_comparable stay False)."""
-    fp = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
+    fp = await ce.current_generation_fingerprint(db, synthetic_copro_evaluated)
     row = (await db.execute(
         select(StructureCalculationResult.calculation_trace_json,
                StructureCalculationResult.total_incentive_value_usd,
                StructureCalculationResult.true_net_cost_usd)
         .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
         .where(
-            ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+            ProductionStructure.project_id == synthetic_copro_evaluated,
             StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
             StructureCalculationResult.input_fingerprint == fp,
             StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == "uk-au-bilateral",
@@ -278,23 +274,23 @@ async def test_little_utopia_uk_au_bilateral_is_served_conditional_with_real_pri
     assert cs["assumption_fact_classification"] == "PROPOSED_CHANGE"
 
 
-async def test_little_utopia_producers_do_not_block_the_uk_au_structure(
-    db: AsyncSession, little_utopia_evaluated: str,
+async def test_synthetic_producers_do_not_block_the_uk_au_structure(
+    db: AsyncSession, synthetic_copro_evaluated: str,
 ):
     """Real, live proof of the policy's own 'existing US producers do not
     automatically block the structure' requirement: Little Utopia's real,
     confirmed US producers (Rachel Winter, Max Botkin) coexist with a
     QUALIFIES personnel gate on uk-au-bilateral — producer nationality is
     never part of this gate's eligible_roles."""
-    facts = await role_attachment_facts_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    facts = await role_attachment_facts_from_project(db, synthetic_copro_evaluated)
     assert facts.get("producer") is not None
     assert "US" in facts["producer"].confirmed_nationality
-    fp = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
+    fp = await ce.current_generation_fingerprint(db, synthetic_copro_evaluated)
     row = (await db.execute(
         select(StructureCalculationResult.calculation_trace_json)
         .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
         .where(
-            ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+            ProductionStructure.project_id == synthetic_copro_evaluated,
             StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
             StructureCalculationResult.input_fingerprint == fp,
             StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == "uk-au-bilateral",
@@ -305,68 +301,49 @@ async def test_little_utopia_producers_do_not_block_the_uk_au_structure(
 
 
 async def test_residency_persists_and_is_read_back_by_role_attachment_facts(db: AsyncSession):
-    """PRE-FLIGHT requirement: prove residency persistence works, even
-    though the current Overview UI deliberately omits a residency control
-    (an explicit, pre-existing design decision — 'Residency is
-    deliberately absent here per the approved design',
-    ProductionDetails.jsx). Written directly at the model layer
-    (TalentProfile.known_residencies), the same real field role_
-    attachment_facts_from_project reads for the personnel gate — proving
-    the PERSISTENCE layer supports it even where this one UI surface does
-    not yet expose it. Reversible: written and deleted in this test only."""
-    from sqlalchemy import delete
-    import uuid
-
-    talent = TalentProfile(id=uuid.uuid4(), name="Residency Test Person", role="lead_cast",
-                            known_residencies=[{"jurisdiction_code": "AU", "confirmed": True}])
-    db.add(talent)
-    await db.flush()
-    pp = ProjectPerson(id=uuid.uuid4(), project_id=LITTLE_UTOPIA_PROJECT_ID, talent_id=talent.id,
-                        role="lead_cast", is_confirmed=True)
-    db.add(pp)
-    await db.commit()
-    try:
-        facts = await role_attachment_facts_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
-        rf = facts.get("lead_cast")
-        assert rf is not None
-        assert "AU" in rf.confirmed_residency
-        assert not rf.confirmed_nationality, "residency and nationality must stay separately typed"
-    finally:
-        await db.delete(pp)
-        await db.delete(talent)
-        await db.commit()
+    """PRE-FLIGHT requirement: prove residency persistence works, even though the current Overview UI deliberately omits a
+    residency control. Written at the model layer (TalentProfile.known_residencies), the same field role_attachment_facts_from_project
+    reads for the personnel gate. Synthetic project; the rolled-back transaction owns cleanup."""
+    pid = await create_synthetic_project(db)
+    await add_synthetic_people(db, pid, [("lead_cast", "Residency Test Person", None, True,
+                                          [{"jurisdiction_code": "AU", "confirmed": True}])])
+    facts = await role_attachment_facts_from_project(db, pid)
+    rf = facts.get("lead_cast")
+    assert rf is not None
+    assert "AU" in rf.confirmed_residency
+    assert not rf.confirmed_nationality, "residency and nationality must stay separately typed"
 
 
 # ---------------------------------------------------------------------------
 # E — the four productions' served output matches their real stored facts
 # ---------------------------------------------------------------------------
 
-async def test_all_four_productions_served_personnel_match_their_real_stored_project_person_rows(db: AsyncSession):
-    """The served view must never diverge from the real Production Record:
-    for each of the four real projects, every confirmed ProjectPerson/
-    TalentProfile row's nationality is exactly what role_attachment_
-    facts_from_project (the SAME function the personnel gate consumes)
-    reports as confirmed_nationality — proving the served output the
-    Globe/optimizer sees is not a stale or second copy of the Production
-    Record."""
-    for name, pid in ALL_FOUR.items():
+async def test_synthetic_productions_served_personnel_match_their_stored_project_person_rows(db: AsyncSession):
+    """The served view must never diverge from the stored Production Record: for each synthetic project (confirmed and
+    unconfirmed attachments), every ProjectPerson/TalentProfile row's nationality is exactly what role_attachment_facts_from_project
+    (the SAME function the personnel gate consumes) reports -- unconfirmed attachments are reported as unconfirmed, never dropped."""
+    people_by_project = {
+        "all confirmed": COPRO_PEOPLE,
+        "mixed": (("writer", "Unconfirmed Writer", "GB", False), ("director", "Confirmed Director", "AU", True),
+                  ("lead_cast", "Confirmed Lead", "NZ", True)),
+    }
+    for name, people in people_by_project.items():
+        pid = await create_synthetic_project(db, title_suffix=f" {name}")
+        await add_synthetic_people(db, pid, people)
         db_rows = (await db.execute(
             select(ProjectPerson.role, ProjectPerson.is_confirmed, TalentProfile.primary_nationality)
             .join(TalentProfile, ProjectPerson.talent_id == TalentProfile.id)
             .where(ProjectPerson.project_id == pid)
         )).all()
+        assert db_rows
         facts = await role_attachment_facts_from_project(db, pid)
         for role, is_confirmed, nationality in db_rows:
             rf = facts.get(role)
             assert rf is not None, f"{name}: role {role} missing from role_attachment_facts"
             if is_confirmed and nationality:
-                assert nationality in rf.confirmed_nationality, (
-                    f"{name}: confirmed {role} nationality {nationality!r} not reflected in served facts"
-                )
+                assert nationality in rf.confirmed_nationality, f"{name}: confirmed {role} nationality {nationality!r} not reflected"
             elif not is_confirmed:
-                assert rf.has_unconfirmed_attachment is True, (
-                    f"{name}: unconfirmed {role} must be reported as unconfirmed, never silently dropped"
-                )
+                assert rf.has_unconfirmed_attachment is True, f"{name}: unconfirmed {role} must be reported as unconfirmed"
 
 
 # ---------------------------------------------------------------------------
@@ -374,7 +351,7 @@ async def test_all_four_productions_served_personnel_match_their_real_stored_pro
 # ---------------------------------------------------------------------------
 
 async def test_uk_au_bilateral_row_is_self_sufficient_regardless_of_prior_evaluation_state(
-    db: AsyncSession,
+    db: AsyncSession, synthetic_copro_evaluated: str,
 ):
     """Prevention test for the exact defect this workstream fixes: the two
     tests above must never depend on ANY other test file having already
@@ -388,14 +365,15 @@ async def test_uk_au_bilateral_row_is_self_sufficient_regardless_of_prior_evalua
     # Sequence 1: evaluate an unrelated project first, then Little Utopia --
     # simulates test_hybrid_anchor_relationship_types.py or
     # test_treaty_coproduction_wiring.py running BEFORE this file.
-    await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
-    await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    fp1 = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
+    unrelated = await create_synthetic_project(db, lines=DEFAULT_LINES, title_suffix=" unrelated")
+    await ce.evaluate_project(db, unrelated)
+    await ce.evaluate_project(db, synthetic_copro_evaluated)
+    fp1 = await ce.current_generation_fingerprint(db, synthetic_copro_evaluated)
     row1 = (await db.execute(
         select(StructureCalculationResult.calculation_trace_json)
         .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
         .where(
-            ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+            ProductionStructure.project_id == synthetic_copro_evaluated,
             StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
             StructureCalculationResult.input_fingerprint == fp1,
             StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == "uk-au-bilateral",
@@ -405,13 +383,13 @@ async def test_uk_au_bilateral_row_is_self_sufficient_regardless_of_prior_evalua
     # Sequence 2: evaluate Little Utopia FIRST, with nothing before it --
     # simulates this file running alone / first, exactly as pytest would
     # if file order were reversed.
-    await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    fp2 = await ce.current_generation_fingerprint(db, LITTLE_UTOPIA_PROJECT_ID)
+    await ce.evaluate_project(db, synthetic_copro_evaluated)
+    fp2 = await ce.current_generation_fingerprint(db, synthetic_copro_evaluated)
     row2 = (await db.execute(
         select(StructureCalculationResult.calculation_trace_json)
         .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
         .where(
-            ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
+            ProductionStructure.project_id == synthetic_copro_evaluated,
             StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
             StructureCalculationResult.input_fingerprint == fp2,
             StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == "uk-au-bilateral",

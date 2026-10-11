@@ -35,10 +35,9 @@ Covers the real defects found and fixed by this task:
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import engine
 from app.models.project_fact import ProjectFact
 from app.services.canonical_evaluation import evaluate_project
 from app.services.canonical_production_view import (
@@ -53,10 +52,16 @@ FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 
 FACT_KEY = "contingency_expected_utilization_pct"
 
+# Isolation (2026-10): tests asserting the REAL productions' frozen composition run only when explicitly authorised, inside a READ ONLY
+# transaction. Everything that writes (the contingency election, evaluation) runs on SYNTHETIC rolled-back records. The old versions of
+# the contingency tests committed to, deleted from and evaluated the real Bad Hombres and Little Utopia projects.
+from tests.isolated_records import (  # noqa: E402
+    DEFAULT_LINES, create_synthetic_project, isolated_session, real_readonly_db, requires_real_production_reads)  # noqa: F401
+
 
 @pytest.fixture
 async def db():
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+    async with isolated_session() as session:
         yield session
 
 
@@ -71,9 +76,11 @@ async def db():
         (FVD_PROJECT_ID, 4_517_687.0, 34, 0.01),
     ],
 )
+@requires_real_production_reads
 async def test_budget_composition_conserves_to_gross(
-    db: AsyncSession, project_id, expected_gross, expected_lines, tolerance,
+    real_readonly_db: AsyncSession, project_id, expected_gross, expected_lines, tolerance,
 ):
+    db = real_readonly_db
     result = await build_generic_pkg_and_economics(db, project_id)
     budget = result["pkg"]["budget"]
     assert len(budget["line_items"]) == expected_lines
@@ -86,7 +93,9 @@ async def test_budget_composition_conserves_to_gross(
     assert recon["leaf_account_sum_usd"] == pytest.approx(expected_gross, abs=tolerance)
 
 
-async def test_budget_composition_populated_without_a_priced_register(db: AsyncSession):
+@requires_real_production_reads
+async def test_budget_composition_populated_without_a_priced_register(real_readonly_db: AsyncSession):
+    db = real_readonly_db
     # ORIGINAL INVARIANT: budget composition must be populated regardless of
     # whether the base jurisdiction prices a register.
     #
@@ -120,7 +129,9 @@ async def test_budget_composition_populated_without_a_priced_register(db: AsyncS
         (FVD_PROJECT_ID, 4_517_687.0, 0.01),
     ],
 )
-async def test_department_breakdown_conserves_to_gross(db: AsyncSession, project_id, expected_gross, tolerance):
+@requires_real_production_reads
+async def test_department_breakdown_conserves_to_gross(real_readonly_db: AsyncSession, project_id, expected_gross, tolerance):
+    db = real_readonly_db
     result = await build_generic_pkg_and_economics(db, project_id)
     by_department = result["pkg"]["budget"]["totals_by_department_usd"]
     assert by_department, "totals_by_department_usd must be populated once a budget is imported"
@@ -138,7 +149,9 @@ async def test_department_breakdown_conserves_to_gross(db: AsyncSession, project
 
 # ── B. Bad Hombres' real unnumbered loaded-cost CONTINGENCY line ───────────
 
-async def test_bad_hombres_contingency_line_extracted(db: AsyncSession):
+@requires_real_production_reads
+async def test_bad_hombres_contingency_line_extracted(real_readonly_db: AsyncSession):
+    db = real_readonly_db
     result = await build_generic_pkg_and_economics(db, BAD_HOMBRES_PROJECT_ID)
     line_items = result["pkg"]["budget"]["line_items"]
     contingency_lines = [li for li in line_items if li["spend_category"] == "contingency"]
@@ -149,7 +162,9 @@ async def test_bad_hombres_contingency_line_extracted(db: AsyncSession):
 
 # ── C. Little Utopia's real LA item — present, categorized, excluded from MU QPE ──
 
-async def test_little_utopia_la_item_present_and_excluded_from_mu_qpe(db: AsyncSession):
+@requires_real_production_reads
+async def test_little_utopia_la_item_present_and_excluded_from_mu_qpe(real_readonly_db: AsyncSession):
+    db = real_readonly_db
     result = await build_generic_pkg_and_economics(db, LITTLE_UTOPIA_PROJECT_ID)
     line_items = result["pkg"]["budget"]["line_items"]
     editorial = next(li for li in line_items if (li["account_code"] or "") == "5000")
@@ -172,58 +187,48 @@ async def test_little_utopia_la_item_present_and_excluded_from_mu_qpe(db: AsyncS
     assert "5000" in outside_accounts
 
 
-# ── D. Generic contingency control — proven on a NON-Little-Utopia project ──
+# ── Synthetic equivalents (rolled back; no real project is read or written) ──────────────────────────────────────────────
+
+async def test_synthetic_budget_composition_conserves_to_gross_and_extracts_the_contingency_line(db: AsyncSession):
+    pid = await create_synthetic_project(db)
+    result = await build_generic_pkg_and_economics(db, pid)
+    budget = result["pkg"]["budget"]
+    gross = sum(l[4] for l in DEFAULT_LINES)
+    assert len(budget["line_items"]) == len(DEFAULT_LINES)
+    assert round(sum(budget["totals_by_spend_category_usd"].values()), 2) == pytest.approx(gross, abs=0.01)
+    assert budget["totals_by_spend_category_usd"]["contingency"] == pytest.approx(100_000.0, abs=0.01)
+    by_department = budget["totals_by_department_usd"]
+    assert by_department and "Miscellaneous" not in by_department
+    assert round(sum(by_department.values()), 2) == pytest.approx(gross, abs=0.01)
+    assert all(line["department"] for line in budget["line_items"])
+    prod = (await build_production_and_structures(db, pid))["production"]
+    assert prod["gross_budget_usd"] == pytest.approx(gross, abs=0.01)
+    assert prod["budget_reconciliation"]["leaf_account_sum_usd"] == pytest.approx(gross, abs=0.01)
+
 
 async def test_contingency_assumption_persists_generically(db: AsyncSession):
-    # Bad Hombres, deliberately — this must work identically for any
-    # project, never a Little-Utopia-specific code path.
-    try:
-        existing_before = (await db.execute(
-            select(ProjectFact).where(
-                ProjectFact.project_id == BAD_HOMBRES_PROJECT_ID, ProjectFact.fact_key == FACT_KEY,
-            )
-        )).scalars().first()
-        assert existing_before is None  # no producer election yet
+    """The election is a generic ProjectFact read back through the same path for ANY project (synthetic here)."""
+    import uuid
 
-        from app.models.enums import ProjectFactSourceType, ReviewStatus
-        import uuid
-        db.add(ProjectFact(
-            id=uuid.uuid4(), project_id=BAD_HOMBRES_PROJECT_ID, fact_key=FACT_KEY,
-            value="50", value_type="number",
-            source_type=ProjectFactSourceType.USER_OVERRIDE.value,
-            review_status=ReviewStatus.APPROVED.value,
-        ))
-        await db.commit()
+    from app.models.enums import ProjectFactSourceType, ReviewStatus
 
-        inputs_result = await build_generic_pkg_and_economics(db, BAD_HOMBRES_PROJECT_ID)
-        assert inputs_result["facts"]["answers"].get(FACT_KEY) == "50"
-    finally:
-        # Never leave a lasting side effect on real project state.
-        await db.execute(delete(ProjectFact).where(
-            ProjectFact.project_id == BAD_HOMBRES_PROJECT_ID, ProjectFact.fact_key == FACT_KEY,
-        ))
-        await db.commit()
-        cleanup_check = (await db.execute(
-            select(ProjectFact).where(
-                ProjectFact.project_id == BAD_HOMBRES_PROJECT_ID, ProjectFact.fact_key == FACT_KEY,
-            )
-        )).scalars().first()
-        assert cleanup_check is None
+    pid = await create_synthetic_project(db)
+    assert (await db.execute(select(ProjectFact).where(ProjectFact.project_id == pid, ProjectFact.fact_key == FACT_KEY))).scalars().first() is None
+    db.add(ProjectFact(
+        id=uuid.uuid4(), project_id=pid, fact_key=FACT_KEY, value="50", value_type="number",
+        source_type=ProjectFactSourceType.USER_OVERRIDE.value, review_status=ReviewStatus.APPROVED.value))
+    await db.flush()
+    inputs_result = await build_generic_pkg_and_economics(db, pid)
+    assert inputs_result["facts"]["answers"].get(FACT_KEY) == "50"
 
 
-# ── E. No stale 100% default survives on Little Utopia ─────────────────────
-
-async def test_little_utopia_no_stale_contingency_default(db: AsyncSession):
-    fact = (await db.execute(
-        select(ProjectFact).where(
-            ProjectFact.project_id == LITTLE_UTOPIA_PROJECT_ID, ProjectFact.fact_key == FACT_KEY,
-        )
-    )).scalars().first()
-    assert fact is None  # migration 0071 — no producer election, no silent default
-
-    result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
-    await db.commit()
-    # Absent a real election, derive_qualification_register's own existing
-    # GREY_AREA_REQUIRES_AUTHORITY doctrine applies — the reserve is
-    # excluded from qualifying QPE, never silently assumed 100% deployed.
-    assert result["baseline"]["true_net_cost_usd"] == pytest.approx(3_791_333.30, abs=0.01)
+async def test_a_new_project_carries_no_silent_contingency_default_and_the_reserve_stays_unconfirmed(db: AsyncSession):
+    """No project carries a silent default election: absent a real election the reserve is a disclosed grey item, never assumed
+    deployed (synthetic project, evaluated inside the rolled-back transaction)."""
+    pid = await create_synthetic_project(db)
+    assert (await db.execute(select(ProjectFact).where(ProjectFact.project_id == pid, ProjectFact.fact_key == FACT_KEY))).scalars().first() is None
+    await evaluate_project(db, pid)
+    register = (await build_generic_pkg_and_economics(db, pid))["pkg"]["register"]
+    reserve = [a for a in register if a["account_code"] == "8300"]
+    assert reserve, "the contingency account must be in the served register"
+    assert all(a["state"] != "qualifies" for a in reserve)

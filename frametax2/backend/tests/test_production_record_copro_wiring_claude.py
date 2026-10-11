@@ -41,19 +41,22 @@ from app.calculators.canonical_treaty_bridge import (
     evaluate_bilateral_coproduction_opportunity,
 )
 from app.calculators.qualification_derivation import BudgetLine
-from app.db.session import engine
 from app.models.project_fact import ProjectFact
 from app.services import canonical_evaluation as ce
 from app.services.canonical_production_view import build_production_and_structures
 from app.services.canonical_project_economics import ProjectEconomicInputs
 
-LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
-BAD_HOMBRES_PROJECT_ID = "4355ae88-a636-4c18-af60-ad73b2646124"
+# Synthetic records only (tests/isolated_records.py): rolled-back transaction on the isolated test database plus a guard that refuses
+# any write naming an existing project. This file used to evaluate and write to the real Little Utopia and Bad Hombres projects.
+from tests.isolated_records import (  # noqa: E402
+    DEFAULT_LINES, add_synthetic_people, create_synthetic_project, isolated_session)
+
+SYNTHETIC_PEOPLE = (("writer", "Synthetic Writer", "GB", True), ("director", "Synthetic Director", "AU", True))
 
 
 @pytest.fixture
 async def db():
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+    async with isolated_session() as session:
         yield session
 
 
@@ -269,10 +272,12 @@ async def test_confirming_an_attachment_changes_the_fingerprint_and_forces_fresh
     role_attachment_facts_from_project's own output (even though it does
     NOT change role_known_codes, which never filters on is_confirmed) —
     the fingerprint must reflect that."""
-    facts_before = await role_attachment_facts_from_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    project_id = await create_synthetic_project(db)
+    await add_synthetic_people(db, project_id, SYNTHETIC_PEOPLE)
+    facts_before = await role_attachment_facts_from_project(db, project_id)
     fp_before = ce._compute_fingerprint(
         ce.ProjectEconomicInputs(
-            project_id=LITTLE_UTOPIA_PROJECT_ID, project_name="t", jurisdiction_code="MU",
+            project_id=project_id, project_name="t", jurisdiction_code="MU",
             production_type="feature_film", gross_budget_usd=1.0, leaf_account_sum_usd=1.0,
             budget_lines=[], spend_category_by_code={}, accounts_outside_jurisdiction=frozenset(),
             offshore_payroll_accounts=frozenset(),
@@ -295,7 +300,7 @@ async def test_confirming_an_attachment_changes_the_fingerprint_and_forces_fresh
     )
     fp_after = ce._compute_fingerprint(
         ce.ProjectEconomicInputs(
-            project_id=LITTLE_UTOPIA_PROJECT_ID, project_name="t", jurisdiction_code="MU",
+            project_id=project_id, project_name="t", jurisdiction_code="MU",
             production_type="feature_film", gross_budget_usd=1.0, leaf_account_sum_usd=1.0,
             budget_lines=[], spend_category_by_code={}, accounts_outside_jurisdiction=frozenset(),
             offshore_payroll_accounts=frozenset(),
@@ -329,52 +334,45 @@ async def test_served_treaty_structure_exposes_the_personnel_gate_contract(db: A
     permanently orphan a row naming a treaty slug that no longer exists
     in the registry after this test ends. The finally block now deletes
     exactly those rows by name, leaving no DB residue."""
-    from sqlalchemy import delete
-    from app.models.production import ProductionStructure, StructureCalculationResult
-
-    struct_ids = (await db.execute(
-        select(ProductionStructure.id).where(ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID)
-    )).scalars().all()
-    await db.execute(delete(StructureCalculationResult).where(
-        StructureCalculationResult.structure_id.in_(struct_ids),
-        StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
-    ))
-    await db.commit()
+    project_id = await create_synthetic_project(db)
+    await add_synthetic_people(db, project_id, SYNTHETIC_PEOPLE)
 
     treaty_slug = "mu-gb-personnel-served-test-bilateral"
     treaty = _synthetic_treaty(treaty_slug, "MU", "GB", _writer_or_director_requirement(codes=("MU", "GB")))
+    # Evidenced contribution shares for this treaty scope (as the combined-structure controls do) so the synthetic opportunity is served.
+    scope = ce._coproduction_fact_scope(treaty_slug, ("MU", "GB"))
+    majority_key, minority_key, _cultural_key = ce._coproduction_fact_keys(scope)
+    db.add(ProjectFact(project_id=project_id, fact_key=majority_key, value="70.0", value_type="number", source_type="user_override"))
+    db.add(ProjectFact(project_id=project_id, fact_key=minority_key, value="30.0", value_type="number", source_type="user_override"))
+    await db.flush()
     te._BILATERAL[frozenset({"MU", "GB"})] = treaty
     try:
-        result = await ce.evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
+        result = await ce.evaluate_project(db, project_id)
         assert result["status"] == "EVALUATION_COMPLETE"
-        view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
-        entries = view["structures"]["allocated_structures"]["structures"]
-        served = [e for e in entries if e.get("treaty_slug") == treaty_slug]
-        assert served, "the synthetic treaty must surface as a real served opportunity"
+        # The served 100-structure page ranks an opportunity with incomplete authority data last, so the contract is read from the
+        # persisted trace row the served view is built from (same fields), not from page position.
+        from app.models.production import ProductionStructure, StructureCalculationResult
+        fp = await ce.current_generation_fingerprint(db, project_id)
+        served = (await db.execute(
+            select(StructureCalculationResult.calculation_trace_json)
+            .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
+            .where(
+                ProductionStructure.project_id == project_id,
+                StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
+                StructureCalculationResult.input_fingerprint == fp,
+                StructureCalculationResult.calculation_trace_json["treaty_slug"].astext == treaty_slug,
+            )
+        )).scalars().all()
+        assert served, "the synthetic treaty must surface as a persisted opportunity row"
         e = served[0]
         assert "personnel_gate_state" in e
         assert e["personnel_gate_state"] in (QUAL_QUALIFIES, QUAL_CURABLE_GAP, QUAL_USER_FACT_REQUIRED, QUAL_HARD_FAIL, QUAL_RULE_DATA_INCOMPLETE)
-        # Little Utopia's real, confirmed director (AU) does not match
-        # (MU, GB) — director role fails; writer (GB) DOES match MU/GB's
-        # eligible codes and is confirmed -> QUALIFIES via the writer.
+        # The synthetic director (AU) does not match (MU, GB) -- the director role fails; the synthetic writer (GB) DOES match and
+        # is confirmed -> QUALIFIES via the writer.
         assert e["personnel_gate_state"] == QUAL_QUALIFIES
         assert e["personnel_satisfied_requirements"]
     finally:
-        del te._BILATERAL[frozenset({"MU", "GB"})]
-        _residue_ids = (await db.execute(
-            select(ProductionStructure.id).where(
-                ProductionStructure.project_id == LITTLE_UTOPIA_PROJECT_ID,
-                ProductionStructure.name.like(f"%{treaty_slug}%"),
-            )
-        )).scalars().all()
-        if _residue_ids:
-            await db.execute(delete(StructureCalculationResult).where(
-                StructureCalculationResult.structure_id.in_(_residue_ids)
-            ))
-            await db.execute(delete(ProductionStructure).where(
-                ProductionStructure.id.in_(_residue_ids)
-            ))
-            await db.commit()
+        del te._BILATERAL[frozenset({"MU", "GB"})]       # the only global state touched; every DB row rolls back
 
 
 # ---------------------------------------------------------------------------
@@ -473,7 +471,7 @@ def test_coproduction_contribution_fact_change_invalidates_the_fingerprint():
     fingerprint must be sensitive to that transition (pre-existing
     coproduction_facts fingerprint param, proven live here rather than
     only asserted from a source read)."""
-    inputs = _inputs(project_id=LITTLE_UTOPIA_PROJECT_ID)
+    inputs = _inputs(project_id="synthetic-fingerprint-project")
     fp_no_facts = ce._compute_fingerprint(inputs, coproduction_facts=None)
     fp_with_facts = ce._compute_fingerprint(
         inputs, coproduction_facts=(("uk-ie-bilateral", ("GB", "IE"), 70.0, 30.0, None),),
@@ -482,34 +480,25 @@ def test_coproduction_contribution_fact_change_invalidates_the_fingerprint():
 
 
 async def test_missing_personnel_records_never_block_single_jurisdiction_pricing_or_copro_discovery(db: AsyncSession):
-    """REGRESSION CONTROLS — Bad Hombres has zero ProjectPerson rows on
-    file. A fresh evaluation must still (a) produce single-jurisdiction
+    """REGRESSION CONTROLS — a synthetic project with zero ProjectPerson rows
+    on file. A fresh evaluation must still (a) produce single-jurisdiction
     priced candidates (personnel absence never suppresses ordinary
     pricing) and (b) still discover real treaty_coproduction opportunities
     (personnel absence never suppresses discovery either), with every
     such opportunity's personnel_gate_state resolving NOT_APPLICABLE
     (no real treaty has a researched personnel rule yet) rather than any
     blocking state."""
-    from sqlalchemy import delete as sa_delete
     from app.models.production import ProductionStructure, StructureCalculationResult
 
-    struct_ids = (await db.execute(
-        select(ProductionStructure.id).where(ProductionStructure.project_id == BAD_HOMBRES_PROJECT_ID)
-    )).scalars().all()
-    await db.execute(sa_delete(StructureCalculationResult).where(
-        StructureCalculationResult.structure_id.in_(struct_ids),
-        StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
-    ))
-    await db.commit()
-
-    result = await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
+    project_id = await create_synthetic_project(db)           # synthetic project with ZERO ProjectPerson rows
+    result = await ce.evaluate_project(db, project_id)
     assert result["status"] == "EVALUATION_COMPLETE"
 
     rows = (await db.execute(
         select(StructureCalculationResult.calculation_trace_json)
         .join(ProductionStructure, ProductionStructure.id == StructureCalculationResult.structure_id)
         .where(
-            ProductionStructure.project_id == BAD_HOMBRES_PROJECT_ID,
+            ProductionStructure.project_id == project_id,
             StructureCalculationResult.engine_version == ce.ENGINE_VERSION,
         )
     )).scalars().all()

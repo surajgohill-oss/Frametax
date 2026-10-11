@@ -38,9 +38,15 @@ from app.services import canonical_production_view as cpv
 from app.services.canonical_project_economics import ProjectEconomicInputs
 
 
+# Synthetic records only (tests/isolated_records.py): rolled-back transaction on the isolated test database plus a guard that refuses
+# any write naming an existing project. This file used to write facts to, and evaluate, the real Little Utopia and F#K projects.
+from tests.isolated_records import (  # noqa: E402
+    DEFAULT_LINES, HEAVY_LINES, create_synthetic_project, isolated_session, requires_heavy_synthetic)
+
+
 @pytest.fixture
 async def db():
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+    async with isolated_session() as session:
         yield session
 
 
@@ -164,34 +170,22 @@ async def test_qual_001_facts_scoped_to_one_treaty_never_leak_into_a_sibling_par
     one (treaty_slug, participant) scope must not be readable under a
     different treaty_slug for the exact same project and participants —
     proving the fix at the actual persistence boundary, not just the
-    pure scope-string derivation above. Uses Little Utopia's real project
-    row only as a valid FK target for a throwaway fact this test writes
-    and deletes in its own finally block — LU's real, frozen economics
-    are never read or affected by this test (no evaluate_project call)."""
-    project_id = "fa5cade5-0669-4816-bfe6-72146f8d3bae"  # Little Utopia (FK target only)
+    pure scope-string derivation above. Uses a SYNTHETIC project row (rolled
+    back) as the FK target; no real project is read or written."""
+    project_id = await create_synthetic_project(db)           # synthetic FK target; rolled back
     scope_a = ce._coproduction_fact_scope("zz-yy-bilateral", ("ZZ", "YY"))
     key_a = f"coproduction_majority_pct::{scope_a}"
-    await db.execute(ProjectFact.__table__.delete().where(
-        ProjectFact.project_id == project_id, ProjectFact.fact_key == key_a,
-    ))
     db.add(ProjectFact(
         project_id=project_id, fact_key=key_a, value="55.0", value_type="number",
         source_type="user_override",
     ))
-    await db.commit()
-    try:
-        majority_a, _, _ = await ce._coproduction_facts(db, project_id, "zz-yy-bilateral", ("ZZ", "YY"))
-        assert majority_a == 55.0
-        # A DIFFERENT treaty_slug, same participants, same project: must
-        # read back None — the fact written above must be architecturally
-        # unreachable from here.
-        majority_b, _, _ = await ce._coproduction_facts(db, project_id, "different-treaty-slug", ("ZZ", "YY"))
-        assert majority_b is None
-    finally:
-        await db.execute(ProjectFact.__table__.delete().where(
-            ProjectFact.project_id == project_id, ProjectFact.fact_key == key_a,
-        ))
-        await db.commit()
+    await db.flush()
+    majority_a, _, _ = await ce._coproduction_facts(db, project_id, "zz-yy-bilateral", ("ZZ", "YY"))
+    assert majority_a == 55.0
+    # A DIFFERENT treaty_slug, same participants, same project: must read back None -- the fact written above must be
+    # architecturally unreachable from here.
+    majority_b, _, _ = await ce._coproduction_facts(db, project_id, "different-treaty-slug", ("ZZ", "YY"))
+    assert majority_b is None
 
 
 # ---------------------------------------------------------------------------
@@ -397,12 +391,9 @@ async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSessi
     correctly produces 100+ priced hybrid combined structures. Current-
     engine-version rows are now deleted first to force a truly fresh
     evaluation regardless of test execution order."""
-    from sqlalchemy import delete as sa_delete
-
-    from app.models.production import ProductionStructure as _PS, StructureCalculationResult as _SCR
     from app.services.canonical_production_view import build_production_and_structures
 
-    project_id = "fa5cade5-0669-4816-bfe6-72146f8d3bae"  # Little Utopia — home MU, real vfx/post spend
+    project_id = await create_synthetic_project(db)      # synthetic MU-home project (lean: no vfx line, see tests/isolated_records.py)
     treaty_slug = "mu-gb-claude-comb001-test-bilateral"
     treaty = te.TreatyData(
         treaty_slug=treaty_slug, treaty_type="bilateral", jurisdiction_a="MU", jurisdiction_b="GB",
@@ -413,21 +404,11 @@ async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSessi
     )
     scope = ce._coproduction_fact_scope(treaty_slug, ("MU", "GB"))
     majority_key, minority_key, cultural_key = ce._coproduction_fact_keys(scope)
-    await db.execute(ProjectFact.__table__.delete().where(
-        ProjectFact.project_id == project_id, ProjectFact.fact_key.in_((majority_key, minority_key, cultural_key)),
-    ))
     db.add(ProjectFact(project_id=project_id, fact_key=majority_key, value="70.0",
                         value_type="number", source_type="user_override"))
     db.add(ProjectFact(project_id=project_id, fact_key=minority_key, value="30.0",
                         value_type="number", source_type="user_override"))
-    await db.commit()
-    struct_ids = (await db.execute(
-        select(_PS.id).where(_PS.project_id == project_id)
-    )).scalars().all()
-    await db.execute(sa_delete(_SCR).where(
-        _SCR.structure_id.in_(struct_ids), _SCR.engine_version == ce.ENGINE_VERSION,
-    ))
-    await db.commit()
+    await db.flush()
     te._BILATERAL[frozenset({"MU", "GB"})] = treaty
     try:
         result = await ce.evaluate_project(db, project_id)
@@ -466,26 +447,10 @@ async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSessi
                 "CONDITIONAL_MATERIAL", "CONDITIONAL_ECONOMICALLY_NON_MATERIAL",
             )
     finally:
-        del te._BILATERAL[frozenset({"MU", "GB"})]
-        await db.execute(ProjectFact.__table__.delete().where(
-            ProjectFact.project_id == project_id, ProjectFact.fact_key.in_((majority_key, minority_key, cultural_key)),
-        ))
-        # Leave no test data behind: delete the real ProductionStructure/
-        # StructureCalculationResult rows this synthetic-treaty run
-        # created (their treaty_slug names the synthetic treaty by name,
-        # which no longer exists in the registry once this test ends).
-        _residue_ids = (await db.execute(
-            select(_PS.id).where(
-                _PS.project_id == project_id,
-                _PS.name.like(f"%{treaty_slug}%"),
-            )
-        )).scalars().all()
-        if _residue_ids:
-            await db.execute(sa_delete(_SCR).where(_SCR.structure_id.in_(_residue_ids)))
-            await db.execute(sa_delete(_PS).where(_PS.id.in_(_residue_ids)))
-        await db.commit()
+        del te._BILATERAL[frozenset({"MU", "GB"})]       # the only global state this test touches; DB rows roll back
 
 
+@requires_heavy_synthetic
 async def test_comb_001_real_served_end_to_end_combined_structure_real_registered_treaty(db: AsyncSession):
     """TEST_RUNTIME_VERIFIED_WITH_REAL_TREATY (workstream
     CLAUDE_D743_REJECTED_FINDINGS_REMEDIATION, item 1). NOT actual FVD
@@ -533,7 +498,7 @@ async def test_comb_001_real_served_end_to_end_combined_structure_real_registere
         attempt (RULE_DATA_INCOMPLETE / MINIMUM_SPEND_FAIL)."""
     from app.services.canonical_production_view import build_production_and_structures
 
-    project_id = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"  # F#K Valentine's Day — home GR, real vfx/post/music spend
+    project_id = await create_synthetic_project(db, lines=HEAVY_LINES, home_code="GR")   # synthetic GR-home project with vfx/post/music (heavy; rolled back)
     treaty = te.get_bilateral_treaty("GB", "IE")
     assert treaty is not None, "uk-ie-bilateral must be a real, already-registered treaty — nothing fabricated here"
     treaty_slug = treaty.treaty_slug
@@ -541,14 +506,11 @@ async def test_comb_001_real_served_end_to_end_combined_structure_real_registere
 
     scope = ce._coproduction_fact_scope(treaty_slug, ("GB", "IE"))
     majority_key, minority_key, cultural_key = ce._coproduction_fact_keys(scope)
-    await db.execute(ProjectFact.__table__.delete().where(
-        ProjectFact.project_id == project_id, ProjectFact.fact_key.in_((majority_key, minority_key, cultural_key)),
-    ))
     db.add(ProjectFact(project_id=project_id, fact_key=majority_key, value="65.0",
                         value_type="number", source_type="user_override"))
     db.add(ProjectFact(project_id=project_id, fact_key=minority_key, value="35.0",
                         value_type="number", source_type="user_override"))
-    await db.commit()
+    await db.flush()
     try:
         result = await ce.evaluate_project(db, project_id)
         assert result["status"] in ("EVALUATION_COMPLETE", "EVALUATION_REUSED")
@@ -600,10 +562,7 @@ async def test_comb_001_real_served_end_to_end_combined_structure_real_registere
         for e in rejected:
             assert e.get("rejection_reason_class") in ("RULE_DATA_INCOMPLETE", "MINIMUM_SPEND_FAIL", "STATUTORY_CONDITIONS_UNMET", "OTHER_EXPLICIT")
     finally:
-        await db.execute(ProjectFact.__table__.delete().where(
-            ProjectFact.project_id == project_id, ProjectFact.fact_key.in_((majority_key, minority_key, cultural_key)),
-        ))
-        await db.commit()
+        pass                                                    # nothing to clean: every row is in the rolled-back transaction
 
 
 def test_comb_001_unresolved_local_stack_is_retained_never_silently_applied():
@@ -703,7 +662,7 @@ async def test_class_001_served_structure_entries_always_carry_a_classification_
     """End-to-end: every structure this backend actually serves for a
     real project carries the new field, never an absent key a frontend
     would have to null-check and infer around."""
-    project_id = "fa5cade5-0669-4816-bfe6-72146f8d3bae"  # Little Utopia
+    project_id = await create_synthetic_project(db)           # synthetic (lean); rolled back
     await ce.evaluate_project(db, project_id)
     view = await cpv.build_production_and_structures(db, project_id)
     entries = view["structures"]["allocated_structures"]["structures"]
