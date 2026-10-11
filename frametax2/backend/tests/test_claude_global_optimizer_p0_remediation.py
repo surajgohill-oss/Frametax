@@ -348,14 +348,16 @@ def test_comb_001_authorized_stacks_attempted_on_every_allocated_side():
     _apply_authorized_stacks_to_combined_sides must be called with all
     three of the combined structure's own participants, not the anchor
     alone."""
-    source = inspect.getsource(ce)
+    import re
+
+    # Whitespace-insensitive: the pin is on the three participants and the call, not on the code's indentation (the block moved
+    # deeper when the search was nested, which silently broke the earlier exact-indentation pin).
+    compact = re.sub(r"\s+", "", inspect.getsource(ce))
     assert (
-        "_comb_sides = [\n"
-        "                        (home_code, home_program_slug),\n"
-        "                        (partner_code, partner_best.program_slug),\n"
-        "                        (_comb_target.jurisdiction_code, _comb_target.program_slug),\n"
-        "                    ]"
-    ) in source
+        "_comb_sides=[(home_code,home_program_slug),(partner_code,partner_best.program_slug),"
+        "(_comb_target.jurisdiction_code,_comb_target.program_slug),]"
+    ) in compact
+    assert "_apply_authorized_stacks_to_combined_sides(priced_by_code,_comb_sides)" in compact
 
 
 async def test_comb_001_real_served_end_to_end_combined_structure(db: AsyncSession):
