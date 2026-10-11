@@ -81,6 +81,7 @@ function NeededForMaximum({ pot }) {
 }
 import { useAppState } from "../state/AppState";
 import { postProjectContentGates } from "../api";
+import { ContingencyLine } from "../components/ContingencyElection";
 import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
 // Final Global Discovery phase: the "Requirements & Timing" section of a
@@ -183,6 +184,56 @@ function ContingencySection({ accountCodes = [], contingencyByAccount = {} }) {
   );
 }
 
+// FLAGGED BUDGET ITEMS: an account the qualification register could not settle (needs an authority decision, or a structuring
+// choice). Shows the SOURCE value, the unresolved reason and the evidence still needed, verbatim from the served register, and
+// wires the one canonical producer control that exists for the item: the project contingency election (a saved
+// ProjectFact, the same control as the Budget rail). There is deliberately NO generic "mark as eligible" action: eligibility is
+// decided by the jurisdiction's rules and the evidenced facts, never by a blanket override.
+const FLAGGED_STATES = new Set(["grey_area_requires_authority", "structuring_opportunity"]);
+const isFlagged = (state) => FLAGGED_STATES.has(state);
+const isContingencyLabel = (text) => /contingen/i.test(text || "");
+
+function FlaggedItem({ item, election }) {
+  const state = accountStateLabel(item.state);
+  const contingency = isContingencyLabel(item.label || item.description) && election;
+  const saved = election?.currentPct;
+  return (
+    <div className="inspector-sect" data-flagged-item={item.code || item.account_code} style={{ margin: "8px 0", padding: "8px 10px", border: "1px solid var(--hairline-strong)", borderLeft: "3px solid var(--amber)", borderRadius: 3 }}>
+      <p className="text-secondary small" style={{ margin: 0 }}>
+        <strong>{item.code || item.account_code} · {item.label || item.description}</strong>{" "}
+        <span className={`badge ${state.tier}`}>{state.label}</span>
+      </p>
+      <dl className="kv-list" style={{ marginTop: 6 }}>
+        <div><dt>Source value</dt><dd className="mono"><Money value={item.amount ?? item.amount_usd} /></dd></div>
+        {(item.greyReason ?? item.grey_reason) && <div><dt>Unresolved because</dt><dd>{humanizeToken(String(item.greyReason ?? item.grey_reason).toLowerCase())}</dd></div>}
+        {(item.incentiveUpsideUsd ?? item.incentive_upside_usd) != null && (
+          <div><dt>Incentive at stake (at modeled rate)</dt><dd className="mono"><Money value={item.incentiveUpsideUsd ?? item.incentive_upside_usd} /></dd></div>
+        )}
+      </dl>
+      {item.reason && <p className="text-secondary small" style={{ margin: "4px 0" }}>{item.reason}</p>}
+      {(item.resolvingEvidence ?? item.resolving_evidence) && (
+        <p className="text-tertiary small" style={{ margin: "4px 0" }}>
+          <strong className="text-secondary">Evidence needed:</strong> {item.resolvingEvidence ?? item.resolving_evidence}
+        </p>
+      )}
+      {contingency ? (
+        <div data-testid="flagged-contingency-input">
+          <p className="text-tertiary small" style={{ margin: "6px 0 2px" }}>
+            <strong className="text-secondary">Saved producer input:</strong>{" "}
+            {saved == null ? "no expected utilization stated" : `${saved}% expected use`}
+            {" · "}the election sets the planned cost; each jurisdiction's rules separately decide how much of the deployed reserve qualifies.
+          </p>
+          <ContingencyLine projectId={election.projectId} reserveUsd={item.amount ?? item.amount_usd} currentPct={saved} planning={election.planning} onSaved={election.onSaved} />
+        </div>
+      ) : (
+        <p className="text-tertiary small" style={{ margin: "6px 0 0" }} data-testid="flagged-no-input">
+          No producer input exists for this item yet. It stays unresolved until the evidence above is supplied; it is never treated as eligible by default.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function AccountInspector({ data }) {
   // Production Overview + Project Globe UI regression repair: this same
   // Inspector now also renders a department-grouped fallback line (a
@@ -211,11 +262,17 @@ function AccountInspector({ data }) {
           <div><dt>Incentive upside (at modeled rate)</dt><dd className="mono"><Money value={data.incentiveUpsideUsd} /></dd></div>
         )}
       </dl>
-      {data.reason && <p className="text-secondary small" style={{ marginTop: 4 }}>{data.reason}</p>}
-      {data.resolvingEvidence && (
-        <p className="text-tertiary small" style={{ marginTop: 8 }}>
-          <strong className="text-secondary">Resolving evidence needed:</strong> {data.resolvingEvidence}
-        </p>
+      {isFlagged(data.state) ? (
+        <FlaggedItem item={data} election={data.contingencyElection} />
+      ) : (
+        <>
+          {data.reason && <p className="text-secondary small" style={{ marginTop: 4 }}>{data.reason}</p>}
+          {data.resolvingEvidence && (
+            <p className="text-tertiary small" style={{ marginTop: 8 }}>
+              <strong className="text-secondary">Resolving evidence needed:</strong> {data.resolvingEvidence}
+            </p>
+          )}
+        </>
       )}
       {data.crossRef?.length > 0 && (
         <div className="inspector-sect">
@@ -366,6 +423,7 @@ function QuestionInspector({ data }) {
 
 function AllocationSegmentInspector({ data }) {
   const trace = data.qualification_trace || [];
+  const flaggedTrace = trace.filter((t) => isFlagged(t.state));
   return (
     <>
       <p className="inspector-eyebrow">Jurisdiction segment{data.structureLabel ? ` · ${data.structureLabel}` : ""}</p>
@@ -419,6 +477,14 @@ function AllocationSegmentInspector({ data }) {
       )}
       <RequirementsSection requirements={data.requirements} />
       <ContingencySection accountCodes={data.account_codes} contingencyByAccount={data.contingencyByAccount} />
+      {flaggedTrace.length > 0 && (
+        <div className="inspector-sect" data-testid="flagged-items">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Flagged budget items ({flaggedTrace.length})</p>
+          {flaggedTrace.map((t, i) => (
+            <FlaggedItem key={`${t.line_id || t.account_code}-${i}`} item={t} election={data.contingencyElection} />
+          ))}
+        </div>
+      )}
       {trace.length > 0 && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Account qualification trace ({trace.length})</p>

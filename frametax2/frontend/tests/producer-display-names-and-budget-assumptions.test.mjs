@@ -91,7 +91,8 @@ test("BudgetRail.jsx: the old local-only Adjustments preview (Reinvestment/In-ki
 });
 
 test("BudgetRail.jsx: every remaining input in the active adjustment form saves through postProjectAssumptions — none are local-state-only", () => {
-  const src = stripComments(read("components/BudgetRail.jsx"));
+  // The contingency control now lives in the shared ContingencyElection.jsx (rail + Inspector); financing stays in the rail.
+  const src = stripComments(read("components/BudgetRail.jsx")) + stripComments(read("components/ContingencyElection.jsx"));
   // Exactly the two producer-settable assumptions this closeout wires:
   // contingency (pre-existing) and financing cost (new). Both call the
   // same generic persistence path.

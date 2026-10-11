@@ -143,3 +143,19 @@ async def test_the_saved_election_reloads_resets_and_rejects_out_of_range_values
     assert bad.value.status_code == 400 and await _reload(session, project.id) == 0.0       # rejected, prior value kept
     await post_project_assumptions(str(project.id), ProjectAssumptions(answers={"contingency_expected_utilization_pct": None}), session)
     assert await _reload(session, project.id) is None                                       # reset restores the unstated state
+
+
+def test_a_flagged_item_serves_its_source_value_unresolved_reason_and_needed_evidence_in_the_trace():
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+    import app.data.program_rate_rules_worldwide  # noqa: F401
+    alloc = [AccountAllocation(account_code=c, description=d, amount_usd=a, component="production", jurisdiction_code="GR",
+                               assignment_kind=AssignmentKind.FIXED, rationale="x", governing_decision="x", line_id=f"L{c}", spend_category=k)
+             for c, d, a, k in [("3100", "CAMERA", 1_000_000.0, "btl_crew_labor"), ("7902", "CONTINGENCY", 250_000.0, "contingency")]]
+    seg = price_segment(jurisdiction_code="GR", program_slug="gr_cash_rebate", allocations=alloc,
+                        spend_category_by_code={"3100": "btl_crew_labor", "7902": "contingency"}, offshore_payroll_accounts=frozenset(),
+                        production_type="feature_film", gross_budget_usd=2_000_000.0, contingency_expected_utilization_pct=100.0)
+    (row,) = [t for t in seg.register_trace if t["account_code"] == "7902"]
+    assert row["state"] == "grey_area_requires_authority" and row["amount_usd"] == 250_000.0      # source value, not eligible by default
+    assert row["line_id"] == "L7902" and row["grey_reason"] == "missing_production_fact"
+    assert "gr_action_a_applicant_evidenced" in row["resolving_evidence"]                       # the evidence that would settle it

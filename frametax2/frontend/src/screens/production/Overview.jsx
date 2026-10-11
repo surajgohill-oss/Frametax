@@ -282,6 +282,10 @@ export default function Overview() {
             onFinanceCostSaved={refetch}
             onSelectAccount={(line, alloc) => openInspector("account", {
               ...line,
+              contingencyElection: /contingen/i.test(line.label || "") ? {
+                projectId, currentPct: contingencyPct, planning: production?.contingency_planning,
+                onSaved: () => { refetch(); window.dispatchEvent(new Event("cineglobe:refetch")); },
+              } : null,
               crossRef: alloc ? [{
                 structureId: structure.structure_id,
                 structureLabel: structure.label,

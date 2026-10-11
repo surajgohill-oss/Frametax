@@ -541,6 +541,13 @@ export default function Workspace() {
   // slot composition itself is selectSixSlots() — Current Location (never
   // mode-filtered) + the top four mode-admissible scenarios + slot 6.
   const projectId = data?.production?.project_id ?? null;
+  // The saved project contingency election, handed to the Inspector's flagged-item block (the same ProjectFact control as the Budget rail).
+  const contingencyElection = projectId ? {
+    projectId,
+    currentPct: data?.facts?.answers?.contingency_expected_utilization_pct == null ? null : Number(data.facts.answers.contingency_expected_utilization_pct),
+    planning: data?.production?.contingency_planning,
+    onSaved: () => window.dispatchEvent(new Event("cineglobe:refetch")),
+  } : null;
   const slot6Override = getSlot6Selection(projectId, workspaceMode);
   const { cols, dropdownOptions: overflow, dropdownEvaluatedAlternatives, dropdownOpportunities, tiedStructureIds } = useMemo(
     () => {
@@ -707,7 +714,7 @@ export default function Workspace() {
     }
     if (pt.tier === "red") { openInspector("optimizer-rejection", buildRejectedDetail(s)); return; }
     const seg = resolveSegmentDetail(s, code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, ...structureStatusDetail(s, optimizerLeadingId), contingencyByAccount });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, ...structureStatusDetail(s, optimizerLeadingId), contingencyByAccount, contingencyElection });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
   // CODEX_FG-002 (2026-09-21): the card's "Inspect" action opens that whole
@@ -721,7 +728,7 @@ export default function Workspace() {
   }
   function handleSelectSegment(structure, code) {
     const seg = resolveSegmentDetail(structure, code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, ...structureStatusDetail(structure, optimizerLeadingId), contingencyByAccount });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, ...structureStatusDetail(structure, optimizerLeadingId), contingencyByAccount, contingencyElection });
   }
 
   return (
