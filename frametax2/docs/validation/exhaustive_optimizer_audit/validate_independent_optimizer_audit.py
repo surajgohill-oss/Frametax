@@ -922,10 +922,10 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 if lu_ny.get('defect_or_disposition_id') != 'NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)':
                     errors.append(f"LU ny_state_film disposition must be NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT), got {lu_ny.get('defect_or_disposition_id')}")
                 rca = lu_ny.get('root_cause_analysis', '')
-                if '2,836,167.00' not in rca or '3,283,489.00' not in rca:
-                    errors.append(f"LU ny_state_film root cause missing supported bounds [2,836,167.00 - 3,283,489.00]: {rca}")
-                if '231,212.10' not in rca:
-                    errors.append(f"LU ny_state_film root cause missing credit overstatement 231,212.10: {rca}")
+                if '2,836,167.00' not in rca or '3,771,453.00' not in rca:
+                    errors.append(f"LU ny_state_film root cause missing supported bounds [2,836,167.00 - 3,771,453.00]: {rca}")
+                if '84,822.90' not in rca:
+                    errors.append(f"LU ny_state_film root cause missing credit overstatement 84,822.90: {rca}")
 
             # 1b. FVD, BH, LLS NY statutory bounds and NOT_ESTABLISHED check (Rule 5)
             for p, exp_min, exp_max in (
@@ -983,8 +983,9 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
             content = f.read()
             req_na_tokens = (
                 "$2,836,167.00",
-                "$3,283,489.00",
+                "$3,771,453.00",
                 "$3,274,421.00",
+                "84,822.90",
                 "138,850",
                 "438,254",
                 "61,568",
@@ -1013,8 +1014,9 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "138,850",
                 "$0.00",
                 "$2,836,167.00",
-                "$3,283,489.00",
+                "$3,771,453.00",
                 "$3,274,421.00",
+                "84,822.90",
                 "340d2041-b11e-4ceb-8c9b-7162f4956903",
                 "14535c49-2dbe-4357-ab61-d3bf5b51c0f4",
                 "NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)",
