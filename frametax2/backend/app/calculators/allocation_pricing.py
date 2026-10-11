@@ -1667,6 +1667,11 @@ def price_segment(
             "state": a.state.value,
             "authority_basis": a.authority_basis.value,
             "reason": a.reason,
+            # Flagged-item detail for the Inspector (read verbatim; absent on generations that predate it).
+            "line_id": a.line_id,
+            "grey_reason": a.grey_reason.value if a.grey_reason else None,
+            "resolving_evidence": a.resolving_evidence,
+            "incentive_upside_usd": a.incentive_upside_usd,
         }
         for a in register
     )
