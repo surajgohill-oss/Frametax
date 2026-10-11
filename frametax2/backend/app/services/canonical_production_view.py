@@ -41,6 +41,7 @@ from app.models.production_requirement import ProductionRequirement
 from app.models.project import Project
 from app.models.project_asset import ProjectAsset
 from app.models.project_fact import ProjectFact
+from app.services.canonical_project_economics import contingency_planning_view
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.economic_identity import canonical_economic_identity
@@ -2097,6 +2098,7 @@ async def build_production_and_structures(
     variance_usd = None
     reconciliation_note = None
     source_budget_finance_usd = 0.0
+    contingency_reserve_usd = 0.0
     if budget_doc is not None:
         leaf_rows = (await session.execute(
             select(BudgetLineItem.amount_usd, BudgetLineItem.spend_category).where(
@@ -2110,6 +2112,10 @@ async def build_production_and_structures(
         source_budget_finance_usd = round(sum(
             float(a) for a, category in leaf_rows
             if a is not None and str(getattr(category, "value", category) or "").endswith("finance_costs")
+        ), 2)
+        contingency_reserve_usd = round(sum(
+            float(a) for a, category in leaf_rows
+            if a is not None and str(getattr(category, "value", category) or "").endswith("contingency")
         ), 2)
         if gross_budget_usd is not None:
             variance_usd = round(gross_budget_usd - leaf_account_sum_usd, 2)
@@ -2224,6 +2230,10 @@ async def build_production_and_structures(
                 "ADDITIONAL to this amount, never a restatement of it."
             ),
         },
+        "contingency_planning": contingency_planning_view(
+            gross_budget_usd, contingency_reserve_usd,
+            await _contingency_pct_fact(session, project.id),
+        ),
         "production_structure_default": None,
         # Item B (Final non-Globe closeout, 2026-09-04) — see the
         # discretionary_policy_view build immediately above.
@@ -2832,6 +2842,17 @@ _PEOPLE_ROLE_TO_BUCKET = {
     "lead_cast": "cast", "lead_cast_2": "lead_cast_2", "lead_cast_3": "lead_cast_3",
     "dop": "dop", "editor": "editor", "composer": "composer",
 }
+
+
+async def _contingency_pct_fact(session, project_id):
+    raw = (await session.execute(
+        select(ProjectFact.value).where(
+            ProjectFact.project_id == project_id, ProjectFact.fact_key == "contingency_expected_utilization_pct")
+    )).scalar_one_or_none()
+    try:
+        return None if raw is None else float(raw)
+    except (TypeError, ValueError):
+        return None
 
 
 async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> dict:

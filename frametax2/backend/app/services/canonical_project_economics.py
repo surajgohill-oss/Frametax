@@ -176,6 +176,25 @@ class ProjectEconomicInputs:
     #: means genuinely unset, never defaulted.
     contingency_expected_utilization_pct: float | None = None
 
+    #: The source budget's own contingency reserve (sum of its contingency-category lines). Original gross and this reserve are
+    #: never rewritten; the saved utilization % only yields the PLANNED cost basis below.
+    contingency_reserve_usd: float = 0.0
+
+    @property
+    def contingency_planned_reduction_usd(self) -> float:
+        """Undeployed reserve = reserve x (1 - utilization). Zero while the producer has not stated a utilization (unknown is
+        never treated as 0% or 100%): the NPC basis then stays the full gross. Applied ONCE, to NPC cost only -- the jurisdiction
+        QPE rules separately decide what part of the deployed reserve qualifies."""
+        if self.contingency_expected_utilization_pct is None or self.contingency_reserve_usd <= 0:
+            return 0.0
+        pct = max(0.0, min(100.0, float(self.contingency_expected_utilization_pct)))
+        return round(self.contingency_reserve_usd * (1.0 - pct / 100.0), 2)
+
+    @property
+    def npc_basis_usd(self) -> float:
+        """Planned production cost the NPC arithmetic starts from: original gross less the undeployed reserve."""
+        return round(self.gross_budget_usd - self.contingency_planned_reduction_usd, 2)
+
     #: Producer Display Names + Budget Rail User Assumptions closeout —
     #: see FACT_FINANCING_COST_USD above. None means genuinely unset.
     financing_cost_usd: float | None = None
@@ -291,6 +310,33 @@ def _fact_float(rows: list[ProjectFact], key: str) -> float | None:
         return float(row.value)
     except (TypeError, ValueError):
         return None
+
+
+def contingency_planning_view(gross_budget_usd, reserve_usd: float, utilization_pct) -> dict:
+    """The served, checkable contingency planning figures. Original gross and reserve are never rewritten: the planned cost is
+    gross less the UNDEPLOYED reserve, applied once to NPC. ``utilization_pct`` None = no election: planned cost = gross and the
+    state says so (unknown is not 0% or 100%). Jurisdiction QPE treatment of the deployed reserve is separate and not shown here."""
+    reserve = round(float(reserve_usd or 0.0), 2)
+    stated = utilization_pct is not None and reserve > 0
+    pct = None if utilization_pct is None else max(0.0, min(100.0, float(utilization_pct)))
+    undeployed = round(reserve * (1.0 - pct / 100.0), 2) if stated and pct is not None else 0.0
+    gross = None if gross_budget_usd is None else float(gross_budget_usd)
+    return {
+        "state": "ELECTED" if stated else ("NO_RESERVE" if reserve <= 0 else "NOT_STATED"),
+        "original_gross_usd": gross,
+        "contingency_reserve_usd": reserve,
+        "expected_utilization_pct": pct,
+        "deployed_reserve_usd": round(reserve - undeployed, 2) if stated else None,
+        "undeployed_reserve_usd": undeployed if stated else None,
+        "planned_cost_usd": None if gross is None else round(gross - undeployed, 2),
+        "note": (
+            "Planned cost = original gross less the undeployed reserve (applied once, to NPC). Each jurisdiction's QPE rules "
+            "separately decide how much of the deployed reserve qualifies."
+            if stated else
+            ("No contingency utilization is stated, so planned cost equals the full gross and the reserve's QPE treatment stays conditional."
+             if reserve > 0 else "The source budget carries no contingency reserve.")
+        ),
+    }
 
 
 def _evidenced_program_facts(rows: list[ProjectFact]) -> frozenset[str]:
@@ -758,6 +804,10 @@ async def build_project_economic_inputs(
         contingency_expected_utilization_pct=_fact_float(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
+        contingency_reserve_usd=round(sum(
+            float(l.amount_usd or 0.0) for l in lines
+            if str(l.spend_category or "").lower().endswith("contingency")
+        ), 2),
         financing_cost_usd=_fact_float(fact_rows, FACT_FINANCING_COST_USD),
         scenario_btl_nonlocal=any(
             f.fact_key == FACT_SCENARIO_BTL_NONLOCAL and str(f.value).strip().lower() in ("true", "1", "yes")

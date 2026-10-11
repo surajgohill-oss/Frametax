@@ -243,6 +243,8 @@ class AllocatedStructurePricing:
     # drives NPC and ranking; total_incentive_floor_usd remains the
     # separately-surfaced conservative/uncertainty figure.
     selected_incentive_usd: float = 0.0
+    #: Undeployed contingency reserve removed from the planned cost basis (0.0 when no utilization is stated).
+    planned_cost_reduction_usd: float = 0.0
     # Off-budget Mauritius in-kind post normalization: a structure that moves
     # that work out of MU must absorb the replacement cost (added to NPC);
     # a structure that keeps the post in MU carries 0. Separate economic
@@ -1932,6 +1934,7 @@ def price_allocated_structure(
     fx_context=None,
     home_jurisdiction_code: str | None = None,
     scenario_btl_nonlocal: bool = False,
+    planned_cost_reduction_usd: float = 0.0,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
@@ -2060,13 +2063,16 @@ def price_allocated_structure(
             (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0)
             + _inkind_repl + _local_cost
         )
+        # planned_cost_reduction_usd is the undeployed contingency reserve (project election): subtracted once from the cost basis,
+        # separately from the QPE rules that decide what part of the DEPLOYED reserve qualifies. Original gross stays in
+        # ``gross_budget_usd`` (it is also the QPE cap base).
         npc_verified = round(
-            gross_budget_usd - selected_incentive
+            gross_budget_usd - planned_cost_reduction_usd - selected_incentive
             + financing_cost_usd + implementation_cost_usd, 2,
         )
         npc_adjusted = round(npc_verified + _norm, 2)
         npc_conservative = round(
-            gross_budget_usd - total_floor
+            gross_budget_usd - planned_cost_reduction_usd - total_floor
             + financing_cost_usd + implementation_cost_usd + _norm, 2,
         )
 
@@ -2106,6 +2112,7 @@ def price_allocated_structure(
         allocation=allocation,
         segments=tuple(segments),
         gross_budget_usd=gross_budget_usd,
+        planned_cost_reduction_usd=planned_cost_reduction_usd,
         total_incentive_floor_usd=total_floor,
         total_incentive_ceiling_usd=total_ceiling,
         selected_incentive_usd=selected_incentive if fully_priced else 0.0,

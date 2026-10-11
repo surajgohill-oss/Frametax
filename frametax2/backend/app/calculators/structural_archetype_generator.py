@@ -315,6 +315,7 @@ def _generate_structural_candidate_uncached(
     fx_delta_usd: float = 0.0,
     local_cost_delta_usd: float = 0.0,
     _component_cache: dict[tuple, SegmentEconomics] | None = None,
+    planned_cost_reduction_usd: float = 0.0,
 ) -> StructuralCandidateResult:
     """Full (uncached) structural pricing -- see generate_structural_candidate."""
     structure_id = _structure_id(components)
@@ -502,7 +503,8 @@ def _generate_structural_candidate_uncached(
     else:
         total_guaranteed = round(sum(ce.guaranteed_incentive_usd for ce in guaranteed_econ), 2)
     total_conditional = round(sum(ce.conditional_incentive_usd for ce in comp_econ), 2)
-    npc = round(gross_budget_usd - total_guaranteed, 2)
+    # planned_cost_reduction_usd: undeployed contingency reserve (project election), subtracted once; gross stays the original.
+    npc = round(gross_budget_usd - planned_cost_reduction_usd - total_guaranteed, 2)
     _total_adjustments = round(
         (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0) + (local_cost_delta_usd or 0.0), 2,
     )
@@ -661,6 +663,7 @@ def generate_structural_candidate(
     local_cost_delta_usd: float = 0.0,
     _cache: dict[tuple, "StructuralCandidateResult"] | None = None,
     _component_cache: dict[tuple, SegmentEconomics] | None = None,
+    planned_cost_reduction_usd: float = 0.0,
 ) -> StructuralCandidateResult:
     """The one generic entry point. Never a per-archetype function --
     every one of the twelve corrected Codex archetypes is just a
@@ -678,7 +681,7 @@ def generate_structural_candidate(
     if _cache is None:
         return _generate_structural_candidate_uncached(
             components, gross_budget_usd, anchor_npc_usd, travel_incremental_delta_usd,
-            fx_delta_usd, local_cost_delta_usd, _component_cache,
+            fx_delta_usd, local_cost_delta_usd, _component_cache, planned_cost_reduction_usd,
         )
     from app.services import _lls_profile_sink as _prof
     _prof.tick("pricing_calls_total")
@@ -690,7 +693,7 @@ def generate_structural_candidate(
     if base is None:
         with _prof.timed("intrinsic_pricing"):
             base = _generate_structural_candidate_uncached(
-                components, gross_budget_usd, None, 0.0, 0.0, 0.0, _component_cache,
+                components, gross_budget_usd, None, 0.0, 0.0, 0.0, _component_cache, planned_cost_reduction_usd,
             )
         _cache[key] = _slim(base)
         _prof.tick("pricing_cache_miss_executable" if base.executable else "pricing_cache_miss_rejected")
