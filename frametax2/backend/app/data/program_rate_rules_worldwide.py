@@ -2376,8 +2376,9 @@ _US_NY_POST_CITATION = (
     "'seeking to contract some or all of the post-production work to a "
     "facility in New York State'; CONFIRMED mutual exclusivity with the "
     "main Production Credit for the same costs ('no other income tax "
-    "credit may be claimed for those costs'). Rate (35% of qualified "
-    "post-production costs) and minimum-spend structure ('qualified "
+    "credit may be claimed for those costs'). Rate: Tax Law 31(a)(2) (nysenate.gov, revision "
+    "displayed 2025-07-11) sets 30% inside the Metropolitan Commuter Transportation District and 35% elsewhere "
+    "in the state (ESD Guidelines April 2025 p.2 agrees); the minimum-spend structure ('qualified "
     "post-production costs must be equal to or greater than the LESSER of "
     "$1,000,000 or 75% of total post-production cost'; VFX/animation "
     "sub-threshold 'lesser of $500,000 or 10% of total post-production "
@@ -2411,8 +2412,69 @@ US_NY_POST_DOCTRINE = register(DoctrineRecord(
     ),
     tiers=(
         DoctrineRateTier(
-            tier_id="us-ny-post-flat-35",
+            tier_id="us-ny-post-outside-mctd-35",
             rate=0.35,
+            is_band_ceiling=False,
+            min_qpe_usd=1_000_000.0,
+            conditions=(
+                RateCondition(
+                    condition_id="us-ny-post-facility-outside-mctd",
+                    description="35% applies only to post-production costs incurred at a qualified "
+                                "facility OUTSIDE the Metropolitan Commuter Transportation District "
+                                "(Public Authorities Law 1262). Inside the district the rate is 30%. "
+                                "Satisfied only by the evidenced producer fact "
+                                "'ny_post_facility_outside_mctd'; absence is never assumed.",
+                    quote="thirty percent ... within the metropolitan commuter transportation district; "
+                          "thirty-five percent ... elsewhere in the state (Tax Law 31(a)(2), nysenate.gov, "
+                          "revision displayed 2025-07-11; ESD Guidelines April 2025 p.2)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ny_post_facility_outside_mctd",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-mutual-exclusivity",
+                    description="MUTUALLY EXCLUSIVE with the main ny_state_film "
+                                "Production Credit for the same costs — a structure "
+                                "must never claim both for the same segment. This "
+                                "program applies ONLY to a post-production-only "
+                                "routing (production shot elsewhere), never to a "
+                                "full-relocation structure.",
+                    quote="if the film post-production credit is claimed for "
+                          "qualified post-production costs, no other income tax "
+                          "credit may be claimed for those costs (tax.ny.gov)",
+                    kind="mutually_exclusive_alternative_program",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-upstate-wage-uplift-not-modeled",
+                    description="POST-credit upstate uplift (Tax Law 31(a)(6), displayed revision "
+                                "2025-07-11): +10% of WAGES AND SALARIES paid to directly employed "
+                                "individuals at a qualified post facility in the listed upstate counties, "
+                                "for a film budget of at least $500,000. A different base from the "
+                                "production credit's: it EXCLUDES writers, directors, composers, "
+                                "producers and performers (background actors with no scripted lines "
+                                "aside). Not a whole-base rate and not priced here -- it needs a "
+                                "facility-county and eligible-wage split this engine does not hold.",
+                    quote="ten percent of the amount of wages or salaries paid to individuals directly "
+                          "employed ... other than writers, directors, composers, producers and "
+                          "performers (Tax Law 31(a)(6), nysenate.gov)",
+                    kind="uplift_on_narrower_base_not_modeled",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-vfx-animation-subthreshold",
+                    description="A separate VFX/animation sub-threshold (lesser of "
+                                "$500K or 10% of total post-production cost) applies "
+                                "within the qualifying post spend — not "
+                                "pre-evaluable without a VFX-specific cost split",
+                    quote="the costs of visual effects and animation must be equal "
+                          "to or greater than the lesser of $500,000 or 10% of the "
+                          "total post-production cost for visual effects and "
+                          "animation (secondary aggregator, corroborating tax.ny.gov)",
+                    kind="min_qpe_usd",
+                ),
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="us-ny-post-base-30-mctd",
+            rate=0.30,
             is_band_ceiling=False,
             min_qpe_usd=1_000_000.0,
             conditions=(
@@ -2428,6 +2490,21 @@ US_NY_POST_DOCTRINE = register(DoctrineRecord(
                           "qualified post-production costs, no other income tax "
                           "credit may be claimed for those costs (tax.ny.gov)",
                     kind="mutually_exclusive_alternative_program",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-upstate-wage-uplift-not-modeled",
+                    description="POST-credit upstate uplift (Tax Law 31(a)(6), displayed revision "
+                                "2025-07-11): +10% of WAGES AND SALARIES paid to directly employed "
+                                "individuals at a qualified post facility in the listed upstate counties, "
+                                "for a film budget of at least $500,000. A different base from the "
+                                "production credit's: it EXCLUDES writers, directors, composers, "
+                                "producers and performers (background actors with no scripted lines "
+                                "aside). Not a whole-base rate and not priced here -- it needs a "
+                                "facility-county and eligible-wage split this engine does not hold.",
+                    quote="ten percent of the amount of wages or salaries paid to individuals directly "
+                          "employed ... other than writers, directors, composers, producers and "
+                          "performers (Tax Law 31(a)(6), nysenate.gov)",
+                    kind="uplift_on_narrower_base_not_modeled",
                 ),
                 RateCondition(
                     condition_id="us-ny-post-vfx-animation-subthreshold",

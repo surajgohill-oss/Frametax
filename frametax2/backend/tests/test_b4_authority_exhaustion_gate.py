@@ -291,7 +291,10 @@ def test_ny_post_production_credit_no_longer_blanket_blocked():
     assert economic_block_for_program(slug) is None, f"{slug} must NOT be B4-blocked"
     rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=1_200_000.0)
     assert rr is not None
-    assert rr.modeled_rate == pytest.approx(0.35)
+    assert rr.modeled_rate == pytest.approx(0.30)     # inside the commuter district unless the outside-district fact is evidenced
+    outside = resolve_program_rate(slug, production_type="feature_film", qpe_usd=1_200_000.0,
+                                   evidenced_facts=frozenset({"ny_post_facility_outside_mctd"}))
+    assert outside is not None and outside.modeled_rate == pytest.approx(0.35)
 
 
 def test_ny_post_and_ny_principal_are_named_mutually_exclusive_not_blanket_blocked():

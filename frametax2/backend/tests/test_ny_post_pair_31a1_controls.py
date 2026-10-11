@@ -101,14 +101,14 @@ def test_production_qualifies_above_the_line_labor_while_the_post_credit_exclude
     assert post["L4"].state == QualificationState.QUALIFIES
 
 
-def test_the_two_upstate_bases_are_recorded_separately_and_the_500k_guidance_is_open_not_applied():
+def test_the_two_upstate_bases_are_recorded_separately_and_the_500k_guidance_is_dated_and_applies_to_identified_payees_only():
     film = get_program_requirements(NY_FILM).additional_facts
     post = get_program_requirements(NY_POST).additional_facts
     assert "INCLUDES qualifying above-the-line salaries" in film["upstate_uplift"] and "24(a)(5)" in film["upstate_uplift"]
     assert "more than 50%" in film["upstate_uplift"]                                    # shooting-day prerequisite preserved
     assert "EXCLUDES writers, directors, composers, producers and performers" in post["upstate_uplift"] and "31(a)(6)" in post["upstate_uplift"]
     cap = film["atl_per_individual_cap_guidance"]
-    assert cap.startswith("OPEN") and "$500,000 cap per individual" in cap and "2025-07-11" in cap and "payee split" in cap
+    assert cap.startswith("DATED AGENCY RULE") and "$500,000 cap per individual" in cap and "2025-07-11" in cap and "UNRESOLVED" in cap
     assert get_program_requirements(NY_FILM).atl_cap_pct_of_other_costs == 0.40
 
 
