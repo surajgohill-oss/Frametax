@@ -16,7 +16,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.allocation_pricing import price_allocated_structure
@@ -38,19 +38,17 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 
 @pytest.fixture
 async def db():
-    async with AsyncSession(engine, expire_on_commit=False) as session:
-        yield session
-        # Never leave test-written financing_cost_usd facts behind — this
-        # fixture cleans up after every test in this file regardless of
-        # outcome, so a failed assertion can't leak persisted test data
-        # into the real project row.
-        await session.execute(
-            delete(ProjectFact).where(
-                ProjectFact.project_id == LITTLE_UTOPIA_PROJECT_ID,
-                ProjectFact.fact_key == FACT_FINANCING_COST_USD,
-            )
-        )
-        await session.commit()
+    """Isolated session: every write below lands in a transaction that is ROLLED BACK, so this module never commits to, nor
+    deletes from, the real Little Utopia project row (an earlier version committed test facts to it and deleted the financing key
+    on teardown, which would have destroyed a producer's saved value). Reads still see the real persisted budget and facts."""
+    async with engine.connect() as conn:
+        outer = await conn.begin()
+        session = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
+        try:
+            yield session
+        finally:
+            await session.close()
+            await outer.rollback()
 
 
 async def _price_little_utopia(inputs):
