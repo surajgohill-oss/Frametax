@@ -22,6 +22,7 @@ In strict accordance with the mandatory **AUDIT INPUT EVIDENCE GATE** (`PROJECT_
 | **RET-05: Per-Person Salary Caps on Aggregate Topsheets** | GA, IL, MA (`us_ga_film_credit`, `us_il_film_production_services_credit`, `us_ma_film_tax_credit`) on FVD, BH, LLS | Claimed verified defect `NA-DEFECT-05` for engine omitting $500k (GA/IL) and $1M (MA) salary cap deductions. | **Prohibited by Rule 5**: Never apply per-person limits to aggregate account totals without individual payee contracts/ledgers. | Reclassified as **`NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)`**; monetary variance claims revoked. |
 | **RET-06: Premature Verified Defect Totals** | Global North America package | Reported preliminary total of 167 verified defects. | **Prohibited by User Direction & Rule 6**: No verified defect totals or completion claim until provenance, matching, and table consistency pass Codex review. | Status frozen as **`GATE STRICTLY OPEN`**; zero completion claim. |
 | **RET-07: Bad Hombres California Minimum Spend Gate Rejection Claim** | `ca_film_30` on Bad Hombres | Claimed verified defect `NA-DEFECT-07` alleging affirmative statutory minimum spend failure ($773,889 BTL < $1,000,000 threshold). | **Verified Primary Authority**: Cal. Rev. & Tax. Code § 17053.98(b)(3)(A) & (B) establishes that the $1,000,000 threshold applies to total **production budget**, NOT local qualified spend. Bad Hombres has a gross production budget of $2,482,023.00, satisfying the statutory gate. | Reclassified as qualified (expected BTL QPE $749,889.00 / credit $262,461.15). Engine canonical-1.106.0 priced $299,158.65 ($854k spend base due to admin/insurance/bond inclusion); reclassified as **`OLD_SAVED_RESULT_STALE_PENDING_REGENERATION`**; monetary variance claims revoked from open code defects. |
+| **RET-08: New York Per-Person Salary Caps on Aggregate Topsheets** | `ny_state_film` on FVD, BH, LLS | Previously claimed exact QPE calculations on FVD ($1,759,486.40), BH ($1,049,844.60), and LLS ($8,194,877.60). | **Prohibited by Rule 5**: Cannot apply per-person $500k caps and 2-producer limits to aggregate topsheet lines without individual general ledger talent contracts. | Reclassified as **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`** with evidenced statutory bounds; exact QPE claims withdrawn while NA-DEFECT-01 ceiling omission is confirmed by lower bounds. |
 
 ---
 
@@ -37,15 +38,16 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
    * **Little Utopia Canadian Stacks (`FIXED_IN_CODE_F06`):** Repaired in commit `486bd15` (repair F-06) to exclude stated-outside US editorial ($9,068) from Canadian stack QPE.
    * **California Film & TV Tax Credit (Program 4.0 BTL):** In `canonical-1.106.0`, California structures were evaluated with earlier spend classification rules that included general administration, insurance, and bond in the qualified BTL base. On FVD, Structure ID `b90c23db-3946-454b-8365-25eebe53dcf3` (Result ID `602efade-0ccf-43f2-b529-81434c6fd912`) correctly excluded ATL grey areas ($1,976,479) yielding $603,665.65 ($1,724,759 × 35%), whereas $1,295,433.30 was the open-spend benchmark (35% of $3,701,238 unconstrained spend as seen in Alabama Structure `3ede659f...`). On Bad Hombres, the $1M production budget floor is met ($2.48M gross), but the engine qualified $854,739 (credit $299,158.65) vs independent BTL baseline of $749,889.00 (credit $262,461.15). Repaired in commit `666a4b7`; saved generation is stale.
 2. **`OPEN_CODE_DEFECT_PENDING_CODEX_REVIEW` (Code & DB Defect):**
-   * **`NA-DEFECT-01` (NY Tax Law § 24(b)(1) 40% Aggregate ATL Ceiling Omission):** NY Tax Law § 24(b)(1) strictly mandates that eligible Above-The-Line costs cannot exceed 40% of (BTL + Post). The engine in both `canonical-1.106.0` and current code completely omits this ceiling, overstating tax credits by up to **$582,525.48** per production. Note: individual per-person $500k caps and 2-producer limits remain an irreducible empirical blocker under `MISSING_INDIVIDUAL_TALENT_CONTRACTS`.
+   * **`NA-DEFECT-01` (NY Tax Law § 24(b)(1) 40% Aggregate ATL Ceiling Omission & Non-Qualifying Spend Inclusion):** NY Tax Law § 24(b)(1) strictly mandates that eligible Above-The-Line costs cannot exceed 40% of other qualified production costs (BTL + Post). The engine in both `canonical-1.106.0` and current code (`program_spend_rules.py:193`) completely omits this ceiling, overstating tax credits significantly. On The Little Utopia, where all payees are <= $500k and producer count is 0, the statutory deduction is verified to the cent: QPE = $3,283,489.00 / Credit = $985,046.70, proving engine overstatement of **+$770,707.00 QPE / +$231,212.10 Credit** with zero balancing residual. On FVD, BH, and LLS, per-person talent caps remain `NOT_ESTABLISHED` under `MISSING_INDIVIDUAL_TALENT_CONTRACTS`, but supported statutory bounds confirm engine overstatement of at least **+$582,525.48** (FVD), **+$383,338.92** (BH), and **+$386,632.92** (LLS).
+   * **`DISC-NY-001` (NY Tax Law § 31*2(a)(1) Stacking Mutual Exclusivity Violation):** NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c) explicitly bar any taxpayer eligible for Section 24 from receiving Section 31*2 post-production credit for the same film. In `backend/app/optimization/stacking_rules.py:617`, the engine rule permits distinct costs (`same_cost_prohibited_distinct_costs_allowed`).
 3. **`NOT_ESTABLISHED_EMPIRICAL_GAP` (Missing Evidence / Unknown Facts):**
    * **CAVCO Domestic Content Certification:** Without official CAVCO certification or Canadian treaty co-production agreements, domestic CPTC/OFTTC eligibility is `NOT_ESTABLISHED` (40 rows across single programs and Canadian domestic stacks).
-   * **High-Earner Salary Caps (GA, IL, MA):** Without individual payee contracts, salary cap disallowances on aggregate lines are `NOT_ESTABLISHED` (9 rows).
+   * **High-Earner Salary Caps (GA, IL, MA, NY):** Without individual payee contracts, salary cap disallowances on aggregate lines are `NOT_ESTABLISHED` (12 rows).
    * **Canadian Labour Expenditure:** Without itemized Canadian payroll schedules and residency declarations, exact QLE is `NOT_ESTABLISHED` (7 rows).
 4. **`COMPARISON_NOT_ESTABLISHED` (Structure Not in Saved Results):**
    * `us_ny_post_production_credit`: 4 rows (component-only structure; no full relocation structure in saved DB).
    * Missing Canadian Stacks: 4 rows (stacks not generated by engine in LU and BH).
-   * `stack_ny_prod_post`: 4 rows (no stack candidate generated by engine; missing candidate cannot establish VERIFIED_AGREEMENT while underlying rule DISC-NY-001 permits distinct-cost pairing contrary to § 31(2)(a)(1)).
+   * `stack_ny_prod_post`: 4 rows (no stack candidate generated by engine; missing candidate cannot establish VERIFIED_AGREEMENT while underlying rule DISC-NY-001 permits distinct-cost pairing contrary to § 31*2(a)(1)).
 5. **`SCENARIO_SPEND_BASE_VARIANCE`:**
    * 41 rows on open-spend programs where the engine's generic relocation spend base differed from independent source-derived relocation baselines.
 
@@ -122,7 +124,7 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 | **FVD** | `us_ma_film_tax_credit` | US-MA | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 925,309.50 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)` | Statutory per-person salary caps ($500k GA/IL, $1M MA) require itemized pay... |
 | **FVD** | `us_nc_film_entertainment_grant` | US-NC | `PRIMARY_AUTHORITY_VERIFIED` | CONDITIONAL_NONDETERMINISTIC | PRICED | 0.00 | 925,309.50 | 925,309.50 | `OLD_SAVED_RESULT_STALE_PENDING_REGENERATION` | `FIXED_IN_CODE_F03` | Engine canonical-1.106.0 priced North Carolina as guaranteed 25% credit. Re... |
 | **FVD** | `us_nm_film_credit` | US-NM | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 907,166.25 | 925,309.50 | 18,143.25 | `SCENARIO_SPEND_BASE_VARIANCE` | `SCENARIO_SPEND_BASE_VARIANCE` | Engine generic relocation spend base variance: Independent baseline $907,16... |
-| **FVD** | `ny_state_film` | US-NY | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 527,845.92 | 1,110,371.40 | 582,525.48 | `OPEN_CODE_DEFECT_PENDING_CODEX_REVIEW` | `NA-DEFECT-01` | Engine omitted NY § 24(b)(1) 40% aggregate ATL ceiling, qualifying non-qual... |
+| **FVD** | `ny_state_film` | US-NY | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 1,110,371.40 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)` | Statutory NY § 24(b)(1)(B) per-person salary caps ($500k/person, max 2 prod... |
 | **FVD** | `us_ny_post_production_credit` | US-NY | `SOURCE_VERIFIED` | QUALIFIED | UNPRICED_OR_MISSING | 54,756.10 | UNPRICED | N/A | `COMPARISON_NOT_ESTABLISHED` | `COMPARISON_NOT_ESTABLISHED (COMPONENT_ONLY_STRUCTURE)` | Engine did not generate full relocation structure for NY post credit; compo... |
 | **FVD** | `us_or_opif` | US-OR | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 740,247.60 | 775,586.45 | 35,338.85 | `SCENARIO_SPEND_BASE_VARIANCE` | `SCENARIO_SPEND_BASE_VARIANCE` | Engine generic relocation spend base variance: Independent baseline $740,24... |
 | **FVD** | `us_ri_film_credit` | US-RI | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 1,110,371.40 | 1,110,371.40 | 0.00 | `OLD_SAVED_RESULT_STALE_PENDING_REGENERATION` | `FIXED_IN_CODE_F04` | Engine canonical-1.106.0 did not model $7M project cap. Repaired in canonic... |
@@ -149,7 +151,7 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 | **BH** | `us_il_film_production_services_credit` | US-IL | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 814,674.35 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)` | Statutory per-person salary caps ($500k GA/IL, $1M MA) require itemized pay... |
 | **BH** | `us_ma_film_tax_credit` | US-MA | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 581,910.25 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)` | Statutory per-person salary caps ($500k GA/IL, $1M MA) require itemized pay... |
 | **BH** | `us_nc_film_entertainment_grant` | US-NC | `PRIMARY_AUTHORITY_VERIFIED` | CONDITIONAL_NONDETERMINISTIC | PRICED | 0.00 | 581,910.25 | 581,910.25 | `OLD_SAVED_RESULT_STALE_PENDING_REGENERATION` | `FIXED_IN_CODE_F03` | Engine canonical-1.106.0 priced North Carolina as guaranteed 25% credit. Re... |
-| **BH** | `ny_state_film` | US-NY | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 314,953.38 | 698,292.30 | 383,338.92 | `OPEN_CODE_DEFECT_PENDING_CODEX_REVIEW` | `NA-DEFECT-01` | Engine omitted NY § 24(b)(1) 40% aggregate ATL ceiling, qualifying non-qual... |
+| **BH** | `ny_state_film` | US-NY | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 698,292.30 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)` | Statutory NY § 24(b)(1)(B) per-person salary caps ($500k/person, max 2 prod... |
 | **BH** | `us_ny_post_production_credit` | US-NY | `SOURCE_VERIFIED` | QUALIFIED | UNPRICED_OR_MISSING | 37,785.30 | UNPRICED | N/A | `COMPARISON_NOT_ESTABLISHED` | `COMPARISON_NOT_ESTABLISHED (COMPONENT_ONLY_STRUCTURE)` | Engine did not generate full relocation structure for NY post credit; compo... |
 | **BH** | `us_or_opif` | US-OR | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 465,528.20 | 501,564.55 | 36,036.35 | `SCENARIO_SPEND_BASE_VARIANCE` | `SCENARIO_SPEND_BASE_VARIANCE` | Engine generic relocation spend base variance: Independent baseline $465,52... |
 | **BH** | `us_ri_film_credit` | US-RI | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 698,292.30 | 698,292.30 | 0.00 | `OLD_SAVED_RESULT_STALE_PENDING_REGENERATION` | `FIXED_IN_CODE_F04` | Engine canonical-1.106.0 did not model $7M project cap. Repaired in canonic... |
@@ -179,7 +181,7 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 | **LLS** | `us_ma_film_tax_credit` | US-MA | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 2,370,913.50 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)` | Statutory per-person salary caps ($500k GA/IL, $1M MA) require itemized pay... |
 | **LLS** | `us_nc_film_entertainment_grant` | US-NC | `PRIMARY_AUTHORITY_VERIFIED` | CONDITIONAL_NONDETERMINISTIC | PRICED | 0.00 | 2,370,913.50 | 2,370,913.50 | `OLD_SAVED_RESULT_STALE_PENDING_REGENERATION` | `FIXED_IN_CODE_F03` | Engine canonical-1.106.0 priced North Carolina as guaranteed 25% credit. Re... |
 | **LLS** | `us_nm_film_credit` | US-NM | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 2,342,163.50 | 2,370,913.50 | 28,750.00 | `SCENARIO_SPEND_BASE_VARIANCE` | `SCENARIO_SPEND_BASE_VARIANCE` | Engine generic relocation spend base variance: Independent baseline $2,342,... |
-| **LLS** | `ny_state_film` | US-NY | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 2,458,463.28 | 2,845,096.20 | 386,632.92 | `OPEN_CODE_DEFECT_PENDING_CODEX_REVIEW` | `NA-DEFECT-01` | Engine omitted NY § 24(b)(1) 40% aggregate ATL ceiling, qualifying non-qual... |
+| **LLS** | `ny_state_film` | US-NY | `NOT_ESTABLISHED` | NOT_ESTABLISHED | PRICED | NOT_ESTABLISHED | 2,845,096.20 | N/A | `NOT_ESTABLISHED_EMPIRICAL_GAP` | `NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)` | Statutory NY § 24(b)(1)(B) per-person salary caps ($500k/person, max 2 prod... |
 | **LLS** | `us_ny_post_production_credit` | US-NY | `SOURCE_VERIFIED` | QUALIFIED | UNPRICED_OR_MISSING | 227,930.50 | UNPRICED | N/A | `COMPARISON_NOT_ESTABLISHED` | `COMPARISON_NOT_ESTABLISHED (COMPONENT_ONLY_STRUCTURE)` | Engine did not generate full relocation structure for NY post credit; compo... |
 | **LLS** | `us_or_opif` | US-OR | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 1,896,730.80 | 2,141,309.00 | 244,578.20 | `SCENARIO_SPEND_BASE_VARIANCE` | `SCENARIO_SPEND_BASE_VARIANCE` | Engine generic relocation spend base variance: Independent baseline $1,896,... |
 | **LLS** | `us_ri_film_credit` | US-RI | `SOURCE_VERIFIED` | QUALIFIED | PRICED | 2,845,096.20 | 2,845,096.20 | 0.00 | `OLD_SAVED_RESULT_STALE_PENDING_REGENERATION` | `FIXED_IN_CODE_F04` | Engine canonical-1.106.0 did not model $7M project cap. Repaired in canonic... |
@@ -196,14 +198,55 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 
 ## 4. Detailed Account-Level Reconciliations
 
-### 4.1 New York State Film Production Credit (§ 24) Breakdown & NY Stack (§ 31)
-* **Statutory Scope of Eligible ATL:** Under NY Tax Law § 24(b)(1) (as amended by Part D, Ch. 59, Laws of 2023, effective April 1, 2023), eligible Above-The-Line costs include writers, directors, composers, performers, and up to 2 producers, capped at $500,000 per person and an aggregate limit of 40% of all other qualified production costs (BTL physical + post-production).
-* **The Little Utopia:** BTL+Post = $3,142,324.00; 40% ceiling = $1,256,929.60; author ATL (Script $5,050.00 + Cast $136,115.00) = $141,165.00 <= ceiling and under $500k cap. Allowed ATL = $141,165.00. Expected QPE = **$3,283,489.00**; Expected Credit = **$985,046.70**. Actual Engine Qualified = $4,054,196.00 (gross less unspent contingency, qualifying non-qualifying finance, insurance, and admin lines); Actual Credit = $1,216,258.80. Delta: **+$770,707.00 QPE / +$231,212.10 Credit** (`NA-DEFECT-01`).
-* **F#K Valentine's Day:** BTL+Post = $1,256,776.00; 40% ceiling = $502,710.40; author ATL (Cast) = $1,976,479.00 > ceiling. Allowed ATL = $502,710.40. Expected QPE = **$1,759,486.40**; Expected Credit = **$527,845.92**. Actual Engine Qualified = $3,701,238.00; Actual Credit = $1,110,371.40. Delta: **+$1,941,751.60 QPE / +$582,525.48 Credit** (`NA-DEFECT-01`).
-* **Bad Hombres:** BTL+Post = $749,889.00; 40% ceiling = $299,955.60; author ATL = $1,448,902.00 > ceiling. Allowed ATL = $299,955.60. Expected QPE = **$1,049,844.60**; Expected Credit = **$314,953.38**. Actual Engine Qualified = $2,327,641.00; Actual Credit = $698,292.30. Delta: **+$1,277,796.40 QPE / +$383,338.92 Credit** (`NA-DEFECT-01`).
-* **Lips Like Sugar:** BTL+Post = $5,853,484.00; 40% ceiling = $2,341,393.60; author ATL = $2,859,123.00 > ceiling. Allowed ATL = $2,341,393.60. Expected QPE = **$8,194,877.60**; Expected Credit = **$2,458,463.28**. Actual Engine Qualified = $9,483,654.00; Actual Credit = $2,845,096.20. Delta: **+$1,288,776.40 QPE / +$386,632.92 Credit** (`NA-DEFECT-01`).
-* **Irreducible Empirical Blocker:** On FVD, BH, and LLS, aggregate cast and producer lines exceed $500,000 without itemized general ledger payee contracts. While the 40% aggregate cap is modeled independently, individual per-person caps and the statutory 2-producer limit remain blocked under `MISSING_INDIVIDUAL_TALENT_CONTRACTS`.
-* **New York Multi-Program Stack Reconciliation (§ 24 + § 31 vs. DISC-NY-001):** Under NY Tax Law § 31(2)(a)(1) & 5 NYCRR § 240.3(c), any taxpayer eligible for Section 24 film production credit is statutorily ineligible for Section 31 post-production credit. Stacking `ny_state_film` and `us_ny_post_production_credit` (`stack_ny_prod_post`) is strictly barred at the taxpayer/film level. The independent calculator models expected QPE as $0.00 (`GATE_REJECTED`). However, the engine's rule registry (`backend/app/optimization/stacking_rules.py:617`) contains confirmed defect `DISC-NY-001`, which erroneously permits distinct-cost pairing (`same_cost_prohibited_distinct_costs_allowed`). In saved generation `canonical-1.106.0`, the engine did not generate a stack candidate for these projects (`STACK_NOT_GENERATED`). A missing saved candidate alone CANNOT establish `VERIFIED_AGREEMENT`, especially when the underlying engine rule is defective. The stack is reclassified as **`COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)`**, pending canonical repair of `DISC-NY-001` in `stacking_rules.py` by Codex.
+### 4.1 New York State Film Production Credit (§ 24) Breakdown, Post (§ 31*2) & NY Stack
+* **Statutory Authority & Effective Dates:**
+  - **NY Tax Law § 24 (Film Production Credit):** As amended by Part D, Ch. 59, Laws of 2023 (enacted May 3, 2023; effective April 1, 2023 for initial applications filed on or after April 1, 2023). Base credit rate is 30% (increased from 25% under pre-2023 historical law).
+  - **Historical vs. Current-Law ATL Doctrine:** Prior to April 1, 2023, Above-The-Line (ATL) costs were strictly excluded (0% eligible). Under current law (§ 24(b)(1)), eligible Above-The-Line costs include writers, directors, composers, performers (actors, excluding background actors without scripted lines), and up to two (2) individual producers.
+  - **Statutory ATL Ceilings:** (1) Individual salary cap of $500,000 per person (§ 24(b)(1)(B)); (2) Headcount cap of maximum 2 producers; and (3) Aggregate ATL ceiling of not more than 40% of all other qualified production costs (BTL physical + post-production) (§ 24(b)(1)).
+* **The Little Utopia (LU) — Exactly Reconciled:**
+  - BTL Physical Production ($2,781,775) + BTL Travel/Living ($82,347) + On-Set Sound ($69,532) + Post-Production ($208,670) = **$3,142,324.00** qualified other production costs.
+  - 40% Statutory Aggregate Ceiling: $3,142,324.00 × 0.40 = **$1,256,929.60**.
+  - Creative ATL Incurred: Script Clearances ($5,050.00) + Cast ($136,115.00) = **$141,165.00**. All payees are <= $500,000, 0 producers. Since $141,165.00 <= $1,256,929.60, 100% qualifies.
+  - Independent Qualified Production Expenditure (QPE): $3,142,324.00 + $141,165.00 = **$3,283,489.00**.
+  - Independent Expected Base Incentive (30%): $3,283,489.00 × 0.30 = **$985,046.70**.
+  - Engine Saved Actual (`canonical-1.106.0`, Result ID `e2300b8c-5f80-4d8c-bd5b-b99fbbbf1335`): Qualified Spend = $4,054,196.00 (gross $4,364,393 less unspent contingency $310,197, qualifying non-qualifying finance, insurance, and admin costs); Actual Incentive = $1,216,258.80.
+  - Exact Verified Delta: **+$770,707.00 QPE / +$231,212.10 Credit** (`NA-DEFECT-01`, residual = $0.00).
+* **F#K Valentine's Day (FVD) — Supported Statutory Bounds:**
+  - BTL Physical Production ($1,114,318) + Travel ($46,000) + On-Set Sound ($26,458) + Post ($70,000) = **$1,256,776.00** BTL+Post baseline.
+  - 40% Statutory Ceiling: $1,256,776.00 × 0.40 = **$502,710.40**.
+  - Cast ($1,976,479) and Producer accounts exceed $500k without general ledger payee contracts. Under AUDIT INPUT EVIDENCE GATE Rule 5: Cannot apply per-person limits to aggregate account totals.
+  - Disposition: **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`**.
+  - Supported Bounds: Min QPE = **$1,256,776.00** [Credit: **$377,032.80**] (zero ATL) to Max QPE = **$1,759,486.40** [Credit: **$527,845.92**] (40% ceiling).
+  - Engine Comparison: Engine qualified $3,701,238.00 (Credit: $1,110,371.40). Even at the statutory upper bound, engine overstates credit by at least **+$582,525.48**, confirming `NA-DEFECT-01`.
+* **Bad Hombres (BH) — Supported Statutory Bounds:**
+  - BTL Physical Production ($656,044) + Travel ($27,000) + On-Set Sound ($16,845) + Post ($50,000) = **$749,889.00** BTL+Post baseline.
+  - 40% Statutory Ceiling: $749,889.00 × 0.40 = **$299,955.60**.
+  - Cast ($974,371) exceeds $500k without payee schedule. Disposition: **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`**.
+  - Supported Bounds: Min QPE = **$749,889.00** [Credit: **$224,966.70**] to Max QPE = **$1,049,844.60** [Credit: **$314,953.38**] (40% ceiling).
+  - Engine Comparison: Engine qualified $2,327,641.00 (Credit: $698,292.30). Even at the statutory upper bound, engine overstates credit by at least **+$383,338.92**, confirming `NA-DEFECT-01`.
+* **Lips Like Sugar (LLS) — Supported Statutory Bounds:**
+  - BTL Physical Production ($5,166,417) + Travel ($200,000) + On-Set Sound ($87,067) + Post ($400,000) = **$5,853,484.00** BTL+Post baseline (financing accounts 6500 $450k, 6600 $250k, 6700 $1M properly excluded under NY-A01).
+  - 40% Statutory Ceiling: $5,853,484.00 × 0.40 = **$2,341,393.60**.
+  - Cast ($1,675,000) and Producers ($1,184,123) exceed $500k without contracts. Disposition: **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`**.
+  - Supported Bounds: Min QPE = **$5,853,484.00** [Credit: **$1,756,045.20**] to Max QPE = **$8,194,877.60** [Credit: **$2,458,463.28**] (40% ceiling).
+  - Engine Comparison: Engine qualified $9,483,654.00 (Credit: $2,845,096.20). Even at the statutory upper bound, engine overstates credit by at least **+$386,632.92**, confirming `NA-DEFECT-01`.
+* **New York Post-Production Credit (§ 31*2) Gateways & Rates:**
+  - **Statute Reference:** NY Tax Law § 31*2 (Film Post-Production Credit, revision 2025-07-11; distinct from plain § 31 Excelsior Jobs).
+  - **Gateways (§ 31*2(a)(2) & (3)):** General Post Gateway requires qualified post costs at a NY Qualified Post-Production Facility (QPF) equal to the lesser of $1,000,000 or 75% of total worldwide post spend. VFX/Animation Gateway requires the lesser of $500,000 or 10% of total worldwide VFX/animation spend. Engine source-config fixed $1M missed both branches (`DISC-NY-002`).
+  - **Rates:** 30% MCTD, 35% Upstate (+5% facility differential), plus +10% eligible county post labor uplift. Flat 35% in engine config confirmed defective (`DISC-NY-003`). Saved DB contains only component-relocation candidates, no full relocation structures (`COMPARISON_NOT_ESTABLISHED (COMPONENT_ONLY_STRUCTURE)`).
+  - **On-Set Sound Exclusion (NY-A03):** Production sound (LU $69,532, FVD $26,458, BH $16,845, LLS $87,067) is BTL physical production, NOT post-production.
+* **Upstate Production Credit Uplift (§ 24(a)(5)):**
+  - 53 upstate counties; Dutchess, Orange, and Putnam ARE statutorily included in the § 24(a)(5) upstate production credit county list (unlike post MCTD boundary).
+  - +10% credit uplift (40% total).
+  - Labor: NY resident upstate labor qualifies.
+  - Non-labor: Qualifies ONLY IF more than 50% (>50%) of principal photography shoot days occur upstate.
+  - ATL is statutorily excluded from the +10% uplift (receives base 30% only).
+  - Status: County shoot day logs are absent from budget records, keeping upstate uplift as an explicit conditional planning scenario (`CONDITIONAL_UPSTATE_EXPANSION`).
+* **New York Multi-Program Stack Reconciliation (§ 24 + § 31*2 vs. DISC-NY-001):**
+  - Absolute taxpayer/film-level bar under NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c): Any taxpayer eligible for Section 24 film production credit is statutorily ineligible for Section 31*2 post-production credit for the same film.
+  - Independent calculator models expected QPE as $0.00 (`GATE_REJECTED`).
+  - Confirmed engine defect `DISC-NY-001` in `backend/app/optimization/stacking_rules.py:617` allows distinct costs (`same_cost_prohibited_distinct_costs_allowed`).
+  - Saved DB did not generate stack candidate (`STACK_NOT_GENERATED`). Reclassified as **`COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)`**, pending canonical repair by Codex.
 
 ### 4.2 California Film & TV Tax Credit (Program 4.0 BTL) Breakdown
 * **FVD Reconciliation ($603,665.65 vs $1,295,433.30):**
@@ -223,9 +266,20 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 
 ## 5. Proposed Canonical Repairs for Codex Review
 
-1. **Implement `NY_ATL_40_PERCENT_RULE` in `program_spend_rules.py`:** Restrict qualifying ATL costs to $\le 0.40 \times (\text{BTL} + \text{Post})$ and enforce statutory $500k/person and max 2 producer caps.
-2. **Refine California Program 4.0 BTL Spend Classification:** Ensure `ca_film_30` in canonical code excludes general administration, insurance, and completion bond from the qualified BTL base.
-3. **Authorize Canonical Regeneration:** Run authorized regeneration to propagate commits `486bd15` (F-01..F-07) and `6cd2bbe` into served database state.
+1. **Implement `NY_ATL_40_PERCENT_RULE` in `program_spend_rules.py` (`NA-DEFECT-01`):**
+   - Restrict qualifying Above-The-Line costs to $\le 0.40 \times (\text{BTL} + \text{Post})$.
+   - Enforce statutory $500,000 per-person salary cap on qualifying ATL roles (writers, directors, composers, performers, and max 2 producers).
+   - Exclude background actors without scripted lines from qualifying ATL.
+   - Exclude non-qualifying finance fees, completion bond, corporate insurance, and general administrative overhead from qualified production costs.
+2. **Repair Stacking Rule Conflict in `stacking_rules.py:617` (`DISC-NY-001`):**
+   - Change `stack_ny_prod_post` relationship from `same_cost_prohibited_distinct_costs_allowed` to `mutually_exclusive`, implementing statutory taxpayer/film-level bar of NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c).
+3. **Implement Dual Post-Production Gateways in `program_spend_rules.py` (`DISC-NY-002`):**
+   - General Post: Lesser of $1,000,000 or 75% of worldwide post spend.
+   - VFX & Animation: Lesser of $500,000 or 10% of worldwide VFX/animation spend.
+4. **Refine Post Rates & County Uplifts (`DISC-NY-003`):**
+   - Model MCTD (30%) vs Upstate facility (35%) geographic boundary and +10% eligible county post labor uplift.
+5. **Refine California Program 4.0 BTL Spend Classification:** Ensure `ca_film_30` in canonical code excludes general administration, insurance, and completion bond from the qualified BTL base.
+6. **Authorize Canonical Regeneration:** Run authorized regeneration to propagate commits `486bd15` (F-01..F-07), `6cd2bbe`, and NY repairs into served database state.
 
 ---
 

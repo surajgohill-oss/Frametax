@@ -910,6 +910,26 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 if abs(expected_inc - 985046.7) > 0.01:
                     errors.append(f"LU ny_state_film expected_base_incentive_usd ({expected_inc}) != 985046.7")
 
+            # 1b. FVD, BH, LLS NY statutory bounds and NOT_ESTABLISHED check (Rule 5)
+            for p, exp_min, exp_max in (
+                ('FVD', '1,256,776.00', '1,759,486.40'),
+                ('BH', '749,889.00', '1,049,844.60'),
+                ('LLS', '5,853,484.00', '8,194,877.60'),
+            ):
+                p_ny = next((r for r in reader if r.get('project_code') == p and r.get('program_slug') == 'ny_state_film'), None)
+                if not p_ny:
+                    errors.append(f"Matrix missing {p} ny_state_film row.")
+                else:
+                    if p_ny.get('expected_qpe_usd') != 'NOT_ESTABLISHED':
+                        errors.append(f"{p} ny_state_film expected_qpe_usd must be NOT_ESTABLISHED under Rule 5, got {p_ny.get('expected_qpe_usd')}")
+                    if p_ny.get('remediation_code_status') != 'NOT_ESTABLISHED_EMPIRICAL_GAP':
+                        errors.append(f"{p} ny_state_film status must be NOT_ESTABLISHED_EMPIRICAL_GAP, got {p_ny.get('remediation_code_status')}")
+                    if p_ny.get('defect_or_disposition_id') != 'NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)':
+                        errors.append(f"{p} ny_state_film disposition must be NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS), got {p_ny.get('defect_or_disposition_id')}")
+                    rca = p_ny.get('root_cause_analysis', '')
+                    if exp_min not in rca or exp_max not in rca:
+                        errors.append(f"{p} ny_state_film root cause missing supported bounds [{exp_min} - {exp_max}]: {rca}")
+
             # 2. Evidenced dispositions for missing candidates & NY stack check
             for idx, r in enumerate(reader, 1):
                 p_code = r.get('project_code')
