@@ -60,20 +60,20 @@ All calculations and rule analyses are grounded in dated primary legal authoriti
   - **Current Law (April 1, 2023+):** Base credit rate is 30%. Eligible Above-The-Line wages are admitted subject to strict individual and aggregate caps (§ 24(b)(1)).
 * **Eligible Above-The-Line Roles (§ 24(b)(1)):**
   - Wages paid to writers, directors, composers, performers (actors, excluding background actors without scripted lines), and up to two (2) individual producers.
-* **Statutory ATL Ceilings:**
-  - **Individual Salary Cap (§ 24(b)(1)(B)):** Maximum of $500,000 in qualifying wages per individual person.
+* **Statutory ATL Ceilings & May 2023 Guidelines:**
+  - **Statutory 40% Aggregate ATL Ceiling (§ 24(b)(1)):** The aggregate amount of all qualifying above-the-line costs shall **not exceed forty percent (40%) of the sum of all other qualified production costs** (i.e., qualified BTL physical production + qualified post-production costs).
   - **Producer Headcount Limit (§ 24(b)(1)):** Maximum of two (2) individual producers per qualified production.
-  - **Aggregate ATL Ceiling (§ 24(b)(1)):** The aggregate amount of all qualifying above-the-line costs shall **not exceed forty percent (40%) of the sum of all other qualified production costs** (i.e., qualified BTL physical production + qualified post-production costs).
+  - **Individual Salary Cap & Temporal Alignment:** The official May 2023 ESD Film Credit Guidelines (page 2) specify a $500,000 per-person salary cap on qualifying individual ATL talent. In accordance with Codex delta review, this administrative cap requires temporal and evidentiary alignment: applying a per-person cap to aggregate topsheet accounts without individual payee contracts is an unevidenced assumption (Rule 5). Actual legal QPE remains `NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)` pending individual payee contracts, bounded by the 0% ATL floor and 40% aggregate ATL ceiling.
 * **Statutory Non-Qualifying Exclusions (§ 24(a)(2)):**
   - Financing costs, interest, bridge loan fees, completion bond fees, corporate insurance premiums, and general corporate administration are statutorily excluded.
 * **Travel and Living Expenses (5 NYCRR § 170.2):**
   - Under 5 NYCRR § 170.2(b), Below-The-Line travel and living expenses qualify ONLY IF incurred within New York State directly for production crew lodging, meals, and local ground transportation. Airfares originating from or terminating outside New York State, foreign travel, and all Above-The-Line travel are strictly non-qualifying.
-* **Upstate Production Credit Uplift (§ 24(a)(5)):**
+* **Upstate Production Credit Uplift (§ 24(a)(5)) vs. Post Uplift (§ 31*2(a)(6)):**
   - **County Definition:** 53 upstate counties. In accordance with primary text and adjudication finding `NY-A05`, **Dutchess, Orange, and Putnam counties ARE statutorily included** in the upstate production credit county list (unlike the MCTD post-production boundary).
   - **Uplift Rate:** Additional +10% credit (40% total).
-  - **Labor Limb:** Wages paid to New York residents for work performed in upstate counties qualify for the +10% uplift.
-  - **Non-Labor Limb:** Non-labor qualified costs incurred in upstate counties qualify for the +10% uplift **ONLY IF more than fifty percent (> 50%) of principal photography shoot days** occur in upstate counties.
-  - **ATL Exclusion:** ATL wages are statutorily excluded from the +10% uplift (they remain capped at the 30% base rate).
+  - **Labor Limb:** Under NY Tax Law § 24(a)(5), qualifying labor expenses (including eligible Above-The-Line wages within the 40% aggregate ATL ceiling and up to 2 credited producers) qualify for the +10% uplift if services are performed in an eligible upstate county. Blanket ATL exclusion from the production uplift is legally disproved by dated statutory text and ESD guidelines. By contrast, under NY Tax Law § 31*2(a)(6) (the post-production credit upstate uplift), ATL roles are expressly excluded from the post uplift.
+  - **Non-Labor Limb:** Non-labor qualified costs incurred in upstate counties qualify for the § 24(a)(5) +10% uplift **ONLY IF more than fifty percent (> 50%) of principal photography shoot days** occur in upstate counties.
+  - **Status:** County shoot day logs and territorial payroll ledgers are absent from budget records, keeping upstate uplift as an explicit conditional planning scenario (`CONDITIONAL_UPSTATE_EXPANSION`).
 
 ### 2.2 NY Tax Law § 31*2 (Empire State Film Post-Production Credit)
 * **Controlling Text:** NY Tax Law § 31*2 (revision 2025-07-11; distinct from plain § 31 Excelsior Jobs). Regulations: 5 NYCRR Part 240.
@@ -409,13 +409,19 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Exact Producer Input Needed:** Producer schedule of individual talent earnings listing name, role (writer/director/performer/producer), and total compensation per person; designation of up to 2 credited individual producers qualifying under § 24(b)(1).
 * **Comparison Matching:** Compared against identical full relocation allocations for New York State Film Tax Credit: FVD Structure `ae10b2e7-ed52-4ebe-894a-b9d6756ced32` / Result `c3b8ad45-5c1e-47ed-b182-c9106f668b2a`; BH Structure `8558365f-6a68-45a2-931e-4f294ddf20c9` / Result `f3513411-547c-41ca-894d-e1ef36d856b7`; LLS Structure `c135df1f-9a8e-4bdf-b25e-bd6af29a608b` / Result `5557ceb5-d3f5-4b42-85df-d7369d72a9bd`.
 
-### 6.3 Blocker 3: Canadian CAVCO Domestic Certification Gaps (CPTC & OFTTC)
+### 6.3 Blocker 3: Canadian CAVCO Domestic Certification Gaps (CPTC & OFTTC) & Assistance Deductions
 * **Blocker ID:** `BLOCKER-03-CAVCO-DOMESTIC-CERTIFICATION-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** CAVCO Part A/B certification, Canadian copyright ownership documentation, and key creative point tally (>= 6/10 CAVCO points) under Income Tax Act § 125.4 and Ontario Taxation Act § 43.
-* **Supported Scenarios & Bounds:**
-  - Non-Certified Scenario: Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to labour expenditure proofs.
-  - Certified Domestic Scenario: 25% federal labour credit (CPTC) + 35% Ontario labour credit (OFTTC) subject to 60% CAVCO cost cap.
+* **Statutory Assistance Deduction Mechanism:** Under ITA § 125.4(1), Qualified Labour Expenditure (QLE) cannot exceed 60% of total production costs *net of assistance*. Provincial tax credits (such as Ontario OFTTC at 35% of eligible Ontario labor) constitute government assistance, reducing the net production cost base. In the domestic certified scenario, the maximum CPTC QLE cap satisfies QLE <= 0.60 × (Production Cost - 0.35 × Labour), which bounds CPTC QLE at approximately 49.59% of gross spend at maximum labor deployment.
+* **Supported Scenarios & Bounds (from Original Budgets):**
+  - Non-Certified Scenario: Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to Canadian resident labour expenditure proofs.
+  - Certified Domestic Scenario (CPTC 25% + OFTTC 35% with Assistance Deduction):
+    * LU (Gross $4,364,395.00): Max CPTC QLE = **$2,164,162.81**; OFTTC = **$757,456.98**; CPTC = **$541,040.70**; Combined domestic stack = **$1,298,497.68**.
+    * FVD (Gross $4,517,687.00): Max CPTC QLE = **$2,240,175.37**; OFTTC = **$784,061.38**; CPTC = **$560,043.84**; Combined domestic stack = **$1,344,105.22**.
+    * BH (Gross $2,482,023.00): Max CPTC QLE = **$1,230,755.21**; OFTTC = **$430,764.32**; CPTC = **$307,688.80**; Combined domestic stack = **$738,453.12**.
+    * LLS (Gross $11,947,562.00): Max CPTC QLE = **$5,924,410.91**; OFTTC = **$2,073,543.82**; CPTC = **$1,481,102.73**; Combined domestic stack = **$3,554,646.55**.
+* **Lawful vs Unlawful Stacking Analysis:** `stack_on_cptc_ofttc` is a lawful domestic stack (subject to CAVCO and assistance deduction). By contrast, `stack_qc_cptc_pstc` is an unlawful cross-regime stack: federal CPTC is restricted to CAVCO domestic content, whereas Quebec PSTC is a service production credit; they cannot legally combine on the same expenditure pool.
 * **Expected Engine Behavior:** Treat missing certification as unknown (`NOT_ESTABLISHED`) rather than hard gate rejection or unearned qualification; surface CAVCO status toggle in Overview/Inspector.
 * **Exact Producer Input Needed:** Producer input confirming CAVCO certification status (Certified vs Production Services Only) and creative point count.
 * **Comparison Matching:** Reconciled across 40 evaluation rows on `ca_federal_cptc`, `on_ofttc`, and domestic stacks (`stack_on_cptc_ofttc`, `stack_qc_cptc_pstc`, `stack_on_ofttc_ocase`).
@@ -424,9 +430,20 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-04-CANADIAN-QLE-PAYROLL-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** Itemized Canadian payroll general ledger with CAVCO individual residency declarations confirming Canadian citizenship / permanent residency for BTL crew and ATL talent under ITA § 125.5.
-* **Supported Scenarios & Bounds:**
-  - 0% Verified Labour Scenario: $0.00 verified credit under strict evidence rules.
-  - Indicative Relocation Scenario: Range between 40% and 60% labour component of physical BTL spend, bounded by statutory 16% PSTC / 21.5% OPSTC rates.
+* **Retraction of Unsupported 40%–60% Labor Assumption:** Arbitrary default labor ratios (including any 40%–60% heuristic) are formally rejected. In accordance with Codex delta review and statutory rules, actual QLE requires itemized payroll records; planning scenarios must be independently bounded from original budget accounts without invented ratios.
+* **Supported Scenarios & Bounds (from Original Budgets):**
+  - Incurred Evidence Floor: **$0.00** verified credit under strict evidence rules (`NOT_ESTABLISHED (MISSING_PAYROLL_SCHEDULE)`).
+  - Direct Line Labor Scenario (Identifiable Crew/Labor Accounts in Original Movie Magic Budgets):
+    * LU (Direct Labor $464,916.00: Production Staff $321,594 + Extras $21,981 + Makeup/Hair $51,809 + Sound $69,532): Federal PSTC (16%) = **$74,386.56**; Ontario OPSTC (21.5%) = **$99,956.94**; Combined Lawful Service Stack (37.5%) = **$174,343.50**.
+    * FVD (Direct Labor $227,641.00: Production Staff $168,353 + Makeup/Hair $32,830 + Sound $26,458): Federal PSTC (16%) = **$36,422.56**; Ontario OPSTC (21.5%) = **$48,942.82**; Combined Lawful Service Stack (37.5%) = **$85,365.38**.
+    * BH (Direct Labor $167,190.00: Production Staff $114,906 + Extras $6,235 + Makeup/Hair $29,204 + Sound $16,845): Federal PSTC (16%) = **$26,750.40**; Ontario OPSTC (21.5%) = **$35,945.85**; Combined Lawful Service Stack (37.5%) = **$62,696.25**.
+    * LLS (Direct Labor $1,998,678.00: Production Staff $608,606 + Background $203,715 + Makeup/Hair $76,175 + Sound $87,067 + BTL Fringes $1,023,115): Federal PSTC (16%) = **$319,788.48**; Ontario OPSTC (21.5%) = **$429,715.77**; Combined Lawful Service Stack (37.5%) = **$749,504.25**.
+  - Maximum Theoretical Physical BTL Ceiling (100% of Physical Production BTL Deployed to Canadian Resident Labor):
+    * LU ($2,642,502.00 BTL): PSTC (16%) = **$422,800.32**; OPSTC (21.5%) = **$568,137.93**; Combined Stack (37.5%) = **$990,938.25**.
+    * FVD ($1,139,276.00 BTL): PSTC (16%) = **$182,284.16**; OPSTC (21.5%) = **$244,944.34**; Combined Stack (37.5%) = **$427,228.50**.
+    * BH ($656,044.00 BTL): PSTC (16%) = **$104,967.04**; OPSTC (21.5%) = **$141,049.46**; Combined Stack (37.5%) = **$246,016.50**.
+    * LLS ($5,166,417.00 BTL): PSTC (16%) = **$826,626.72**; OPSTC (21.5%) = **$1,110,779.66**; Combined Stack (37.5%) = **$1,937,406.38**.
+* **Lawful Stacking Analysis:** `stack_on_opstc_ocase` (OPSTC on labor + OCASE on computer animation/VFX) and `stack_bc_dave_pstc` (BC PSTC on labor + BC DAVE on digital animation/VFX) are lawful service stacks with no statutory prohibition against stacking.
 * **Expected Engine Behavior:** Retract arbitrary 50% heuristic; flag `MISSING_PAYROLL_SCHEDULE` until resident labour is itemized.
 * **Exact Producer Input Needed:** Producer upload or entry of Canadian resident payroll ledger or certified labour ratio.
 * **Comparison Matching:** Reconciled across 28 rows on Canadian labour programs and stacks; verified zero heuristic substitution under Rule 2.
