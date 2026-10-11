@@ -1,0 +1,53 @@
+Two-movable-component evaluation slowdown: bounded cardinality / plan evidence, 2026-10-11
+Budget: CA-ON home; director 400k, crew 1.5M, equipment 600k, post production 300k, VFX 300k (the budget that exceeded 240 s). Isolated frametax2_pytest, rolled back.
+Tool: backend/tests/heavy_synthetic/diagnose_two_component_slowdown.py (aborts the evaluation at a CPU budget; SIGVTALRM so the outer perl alarm is untouched).
+
+== run A (first bounded run, 125 s wall, abort at next statement): statements=37 db_seconds=0.4; faulthandler stack samples every 25 s were all inside evaluate_project -> _best_first_bound_search_shared / _hy_try_combination (pure Python)
+
+== run B (cProfile, 35 s CPU budget, no memo)
+DIAG aborted='CPU budget of 35s reached' statements=36 db_seconds=0.6 wall_seconds=43.9
+DIAG CPROFILE by own time (ncalls = cardinality):
+         45953075 function calls (45710758 primitive calls) in 41.872 seconds
+   Ordered by: internal time
+   List reduced from 1710 to 14 due to restriction <14>
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    40423    2.939    0.000   41.299    0.001 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_evaluation.py:7290(_hy_try_combination)
+   578145    2.271    0.000    3.514    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_program_identity.py:116(_aliases_for_uncached)
+  6308290    1.542    0.000    1.542    0.000 {method 'get' of 'dict' objects}
+    39864    1.394    0.000    9.566    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/calculators/structural_archetype_generator.py:310(_generate_structural_ca
+  1157042    1.253    0.000    1.253    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/candidate_aggregation.py:49(<genexpr>)
+    39865    1.166    0.000    5.640    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_evaluation.py:1380(_build_hybrid_route)
+1697650/1458380    1.075    0.000    2.949    0.000 {built-in method builtins.sorted}
+    40342    1.041    0.000    3.378    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/calculators/production_allocation.py:317(derive_account_allocation)
+    76316    1.032    0.000    1.032    0.000 /opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py:205(iterencode)
+   879729    0.972    0.000    1.860    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1271(set)
+    80498    0.779    0.000   11.771    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_evaluation.py:4458(add)
+    39864    0.696    0.000    0.696    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_evaluation.py:1840(_hy_result_trace_extras)
+  1068877    0.660    0.000    0.660    0.000 {built-in method builtins.round}
+
+== run C (same, inside alias_memo_scope, as the bounded regeneration wrapper runs)
+DIAG aborted='CPU budget of 35s reached' statements=37 db_seconds=1.2 wall_seconds=47.0
+DIAG CPROFILE by own time (ncalls = cardinality):
+         52762672 function calls (52426933 primitive calls) in 44.766 seconds
+   Ordered by: internal time
+   List reduced from 1722 to 14 due to restriction <14>
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    56217    4.372    0.000   43.273    0.001 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_evaluation.py:7290(_hy_try_combination)
+   111887    1.881    0.000    1.881    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:201(__init__)
+  7467772    1.657    0.000    1.657    0.000 {method 'get' of 'dict' objects}
+    55440    1.557    0.000    5.862    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/calculators/structural_archetype_generator.py:310(_generate_structural_ca
+    55440    1.383    0.000    5.333    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/services/canonical_evaluation.py:1380(_build_hybrid_route)
+    55917    1.235    0.000    2.605    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/app/calculators/production_allocation.py:317(derive_account_allocation)
+  1220769    1.183    0.000    2.262    0.000 /Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1271(set)
+
+== process runs that did not abort (each stopped by the outer perl alarm, no processes or sessions left): two runs whose abort exception was swallowed or never checked (a plain Exception subclass; a statement-count check that pure compute never reaches).
+
+== run D (the ORIGINAL failing budget, ONE evaluation inside alias_memo_scope, no profiler, 420 s bound, 540 s process alarm)
+PASSED in 251.3 s: tests/heavy_synthetic/check_canada_labour_base_and_uplifts.py::test_quebec_vfx_bound_on_the_original_two_movable_component_budget_runs_inside_the_regeneration_memo_scope
+(the same budget exceeded the 240 s evaluation bound without the memo scope).
+
+== Conclusion (evidence, not hypothesis)
+- The slowdown is CPU-bound enumeration in the per-combination hybrid search (_hy_try_combination), not the database: 36-37 statements and 0.4-1.2 s of database time in 44-125 s of wall time; no ungranted locks (earlier stall) and every periodic stack sample inside _best_first_bound_search_shared / _hy_try_combination.
+- Cardinality: 40,423 combinations in 35 s of CPU under the profiler without the memo scope (about 1.0 ms and 1,100 Python calls per combination); 56,217 with it (+39%). The full combination count of this budget was not measured (the runs were aborted); one unprofiled evaluation takes about 251 s inside the memo scope.
+- The stale-planner-statistics hypothesis is refuted for this slowdown (the earlier stall was a single long SELECT on a transaction that had accumulated nine evaluations; that is a separate, now avoided, pattern).
+- Correction applied: heavy checks that evaluate large budgets run inside alias_memo_scope(), exactly as the bounded regeneration wrapper does. No engine change was made for performance.

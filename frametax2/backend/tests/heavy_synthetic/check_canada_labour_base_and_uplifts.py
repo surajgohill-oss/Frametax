@@ -106,3 +106,19 @@ async def test_quebec_vfx_labour_enhancement_prices_on_the_evidenced_labour_port
         await _evaluate(db, pid)
         qc = await _entry(db, pid, "ca_qc_pstc")
         assert qc["confirmed_incentive_floor_usd"] == pytest.approx(0.25 * qc["qpe_usd"] + 0.16 * 195_000.0) and qc["ceiling_requires_confirmation"] is False
+
+
+async def test_quebec_vfx_bound_on_the_original_two_movable_component_budget_runs_inside_the_regeneration_memo_scope():
+    """The ORIGINAL failing shape (director, crew, equipment, 300,000 post AND 300,000 VFX: two movable components). Cause established in
+    docs/validation/diagnostics/two_component_slowdown_20261011.txt: the evaluation is CPU-bound (37 database statements, about 1 s of database
+    time) in the per-combination hybrid search, and running it inside canonical_program_identity.alias_memo_scope() -- as the bounded regeneration
+    wrapper does -- raised throughput by 39% (56,217 vs 40,423 combinations in the same CPU budget). This node runs ONE evaluation of that budget
+    in that scope with a 420 s bound; exceeding the bound FAILS the check (it is never converted into a pass)."""
+    from app.services.canonical_program_identity import alias_memo_scope
+    async with isolated_session() as db:
+        pid = await create_synthetic_project(db, lines=LINES + (("6100", "VFX", "vfx", "post", 300_000.0),), home_code="CA-ON")
+        with alias_memo_scope():
+            await asyncio.wait_for(ce.evaluate_project(db, pid), 420)
+        qc = await _entry(db, pid, "ca_qc_pstc")
+        assert qc["confirmed_incentive_floor_usd"] == pytest.approx(0.25 * qc["qpe_usd"])
+        assert qc["maximum_supported_incentive_usd"] == pytest.approx(0.25 * qc["qpe_usd"] + 0.16 * 300_000.0) and qc["ceiling_requires_confirmation"] is True
