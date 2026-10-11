@@ -1,0 +1,41 @@
+== ps
+  PID  PPID ELAPSED      TIME STAT  %CPU COMMAND
+19283 19282   08:08   1:51.30 S      0.2 /opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -m pytest tests/heavy_synthetic/check_canada_labour
+19289  2673   08:08   3:54.16 Rs     5.0 postgres: frametax frametax2_pytest 127.0.0.1(61551) SELECT  
+== pg_stat_activity (frametax2_pytest)
+-[ RECORD 1 ]---+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pid             | 19289
+state           | active
+wait_event_type | 
+wait_event      | 
+conn_age        | 00:08:08.734499
+xact_age        | 00:07:58.644228
+query_age       | 00:01:55.060997
+query           | SELECT production_structures.project_id, production_structures.name, production_structures.description, production_structures.status, production_structures.jurisdiction_allocations, production_structures.claimed_program_ids, production_structures.talent_arrangements, production_structures.assumed_jurisdiction_spend_pcts, production_structures.uses_georgia_logo, production_structures.is_official_coproduction, production_structures.coproduction_treaty, production_structures.notes, production_structures.id, production_structures.created_at, production_structures.updated_at, structure_calculation_results.structure_id, structure_calculation_results.engine_version, structure_calculation_results.structure_type, structure_calculation_results.generation_ordinal, structure_calculation_results.economic_identity, structure_calculation_results.total_budget_usd, structure_calculation_results.rebase_btl_usd, structure_calculation_results.fixed_atl_usd, structure_calculation_results.total_qualifying_spend_usd, structure_cal
+
+== locks held/waited by that pid
+   locktype    |       mode       | granted | count 
+---------------+------------------+---------+-------
+ relation      | AccessShareLock  | t       |    94
+ relation      | RowExclusiveLock | t       |    14
+ relation      | RowShareLock     | t       |    23
+ transactionid | ExclusiveLock    | t       |     1
+ virtualxid    | ExclusiveLock    | t       |     1
+(5 rows)
+
+== blocked queries
+ blocked 
+---------
+       0
+(1 row)
+
+== stopped only pid 19283 (pytest); no server touched
+
+== second run (restructured, bounded), recorded 2026-10-11
+run 2 ended by itself: exit 1, 343.3 s total, "1 failed, 1 passed".
+last COMPLETED test : test_labour_bases_and_every_uplift_price_when_their_base_is_stated_and_stay_bounds_when_not (PASSED, 53.1 s)
+STALLED node        : test_quebec_vfx_labour_enhancement_prices_on_the_evidenced_labour_portion_only (284.8 s) -- the first
+                      ce.evaluate_project on the CA-ON budget WITH a VFX line hit the 240 s per-evaluation bound (asyncio.TimeoutError) while inside
+                      _coproduction_facts / the hybrid component search. VFX makes the evaluator enumerate ~174k hybrid candidates.
+run 1 (killed by me): single SELECT on production_structures running 1 m 55 s, state active, no wait event, 0 ungranted locks -> COMPUTING, not blocked.
+no process or database session remains from either run (see counts above).

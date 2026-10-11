@@ -7115,24 +7115,40 @@ CA_MB_DOCTRINE = register(DoctrineRecord(
               "Bonus 5%; and Rural and Northern Bonus of 5%, increasing "
               "the value up to 65% on eligible Manitoba expenditures.' "
               "Confirms catalog's 45% base, corrects a massively "
-              "undercounted ceiling (catalog implied 45% was the max).",
-    source_ref="thereactionlab.com+kpmg-manitoba-2026-budget",
-    tiers=(DoctrineRateTier(tier_id="ca-mb-base-45", rate=0.45, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="ca-mb-ceiling-65", rate=0.65, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="ca-mb-frequent-producer-rural-bonuses",
-                                 description="+10% Frequent Filming + 5% "
-                                             "Manitoba Producer + 5% Rural/"
-                                             "Northern -- none pre-"
-                                             "evaluable without production-"
-                                             "history/producer-residency/"
-                                             "shoot-location facts",
-                                 quote="Frequent Filming Bonus 10%; "
-                                       "Manitoba Producer Bonus 5%; and "
-                                       "Rural and Northern Bonus of 5% "
-                                       "(thereactionlab.com)",
-                                 kind="discretionary_band"),)),),
+              "undercounted ceiling (catalog implied 45% was the max). Official re-read 2026-10-11 (Manitoba Film & Music, Manitoba Finance): the "
+              "45% is the cost-of-salaries credit on eligible Manitoba LABOUR; bonuses +10% (third film in two years), +5% (Manitoba co-producer), "
+              "+5% (at least 50% of production days 35 km or more from Winnipeg centre) bring it to 65% of that labour.",
+    source_ref="thereactionlab.com+kpmg-manitoba-2026-budget+mbfilmmusic.ca+manitoba.ca-finance",
+    tiers=(DoctrineRateTier(
+        tier_id="ca-mb-base-45", rate=0.45, is_band_ceiling=False,
+        conditions=(
+            RateCondition(
+                condition_id="ca-mb-cost-of-salaries-labour-base",
+                description="The 45% credit is the Manitoba COST-OF-SALARIES credit: 45% of eligible Manitoba LABOUR (salaries paid to Manitoba "
+                            "residents and qualifying non-resident employees), not of all Manitoba spend (Manitoba Film & Music and Manitoba Finance, "
+                            "retrieved 2026-10-11). The rate applies to the segment's own qualifying labour-category lines. The separate "
+                            "cost-of-production alternative (30% of all eligible Manitoba production expenditures, +8% bonus) is a producer election "
+                            "this engine does not compare in dollars.",
+                quote="45% of eligible Manitoba labour; bonuses can raise it to 65% (mbfilmmusic.ca Manitoba Cost-of-Salaries Tax Credit)",
+                kind="project_fact_dependent_eligibility",
+                amount_fact_key="ca_mb_qualified_labour_usd",
+                amount_fact_min=0.01,
+                is_component_basis=True,
+                component_basis_spend_categories=(
+                    "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                    "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                ),
+            ),
+            RateCondition(
+                condition_id="ca-mb-nonresident-salary-limit",
+                description="Salary of non-resident employees may not exceed 30% of eligible salaries paid to Manitoba residents when two or more "
+                            "residents are trained for each non-resident (10% if one) -- a resident/non-resident payroll split this engine does not hold.",
+                quote="non-resident salary limited to 30% (or 10%) of eligible resident salaries (Manitoba Finance corporate tax credits page)",
+                kind="unmodeled_spend_split_ratio"),
+        )),),
 ))
+# The former whole-base 65% "ceiling" tier is REMOVED: Frequent Filming (+10%), Manitoba Producer (+5%) and Rural and Northern (+5%) are
+# statutory bonuses priced through SUBSET_UPLIFT_RULES["ca_mb_film_video_credit"] when their fact is stated.
 register_rate_rules(rate_rules_for(CA_MB_DOCTRINE))
 
 # ── CA-Nova Scotia: Film & Television Production Incentive Fund ───────────

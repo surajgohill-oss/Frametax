@@ -35,6 +35,9 @@ NY_EVIDENCED_FACTS = {
     "on_ofttc_labour_outside_gta": None,
     "bc_labour_in_regional_zone": None,
     "bc_labour_in_distant_location_zone": None,
+    "mb_frequent_filming_bonus": None,
+    "mb_manitoba_producer_bonus": None,
+    "mb_rural_northern_bonus": None,
 }
 
 
