@@ -56,6 +56,16 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 5. **`SCENARIO_SPEND_BASE_VARIANCE`:**
    * 41 rows on open-spend programs where the engine's generic relocation spend base differed from independent source-derived relocation baselines.
 
+### Reconciled Status of Claude Remediation Repairs (Unwired Helpers & Unpriced Uplifts)
+
+In accordance with Codex delta review (`CALCULATION_ASSURANCE_DELTA_REVIEW_20261010.md`) and Claude's Capability Ledger (commits `f37ffff7`..`2e948ab5`), Claude's remediation code status is reconciled as follows:
+
+1. **Uncalled / Unwired Individual ATL Cap Helper (`ny_atl_individual_cap.py`):** Although Claude introduced `ny_atl_individual_cap.py` to evaluate the ESD $500,000 per-individual cap, it operates only when an identified payee has evidenced-complete compensation. In standard qualification and pricing flows without durable producer facts, the helper is uncalled or inert, yielding zero per-individual cap reduction in engine baseline pricing.
+2. **Unpriced Statutory Uplifts (§ 24(a)(5) and § 31*2(a)(6)):** Upstate production labor uplifts (§ 24(a)(5)) and post labor uplifts (§ 31*2(a)(6)) are implemented as subset-uplift rules with prerequisites (e.g. >50% principal photography shoot days upstate, 53 listed counties, scoring with five musicians), but remain unpriced conditions in standard pricing without producer-entered territorial shoot logs and payee residence schedules.
+3. **Pending UI Overview/Inspector Workflow:** While Claude created backend data structures (`POST /projects/{id}/program-facts`), no UI controls exist in Overview or Inspector for producers to submit these facts on real projects.
+4. **Stale Served Database Baseline:** Served PostgreSQL database state remains `canonical-1.106.0` (unregenerated).
+5. **Remediation Classification:** These repairs are classified as **`FIXED_IN_CODE_UNWIRED_AND_UNPRICED` / `UNFINISHED`**, pending producer UI integration and authorized canonical regeneration.
+
 ---
 
 ## 3. Discrepancy & Disposition Register Table
@@ -212,7 +222,7 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
   - **Grounded in Single Treatment Table:** Derived from `LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv` conserving all 44 original budget accounts ($4,364,395.00 leaf sum; $4,364,393.00 controlling gross with $2 rounding variance).
   - **Physical Below-The-Line:** Accounts 2000–3800 (excluding 3200) = $2,572,970.00; On-Set Sound (Account 3200, BTL per NY-A03) = $69,532.00. Total Physical BTL = **$2,642,502.00**.
   - **Creative Above-The-Line Incurred:** Script Clearances (Account 1100) = $5,050.00; Cast Performers (Account 1400) = $136,115.00. Total Creative ATL = **$141,165.00**. (All individual earners <= $500k; producer count is 0).
-  - **Post-Production Department:** Post VFX (Account 6100) = $52,500.00 (qualifying post spend if NY facility); Post Editorial (Account 5000) = $9,068.00 (performed in Los Angeles, CA; consistently excluded from NY spend across relocation bounds, allocated outside NY to generic US unpriced in engine trace Segment 0). Total Post = **$61,568.00** (reconciling source accounts and withdrawing previously hallucinated $208,670).
+  - **Post-Production Department:** Post VFX (Account 6100) = $52,500.00 (qualifying post spend if NY facility); Post Editorial (Account 5000) = $9,068.00 (Planned post-production location is explicitly evidenced on the cover sheet and page 46 header of the original Movie Magic budget PDF *The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf* as 'PICTURE EDIT: LA', with Account 5200 stating 'SOUND EDIT: LA' and Account 5100 titled 'EDITORIAL - USA'. Incurred New York post facility spend is NOT_ESTABLISHED in the absence of a New York Qualified Post-Production Facility contract; out-of-state Los Angeles editorial is excluded from New York qualified spend under NY Tax Law § 24(a)(2) based on source budget evidence, not engine trace allocations). Total Post = **$61,568.00** (reconciling source accounts and withdrawing previously hallucinated $208,670).
   - **BTL Travel & Living (Account 3900):** $438,254.00. Under 5 NYCRR § 170.2, in-state crew lodging/per diem qualifies, while out-of-state/foreign airfares are statutorily excluded. Because the Movie Magic Topsheet does not itemize in-state lodging vs foreign airfares, Account 3900 is an empirical unknown (withdrawing previously hallucinated $82,347).
   - **Subaccount Breakdown for Admin, Publicity & Insurance (Verified against Original Budget PDF):**
     - **Account 7000 (Administrative Expenses: $297,593.00):** Direct production office lines (7009 Copiers $4,239, 7014 DIT Software $1,112, 7015 Hardware $2,609, 7030 Telecom $11,886, 7094 Office Supplies $3,696) total **$23,542.00**; Line production service company fee (7003) = **$95,000.00** (potentially eligible production coordination); Statutorily excluded corporate lines (7002 Setup & Audit $35,927, 7007 Legals $10,000, 7038 Bank Charges $2,957, 7042 Freight $27,293, 7050 Wrap Party $10,435, 7095 Foreign VAT $92,439) total **$179,051.00** (statutorily excluded under § 24(a)(2)). Total: $23,542 + $95,000 + $179,051 = **$297,593.00**.
@@ -230,7 +240,7 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
     - **Relocation Baseline (Midpoint Scenario):** In-state crew lodging admitted ($438,254), out-of-state LA editorial excluded ($9,068). Other qualified costs = $3,133,256.00. 40% ceiling = $1,253,302.40 (Creative ATL $141,165 admitted). Relocation Baseline QPE = **$3,274,421.00** [Credit at 30%: **$982,326.30**].
     - **Optimistic Planning Ceiling / Upper Bound:** Admits every potentially eligible unresolved portion from source table: 100% contingency deployment into BTL physical ($301,131), 100% in-state crew travel ($438,254), direct production office ($23,542), line production coordination ($95,000), unit stills & EPK crew ($24,348), direct liability & medicals ($4,874), and production package insurance ($48,181). Editorial in LA ($9,068) is consistently excluded from NY relocation spend. Upper Bound QPE = **$3,771,497.00** [Credit at 30%: **$1,131,449.10**].
   - **Engine Comparison (`canonical-1.106.0`, Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903`, Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`):**
-    - Actual Qualified Spend: $4,054,196.00 (gross $4,355,327 allocated to NY less $301,131 unspent contingency; out-of-state editorial $9,068 allocated to US unpriced in Segment 0).
+    - Actual Qualified Spend: $4,054,196.00 (gross $4,355,327 allocated to NY less $301,131 unspent contingency; out-of-state LA editorial $9,068 omitted from NY spend in engine saved candidate Segment 1).
     - Actual Incentive: $1,216,258.80 ($4,054,196.00 × 0.30).
     - Overstatement at Optimistic Upper Bound: $1,216,258.80 - $1,131,449.10 = **+$84,809.70**.
     - Overstatement at Relocation Baseline: $1,216,258.80 - $982,326.30 = **+$233,932.50**.
@@ -285,15 +295,14 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 * **New York Post-Production Credit (§ 31*2) Gateways & Rates:**
   - **Statute Reference:** NY Tax Law § 31*2 (Film Post-Production Credit, revision 2025-07-11; distinct from plain § 31 Excelsior Jobs).
   - **Gateways (§ 31*2(a)(2) & (3)):** General Post Gateway requires qualified post costs at a NY Qualified Post-Production Facility (QPF) equal to the lesser of $1,000,000 or 75% of total worldwide post spend. VFX/Animation Gateway requires the lesser of $500,000 or 10% of total worldwide VFX/animation spend. Engine source-config fixed $1M missed both branches (`DISC-NY-002`).
-  - **Rates:** 30% MCTD, 35% Upstate (+5% facility differential), plus +10% eligible county post labor uplift. Flat 35% in engine config confirmed defective (`DISC-NY-003`). Saved DB contains only component-relocation candidates, no full relocation structures (`COMPARISON_NOT_ESTABLISHED (COMPONENT_ONLY_STRUCTURE)`).
+  - **Rates & Outside-MCTD Geography (§ 31*2(a)(2)):** 30% for facilities located inside the Metropolitan Commuter Transportation District (MCTD); 35% for facilities located outside the MCTD (+5% facility differential). Under NY Public Authorities Law § 1262, the MCTD consists of NYC (5 counties: New York, Bronx, Kings, Queens, Richmond) plus Nassau, Suffolk, Westchester, Rockland, Dutchess, Orange, and Putnam. Therefore, facilities in Dutchess, Orange, and Putnam are geographically inside the MCTD and receive the 30% base facility rate, NOT 35%. Engine source-config flat 35% confirmed defective (`DISC-NY-003`). Saved DB contains only component-relocation candidates, no full relocation structures (`COMPARISON_NOT_ESTABLISHED (COMPONENT_ONLY_STRUCTURE)`).
   - **On-Set Sound Exclusion (NY-A03):** Production sound (LU $69,532, FVD $26,458, BH $16,845, LLS $87,067) is BTL physical production, NOT post-production.
-* **Upstate Production Credit Uplift (§ 24(a)(5)) vs. Post Uplift (§ 31*2(a)(6)):**
-  - 53 upstate counties; Dutchess, Orange, and Putnam ARE statutorily included in the § 24(a)(5) upstate production credit county list (unlike post MCTD boundary).
-  - +10% credit uplift (40% total).
-  - Labor: Under NY Tax Law § 24(a)(5), qualifying labor expenses (including eligible Above-The-Line wages within the 40% aggregate ATL ceiling and up to 2 credited producers) qualify for the +10% uplift if services are performed in an eligible upstate county. Blanket ATL exclusion from the production uplift is legally disproved by dated statutory text and ESD guidelines.
-  - By contrast, under NY Tax Law § 31*2(a)(6) (the post-production credit upstate uplift), ATL roles are expressly excluded from the post uplift.
-  - Non-labor: Qualifies for the § 24(a)(5) +10% uplift ONLY IF more than 50% (>50%) of principal photography shoot days occur upstate.
-  - Status: County shoot day logs and territorial payroll ledgers are absent from budget records, keeping upstate uplift as an explicit conditional planning scenario (`CONDITIONAL_UPSTATE_EXPANSION`).
+* **Upstate Production Credit Uplift (§ 24(a)(5)) vs. Post Labor Uplift (§ 31*2(a)(6)):**
+  - **Statutory County Enumeration:** Both § 24(a)(5) (production credit) and § 31*2(a)(6) (post credit wage uplift) explicitly enumerate the same 53 upstate counties: Albany, Allegany, Broome, Cattaraugus, Cayuga, Chautauqua, Chemung, Chenango, Clinton, Columbia, Cortland, Delaware, Dutchess, Erie, Essex, Franklin, Fulton, Genesee, Greene, Hamilton, Herkimer, Jefferson, Lewis, Livingston, Madison, Monroe, Montgomery, Niagara, Oneida, Onondaga, Ontario, Orange, Orleans, Oswego, Otsego, Putnam, Rensselaer, Saratoga, Schenectady, Schoharie, Schuyler, Seneca, St. Lawrence, Steuben, Sullivan, Tioga, Tompkins, Ulster, Warren, Washington, Wayne, Wyoming, and Yates.
+  - **Separation of Outside-MCTD Base Rate from § 31*2(a)(6) +10% Labor Uplift Counties:** Dutchess, Orange, and Putnam ARE explicitly listed in § 31*2(a)(6) for the +10% post-production labor uplift, even though they belong to the MCTD commuter district and thus receive the 30% (not 35%) base facility rate under § 31*2(a)(2). A qualified facility located in Dutchess, Orange, or Putnam qualifies for the +10% post labor uplift (total 40% on qualifying wages), separating base-rate transit geography from statutory labor uplift eligibility.
+  - **ATL Treatment in Uplifts:** Under § 24(a)(5), qualifying labor expenses (including eligible Above-The-Line wages within the 40% aggregate ATL ceiling and up to 2 credited producers) qualify for the +10% uplift if performed in an eligible upstate county; blanket ATL exclusion from the production uplift is disproved. By contrast, under § 31*2(a)(6), ATL roles (writers, directors, composers, producers, and performers) are expressly excluded from the post uplift.
+  - **Non-Labor Uplift Limb (§ 24(a)(5)):** Non-labor qualified production costs qualify for the § 24(a)(5) +10% uplift ONLY IF more than 50% (>50%) of principal photography shoot days occur upstate.
+  - **Status:** County shoot day logs and territorial payroll ledgers are absent from budget records, keeping upstate uplift as an explicit conditional planning scenario (`CONDITIONAL_UPSTATE_EXPANSION`).
 * **New York Multi-Program Stack Reconciliation (§ 24 + § 31*2 vs. DISC-NY-001):**
   - Absolute taxpayer/film-level bar under NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c): Any taxpayer eligible for Section 24 film production credit is statutorily ineligible for Section 31*2 post-production credit for the same film.
   - Independent calculator models expected QPE as $0.00 (`GATE_REJECTED`).
@@ -329,9 +338,12 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
    - General Post: Lesser of $1,000,000 or 75% of worldwide post spend.
    - VFX & Animation: Lesser of $500,000 or 10% of worldwide VFX/animation spend.
 4. **Refine Post Rates & County Uplifts (`DISC-NY-003`):**
-   - Model MCTD (30%) vs Upstate facility (35%) geographic boundary and +10% eligible county post labor uplift.
-5. **Refine California Program 4.0 BTL Spend Classification:** Ensure `ca_film_30` in canonical code excludes general administration, insurance, and completion bond from the qualified BTL base.
-6. **Authorize Canonical Regeneration:** Run authorized regeneration to propagate commits `486bd15` (F-01..F-07), `6cd2bbe`, and NY repairs into served database state.
+   - Model base facility rates: 30% inside MCTD (including Dutchess, Orange, and Putnam) vs 35% outside MCTD (§ 31*2(a)(2)), and +10% post labor uplift on post wages in the 53 enumerated counties (which includes Dutchess, Orange, and Putnam under § 31*2(a)(6)).
+5. **Wire Individual ATL Cap Helper & Price Uplifts (Reconciling Unfinished Repairs):**
+   - Wire `app/calculators/ny_atl_individual_cap.py` into qualification and pricing pathways with producer payee facts (currently uncalled / unwired in standard flows, resulting in zero per-individual cap reduction in engine prices).
+   - Price upstate production (§ 24(a)(5)) and post (§ 31*2(a)(6)) labor uplifts with evidenced territorial facts (currently carried as unpriced conditions).
+6. **Refine California Program 4.0 BTL Spend Classification:** Ensure `ca_film_30` in canonical code excludes general administration, insurance, and completion bond from the qualified BTL base.
+7. **Authorize Canonical Regeneration:** Run authorized regeneration to propagate commits `486bd15` (F-01..F-07), `6cd2bbe`, and completed NY repairs into served database state.
 
 ---
 
@@ -367,24 +379,37 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-03-CAVCO-DOMESTIC-CERTIFICATION-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** CAVCO Part A/B certification, Canadian copyright ownership documentation, and key creative point tally (>= 6/10 CAVCO points) under Income Tax Act § 125.4 and Ontario Taxation Act § 43.
-* **Divergent CPTC vs OFTTC Labor Bases:**
-  - **Federal CPTC Base ($L_{\text{CA}}$):** Remuneration paid to Canadian citizens or permanent residents residing anywhere in Canada for services rendered in Canada.
-  - **Ontario OFTTC Base ($L_{\text{ON}}$):** Remuneration paid to individuals resident specifically in **Ontario** at the end of the calendar year, for services rendered in **Ontario** ($L_{\text{ON}} \le L_{\text{CA}}$).
-  - In any production utilizing Canadian crew from other provinces (e.g. BC, Quebec, Alberta), $L_{\text{ON}} < L_{\text{CA}}$, and CPTC and OFTTC bases are NOT identical.
-* **Statutory Assistance Deduction Equations:**
-  - Ontario OFTTC: $\text{OFTTC} = 0.35 \times L_{\text{ON}}$.
-  - Federal CPTC under ITA § 125.4(1): Provincial tax credits constitute government assistance under ITA § 12(1)(x), reducing net production cost: $\text{Net Production Cost} = \text{Gross} - 0.35 \times L_{\text{ON}}$.
-  - CPTC Statutory 60% Net Cost Ceiling: $\text{QLE}_{\text{cap}} = 0.60 \times (\text{Gross} - 0.35 \times L_{\text{ON}})$.
-  - CPTC Qualified Labour Expenditure: $\text{QLE}_{\text{CPTC}} = \min(L_{\text{CA}}, \text{QLE}_{\text{cap}})$; $\text{CPTC Credit} = 0.25 \times \text{QLE}_{\text{CPTC}}$.
-  - **Ceiling at Maximum Ontario Labor ($L_{\text{ON}} = L_{\text{CA}} = L$):**
-    $$L \le 0.60 \times (\text{Gross} - 0.35 \times L) \implies L \times 1.21 \le 0.60 \times \text{Gross} \implies L \le \frac{0.60}{1.21} \times \text{Gross} \approx 49.5868\% \times \text{Gross}$$
+* **Separate Variable Definitions & Statutory Domain:**
+  - Let $G$ = Gross Production Budget / Total Cost (ITA § 125.4(1)).
+  - Let $L_{\text{CA}}$ = Total Qualified Canadian Labour Expenditure across all provinces ($0 \le L_{\text{CA}} \le G$).
+  - Let $L_{\text{ON}}$ = Ontario Resident Labour Expenditure ($0 \le L_{\text{ON}} \le L_{\text{CA}}$). Remuneration paid to individuals resident specifically in Ontario for services rendered in Ontario (Ontario Taxation Act § 43). Because Ontario residents are a subset of Canadian residents, $L_{\text{ON}} \le L_{\text{CA}}$.
+  - In any production utilizing crew from other provinces (BC, Quebec, Alberta), $L_{\text{ON}} < L_{\text{CA}}$, and CPTC and OFTTC bases are NOT identical.
+* **Independent Proof of Every Constraint & Assistance Deduction:**
+  - **Provincial Assistance:** $\text{OFTTC} = 0.35 \times L_{\text{ON}}$. Under ITA § 12(1)(x), provincial tax credits constitute government assistance reducing Net Production Cost: $\text{NPC} = G - 0.35 \times L_{\text{ON}}$.
+  - **Federal Statutory Cap Constraint:** Under ITA § 125.4(1), Qualified Labour Expenditure cannot exceed 60% of Net Production Cost: $\text{QLE}_{\text{cap}} = 0.60 \times \text{NPC} = 0.60 \times (G - 0.35 \times L_{\text{ON}}) = 0.60 \times G - 0.21 \times L_{\text{ON}}$.
+  - **Federal Labor Constraint:** $\text{QLE}_{\text{CPTC}} \le L_{\text{CA}}$.
+  - **Federal QLE Formula:** $\text{QLE}_{\text{CPTC}}(L_{\text{CA}}, L_{\text{ON}}) = \min\big(L_{\text{CA}}, \; 0.60 \times G - 0.21 \times L_{\text{ON}}\big)$; $\text{CPTC} = 0.25 \times \text{QLE}_{\text{CPTC}}$.
+  - **Proof 1 (Standalone Federal Ceiling at $L_{\text{ON}} = 0$):** If no Ontario credit is claimed ($L_{\text{ON}} = 0$), $\text{QLE}_{\text{CPTC}} = \min(L_{\text{CA}}, 0.60 \times G)$. The maximum possible federal QLE across all scenarios is $0.60 \times G$ (yielding maximum CPTC of $0.15 \times G$).
+  - **Proof 2 (Assistance Clawback Rate):** $\frac{\partial \text{QLE}_{\text{cap}}}{\partial L_{\text{ON}}} = -0.21$. Every $1.00 of Ontario labor claimed reduces the federal QLE ceiling by $0.21 and federal CPTC by $0.0525 ($0.25 \times 0.21).
+  - **Proof 3 (Region I vs Region II Return):**
+    * Region I (Labor-Limited: $L_{\text{CA}} \le 0.60 \times G - 0.21 \times L_{\text{ON}}$): $\text{QLE}_{\text{CPTC}} = L_{\text{CA}}$. $\text{Total Benefit} = 0.25 \times L_{\text{CA}} + 0.35 \times L_{\text{ON}}$.
+    * Region II (Net-Cost-Capped: $L_{\text{CA}} > 0.60 \times G - 0.21 \times L_{\text{ON}}$): $\text{QLE}_{\text{CPTC}} = 0.60 \times G - 0.21 \times L_{\text{ON}}$. $\text{Total Benefit} = 0.15 \times G + 0.2975 \times L_{\text{ON}}$. Since $+0.2975 > 0$, Ontario labor expansion strictly increases total domestic return despite the federal clawback.
+  - **Proof 4 (Co-Extensive Labor Boundary $L_{\text{ON}} = L_{\text{CA}} = L$):** The boundary between Region I and Region II satisfies $L = 0.60 \times (G - 0.35 \times L) \iff 1.21 \times L = 0.60 \times G \iff L^* = \frac{60}{121} \times G \approx \mathbf{49.58677686\% \times G}$.
+    * For $L \le L^*$: $\text{QLE}_{\text{CPTC}} = L$; combined credit rate is $(0.25 + 0.35) \times L = 0.60 \times L$.
+    * At $L = L^* = \frac{60}{121} G$: $\text{QLE}_{\text{CPTC}} = \frac{60}{121} G$; $\text{OFTTC} = \frac{21}{121} G \approx 17.3554\% G$; $\text{CPTC} = \frac{15}{121} G \approx 12.3967\% G$; combined stack = $\frac{36}{121} G \approx \mathbf{29.752066\% \times G}$.
+    * For $L > L^*$: $\text{QLE}_{\text{CPTC}}$ drops below $\frac{60}{121} G$ due to assistance deductions, while OFTTC increases at 35%.
 * **Supported Scenarios & Bounds (from Original Budgets):**
   - Non-Certified Scenario: Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to Canadian resident labour expenditure proofs.
-  - Certified Domestic Scenario (CPTC 25% + OFTTC 35% with Assistance Deduction at Statutory Ceiling):
+  - Certified Domestic Scenario at Transition Ceiling ($L^* = \frac{60}{121} \times \text{Gross}$):
     * LU (Gross $4,364,395.00): Max CPTC QLE = **$2,164,162.81**; OFTTC = **$757,456.98**; CPTC = **$541,040.70**; Combined domestic stack = **$1,298,497.68**.
     * FVD (Gross $4,517,687.00): Max CPTC QLE = **$2,240,175.37**; OFTTC = **$784,061.38**; CPTC = **$560,043.84**; Combined domestic stack = **$1,344,105.22**.
     * BH (Gross $2,482,023.00): Max CPTC QLE = **$1,230,755.21**; OFTTC = **$430,764.32**; CPTC = **$307,688.80**; Combined domestic stack = **$738,453.12**.
     * LLS (Gross $11,947,562.00): Max CPTC QLE = **$5,924,410.91**; OFTTC = **$2,073,543.82**; CPTC = **$1,481,102.73**; Combined domestic stack = **$3,554,646.55**.
+  - Physical BTL Labor Scenario ($L_{\text{ON}} = L_{\text{BTL}}$):
+    * LU ($L_{\text{BTL}} = $2,642,502.00 > L^*): In Region II: OFTTC = **$924,875.70**; $\text{NPC} = $3,439,519.30; $\text{QLE}_{\text{CPTC}} = 0.60 \times \text{NPC} = \mathbf{$2,063,711.58}$; CPTC = **$515,927.90**; Combined stack = **$1,440,803.60**.
+    * FVD ($L_{\text{BTL}} = $1,139,276.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$1,139,276.00}$; OFTTC = **$398,746.60**; CPTC = **$284,819.00**; Combined stack = **$683,565.60**.
+    * BH ($L_{\text{BTL}} = $656,044.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$656,044.00}$; OFTTC = **$229,615.40**; CPTC = **$164,011.00**; Combined stack = **$393,626.40**.
+    * LLS ($L_{\text{BTL}} = $5,166,417.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$5,166,417.00}$; OFTTC = **$1,808,245.95**; CPTC = **$1,291,604.25**; Combined stack = **$3,099,850.20**.
 * **Lawful vs Unlawful Stacking Analysis:** `stack_on_cptc_ofttc` is a lawful domestic stack (subject to CAVCO and assistance deduction). By contrast, `stack_qc_cptc_pstc` is an unlawful cross-regime stack: federal CPTC is restricted to CAVCO domestic content, whereas Quebec PSTC is a service production credit; they cannot legally combine on the same expenditure pool.
 * **Expected Engine Behavior:** Treat missing certification as unknown (`NOT_ESTABLISHED`) rather than hard gate rejection or unearned qualification; surface CAVCO status toggle in Overview/Inspector.
 * **Exact Producer Input Needed:** Producer input confirming CAVCO certification status (Certified vs Production Services Only) and creative point count.
@@ -454,6 +479,15 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Exact Producer Input Needed:** None (system authorization for production regeneration required).
 * **Comparison Matching:** Unambiguously identified and separated from open code defects across all affected rows.
 
+### 6.8 Blocker 8: Uncalled Cap Helper & Unpriced Uplifts in Remediation Code
+* **Blocker ID:** `BLOCKER-08-UNWIRED-HELPERS-AND-UNPRICED-UPLIFTS`
+* **Classification:** Unfinished Remediation Implementation (`FIXED_IN_CODE_UNWIRED_AND_UNPRICED` / `UNFINISHED`)
+* **Missing Facts:** Durable producer program facts (payee-level compensation splits, county shoot day logs, scoring musician tallies) via UI.
+* **Current Engine Behavior:** `ny_atl_individual_cap.py` is uncalled/unwired in standard baseline qualification and pricing without producer fact records; upstate uplifts (§ 24(a)(5) and § 31*2(a)(6)) are unpriced conditions; database state remains `canonical-1.106.0`.
+* **Expected Engine Behavior:** Wire individual cap helper into baseline pipeline with clear fallback handling, price conditional uplifts in planning scenarios, and expose durable facts in Overview/Inspector UI.
+* **Exact Producer Input Needed:** Producer entry in Overview/Inspector of individual talent compensation, county shoot logs, and facility location.
+* **Comparison Matching:** Reconciles Codex delta review and Claude Capability Ledger across all NY and uplift candidate evaluations.
+
 ---
 
 ## 7. Gate Disposition & Mandatory Sign-off
@@ -464,6 +498,6 @@ Every retained issue across the four anchor projects is categorized and detailed
 >
 > **REMAINING BLOCKERS:**
 > 1. **Empirical Fact Gaps (Producers):** General ledger payroll ledgers (Canadian QLE), individual talent payee contracts (GA/IL/MA salary caps), and location shoot logs remain unresolved in source records.
-> 2. **Code Repair Implementation (Codex):** NY § 24 ATL 40% aggregate cap and CA Program 4.0 spend refinement await Codex implementation and review.
+> 2. **Code Repair Implementation & Wiring (Codex):** NY § 24 ATL 40% aggregate cap, wiring `ny_atl_individual_cap.py` with producer fact fallbacks, pricing statutory uplifts, and CA Program 4.0 spend refinement await Codex review.
 > 3. **Authorized Database Regeneration:** Commits `486bd15` (F-01..F-07) and `6cd2bbe` are unregenerated; served database state remains stale until regeneration is authorized.
 > 4. **Regional Expansion Boundary:** All execution halts strictly at the North American handoff. Rest-of-World (ROW) expansion will NOT begin until Codex review passes and the North American gate is adjudicated.
