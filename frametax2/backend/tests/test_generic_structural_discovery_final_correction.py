@@ -15,49 +15,19 @@ from app.models.production import EvaluationCandidateAggregate
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import engine
 from app.services import canonical_evaluation as ce
 
 _SRC = Path(ce.__file__).read_text()
 _SRC_CODE_ONLY = "\n".join(line.split("#", 1)[0] for line in _SRC.splitlines())
 
-LIPS_LIKE_SUGAR_PROJECT_ID = "ab10b319-978e-44d3-9331-af2a5f2cccc2"
-
-# Fail-closed DB isolation guard. This workstream's DB-backed tests write
-# real rows (they exercise the live evaluate_project() persistence path,
-# not a mock) and must never do so against the shared local application
-# database that every developer/worktree on this machine reads and
-# writes. Only an explicitly isolated audit database -- this exact name,
-# or a name starting with one of the approved prefixes below -- is
-# permitted. Anything else, including the shared "frametax2" database
-# itself, fails the test suite immediately rather than silently writing
-# to shared state.
-_APPROVED_ISOLATED_DB_NAME = "frametax2_claude_generic_discovery_audit_20260917"
-# The canonical-1.90 acceptance database is an equally isolated database (never the shared frametax2).
-_APPROVED_ISOLATED_DB_PREFIXES = (
-    "frametax2_claude_generic_discovery_audit_", "frametax2_claude_optimizer_acceptance_",
-)
-
-
-def _assert_isolated_database(engine_obj) -> str:
-    db_name = engine_obj.url.database or ""
-    is_approved = db_name == _APPROVED_ISOLATED_DB_NAME or any(
-        db_name.startswith(p) for p in _APPROVED_ISOLATED_DB_PREFIXES
-    )
-    assert is_approved, (
-        f"REFUSING TO RUN: resolved database is {db_name!r}, which is not the approved "
-        f"isolated audit database ({_APPROVED_ISOLATED_DB_NAME!r}) or an approved-prefix "
-        "database. This test suite writes real persisted rows and must never run against "
-        "the shared local application database. Set DATABASE_URL to point at the isolated "
-        "audit database before running these tests."
-    )
-    return db_name
-
-
+# DB isolation: every DB-backed test here runs on ROLLED-BACK synthetic records on the isolated ``frametax2_pytest`` database
+# (tests/isolated_records.py; DATABASE_URL unset). It never reads or evaluates a real production and writes nothing that survives
+# the test. (It previously evaluated the real Lips Like Sugar and F#K Valentine's Day productions and persisted AUDIT_CONTROL rows
+# into an approved audit database.)
 @pytest.fixture
 async def db():
-    _assert_isolated_database(engine)
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+    from tests.isolated_records import isolated_session
+    async with isolated_session() as session:
         yield session
 
 
@@ -135,218 +105,23 @@ def test_no_arbitrary_top_n_discovery_cutoff_remains():
     )
 
 
-def test_pigeonhole_window_starts_at_subset_size_not_a_fixed_constant():
-    """The search window must start at `_r` (the subset size), a
-    mathematically-derived value, never a fixed magic number like 3 or 5."""
-    match = re.search(r"_window = _r\b", _SRC)
-    assert match is not None, "window must be seeded from the subset size, not a constant"
+def test_search_is_proof_based_not_a_fixed_window_constant():
+    """The pre-1.86 pigeonhole window (seeded at the subset size) was replaced by best-first branch-and-bound with a stopping
+    inequality. The intent is unchanged: no fixed magic window/cutoff constant, and every non-exhaustive stop carries a proof."""
+    assert not re.search(r"\b_\w*window\s*=\s*\d", _SRC_CODE_ONLY), "a fixed integer search window was reintroduced"
+    assert '_hy_proof_type = "best_first_heap_bound"' in _SRC_CODE_ONLY
+    assert '"EXHAUSTIVE_SEARCH"' in _SRC_CODE_ONLY
+    assert '"stopping_inequality_holds"' in _SRC_CODE_ONLY
+
+
+# The four Lips-Like-Sugar mechanism controls (DOMINATED_WITH_PROOF engine version and numeric proof, duplicate economic routes
+# persisted once, multiple candidates per window actually examined) need a budget with a VFX line, which enumerates ~174k hybrid
+# candidates (about three minutes). They run the SAME assertions on one rolled-back synthetic project in
+# tests/heavy_synthetic/check_generic_discovery_heavy.py (explicit path, like the other heavy synthetic check) -- they are not skipped.
 
 
 @pytest.mark.asyncio
-async def test_dominated_with_proof_rows_use_correction_engine_version(db: AsyncSession):
-    """Every DOMINATED_WITH_PROOF row persisted for a real production
-    must be tagged with the CURRENT engine version (proves the discovery
-    mechanism the fingerprint/version bump targets is actually the one
-    running -- the SERVED evaluation must be driven by rows persisted
-    under the current engine version, never a stale row left over from a
-    prior version (older-version rows legitimately remain in the table as
-    superseded history; they must simply never be what the current
-    evaluation reads back as current)."""
-    result = await ce.evaluate_project(db, LIPS_LIKE_SUGAR_PROJECT_ID)
-    assert result.get("engine_version") == ce.ENGINE_VERSION
-    current_fingerprint = result["state_fingerprint"]
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT COUNT(*)
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.engine_version = :ev
-                  AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF'
-                """
-            ),
-            {"pid": LIPS_LIKE_SUGAR_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": current_fingerprint},
-        )
-    ).scalar()
-    assert rows and rows > 0, (
-        "no DOMINATED_WITH_PROOF row exists under the CURRENT engine version AND "
-        "current input fingerprint -- either the discovery mechanism did not run "
-        "this call, or a stale fingerprint/engine-version row from a PRIOR call "
-        "was mistaken for evidence that this call produced one"
-    )
-
-
-@pytest.mark.asyncio
-async def test_dominated_with_proof_rows_carry_a_real_numeric_proof(db: AsyncSession):
-    """Every DOMINATED_WITH_PROOF row must carry the actual proof data
-    (window size, best real total found, dominated count) -- never an
-    empty or placeholder justification."""
-    result = await ce.evaluate_project(db, LIPS_LIKE_SUGAR_PROJECT_ID)
-    current_fingerprint = result["state_fingerprint"]
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT scr.calculation_trace_json
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.engine_version = :ev
-                  AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'candidate_status' = 'DOMINATED_WITH_PROOF'
-                LIMIT 20
-                """
-            ),
-            {"pid": LIPS_LIKE_SUGAR_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": current_fingerprint},
-        )
-    ).all()
-    assert rows, "expected at least one DOMINATED_WITH_PROOF row for a real production"
-    for (trace,) in rows:
-        # Proof schema of canonical-1.86+ (best-first branch-and-bound replaced the pre-1.86 pigeonhole window, whose
-        # proof_window_size / "pigeonhole" reason / component_target_windows fields no longer exist): the proof must
-        # still carry its full numeric reconstruction data -- never a placeholder.
-        assert trace.get("proof_type") in ("best_first_heap_bound", "EXHAUSTIVE_SEARCH")
-        for count_key in ("total_candidate_combinations", "visited_combination_count",
-                          "evaluated_combination_count", "rejected_combination_count"):
-            assert isinstance(trace.get(count_key), int), f"proof carries no integer {count_key}"
-        assert trace.get("dominated_combination_count", 0) > 0
-        assert trace.get("best_real_total_found_usd") is not None
-        assert isinstance(trace.get("incumbent_value_usd"), (int, float))
-        assert trace.get("stopping_inequality_holds") is True
-        if trace["proof_type"] == "best_first_heap_bound":
-            assert isinstance(trace.get("stopping_bound_usd"), (int, float))
-            assert trace["stopping_bound_usd"] <= trace["incumbent_value_usd"] + 1e-6
-            assert trace["visited_combination_count"] <= trace["total_candidate_combinations"]
-        else:
-            assert trace.get("stopping_bound_usd") is None
-            assert trace["visited_combination_count"] == trace["total_candidate_combinations"]
-        assert "provably dominated" in trace.get("reason", "").lower() or "exhaust" in trace.get("reason", "").lower()
-        # Reconstruction data: the exact real candidates examined per component and the specific incumbent
-        # structure the proof is measured against must be named, not just counted.
-        assert trace.get("incumbent_structure_id"), "DOMINATED_WITH_PROOF row has no incumbent_structure_id"
-        lists = trace.get("component_candidate_lists")
-        assert lists and len(lists) > 0, (
-            "DOMINATED_WITH_PROOF row has no component_candidate_lists -- "
-            "the examined candidate set cannot be reconstructed from this row alone"
-        )
-
-
-@pytest.mark.asyncio
-async def test_duplicate_economic_routes_persist_once(db: AsyncSession):
-    """Two different (anchor, subset) search paths that happen to
-    discover the exact same canonical component set must collapse to a
-    single persisted structure, never two -- WITHIN one served view.
-
-    Scoping this only by engine_version (and not by input_fingerprint) is
-    a real test bug found and fixed this pass: two rows with the SAME
-    structural_generator_structure_id but DIFFERENT input_fingerprints
-    are not a duplicate-persistence defect -- they are two different
-    fingerprint epochs (a real, legitimate outcome any time the
-    project's underlying facts change between two evaluate_project()
-    calls), and canonical_evaluation.py's own fingerprint-scoped
-    `_summarize_evaluation()` already reads back only the CURRENT
-    fingerprint's rows as served/current, per its own explicit design
-    ('older-version rows legitimately remain in the table as superseded
-    history; they must simply never be what the current evaluation reads
-    back as current'). This test must therefore scope to the SAME
-    (engine_version, input_fingerprint) pair the served view actually
-    uses -- taken from evaluate_project()'s own returned
-    state_fingerprint -- to test true within-current-view duplication,
-    not conflate it with ordinary historical churn across calls."""
-    result = await ce.evaluate_project(db, LIPS_LIKE_SUGAR_PROJECT_ID)
-    current_fingerprint = result["state_fingerprint"]
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT scr.calculation_trace_json->>'structural_generator_structure_id', COUNT(*)
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.engine_version = :ev
-                  AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
-                  AND scr.calculation_trace_json->>'discovery_classification' = 'structural_archetype_generator'
-                GROUP BY 1
-                HAVING COUNT(*) > 1
-                """
-            ),
-            {"pid": LIPS_LIKE_SUGAR_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": current_fingerprint},
-        )
-    ).all()
-    assert not rows, f"duplicate economic route(s) persisted more than once WITHIN the current fingerprint: {rows}"
-
-
-@pytest.mark.asyncio
-async def test_multiple_candidates_per_window_are_actually_examined(db: AsyncSession):
-    """Regression guard for the exact historical defect this workstream
-    fixed: a block of the branch-and-bound (the heap pop, real pricing,
-    persistence, and the heap's own neighbor-push) had been accidentally
-    dedented one level out of the inner `while _heap:` loop, so ONLY the
-    single top-ranked (index 0 in every dimension) combination was ever
-    examined per search window -- confirmed at the time to collapse
-    Lips Like Sugar's ordinary_component_hybrid discovery to a mere
-    handful of rows (a single combination per (anchor, subset) pair,
-    with most producing zero PRICED results due to jurisdiction
-    collisions on that single combination). If that dedent regressed,
-    this count would collapse back to a tiny number; a genuinely
-    branching search over Lips Like Sugar's real budget produces
-    hundreds of distinct priced ordinary-component-hybrid structures."""
-    result = await ce.evaluate_project(db, LIPS_LIKE_SUGAR_PROJECT_ID)
-    current_fingerprint = result["state_fingerprint"]
-    priced_count = (
-        await db.execute(
-            text(
-                """
-                SELECT COUNT(DISTINCT scr.calculation_trace_json->>'structural_generator_structure_id')
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.engine_version = :ev
-                  AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
-                  AND scr.calculation_trace_json->>'discovery_classification' = 'structural_archetype_generator'
-                """
-            ),
-            {"pid": LIPS_LIKE_SUGAR_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": current_fingerprint},
-        )
-    ).scalar()
-    assert priced_count is not None and priced_count > 100, (
-        f"only {priced_count} distinct ordinary_component_hybrid PRICED structures found for Lips Like "
-        "Sugar -- this is consistent with the historical dedent defect (only the top-ranked candidate "
-        "examined per window) having recurred, not with a genuinely branching multi-candidate search"
-    )
-    # Direct confirmation that MULTIPLE components' chosen destinations
-    # are not always each component's own single top-ranked target --
-    # if the search only ever examined index (0, 0, ..., 0), every
-    # persisted structure's jurisdiction/program choice for a given
-    # component would be identical across every structure that includes
-    # that component, which is exactly what the dedent bug produced.
-    per_component_choices = (
-        await db.execute(
-            text(
-                """
-                SELECT jsonb_array_elements(scr.calculation_trace_json->'component_allocations')->>'jurisdiction_code'
-                FROM production_structures ps
-                JOIN structure_calculation_results scr ON scr.structure_id = ps.id
-                WHERE ps.project_id = :pid AND scr.engine_version = :ev
-                  AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->>'candidate_status' = 'PRICED'
-                  AND scr.calculation_trace_json->>'discovery_classification' = 'structural_archetype_generator'
-                """
-            ),
-            {"pid": LIPS_LIKE_SUGAR_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": current_fingerprint},
-        )
-    ).scalars().all()
-    distinct_jurisdictions_chosen = set(per_component_choices)
-    assert len(distinct_jurisdictions_chosen) > 5, (
-        f"only {len(distinct_jurisdictions_chosen)} distinct jurisdiction(s) ever appear as a chosen "
-        "component destination across every persisted structure -- consistent with the search only "
-        "ever reaching a single fixed candidate per component, never actually branching"
-    )
-
-
-@pytest.mark.asyncio
-async def test_ho001_and_ho002_remain_computable_via_the_generic_generator_with_no_allowlist(db: AsyncSession):
+async def test_ho001_and_ho002_remain_computable_via_the_generic_generator_with_no_allowlist():
     """HO-001 and HO-002 are acceptance controls, not implementation
     instructions (per the workstream's own framing): this test proves
     the generic generate_structural_candidate mechanism still correctly
@@ -401,7 +176,7 @@ async def test_ho001_and_ho002_remain_computable_via_the_generic_generator_with_
 
 @pytest.mark.asyncio
 async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(db: AsyncSession):
-    """Regression guard for a real, confirmed defect found via direct
+    """Regression guard (now on a synthetic Ontario-home budget) for a real, confirmed defect found via direct
     instrumentation this pass: price_program_group_stack's own docstring
     already promised its rejection is preserved by canonical_evaluation.py
     "exactly like every other None return here," but the consuming
@@ -414,28 +189,36 @@ async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(
     cptc+ocase pair (a genuine, disclosed authority gap -- CAVCO's own
     official OFTTC/OPSTC page names only those two as OCASE's partners),
     never silent omission."""
-    FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
+    # Synthetic Ontario-home budget (no real project is read or written; the original evaluated the real production and needed a
+    # VFX-heavy three-minute enumeration). The mechanism under test is generic: a same-jurisdiction group whose pair is rejected must
+    # carry an explicit, reconstructable RULE_REJECTED disposition. On this budget Ontario's on_ofttc / on_opstc group is that case
+    # (they are registered mutually exclusive, and the wider group has a genuine pairwise authority gap).
+    from tests.isolated_records import create_synthetic_project
+    FVD_PROJECT_ID = await create_synthetic_project(db, lines=(
+        ("2000", "DIRECTOR FEE", "atl_director", "atl", 400_000.0),
+        ("3000", "CREW", "btl_crew_labor", "btl", 1_500_000.0),
+        ("5000", "POST PRODUCTION", "post_production", "post", 200_000.0),
+    ), home_code="CA-ON")
     result = await ce.evaluate_project(db, FVD_PROJECT_ID)
     fingerprint = result["state_fingerprint"]
     # canonical-1.90: the RULE_REJECTED disposition is COUNTED EXACTLY in an aggregate group whose representative keeps
     # the full trace (a plain rejection is not a detailed row) -- so "never silently omitted" is verified against the
     # retained detailed rows AND the aggregate groups.
-    slugs = ["ca_federal_cptc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"]
+    slugs = ["on_ofttc", "on_opstc"]
     detailed = (
         await db.execute(
             text(
                 """
                 SELECT scr.calculation_trace_json->>'candidate_status',
-                       scr.calculation_trace_json->>'rejection_reason_class'
+                       scr.calculation_trace_json->>'rejection_reason_class',
+                       scr.calculation_trace_json->>'reason'
                 FROM production_structures ps
                 JOIN structure_calculation_results scr ON scr.structure_id = ps.id
                 WHERE ps.project_id = :pid AND scr.engine_version = :ev AND scr.input_fingerprint = :fp
-                  AND scr.calculation_trace_json->'program_slugs' @> '["ca_federal_cptc"]'::jsonb
-                  AND scr.calculation_trace_json->'program_slugs' @>
-                      '["ontario_computer_animation_and_special_effects_tax_credit_ocase"]'::jsonb
+                  AND scr.calculation_trace_json->'program_slugs' @> '["on_ofttc", "on_opstc"]'::jsonb
                 """
             ),
-            {"pid": FVD_PROJECT_ID, "ev": ce.ENGINE_VERSION, "fp": fingerprint},
+            {"pid": str(FVD_PROJECT_ID), "ev": ce.ENGINE_VERSION, "fp": fingerprint},
         )
     ).fetchall()
     grouped = (
@@ -448,17 +231,21 @@ async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(
             )
         )
     ).scalars().all()
-    rows = [tuple(r) for r in detailed] + [(g.candidate_status, g.reason_class) for g in grouped]
+    rows = [(r[0], r[1], r[2]) for r in detailed] + [(g.candidate_status, g.reason_class, (g.representative or {}).get("trace", {}).get("reason")) for g in grouped]
     assert grouped and all(g.candidate_count >= 1 and (g.representative or {}).get("trace", {}).get("reason") for g in grouped), (
-        "the ca_federal_cptc+ocase rejection must be an exactly-counted aggregate group with a reconstructable representative"
+        "the on_ofttc+on_opstc rejection must be an exactly-counted aggregate group with a reconstructable representative"
     )
     assert rows, (
-        "no persisted row at all for the ca_federal_cptc+ocase same-jurisdiction combination -- "
+        "no persisted row at all for the on_ofttc+on_opstc same-jurisdiction combination -- "
         "the exact silent-omission defect this test guards against has recurred"
     )
-    for status, reason_class in rows:
+    for status, reason_class, reason in rows:
         assert status == "RULE_REJECTED"
-        assert reason_class in ("UNRESOLVED_NO_AUTHORITY", "RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE")
+        if reason_class is None:
+            # a registered rule's own rejection is labeled by that rule, never as a missing authority
+            assert "MUTUALLY EXCLUSIVE under their own stacking rule" in reason, reason
+        else:
+            assert reason_class in ("UNRESOLVED_NO_AUTHORITY", "RULE_TYPE_UNSUPPORTED_BY_SAME_JURISDICTION_BRIDGE")
 
 
 @pytest.mark.asyncio
@@ -993,8 +780,9 @@ async def test_ho013_no_arbitrary_target_bound_remains_and_search_uses_component
     )
     assert "_hy_component_all_targets.get(_mc_comp_a" in src_code_only
     assert "_hy_component_all_targets.get(_mc_comp_b" in src_code_only
-    assert "_mc_window = 2" in src_code_only
-    assert "_mc_window = min(_mc_window * 2" in src_code_only
+    # the pigeonhole widening window was replaced (1.87.0) by the same best-first proof used by the single-component search
+    assert '_mc_proof_type = "best_first_heap_bound"' in src_code_only
+    assert not re.search(r"\b_mc_window\b", src_code_only), "the fixed multi-component window constant was reintroduced"
 
 
 @pytest.mark.asyncio
