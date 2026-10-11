@@ -298,6 +298,35 @@ Because the exact qualifying split of BTL travel ($438,254) and actual disbursem
 
 ---
 
+### 3.5 Three-Unit Reconciled Defect & Variance Breakdown (`NA-DEFECT-01` in Saved Engine `canonical-1.106.0`)
+*(Operands derived strictly within matching units: QPE vs QPE, Incentive vs Incentive, NPC vs NPC. Historical saved results in `canonical-1.106.0` do not prove defects in current code `canonical-1.111.0` / `canonical-1.112.0`)*
+
+#### Unit 1: Qualified Production Expenditure (QPE)
+| Project | Structure ID / Result ID | Saved Engine QPE (1.106.0) | Statutory Min QPE Floor | Relocation Baseline QPE | Statutory Max QPE Upper Bound | $\Delta \text{QPE}_{\min}$ (vs Max Bound) | $\Delta \text{QPE}_{\max}$ (vs Min Floor) |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **LU** | `14535c49...` / `340d2041...` | $4,054,196.00 | $2,836,167.00 | $3,274,421.00 | $3,771,497.00 | +$282,699.00 | +$1,218,029.00 |
+| **FVD** | `ae10b2e7...` / `c3b8ad45...` | $3,701,238.00 | $1,256,776.00 | — | $1,759,486.40 | +$1,941,751.60 | +$2,444,462.00 |
+| **BH** | `8558365f...` / `f3513411...` | $2,327,641.00 | $749,889.00 | — | $1,049,844.60 | +$1,277,796.40 | +$1,577,752.00 |
+| **LLS** | `c135df1f...` / `5557ceb5...` | $9,483,654.00 | $5,853,484.00 | — | $8,194,877.60 | +$1,288,776.40 | +$3,630,170.00 |
+
+#### Unit 2: Incentive / Tax Credit (Base 30% Rate)
+| Project | Structure ID / Result ID | Saved Engine Incentive (1.106.0) | Statutory Min Credit Floor | Relocation Baseline Credit | Statutory Max Credit Upper Bound | $\Delta \text{Incentive}_{\min}$ (vs Max Bound) | $\Delta \text{Incentive}_{\max}$ (vs Min Floor) |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **LU** | `14535c49...` / `340d2041...` | $1,216,258.80 | $850,850.10 | $982,326.30 | $1,131,449.10 | +$84,809.70 | +$365,408.70 |
+| **FVD** | `ae10b2e7...` / `c3b8ad45...` | $1,110,371.40 | $377,032.80 | — | $527,845.92 | +$582,525.48 | +$733,338.60 |
+| **BH** | `8558365f...` / `f3513411...` | $698,292.30 | $224,966.70 | — | $314,953.38 | +$383,338.92 | +$473,325.60 |
+| **LLS** | `c135df1f...` / `5557ceb5...` | $2,845,096.20 | $1,756,045.20 | — | $2,458,463.28 | +$386,632.92 | +$1,089,051.00 |
+
+#### Unit 3: Net Production Cost (NPC)
+| Project | Controlling Gross Budget | Saved Engine NPC (1.106.0) | Statutory Min NPC Floor (at Max Credit) | Relocation Baseline NPC | Statutory Max NPC Ceiling (at Min Credit) | $\Delta \text{NPC}$ (vs Min NPC) | $\Delta \text{NPC}$ (vs Max NPC) |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **LU** | $4,364,395.00 | $3,148,136.20 | $3,232,945.90 | $3,382,068.70 | $3,513,544.90 | -$84,809.70 | -$365,408.70 |
+| **FVD** | $4,517,687.00 | $3,407,315.60 | $3,989,841.08 | — | $4,140,654.20 | -$582,525.48 | -$733,338.60 |
+| **BH** | $2,482,023.00 | $1,783,730.70 | $2,167,069.62 | — | $2,257,056.30 | -$383,338.92 | -$473,325.60 |
+| **LLS** | $11,947,562.00 | $9,102,465.80 | $9,489,098.72 | — | $10,191,516.80 | -$386,632.92 | -$1,089,051.00 |
+
+---
+
 ## 4. Multi-Program Stacking & Post-Production Gateways
 
 ### 4.1 New York Multi-Program Stack (`stack_ny_prod_post`) & Defect `DISC-NY-001`
@@ -413,10 +442,20 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-03-CAVCO-DOMESTIC-CERTIFICATION-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** CAVCO Part A/B certification, Canadian copyright ownership documentation, and key creative point tally (>= 6/10 CAVCO points) under Income Tax Act § 125.4 and Ontario Taxation Act § 43.
-* **Statutory Assistance Deduction Mechanism:** Under ITA § 125.4(1), Qualified Labour Expenditure (QLE) cannot exceed 60% of total production costs *net of assistance*. Provincial tax credits (such as Ontario OFTTC at 35% of eligible Ontario labor) constitute government assistance, reducing the net production cost base. In the domestic certified scenario, the maximum CPTC QLE cap satisfies QLE <= 0.60 × (Production Cost - 0.35 × Labour), which bounds CPTC QLE at approximately 49.59% of gross spend at maximum labor deployment.
+* **Divergent CPTC vs OFTTC Labor Bases:**
+  - **Federal CPTC Base ($L_{\text{CA}}$):** Remuneration paid to Canadian citizens or permanent residents residing anywhere in Canada for services rendered in Canada.
+  - **Ontario OFTTC Base ($L_{\text{ON}}$):** Remuneration paid to individuals resident specifically in **Ontario** at the end of the calendar year, for services rendered in **Ontario** ($L_{\text{ON}} \le L_{\text{CA}}$).
+  - In any production utilizing Canadian crew from other provinces (e.g. BC, Quebec, Alberta), $L_{\text{ON}} < L_{\text{CA}}$, and CPTC and OFTTC bases are NOT identical.
+* **Statutory Assistance Deduction Equations:**
+  - Ontario OFTTC: $\text{OFTTC} = 0.35 \times L_{\text{ON}}$.
+  - Federal CPTC under ITA § 125.4(1): Provincial tax credits constitute government assistance under ITA § 12(1)(x), reducing net production cost: $\text{Net Production Cost} = \text{Gross} - 0.35 \times L_{\text{ON}}$.
+  - CPTC Statutory 60% Net Cost Ceiling: $\text{QLE}_{\text{cap}} = 0.60 \times (\text{Gross} - 0.35 \times L_{\text{ON}})$.
+  - CPTC Qualified Labour Expenditure: $\text{QLE}_{\text{CPTC}} = \min(L_{\text{CA}}, \text{QLE}_{\text{cap}})$; $\text{CPTC Credit} = 0.25 \times \text{QLE}_{\text{CPTC}}$.
+  - **Ceiling at Maximum Ontario Labor ($L_{\text{ON}} = L_{\text{CA}} = L$):**
+    $$L \le 0.60 \times (\text{Gross} - 0.35 \times L) \implies L \times 1.21 \le 0.60 \times \text{Gross} \implies L \le \frac{0.60}{1.21} \times \text{Gross} \approx 49.5868\% \times \text{Gross}$$
 * **Supported Scenarios & Bounds (from Original Budgets):**
   - Non-Certified Scenario: Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to Canadian resident labour expenditure proofs.
-  - Certified Domestic Scenario (CPTC 25% + OFTTC 35% with Assistance Deduction):
+  - Certified Domestic Scenario (CPTC 25% + OFTTC 35% with Assistance Deduction at Statutory Ceiling):
     * LU (Gross $4,364,395.00): Max CPTC QLE = **$2,164,162.81**; OFTTC = **$757,456.98**; CPTC = **$541,040.70**; Combined domestic stack = **$1,298,497.68**.
     * FVD (Gross $4,517,687.00): Max CPTC QLE = **$2,240,175.37**; OFTTC = **$784,061.38**; CPTC = **$560,043.84**; Combined domestic stack = **$1,344,105.22**.
     * BH (Gross $2,482,023.00): Max CPTC QLE = **$1,230,755.21**; OFTTC = **$430,764.32**; CPTC = **$307,688.80**; Combined domestic stack = **$738,453.12**.
@@ -431,18 +470,26 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** Itemized Canadian payroll general ledger with CAVCO individual residency declarations confirming Canadian citizenship / permanent residency for BTL crew and ATL talent under ITA § 125.5.
 * **Retraction of Unsupported 40%–60% Labor Assumption:** Arbitrary default labor ratios (including any 40%–60% heuristic) are formally rejected. In accordance with Codex delta review and statutory rules, actual QLE requires itemized payroll records; planning scenarios must be independently bounded from original budget accounts without invented ratios.
+* **Statutory Service Stack Mechanics & Assistance Deduction (ITA § 125.5(1)):**
+  - Under ITA § 125.5(1), Qualified Canadian Labour Expenditure (QCLE) is Canadian labour expenditure *net of assistance*: $\text{QCLE} = L_{\text{CA}} - \text{Assistance}$.
+  - If Ontario OPSTC ($21.5\% \times L_{\text{ON}}$) reduces federal QCLE: $\text{QCLE} = L_{\text{CA}} - 0.215 \times L_{\text{ON}}$. When $L_{\text{ON}} = L_{\text{CA}} = L$, $\text{QCLE} = 0.785 \times L$.
+  - Federal PSTC (16% of QCLE) = $0.16 \times (0.785 \times L) = 12.56\% \times L$.
+  - Ontario OPSTC (21.5% of labor) = $21.50\% \times L$.
+  - **Statutory Net Stack Rate:** $21.50\% + 12.56\% = \mathbf{34.06\%}$ of labor.
+  - **Unreduced Nominal Stack Rate:** $16.00\% + 21.50\% = \mathbf{37.50\%}$ (nominal sum assuming zero federal assistance clawback).
+* **Non-Labor Physical BTL Disclaimer:** Departmental Below-The-Line physical totals include non-labor equipment rentals, materials, expendables, fuel, food, and facilities. Treating 100% of physical BTL as labor is an abstract mathematical ceiling, NOT established eligible labor.
 * **Supported Scenarios & Bounds (from Original Budgets):**
   - Incurred Evidence Floor: **$0.00** verified credit under strict evidence rules (`NOT_ESTABLISHED (MISSING_PAYROLL_SCHEDULE)`).
   - Direct Line Labor Scenario (Identifiable Crew/Labor Accounts in Original Movie Magic Budgets):
-    * LU (Direct Labor $464,916.00: Production Staff $321,594 + Extras $21,981 + Makeup/Hair $51,809 + Sound $69,532): Federal PSTC (16%) = **$74,386.56**; Ontario OPSTC (21.5%) = **$99,956.94**; Combined Lawful Service Stack (37.5%) = **$174,343.50**.
-    * FVD (Direct Labor $227,641.00: Production Staff $168,353 + Makeup/Hair $32,830 + Sound $26,458): Federal PSTC (16%) = **$36,422.56**; Ontario OPSTC (21.5%) = **$48,942.82**; Combined Lawful Service Stack (37.5%) = **$85,365.38**.
-    * BH (Direct Labor $167,190.00: Production Staff $114,906 + Extras $6,235 + Makeup/Hair $29,204 + Sound $16,845): Federal PSTC (16%) = **$26,750.40**; Ontario OPSTC (21.5%) = **$35,945.85**; Combined Lawful Service Stack (37.5%) = **$62,696.25**.
-    * LLS (Direct Labor $1,998,678.00: Production Staff $608,606 + Background $203,715 + Makeup/Hair $76,175 + Sound $87,067 + BTL Fringes $1,023,115): Federal PSTC (16%) = **$319,788.48**; Ontario OPSTC (21.5%) = **$429,715.77**; Combined Lawful Service Stack (37.5%) = **$749,504.25**.
-  - Maximum Theoretical Physical BTL Ceiling (100% of Physical Production BTL Deployed to Canadian Resident Labor):
-    * LU ($2,642,502.00 BTL): PSTC (16%) = **$422,800.32**; OPSTC (21.5%) = **$568,137.93**; Combined Stack (37.5%) = **$990,938.25**.
-    * FVD ($1,139,276.00 BTL): PSTC (16%) = **$182,284.16**; OPSTC (21.5%) = **$244,944.34**; Combined Stack (37.5%) = **$427,228.50**.
-    * BH ($656,044.00 BTL): PSTC (16%) = **$104,967.04**; OPSTC (21.5%) = **$141,049.46**; Combined Stack (37.5%) = **$246,016.50**.
-    * LLS ($5,166,417.00 BTL): PSTC (16%) = **$826,626.72**; OPSTC (21.5%) = **$1,110,779.66**; Combined Stack (37.5%) = **$1,937,406.38**.
+    * LU (Direct Labor $464,916.00: Staff $321,594 + Extras $21,981 + Makeup/Hair $51,809 + Sound $69,532): Statutory Net Stack (34.06%) = **$158,350.39** [OPSTC $99,956.94 + PSTC $58,393.45]; Nominal Unreduced Stack (37.50%) = **$174,343.50** [OPSTC $99,956.94 + PSTC $74,386.56].
+    * FVD (Direct Labor $227,641.00: Staff $168,353 + Makeup/Hair $32,830 + Sound $26,458): Statutory Net Stack (34.06%) = **$77,534.53** [OPSTC $48,942.82 + PSTC $28,591.71]; Nominal Unreduced Stack (37.50%) = **$85,365.38** [OPSTC $48,942.82 + PSTC $36,422.56].
+    * BH (Direct Labor $167,190.00: Staff $114,906 + Extras $6,235 + Makeup/Hair $29,204 + Sound $16,845): Statutory Net Stack (34.06%) = **$56,944.91** [OPSTC $35,945.85 + PSTC $20,999.06]; Nominal Unreduced Stack (37.50%) = **$62,696.25** [OPSTC $35,945.85 + PSTC $26,750.40].
+    * LLS (Direct Labor $1,998,678.00: Staff $608,606 + Background $203,715 + Makeup/Hair $76,175 + Sound $87,067 + Fringes $1,023,115): Statutory Net Stack (34.06%) = **$680,749.73** [OPSTC $429,715.77 + PSTC $251,033.96]; Nominal Unreduced Stack (37.50%) = **$749,504.25** [OPSTC $429,715.77 + PSTC $319,788.48].
+  - Abstract Physical BTL Ceiling (Hypothetical Max Departmental Pool Boundary, NOT Established Eligible Labor):
+    * LU ($2,642,502.00 BTL): Statutory Net Stack (34.06%) = **$900,036.18**; Nominal Stack (37.50%) = **$990,938.25**.
+    * FVD ($1,139,276.00 BTL): Statutory Net Stack (34.06%) = **$388,037.40**; Nominal Stack (37.50%) = **$427,228.50**.
+    * BH ($656,044.00 BTL): Statutory Net Stack (34.06%) = **$223,448.59**; Nominal Stack (37.50%) = **$246,016.50**.
+    * LLS ($5,166,417.00 BTL): Statutory Net Stack (34.06%) = **$1,759,681.63**; Nominal Stack (37.50%) = **$1,937,406.38**.
 * **Lawful Stacking Analysis:** `stack_on_opstc_ocase` (OPSTC on labor + OCASE on computer animation/VFX) and `stack_bc_dave_pstc` (BC PSTC on labor + BC DAVE on digital animation/VFX) are lawful service stacks with no statutory prohibition against stacking.
 * **Expected Engine Behavior:** Retract arbitrary 50% heuristic; flag `MISSING_PAYROLL_SCHEDULE` until resident labour is itemized.
 * **Exact Producer Input Needed:** Producer upload or entry of Canadian resident payroll ledger or certified labour ratio.
