@@ -552,7 +552,8 @@ def _resolve_incentive_dollar_cap(
 _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit"})
 
 
-def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None):
+def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None,
+                          floor_base_usd=None, potential_base_usd=None):
     """Price only evidenced portions; missing portions remain disclosed bounds.
 
     A line's uplift basis is confirmed when its statutory prerequisite fact is evidenced AND either the rule's whole-base fact is
@@ -613,6 +614,8 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             else:
                 potential += qualified
                 missing.append(line.line_id)
+        if rule.base_cap_usd is not None:
+            confirmed, potential = min(confirmed, rule.base_cap_usd), min(potential, rule.base_cap_usd)
         group = rule.exclusive_group or rule.uplift_id
         floor_parts[group] = max(floor_parts.get(group, 0.0), confirmed * rule.rate)
         potential_parts[group] = max(potential_parts.get(group, 0.0), min(qpe, potential) * rule.rate)
@@ -630,10 +633,11 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     raw_qpe = sum(qualifying.values())
     if raw_qpe > qpe + .005 and any(floor_parts.values()):
         raise ValueError("Subset uplift with a capped QPE base requires an explicit qualified claim-line selection")
-    floor = round(qpe * base_rate + sum(floor_parts.values()), 2)
-    # The potential keeps the resolved rate ceiling (e.g. a conditional higher base rate) when it exceeds the guaranteed base rate.
-    potential = round(qpe * max(base_rate, ceiling_rate or 0.0) + sum(potential_parts.values()), 2)
-    return floor, potential, tuple(conditions)
+    # The base is the segment's own already-priced base (a labour-basis program prices its rate on that basis, not on total QPE); callers
+    # that pass nothing get rate x QPE. The potential keeps a conditional higher base rate (ceiling_rate) when it exceeds the guaranteed one.
+    floor_base = floor_base_usd if floor_base_usd is not None else qpe * base_rate
+    potential_base = potential_base_usd if potential_base_usd is not None else qpe * max(base_rate, ceiling_rate or 0.0)
+    return round(floor_base + sum(floor_parts.values()), 2), round(potential_base + sum(potential_parts.values()), 2), tuple(conditions)
 
 
 def price_segment(
@@ -1728,7 +1732,9 @@ def price_segment(
     try:
         subset_pricing = _price_subset_uplifts(slug, lines, register, qpe, rr.floor_rate,
             production_type, amount_facts, evidenced_requirement_facts, gross_budget_usd=gross_budget_usd,
-            ceiling_rate=rr.modeled_rate if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else None)
+            ceiling_rate=rr.modeled_rate if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else None,
+            floor_base_usd=floor_incentive_usd,
+            potential_base_usd=ceiling_incentive_usd if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else floor_incentive_usd)
     except ValueError as exc:
         return SegmentEconomics(jurisdiction_code=jurisdiction_code, program_slug=slug,
             claims_incentive=True, allocated_usd=allocated, account_codes=codes,

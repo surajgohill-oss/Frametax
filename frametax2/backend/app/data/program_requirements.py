@@ -316,7 +316,7 @@ register(ProgramRequirementsProfile(
                                            "April 1, 2023: ATL salaries are 'subject to a $500,000 cap per individual and limited to 40% of all "
                                            "other qualified production costs'. Tax Law 24 as displayed (revision 2025-07-11) states the 40% group "
                                            "limit and at most two producers but no per-person dollar cap; that silence does not disprove the "
-                                           "agency rule. Executed in the qualification register (calculators/ny_atl_individual_cap.py): an identified payee with evidenced-complete NY compensation is cut at $500,000 (excess EXCLUDED, summed across that payee's accounts), only for costs established as on or after 2023-04-01; an account not tied to an identified payee stays at its qualified amount with an explicit UNRESOLVED note and is never capped or assumed. The 40% group limit is applied definitively, pro rata, after the individual cap. Payee identity and complete compensation are stated through POST /projects/{id}/ny-program-facts (backend path; the Overview/Inspector control is a pending UI stage). Unresolved: the two-producer limit (only one executive and one line producer qualify) and composer fees inside music accounts are not tested.",
+                                           "agency rule. Executed in the qualification register (calculators/ny_atl_individual_cap.py): an identified payee with evidenced-complete NY compensation is cut at $500,000 (excess EXCLUDED, summed across that payee's accounts), only for costs established as on or after 2023-04-01; an account not tied to an identified payee stays at its qualified amount with an explicit UNRESOLVED note and is never capped or assumed. The 40% group limit is applied definitively, pro rata, after the individual cap. Payee identity and complete compensation are stated through POST /projects/{id}/program-facts (backend path; the Overview/Inspector control is a pending UI stage). Unresolved: the two-producer limit (only one executive and one line producer qualify) and composer fees inside music accounts are not tested.",
         "scoring_uplift": "+10% on scoring costs if scoring pays a minimum of 5 musicians",
         "min_spend_nyc_metro_usd": "1,000,000",
     },
@@ -354,7 +354,7 @@ register(ProgramRequirementsProfile(
                                      "District; 35% at a qualified facility elsewhere in the state (Tax Law 31(a)(2), displayed 2025-07-11; ESD "
                                      "Guidelines April 2025 p.2). 30% is the guaranteed rate; 35% is shown as a conditional planning scenario until "
                                      "the producer states 'ny_post_facility_outside_mctd' (becomes guaranteed) or 'ny_post_facility_inside_mctd' (scenario removed), "
-                                     "stated through POST /projects/{id}/ny-program-facts (backend path; the UI control is a pending stage).",
+                                     "stated through POST /projects/{id}/program-facts (backend path; the UI control is a pending stage).",
         "vfx_animation_subthreshold": "lesser of $500,000 or 10% of total post-production cost",
         "eligible_production_profile": "production shot substantially outside NY, post routed to an NY facility",
     },

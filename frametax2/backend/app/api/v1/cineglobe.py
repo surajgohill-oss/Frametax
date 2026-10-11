@@ -871,10 +871,10 @@ class NyProgramFacts(BaseModel):
     uplift_basis: list[dict[str, Any]] = []
 
 
-@router.post("/projects/{project_id}/ny-program-facts")
+@router.post("/projects/{project_id}/program-facts")
 async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
-    """Backend write path for producer-stated New York facts (post facility location, majority-days/scoring/Production Plus
-    prerequisites, identified payees with complete compensation, evidenced uplift portions). Stored in the existing ProjectFact
+    """Backend write path for producer-stated program facts (New York post facility location, majority-days/scoring/Production Plus
+    prerequisites, identified payees with complete compensation, Ontario/BC zone and first-time-producer facts, evidenced uplift portions). Stored in the existing ProjectFact
     table and covered by the evaluation fingerprint; a later evaluation prices them. Unknown is a cleared (null) fact, never
     false. The Overview/Inspector controls for these facts are a separate pending UI stage."""
     from app.services.ny_producer_facts import write_ny_program_facts

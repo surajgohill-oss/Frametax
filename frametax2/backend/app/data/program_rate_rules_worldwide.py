@@ -983,24 +983,8 @@ CA_BC_DOCTRINE = register(DoctrineRecord(
                 ),
             ),
         ),
-        DoctrineRateTier(
-            tier_id="ca-bc-pstc-regional-ceiling-48",
-            rate=0.48,
-            is_band_ceiling=True,
-            conditions=(
-                RateCondition(
-                    condition_id="ca-bc-regional-distant-uplift",
-                    description="+6% regional and +6% distant-location "
-                                "uplifts (up to 48% combined) require a "
-                                "fact identifying WHERE in BC a shoot "
-                                "occurs, which this engine does not have",
-                    quote="Regional production services tax credit (6%) "
-                          "and Distant location production services tax "
-                          "credit (6%) (gov.bc.ca)",
-                    kind="discretionary_band",
-                ),
-            ),
-        ),
+        # The former whole-base 48% "ceiling" tier is REMOVED: the +6% regional and +6% distant-location credits are statutory uplifts on the
+        # labour incurred in those zones, priced through SUBSET_UPLIFT_RULES["ca_bc_pstc"] (zone fact or per-account evidenced labour).
     ),
 ))
 register_rate_rules(rate_rules_for(CA_BC_DOCTRINE))
@@ -1288,6 +1272,22 @@ ON_OFTTC_DOCTRINE = register(DoctrineRecord(
             rate=0.35,
             is_band_ceiling=False,
             conditions=(
+                RateCondition(
+                    condition_id="on-ofttc-labour-only-base",
+                    description="OFTTC is 35% of the ELIGIBLE ONTARIO LABOUR expenditures, not of all qualifying spend: the rate applies to the "
+                                "segment's own qualifying labour-category lines (the basis traced from its AccountAllocation lines). Whether each "
+                                "labour account is an eligible Ontario labour expenditure (e.g. the payee's Ontario residency) is not evidenced from "
+                                "a topsheet, so this basis is a planning figure, not a certified claim.",
+                    quote="35% of the eligible Ontario labour expenditures incurred by a qualifying production company (ontariocreates.ca)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="on_ofttc_qualified_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
+                ),
                 RateCondition(
                     condition_id="on-ofttc-cancon-cert",
                     description="Requires Canadian-content certification "
@@ -7149,7 +7149,22 @@ CA_NS_DOCTRINE = register(DoctrineRecord(
               "catalog's 25% base; rural bonus magnitude not disclosed.",
     source_ref="thereactionlab.com-nova-scotia",
     tiers=(DoctrineRateTier(tier_id="ca-ns-base-25", rate=0.25, is_band_ceiling=False,
-                             conditions=(RateCondition(
+                             conditions=(
+                RateCondition(
+                    condition_id="ca-ns-labour-only-base",
+                    description="The recorded source states the base as 'eligible Nova Scotia labour' (a single secondary source): the rate applies to "
+                                "the segment's own qualifying labour-category lines, not to all qualifying spend. Eligibility of each labour account "
+                                "(e.g. Nova Scotia residency) is not evidenced from a topsheet.",
+                    quote="Base rate of 25% on eligible Nova Scotia labour, with additional rural bonuses (thereactionlab.com)",
+                    kind="project_fact_dependent_eligibility",
+                    amount_fact_key="ca_ns_qualified_labour_usd",
+                    amount_fact_min=0.01,
+                    is_component_basis=True,
+                    component_basis_spend_categories=(
+                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
+                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+                    ),
+                ),RateCondition(
                                  condition_id="ca-ns-rural-bonus-magnitude-undisclosed",
                                  description="Additional rural bonuses "
                                              "exist but their magnitude is "

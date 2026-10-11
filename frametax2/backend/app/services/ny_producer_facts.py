@@ -1,4 +1,4 @@
-"""Durable producer-stated New York program facts (backend write/read path).
+"""Durable producer-stated program facts for statutory uplifts (New York, Ontario, British Columbia): backend write/read path.
 
 Everything here is a stated PRODUCER fact or planning election stored in the existing ProjectFact table, read back by
 canonical_project_economics.build_project_economic_inputs into the fields the evaluation fingerprint already covers
@@ -30,6 +30,11 @@ NY_EVIDENCED_FACTS = {
     "ny_scoring_five_musicians_in_state": None,
     "ny_production_plus_10pct_tier": "ny_production_plus_5pct_tier",
     "ny_production_plus_5pct_tier": "ny_production_plus_10pct_tier",
+    # Canada (statutory uplifts on a narrower base; each states a zone or producer fact, or a per-account evidenced portion)
+    "on_ofttc_first_time_producer": None,
+    "on_ofttc_labour_outside_gta": None,
+    "bc_labour_in_regional_zone": None,
+    "bc_labour_in_distant_location_zone": None,
 }
 
 
@@ -85,7 +90,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
     lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis) else {}
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
-            raise ValueError(f"'{fid}' is not a settable New York program fact")
+            raise ValueError(f"'{fid}' is not a settable program fact")
         if value not in (True, None):
             raise ValueError(f"'{fid}' accepts true (stated) or null (Unknown); a false is never stored as evidence")
         partner = NY_EVIDENCED_FACTS[fid]

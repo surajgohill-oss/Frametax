@@ -2986,6 +2986,8 @@ class EligibleSubsetUpliftRule:
     potential_requires_prerequisite: bool = False
     #: The film's gross budget must be at least this (statutory minimum budget); below it the uplift does not apply.
     min_gross_budget_usd: float | None = None
+    #: Ceiling on the TOTAL base this uplift can apply to across all lines (e.g. an enhanced rate on only the first $240,000 of labour).
+    base_cap_usd: float | None = None
 
 
 _NY_LABOR_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
@@ -3030,6 +3032,29 @@ SUBSET_UPLIFT_RULES = {
             source_ref="Tax Law 31(a)(6) (displayed 2025-07-11): +10% of wages or salaries paid to individuals directly employed at a qualified post facility in the "
                        "listed counties, other than writers, directors, composers, producers and performers; facility fees, equipment and vendor charges are not wages, "
                        "so each line needs its evidenced wage portion"),
+    ),
+    "on_ofttc": (
+        EligibleSubsetUpliftRule(
+            "first_time_producer", .05, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="on_ofttc_first_time_producer",
+            prerequisite_fact="on_ofttc_first_time_producer", potential_requires_prerequisite=True, base_cap_usd=240_000.0,
+            source_ref="Ontario Creates OFTTC page: enhanced 40% (35% + 5 points) on the first $240,000 of qualifying labour expenditure for first-time producers"),
+        EligibleSubsetUpliftRule(
+            "regional_bonus", .10, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="on_ofttc_labour_outside_gta",
+            source_ref="Ontario Creates OFTTC page: 10% bonus on all Ontario labour expenditures for productions shot outside the Greater Toronto Area"),
+    ),
+    "ca_qc_pstc": (
+        EligibleSubsetUpliftRule(
+            "vfx_labour_enhancement", .16, eligible_categories=frozenset({"vfx"}),
+            source_ref="SODEC fact sheet (2024) and Revenu Quebec: additional 16% on qualified computer-animation/VFX LABOUR costs; only 65% of a VFX/animation "
+                       "service contract is recognized, so each account needs its evidenced qualifying labour portion"),
+    ),
+    "ca_bc_pstc": (
+        EligibleSubsetUpliftRule(
+            "regional", .06, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="bc_labour_in_regional_zone",
+            source_ref="gov.bc.ca: Regional production services tax credit (6%) on qualified BC labour in the regional zone"),
+        EligibleSubsetUpliftRule(
+            "distant_location", .06, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="bc_labour_in_distant_location_zone",
+            source_ref="gov.bc.ca: Distant location production services tax credit (6%) on qualified BC labour in the distant location zone"),
     ),
     "us_nm_film_credit": (
         EligibleSubsetUpliftRule("rural_location", .10, excluded_categories=frozenset({"btl_nonresident_labor"}), source_ref="TRD FYI-370 July 2025 p4: qualifying rural-location goods/services; rental prorating; excludes nonresident BTL"),

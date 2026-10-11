@@ -251,26 +251,23 @@ def test_four_canadian_pstc_programs_no_longer_b1_blocked():
         assert rr is not None, f"{slug} must resolve a real rate"
         assert rr.floor_rate == pytest.approx(floor)
         assert rr.has_guaranteed_floor is True
-    # Without the labour basis the federal credit fails closed, and BC offers only its ceiling with NO guaranteed floor.
+    # Without the labour basis the federal credit and BC fail closed.
     assert resolve_program_rate("ca_federal_pstc", production_type="feature_film", qpe_usd=2_000_000.0) is None
+    assert resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0) is None
 
 
-def test_ca_bc_pstc_regional_uplift_remains_a_disclosed_ceiling_not_guaranteed():
-    # The 48% regional/distant-location uplift tier is a real, correctly-modeled is_band_ceiling=True discretionary_band
-    # condition -- only the 36% labour-basis floor is guaranteed. Removing the B1 veto must not promote the uplift.
+def test_ca_bc_pstc_regional_and_distant_uplifts_are_unconfirmed_subset_rules_not_a_guaranteed_rate():
+    # The +6% regional and +6% distant-location credits are statutory uplifts on the labour incurred in those zones. They are subset
+    # uplift rules (zone fact or per-account evidenced labour), never a whole-base 48% rate, and never part of the guaranteed 36%.
+    from app.data.program_rate_rules import get_subset_uplift_rules
     rr = resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0,
                               amount_facts={"ca_bc_pstc_qualified_labour_usd": 1_000_000.0})
     assert rr is not None
-    assert rr.modeled_rate == pytest.approx(0.48)
-    assert rr.is_band_ceiling is True
-    assert rr.floor_rate == pytest.approx(0.36)
-    assert rr.has_guaranteed_floor is True
-    assert "guaranteed floor tier is 36%" in rr.basis
-    # Labour basis not evidenced: the base tier is ineligible, only the ceiling remains, and nothing may read as guaranteed.
-    bare = resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0)
-    assert bare is not None and bare.is_band_ceiling is True and bare.has_guaranteed_floor is False
-    assert "guaranteed floor tier is 48%" not in bare.basis, "a ceiling must never be described as the guaranteed floor"
-    assert "NO guaranteed floor tier is eligible" in bare.basis
+    assert rr.modeled_rate == pytest.approx(0.36) and rr.floor_rate == pytest.approx(0.36)
+    assert rr.is_band_ceiling is False and rr.has_guaranteed_floor is True
+    assert {r.uplift_id: r.rate for r in get_subset_uplift_rules("ca_bc_pstc")} == {"regional": 0.06, "distant_location": 0.06}
+    # Labour basis not evidenced: the base tier is ineligible and there is no rate at all (no ceiling-only 48% to misread).
+    assert resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0) is None
 
 
 def test_retired_identity_is_blocked():
