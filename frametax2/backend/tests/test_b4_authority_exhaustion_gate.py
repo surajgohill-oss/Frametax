@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.data.authority_coverage_registry import economic_block_for_program
+from app.data.authority_coverage_registry import _B1_DISCRETIONARY_RULING, economic_block_for_program
 from app.data.program_rate_rules import (
     RATE_FAILURE_AUTHORITY_EXHAUSTED,
     RateCondition,
@@ -127,35 +127,37 @@ def test_negative_3_pair_and_group_stacks_with_blocked_member_reject():
 # ── Negative control 4: a display-only discretionary candidate remains
 # visible but contributes zero guaranteed value. ────────────────────────
 
-async def test_negative_4_display_only_candidate_visible_zero_guaranteed(db):
+async def test_negative_4_display_only_candidate_visible_zero_guaranteed():
+    """Synthetic, rolled-back records only. This control used to evaluate the real F#K Valentine's Day production and expected
+    de_dfff to be display-only, but de_dfff left the discretionary ruling in 1.10.0 (supported guaranteed floor). The behavior is
+    pinned on a program that is STILL display-only in the ruling and is discovered for the synthetic budget."""
+    from tests.isolated_records import create_synthetic_project, isolated_session, served_structures
     from app.services.canonical_evaluation import evaluate_project
-    from app.services.canonical_production_view import build_production_and_structures
 
-    fvd_project_id = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
-    await evaluate_project(db, fvd_project_id)
-    view = await build_production_and_structures(db, fvd_project_id)
-    entries = view["structures"]["allocated_structures"]["structures"]
-    de = next(e for e in entries if e["primary_jurisdiction"] == "DE")  # de_dfff, B1 DISPLAY_ONLY_ZERO_GUARANTEED
-    assert de is not None, "DE must remain visible/discovered"
-    assert de["is_fully_priced"] is False
-    assert not de.get("selected_incentive_usd")
-
-
-@pytest.fixture
-async def db():
-    from sqlalchemy.ext.asyncio import AsyncSession
-    from app.db.session import engine
-    async with AsyncSession(engine, expire_on_commit=False) as session:
-        yield session
-
+    slug = "sg_made_with_singapore_rebate"
+    assert _B1_DISCRETIONARY_RULING[slug] == "DISPLAY_ONLY_ZERO_GUARANTEED"
+    async with isolated_session() as session:
+        pid = await create_synthetic_project(session, home_code="MU")
+        await evaluate_project(session, pid)
+        entries = await served_structures(session, pid)
+    shown = [e for e in entries if slug in (e.get("program_slugs") or [e.get("program_slug")])]
+    assert shown, "the display-only candidate must remain visible/discovered"
+    assert all(e["is_fully_priced"] is False for e in shown)
+    assert not any(e.get("selected_incentive_usd") for e in shown), "a display-only program contributes zero guaranteed value"
+    assert not any(e.get("confirmed_incentive_floor_usd") for e in shown)
 
 # ── Negative control 5: an unrelated verified rule still prices. ────────
 
 def test_negative_5_unrelated_verified_rule_still_prices():
-    r = resolve_program_rate("ca_federal_cptc", production_type="feature_film", qpe_usd=5_000_000)
+    # The CPTC rate applies to qualified Canadian LABOUR (Task 4 labour-only base), so it prices only when that basis is evidenced.
+    r = resolve_program_rate("ca_federal_cptc", production_type="feature_film", qpe_usd=5_000_000,
+                             amount_facts={"ca_federal_cptc_qualified_labour_usd": 2_000_000.0})
     assert r is not None
     assert r.modeled_rate == 0.25
+    assert r.has_guaranteed_floor is True and r.qpe_basis_used == 2_000_000.0
     assert economic_block_for_program("ca_federal_cptc") is None
+    # No labour basis evidenced: fail closed (no rate), never the whole QPE.
+    assert resolve_program_rate("ca_federal_cptc", production_type="feature_film", qpe_usd=5_000_000) is None
 
 
 # ── Negative control 6: no loader or registry-import order can reactivate
@@ -195,20 +197,37 @@ def test_negative_6_reregistering_a_blocked_slugs_rate_rule_cannot_reactivate_it
 # for every one of the 46 B1 canonical ids, and for the pre-existing
 # authority-exhausted/retired/duplicate states it also covers. ─────────
 
-def test_all_45_b1_canonical_ids_are_blocked():
-    # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
-    # corrected count (49 -> 45) after removing ca_bc_pstc, ca_federal_pstc,
-    # ca_qc_pstc, ca_nl_all_spend_credit -- each a real, standard,
-    # non-discretionary Canadian tax credit genuinely misclassified as
-    # authority-exhausted (see CLAUDE_FINAL_B1_49_RECLASSIFICATION.csv).
-    from app.data.authority_coverage_registry import _B1_DISCRETIONARY_RULING
+#: The 45-entry ruling was reconciled down to 10: 20 earlier STATUTORY_FORMULAIC removals plus the 15 floor-supported programs of
+#: AUTHORITY_COVERAGE_REGISTRY_VERSION 1.10.0 (see the comment above _B1_DISCRETIONARY_RULING). The 35 removed ids are pinned here.
+_B1_REMOVED_BY_RECONCILIATION = (
+    "ae_ad_film_rebate", "al_cash_rebate", "au_nsw_pdv_rebate", "au_pdv_offset", "au_qld_pdv_rebate", "au_sa_pdv_rebate",
+    "be_tax_shelter", "ch_pics_national_rebate", "de_dfff", "dk_production_rebate", "eg_empc_cashback", "fj_film_rebate",
+    "ge_film_rebate", "gh_film_tax_incentive", "il_foreign_production_fund", "in_national_film", "me_cash_rebate",
+    "mk_cash_rebate", "mn_production_incentive", "mx_federal_film_incentive_2026", "pa_film_rebate", "ph_fdcp_flip",
+    "pt_scri_pt_cash_rebate", "pt_scri_pt_medium_budget", "qa_screen_production_incentive", "si_cash_rebate",
+    "tt_production_expenditure_rebate", "ua_cash_rebate", "us_il_film_production_services_credit", "us_tn_performance_grant",
+    "us_wa_mpcp", "uy_acau_cash_rebate", "uy_tax_credit_2026", "uz_film_rebate", "za_dtic_foreign_film",
+)
 
-    assert len(_B1_DISCRETIONARY_RULING) == 45
+
+def test_all_remaining_b1_canonical_ids_are_blocked():
+    assert len(_B1_DISCRETIONARY_RULING) == 10
+    assert not set(_B1_DISCRETIONARY_RULING) & set(_B1_REMOVED_BY_RECONCILIATION)
     for slug, expected_classification in _B1_DISCRETIONARY_RULING.items():
         block = economic_block_for_program(slug)
         assert block is not None, f"{slug} must be B4-blocked"
         assert block.classification == expected_classification
 
+
+def test_every_id_removed_from_the_ruling_is_unblocked_and_never_guarantees_without_a_floor():
+    assert len(_B1_REMOVED_BY_RECONCILIATION) == 35
+    for slug in _B1_REMOVED_BY_RECONCILIATION:
+        assert economic_block_for_program(slug) is None, f"{slug} left the ruling and must not be B4-blocked"
+        rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=5_000_000.0)
+        if rr is None:
+            assert classify_rate_resolution_failure(slug, "feature_film", 5_000_000.0) != RATE_FAILURE_AUTHORITY_EXHAUSTED, slug
+        elif not rr.has_guaranteed_floor:
+            assert rr.is_band_ceiling is True, slug     # a lone ceiling is consumed fail-closed by allocation_pricing
 
 def test_four_canadian_pstc_programs_no_longer_b1_blocked():
     # CLAUDE_FINAL_PROGRAM_TAXONOMY_UNPRICED_LEDGER_AND_SUPPORT_CLOSEOUT:
@@ -222,24 +241,36 @@ def test_four_canadian_pstc_programs_no_longer_b1_blocked():
         "ca_qc_pstc": 0.25,
         "ca_nl_all_spend_credit": 0.40,
     }
+    # CPTC-style labour basis: BC, federal and Quebec PSTC rates apply to qualified labour, so their rate resolves only when
+    # that basis is evidenced (Task 4); NL and Quebec carry no such gate.
+    labour_fact = {"ca_bc_pstc": "ca_bc_pstc_qualified_labour_usd", "ca_federal_pstc": "ca_federal_pstc_qualified_labour_usd"}
     for slug, floor in expected_floor.items():
         assert economic_block_for_program(slug) is None, f"{slug} must NOT be B4-blocked"
-        rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=2_000_000.0)
+        facts = {labour_fact[slug]: 1_000_000.0} if slug in labour_fact else None
+        rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=2_000_000.0, amount_facts=facts)
         assert rr is not None, f"{slug} must resolve a real rate"
         assert rr.floor_rate == pytest.approx(floor)
+        assert rr.has_guaranteed_floor is True
+    # Without the labour basis the federal credit fails closed, and BC offers only its ceiling with NO guaranteed floor.
+    assert resolve_program_rate("ca_federal_pstc", production_type="feature_film", qpe_usd=2_000_000.0) is None
 
 
 def test_ca_bc_pstc_regional_uplift_remains_a_disclosed_ceiling_not_guaranteed():
-    # The 48% regional/distant-location uplift tier is a real,
-    # correctly-modeled is_band_ceiling=True discretionary_band condition --
-    # only the 36% floor is guaranteed. Removing the B1 veto must not turn
-    # the discretionary uplift into a guaranteed rate.
-    rr = resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0)
+    # The 48% regional/distant-location uplift tier is a real, correctly-modeled is_band_ceiling=True discretionary_band
+    # condition -- only the 36% labour-basis floor is guaranteed. Removing the B1 veto must not promote the uplift.
+    rr = resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0,
+                              amount_facts={"ca_bc_pstc_qualified_labour_usd": 1_000_000.0})
     assert rr is not None
     assert rr.modeled_rate == pytest.approx(0.48)
     assert rr.is_band_ceiling is True
     assert rr.floor_rate == pytest.approx(0.36)
     assert rr.has_guaranteed_floor is True
+    assert "guaranteed floor tier is 36%" in rr.basis
+    # Labour basis not evidenced: the base tier is ineligible, only the ceiling remains, and nothing may read as guaranteed.
+    bare = resolve_program_rate("ca_bc_pstc", production_type="feature_film", qpe_usd=2_000_000.0)
+    assert bare is not None and bare.is_band_ceiling is True and bare.has_guaranteed_floor is False
+    assert "guaranteed floor tier is 48%" not in bare.basis, "a ceiling must never be described as the guaranteed floor"
+    assert "NO guaranteed floor tier is eligible" in bare.basis
 
 
 def test_retired_identity_is_blocked():

@@ -2913,11 +2913,19 @@ def resolve_program_rate(
                 detail=ber.observed_in,
             ))
 
-    band_note = (
-        " The source says 'up to' this rate — it is a modeling ceiling subject to "
-        f"EDB approval; the guaranteed floor tier is {floor_rate:.0%}."
-        if tier.is_band_ceiling else ""
-    )
+    if not tier.is_band_ceiling:
+        band_note = ""
+    elif has_guaranteed_floor:
+        band_note = (
+            " The source says 'up to' this rate — it is a modeling ceiling subject to "
+            f"EDB approval; the guaranteed floor tier is {floor_rate:.0%}."
+        )
+    else:
+        band_note = (
+            " The source says 'up to' this rate — it is a modeling ceiling subject to "
+            "EDB approval; NO guaranteed floor tier is eligible on the evidenced facts, so "
+            "nothing here is a guaranteed amount."
+        )
     bracket_note = (
         f" Statute-confirmed marginal/bracketed rate: blended to a real effective "
         f"rate of {effective_rate:.2%} for this QPE (not the flat top-bracket "
