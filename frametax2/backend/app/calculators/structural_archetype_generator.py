@@ -384,6 +384,24 @@ def _generate_structural_candidate_uncached(
     # OTHER component type failing its own real threshold IS a genuine
     # structure-invalidating rejection (Task 3: "If a program ultimately
     # fails a real threshold, persist a precise rejection").
+    # Project-level eligibility gates (California Program 4.0: 75% of the production budget OR 75% of principal photography in California):
+    # decided on the WHOLE structure before any component is priced, so a California-only slice of a Manitoba-shot production cannot qualify.
+    from app.calculators.project_eligibility_gates import evaluate_project_gate
+    _gate_rows = [(a.jurisdiction_code, a.amount_usd, a.component, x.component_type) for x in components for a in x.allocations]
+    _principal = next((x.jurisdiction_code for x in components if x.component_type == "principal_production"), None)
+    for c in components:
+        _gate = evaluate_project_gate(c.program_slug, c.jurisdiction_code, _gate_rows, _principal, c.amount_facts)
+        if _gate is not None and not _gate.passed:
+            return StructuralCandidateResult(
+                structure_id=structure_id, component_types=component_types,
+                program_slugs=program_slugs, jurisdiction_codes=jurisdiction_codes,
+                executable=False, rejection_reason=_gate.reason,
+                blocking_pairs=(), component_economics=(),
+                total_allocated_usd=round(sum(x.allocated_usd for x in components), 2),
+                total_guaranteed_incentive_usd=0.0, total_conditional_incentive_usd=0.0,
+                gross_budget_usd=gross_budget_usd, npc_usd=None, anchor_npc_usd=anchor_npc_usd,
+                incremental_benefit_vs_anchor_usd=None, materiality_recommended=None,
+            )
     comp_econ: list[ComponentEconomics] = []
     selective_zero_notes: list[str] = []
     for c in components:

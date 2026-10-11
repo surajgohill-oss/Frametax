@@ -49,6 +49,7 @@ _HARD_CLASSES = {
     "MUTUALLY_EXCLUSIVE_MEMBER_PAIR": "A prohibited program combination (mutually exclusive programs).",
     "MINIMUM_SPEND_FAIL": "A mandatory minimum-spend threshold is not met.",
     "THRESHOLD_NOT_MET": "A mandatory program threshold is not met.",
+    "PROJECT_ELIGIBILITY_GATE_FAILED": "A mandatory project-level eligibility gate is not met (e.g. California's 75% spend / 75% principal-photography test).",
     "QUALIFICATION_HARD_FAIL": "A mandatory qualification gate failed (HARD_FAIL).",
 }
 

@@ -53,7 +53,9 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field, replace as _dataclasses_replace
 
+from dataclasses import replace as _dc_replace
 from app.calculators.ny_atl_individual_cap import limits_facts_from_amount_facts
+from app.calculators.project_eligibility_gates import evaluate_project_gate
 from app.calculators import treaty_engine as te
 from app.calculators.optimization_engine import RiskCase, build_risk_cases
 from app.calculators.production_allocation import (
@@ -2079,6 +2081,7 @@ def price_allocated_structure(
         by_jur.setdefault(a.jurisdiction_code, []).append(a)
 
     segments: list[SegmentEconomics] = []
+    _gate_rows = [(a.jurisdiction_code, a.amount_usd, a.component, "") for a in allocation.assignments]
     for jur in sorted(by_jur):
         seg = price_segment(
             jurisdiction_code=jur,
@@ -2097,6 +2100,12 @@ def price_allocated_structure(
             home_jurisdiction_code=home_jurisdiction_code,
             scenario_btl_nonlocal=scenario_btl_nonlocal,
         )
+        # Project-level eligibility (California Program 4.0: 75% of budget OR 75% of principal photography in California) cannot be decided
+        # by one segment alone; a failed gate zeroes this segment's credit and keeps the candidate visible with an affirmative rejection.
+        _gate = evaluate_project_gate(spec.incentive_programs.get(jur), jur, _gate_rows, spec.primary_jurisdiction, amount_facts)
+        if _gate is not None and not _gate.passed:
+            seg = _dc_replace(seg, executable=False, incentive_floor_usd=0.0, incentive_ceiling_usd=0.0, incentive_uncapped_usd=None,
+                              ceiling_requires_confirmation=False, blockers=tuple(seg.blockers) + (_gate.reason,))
         segments.append(seg)
         blockers.extend(seg.blockers)
 

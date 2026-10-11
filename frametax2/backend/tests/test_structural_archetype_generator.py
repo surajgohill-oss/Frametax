@@ -194,7 +194,8 @@ def test_materiality_and_incremental_benefit_compare_on_adjusted_npc_not_raw_npc
     bug a $0-adjustment hybrid could previously produce (looking like a
     real improvement over the anchor purely because its own relocation
     cost was never charged)."""
-    c1 = _comp("ca_mb_film_video_credit", "CA-MB", 3_000_000.0, line_id="L1")
+    # Manitoba's 45% credit is a cost-of-salaries credit on LABOUR (canonical-1.115.0), so its slice is a labour account; 45% x 3,000,000 = 1,350,000.
+    c1 = _comp("ca_mb_film_video_credit", "CA-MB", 3_000_000.0, line_id="L1", spend_category="btl_crew_labor")
     c2 = _comp("ca_nl_all_spend_credit", "CA-NL", 500_000.0, component_type="post", line_id="L2")
     # Real guaranteed incentive here is $1,550,000 on a $3,500,000 budget,
     # so raw npc_usd = $1,950,000 -- on THAT figure alone, an anchor of

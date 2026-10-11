@@ -1084,6 +1084,11 @@ register(ProgramRequirementsProfile(
               "on approved DEIA documentation.",
     ),
     additional_facts={
+        "project_eligibility_gate": "ENFORCED (engine 1.121.0, calculators/project_eligibility_gates.py): at least 75% of the production budget spent in California "
+                                    "OR at least 75% of principal-photography days wholly in California (CFC Program 4.0 Guidelines, Jan 1, 2026, section II.A.1; allocation "
+                                    "letters dated on or after July 1, 2025). Distinct from the VFX / out-of-zone uplift tests. A production shot elsewhere with only California "
+                                    "VFX fails and is persisted RULE_REJECTED / PROJECT_ELIGIBILITY_GATE_FAILED. Shooting days are proxied by the dollar share of location-bound "
+                                    "principal-photography accounts unless the producer states ca_principal_photography_days_in_california_pct.",
         "program_4_0_window": "Program 4.0 applies to applications after 2025-07-01 and runs through 2030-06-30.",
         "refundable_election": "Under Program 4.0 a production may elect to receive the credit as "
                                "a refundable credit, paid even absent California tax liability.",
