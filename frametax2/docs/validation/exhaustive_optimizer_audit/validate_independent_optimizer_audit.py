@@ -888,7 +888,19 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                     if '35.0%' not in reason or '30.0%' not in reason:
                         errors.append(f"FVD principal fee line {r.get('account_code')} must cite versioned 35.0% and 30.0% fee caps: {r}")
 
-    # 38. North American Four-Project Comprehensive Matrix
+    # 38. North American Four-Project Comprehensive Matrix & Source-Line Treatment Table
+    lut_path = os.path.join(base_dir, "LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv")
+    if not os.path.exists(lut_path):
+        errors.append(f"Missing file: {lut_path}")
+    else:
+        with open(lut_path, mode="r", encoding="utf-8") as f:
+            lut_reader = list(csv.DictReader(f))
+            if len(lut_reader) != 44:
+                errors.append(f"LU treatment CSV row count ({len(lut_reader)}) != expected 44.")
+            lut_sum = sum(float(r['original_amount']) for r in lut_reader)
+            if abs(lut_sum - 4364395.00) > 0.01:
+                errors.append(f"LU treatment CSV leaf sum ({lut_sum}) != expected 4364395.00.")
+
     na_matrix_path = os.path.join(base_dir, "NORTH_AMERICAN_FOUR_PROJECT_COMPREHENSIVE_MATRIX.csv")
     if not os.path.exists(na_matrix_path):
         errors.append(f"Missing file: {na_matrix_path}")
@@ -898,17 +910,22 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
             if len(reader) != 204:
                 errors.append(f"NORTH_AMERICAN_FOUR_PROJECT_COMPREHENSIVE_MATRIX.csv row count ({len(reader)}) != 204.")
             
-            # 1. LU NY subtotal check
+            # 1. LU NY status and supported bounds check (NOT_ESTABLISHED under Evidence Gate Rules 2, 3, & 5)
             lu_ny = next((r for r in reader if r.get('project_code') == 'LU' and r.get('program_slug') == 'ny_state_film'), None)
             if not lu_ny:
                 errors.append("Matrix missing LU ny_state_film row.")
             else:
-                expected_qpe = float(lu_ny.get('expected_qpe_usd', 0))
-                expected_inc = float(lu_ny.get('expected_base_incentive_usd', 0))
-                if abs(expected_qpe - 3283489.0) > 0.01:
-                    errors.append(f"LU ny_state_film expected_qpe_usd ({expected_qpe}) != 3283489.0 (operand discrepancy)")
-                if abs(expected_inc - 985046.7) > 0.01:
-                    errors.append(f"LU ny_state_film expected_base_incentive_usd ({expected_inc}) != 985046.7")
+                if lu_ny.get('expected_qpe_usd') != 'NOT_ESTABLISHED':
+                    errors.append(f"LU ny_state_film expected_qpe_usd must be NOT_ESTABLISHED, got {lu_ny.get('expected_qpe_usd')}")
+                if lu_ny.get('remediation_code_status') != 'NOT_ESTABLISHED_EMPIRICAL_GAP':
+                    errors.append(f"LU ny_state_film status must be NOT_ESTABLISHED_EMPIRICAL_GAP, got {lu_ny.get('remediation_code_status')}")
+                if lu_ny.get('defect_or_disposition_id') != 'NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)':
+                    errors.append(f"LU ny_state_film disposition must be NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT), got {lu_ny.get('defect_or_disposition_id')}")
+                rca = lu_ny.get('root_cause_analysis', '')
+                if '2,836,167.00' not in rca or '3,283,489.00' not in rca:
+                    errors.append(f"LU ny_state_film root cause missing supported bounds [2,836,167.00 - 3,283,489.00]: {rca}")
+                if '231,212.10' not in rca:
+                    errors.append(f"LU ny_state_film root cause missing credit overstatement 231,212.10: {rca}")
 
             # 1b. FVD, BH, LLS NY statutory bounds and NOT_ESTABLISHED check (Rule 5)
             for p, exp_min, exp_max in (
@@ -965,18 +982,50 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
         with open(na_reg_path, mode="r", encoding="utf-8") as f:
             content = f.read()
             req_na_tokens = (
-                "$3,142,324.00",
+                "$2,836,167.00",
                 "$3,283,489.00",
-                "$985,046.70",
+                "$3,274,421.00",
+                "138,850",
+                "438,254",
+                "61,568",
+                "301,131",
                 "DISC-NY-001",
                 "COMPARISON_NOT_ESTABLISHED",
                 "NA-DEFECT-01",
+                "RET-09",
             )
             for tok in req_na_tokens:
                 if tok not in content:
                     errors.append(f"NORTH_AMERICAN_DISCREPANCY_REGISTER.md missing required token: '{tok}'")
             if "$3,141,324.00" in content:
                 errors.append("NORTH_AMERICAN_DISCREPANCY_REGISTER.md contains obsolete $1,000 operand error '$3,141,324.00'!")
+
+    # 40. New York Audit Closeout Handoff Document
+    ny_handoff_path = os.path.join(base_dir, "NEW_YORK_AUDIT_CLOSEOUT_HANDOFF.md")
+    if not os.path.exists(ny_handoff_path):
+        errors.append(f"Missing file: {ny_handoff_path}")
+    else:
+        with open(ny_handoff_path, mode="r", encoding="utf-8") as f:
+            h_content = f.read()
+            req_handoff_tokens = (
+                "LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv",
+                "$4,364,395.00",
+                "138,850",
+                "$0.00",
+                "$2,836,167.00",
+                "$3,283,489.00",
+                "$3,274,421.00",
+                "340d2041-b11e-4ceb-8c9b-7162f4956903",
+                "14535c49-2dbe-4357-ab61-d3bf5b51c0f4",
+                "NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)",
+                "NA-DEFECT-01",
+                "DISC-NY-001",
+                "RET-09",
+                "STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN",
+            )
+            for tok in req_handoff_tokens:
+                if tok not in h_content:
+                    errors.append(f"NEW_YORK_AUDIT_CLOSEOUT_HANDOFF.md missing required token: '{tok}'")
 
     return (len(errors) == 0, errors)
 
@@ -994,7 +1043,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 40
+    nc_total = 41
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -1809,7 +1858,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 35: Rejection of On-Set Production Sound in NY § 31 Post Credit
         # -------------------------------------------------------------
-        print("  [NC 35/40] Testing rejection of on-set production sound qualified for NY § 31 post credit...")
+        print("  [NC 35/41] Testing rejection of on-set production sound qualified for NY § 31 post credit...")
         with open(nym_f, "r", encoding="utf-8") as f:
             nym_rows = list(csv.DictReader(f))
         orig_nym = [dict(r) for r in nym_rows]
@@ -1835,7 +1884,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 36: Rejection of Omitted LLS Bridge Financing Fee in Exclusions
         # -------------------------------------------------------------
-        print("  [NC 36/40] Testing rejection of omitted LLS bridge financing fee in exclusions...")
+        print("  [NC 36/41] Testing rejection of omitted LLS bridge financing fee in exclusions...")
         with open(nym_f, "r", encoding="utf-8") as f:
             nym_rows = list(csv.DictReader(f))
         orig_nym = [dict(r) for r in nym_rows]
@@ -1861,7 +1910,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 37: Rejection of Missing NY Adjudication Token in Report
         # -------------------------------------------------------------
-        print("  [NC 37/40] Testing rejection of missing NY adjudication reference in audit report...")
+        print("  [NC 37/41] Testing rejection of missing NY adjudication reference in audit report...")
         nya_f = os.path.join(tmpdir, "NEW_YORK_INCENTIVES_AND_UPSTATE_AUDIT.md")
         with open(nya_f, "r", encoding="utf-8") as f:
             orig_nya = f.read()
@@ -1880,7 +1929,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 38: Rejection of Blanket Exclusion of Insurance in FVD Greece Matrix
         # -------------------------------------------------------------
-        print("  [NC 38/40] Testing rejection of blanket exclusion of Greek insurance...")
+        print("  [NC 38/41] Testing rejection of blanket exclusion of Greek insurance...")
         fgr_f = os.path.join(tmpdir, "FVD_GREECE_34_ACCOUNT_RECONSTRUCTION.csv")
         with open(fgr_f, "r", encoding="utf-8") as f:
             fgr_rows = list(csv.DictReader(f))
@@ -1906,7 +1955,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 39: Rejection of Missing Candidate Claiming VERIFIED_AGREEMENT
         # -------------------------------------------------------------
-        print("  [NC 39/40] Testing rejection of missing candidate claiming VERIFIED_AGREEMENT...")
+        print("  [NC 39/41] Testing rejection of missing candidate claiming VERIFIED_AGREEMENT...")
         na_mat_f = os.path.join(tmpdir, "NORTH_AMERICAN_FOUR_PROJECT_COMPREHENSIVE_MATRIX.csv")
         with open(na_mat_f, "r", encoding="utf-8") as f:
             mat_rows = list(csv.DictReader(f))
@@ -1931,7 +1980,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 40: Rejection of LU NY $1,000 Operand Discrepancy
         # -------------------------------------------------------------
-        print("  [NC 40/40] Testing rejection of LU NY $1,000 operand discrepancy in report...")
+        print("  [NC 40/41] Testing rejection of LU NY $1,000 operand discrepancy in report...")
         na_reg_f = os.path.join(tmpdir, "NORTH_AMERICAN_DISCREPANCY_REGISTER.md")
         with open(na_reg_f, "r", encoding="utf-8") as f:
             orig_reg = f.read()
@@ -1946,6 +1995,25 @@ def run_negative_controls():
             print("    -> FAIL: Validator failed to catch LU NY $1,000 operand discrepancy.")
         with open(na_reg_f, "w", encoding="utf-8") as f:
             f.write(orig_reg)
+
+        # -------------------------------------------------------------
+        # Negative Control 41: Rejection of Missing Supported Bounds in NY Closeout Handoff
+        # -------------------------------------------------------------
+        print("  [NC 41/41] Testing rejection of missing supported bounds in NY closeout handoff...")
+        ny_hnd_f = os.path.join(tmpdir, "NEW_YORK_AUDIT_CLOSEOUT_HANDOFF.md")
+        with open(ny_hnd_f, "r", encoding="utf-8") as f:
+            orig_hnd = f.read()
+        tampered_hnd = orig_hnd.replace("$2,836,167.00", "$9,999,999.00")
+        with open(ny_hnd_f, "w", encoding="utf-8") as f:
+            f.write(tampered_hnd)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught tampered NY closeout handoff bounds.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch tampered NY closeout handoff.")
+        with open(ny_hnd_f, "w", encoding="utf-8") as f:
+            f.write(orig_hnd)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total

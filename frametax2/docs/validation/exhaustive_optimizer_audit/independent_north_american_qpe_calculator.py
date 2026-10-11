@@ -212,6 +212,24 @@ def summarize_project_lines(lines: List[Dict[str, Any]]) -> Dict[str, float]:
         "general_admin": general_admin,
     }
 
+def load_lu_ny_treatment_table() -> Tuple[List[Dict[str, Any]], Dict[str, float]]:
+    """
+    Loads and validates the single source-line treatment table for The Little Utopia (LU)
+    New York State Film Production Credit (§ 24) audit. Conserves all 44 original accounts exactly once.
+    """
+    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv")
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        reader = list(csv.DictReader(f))
+    
+    assert len(reader) == 44, f"Treatment table must contain exactly 44 accounts, found {len(reader)}"
+    by_treatment = defaultdict(float)
+    for r in reader:
+        by_treatment[r["treatment"]] += float(r["original_amount"])
+    
+    total_gross = sum(float(r["original_amount"]) for r in reader)
+    assert abs(total_gross - 4364395.00) < 0.01, f"Treatment table gross {total_gross} != 4364395.00"
+    return reader, dict(by_treatment)
+
 def calculate_independent_program_expectation(
     proj_code: str,
     proj_cfg: Dict[str, Any],
@@ -359,32 +377,63 @@ def calculate_independent_program_expectation(
             atl_ceiling_40 = 0.40 * btl_post
             
             if proj_code == "LU":
-                # On LU: Entire creative ATL is Script $5,050.00 + Cast $136,115.00 = $141,165.00.
-                # No individual earner exceeds $500k; producer count is 0 (<= 2).
-                # $141,165.00 <= $1,256,929.60 (40% ceiling).
-                # Every statutory input is SOURCE_VERIFIED from raw budget lines without missing facts.
-                allowed_atl = 141165.0
-                qpe = btl_post + allowed_atl
-                base_inc = qpe * base_rate
-                cond_inc = qpe * 0.10  # Upstate 10% labor uplift conditional
-                npc = gross - base_inc
+                # Grounded directly in LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv
+                _, lu_by_treatment = load_lu_ny_treatment_table()
+                
+                # Dynamic subtotals from single treatment table:
+                btl_phys = lu_by_treatment.get("QUALIFIED_BTL_PHYSICAL", 0.0) + lu_by_treatment.get("QUALIFIED_BTL_ONSET_SOUND", 0.0)
+                atl_creative = lu_by_treatment.get("QUALIFIED_ATL_WRITER", 0.0) + lu_by_treatment.get("QUALIFIED_ATL_PERFORMERS", 0.0)
+                post_vfx = lu_by_treatment.get("QUALIFIED_POST_VFX", 0.0)
+                post_edit_la = lu_by_treatment.get("STATUTORILY_EXCLUDED_OUT_OF_STATE_EDITORIAL", 0.0)
+                btl_travel = lu_by_treatment.get("CONDITIONAL_BTL_TRAVEL_LIVING", 0.0)
+                
+                # 1. Lower Bound (Min QPE): Exclude uncertain BTL travel ($438,254) and out-of-state LA editorial ($9,068)
+                other_qual_min = btl_phys + post_vfx  # $2,642,502 + $52,500 = $2,695,002.00
+                ceil_40_min = round(0.40 * other_qual_min, 2)  # $1,078,000.80
+                allowed_atl_min = min(atl_creative, ceil_40_min)  # $141,165.00
+                min_qpe = round(other_qual_min + allowed_atl_min, 2)  # $2,836,167.00
+                min_credit = round(min_qpe * base_rate, 2)  # $850,850.10
+                
+                # 2. Relocation Baseline: In-state BTL crew lodging admitted, out-of-state LA editorial excluded
+                other_qual_reloc = btl_phys + btl_travel + post_vfx  # $2,642,502 + $438,254 + $52,500 = $3,133,256.00
+                ceil_40_reloc = round(0.40 * other_qual_reloc, 2)  # $1,253,302.40
+                allowed_atl_reloc = min(atl_creative, ceil_40_reloc)  # $141,165.00
+                reloc_qpe = round(other_qual_reloc + allowed_atl_reloc, 2)  # $3,274,421.00
+                reloc_credit = round(reloc_qpe * base_rate, 2)  # $982,326.30
+                
+                # 3. Upper Bound (Max QPE): Hypothetical ceiling assuming 100% BTL travel and out-of-state editorial admitted
+                other_qual_max = btl_phys + btl_travel + post_vfx + post_edit_la  # $3,142,324.00
+                ceil_40_max = round(0.40 * other_qual_max, 2)  # $1,256,929.60
+                allowed_atl_max = min(atl_creative, ceil_40_max)  # $141,165.00
+                max_qpe = round(other_qual_max + allowed_atl_max, 2)  # $3,283,489.00
+                max_credit = round(max_qpe * base_rate, 2)  # $985,046.70
+                
+                # Under AUDIT INPUT EVIDENCE GATE Rules 2, 3, and 5:
+                # Travel split and contingency disbursement are empirical unknowns; cannot fabricate single dollar QPE.
                 return {
-                    "expected_status": "QUALIFIED",
-                    "gate_reason": "NONE",
-                    "expected_qpe": round(qpe, 2),
-                    "expected_base_incentive": round(base_inc, 2),
-                    "expected_conditional_incentive": round(cond_inc, 2),
-                    "expected_total_incentive": round(base_inc, 2),
-                    "expected_npc": round(npc, 2),
+                    "expected_status": "NOT_ESTABLISHED",
+                    "gate_reason": (
+                        f"MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT (BTL Travel $438,254 is an unsplit topsheet line lacking in-state lodging vs foreign airfare breakdown per 5 NYCRR § 170.2; "
+                        f"Post Editorial $9,068 was performed in Los Angeles, CA and excluded under § 24; Contingency $301,131 is an unspent reserve under Rule 2. "
+                        f"Supported Bounds: Min QPE = ${min_qpe:,.2f} [${min_credit:,.2f} Credit] to Max QPE = ${max_qpe:,.2f} [${max_credit:,.2f} Credit]; "
+                        f"Relocation Baseline = ${reloc_qpe:,.2f} [${reloc_credit:,.2f} Credit])"
+                    ),
+                    "expected_qpe": "NOT_ESTABLISHED",
+                    "expected_base_incentive": "NOT_ESTABLISHED",
+                    "expected_conditional_incentive": "NOT_ESTABLISHED",
+                    "expected_total_incentive": "NOT_ESTABLISHED",
+                    "expected_npc": "NOT_ESTABLISHED",
                     "statutory_rate": base_rate,
-                    "input_evidence_classification": "SOURCE_VERIFIED",
-                    "missing_facts": "NY ESD principal photography shoot day logs (>50% upstate gateway for 10% uplift)",
-                    "recovery_attempts": "Verified against LU source lines: total creative ATL is $141,165 (all payees <= $500k, 0 producers)",
+                    "input_evidence_classification": "NOT_ESTABLISHED",
+                    "missing_facts": "Itemized BTL crew travel ledger (in-state lodging vs foreign airfares), actual contingency deployment ledger, and NY ESD principal photography shoot logs",
+                    "recovery_attempts": "Audited 44 budget lines in LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv; itemized travel receipts and contingency disbursement logs absent",
                     "finding_id": "NA-DEFECT-01",
-                    "min_qpe": round(btl_post, 2),
-                    "max_qpe": round(btl_post + atl_ceiling_40, 2),
-                    "min_credit": round(btl_post * base_rate, 2),
-                    "max_credit": round((btl_post + atl_ceiling_40) * base_rate, 2),
+                    "min_qpe": min_qpe,
+                    "max_qpe": max_qpe,
+                    "min_credit": min_credit,
+                    "max_credit": max_credit,
+                    "relocation_baseline_qpe": reloc_qpe,
+                    "relocation_baseline_credit": reloc_credit,
                 }
             else:
                 # FVD, BH, LLS have aggregate Cast and Producer accounts exceeding $500,000 without payee contracts.
@@ -677,6 +726,23 @@ def run_comprehensive_audit():
                     disposition_id = "NOT_ESTABLISHED (MISSING_PAYROLL_SCHEDULE)"
                     remediation_status = "NOT_ESTABLISHED_EMPIRICAL_GAP"
                     root_cause = "Statutory Canadian Qualified Labour Expenditure (QLE) cannot be determined without itemized payroll ledger; 50% labour heuristic withdrawn."
+                elif "TRAVEL" in indep["gate_reason"] or "CONTINGENCY" in indep["gate_reason"]:
+                    disposition_id = "NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)"
+                    remediation_status = "NOT_ESTABLISHED_EMPIRICAL_GAP"
+                    min_q = indep.get("min_qpe", 0.0)
+                    max_q = indep.get("max_qpe", 0.0)
+                    min_c = indep.get("min_credit", 0.0)
+                    max_c = indep.get("max_credit", 0.0)
+                    reloc_q = indep.get("relocation_baseline_qpe", 0.0)
+                    reloc_c = indep.get("relocation_baseline_credit", 0.0)
+                    act_inc_val = actual_inc if actual_inc is not None else 0.0
+                    root_cause = (
+                        f"BTL Travel ($438,254.00) is an unsplit topsheet line lacking in-state crew lodging vs foreign/out-of-state airfare splits (5 NYCRR § 170.2); "
+                        f"Post Editorial ($9,068.00) performed in LA, CA is excluded from NY spend; Contingency Reserve ($301,131.00) is an unspent reserve (Rule 2). "
+                        f"Supported bounds: Min QPE = ${min_q:,.2f} [${min_c:,.2f} Credit] to Max QPE = ${max_q:,.2f} [${max_c:,.2f} Credit] "
+                        f"(Relocation Baseline = ${reloc_q:,.2f} [${reloc_c:,.2f} Credit]). Saved engine qualified spend ($4,054,196.00 / ${act_inc_val:,.2f} Credit) "
+                        f"overstates incentive by at least +${act_inc_val - max_c:,.2f} (and +${act_inc_val - min_c:,.2f} at lower bound), confirming NA-DEFECT-01."
+                    )
                 elif "TALENT" in indep["gate_reason"]:
                     disposition_id = "NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)"
                     remediation_status = "NOT_ESTABLISHED_EMPIRICAL_GAP"
@@ -684,12 +750,13 @@ def run_comprehensive_audit():
                     max_q = indep.get("max_qpe", 0.0)
                     min_c = indep.get("min_credit", 0.0)
                     max_c = indep.get("max_credit", 0.0)
+                    act_inc_val = actual_inc if actual_inc is not None else 0.0
                     root_cause = (
                         f"Statutory NY § 24(b)(1)(B) per-person salary caps ($500k/person, max 2 producers) cannot be evaluated without "
                         f"itemized general ledger contracts. Supported bounds: Min QPE = ${min_q:,.2f} [${min_c:,.2f} Credit] (BTL+Post only) "
                         f"to Max QPE = ${max_q:,.2f} [${max_c:,.2f} Credit] (40% aggregate ATL ceiling). Even at the upper bound, engine "
-                        f"qualified spend (${actual_inc / 0.30:,.2f} / ${actual_inc:,.2f} Credit) overstates incentive by at least "
-                        f"+${actual_inc - max_c:,.2f}, confirming NA-DEFECT-01."
+                        f"qualified spend (${actual_inc / 0.30:,.2f} / ${act_inc_val:,.2f} Credit) overstates incentive by at least "
+                        f"+${act_inc_val - max_c:,.2f}, confirming NA-DEFECT-01."
                     )
                 else:
                     disposition_id = "NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)"
@@ -983,21 +1050,42 @@ def verify_audit_integrity(matrix_rows: List[Dict], evidence: Dict[str, Any]):
         expected_credit = round(expected_qpe * 0.30, 2)
         
         if p_code == "LU":
-            assert btl_post == 3142324.00, f"LU BTL+Post recomputation failed: {btl_post} != 3142324.00"
-            assert creative_atl == 141165.00, f"LU creative ATL recomputation failed: {creative_atl} != 141165.00"
-            assert ceiling_40 == 1256929.60, f"LU 40% ceiling recomputation failed: {ceiling_40} != 1256929.60"
-            assert expected_qpe == 3283489.00, f"LU Expected QPE recomputation failed: {expected_qpe} != 3283489.00"
-            assert expected_credit == 985046.70, f"LU Expected Credit recomputation failed: {expected_credit} != 985046.70"
+            # Verify directly against LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv
+            lu_lines, lu_by_treatment = load_lu_ny_treatment_table()
+            assert len(lu_lines) == 44, f"LU treatment table must have 44 accounts, got {len(lu_lines)}"
+            leaf_sum = sum(float(r["original_amount"]) for r in lu_lines)
+            assert abs(leaf_sum - 4364395.0) < 0.01, f"LU leaf sum {leaf_sum} != 4364395.00"
+            
+            lu_phys = lu_by_treatment["QUALIFIED_BTL_PHYSICAL"] + lu_by_treatment["QUALIFIED_BTL_ONSET_SOUND"]
+            lu_atl = lu_by_treatment["QUALIFIED_ATL_WRITER"] + lu_by_treatment["QUALIFIED_ATL_PERFORMERS"]
+            lu_vfx = lu_by_treatment["QUALIFIED_POST_VFX"]
+            lu_edit = lu_by_treatment["STATUTORILY_EXCLUDED_OUT_OF_STATE_EDITORIAL"]
+            lu_travel = lu_by_treatment["CONDITIONAL_BTL_TRAVEL_LIVING"]
+            lu_exclusions = (
+                lu_by_treatment["STATUTORILY_EXCLUDED_ATL_TRAVEL"] +
+                lu_by_treatment["STATUTORILY_EXCLUDED_ADMIN_PUBLICITY"] +
+                lu_by_treatment["STATUTORILY_EXCLUDED_INSURANCE"] +
+                lu_by_treatment["STATUTORILY_EXCLUDED_CONTINGENCY_RESERVE"]
+            )
+            
+            assert lu_phys == 2642502.00, f"LU Physical BTL recomputation failed: {lu_phys} != 2642502.00"
+            assert lu_atl == 141165.00, f"LU Creative ATL recomputation failed: {lu_atl} != 141165.00"
+            assert lu_vfx == 52500.00, f"LU Post VFX recomputation failed: {lu_vfx} != 52500.00"
+            assert lu_edit == 9068.00, f"LU Out-of-state Post Edit recomputation failed: {lu_edit} != 9068.00"
+            assert lu_travel == 438254.00, f"LU BTL Travel recomputation failed: {lu_travel} != 438254.00"
+            assert lu_exclusions == 1080906.00, f"LU Statutory Exclusions recomputation failed: {lu_exclusions} != 1080906.00"
+            assert abs((lu_phys + lu_atl + lu_vfx + lu_edit + lu_travel + lu_exclusions) - leaf_sum) < 0.01
             
             # Find LU ny_state_film row in matrix
             lu_ny = next(r for r in matrix_rows if r["project_code"] == "LU" and r["program_slug"] == "ny_state_film")
-            assert float(lu_ny["expected_qpe_usd"]) == 3283489.00
-            assert float(lu_ny["expected_base_incentive_usd"]) == 985046.70
-            assert float(lu_ny["actual_incentive_usd"]) == 1216258.80
-            assert float(lu_ny["delta_incentive_usd"]) == 231212.10
+            assert lu_ny["expected_qpe_usd"] == "NOT_ESTABLISHED"
+            assert lu_ny["expected_base_incentive_usd"] == "NOT_ESTABLISHED"
+            assert lu_ny["remediation_code_status"] == "NOT_ESTABLISHED_EMPIRICAL_GAP"
+            assert lu_ny["defect_or_disposition_id"] == "NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)"
+            assert "2,836,167.00" in lu_ny["root_cause_analysis"]
             assert "3,283,489.00" in lu_ny["root_cause_analysis"]
             assert "231,212.10" in lu_ny["root_cause_analysis"]
-            print("  [PASS] LU NY source accounts subtotal independently verified: BTL+Post=$3,142,324.00, QPE=$3,283,489.00 (zero balancing residual)")
+            print("  [PASS] LU NY 44-line treatment table independently verified: Conserved=$4,364,395.00, Status=NOT_ESTABLISHED, Bounds [$2,836,167.00 - $3,283,489.00]")
         elif p_code == "FVD":
             assert btl_post == 1256776.00
             assert ceiling_40 == 502710.40
@@ -1072,7 +1160,8 @@ def generate_markdown_report(rows: List[Dict], discrepancies: List[Dict], out_md
         f.write("| **RET-05: Per-Person Salary Caps on Aggregate Topsheets** | GA, IL, MA (`us_ga_film_credit`, `us_il_film_production_services_credit`, `us_ma_film_tax_credit`) on FVD, BH, LLS | Claimed verified defect `NA-DEFECT-05` for engine omitting $500k (GA/IL) and $1M (MA) salary cap deductions. | **Prohibited by Rule 5**: Never apply per-person limits to aggregate account totals without individual payee contracts/ledgers. | Reclassified as **`NOT_ESTABLISHED (MISSING_PAYEE_COMPENSATION_SPLIT)`**; monetary variance claims revoked. |\n")
         f.write("| **RET-06: Premature Verified Defect Totals** | Global North America package | Reported preliminary total of 167 verified defects. | **Prohibited by User Direction & Rule 6**: No verified defect totals or completion claim until provenance, matching, and table consistency pass Codex review. | Status frozen as **`GATE STRICTLY OPEN`**; zero completion claim. |\n")
         f.write("| **RET-07: Bad Hombres California Minimum Spend Gate Rejection Claim** | `ca_film_30` on Bad Hombres | Claimed verified defect `NA-DEFECT-07` alleging affirmative statutory minimum spend failure ($773,889 BTL < $1,000,000 threshold). | **Verified Primary Authority**: Cal. Rev. & Tax. Code § 17053.98(b)(3)(A) & (B) establishes that the $1,000,000 threshold applies to total **production budget**, NOT local qualified spend. Bad Hombres has a gross production budget of $2,482,023.00, satisfying the statutory gate. | Reclassified as qualified (expected BTL QPE $749,889.00 / credit $262,461.15). Engine canonical-1.106.0 priced $299,158.65 ($854k spend base due to admin/insurance/bond inclusion); reclassified as **`OLD_SAVED_RESULT_STALE_PENDING_REGENERATION`**; monetary variance claims revoked from open code defects. |\n")
-        f.write("| **RET-08: New York Per-Person Salary Caps on Aggregate Topsheets** | `ny_state_film` on FVD, BH, LLS | Previously claimed exact QPE calculations on FVD ($1,759,486.40), BH ($1,049,844.60), and LLS ($8,194,877.60). | **Prohibited by Rule 5**: Cannot apply per-person $500k caps and 2-producer limits to aggregate topsheet lines without individual general ledger talent contracts. | Reclassified as **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`** with evidenced statutory bounds; exact QPE claims withdrawn while NA-DEFECT-01 ceiling omission is confirmed by lower bounds. |\n\n")
+        f.write("| **RET-08: New York Per-Person Salary Caps on Aggregate Topsheets** | `ny_state_film` on FVD, BH, LLS | Previously claimed exact QPE calculations on FVD ($1,759,486.40), BH ($1,049,844.60), and LLS ($8,194,877.60). | **Prohibited by Rule 5**: Cannot apply per-person $500k caps and 2-producer limits to aggregate topsheet lines without individual general ledger talent contracts. | Reclassified as **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`** with evidenced statutory bounds; exact QPE claims withdrawn while NA-DEFECT-01 ceiling omission is confirmed by lower bounds. |\n")
+        f.write("| **RET-09: Little Utopia New York Single Verified Dollar Claim & Unsupported Cost Subtotals** | `ny_state_film` on The Little Utopia (LU) | Previously claimed exact verified QPE of $3,283,489.00 and credit of $985,046.70 with unsupported subtotal bridge ($82,347 BTL travel, $208,670 post, $310,197 contingency). | **Prohibited by Evidence Gate Rules 2, 3, & 5**: BTL Travel ($438,254.00) is an unsplit topsheet line lacking in-state lodging vs foreign airfare schedules per 5 NYCRR § 170.2; Post Editorial ($9,068.00) was performed in LA, CA; Contingency ($301,131.00) is an unspent reserve (producer election is a scenario assumption, not incurred spend under Rule 2). The previously claimed $138,850 exclusion residual was the arithmetic shortfall of four hallucinated line items ($942,054 vs $1,080,904). | Reclassified as **`NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)`** under **`NOT_ESTABLISHED_EMPIRICAL_GAP`**, with fully evidenced statutory bounds: Min QPE = **$2,836,167.00** [Credit: **$850,850.10**] to Max QPE = **$3,283,489.00** [Credit: **$985,046.70**] (Relocation Baseline = **$3,274,421.00** [Credit: **$982,326.30**]). Single verified dollar claims withdrawn while engine overstatement of at least **+$231,212.10** is confirmed across all bounds (`NA-DEFECT-01`). |\n\n")
         f.write("---\n\n")
         
         # -------------------------------------------------------------
@@ -1088,12 +1177,15 @@ def generate_markdown_report(rows: List[Dict], discrepancies: List[Dict], out_md
         f.write("   * **Little Utopia Canadian Stacks (`FIXED_IN_CODE_F06`):** Repaired in commit `486bd15` (repair F-06) to exclude stated-outside US editorial ($9,068) from Canadian stack QPE.\n")
         f.write("   * **California Film & TV Tax Credit (Program 4.0 BTL):** In `canonical-1.106.0`, California structures were evaluated with earlier spend classification rules that included general administration, insurance, and bond in the qualified BTL base. On FVD, Structure ID `b90c23db-3946-454b-8365-25eebe53dcf3` (Result ID `602efade-0ccf-43f2-b529-81434c6fd912`) correctly excluded ATL grey areas ($1,976,479) yielding $603,665.65 ($1,724,759 × 35%), whereas $1,295,433.30 was the open-spend benchmark (35% of $3,701,238 unconstrained spend as seen in Alabama Structure `3ede659f...`). On Bad Hombres, the $1M production budget floor is met ($2.48M gross), but the engine qualified $854,739 (credit $299,158.65) vs independent BTL baseline of $749,889.00 (credit $262,461.15). Repaired in commit `666a4b7`; saved generation is stale.\n")
         f.write("2. **`OPEN_CODE_DEFECT_PENDING_CODEX_REVIEW` (Code & DB Defect):**\n")
-        f.write("   * **`NA-DEFECT-01` (NY Tax Law § 24(b)(1) 40% Aggregate ATL Ceiling Omission & Non-Qualifying Spend Inclusion):** NY Tax Law § 24(b)(1) strictly mandates that eligible Above-The-Line costs cannot exceed 40% of other qualified production costs (BTL + Post). The engine in both `canonical-1.106.0` and current code (`program_spend_rules.py:193`) completely omits this ceiling, overstating tax credits significantly. On The Little Utopia, where all payees are <= $500k and producer count is 0, the statutory deduction is verified to the cent: QPE = $3,283,489.00 / Credit = $985,046.70, proving engine overstatement of **+$770,707.00 QPE / +$231,212.10 Credit** with zero balancing residual. On FVD, BH, and LLS, per-person talent caps remain `NOT_ESTABLISHED` under `MISSING_INDIVIDUAL_TALENT_CONTRACTS`, but supported statutory bounds confirm engine overstatement of at least **+$582,525.48** (FVD), **+$383,338.92** (BH), and **+$386,632.92** (LLS).\n")
+        f.write("   * **`NA-DEFECT-01` (NY Tax Law § 24(b)(1) 40% Aggregate ATL Ceiling Omission & Non-Qualifying Spend Inclusion):** NY Tax Law § 24(b)(1) strictly mandates that eligible Above-The-Line costs cannot exceed 40% of other qualified production costs (BTL + Post). The engine in both `canonical-1.106.0` and current code (`program_spend_rules.py:193`) completely omits this ceiling, overstating tax credits significantly. Across all four projects (LU, FVD, BH, LLS), statutory bounds decisively prove engine credit overstatements ranging from +$231,212.10 to +$582,525.48, even at the maximum hypothetical upper bounds.\n")
         f.write("   * **`DISC-NY-001` (NY Tax Law § 31*2(a)(1) Stacking Mutual Exclusivity Violation):** NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c) explicitly bar any taxpayer eligible for Section 24 from receiving Section 31*2 post-production credit for the same film. In `backend/app/optimization/stacking_rules.py:617`, the engine rule permits distinct costs (`same_cost_prohibited_distinct_costs_allowed`).\n")
         f.write("3. **`NOT_ESTABLISHED_EMPIRICAL_GAP` (Missing Evidence / Unknown Facts):**\n")
         f.write("   * **CAVCO Domestic Content Certification:** Without official CAVCO certification or Canadian treaty co-production agreements, domestic CPTC/OFTTC eligibility is `NOT_ESTABLISHED` (40 rows across single programs and Canadian domestic stacks).\n")
-        f.write("   * **High-Earner Salary Caps (GA, IL, MA, NY):** Without individual payee contracts, salary cap disallowances on aggregate lines are `NOT_ESTABLISHED` (12 rows).\n")
+        f.write("   * **High-Earner Salary Caps (GA, IL, MA):** Without individual payee contracts, salary cap disallowances on aggregate lines are `NOT_ESTABLISHED` (12 rows).\n")
         f.write("   * **Canadian Labour Expenditure:** Without itemized Canadian payroll schedules and residency declarations, exact QLE is `NOT_ESTABLISHED` (7 rows).\n")
+        f.write("   * **New York Section 24 Empirical Gaps:** All 4 projects on `ny_state_film` are classified as `NOT_ESTABLISHED` with rigorous statutory bounds:\n")
+        f.write("     * **The Little Utopia:** BTL Travel ($438,254.00) is unsplit between in-state lodging and foreign airfares (5 NYCRR § 170.2); Post Editorial ($9,068.00) in LA, CA is excluded; Contingency ($301,131.00) is an unspent reserve (`NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)`). Supported bounds: Min QPE = $2,836,167.00 [$850,850.10 Credit] to Max QPE = $3,283,489.00 [$985,046.70 Credit]; Relocation Baseline = $3,274,421.00 [$982,326.30 Credit].\n")
+        f.write("     * **FVD, BH, LLS:** Aggregate Cast and Producer accounts exceed $500,000 without payee contracts (`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)` under Rule 5).\n")
         f.write("4. **`COMPARISON_NOT_ESTABLISHED` (Structure Not in Saved Results):**\n")
         f.write("   * `us_ny_post_production_credit`: 4 rows (component-only structure; no full relocation structure in saved DB).\n")
         f.write("   * Missing Canadian Stacks: 4 rows (stacks not generated by engine in LU and BH).\n")
@@ -1125,14 +1217,34 @@ def generate_markdown_report(rows: List[Dict], discrepancies: List[Dict], out_md
         f.write("  - **NY Tax Law § 24 (Film Production Credit):** As amended by Part D, Ch. 59, Laws of 2023 (enacted May 3, 2023; effective April 1, 2023 for initial applications filed on or after April 1, 2023). Base credit rate is 30% (increased from 25% under pre-2023 historical law).\n")
         f.write("  - **Historical vs. Current-Law ATL Doctrine:** Prior to April 1, 2023, Above-The-Line (ATL) costs were strictly excluded (0% eligible). Under current law (§ 24(b)(1)), eligible Above-The-Line costs include writers, directors, composers, performers (actors, excluding background actors without scripted lines), and up to two (2) individual producers.\n")
         f.write("  - **Statutory ATL Ceilings:** (1) Individual salary cap of $500,000 per person (§ 24(b)(1)(B)); (2) Headcount cap of maximum 2 producers; and (3) Aggregate ATL ceiling of not more than 40% of all other qualified production costs (BTL physical + post-production) (§ 24(b)(1)).\n")
-        f.write("* **The Little Utopia (LU) — Exactly Reconciled:**\n")
-        f.write("  - BTL Physical Production ($2,781,775) + BTL Travel/Living ($82,347) + On-Set Sound ($69,532) + Post-Production ($208,670) = **$3,142,324.00** qualified other production costs.\n")
-        f.write("  - 40% Statutory Aggregate Ceiling: $3,142,324.00 × 0.40 = **$1,256,929.60**.\n")
-        f.write("  - Creative ATL Incurred: Script Clearances ($5,050.00) + Cast ($136,115.00) = **$141,165.00**. All payees are <= $500,000, 0 producers. Since $141,165.00 <= $1,256,929.60, 100% qualifies.\n")
-        f.write("  - Independent Qualified Production Expenditure (QPE): $3,142,324.00 + $141,165.00 = **$3,283,489.00**.\n")
-        f.write("  - Independent Expected Base Incentive (30%): $3,283,489.00 × 0.30 = **$985,046.70**.\n")
-        f.write("  - Engine Saved Actual (`canonical-1.106.0`, Result ID `e2300b8c-5f80-4d8c-bd5b-b99fbbbf1335`): Qualified Spend = $4,054,196.00 (gross $4,364,393 less unspent contingency $310,197, qualifying non-qualifying finance, insurance, and admin costs); Actual Incentive = $1,216,258.80.\n")
-        f.write("  - Exact Verified Delta: **+$770,707.00 QPE / +$231,212.10 Credit** (`NA-DEFECT-01`, residual = $0.00).\n")
+        f.write("* **The Little Utopia (LU) — Source Line Table Breakdown & Reconciliations:**\n")
+        f.write("  - **Grounded in Single Treatment Table:** Derived from `LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv` conserving all 44 original budget accounts ($4,364,395.00 leaf sum; $4,364,393.00 controlling gross with $2 rounding variance).\n")
+        f.write("  - **Physical Below-The-Line:** Accounts 2000–3800 (excluding 3200) = $2,572,970.00; On-Set Sound (Account 3200, BTL per NY-A03) = $69,532.00. Total Physical BTL = **$2,642,502.00**.\n")
+        f.write("  - **Creative Above-The-Line Incurred:** Script Clearances (Account 1100) = $5,050.00; Cast Performers (Account 1400) = $136,115.00. Total Creative ATL = **$141,165.00**. (All individual earners <= $500k; producer count is 0).\n")
+        f.write("  - **Post-Production Department:** Post VFX (Account 6100) = $52,500.00 (qualifying post spend if NY facility); Post Editorial (Account 5000) = $9,068.00 (performed in Los Angeles, CA; excluded from NY spend under § 24 territorial rules, allocated outside NY to generic US unpriced in engine trace Segment 0). Total Post = **$61,568.00** (reconciling source accounts and withdrawing previously hallucinated $208,670).\n")
+        f.write("  - **BTL Travel & Living (Account 3900):** $438,254.00. Under 5 NYCRR § 170.2, in-state crew lodging/per diem qualifies, while out-of-state/foreign airfares are statutorily excluded. Because the Movie Magic Topsheet does not itemize in-state lodging vs foreign airfares, Account 3900 is an empirical unknown (withdrawing previously hallucinated $82,347).\n")
+        f.write("  - **Statutory Non-Qualifying Exclusions:**\n")
+        f.write("    - ATL Travel & Living (Account 1600): $397,279.00 (statutorily excluded under § 24(b)(1)).\n")
+        f.write("    - General Administrative Expenses (Account 7000): $297,593.00.\n")
+        f.write("    - Publicity (Account 7100): $24,348.00.\n")
+        f.write("    - Corporate Insurance (Account 7200): $12,374.00.\n")
+        f.write("    - Insurance : 1.2% (Account 8100): $48,181.00.\n")
+        f.write("    - Contingency Reserve : 7.5% (Account 8300): $301,131.00 (unspent reserve; withdrawing hallucinated $310,197; producer election 1.0 is a scenario election, not incurred spend under Rule 2; engine trace Segment 1 excluded $301,131).\n")
+        f.write("    - Total Statutory Exclusions: $397,279 + $297,593 + $24,348 + $12,374 + $48,181 + $301,131 = **$1,080,906.00** ($1,080,904.00 against controlling gross).\n")
+        f.write("  - **Root Cause & Resolution of the $138,850 Exclusion Residual:**\n")
+        f.write("    - The previous handoff listed four manually substituted categories: Contingency ($310,197) + Finance/Legal ($421,791) + Insurance/Bond ($130,081) + Admin ($79,985) = $942,054.00, while asserting total exclusions of $1,080,904.00. The subtraction $1,080,904.00 - $942,054.00 = **$138,850.00** was an internal arithmetic contradiction from hallucinated category figures.\n")
+        f.write("    - When grounded in the actual 44 source budget accounts, statutory exclusions total exactly **$1,080,906.00** ($1,080,904.00 gross). Conserving leaf sum: $4,364,395.00 - $1,080,906.00 = $3,283,489.00 max spend base; unexplained residual = **$0.00**.\n")
+        f.write("  - **Supported Statutory Bounds on The Little Utopia:**\n")
+        f.write("    - **Minimum QPE (Lower Bound):** Excludes uncertain BTL travel ($438,254) and out-of-state LA editorial ($9,068). Qualified Physical BTL ($2,642,502) + VFX ($52,500) = $2,695,002.00 other qualified costs. 40% ceiling = $1,078,000.80 (Creative ATL $141,165 fully admitted). Min QPE = **$2,836,167.00** [Credit at 30%: **$850,850.10**].\n")
+        f.write("    - **Relocation Baseline:** In-state crew lodging admitted ($438,254), out-of-state LA editorial excluded ($9,068). Other qualified costs = $3,133,256.00. 40% ceiling = $1,253,302.40 (Creative ATL $141,165 admitted). Relocation Baseline QPE = **$3,274,421.00** [Credit at 30%: **$982,326.30**].\n")
+        f.write("    - **Maximum QPE (Hypothetical Upper Bound):** Assuming 100% BTL travel qualifies and out-of-state editorial is admitted. Other qualified costs = $3,142,324.00. 40% ceiling = $1,256,929.60 (Creative ATL $141,165 admitted). Max QPE = **$3,283,489.00** [Credit at 30%: **$985,046.70**].\n")
+        f.write("  - **Engine Comparison (`canonical-1.106.0`, Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903`, Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`):**\n")
+        f.write("    - Actual Qualified Spend: $4,054,196.00 (gross $4,355,327 allocated to NY less $301,131 unspent contingency; out-of-state editorial $9,068 allocated to US unpriced in Segment 0).\n")
+        f.write("    - Actual Incentive: $1,216,258.80 ($4,054,196.00 × 0.30).\n")
+        f.write("    - Overstatement at Max QPE Upper Bound: $1,216,258.80 - $985,046.70 = **+$231,212.10**.\n")
+        f.write("    - Overstatement at Relocation Baseline: $1,216,258.80 - $982,326.30 = **+$233,932.50**.\n")
+        f.write("    - Overstatement at Min QPE Lower Bound: $1,216,258.80 - $850,850.10 = **+$365,408.70**.\n")
+        f.write("    - **Audit Disposition:** **`NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)`** under **`NOT_ESTABLISHED_EMPIRICAL_GAP`**. Engine credit overstatement confirmed across all bounds (`NA-DEFECT-01`).\n")
         f.write("* **F#K Valentine's Day (FVD) — Supported Statutory Bounds:**\n")
         f.write("  - BTL Physical Production ($1,114,318) + Travel ($46,000) + On-Set Sound ($26,458) + Post ($70,000) = **$1,256,776.00** BTL+Post baseline.\n")
         f.write("  - 40% Statutory Ceiling: $1,256,776.00 × 0.40 = **$502,710.40**.\n")

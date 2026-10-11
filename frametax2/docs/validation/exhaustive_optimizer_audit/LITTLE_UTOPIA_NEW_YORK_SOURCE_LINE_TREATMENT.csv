@@ -1,0 +1,45 @@
+account_id,description,original_amount,department,atl_btl,category,treatment,statutory_authority,notes
+1000,1000 DEVELOPMENT,0.00,Above The Line,atl,miscellaneous,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+1100,1100 SCRIPT,5050.00,Above The Line,atl,atl_writer,QUALIFIED_ATL_WRITER,NY Tax Law § 24(b)(1)(B),"Eligible creative ATL writer clearances; individual earner <= ,000"
+1200,1200 PRODUCERS UNIT,0.00,Above The Line,atl,atl_producer,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+1300,1300 DIRECTION,0.00,Above The Line,atl,atl_director,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+1400,1400 CAST,136115.00,Above The Line,atl,atl_cast,QUALIFIED_ATL_PERFORMERS,NY Tax Law § 24(b)(1)(B),"Eligible creative ATL performers with speaking lines; individual earners <= ,000"
+1600,1600 ATL TRAVEL & LIVING,397279.00,Above The Line,atl,travel,STATUTORILY_EXCLUDED_ATL_TRAVEL,NY Tax Law § 24(b)(1),ATL travel and living non-qualifying; ATL restricted to wages of writers/directors/performers/composers/producers
+2000,2000 PRODUCTION STAFF,321594.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2100,2100 EXTRA TALENT,21981.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2200,2200 SET DESIGN,65873.00,Production,btl,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2300,2300 SET CONSTRUCTION,107628.00,Production,btl,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2400,2400 SET DRESSING,154826.00,Production,btl,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2500,2500 PROPERTIES,68854.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2600,2600 PICTURE VEHICLES AND ANIMALS,215218.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2700,2700 WARDROBE,58815.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2800,2800 MAKE-UP & HAIR,51809.00,Production,btl,btl_crew_labor,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+2900,2900 SET OPERATIONS,90679.00,Production,btl,btl_set_construction,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3000,3000 ELECTRICAL,155375.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3100,3100 CAMERA,288729.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3200,3200 PRODUCTION SOUND,69532.00,Production,btl,production_sound,QUALIFIED_BTL_ONSET_SOUND,NY Tax Law § 24(a)(2) / NY-A03,Physical production on-set sound; BTL physical spend per NY-A03
+3300,3300 SPECIAL EFFECTS & MARINE,99837.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3400,3400 LOCATION EXPENSE,496232.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3500,3500 AERIAL/DRONE UNIT,16215.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3600,3600 TRANSPORTATION,321899.00,Production,btl,btl_transportation,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3700,3700 STAGE & OFFICE RENTALS,27732.00,Production,btl,btl_stage_facility,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3800,3800 PRODUCTION LAB & MEDIA MANAGEMENT,9674.00,Production,btl,miscellaneous,QUALIFIED_BTL_PHYSICAL,NY Tax Law § 24(a)(2),"Physical production below-the-line goods, services, and crew labor"
+3900,3900 BTL TRAVEL & LIVING,438254.00,Production,btl,travel,CONDITIONAL_BTL_TRAVEL_LIVING,NY Tax Law § 24(a)(2) / 5 NYCRR § 170.2,In-state crew lodging/per diem qualifies; foreign/out-of-state airfare excluded. Unsplit topsheet line
+4000,4000 SPECIAL SHOOT UNITS,0.00,Production,btl,miscellaneous,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+5000,5000 EDITORIAL,9068.00,Post Production,post,post_production,STATUTORILY_EXCLUDED_OUT_OF_STATE_EDITORIAL,NY Tax Law § 24(a)(2),"Editorial performed in Los Angeles, CA; excluded from NY qualified spend. Engine allocated outside NY"
+5100,5100 EDITORIAL - USA,0.00,Post Production,post,post_production,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+5200,5200 SOUND POST PRODUCTION,0.00,Post Production,post,sound,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+5300,5300 PICTURE POST PRODUCTION,0.00,Post Production,post,post_production,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+5400,5400 GRAPHICS / TITLES / STOCK FOOTAGE,0.00,Post Production,post,post_production,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+5500,5500 DELIVERABLES,0.00,Post Production,post,post_production,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+6000,6000 MUSIC,0.00,Other,post,music,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+6100,6100 VFX DEPARTMENT,52500.00,Other,post,vfx,QUALIFIED_POST_VFX,NY Tax Law § 24(a)(2),Visual effects department; qualifying post-production spend if contracted to NY facility
+6500,6500 USA ADMIN COSTS,0.00,Other,btl,miscellaneous,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+7000,7000 ADMINISTRATIVE EXPENSES,297593.00,Other,other,general_administration,STATUTORILY_EXCLUDED_ADMIN_PUBLICITY,NY Tax Law § 24(a)(2),General administrative overhead and marketing/publicity statutorily excluded
+7100,7100 PUBLICITY,24348.00,Other,other,general_administration,STATUTORILY_EXCLUDED_ADMIN_PUBLICITY,NY Tax Law § 24(a)(2),General administrative overhead and marketing/publicity statutorily excluded
+7200,7200 INSURANCE,12374.00,Other,other,insurance,STATUTORILY_EXCLUDED_INSURANCE,NY Tax Law § 24(a)(2),Corporate wrap and production insurance premiums statutorily excluded
+7300,7300 MARKETING,0.00,Other,btl,miscellaneous,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+7800,7800 FINANCE & LEGAL,0.00,Other,other,finance_costs,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+8100,8100 Insurance : 1.2%,48181.00,Below The Line,other,insurance,STATUTORILY_EXCLUDED_INSURANCE,NY Tax Law § 24(a)(2),Corporate wrap and production insurance premiums statutorily excluded
+8200,8200 Bond : 0.0%,0.00,Below The Line,other,completion_bond,ZERO_BUDGET_LINE,NY Tax Law § 24,Zero budgeted spend in source budget file
+8300,8300 Contigency : 7.5%,301131.00,Below The Line,other,contingency,STATUTORILY_EXCLUDED_CONTINGENCY_RESERVE,NY Tax Law § 24 / Rule 2,Undeployed contingency reserve is an unspent reserve; excluded in engine trace and EDB control
