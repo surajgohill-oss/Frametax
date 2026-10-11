@@ -56,15 +56,15 @@ Auditing the engine requires separating **old saved results** (`canonical-1.106.
 5. **`SCENARIO_SPEND_BASE_VARIANCE`:**
    * 41 rows on open-spend programs where the engine's generic relocation spend base differed from independent source-derived relocation baselines.
 
-### Reconciled Status of Claude Remediation Repairs (Unwired Helpers & Unpriced Uplifts)
+### Reconciled Status of Claude Remediation Repairs (Implemented Pricing vs. Missing UI / Production Evidence)
 
-In accordance with Codex delta review (`CALCULATION_ASSURANCE_DELTA_REVIEW_20261010.md`) and Claude's Capability Ledger (commits `f37ffff7`..`2e948ab5`), Claude's remediation code status is reconciled as follows:
+In accordance with Codex delta review (`CALCULATION_ASSURANCE_DELTA_REVIEW_20261010.md`) and Claude's Capability Ledger (commits `f37ffff7`..`2e948ab5`), Claude's committed integration is reconciled as follows:
 
-1. **Uncalled / Unwired Individual ATL Cap Helper (`ny_atl_individual_cap.py`):** Although Claude introduced `ny_atl_individual_cap.py` to evaluate the ESD $500,000 per-individual cap, it operates only when an identified payee has evidenced-complete compensation. In standard qualification and pricing flows without durable producer facts, the helper is uncalled or inert, yielding zero per-individual cap reduction in engine baseline pricing.
-2. **Unpriced Statutory Uplifts (§ 24(a)(5) and § 31*2(a)(6)):** Upstate production labor uplifts (§ 24(a)(5)) and post labor uplifts (§ 31*2(a)(6)) are implemented as subset-uplift rules with prerequisites (e.g. >50% principal photography shoot days upstate, 53 listed counties, scoring with five musicians), but remain unpriced conditions in standard pricing without producer-entered territorial shoot logs and payee residence schedules.
-3. **Pending UI Overview/Inspector Workflow:** While Claude created backend data structures (`POST /projects/{id}/program-facts`), no UI controls exist in Overview or Inspector for producers to submit these facts on real projects.
-4. **Stale Served Database Baseline:** Served PostgreSQL database state remains `canonical-1.106.0` (unregenerated).
-5. **Remediation Classification:** These repairs are classified as **`FIXED_IN_CODE_UNWIRED_AND_UNPRICED` / `UNFINISHED`**, pending producer UI integration and authorized canonical regeneration.
+1. **Implemented & Verified Pricing Calculation Logic (Synthetic Records with Supplied Facts):** Claude successfully implemented and verified the core calculation mechanics in code for engine 1.113.0..1.115.0. When program facts are passed into the pricing functions, `ny_atl_individual_cap.py` prices individual payee caps, and `allocation_pricing.py` prices post and upstate uplifts on their own bases, verified by synthetic test suites (`test_ny_pricing_integration.py`, `test_ny_post_rate_and_atl_cap_controls.py`).
+2. **Missing Production Evidence on Real Projects:** No real anchor project in the database carries evidenced deal memos, individual compensation splits, county shoot day logs, or CAVCO certificates. In baseline evaluations without supplied facts, the individual cap helper is uncalled or inert, and uplifts remain unpriced conditions.
+3. **Missing UI Workflow:** While backend persistence endpoints exist (`POST /projects/{id}/program-facts`), no Overview or Inspector UI controls exist for producers to view, enter, or toggle these facts on real projects.
+4. **Stale Served Database State:** PostgreSQL database state remains `canonical-1.106.0` (unregenerated); no real-project evaluation has been regenerated or updated in served database state.
+5. **Remediation Classification:** These repairs are classified as **`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`**, pending producer UI integration and authorized canonical regeneration.
 
 ---
 
@@ -379,37 +379,57 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-03-CAVCO-DOMESTIC-CERTIFICATION-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** CAVCO Part A/B certification, Canadian copyright ownership documentation, and key creative point tally (>= 6/10 CAVCO points) under Income Tax Act § 125.4 and Ontario Taxation Act § 43.
-* **Separate Variable Definitions & Statutory Domain:**
-  - Let $G$ = Gross Production Budget / Total Cost (ITA § 125.4(1)).
-  - Let $L_{\text{CA}}$ = Total Qualified Canadian Labour Expenditure across all provinces ($0 \le L_{\text{CA}} \le G$).
-  - Let $L_{\text{ON}}$ = Ontario Resident Labour Expenditure ($0 \le L_{\text{ON}} \le L_{\text{CA}}$). Remuneration paid to individuals resident specifically in Ontario for services rendered in Ontario (Ontario Taxation Act § 43). Because Ontario residents are a subset of Canadian residents, $L_{\text{ON}} \le L_{\text{CA}}$.
-  - In any production utilizing crew from other provinces (BC, Quebec, Alberta), $L_{\text{ON}} < L_{\text{CA}}$, and CPTC and OFTTC bases are NOT identical.
-* **Independent Proof of Every Constraint & Assistance Deduction:**
-  - **Provincial Assistance:** $\text{OFTTC} = 0.35 \times L_{\text{ON}}$. Under ITA § 12(1)(x), provincial tax credits constitute government assistance reducing Net Production Cost: $\text{NPC} = G - 0.35 \times L_{\text{ON}}$.
-  - **Federal Statutory Cap Constraint:** Under ITA § 125.4(1), Qualified Labour Expenditure cannot exceed 60% of Net Production Cost: $\text{QLE}_{\text{cap}} = 0.60 \times \text{NPC} = 0.60 \times (G - 0.35 \times L_{\text{ON}}) = 0.60 \times G - 0.21 \times L_{\text{ON}}$.
-  - **Federal Labor Constraint:** $\text{QLE}_{\text{CPTC}} \le L_{\text{CA}}$.
-  - **Federal QLE Formula:** $\text{QLE}_{\text{CPTC}}(L_{\text{CA}}, L_{\text{ON}}) = \min\big(L_{\text{CA}}, \; 0.60 \times G - 0.21 \times L_{\text{ON}}\big)$; $\text{CPTC} = 0.25 \times \text{QLE}_{\text{CPTC}}$.
-  - **Proof 1 (Standalone Federal Ceiling at $L_{\text{ON}} = 0$):** If no Ontario credit is claimed ($L_{\text{ON}} = 0$), $\text{QLE}_{\text{CPTC}} = \min(L_{\text{CA}}, 0.60 \times G)$. The maximum possible federal QLE across all scenarios is $0.60 \times G$ (yielding maximum CPTC of $0.15 \times G$).
-  - **Proof 2 (Assistance Clawback Rate):** $\frac{\partial \text{QLE}_{\text{cap}}}{\partial L_{\text{ON}}} = -0.21$. Every $1.00 of Ontario labor claimed reduces the federal QLE ceiling by $0.21 and federal CPTC by $0.0525 ($0.25 \times 0.21).
+* **Separate Variable Definitions & Statutory Authority:**
+  - Let $G$ = Gross Production Budget / Total Production Cost (Income Tax Act § 125.4(1) 'production cost').
+  - Let $L_{\text{CA}}$ = Total Qualified Canadian Labour Expenditure across all provinces ($0 \le L_{\text{CA}} \le G$, ITA § 125.4(1) 'Canadian labour expenditure').
+  - Let $L_{\text{ON}}$ = Ontario Resident Labour Expenditure ($0 \le L_{\text{ON}} \le L_{\text{CA}} \le G$, Ontario Taxation Act, 2007, S.O. 2007, c. 11, Sched. A, § 43(1) 'qualifying labour expenditure'). Whenever a production uses crew outside Ontario (BC, QC, AB), $L_{\text{ON}} < L_{\text{CA}}$, and CPTC and OFTTC bases are NOT identical.
+  - Let $\text{Assistance} = \text{OFTTC} = 0.35 \times L_{\text{ON}}$ (government assistance under ITA § 12(1)(x) & § 125.4(1)).
+  - Let $\text{NPC} = G - \text{Assistance} = G - 0.35 \times L_{\text{ON}}$ (Net Production Cost under ITA § 125.4(1)).
+  - Let $\text{QLE}_{\text{cap}} = 0.60 \times \text{NPC} = 0.60 \times (G - 0.35 \times L_{\text{ON}}) = 0.60 \times G - 0.21 \times L_{\text{ON}}$ (Statutory 60% Net Cost Ceiling under ITA § 125.4(1)(b)).
+  - Let $\text{QLE}_{\text{CPTC}} = \min(L_{\text{CA}}, \; \text{QLE}_{\text{cap}}) = \min(L_{\text{CA}}, \; 0.60 \times G - 0.21 \times L_{\text{ON}})$ (Qualified Labour Expenditure under ITA § 125.4(1)).
+  - Let $\text{CPTC} = 0.25 \times \text{QLE}_{\text{CPTC}}$ (Federal Credit under ITA § 125.4(3)).
+  - Let $\text{Total Benefit} = \text{OFTTC} + \text{CPTC} = 0.35 \times L_{\text{ON}} + 0.25 \times \min(L_{\text{CA}}, \; 0.60 \times G - 0.21 \times L_{\text{ON}})$.
+* **Legal Evaluation of $G = \$1\text{M}, L_{\text{CA}} = L_{\text{ON}} = \$800\text{k}$ (Yielding $\$388,000 / 38.80\% G$):**
+  - **Statutory Constraint Check:**
+    1. Domain $0 \le L_{\text{ON}} \le L_{\text{CA}} \le G$: $\$800\text{k} \le \$800\text{k} \le \$1\text{M}$ is satisfied (80% labor, 20% non-labor physical goods/services).
+    2. Ontario Taxation Act § 43(1): $\text{OFTTC} = 0.35 \times \$800\text{k} = \mathbf{\$280,000.00}$. Satisfied.
+    3. ITA § 12(1)(x) & § 125.4(1): $\text{Assistance} = \$280,000.00$; $\text{NPC} = \$1,000,000.00 - \$280,000.00 = \mathbf{\$720,000.00}$. Satisfied.
+    4. ITA § 125.4(1)(b) 60% Net Cost Ceiling: $\text{QLE}_{\text{cap}} = 0.60 \times \$720,000.00 = \mathbf{\$432,000.00}$. Satisfied.
+    5. ITA § 125.4(1) Qualified Labour Expenditure: $\text{QLE}_{\text{CPTC}} = \min(\$800,000.00, \$432,000.00) = \mathbf{\$432,000.00}$. Crucially, $\frac{\text{QLE}}{\text{NPC}} = \frac{\$432\text{k}}{\$720\text{k}} = 60.0\% \le 60\%$, so the statutory ceiling is **strictly satisfied**.
+    6. ITA § 125.4(3) Federal CPTC: $0.25 \times \$432,000.00 = \mathbf{\$108,000.00}$. Satisfied.
+    7. Combined Domestic Benefit: $\$280,000.00 + \$108,000.00 = \mathbf{\$388,000.00}$ (exactly **38.80% of Gross Budget**). Satisfied.
+  - **Why this exceeds the claimed $\$297,520.66$ ($29.7521\% G$):** The statutory 60% ceiling under ITA § 125.4(1) restricts **QLE relative to Net Production Cost** ($\text{QLE} \le 0.60 \times \text{NPC}$), NOT labor relative to gross budget ($L \le 0.60 G$). Film productions are legally permitted to incur labor exceeding 60% of gross budget. When labor is $80\% G$, OFTTC earns 35% on all $\$800\text{k}$, while CPTC earns 25% on the capped $\$432\text{k}$ QLE, yielding $\$388\text{k}$. This scenario **completely satisfies all primary legal and statutory constraints**.
+* **Independent Proof of Every Constraint & Formal Withdrawal of the 60/121 Maximum Claim:**
+  - **Proof 1 (Standalone Federal Ceiling at $L_{\text{ON}} = 0$):** If no Ontario credit is claimed ($L_{\text{ON}} = 0$), $\text{QLE}_{\text{CPTC}} = \min(L_{\text{CA}}, 0.60 \times G)$. The maximum possible standalone federal QLE is $0.60 \times G$ (yielding maximum CPTC of $0.15 \times G$).
+  - **Proof 2 (Assistance Clawback Rate):** $\frac{\partial \text{QLE}_{\text{cap}}}{\partial L_{\text{ON}}} = -0.21$. Every $\$1.00 of Ontario labor claimed reduces the federal QLE ceiling by $\$0.21 and federal CPTC by $\$0.0525 ($0.25 \times 0.21).
   - **Proof 3 (Region I vs Region II Return):**
     * Region I (Labor-Limited: $L_{\text{CA}} \le 0.60 \times G - 0.21 \times L_{\text{ON}}$): $\text{QLE}_{\text{CPTC}} = L_{\text{CA}}$. $\text{Total Benefit} = 0.25 \times L_{\text{CA}} + 0.35 \times L_{\text{ON}}$.
-    * Region II (Net-Cost-Capped: $L_{\text{CA}} > 0.60 \times G - 0.21 \times L_{\text{ON}}$): $\text{QLE}_{\text{CPTC}} = 0.60 \times G - 0.21 \times L_{\text{ON}}$. $\text{Total Benefit} = 0.15 \times G + 0.2975 \times L_{\text{ON}}$. Since $+0.2975 > 0$, Ontario labor expansion strictly increases total domestic return despite the federal clawback.
-  - **Proof 4 (Co-Extensive Labor Boundary $L_{\text{ON}} = L_{\text{CA}} = L$):** The boundary between Region I and Region II satisfies $L = 0.60 \times (G - 0.35 \times L) \iff 1.21 \times L = 0.60 \times G \iff L^* = \frac{60}{121} \times G \approx \mathbf{49.58677686\% \times G}$.
-    * For $L \le L^*$: $\text{QLE}_{\text{CPTC}} = L$; combined credit rate is $(0.25 + 0.35) \times L = 0.60 \times L$.
-    * At $L = L^* = \frac{60}{121} G$: $\text{QLE}_{\text{CPTC}} = \frac{60}{121} G$; $\text{OFTTC} = \frac{21}{121} G \approx 17.3554\% G$; $\text{CPTC} = \frac{15}{121} G \approx 12.3967\% G$; combined stack = $\frac{36}{121} G \approx \mathbf{29.752066\% \times G}$.
-    * For $L > L^*$: $\text{QLE}_{\text{CPTC}}$ drops below $\frac{60}{121} G$ due to assistance deductions, while OFTTC increases at 35%.
-* **Supported Scenarios & Bounds (from Original Budgets):**
-  - Non-Certified Scenario: Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to Canadian resident labour expenditure proofs.
-  - Certified Domestic Scenario at Transition Ceiling ($L^* = \frac{60}{121} \times \text{Gross}$):
-    * LU (Gross $4,364,395.00): Max CPTC QLE = **$2,164,162.81**; OFTTC = **$757,456.98**; CPTC = **$541,040.70**; Combined domestic stack = **$1,298,497.68**.
-    * FVD (Gross $4,517,687.00): Max CPTC QLE = **$2,240,175.37**; OFTTC = **$784,061.38**; CPTC = **$560,043.84**; Combined domestic stack = **$1,344,105.22**.
-    * BH (Gross $2,482,023.00): Max CPTC QLE = **$1,230,755.21**; OFTTC = **$430,764.32**; CPTC = **$307,688.80**; Combined domestic stack = **$738,453.12**.
-    * LLS (Gross $11,947,562.00): Max CPTC QLE = **$5,924,410.91**; OFTTC = **$2,073,543.82**; CPTC = **$1,481,102.73**; Combined domestic stack = **$3,554,646.55**.
-  - Physical BTL Labor Scenario ($L_{\text{ON}} = L_{\text{BTL}}$):
-    * LU ($L_{\text{BTL}} = $2,642,502.00 > L^*): In Region II: OFTTC = **$924,875.70**; $\text{NPC} = $3,439,519.30; $\text{QLE}_{\text{CPTC}} = 0.60 \times \text{NPC} = \mathbf{$2,063,711.58}$; CPTC = **$515,927.90**; Combined stack = **$1,440,803.60**.
-    * FVD ($L_{\text{BTL}} = $1,139,276.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$1,139,276.00}$; OFTTC = **$398,746.60**; CPTC = **$284,819.00**; Combined stack = **$683,565.60**.
-    * BH ($L_{\text{BTL}} = $656,044.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$656,044.00}$; OFTTC = **$229,615.40**; CPTC = **$164,011.00**; Combined stack = **$393,626.40**.
-    * LLS ($L_{\text{BTL}} = $5,166,417.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$5,166,417.00}$; OFTTC = **$1,808,245.95**; CPTC = **$1,291,604.25**; Combined stack = **$3,099,850.20**.
+    * Region II (Net-Cost-Capped: $L_{\text{CA}} > 0.60 \times G - 0.21 \times L_{\text{ON}}$): $\text{QLE}_{\text{CPTC}} = 0.60 \times G - 0.21 \times L_{\text{ON}}$. $\text{Total Benefit} = 0.15 \times G + 0.2975 \times L_{\text{ON}}$.
+    * Since $\frac{d}{dL_{\text{ON}}}(\text{Total Benefit}) = +0.2975 > 0$, total domestic benefit strictly increases with additional Ontario labor across Region II.
+  - **Proof 4 (The 60/121 Transition Point is the Federal QLE Peak, NOT Combined Maximum):** Under co-extensive Ontario labor ($L_{\text{ON}} = L_{\text{CA}} = L$), the transition point between Region I and Region II occurs at $L = 0.60 \times (G - 0.35 \times L) \iff 1.21 \times L = 0.60 \times G \iff L^* = \frac{60}{121} \times G \approx \mathbf{49.58677686\% \times G}$.
+    * At $L = L^* = \frac{60}{121} G$: Federal QLE reaches its absolute global peak ($\text{QLE}_{\text{CPTC}} = \frac{60}{121} G \approx 49.5868\% G$; $\text{CPTC} = \frac{15}{121} G \approx 12.3967\% G$; $\text{OFTTC} = \frac{21}{121} G \approx 17.3554\% G$; Combined Stack = $\frac{36}{121} G \approx \mathbf{29.752066\% \times G}$).
+    * For $L > L^*$: Although Federal QLE decreases at rate $-0.21$, Ontario OFTTC increases at $+0.35$, yielding a positive net slope of $+0.2975$. The combined benefit continues to increase linearly beyond $L^*$.
+    * **Formal Retraction / Withdrawal:** The previous assertion claiming $L^* = \frac{60}{121} G$ ($29.7521\% G$) is the 'domestic maximum' is **FORMALLY WITHDRAWN**. It is mathematically and legally the **Federal QLE Maximum / Transition Point**, not the combined benefit maximum.
+  - **Proof 5 (Derivation of the Actual Theoretical Upper Bound at $L = G$):** Over the statutory domain $0 \le L_{\text{ON}} \le L_{\text{CA}} \le G$, the maximum possible combined credit occurs at the domain boundary $L_{\text{ON}} = L_{\text{CA}} = G$ (100% Ontario labor):
+    $$\text{Total Benefit}_{\max}^{\text{theoretical}} = 0.15 \times G + 0.2975 \times G = \mathbf{0.4475 \times G = 44.75\% \times G}$$
+    (Where $\text{OFTTC} = 0.35 G$, $\text{NPC} = 0.65 G$, $\text{QLE}_{\text{CPTC}} = 0.60 \times 0.65 G = 0.39 G$, $\text{CPTC} = 0.25 \times 0.39 G = 0.0975 G$).
+* **Corrected Supported Scenarios & Bounds (from Original Budgets):**
+  - **Non-Certified Scenario:** Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to Canadian resident labour expenditure proofs.
+  - **Scenario 1: Federal QLE Transition Point ($L^* = \frac{60}{121} \times \text{Gross} \approx 49.5868\% G$):**
+    * LU (Gross $4,364,395.00): Max Federal QLE = **$2,164,162.81**; OFTTC = **$757,456.98**; CPTC = **$541,040.70**; Combined domestic stack = **$1,298,497.68** ($29.75\% G$).
+    * FVD (Gross $4,517,687.00): Max Federal QLE = **$2,240,175.37**; OFTTC = **$784,061.38**; CPTC = **$560,043.84**; Combined domestic stack = **$1,344,105.22** ($29.75\% G$).
+    * BH (Gross $2,482,023.00): Max Federal QLE = **$1,230,755.21**; OFTTC = **$430,764.32**; CPTC = **$307,688.80**; Combined domestic stack = **$738,453.12** ($29.75\% G$).
+    * LLS (Gross $11,947,562.00): Max Federal QLE = **$5,924,410.91**; OFTTC = **$2,073,543.82**; CPTC = **$1,481,102.73**; Combined domestic stack = **$3,554,646.55** ($29.75\% G$).
+  - **Scenario 2: Empirical Physical BTL Labor Bound ($L = L_{\text{BTL}}$):**
+    * LU ($L_{\text{BTL}} = $2,642,502.00 > L^*): In Region II: OFTTC = **$924,875.70**; $\text{NPC} = $3,439,519.30; $\text{QLE}_{\text{CPTC}} = 0.60 \times \text{NPC} = \mathbf{$2,063,711.58}$; CPTC = **$515,927.90**; Combined stack = **$1,440,803.60** ($33.01\% G$).
+    * FVD ($L_{\text{BTL}} = $1,139,276.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$1,139,276.00}$; OFTTC = **$398,746.60**; CPTC = **$284,819.00**; Combined stack = **$683,565.60** ($15.13\% G$).
+    * BH ($L_{\text{BTL}} = $656,044.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$656,044.00}$; OFTTC = **$229,615.40**; CPTC = **$164,011.00**; Combined stack = **$393,626.40** ($15.86\% G$).
+    * LLS ($L_{\text{BTL}} = $5,166,417.00 \le L^*): In Region I: $\text{QLE}_{\text{CPTC}} = \mathbf{$5,166,417.00}$; OFTTC = **$1,808,245.95**; CPTC = **$1,291,604.25**; Combined stack = **$3,099,850.20** ($25.95\% G$).
+  - **Scenario 3: Theoretical 100% Ontario Labor Bound ($L = G$, 44.75% $G$):**
+    * LU (Gross $4,364,395.00): OFTTC = **$1,527,538.25**; Federal QLE = **$1,702,114.05**; CPTC = **$425,528.51**; Combined stack = **$1,953,066.76** ($44.75\% G$).
+    * FVD (Gross $4,517,687.00): OFTTC = **$1,581,190.45**; Federal QLE = **$1,761,897.93**; CPTC = **$440,474.48**; Combined stack = **$2,021,664.93** ($44.75\% G$).
+    * BH (Gross $2,482,023.00): OFTTC = **$868,708.05**; Federal QLE = **$967,988.97**; CPTC = **$241,997.24**; Combined stack = **$1,110,705.29** ($44.75\% G$).
+    * LLS (Gross $11,947,562.00): OFTTC = **$4,181,646.70**; Federal QLE = **$4,659,549.18**; CPTC = **$1,164,887.30**; Combined stack = **$5,346,534.00** ($44.75\% G$).
 * **Lawful vs Unlawful Stacking Analysis:** `stack_on_cptc_ofttc` is a lawful domestic stack (subject to CAVCO and assistance deduction). By contrast, `stack_qc_cptc_pstc` is an unlawful cross-regime stack: federal CPTC is restricted to CAVCO domestic content, whereas Quebec PSTC is a service production credit; they cannot legally combine on the same expenditure pool.
 * **Expected Engine Behavior:** Treat missing certification as unknown (`NOT_ESTABLISHED`) rather than hard gate rejection or unearned qualification; surface CAVCO status toggle in Overview/Inspector.
 * **Exact Producer Input Needed:** Producer input confirming CAVCO certification status (Certified vs Production Services Only) and creative point count.
@@ -479,12 +499,12 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Exact Producer Input Needed:** None (system authorization for production regeneration required).
 * **Comparison Matching:** Unambiguously identified and separated from open code defects across all affected rows.
 
-### 6.8 Blocker 8: Uncalled Cap Helper & Unpriced Uplifts in Remediation Code
-* **Blocker ID:** `BLOCKER-08-UNWIRED-HELPERS-AND-UNPRICED-UPLIFTS`
-* **Classification:** Unfinished Remediation Implementation (`FIXED_IN_CODE_UNWIRED_AND_UNPRICED` / `UNFINISHED`)
-* **Missing Facts:** Durable producer program facts (payee-level compensation splits, county shoot day logs, scoring musician tallies) via UI.
-* **Current Engine Behavior:** `ny_atl_individual_cap.py` is uncalled/unwired in standard baseline qualification and pricing without producer fact records; upstate uplifts (§ 24(a)(5) and § 31*2(a)(6)) are unpriced conditions; database state remains `canonical-1.106.0`.
-* **Expected Engine Behavior:** Wire individual cap helper into baseline pipeline with clear fallback handling, price conditional uplifts in planning scenarios, and expose durable facts in Overview/Inspector UI.
+### 6.8 Blocker 8: Claude Remediation Pricing Implemented but Pending UI Workflow & Real-Project Evidence
+* **Blocker ID:** `BLOCKER-08-PRICING-IMPLEMENTED-PENDING-UI-AND-EVIDENCE`
+* **Classification:** Implemented Pricing Logic Pending UI Workflow & Production Evidence (`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`)
+* **Missing Facts & Workflow:** (1) Individual talent deal memos and payee compensation splits on real anchor projects; (2) Signed county shoot day logs and scoring musician certifications; (3) Overview/Inspector UI controls for human producers to view, enter, and toggle these facts on real projects.
+* **Committed Engine Behavior:** Pricing calculation logic is implemented and tested in code (engine 1.113.0..1.115.0) for individual ATL caps (`ny_atl_individual_cap.py`), dual post rates (30% MCTD / 35% outside MCTD), and subset-uplifts with prerequisites (`allocation_pricing.py`). When facts are supplied in synthetic tests, pricing functions calculate them correctly. However, in baseline evaluations without supplied facts, the individual cap helper is uncalled or inert, uplifts remain unpriced conditions, and database state remains `canonical-1.106.0`.
+* **Expected Engine Behavior:** Expose durable fact controls in Overview/Inspector UI, wire individual cap helper into baseline pipeline with clear fallback handling, price conditional uplifts in planning scenarios, and run authorized database regeneration.
 * **Exact Producer Input Needed:** Producer entry in Overview/Inspector of individual talent compensation, county shoot logs, and facility location.
 * **Comparison Matching:** Reconciles Codex delta review and Claude Capability Ledger across all NY and uplift candidate evaluations.
 
