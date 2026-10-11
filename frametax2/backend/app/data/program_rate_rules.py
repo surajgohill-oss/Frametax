@@ -2055,6 +2055,12 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
     # the segment closed, never uncapped. The figure is law-firm-summarized (Baker McKenzie, KPMG);
     # the Decreto defers per-project figures to a Lineamientos document not yet read, so the
     # authority tier is unchanged.
+    "ca_nb_film_tax_credit": IncentiveValueCapRule(
+        program_slug="ca_nb_film_tax_credit", cap_currency="CAD", cap_native_amount=800_000.0,
+        description="Per-project maximum for a feature film (dramatic series also 800,000; other genres lower): CAD 800,000, with a company yearly maximum of CAD 1,000,000.",
+        quote="Feature Films $800,000 (THC Film guidelines 2017-2018; 'Individual production companies may be eligible for up to $1M ... in any given fiscal year')",
+        source_ref="nb-thc-film-guidelines-2017-2018-primary",
+    ),
     "mx_federal_film_incentive_2026": IncentiveValueCapRule(
         program_slug="mx_federal_film_incentive_2026", cap_currency="MXN", cap_native_amount=40_000_000.0,
         description="Cap per project / beneficiary: MXN 40,000,000 of tax credit.",

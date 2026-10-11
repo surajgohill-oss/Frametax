@@ -49,17 +49,20 @@ def _usd_amounts(text: str) -> set[float]:
     return out
 
 
-# ── F-01: a production-type tier is not a discretionary band ceiling (New Brunswick) ─────────────────────────────────
-def test_nb_thirty_percent_feature_tier_is_priced_as_one_confirmed_rate_not_a_floor_below_a_band():
+# ── F-01 (superseded by primary authority, 2026-10-11): New Brunswick's Production Incentive is a discretionary 'maximum of' incentive ───
+def test_new_brunswick_is_a_discretionary_ceiling_with_a_per_project_maximum_not_a_flat_credit():
+    # F-01 once made NB a confirmed flat 30% because the 30% tier was selected by production type. The primary THC guidelines (2017-2018)
+    # state 'a maximum of' 25%/30% of NB spend, support 'will depend on budget availability' and expense eligibility is 'at the sole
+    # discretion of THC', with a feature maximum of $800,000. Every tier is therefore a ceiling with an unresolved discretion condition.
     doc = get_doctrine("ca_nb_film_tax_credit")
-    thirty = [t for t in doc.tiers if abs(t.rate - 0.30) < 1e-9]
-    assert thirty and all(not t.is_band_ceiling for t in thirty), (
-        "the 30% tier is selected by production type (a satisfied condition), so it is not an 'up to' band")
+    assert {round(t.rate, 2) for t in doc.tiers} == {0.25, 0.30}
+    assert all(t.is_band_ceiling and any(c.kind == "discretionary_band" for c in t.conditions) for t in doc.tiers)
     seg = _price("CA-NB", "ca_nb_film_tax_credit", 2_000_000.0)
-    assert seg.executable and seg.rate_floor == pytest.approx(0.30) and seg.rate_ceiling == pytest.approx(0.30)
-    # explicit arithmetic: floor and maximum are the same 30% of the same QPE; no 25% floor under a 30% 'confirmed' figure
-    assert seg.incentive_floor_usd == pytest.approx(seg.qpe_usd * 0.30)
-    assert seg.incentive_ceiling_usd == pytest.approx(seg.incentive_floor_usd)
+    assert not seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation, "no guaranteed value for a discretionary maximum"
+    assert seg.incentive_floor_usd in (None, 0, 0.0) and "no guaranteed floor" in " ".join(seg.blockers)
+    from app.data.program_rate_rules import get_incentive_value_cap
+    cap = get_incentive_value_cap("ca_nb_film_tax_credit")
+    assert cap.cap_currency == "CAD" and cap.cap_native_amount == 800_000.0
 
 
 def test_no_scoped_tier_is_a_band_ceiling_whose_only_conditions_are_already_satisfied_type_gates():

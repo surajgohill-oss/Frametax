@@ -7203,29 +7203,35 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
     confidence_tier="PARSED", incentive_type="tax_credit",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="thereactionlab.com: '25%-30% of eligible production costs "
-              "depending on type of project. (Features, mini-series and "
-              "TV series all at 30%.)' Confirms catalog's 25% figure as "
-              "one tier, clarifies 30% applies to features/mini-series/TV series.",
-    source_ref="thereactionlab.com-new-brunswick",
-    # The 30% tier is selected by production TYPE (a satisfied production_type condition for a
-    # feature), not a discretionary "up to" band: flagging it is_band_ceiling=True made the segment
-    # report a 25% floor while the structure's confirmed figure used 30% (the register-disclosed
-    # inconsistency, PROJECT_OPEN_ITEM_RECOVERY F-01).
-    tiers=(DoctrineRateTier(tier_id="ca-nb-general-25", rate=0.25, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="ca-nb-feature-miniseries-tv-30",
-                             rate=0.30, is_band_ceiling=False,
+    citation="New Brunswick Department of Tourism, Heritage and Culture (THC), Film guidelines 2017-2018 (primary; text extracted 2026-10-11): the "
+              "Production Incentive is EITHER a Labour-Based Incentive 'equal to a maximum of 40% of eligible salaries paid to New Brunswick residents' "
+              "OR an All-Spend Incentive 'equal to a maximum of 25% of all New Brunswick expenditures for variety and service productions, or to a "
+              "maximum 30% of all New Brunswick expenditures for New Brunswick based productions or co-productions'; 'approval of support for service "
+              "productions will depend on budget availability'; eligibility of expenses is 'at the sole discretion of THC'; per-project maximums apply "
+              "(feature films $800,000) and a company yearly maximum of $1M. The provincial refundable film TAX CREDIT was eliminated in the 2011-12 "
+              "budget (CBC, The Coast). The earlier record of a flat 25%/30% credit came from a secondary aggregator and is superseded. Dated: these "
+              "guidelines are 2017-2018; the current-year guidelines were not found.",
+    source_ref="nb-thc-film-guidelines-2017-2018-primary",
+    # A funded, discretionary incentive with 'maximum of' rates: every tier is a CEILING with a THC-discretion condition and NO guaranteed floor,
+    # so the pricer shows it as an unconfirmed ceiling with zero guaranteed value (it supersedes the 1.5.1 flat 25%/30% treatment, F-01).
+    tiers=(DoctrineRateTier(tier_id="ca-nb-all-spend-25-service-ceiling", rate=0.25, is_band_ceiling=True,
                              conditions=(RateCondition(
-                                 condition_id="ca-nb-project-type-30pct",
-                                 description="30% applies to features, "
-                                             "mini-series and TV series "
-                                             "specifically -- pre-"
-                                             "evaluable from project_type "
-                                             "if known, otherwise "
-                                             "disclosed as a condition",
-                                 quote="Features, mini-series and TV "
-                                       "series all at 30% (thereactionlab.com)",
-                                 kind="production_type"),)),),
+                                 condition_id="ca-nb-thc-discretion-and-budget",
+                                 description="Maximum 25% of all New Brunswick spend for variety and service productions; support depends on budget "
+                                             "availability, domestic productions have priority, eligibility is at THC's sole discretion, and the "
+                                             "per-project maximum applies.",
+                                 quote="to a maximum of 25% of all spend in NB ... approval of support for service productions will depend on budget "
+                                       "availability (THC Film guidelines 2017-2018)",
+                                 kind="discretionary_band"),)),
+           DoctrineRateTier(tier_id="ca-nb-all-spend-30-nb-based-ceiling", rate=0.30, is_band_ceiling=True,
+                             conditions=(RateCondition(
+                                 condition_id="ca-nb-thc-discretion-nb-based",
+                                 description="Maximum 30% of all New Brunswick spend for New Brunswick based productions or co-productions (a New "
+                                             "Brunswick production company retaining at least 20% of revenues and copyright); award and expense "
+                                             "eligibility are at THC's sole discretion within yearly funding.",
+                                 quote="a maximum 30% of all New Brunswick expenditures for New Brunswick based productions or co-productions "
+                                       "(THC Film guidelines 2017-2018)",
+                                 kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(CA_NB_DOCTRINE))
 
@@ -8435,8 +8441,12 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
               "expenditures up to a maximum of $5,000,000, while the "
               "Service Production Stream offers 25% of all eligible "
               "Saskatchewan expenditures up to a maximum of $5,000,000.' "
-              "First confirmed rate for this catalog entry (was base_rate=None).",
-    source_ref="hellodarwin.com+grantcompass.ca-saskatchewan",
+              "First confirmed rate for this catalog entry (was base_rate=None). PRIMARY re-read 2026-10-11 (Creative Saskatchewan FY 2026/27 "
+              "Film, TV and Video guidelines, effective April 1, 2026, creativesask.ca): both streams are 'eligible applicants may apply for' "
+              "30% / 25% of all eligible Saskatchewan expenditures up to $5,000,000, 'Funding will be in the form of a grant', assessed by Creative "
+              "Saskatchewan, with bonuses to a maximum of 40% (Saskatchewan Stream) and 35% (Service Production Stream). A discretionary, assessed "
+              "grant: it stays display-only (authority_coverage_registry B1 ruling) and is never a guaranteed credit.",
+    source_ref="creativesask.ca-fy2026-27-guidelines-primary+hellodarwin.com+grantcompass.ca-saskatchewan",
     tiers=(DoctrineRateTier(tier_id="ca-sk-service-production-25", rate=0.25, is_band_ceiling=False),
            DoctrineRateTier(tier_id="ca-sk-saskatchewan-stream-30", rate=0.30, is_band_ceiling=True,
                              conditions=(RateCondition(
