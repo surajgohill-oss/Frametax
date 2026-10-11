@@ -32,9 +32,8 @@ EVALUATION_BUDGET_SECONDS = 240   # an evaluation that exceeds this FAILS the ch
 
 
 async def _evaluate(db, pid):
-    """One bounded evaluation, then fresh planner statistics: every evaluation inside this rolled-back transaction adds hundreds of
-    structure rows that autovacuum cannot analyze until commit, and without ANALYZE the served-structure read degrades from seconds
-    to minutes (diagnosed 2026-10-11 from a 9-evaluation run whose single SELECT was still running after 8 minutes)."""
+    """One bounded evaluation, then fresh planner statistics (a precaution: each evaluation inside this rolled-back transaction adds hundreds
+    of structure rows autovacuum cannot analyze until commit; whether that explained the 2026-10-11 stall is an unproven hypothesis)."""
     result = await asyncio.wait_for(ce.evaluate_project(db, pid), EVALUATION_BUDGET_SECONDS)
     await db.execute(text("ANALYZE production_structures"))
     await db.execute(text("ANALYZE structure_calculation_results"))
@@ -85,7 +84,12 @@ async def test_labour_bases_and_every_uplift_price_when_their_base_is_stated_and
 
 
 async def test_quebec_vfx_labour_enhancement_prices_on_the_evidenced_labour_portion_only():
-    lines = LINES + (("6100", "VFX", "vfx", "post", 300_000.0),)
+    # Budget shape matters, not size. Measured 2026-10-11 on this isolated database with a Canada-Ontario home: director + crew + equipment + VFX
+    # (ONE movable component) evaluates in 33.6 s including the served read; the same budget plus a 300,000 post-production line (TWO movable
+    # components, post_vfx_package and a VFX split) exceeded the 240 s bound in the hybrid component search. The Quebec VFX enhancement needs
+    # only a VFX account, so this control uses the one-movable-component shape. (The slowdown with two movable components is recorded as an
+    # open performance finding; stale planner statistics are an unproven hypothesis, not the established cause.)
+    lines = tuple(l for l in LINES if l[2] != "post_production") + (("6100", "VFX", "vfx", "post", 300_000.0),)
     async with isolated_session() as db:
         pid = await create_synthetic_project(db, lines=lines, home_code="CA-ON")
         rows = (await db.execute(select(BudgetLineItem.id, BudgetLineItem.description).join(

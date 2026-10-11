@@ -551,6 +551,11 @@ def _resolve_incentive_dollar_cap(
 #: not a whole-base uplift that the subset rules replace. Their potential keeps the scenario rate; every other subset program keeps the floor rate.
 _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit"})
 
+#: Programs with an elective alternative credit on a different base: slug -> (alternative rate on total qualifying spend, label).
+_ALTERNATIVE_ELECTION_PROGRAMS = {
+    "ca_mb_film_video_credit": (0.30, "The Manitoba cost-of-production credit (30% of all eligible Manitoba production expenditures)"),
+}
+
 
 def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None,
                           floor_base_usd=None, potential_base_usd=None):
@@ -1744,6 +1749,23 @@ def price_segment(
         floor_incentive_usd, ceiling_incentive_usd, subset_conditions = subset_pricing
         ceiling_requires_confirmation = bool(subset_conditions)
 
+    # Producer-elected ALTERNATIVE credit on a different base (Manitoba: the 30% cost-of-production credit on all eligible Manitoba
+    # expenditures instead of the 45% cost-of-salaries credit on labour). The corporation claims one, so the planning figure is the higher
+    # dollar amount, and the other option is disclosed; neither is a stacked sum.
+    election_notes: tuple[str, ...] = ()
+    alternative = _ALTERNATIVE_ELECTION_PROGRAMS.get(slug)
+    if alternative is not None:
+        alt_rate, alt_label = alternative
+        alt_usd = round(qpe * alt_rate, 2)
+        if alt_usd > floor_incentive_usd:
+            election_notes = (f"{alt_label} is the higher of the two elective credits for this base (${alt_usd:,.2f} vs ${floor_incentive_usd:,.2f}); "
+                              "the corporation claims one, so the planning figure uses it.",)
+            floor_incentive_usd = alt_usd
+        else:
+            election_notes = (f"{alt_label} (${alt_usd:,.2f}) is the alternative elective credit and is lower than the credit priced here; "
+                              "the corporation claims one.",)
+        ceiling_incentive_usd = max(ceiling_incentive_usd, floor_incentive_usd)
+
     # ── Cluster 7: dollar caps constrain the INCENTIVE ───────────────────
     # Canonical sequence: qualifying base x rate (+ uplift) = gross
     # incentive, THEN the applicable dollar cap clips it. Applied after the
@@ -1823,7 +1845,7 @@ def price_segment(
         incentive_ceiling_usd=ceiling_incentive_usd,
         doctrine=doctrine.value,
         register_trace=trace,
-        notes=cap_notes,
+        notes=cap_notes + election_notes,
         ceiling_requires_confirmation=ceiling_requires_confirmation,
         ceiling_conditions=(
             subset_conditions if subset_pricing is not None else tuple(

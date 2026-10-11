@@ -560,4 +560,8 @@ def derive_qualification_register(
             composer_by_line=dict(facts.ny_atl_composer_by_line), role_by_line=dict(facts.ny_atl_producer_role_by_line),
             subaccounts_by_line={l.line_id: l.source_subaccounts for l in line_items if l.source_subaccounts},
         )
+    if _canonical(program_slug) == "ca_mb_film_video_credit" and not facts.scenario_local_btl:
+        from app.calculators.mb_nonresident_limit import apply_mb_nonresident_limit
+        register = apply_mb_nonresident_limit(
+            register, {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items}, facts.evidenced_facts)
     return register

@@ -38,6 +38,8 @@ NY_EVIDENCED_FACTS = {
     "mb_frequent_filming_bonus": None,
     "mb_manitoba_producer_bonus": None,
     "mb_rural_northern_bonus": None,
+    "mb_two_residents_trained_per_nonresident": "mb_one_resident_trained_per_nonresident",
+    "mb_one_resident_trained_per_nonresident": "mb_two_residents_trained_per_nonresident",
 }
 
 
