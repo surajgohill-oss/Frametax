@@ -33,22 +33,9 @@ from app.services.canonical_project_economics import (
     production_facts_for,
 )
 
-LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
-
-
-@pytest.fixture
-async def db():
-    """Isolated session: every write below lands in a transaction that is ROLLED BACK, so this module never commits to, nor
-    deletes from, the real Little Utopia project row (an earlier version committed test facts to it and deleted the financing key
-    on teardown, which would have destroyed a producer's saved value). Reads still see the real persisted budget and facts."""
-    async with engine.connect() as conn:
-        outer = await conn.begin()
-        session = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
-        try:
-            yield session
-        finally:
-            await session.close()
-            await outer.rollback()
+# Synthetic project + rolled-back transaction + real-project write guard (tests/isolated_records.py). An earlier version committed
+# test facts to the real Little Utopia project and deleted its financing key on teardown; nothing here touches a real project.
+from tests.isolated_records import isolated_project  # noqa: E402,F401
 
 
 async def _price_little_utopia(inputs):
@@ -88,49 +75,52 @@ async def _price_little_utopia(inputs):
     )
 
 
-async def test_financing_cost_defaults_to_unset_not_zero(db: AsyncSession):
+async def test_financing_cost_defaults_to_unset_not_zero(isolated_project):
     """Genuinely absent — never coerced to 0.0 at the input-resolution
     layer (price_allocated_structure applies its own 0.0 default at the
     pricing boundary, same as every other adjustment)."""
-    inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    db, project_id = isolated_project
+    inputs = (await build_project_economic_inputs(db, project_id)).inputs
     assert inputs.financing_cost_usd is None
 
 
-async def test_financing_cost_persists_through_the_generic_project_fact_write_path(db: AsyncSession):
+async def test_financing_cost_persists_through_the_generic_project_fact_write_path(isolated_project):
     """The SAME ProjectFact table / USER_OVERRIDE precedence as
     contingency_expected_utilization_pct — no second persistence
     mechanism. Writes directly against the model (equivalent to what
     POST /projects/{id}/assumptions does) and confirms the read path
     resolves it back."""
+    db, project_id = isolated_project
     db.add(ProjectFact(
-        id=uuid.uuid4(), project_id=LITTLE_UTOPIA_PROJECT_ID, fact_key=FACT_FINANCING_COST_USD,
+        id=uuid.uuid4(), project_id=project_id, fact_key=FACT_FINANCING_COST_USD,
         value="15000", value_type="number",
         source_type=ProjectFactSourceType.USER_OVERRIDE.value,
     ))
     await db.commit()
 
-    inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    inputs = (await build_project_economic_inputs(db, project_id)).inputs
     assert inputs.financing_cost_usd == 15000.0
 
 
-async def test_financing_cost_shifts_npc_by_exactly_the_persisted_amount_never_qpe(db: AsyncSession):
+async def test_financing_cost_shifts_npc_by_exactly_the_persisted_amount_never_qpe(isolated_project):
     """The exact canonical treatment already documented in
     allocation_pricing.price_allocated_structure: financing_cost_usd adds
     straight onto NPC (npc_verified_usd / npc_with_adjustments_usd) and
     never touches selected_incentive_usd/QPE — a financing assumption is
     not automatically incentive-qualifying spend merely because a
     producer enters it."""
-    baseline_inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    db, project_id = isolated_project
+    baseline_inputs = (await build_project_economic_inputs(db, project_id)).inputs
     baseline_pricing = await _price_little_utopia(baseline_inputs)
 
     db.add(ProjectFact(
-        id=uuid.uuid4(), project_id=LITTLE_UTOPIA_PROJECT_ID, fact_key=FACT_FINANCING_COST_USD,
+        id=uuid.uuid4(), project_id=project_id, fact_key=FACT_FINANCING_COST_USD,
         value="15000", value_type="number",
         source_type=ProjectFactSourceType.USER_OVERRIDE.value,
     ))
     await db.commit()
 
-    adjusted_inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    adjusted_inputs = (await build_project_economic_inputs(db, project_id)).inputs
     adjusted_pricing = await _price_little_utopia(adjusted_inputs)
 
     assert adjusted_pricing.npc_verified_usd == round(baseline_pricing.npc_verified_usd + 15000.0, 2)
@@ -143,31 +133,33 @@ async def test_financing_cost_shifts_npc_by_exactly_the_persisted_amount_never_q
     assert adjusted_pricing.gross_budget_usd == baseline_pricing.gross_budget_usd
 
 
-async def test_financing_cost_participates_in_the_evaluation_cache_fingerprint(db: AsyncSession):
+async def test_financing_cost_participates_in_the_evaluation_cache_fingerprint(isolated_project):
     """A change to the persisted assumption must invalidate any
     previously-cached evaluation row — same mechanism already proven for
     contingency_expected_utilization_pct."""
-    inputs_unset = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    db, project_id = isolated_project
+    inputs_unset = (await build_project_economic_inputs(db, project_id)).inputs
     fp_unset = _compute_fingerprint(inputs_unset)
 
     db.add(ProjectFact(
-        id=uuid.uuid4(), project_id=LITTLE_UTOPIA_PROJECT_ID, fact_key=FACT_FINANCING_COST_USD,
+        id=uuid.uuid4(), project_id=project_id, fact_key=FACT_FINANCING_COST_USD,
         value="15000", value_type="number",
         source_type=ProjectFactSourceType.USER_OVERRIDE.value,
     ))
     await db.commit()
 
-    inputs_set = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    inputs_set = (await build_project_economic_inputs(db, project_id)).inputs
     fp_set = _compute_fingerprint(inputs_set)
 
     assert fp_unset != fp_set
 
 
-async def test_financing_cost_assumption_endpoint_key_is_whitelisted_generically(db: AsyncSession):
+async def test_financing_cost_assumption_endpoint_key_is_whitelisted_generically(isolated_project):
     """POST /projects/{id}/assumptions' whitelist accepts financing_cost_usd
     for ANY project — no project id/title branch. Import-level check
     (avoids spinning up the full ASGI app in this module): confirms the
     key is present in the same generic whitelist contingency uses."""
+    db, project_id = isolated_project
     from app.api.v1.cineglobe import _PROJECT_ASSUMPTION_FACT_KEYS
     assert "financing_cost_usd" in _PROJECT_ASSUMPTION_FACT_KEYS
     assert "contingency_expected_utilization_pct" in _PROJECT_ASSUMPTION_FACT_KEYS
