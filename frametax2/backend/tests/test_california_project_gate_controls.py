@@ -173,6 +173,164 @@ def test_lls_manitoba_california_hybrid_fails_the_california_gate_so_the_stale_r
     assert "0.3% of the production budget" in res.rejection_reason and "ALL of its principal photography outside US-CA (explicit modeled scenario" in res.rejection_reason
 
 
+def _mb_component(include_vfx_line):
+    from app.calculators.production_allocation import COMPONENT_BY_SPEND_CATEGORY
+    return _comp("principal_production", "CA-MB", MB, [
+        _alloc(str(i), amount, COMPONENT_BY_SPEND_CATEGORY.get(cat, "principal_photography"), "CA-MB", str(i), cat)
+        for i, (cat, amount) in enumerate(c for c in LLS.items() if include_vfx_line or c[0] != "vfx")])
+
+
+RESERVE = LLS["contingency"]          # the contingency-category line (the residuals reserve is a separate obligation, not the planning reserve)
+ELIGIBLE_ALL_MB = SAVED["gross"] - LLS["finance_costs"] - LLS["contingency"] - LLS["residuals_reserve"]      # 9,483,654 (travel assumed eligible)
+ELIGIBLE_SAME_ALLOCATION = ELIGIBLE_ALL_MB - LLS["vfx"]                                                      # 9,443,654 (the 40,000 VFX stays in California)
+
+
+def test_lls_three_distinct_artifacts_rejected_hybrid_same_allocation_sensitivity_and_all_manitoba_alternative():
+    """Codex finding 2. Three DIFFERENT things that must never be mixed:
+    (1) the retained hybrid (Manitoba principal 11,943,654 + California VFX 40,000): in the modeled scenario the shoot is entirely in Manitoba, so the
+        California gate FAILS and the hybrid is a rejected candidate, not a priced one (no NPC is claimed for it);
+    (2) the SAME-ALLOCATION SENSITIVITY: the Manitoba leg alone on its own 11,943,654 allocation with the California VFX earning nothing. 30% x 9,443,654
+        = 2,833,096.20; NPC arithmetic = gross 11,983,654 - 2,833,096.20 = 9,150,557.80. Arithmetic on the allocation, not a candidate and not certified QPE;
+    (3) the RELOCATED ALL-MANITOBA ALTERNATIVE: the 40,000 VFX moved into Manitoba (a different structure with its own relocation cost, not computed here):
+        30% x 9,483,654 = 2,845,096.20; NPC 9,138,557.80. The two Manitoba figures differ by exactly 30% x 40,000 = 12,000."""
+    hybrid = _run([_mb_component(False), _comp("vfx", "US-CA", CA_PROGRAM, [_vfx("US-CA", LLS["vfx"])])], SAVED["gross"])
+    assert hybrid.executable is False and hybrid.rejection_reason.startswith(GATE_FAILED_PREFIX) and hybrid.npc_usd is None, "(1) rejected, no NPC claimed"
+    same = _run([_mb_component(False)], SAVED["gross"])
+    assert round(0.30 * ELIGIBLE_SAME_ALLOCATION, 2) == 2_833_096.20 == pytest.approx(same.total_guaranteed_incentive_usd)
+    assert same.npc_usd == pytest.approx(9_150_557.80) == pytest.approx(SAVED["gross"] - 2_833_096.20), "(2) same-allocation sensitivity"
+    alt = _run([_mb_component(True)], SAVED["gross"])
+    assert round(0.30 * ELIGIBLE_ALL_MB, 2) == 2_845_096.20 == pytest.approx(alt.total_guaranteed_incentive_usd)
+    assert alt.npc_usd == pytest.approx(9_138_557.80), "(3) relocated all-Manitoba alternative"
+    assert round(alt.total_guaranteed_incentive_usd - same.total_guaranteed_incentive_usd, 2) == 12_000.00 == round(0.30 * LLS["vfx"], 2)
+    # hand cross-check of the labour credit, which never exceeds the cost-of-production alternative here
+    labour = sum(LLS[c] for c in ("atl_producer", "atl_cast", "atl_writer", "atl_director", "btl_crew_labor"))
+    assert labour == 2_935_298.0 and round(0.45 * labour, 2) == 1_320_884.10 < 2_833_096.20
+    # versus the stale row: the stale Manitoba floor was 45% of a 9,443,654 ALL-SPEND base (the same-allocation eligible amount), not a labour base
+    assert SAVED["mb_floor"] == pytest.approx(0.45 * ELIGIBLE_SAME_ALLOCATION) and round(SAVED["total_incentive"] - 2_833_096.20, 2) == 1_430_548.10
+
+
+def test_lls_contingency_election_is_a_planning_cost_mechanism_separate_from_manitoba_qpe():
+    """Codex finding 3. The Manitoba program has no contingency rule, so the 400,000 contingency line is excluded from QPE under EVERY election (verified
+    below); the election changes only the PLANNING cost basis: planned cost = original gross - reserve x (1 - utilization), applied once to NPC. A reconciliation
+    that treated the whole reserve as 'unspent' substituted an incurred-cost case for the planning case. No LLS contingency election is stored in the
+    acceptance or shared database as of this read (state NOT_STATED, planned cost = gross), so the table below is the mechanism, not a saved value."""
+    from app.calculators.allocation_pricing import price_segment
+    from app.services.canonical_project_economics import contingency_planning_view
+    cats = {str(i): c for i, (c, _) in enumerate(LLS.items())}
+    allocs = list(_mb_component(True).allocations)
+    floors = set()
+    for pct in (None, 0.0, 50.0, 100.0):
+        seg = price_segment("CA-MB", MB, allocs, cats, frozenset(), production_type="feature_film", gross_budget_usd=SAVED["gross"], contingency_expected_utilization_pct=pct)
+        floors.add(seg.incentive_floor_usd)
+        assert seg.excluded_usd == RESERVE, f"contingency excluded from Manitoba QPE under election {pct}"
+    assert floors == {2_845_096.20}, "the Manitoba credit does not depend on the election"
+    view = contingency_planning_view(SAVED["gross"], RESERVE, None)
+    assert view["state"] == "NOT_STATED" and view["planned_cost_usd"] == SAVED["gross"] and view["undeployed_reserve_usd"] is None
+    expected = {0.0: 8_750_557.80, 50.0: 8_950_557.80, 100.0: 9_150_557.80}              # same-allocation sensitivity NPC by election
+    expected_alt = {0.0: 8_738_557.80, 50.0: 8_938_557.80, 100.0: 9_138_557.80}          # all-Manitoba alternative NPC by election
+    for pct, npc in expected.items():
+        view = contingency_planning_view(SAVED["gross"], RESERVE, pct)
+        reduction = view["undeployed_reserve_usd"]
+        assert view["planned_cost_usd"] == pytest.approx(SAVED["gross"] - RESERVE * (1 - pct / 100.0)) and view["original_gross_usd"] == SAVED["gross"]
+        same = generate_structural_candidate([_mb_component(False)], gross_budget_usd=SAVED["gross"], planned_cost_reduction_usd=reduction)
+        alt = generate_structural_candidate([_mb_component(True)], gross_budget_usd=SAVED["gross"], planned_cost_reduction_usd=reduction)
+        assert same.npc_usd == pytest.approx(npc) and alt.npc_usd == pytest.approx(expected_alt[pct])
+        assert round(SAVED["gross"] - reduction - 2_833_096.20, 2) == npc, "independent arithmetic: gross - undeployed reserve - incentive"
+
+
+# ── Codex finding 1: dollars do not establish shooting days (unknown / mixed / explicit entirely-outside / explicit entirely-inside) ──────────
+
+def _outcome(pp_rows, spend_ca=10_000.0, other=990_000.0, primary="CA-MB", facts=None):
+    rows = [("US-CA", spend_ca, "vfx", "vfx"), ("CA-MB", other, "above_the_line", "principal_production")] + pp_rows
+    return evaluate_project_gate(CA_PROGRAM, "US-CA", rows, primary, facts)
+
+
+def test_mixed_principal_photography_is_conditional_not_a_proven_pass_or_failure():
+    # 40% of the location-bound accounts' dollars are in California: dollars do not establish that 75% of the DAYS are
+    mixed = _outcome([("US-CA", 400_000.0, "principal_photography", "x"), ("CA-MB", 600_000.0, "principal_photography", "x")])
+    assert mixed.conditional and not mixed.passed and not mixed.failed and mixed.photography_share is None
+    assert mixed.reason.startswith("PROJECT_ELIGIBILITY_GATE_CONDITIONAL:") and "dollar shares do not establish shooting days" in mixed.reason
+    # even 90% of the dollars in California cannot PROVE 75% of the days
+    assert _outcome([("US-CA", 900_000.0, "principal_photography", "x"), ("CA-MB", 100_000.0, "principal_photography", "x")]).conditional
+
+
+def test_unknown_principal_photography_is_conditional():
+    assert _outcome([], primary=None).conditional
+
+
+def test_explicitly_modeled_shoot_entirely_outside_fails_only_that_modeled_scenario_and_entirely_inside_passes():
+    outside = _outcome([("CA-MB", 1_000_000.0, "principal_photography", "x")])
+    assert outside.failed and "ALL of its principal photography outside US-CA (explicit modeled scenario; not an inferred dollar ratio)" in outside.reason
+    inside = _outcome([("US-CA", 1_000_000.0, "principal_photography", "x")])
+    assert inside.passed and inside.photography_share == 1.0 and "ALL of its principal photography in US-CA (explicit modeled scenario)" in inside.photography_basis
+    # no photography accounts modeled: the modeled principal-production jurisdiction stands for the shoot
+    assert _outcome([], primary="CA-MB").failed and _outcome([], primary="US-CA").passed
+
+
+def test_a_known_passing_spend_branch_is_sufficient_whatever_the_photography_is():
+    # California 7.5m of a 10m total (the 1m of photography is part of the remaining 2.5m): exactly 75.0%
+    assert _outcome([("CA-MB", 1_000_000.0, "principal_photography", "x")], spend_ca=7_500_000.0, other=1_500_000.0).passed
+    assert _outcome([("US-CA", 400_000.0, "principal_photography", "x"), ("CA-MB", 600_000.0, "principal_photography", "x")], spend_ca=7_100_000.0, other=1_900_000.0).passed
+
+
+def test_a_stated_share_of_days_overrides_the_modeled_placement_in_both_directions():
+    facts = lambda pct: {"ca_principal_photography_days_in_california_pct": pct}
+    assert _outcome([("CA-MB", 1_000_000.0, "principal_photography", "x")], facts=facts(80.0)).passed
+    assert _outcome([("US-CA", 1_000_000.0, "principal_photography", "x")], facts=facts(74.0)).failed
+
+
+def test_a_conditional_gate_keeps_the_hybrid_visible_with_no_guaranteed_california_value():
+    mixed = [_pp("CA-MB", 5_000_000.0, "P1"), _pp("US-CA", 3_000_000.0, "P2")]
+    res = _run([_comp("principal_production", "CA-MB", MB, [mixed[0]]), _comp("vfx", "US-CA", CA_PROGRAM, [mixed[1], _vfx("US-CA", 40_000.0)])], 8_040_000.0)
+    assert res.executable is True, res.rejection_reason
+    ca = next(e for e in res.component_economics if e.component.jurisdiction_code == "US-CA")
+    assert ca.is_guaranteed is False and ca.guaranteed_incentive_usd == 0.0 and ca.conditional_incentive_usd > 0.0
+    assert ca.segment.ceiling_requires_confirmation and any(c["condition_id"] == "project-eligibility-days-undetermined" for c in ca.segment.ceiling_conditions)
+
+
+def test_programs_without_the_gate_and_all_california_structures_are_untouched():
+    assert _run([_comp("principal_production", "US-CA", CA_PROGRAM, [_pp("US-CA", 5_000_000.0, "P")])], 5_000_000.0).executable is True
+    mb_vfx = _run([_comp("principal_production", "CA-MB", MB, [_pp("CA-MB", 9_960_000.0, "P")]),
+                   _comp("vfx", "CA-ON", "ontario_computer_animation_and_special_effects_tax_credit_ocase", [_vfx("CA-ON", 40_000.0)])], 10_000_000.0)
+    assert not (mb_vfx.rejection_reason or "").startswith(GATE_FAILED_PREFIX)
+
+
+# ── Lips Like Sugar: independent reconstruction from retained inputs (assumptions disclosed) ──────────────────────────────
+
+#: Read-only extraction of the 46 active budget lines, 2026-10-11 (category -> USD). Sum = 11,983,654.00 = the saved gross.
+LLS = {
+    "miscellaneous": 2_385_314.0, "finance_costs": 1_700_000.0, "atl_producer": 1_414_198.0, "payroll_fringes": 1_091_423.0 + 255_291.0,
+    "atl_cast": 863_388.0, "btl_set_construction": 808_296.0, "post_production": 571_710.0, "btl_transportation": 547_205.0, "contingency": 400_000.0,
+    "residuals_reserve": 400_000.0, "atl_writer": 314_153.0, "atl_director": 267_384.0, "music": 206_774.0, "legal_accounting": 150_000.0,
+    "completion_bond": 115_000.0, "insurance": 106_000.0, "production_sound": 87_067.0, "general_administration": 84_195.0, "btl_crew_labor": 76_175.0,
+    "travel": 60_561.0, "vfx": 40_000.0, "sound": 39_520.0,
+}
+SAVED = {"gross": 11_983_654.0, "total_incentive": 4_263_644.30, "npc": 7_720_009.70, "mb_allocated": 11_943_654.0, "mb_floor": 4_249_644.30, "ca_allocated": 40_000.0, "ca_floor": 14_000.0}
+
+
+def test_lls_retained_inputs_conserve_and_the_saved_row_is_arithmetically_consistent_only():
+    assert round(sum(LLS.values()), 2) == SAVED["gross"]
+    assert SAVED["mb_allocated"] + SAVED["ca_allocated"] == SAVED["gross"]
+    assert round(SAVED["gross"] - SAVED["total_incentive"], 2) == SAVED["npc"] and SAVED["mb_floor"] + SAVED["ca_floor"] == pytest.approx(SAVED["total_incentive"])
+    # the stale Manitoba floor is exactly 45% of a 9,443,654 base -- an all-spend base, not Manitoba LABOUR (canonical-1.110.0, before the 1.115 repair)
+    assert SAVED["mb_floor"] == pytest.approx(0.45 * 9_443_654.0)
+
+
+def test_lls_manitoba_california_hybrid_fails_the_california_gate_so_the_stale_row_cannot_stand():
+    ca_spend_share = SAVED["ca_allocated"] / SAVED["gross"]
+    assert ca_spend_share == pytest.approx(0.0033378, abs=1e-6) and ca_spend_share < 0.75
+    # every non-VFX account is allocated to Manitoba under its real component label (location-bound accounts default to principal_photography)
+    from app.calculators.production_allocation import COMPONENT_BY_SPEND_CATEGORY
+    mb = _comp("principal_production", "CA-MB", MB, [
+        _alloc(str(i), amount, COMPONENT_BY_SPEND_CATEGORY.get(cat, "principal_photography"), "CA-MB", str(i), cat)
+        for i, (cat, amount) in enumerate(c for c in LLS.items() if c[0] != "vfx")])
+    assert round(mb.allocated_usd, 2) == SAVED["mb_allocated"]
+    ca = _comp("vfx", "US-CA", CA_PROGRAM, [_vfx("US-CA", LLS["vfx"])])
+    res = _run([mb, ca], SAVED["gross"])
+    assert res.executable is False and res.rejection_reason.startswith(GATE_FAILED_PREFIX), "the saved 4,263,644.30 row would now be RULE_REJECTED"
+    assert "0.3% of the production budget" in res.rejection_reason and "ALL of its principal photography outside US-CA (explicit modeled scenario" in res.rejection_reason
+
+
 def test_lls_independent_manitoba_reconstruction_against_the_stale_row_and_the_current_engine():
     """Hand reconstruction from the raw category totals; the assumptions are this test's contract, not engine output.
     A1 cost-of-salaries credit: 45% of labour = atl_producer + atl_cast + atl_writer + atl_director + btl_crew_labor (payroll fringes excluded as employer
