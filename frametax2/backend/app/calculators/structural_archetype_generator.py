@@ -389,9 +389,12 @@ def _generate_structural_candidate_uncached(
     from app.calculators.project_eligibility_gates import evaluate_project_gate
     _gate_rows = [(a.jurisdiction_code, a.amount_usd, a.component, x.component_type) for x in components for a in x.allocations]
     _principal = next((x.jurisdiction_code for x in components if x.component_type == "principal_production"), None)
+    _conditional_gates: dict[int, object] = {}
     for c in components:
         _gate = evaluate_project_gate(c.program_slug, c.jurisdiction_code, _gate_rows, _principal, c.amount_facts)
-        if _gate is not None and not _gate.passed:
+        if _gate is not None and _gate.conditional:
+            _conditional_gates[id(c)] = _gate
+        if _gate is not None and _gate.failed:
             return StructuralCandidateResult(
                 structure_id=structure_id, component_types=component_types,
                 program_slugs=program_slugs, jurisdiction_codes=jurisdiction_codes,
@@ -406,6 +409,9 @@ def _generate_structural_candidate_uncached(
     selective_zero_notes: list[str] = []
     for c in components:
         seg = _price_component_cached(c, _component_cache)
+        if id(c) in _conditional_gates and seg.executable:
+            from app.calculators.allocation_pricing import conditional_project_gate_segment
+            seg = conditional_project_gate_segment(seg, _conditional_gates[id(c)])
         if not seg.executable:
             if c.component_type in ("selective_upside", "fund_overlay"):
                 selective_zero_notes.append(

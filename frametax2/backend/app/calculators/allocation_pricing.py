@@ -1980,6 +1980,16 @@ def _treaty_requirements(
 
 # ── Structure pricing ────────────────────────────────────────────────────────
 
+def conditional_project_gate_segment(seg: SegmentEconomics, gate) -> SegmentEconomics:
+    """A project-level gate whose days evidence is unknown or mixed: the credit is a disclosed CONDITIONAL planning scenario (no guaranteed floor, the
+    computed amount kept as the ceiling), never a proven pass or failure."""
+    condition = {"condition_id": "project-eligibility-days-undetermined", "description": gate.reason, "kind": "project_eligibility_gate",
+                 "condition_state": "USER_FACT_REQUIRED", "satisfied": None,
+                 "note": "State the share of principal-photography days wholly in the jurisdiction (ca_principal_photography_days_in_california_pct)."}
+    return _dc_replace(seg, incentive_floor_usd=0.0, is_band_ceiling=True, ceiling_requires_confirmation=True,
+                       ceiling_conditions=tuple(seg.ceiling_conditions) + (condition,))
+
+
 def price_allocated_structure(
     spec: StructureSpec,
     allocation: AllocationResult,
@@ -2103,9 +2113,11 @@ def price_allocated_structure(
         # Project-level eligibility (California Program 4.0: 75% of budget OR 75% of principal photography in California) cannot be decided
         # by one segment alone; a failed gate zeroes this segment's credit and keeps the candidate visible with an affirmative rejection.
         _gate = evaluate_project_gate(spec.incentive_programs.get(jur), jur, _gate_rows, spec.primary_jurisdiction, amount_facts)
-        if _gate is not None and not _gate.passed:
+        if _gate is not None and _gate.failed:
             seg = _dc_replace(seg, executable=False, incentive_floor_usd=0.0, incentive_ceiling_usd=0.0, incentive_uncapped_usd=None,
                               ceiling_requires_confirmation=False, blockers=tuple(seg.blockers) + (_gate.reason,))
+        elif _gate is not None and _gate.conditional:
+            seg = conditional_project_gate_segment(seg, _gate)
         segments.append(seg)
         blockers.extend(seg.blockers)
 

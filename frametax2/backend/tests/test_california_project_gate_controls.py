@@ -41,7 +41,8 @@ def _run(components, gross):
 def test_manitoba_principal_with_only_california_vfx_cannot_qualify_for_california():
     res = _run([_comp("principal_production", "CA-MB", MB, [_pp("CA-MB", 9_960_000.0, "P")]), _comp("vfx", "US-CA", CA_PROGRAM, [_vfx("US-CA", 40_000.0)])], 10_000_000.0)
     assert res.executable is False and res.rejection_reason.startswith(GATE_FAILED_PREFIX)
-    assert "0.4% of the production budget" in res.rejection_reason and "0.0% of principal photography" in res.rejection_reason
+    assert "0.4% of the production budget" in res.rejection_reason and "ALL of its principal photography outside US-CA (explicit modeled scenario" in res.rejection_reason
+    assert "not met in this modeled scenario" in res.rejection_reason, "a failure of the MODELED scenario, not a finding about an actual shoot"
     assert res.total_guaranteed_incentive_usd == 0.0 and res.blocking_pairs == ()
 
 
@@ -73,10 +74,60 @@ def test_a_producer_stated_share_of_california_shooting_days_replaces_the_dollar
 def test_gate_arithmetic_and_basis_are_reported():
     rows = [("CA-MB", 9_960_000.0, "principal_photography", "principal_production"), ("US-CA", 40_000.0, "vfx", "vfx")]
     out = evaluate_project_gate(CA_PROGRAM, "US-CA", rows, "CA-MB")
-    assert out.passed is False and out.spend_share == pytest.approx(0.004) and out.photography_share == 0.0
+    assert out.failed and out.spend_share == pytest.approx(0.004) and out.photography_share == 0.0
     assert evaluate_project_gate(MB, "CA-MB", rows, "CA-MB") is None, "a program without a project-level gate is never gated"
     none_modeled = evaluate_project_gate(CA_PROGRAM, "US-CA", [("US-CA", 10.0, "vfx", "vfx")], None)
     assert none_modeled.passed is True and none_modeled.spend_share == 1.0
+
+
+# ── Codex finding 1: dollars do not establish shooting days (unknown / mixed / explicit entirely-outside / explicit entirely-inside) ──────────
+
+def _outcome(pp_rows, spend_ca=10_000.0, other=990_000.0, primary="CA-MB", facts=None):
+    rows = [("US-CA", spend_ca, "vfx", "vfx"), ("CA-MB", other, "above_the_line", "principal_production")] + pp_rows
+    return evaluate_project_gate(CA_PROGRAM, "US-CA", rows, primary, facts)
+
+
+def test_mixed_principal_photography_is_conditional_not_a_proven_pass_or_failure():
+    # 40% of the location-bound accounts' dollars are in California: dollars do not establish that 75% of the DAYS are
+    mixed = _outcome([("US-CA", 400_000.0, "principal_photography", "x"), ("CA-MB", 600_000.0, "principal_photography", "x")])
+    assert mixed.conditional and not mixed.passed and not mixed.failed and mixed.photography_share is None
+    assert mixed.reason.startswith("PROJECT_ELIGIBILITY_GATE_CONDITIONAL:") and "dollar shares do not establish shooting days" in mixed.reason
+    # even 90% of the dollars in California cannot PROVE 75% of the days
+    assert _outcome([("US-CA", 900_000.0, "principal_photography", "x"), ("CA-MB", 100_000.0, "principal_photography", "x")]).conditional
+
+
+def test_unknown_principal_photography_is_conditional():
+    assert _outcome([], primary=None).conditional
+
+
+def test_explicitly_modeled_shoot_entirely_outside_fails_only_that_modeled_scenario_and_entirely_inside_passes():
+    outside = _outcome([("CA-MB", 1_000_000.0, "principal_photography", "x")])
+    assert outside.failed and "ALL of its principal photography outside US-CA (explicit modeled scenario; not an inferred dollar ratio)" in outside.reason
+    inside = _outcome([("US-CA", 1_000_000.0, "principal_photography", "x")])
+    assert inside.passed and inside.photography_share == 1.0 and "ALL of its principal photography in US-CA (explicit modeled scenario)" in inside.photography_basis
+    # no photography accounts modeled: the modeled principal-production jurisdiction stands for the shoot
+    assert _outcome([], primary="CA-MB").failed and _outcome([], primary="US-CA").passed
+
+
+def test_a_known_passing_spend_branch_is_sufficient_whatever_the_photography_is():
+    # California 7.5m of a 10m total (the 1m of photography is part of the remaining 2.5m): exactly 75.0%
+    assert _outcome([("CA-MB", 1_000_000.0, "principal_photography", "x")], spend_ca=7_500_000.0, other=1_500_000.0).passed
+    assert _outcome([("US-CA", 400_000.0, "principal_photography", "x"), ("CA-MB", 600_000.0, "principal_photography", "x")], spend_ca=7_100_000.0, other=1_900_000.0).passed
+
+
+def test_a_stated_share_of_days_overrides_the_modeled_placement_in_both_directions():
+    facts = lambda pct: {"ca_principal_photography_days_in_california_pct": pct}
+    assert _outcome([("CA-MB", 1_000_000.0, "principal_photography", "x")], facts=facts(80.0)).passed
+    assert _outcome([("US-CA", 1_000_000.0, "principal_photography", "x")], facts=facts(74.0)).failed
+
+
+def test_a_conditional_gate_keeps_the_hybrid_visible_with_no_guaranteed_california_value():
+    mixed = [_pp("CA-MB", 5_000_000.0, "P1"), _pp("US-CA", 3_000_000.0, "P2")]
+    res = _run([_comp("principal_production", "CA-MB", MB, [mixed[0]]), _comp("vfx", "US-CA", CA_PROGRAM, [mixed[1], _vfx("US-CA", 40_000.0)])], 8_040_000.0)
+    assert res.executable is True, res.rejection_reason
+    ca = next(e for e in res.component_economics if e.component.jurisdiction_code == "US-CA")
+    assert ca.is_guaranteed is False and ca.guaranteed_incentive_usd == 0.0 and ca.conditional_incentive_usd > 0.0
+    assert ca.segment.ceiling_requires_confirmation and any(c["condition_id"] == "project-eligibility-days-undetermined" for c in ca.segment.ceiling_conditions)
 
 
 def test_programs_without_the_gate_and_all_california_structures_are_untouched():
@@ -119,7 +170,7 @@ def test_lls_manitoba_california_hybrid_fails_the_california_gate_so_the_stale_r
     ca = _comp("vfx", "US-CA", CA_PROGRAM, [_vfx("US-CA", LLS["vfx"])])
     res = _run([mb, ca], SAVED["gross"])
     assert res.executable is False and res.rejection_reason.startswith(GATE_FAILED_PREFIX), "the saved 4,263,644.30 row would now be RULE_REJECTED"
-    assert "0.3% of the production budget" in res.rejection_reason and "0.0% of principal photography" in res.rejection_reason
+    assert "0.3% of the production budget" in res.rejection_reason and "ALL of its principal photography outside US-CA (explicit modeled scenario" in res.rejection_reason
 
 
 def test_lls_independent_manitoba_reconstruction_against_the_stale_row_and_the_current_engine():
@@ -149,3 +200,31 @@ def test_lls_independent_manitoba_reconstruction_against_the_stale_row_and_the_c
     assert res.executable is True and res.total_guaranteed_incentive_usd == pytest.approx(planning) and res.npc_usd == pytest.approx(new_npc)
     # versus the stale row (canonical-1.110.0): overstated incentive and understated NPC by the same amount
     assert round(SAVED["total_incentive"] - planning, 2) == 1_418_548.10 and round(new_npc - SAVED["npc"], 2) == 1_418_548.10
+
+
+# ── the allocated-structure kernel (price_allocated_structure) honours the same three outcomes ─────────────────────────────
+
+def _allocated(splits, vfx_to_ca=True):
+    from app.calculators.allocation_pricing import price_allocated_structure
+    from app.calculators.production_allocation import StructureSpec, derive_account_allocation
+    from app.calculators.qualification_derivation import BudgetLine
+    lines = [BudgetLine(account_code="3000", description="CREW", amount_usd=8_000_000.0, spend_category="btl_crew_labor", is_memo=False, line_id="L-crew"),
+             BudgetLine(account_code="6100", description="VFX", amount_usd=200_000.0, spend_category="vfx", is_memo=False, line_id="L-vfx")]
+    cats = {"3000": "btl_crew_labor", "6100": "vfx"}
+    spec = StructureSpec(structure_id="X", structure_type="hybrid", label="x", primary_jurisdiction="CA-MB", participants=("CA-MB", "US-CA"),
+                         incentive_programs={"CA-MB": MB, "US-CA": CA_PROGRAM}, component_routes={"vfx": "US-CA"} if vfx_to_ca else {},
+                         account_splits=splits)
+    allocation = derive_account_allocation(lines, cats, spec)
+    return price_allocated_structure(spec, allocation, cats, frozenset(), 8_200_000.0)
+
+
+def test_allocated_structure_fails_the_modeled_outside_shoot_and_keeps_a_mixed_split_conditional():
+    outside = _allocated({})
+    assert outside.is_fully_priced is False and any(b.startswith(GATE_FAILED_PREFIX) for b in outside.blockers)
+    ca_seg = next(s for s in outside.segments if s.jurisdiction_code == "US-CA")
+    assert ca_seg.incentive_floor_usd == 0.0 and ca_seg.incentive_ceiling_usd == 0.0
+    mixed = _allocated({"3000": {"CA-MB": 0.5, "US-CA": 0.5}})        # the shoot account is split 50/50: days undetermined
+    ca_mixed = next(s for s in mixed.segments if s.jurisdiction_code == "US-CA")
+    assert not any(b.startswith(GATE_FAILED_PREFIX) for b in mixed.blockers), mixed.blockers
+    assert ca_mixed.incentive_floor_usd == 0.0 and ca_mixed.ceiling_requires_confirmation and any(
+        c["condition_id"] == "project-eligibility-days-undetermined" for c in ca_mixed.ceiling_conditions)
