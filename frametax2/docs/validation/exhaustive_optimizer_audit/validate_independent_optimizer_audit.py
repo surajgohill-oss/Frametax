@@ -922,10 +922,10 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 if lu_ny.get('defect_or_disposition_id') != 'NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)':
                     errors.append(f"LU ny_state_film disposition must be NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT), got {lu_ny.get('defect_or_disposition_id')}")
                 rca = lu_ny.get('root_cause_analysis', '')
-                if '2,836,167.00' not in rca or '3,771,453.00' not in rca:
-                    errors.append(f"LU ny_state_film root cause missing supported bounds [2,836,167.00 - 3,771,453.00]: {rca}")
-                if '84,822.90' not in rca:
-                    errors.append(f"LU ny_state_film root cause missing credit overstatement 84,822.90: {rca}")
+                if '2,836,167.00' not in rca or '3,771,497.00' not in rca:
+                    errors.append(f"LU ny_state_film root cause missing supported bounds [2,836,167.00 - 3,771,497.00]: {rca}")
+                if '84,809.70' not in rca:
+                    errors.append(f"LU ny_state_film root cause missing credit overstatement 84,809.70: {rca}")
 
             # 1b. FVD, BH, LLS NY statutory bounds and NOT_ESTABLISHED check (Rule 5)
             for p, exp_min, exp_max in (
@@ -983,9 +983,9 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
             content = f.read()
             req_na_tokens = (
                 "$2,836,167.00",
-                "$3,771,453.00",
+                "$3,771,497.00",
                 "$3,274,421.00",
-                "84,822.90",
+                "84,809.70",
                 "138,850",
                 "438,254",
                 "61,568",
@@ -994,6 +994,10 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "COMPARISON_NOT_ESTABLISHED",
                 "NA-DEFECT-01",
                 "RET-09",
+                "RET-10",
+                "c3b8ad45-5c1e-47ed-b182-c9106f668b2a",
+                "f3513411-547c-41ca-894d-e1ef36d856b7",
+                "5557ceb5-d3f5-4b42-85df-d7369d72a9bd",
             )
             for tok in req_na_tokens:
                 if tok not in content:
@@ -1014,15 +1018,19 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "138,850",
                 "$0.00",
                 "$2,836,167.00",
-                "$3,771,453.00",
+                "$3,771,497.00",
                 "$3,274,421.00",
-                "84,822.90",
+                "84,809.70",
                 "340d2041-b11e-4ceb-8c9b-7162f4956903",
                 "14535c49-2dbe-4357-ab61-d3bf5b51c0f4",
                 "NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)",
                 "NA-DEFECT-01",
                 "DISC-NY-001",
                 "RET-09",
+                "RET-10",
+                "c3b8ad45-5c1e-47ed-b182-c9106f668b2a",
+                "f3513411-547c-41ca-894d-e1ef36d856b7",
+                "5557ceb5-d3f5-4b42-85df-d7369d72a9bd",
                 "STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN",
             )
             for tok in req_handoff_tokens:

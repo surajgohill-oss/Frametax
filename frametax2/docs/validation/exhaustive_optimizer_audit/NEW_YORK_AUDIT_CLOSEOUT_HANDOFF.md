@@ -33,6 +33,12 @@ In accordance with Evidence Gate Rules 2, 3, and 5, all previously asserted sing
 3. **Withdrawal of Erroneous Contingency Reserve:** The previously asserted contingency reserve of $310,197.00 is corrected to the exact source account figure of $301,131.00 (Account 8300).
 4. **Withdrawal of Single Verified Dollar Claim:** Under Evidence Gate Rules 2, 3, and 5, where empirical evidence (travel lodging splits and actual contingency disbursement) is absent, auditors must NOT fabricate exact qualified spend. LU NY is classified as **`NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)`** with fully evidenced statutory bounds proving engine credit overstatement across all bounds.
 
+### Formal Withdrawal of California Result/Structure IDs Mismatched to New York Comparisons (`RET-10`):
+In strict accordance with Evidence Gate Rule 4, all cross-program comparisons citing California Program 4.0 (`ca_film_30`) structures and results as New York comparisons are **FORMALLY WITHDRAWN**:
+1. **Withdrawal of FVD California Result `602efade-0ccf-43f2-b529-81434c6fd912` / Structure `b90c23db-3946-454b-8365-25eebe53dcf3`**: Withdrawn from NY comparison. Replaced with exact New York Film Production Credit structure `ae10b2e7-ed52-4ebe-894a-b9d6756ced32` and calculation result `c3b8ad45-5c1e-47ed-b182-c9106f668b2a` (Engine Qualified: $3,701,238.00; Incentive: $1,110,371.40).
+2. **Withdrawal of BH California Structure `f7ef008d-ec84-4c96-a9fc-035638a420e7` / Result `65a62a4d-afdf-4cdc-8b6e-724364206e6b`**: Withdrawn from NY comparison. Replaced with exact New York Film Production Credit structure `8558365f-6a68-45a2-931e-4f294ddf20c9` and calculation result `f3513411-547c-41ca-894d-e1ef36d856b7` (Engine Qualified: $2,327,641.00; Incentive: $698,292.30).
+3. **Withdrawal of LLS California Structure `f167da0f-bb1a-47e7-829b-b208cc08b38d` / Result `ce6e65af-f987-4aea-81bf-6b73280722a5`**: Withdrawn from NY comparison. Replaced with exact New York Film Production Credit structure `c135df1f-9a8e-4bdf-b25e-bd6af29a608b` and calculation result `5557ceb5-d3f5-4b42-85df-d7369d72a9bd` (Engine Qualified: $9,483,654.00; Incentive: $2,845,096.20).
+
 ### Core Audit Tenets Enforced:
 1. **Zero Circularity & Zero Arithmetic against Self:** All expectations and bounds are derived independently from original budget accounts and dated primary statutes without invoking engine qualification, classification, or pricing methods.
 2. **Single 44-Line Source Treatment Table:** All figures, subtotals, and statutory treatments are generated from `LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv`, which conserves every original budget account exactly once ($4,364,395.00 leaf sum; $4,364,393.00 controlling gross with documented $2 rounding variance).
@@ -164,14 +170,14 @@ Every figure in this section is derived strictly from `LITTLE_UTOPIA_NEW_YORK_SO
 * **Subaccount Breakdown for Admin, Publicity & Insurance (Verified against Original Budget PDF):**
   - **Account 7000 (Administrative Expenses: $297,593.00):** Direct production office lines (7009 Copiers $4,239, 7014 DIT Software $1,112, 7015 Hardware $2,609, 7030 Telecom $11,886, 7094 Office Supplies $3,696) total **$23,542.00**; Line production service company fee (7003) = **$95,000.00** (potentially eligible production coordination); Statutorily excluded corporate lines (7002 Setup & Audit $35,927, 7007 Legals $10,000, 7038 Bank Charges $2,957, 7042 Freight $27,293, 7050 Wrap Party $10,435, 7095 Foreign VAT $92,439) total **$179,051.00** (statutorily excluded under § 24(a)(2)). Total: $23,542 + $95,000 + $179,051 = **$297,593.00**.
   - **Account 7100 (Publicity: $24,348.00):** Unit still photographer (7102) = **$8,696.00** (IATSE 600 BTL crew labor); EPK crew & equipment (7105) = **$15,652.00** (camera crew $9,783, edit $5,869). Admitted up to **$24,348.00** in optimistic planning ceiling; excluded promotional marketing in incurred spend.
-  - **Account 7200 (Corporate Insurance: $12,374.00):** Direct production liability (7201: $4,174) + cast medicals (7203: $700) = **$4,830.00** (direct physical safety). Excluded corporate wrap (7202 E&O $5,000, broker fee $43, travel insurance $2,500) = **$7,543.00**. Total: $4,830 + $7,543 = **$12,374.00**.
+  - **Account 7200 (Corporate Insurance: $12,374.00):** Direct production liability (7201: $4,174) + cast medicals (7203: $700) = **$4,874.00** (direct physical safety). Excluded corporate wrap (7202 E&O $5,000, travel insurance $2,500) = **$7,500.00**. Total: $4,874 + $7,500 = **$12,374.00**.
   - **Account 8100 (Insurance : 1.2%: $48,181.00):** Production package floater. Excluded in baseline without policy binder; admitted up to **$48,181.00** in optimistic planning ceiling.
   - **Account 8300 (Contingency Reserve : 7.5%: $301,131.00):** Unspent reserve ($0.00 incurred spend); admitted up to **$301,131.00** in optimistic planning scenario per documented producer election (100% deployment into qualifying BTL physical production).
   - **Account 1600 (ATL Travel & Living: $397,279.00):** Statutorily excluded under § 24(b)(1).
 * **Statutory Non-Qualifying Exclusions & Resolution of the $138,850 Residual:**
   - Incurred spend baseline exclusions: ATL Travel ($397,279) + Admin ($297,593) + Publicity ($24,348) + Insurance ($12,374) + Insurance 1.2% ($48,181) + Contingency ($301,131) = **$1,080,906.00** ($1,080,904.00 against controlling gross topsheet).
   - The previously reported handoff stated: Contingency $310,197.00 + Financing & Legal $421,791.00 + Insurance & Bond $130,081.00 + Administrative $79,985.00 = $942,054.00, while asserting total exclusions of $1,080,904.00. The difference was $\$1,080,904.00 - \$942,054.00 = \mathbf{\$138,850.00}$. Grounded in the actual 44 source accounts, statutory exclusions total exactly **$1,080,906.00** ($1,080,904.00 gross). Conserving leaf sum: $\$4,364,395.00 - \$1,080,906.00 = \$3,283,489.00$, yielding an unexplained residual of exactly **$0.00**.
-  - Optimistic planning upper bound exclusions: ATL Travel ($397,279) + Excluded Corporate Admin ($179,051) + Corporate Insurance ($7,543) + LA Editorial ($9,068) = **$592,941.00** ($1 rounding variance). Upper bound eligible spend = $\$4,364,395.00 - \$592,941.00 = \mathbf{\$3,771,453.00}$.
+  - Optimistic planning upper bound exclusions: ATL Travel ($397,279) + Excluded Corporate Admin ($179,051) + Corporate Insurance ($7,500) + LA Editorial ($9,068) = **$592,898.00**. Upper bound eligible spend = $\$4,364,395.00 - \$592,898.00 = \mathbf{\$3,771,497.00}$.
 
 #### Supported Statutory Bounds for The Little Utopia (`ny_state_film`):
 Because the exact qualifying split of BTL travel ($438,254) and actual disbursement of contingency reserve ($301,131) are empirical unknowns, AUDIT INPUT EVIDENCE GATE Rules 2, 3, and 5 prohibit asserting a single dollar figure. The audit provides rigorous statutory bounds:
@@ -190,12 +196,12 @@ Because the exact qualifying split of BTL travel ($438,254) and actual disbursem
    - **Relocation Baseline QPE:** $\$3,133,256.00 + \$141,165.00 = \mathbf{\$3,274,421.00}$
    - **Relocation Baseline Credit (30%):** $\$3,274,421.00 \times 0.30 = \mathbf{\$982,326.30}$
 3. **Optimistic Planning Ceiling / Upper Bound (Including Every Potentially Eligible Unresolved Portion):**
-   - Admits 100% contingency deployment into BTL physical ($301,131.00), 100% in-state crew travel ($438,254.00), direct production office ($23,542.00), line production coordination fee ($95,000.00), unit still photography and EPK crew ($24,348.00), direct production liability & medicals ($4,830.00), and production package insurance floater ($48,181.00). Editorial in LA ($9,068.00) is consistently excluded from NY relocation spend across bounds.
-   - Other qualified costs = Physical BTL $2,642,502 + Travel $438,254 + Contingency $301,131 + Post VFX $52,500 + Qualifying Admin $118,542 + Publicity $24,348 + Qualifying Insurance $53,011 = **$3,630,288.00**.
-   - 40% Statutory ATL Ceiling: $\$3,630,288.00 \times 0.40 = \$1,452,115.20$.
+   - Admits 100% contingency deployment into BTL physical ($301,131.00), 100% in-state crew travel ($438,254.00), direct production office ($23,542.00), line production coordination fee ($95,000.00), unit still photography and EPK crew ($24,348.00), direct production liability & medicals ($4,874.00), and production package insurance floater ($48,181.00). Editorial in LA ($9,068.00) is consistently excluded from NY relocation spend across bounds.
+   - Other qualified costs = Physical BTL $2,642,502 + Travel $438,254 + Contingency $301,131 + Post VFX $52,500 + Qualifying Admin $118,542 + Publicity $24,348 + Qualifying Insurance $53,055 = **$3,630,332.00**.
+   - 40% Statutory ATL Ceiling: $\$3,630,332.00 \times 0.40 = \$1,452,132.80$.
    - Creative ATL Incurred: $141,165.00 (fully admitted).
-   - **Max Upper Bound QPE:** $\$3,630,288.00 + \$141,165.00 = \mathbf{\$3,771,453.00}$
-   - **Max Base Credit (30%):** $\$3,771,453.00 \times 0.30 = \mathbf{\$1,131,435.90}$
+   - **Max Upper Bound QPE:** $\$3,630,332.00 + \$141,165.00 = \mathbf{\$3,771,497.00}$
+   - **Max Base Credit (30%):** $\$3,771,497.00 \times 0.30 = \mathbf{\$1,131,449.10}$
    - *(Note: Historical physical spend base prior to subaccount resolution was $3,283,489.00 [Credit: $985,046.70]).*
 
 #### Comparison against Engine Saved Result (`canonical-1.106.0`):
@@ -205,7 +211,7 @@ Because the exact qualifying split of BTL travel ($438,254) and actual disbursem
   - Segment 1 (US-NY ny_state_film): Allocated $4,355,327.00; Excluded $301,131.00 (Contingency Reserve 8300); Qualified Spend = **$4,054,196.00**
   - Actual Base Incentive: **$1,216,258.80** ($4,054,196.00 × 0.30)
 * **Defect Proof across All Bounds (`NA-DEFECT-01`):**
-  - Overstatement at Optimistic Upper Bound ($3,771,453.00): $\$1,216,258.80 - \$1,131,435.90 = \mathbf{+\$84,822.90}$
+  - Overstatement at Optimistic Upper Bound ($3,771,497.00): $\$1,216,258.80 - \$1,131,449.10 = \mathbf{+\$84,809.70}$
   - Overstatement at Relocation Baseline ($3,274,421.00): $\$1,216,258.80 - \$982,326.30 = \mathbf{+\$233,932.50}$
   - Overstatement at Min QPE Lower Bound Floor ($2,836,167.00): $\$1,216,258.80 - \$850,850.10 = \mathbf{+\$365,408.70}$
 * **Audit Disposition:** **`NOT_ESTABLISHED (MISSING_TRAVEL_SCHEDULE_AND_CONTINGENCY_DEPLOYMENT)`** under **`NOT_ESTABLISHED_EMPIRICAL_GAP`**. Engine credit overstatement is conclusively proven across every single supported bound (`NA-DEFECT-01`).
@@ -229,7 +235,7 @@ Because the exact qualifying split of BTL travel ($438,254) and actual disbursem
     $$\text{Min QPE} = \mathbf{\$1,256,776.00} \quad [\text{Credit at 30\%: } \mathbf{\$377,032.80}]$$
   - **Maximum QPE (Statutory 40% Ceiling Fully Satisfied):**
     $$\text{Max QPE} = \$1,256,776.00 + \$502,710.40 = \mathbf{\$1,759,486.40} \quad [\text{Credit at 30\%: } \mathbf{\$527,845.92}]$$
-* **Engine Comparison (`canonical-1.106.0`, Result ID `602efade-0ccf-43f2-b529-81434c6fd912`):**
+* **Engine Comparison (`canonical-1.106.0`, Result ID `c3b8ad45-5c1e-47ed-b182-c9106f668b2a`, Structure ID `ae10b2e7-ed52-4ebe-894a-b9d6756ced32`):**
   - Engine Qualified: $3,701,238.00; Engine Credit: $1,110,371.40.
   - Overstatement at Maximum Upper Bound: $\Delta \text{Credit}_{\min} = \$1,110,371.40 - \$527,845.92 = \mathbf{+\$582,525.48}$
   - Overstatement at Lower Bound: $\Delta \text{Credit}_{\max} = \$1,110,371.40 - \$377,032.80 = \mathbf{+\$733,338.60}$
@@ -252,7 +258,7 @@ Because the exact qualifying split of BTL travel ($438,254) and actual disbursem
     $$\text{Min QPE} = \mathbf{\$749,889.00} \quad [\text{Credit at 30\%: } \mathbf{\$224,966.70}]$$
   - **Maximum QPE (Statutory 40% Ceiling Fully Satisfied):**
     $$\text{Max QPE} = \$749,889.00 + \$299,955.60 = \mathbf{\$1,049,844.60} \quad [\text{Credit at 30\%: } \mathbf{\$314,953.38}]$$
-* **Engine Comparison (`canonical-1.106.0`, Result ID `f7ef008d-ec84-4c96-a9fc-035638a420e7`):**
+* **Engine Comparison (`canonical-1.106.0`, Result ID `f3513411-547c-41ca-894d-e1ef36d856b7`, Structure ID `8558365f-6a68-45a2-931e-4f294ddf20c9`):**
   - Engine Qualified: $2,327,641.00; Engine Credit: $698,292.30.
   - Overstatement at Maximum Upper Bound: $\Delta \text{Credit}_{\min} = \$698,292.30 - \$314,953.38 = \mathbf{+\$383,338.92}$
   - Overstatement at Lower Bound: $\Delta \text{Credit}_{\max} = \$698,292.30 - \$224,966.70 = \mathbf{+\$473,325.60}$
@@ -261,22 +267,30 @@ Because the exact qualifying split of BTL travel ($438,254) and actual disbursem
 ---
 
 ### 3.4 Lips Like Sugar (`LLS`) — Supported Statutory Bounds
-* **Gross Controlling Budget:** $11,947,562.00.
-* **Source BTL + Post Base (Accounting for `NY-A01` Financing Exclusions):**
-  - Production BTL: $5,166,417.00; Travel/Living: $200,000.00; On-Set Sound: $87,067.00; Post: $400,000.00.
-  - Excluded Financing Costs (NY-A01): Account 6500 ($450,000), Account 6600 ($250,000), Account 6700 ($1,000,000) are fully excluded.
+* **Gross Controlling Budget & Source Conservation:**
+  - Declared Topsheet Gross: **$11,947,562.00**; Leaf Sum with fringes: **$11,983,654.00**.
+* **Statutory Financing Exclusions (`NY-A01`):**
+  - Account 6500 (`FINANCING FEES`): $450,000.00
+  - Account 6600 (`BRIDGE`): $250,000.00
+  - Account 6700 (`BANKING FEE`): $1,000,000.00
+  - **Total Non-Qualifying Financing Excluded:** **$1,700,000.00**
+* **Source BTL + Post Departmental Base:**
+  - Production BTL Physical (Accounts 2000-3600, 3900): $3,816,990.00
+  - Fringes BTL (Accounts 4900, 5900): $1,091,423.00
+  - On-Set Sound (Account 3400, BTL per `NY-A03`): $87,067.00
+  - Post-Production (Accounts 3700, 4400-4800, 4900, 5800): $858,004.00
   - **Sum of Other Qualified Costs (BTL + Post):** **$5,853,484.00**
 * **Statutory 40% Aggregate Ceiling:**
   $$\text{Ceiling} = 0.40 \times \$5,853,484.00 = \mathbf{\$2,341,393.60}$$
 * **Audit Evidence Evaluation under Rule 5:**
-  - Cast (Account 1400, $1,675,000.00) and Producer accounts ($1,184,123.00) exceed $500,000 without payee contracts.
+  - Cast (Account 1400, $863,388.00 + fringes $255,291.00 = $1,118,679.00) and Producer accounts ($1,414,198.00) exceed $500,000 without individual contracts.
   - Disposition: **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`** under **`NOT_ESTABLISHED_EMPIRICAL_GAP`**.
 * **Evidenced Statutory Bounds:**
   - **Minimum QPE (Zero ATL Qualified):**
     $$\text{Min QPE} = \mathbf{\$5,853,484.00} \quad [\text{Credit at 30\%: } \mathbf{\$1,756,045.20}]$$
   - **Maximum QPE (Statutory 40% Ceiling Fully Satisfied):**
     $$\text{Max QPE} = \$5,853,484.00 + \$2,341,393.60 = \mathbf{\$8,194,877.60} \quad [\text{Credit at 30\%: } \mathbf{\$2,458,463.28}]$$
-* **Engine Comparison (`canonical-1.106.0`, Result ID `f167da0f-bb1a-47e7-829b-b208cc08b38d`):**
+* **Engine Comparison (`canonical-1.106.0`, Result ID `5557ceb5-d3f5-4b42-85df-d7369d72a9bd`, Structure ID `c135df1f-9a8e-4bdf-b25e-bd6af29a608b`):**
   - Engine Qualified: $9,483,654.00; Engine Credit: $2,845,096.20.
   - Overstatement at Maximum Upper Bound: $\Delta \text{Credit}_{\min} = \$2,845,096.20 - \$2,458,463.28 = \mathbf{+\$386,632.92}$
   - Overstatement at Lower Bound: $\Delta \text{Credit}_{\max} = \$2,845,096.20 - \$1,756,045.20 = \mathbf{+\$1,089,051.00}$
@@ -377,11 +391,11 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Supported Scenarios & Bounds:**
   - Lower Bound Floor: Min QPE = **$2,836,167.00** [Credit: **$850,850.10**] (contingency unspent, airfare excluded, baseline insurance excluded).
   - Relocation Baseline Midpoint: Baseline QPE = **$3,274,421.00** [Credit: **$982,326.30**] (100% lodging admitted, contingency unspent, LA editorial excluded).
-  - Optimistic Planning Ceiling Upper Bound: Max QPE = **$3,771,453.00** [Credit: **$1,131,435.90**] (100% contingency deployed into BTL physical, 100% lodging admitted, qualifying office/coordination/insurance admitted, LA editorial excluded).
+  - Optimistic Planning Ceiling Upper Bound: Max QPE = **$3,771,497.00** [Credit: **$1,131,449.10**] (100% contingency deployed into BTL physical, 100% lodging admitted, qualifying office/coordination/insurance admitted, LA editorial excluded).
   - *(Historical physical spend base prior to subaccount resolution: **$3,283,489.00** [Credit: **$985,046.70**]).*
 * **Expected Engine Behavior:** Incurred-spend evaluations must fail closed or flag `MISSING_AUDIT_EVIDENCE` for unitemized travel and unspent reserves; planning scenario evaluations must admit contingency and lodging strictly subject to explicit producer election and apply statutory 40% ATL cap.
 * **Exact Producer Input Needed:** Producer entry in Overview/Inspector of in-state crew lodging breakdown ($ in Account 3900), contingency inclusion % (0% for incurred vs 100% for relocation), NY insurance binder, and county shoot day logs.
-* **Comparison Matching:** Compared against identical allocation Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`, Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903` ($4,054,196.00 QPE / $1,216,258.80 Credit). Overstatement of at least **+$84,822.90** is confirmed across all bounds (`NA-DEFECT-01`).
+* **Comparison Matching:** Compared against identical allocation Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`, Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903` ($4,054,196.00 QPE / $1,216,258.80 Credit). Overstatement of at least **+$84,809.70** is confirmed across all bounds (`NA-DEFECT-01`).
 
 ### 6.2 Blocker 2: FVD, BH, LLS New York Individual Talent Contracts & Producer Limit Gaps
 * **Blocker ID:** `BLOCKER-02-NY-TALENT-CONTRACTS-GAP`
@@ -393,7 +407,7 @@ Every retained issue across the four anchor projects is categorized and detailed
   - LLS: Floor = **$5,853,484.00** [$1,756,045.20 Credit]; Ceiling = **$8,194,877.60** [$2,458,463.28 Credit]. Engine overstatement >= **+$386,632.92**.
 * **Expected Engine Behavior:** When individual talent contracts are absent, calculate and display the supported statutory range [Floor .. Ceiling], enforce the 40% aggregate ATL ceiling, and prevent qualifying aggregate topsheet ATL lines above the cap.
 * **Exact Producer Input Needed:** Producer schedule of individual talent earnings listing name, role (writer/director/performer/producer), and total compensation per person; designation of up to 2 credited individual producers qualifying under § 24(b)(1).
-* **Comparison Matching:** Compared against identical full relocation allocations: FVD Structure `b90c23db...` / Result `602efade...`; BH Structure `b90c23db...` / Result `f7ef008d...`; LLS Structure `14535c49...` / Result `f167da0f...`.
+* **Comparison Matching:** Compared against identical full relocation allocations for New York State Film Tax Credit: FVD Structure `ae10b2e7-ed52-4ebe-894a-b9d6756ced32` / Result `c3b8ad45-5c1e-47ed-b182-c9106f668b2a`; BH Structure `8558365f-6a68-45a2-931e-4f294ddf20c9` / Result `f3513411-547c-41ca-894d-e1ef36d856b7`; LLS Structure `c135df1f-9a8e-4bdf-b25e-bd6af29a608b` / Result `5557ceb5-d3f5-4b42-85df-d7369d72a9bd`.
 
 ### 6.3 Blocker 3: Canadian CAVCO Domestic Certification Gaps (CPTC & OFTTC)
 * **Blocker ID:** `BLOCKER-03-CAVCO-DOMESTIC-CERTIFICATION-GAP`
@@ -459,6 +473,6 @@ Every retained issue across the four anchor projects is categorized and detailed
 > ### FINAL HANDOFF GATE DISPOSITION:
 > **`STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN`**
 >
-> 1. **Zero Acceptance of Defective Totals:** The engine's saved results in `canonical-1.106.0` overstate New York State film tax credits by at least **+$84,822.90** on The Little Utopia (Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903`, Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`) at maximum upper bound ($3,771,453.00) (and +$233,932.50 at baseline, +$365,408.70 at floor), **+$582,525.48** on FVD, **+$383,338.92** on Bad Hombres, and **+$386,632.92** on Lips Like Sugar.
+> 1. **Zero Acceptance of Defective Totals:** The engine's saved results in `canonical-1.106.0` overstate New York State film tax credits by at least **+$84,809.70** on The Little Utopia (Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903`, Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`) at maximum upper bound ($3,771,497.00) (and +$233,932.50 at baseline, +$365,408.70 at floor), **+$582,525.48** on FVD, **+$383,338.92** on Bad Hombres, and **+$386,632.92** on Lips Like Sugar.
 > 2. **Remediation Gate Closed Only upon Codex Review & Regeneration:** Acceptance will NOT close until Codex implements the repair specifications (`NA-DEFECT-01`, `DISC-NY-001`, `DISC-NY-002`, `DISC-NY-003`), runs authorized canonical regeneration, and verifies agreement against independent bounds.
 > 3. **Rest-of-World (ROW) Expansion Boundary:** Regional expansion remains strictly paused. ROW audit will not commence until Codex adjudicates this package.
