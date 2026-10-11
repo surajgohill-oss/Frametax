@@ -522,6 +522,22 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Exact Producer Input Needed:** Producer entry in Overview/Inspector of individual talent compensation, county shoot logs, and facility location.
 * **Comparison Matching:** Reconciles Codex delta review and Claude Capability Ledger across all NY and uplift candidate evaluations.
 
+### 6.9 Blocker 9: North American Hybrid Audit & LLS Manitoba–California Reconstruction (`canonical-1.122.0`)
+* **Blocker ID:** `BLOCKER-09-NA-HYBRID-AUDIT-AND-LLS-MB-CA`
+* **Frozen Baseline:** `canonical-1.122.0`, commits `f5dc6a17` (`f5dc6a17858436c0809d7830151696d036aa159b`), `f0b042ba` (`f0b042ba039ed41e619217a4ac8758ec6814eed8`), and `59566fd1` (`59566fd17463b71e9796d41e8e080bf5d0ac27ea`).
+* **Full Hybrid Deliverables:** `NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md` and `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv` (`1,601` rows: 9 explicit `LLS` Manitoba–California artifact & contingency-election rows + 1,592 saved North American rows across `LU`, `FVD`, `BH`, and `LLS`, with zero `line_id` overlap across all `1,001` multi-leg hybrids).
+* **`LLS` Manitoba–California (`CA-MB` Principal `$11,943,654` + `US-CA` VFX `$40,000`):**
+  - **Artifact 1 (Retained Hybrid — `scr.id = 914a47c0-9b1e-4d47-867f-425e6d4792fa`):** `GATE_REJECTED` (`$0.00` credit, `$11,983,654.00` NPC) because the `$40,000` California VFX leg (`0.3338%` of budget, `0%` principal photography days) fails California's statutory 75% budget / 75% principal photography gate (CFC Program 4.0 Guidelines Jan 1, 2026 § II.A.1; 10 CCR § 5520(a)). Saved DB `$4,263,644.30` overstated by `+$4,263,644.30` (`STALE_DB_OVERSTATEMENT_AND_GATE_FAILURE`).
+  - **Artifact 2 (Same-Allocation MB Leg Sensitivity — `$11,943,654` in MB, `$40,000` CA VFX earns `$0`):** Excludes `$1,700,000` financing (`6500-6700`), `$400,000` unconfirmed residuals reserve (`6800`, `GREY_AREA_REQUIRES_AUTHORITY`), and `$400,000` unspent contingency (`7100`) -> `$9,443,654.00` eligible Manitoba base -> **`$2,833,096.20`** guaranteed floor credit (30% Stream A under Manitoba ITA s. 7.6(6)) + `+$755,492.32` conditional `+8%` Manitoba Co-Producer bonus (`$3,588,588.52` ceiling), **`$9,150,557.80`** unadjusted NPC.
+  - **Artifact 3 (Relocated All-Manitoba Alternative — `$11,983,654` in MB incl. `$40,000` VFX):** `$9,483,654.00` eligible Manitoba base -> **`$2,845,096.20`** guaranteed floor credit (`+$12,000.00` over Artifact 2), **`$9,138,557.80`** unadjusted NPC.
+  - **4-Election Contingency Matrix (`NOT_STATED`, `0%`, `50%`, `100%` on `$400,000` `7100 Contingency`):** Manitoba ITA s. 7.5(1) excludes only **unspent** contingency reserve; **deployed** contingency spent on eligible Manitoba production costs **is statutorily eligible** (`+$60,000.00` credit at `50%` -> `$2,893,096.20` Art. 2 / `$2,905,096.20` Art. 3; `+$120,000.00` credit at `100%` -> `$2,953,096.20` Art. 2 / `$2,965,096.20` Art. 3). Engine `1.122.0` excludes it at `50%`/`100%` only because `program_spend_rules.py` lacks a Manitoba contingency `SpendRule` (`NA-HYB-DEF-04`).
+* **Active Code Defects Verified in `canonical-1.122.0` (`59566fd1`):**
+  - **`NA-HYB-DEF-01`:** Unmodeled US state statutory minimum spend & project-share gates on routed hybrid components (`US-MN` `$1M`, `US-PA` `60%` budget share, `US-MA` `>75%` budget/days on non-payroll, `US-RI` `51%` photography days + `$100k` min, `US-AL` `$500k` min + 35% payroll rate applied to non-payroll spend, `US-CO`, `US-HI`, `US-OK`, `US-UT`, `US-VA`, `US-AZ`).
+  - **`NA-HYB-DEF-02`:** Unreachable `CA-MB` 30% Cost-of-Production election in `allocation_pricing.py` (line 1759) when segment `atl_*`/`btl_*` labour is `$0` (blocked at line 1365).
+  - **`NA-HYB-DEF-03`:** BTL department labour accounts (`2000–3900` except `3100`) classified as `miscellaneous` and `1900/4900/5900` as `payroll_fringes` omitted from `component_basis_spend_categories` on labour-only programs.
+  - **`NA-HYB-DEF-04`:** Absent Manitoba contingency `SpendRule` in `program_spend_rules.py` excludes deployed contingency at `50%`/`100%`.
+  - **`NA-HYB-DEF-05`:** Inconsistent CPTC 60% production-cost cap base between `price_segment` (`0.60 * gross_budget_usd`) and `canonical_stack_bridge` (`0.60 * net_qualified_spend`), causing `price_segment` on `BH` to overstate standalone CPTC by `+$20,380.35` (`$369,526.50` vs `$349,146.15`) and misattributing `$20,380.35` to `stacking_reduction_usd` (`$97,980.91` on `CA-ON`, `$107,666.89` on `CA-QC`), plus unlawful `ca_federal_cptc + ca_qc_pstc` domestic+service stack.
+
 ---
 
 ## 7. Gate Disposition & Mandatory Sign-off
@@ -532,6 +548,6 @@ Every retained issue across the four anchor projects is categorized and detailed
 >
 > **REMAINING BLOCKERS:**
 > 1. **Empirical Fact Gaps (Producers):** General ledger payroll ledgers (Canadian QLE), individual talent payee contracts (GA/IL/MA salary caps), and location shoot logs remain unresolved in source records.
-> 2. **Code Repair Implementation & Wiring (Codex):** NY § 24 ATL 40% aggregate cap, wiring `ny_atl_individual_cap.py` with producer fact fallbacks, pricing statutory uplifts, and CA Program 4.0 spend refinement await Codex review.
-> 3. **Authorized Database Regeneration:** Commits `486bd15` (F-01..F-07) and `6cd2bbe` are unregenerated; served database state remains stale until regeneration is authorized.
+> 2. **Code Repair Implementation & Wiring (Codex):** NY § 24 ATL 40% aggregate cap (`NA-DEFECT-01`), hybrid defects `NA-HYB-DEF-01`..`NA-HYB-DEF-05`, wiring `ny_atl_individual_cap.py` with producer fact fallbacks, pricing statutory uplifts, and CA Program 4.0 spend refinement await Codex review.
+> 3. **Authorized Database Regeneration:** Commits `486bd15` (F-01..F-07), `6cd2bbe`, and `f5dc6a17`/`f0b042ba`/`59566fd1` (`canonical-1.122.0`) are unregenerated; served database state remains stale until regeneration is authorized.
 > 4. **Regional Expansion Boundary:** All execution halts strictly at the North American handoff. Rest-of-World (ROW) expansion will NOT begin until Codex review passes and the North American gate is adjudicated.

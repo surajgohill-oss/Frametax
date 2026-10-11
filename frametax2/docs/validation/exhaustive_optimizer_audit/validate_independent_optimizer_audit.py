@@ -1037,6 +1037,63 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 if tok not in h_content:
                     errors.append(f"NEW_YORK_AUDIT_CLOSEOUT_HANDOFF.md missing required token: '{tok}'")
 
+    # 41. North American Hybrid Coverage Matrix
+    na_hyb_csv_path = os.path.join(base_dir, "NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv")
+    if not os.path.exists(na_hyb_csv_path):
+        errors.append(f"Missing file: {na_hyb_csv_path}")
+    else:
+        with open(na_hyb_csv_path, mode="r", encoding="utf-8") as f:
+            hyb_reader = list(csv.DictReader(f))
+            if len(hyb_reader) != 1601:
+                errors.append(f"NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv row count ({len(hyb_reader)}) != expected 1601 (9 explicit LLS MB-CA rows + 1592 saved NA rows).")
+            overlap_violations = [r for r in hyb_reader if r.get("line_overlap_count") not in ("0", 0)]
+            if overlap_violations:
+                errors.append(f"NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv has {len(overlap_violations)} rows with non-zero line_overlap_count!")
+            art1 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_1_RETAINED_HYBRID"), None)
+            art2 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_2_MB_LEG_SENSITIVITY_CONTINGENCY_NOT_STATED"), None)
+            art3 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_3_ALL_MB_ALTERNATIVE_CONTINGENCY_NOT_STATED"), None)
+            if not art1 or art1.get("independent_expected_status") != "GATE_REJECTED" or art1.get("independent_incentive_floor_usd") != "0.00":
+                errors.append(f"LLS MB-CA Artifact 1 must be GATE_REJECTED with 0.00 floor credit, got: {art1}")
+            if not art2 or art2.get("independent_incentive_floor_usd") != "2833096.20" or art2.get("independent_npc_floor_usd") != "9150557.80":
+                errors.append(f"LLS MB-CA Artifact 2 must have 2833096.20 floor credit and 9150557.80 NPC, got: {art2}")
+            if not art3 or art3.get("independent_incentive_floor_usd") != "2845096.20" or art3.get("independent_npc_floor_usd") != "9138557.80":
+                errors.append(f"LLS MB-CA Artifact 3 must have 2845096.20 floor credit and 9138557.80 NPC, got: {art3}")
+            c100_a2 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_2_MB_LEG_SENSITIVITY_CONTINGENCY_100%"), None)
+            if not c100_a2 or c100_a2.get("independent_incentive_floor_usd") != "2953096.20" or "NA-HYB-DEF-04" not in c100_a2.get("audit_disposition", ""):
+                errors.append(f"LLS MB-CA 100% Contingency Artifact 2 must have 2953096.20 floor credit and NA-HYB-DEF-04, got: {c100_a2}")
+
+    # 42. North American Hybrid Audit Handoff Document
+    na_hyb_md_path = os.path.join(base_dir, "NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md")
+    if not os.path.exists(na_hyb_md_path):
+        errors.append(f"Missing file: {na_hyb_md_path}")
+    else:
+        with open(na_hyb_md_path, mode="r", encoding="utf-8") as f:
+            hyb_md = f.read()
+            req_hyb_tokens = (
+                "f5dc6a17858436c0809d7830151696d036aa159b",
+                "f0b042ba039ed41e619217a4ac8758ec6814eed8",
+                "59566fd17463b71e9796d41e8e080bf5d0ac27ea",
+                "canonical-1.122.0",
+                "914a47c0-9b1e-4d47-867f-425e6d4792fa",
+                "9656c441-881e-4667-bec1-8841387408ce",
+                "2,833,096.20",
+                "2,845,096.20",
+                "9,150,557.80",
+                "9,138,557.80",
+                "1,320,884.10",
+                "2,893,096.20",
+                "2,953,096.20",
+                "NA-HYB-DEF-01",
+                "NA-HYB-DEF-02",
+                "NA-HYB-DEF-03",
+                "NA-HYB-DEF-04",
+                "NA-HYB-DEF-05",
+                "STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN",
+            )
+            for tok in req_hyb_tokens:
+                if tok not in hyb_md:
+                    errors.append(f"NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md missing required token: '{tok}'")
+
     return (len(errors) == 0, errors)
 
 
@@ -1053,7 +1110,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 41
+    nc_total = 44
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -2024,6 +2081,73 @@ def run_negative_controls():
             print("    -> FAIL: Validator failed to catch tampered NY closeout handoff.")
         with open(ny_hnd_f, "w", encoding="utf-8") as f:
             f.write(orig_hnd)
+
+        # -------------------------------------------------------------
+        # Negative Control 42: Rejection of Non-Zero Line Overlap in NA Hybrid Matrix
+        # -------------------------------------------------------------
+        print("  [NC 42/44] Testing rejection of non-zero line overlap in NA Hybrid Coverage Matrix...")
+        na_hyb_f = os.path.join(tmpdir, "NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv")
+        with open(na_hyb_f, "r", encoding="utf-8") as f:
+            hyb_rows = list(csv.DictReader(f))
+        orig_hyb = [dict(r) for r in hyb_rows]
+        hyb_rows[0]["line_overlap_count"] = "2"
+        with open(na_hyb_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(hyb_rows[0].keys()))
+            w.writeheader()
+            w.writerows(hyb_rows)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught non-zero line overlap in NA Hybrid Coverage Matrix.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch non-zero line overlap in NA Hybrid Coverage Matrix.")
+        with open(na_hyb_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_hyb[0].keys()))
+            w.writeheader()
+            w.writerows(orig_hyb)
+
+        # -------------------------------------------------------------
+        # Negative Control 43: Rejection of LLS MB-CA Retained Hybrid Falsely Qualifying
+        # -------------------------------------------------------------
+        print("  [NC 43/44] Testing rejection of LLS MB-CA Artifact 1 falsely claiming qualified credit...")
+        tampered_hyb2 = [dict(r) for r in orig_hyb]
+        for r in tampered_hyb2:
+            if r["row_category"] == "LLS_MB_CA_ARTIFACT_1_RETAINED_HYBRID":
+                r["independent_expected_status"] = "PRICED"
+                r["independent_incentive_floor_usd"] = "2845096.20"
+        with open(na_hyb_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(tampered_hyb2[0].keys()))
+            w.writeheader()
+            w.writerows(tampered_hyb2)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught LLS MB-CA Artifact 1 falsely claiming qualified credit.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch LLS MB-CA Artifact 1 false credit claim.")
+        with open(na_hyb_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_hyb[0].keys()))
+            w.writeheader()
+            w.writerows(orig_hyb)
+
+        # -------------------------------------------------------------
+        # Negative Control 44: Rejection of Missing Frozen Commit in NA Hybrid Handoff
+        # -------------------------------------------------------------
+        print("  [NC 44/44] Testing rejection of missing frozen commit in NA Hybrid Audit Handoff...")
+        na_hyb_md_f = os.path.join(tmpdir, "NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md")
+        with open(na_hyb_md_f, "r", encoding="utf-8") as f:
+            orig_hyb_md = f.read()
+        tampered_hyb_md = orig_hyb_md.replace("59566fd17463b71e9796d41e8e080bf5d0ac27ea", "0000000000000000000000000000000000000000")
+        with open(na_hyb_md_f, "w", encoding="utf-8") as f:
+            f.write(tampered_hyb_md)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught missing frozen commit in NA Hybrid Audit Handoff.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch missing frozen commit in NA Hybrid Audit Handoff.")
+        with open(na_hyb_md_f, "w", encoding="utf-8") as f:
+            f.write(orig_hyb_md)
 
     print(f"\nNEGATIVE CONTROLS SUMMARY: {nc_passed}/{nc_total} PASSED (100% SUCCESS)")
     return nc_passed == nc_total
