@@ -44,9 +44,9 @@ In strict accordance with Evidence Gate Rule 4, all cross-program comparisons ci
 2. **Single 44-Line Source Treatment Table:** All figures, subtotals, and statutory treatments are generated from `LITTLE_UTOPIA_NEW_YORK_SOURCE_LINE_TREATMENT.csv`, which conserves every original budget account exactly once ($4,364,395.00 leaf sum; $4,364,393.00 controlling gross with documented $2 rounding variance).
 3. **Resolution of the $138,850 Exclusion Residual:** The previously claimed $138,850 exclusion residual was the arithmetic shortfall of four manually substituted category amounts ($942,054.00 vs $1,080,904.00). Grounded in the actual 44 source accounts, statutory exclusions total exactly **$1,080,906.00** ($1,080,904.00 against gross), leaving an unexplained residual of **$0.00**.
 4. **Strict Adherence to Rule 5 (No Per-Person Caps on Aggregate Accounts):** On productions lacking itemized general ledger talent contracts (FVD, BH, LLS), no exact per-person caps are fabricated. These projects are classified as **`NOT_ESTABLISHED (MISSING_INDIVIDUAL_TALENT_CONTRACTS)`** under **`NOT_ESTABLISHED_EMPIRICAL_GAP`**, with evidenced statutory bounds proving engine overstatement.
-5. **Reconciliation of Multi-Program Stacking (`DISC-NY-001`):** NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c) command an absolute taxpayer/film-level bar between Section 24 and Section 31*2. Confirmed engine rule defect `DISC-NY-001` (`same_cost_prohibited_distinct_costs_allowed`) is isolated; saved engine outputs that did not generate a stack candidate are reclassified as **`COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)`**. Missing candidates alone cannot establish `VERIFIED_AGREEMENT`.
+5. **Reconciliation of Multi-Program Stacking (`DISC-NY-001` Withdrawn):** NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c) command an absolute taxpayer/film-level bar between Section 24 and Section 31*2. In canonical code at commit `14c5c03e` (`canonical-1.111.0`, stacking rules 1.5.0), the historical distinct-costs rule was repaired to `mutually_exclusive` at the film level with controls in `test_ny_post_pair_31a1_controls.py`. The claim that `DISC-NY-001` remains an open code defect in canonical code is **FORMALLY WITHDRAWN**. In saved database `canonical-1.106.0`, no stack candidate was generated, classified as **`COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)`** pending canonical database regeneration.
 6. **No Production Mutations or ROW Expansion:** Zero production code or database mutations were performed; Rest-of-World (ROW) expansion remains strictly gated.
-7. **Reconciliation of Claude's Committed Integration (`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`):** In accordance with Codex delta review (`CALCULATION_ASSURANCE_DELTA_REVIEW_20261010.md`) and Claude's Capability Ledger (commits `f37ffff7`..`2e948ab5`), Claude's committed integration is reconciled: calculation logic is implemented and tested in code (engine 1.113.0..1.115.0) for individual ATL caps (`ny_atl_individual_cap.py`), dual post rates (30% MCTD / 35% outside MCTD), and subset-uplifts with prerequisites (`allocation_pricing.py`). When facts are supplied in synthetic tests, pricing functions calculate them correctly. However, in baseline evaluations without supplied facts, the individual cap helper is uncalled or inert, uplifts remain unpriced conditions, no UI Overview/Inspector workflow exists for producers to supply facts on real projects, and served database state remains `canonical-1.106.0` (stale, unregenerated). These repairs are classified as **`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`**.
+7. **Reconciliation of Claude's Committed Integration (`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`):** In accordance with Codex delta review (`CALCULATION_ASSURANCE_DELTA_REVIEW_20261010.md`), Claude's Capability Ledger, and the frozen Claude repository HEAD commit `e4a6a414` (`canonical-1.118.0`), Claude's committed integration is reconciled across three orthogonal dimensions: (1) Implemented Pricing in Canonical Code (engine `canonical-1.111.0`..`canonical-1.118.0`) prices individual ATL caps (`backend/app/calculators/ny_atl_individual_cap.py`), dual post rates, subset-uplifts, and stacking mutual exclusivity (`14c5c03e`) when facts are supplied in test harnesses; note: the two-producer limit lacks a verified call path in baseline evaluations without producer line facts. (2) Missing Producer UI & Production Facts on Real Projects: Overview and Inspector UI lack interactive controls for human producers to enter payee splits, select qualifying producers, or enter county shoot logs; real anchor budgets lack itemized contracts/logs. Contracts, payroll, and certification remain statutory claim follow-ups for filed claims, NOT automatic planning blockers. (3) Stale Served Database State: Database `frametax2_claude_optimizer_acceptance_20260919` retains `canonical-1.106.0` rows, awaiting authorized canonical regeneration.
 
 ---
 
@@ -407,8 +407,8 @@ To resolve the confirmed New York defects in the engine without introducing circ
 ### 5.5 Repair Specification 5: Wire Individual ATL Cap Helper & Price Uplifts (Reconciling Unfinished Repairs)
 * **Target Files:** `backend/app/calculators/ny_atl_individual_cap.py`, `backend/app/calculators/allocation_pricing.py`, `backend/app/data/program_rate_rules.py`.
 * **Specification:**
-  - Wire `ny_atl_individual_cap.py` into standard qualification and pricing pathways with fallback handling when individual contracts are absent, ensuring transparent reporting rather than an uncalled or inert helper that yields zero per-individual cap reduction in engine baseline prices.
-  - Price upstate production (§ 24(a)(5)) and post (§ 31*2(a)(6)) labor uplifts in conditional planning scenarios with evidenced territorial facts (currently carried as unpriced conditions).
+  - Wire `backend/app/calculators/ny_atl_individual_cap.py` into qualification and pricing pathways with producer payee facts (currently uncalled / inert in baseline evaluations without producer line facts; unstated roles remain qualified without a verified 2-producer limit call path).
+  - Price upstate production (§ 24(a)(5)) and post (§ 31*2(a)(6)) labor uplifts with evidenced territorial facts (currently carried as unpriced conditions).
   - Expose durable producer program facts in Overview/Inspector UI when the workflow stage is reached.
 
 ---
@@ -420,16 +420,12 @@ Every retained issue across the four anchor projects is categorized and detailed
 ### 6.1 Blocker 1: LU New York Empirical Evidence Gaps (Travel, Contingency, Insurance, Upstate)
 * **Blocker ID:** `BLOCKER-01-LU-NY-EVIDENCE-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
-* **Missing Facts:**
-  1. Itemized departmental crew travel schedule distinguishing in-state crew hotel lodging/per diem from foreign/out-of-state airfares in Account 3900 ($438,254.00) under 5 NYCRR § 170.2.
-  2. Final audited cost reports and general ledger expenditure registers showing actual post-production disbursement for contingency reserve Account 8300 ($301,131.00) (unspent reserve under Rule 2; producer election is a planning input).
-  3. Formal insurance policy binder allocating production package floater Account 8100 ($48,181.00) specifically to New York risks.
-  4. Principal photography shoot day logs signed by 1st AD / UPM proving >50% shoot days upstate for § 24(a)(5) non-labor uplift.
+* **Missing Facts:** (1) Itemized crew lodging vs foreign/out-of-state airfare schedule in Account 3900 ($438,254.00) under 5 NYCRR § 170.2; (2) General ledger disbursement proof for unspent contingency reserve Account 8300 ($301,131.00); (3) Insurance policy binder allocating package floater Account 8100 ($48,181.00) to NY risks; (4) County shoot logs for upstate non-labor uplift.
+* **Claim vs Planning Distinction:** Unitemized travel schedules and unspent contingency proofs are statutory **claim follow-ups** required for actual filed tax credit certificates, NOT automatic planning blockers. For planning scenarios, supported bounds [$2,836,167.00 - $3,771,497.00] are modeled using explicit producer elections.
 * **Supported Scenarios & Bounds:**
   - Lower Bound Floor: Min QPE = **$2,836,167.00** [Credit: **$850,850.10**] (contingency unspent, airfare excluded, baseline insurance excluded).
   - Relocation Baseline Midpoint: Baseline QPE = **$3,274,421.00** [Credit: **$982,326.30**] (100% lodging admitted, contingency unspent, LA editorial excluded).
   - Optimistic Planning Ceiling Upper Bound: Max QPE = **$3,771,497.00** [Credit: **$1,131,449.10**] (100% contingency deployed into BTL physical, 100% lodging admitted, qualifying office/coordination/insurance admitted, LA editorial excluded).
-  - *(Historical physical spend base prior to subaccount resolution: **$3,283,489.00** [Credit: **$985,046.70**]).*
 * **Expected Engine Behavior:** Incurred-spend evaluations must fail closed or flag `MISSING_AUDIT_EVIDENCE` for unitemized travel and unspent reserves; planning scenario evaluations must admit contingency and lodging strictly subject to explicit producer election and apply statutory 40% ATL cap.
 * **Exact Producer Input Needed:** Producer entry in Overview/Inspector of in-state crew lodging breakdown ($ in Account 3900), contingency inclusion % (0% for incurred vs 100% for relocation), NY insurance binder, and county shoot day logs.
 * **Comparison Matching:** Compared against identical allocation Structure ID `14535c49-2dbe-4357-ab61-d3bf5b51c0f4`, Result ID `340d2041-b11e-4ceb-8c9b-7162f4956903` ($4,054,196.00 QPE / $1,216,258.80 Credit). Overstatement of at least **+$84,809.70** is confirmed across all bounds (`NA-DEFECT-01`).
@@ -438,6 +434,7 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-02-NY-TALENT-CONTRACTS-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** Individual general ledger deal memos, payroll ledgers, and employment contracts for Cast (FVD $1,976,479; BH $974,371; LLS $1,675,000) and Producer accounts (FVD $477,541; LLS $1,184,123) to apply the statutory $500,000 per-person salary cap and the maximum 2 individual producers limit under NY Tax Law § 24(b)(1)(B).
+* **Claim vs Planning Distinction & 2-Producer Limit Call Path:** Individual general ledger deal memos, payroll ledgers, and employment contracts are statutory **claim follow-ups** needed to document an incurred-spend filing, NOT automatic planning blockers. For planning scenarios, the engine models supported ranges [Floor .. Ceiling] using the 40% aggregate ATL ceiling under § 24(a)(5). Note on Producer Limits: While `backend/app/calculators/ny_atl_individual_cap.py` includes helper logic for producer roles, there is no verified call path in standard baseline evaluations that caps or restricts unevidenced producer lines to 2 individuals without producer line facts (unstated roles remain qualified with an unresolved note). Do not claim the two-producer limit is implemented in runtime pricing without a verified call path and durable UI.
 * **Supported Scenarios & Bounds:**
   - FVD: Floor = **$1,256,776.00** [$377,032.80 Credit] (0% ATL); Ceiling = **$1,759,486.40** [$527,845.92 Credit] (40% ATL cap). Engine overstatement >= **+$582,525.48**.
   - BH: Floor = **$749,889.00** [$224,966.70 Credit]; Ceiling = **$1,049,844.60** [$314,953.38 Credit]. Engine overstatement >= **+$383,338.92**.
@@ -450,6 +447,7 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-03-CAVCO-DOMESTIC-CERTIFICATION-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** CAVCO Part A/B certification, Canadian copyright ownership documentation, and key creative point tally (>= 6/10 CAVCO points) under Income Tax Act § 125.4 and Ontario Taxation Act § 43.
+* **Claim vs Planning Distinction:** CAVCO Part A/B certification and Canadian copyright ownership documentation are statutory **claim follow-ups** required for domestic tax credit filings, NOT automatic planning blockers for modeling explicitly labeled producer planning scenarios.
 * **Separate Variable Definitions & Statutory Authority:**
   - Let $G$ = Gross Production Budget / Total Production Cost (Income Tax Act § 125.4(1) 'production cost').
   - Let $L_{\text{CA}}$ = Total Qualified Canadian Labour Expenditure across all provinces ($0 \le L_{\text{CA}} \le G$, ITA § 125.4(1) 'Canadian labour expenditure').
@@ -478,15 +476,16 @@ Every retained issue across the four anchor projects is categorized and detailed
     * Region II (Net-Cost-Capped: $L_{\text{CA}} > 0.60 \times G - 0.21 \times L_{\text{ON}}$): $\text{QLE}_{\text{CPTC}} = 0.60 \times G - 0.21 \times L_{\text{ON}}$. $\text{Total Benefit} = 0.15 \times G + 0.2975 \times L_{\text{ON}}$.
     * Since $\frac{d}{dL_{\text{ON}}}(\text{Total Benefit}) = +0.2975 > 0$, total domestic benefit strictly increases with additional Ontario labor across Region II.
   - **Proof 4 (The 60/121 Transition Point is the Federal QLE Peak, NOT Combined Maximum):** Under co-extensive Ontario labor ($L_{\text{ON}} = L_{\text{CA}} = L$), the transition point between Region I and Region II occurs at $L = 0.60 \times (G - 0.35 \times L) \iff 1.21 \times L = 0.60 \times G \iff L^* = \frac{60}{121} \times G \approx \mathbf{49.58677686\% \times G}$.
-    * At $L = L^* = \frac{60}{121} G$: Federal QLE reaches its absolute global peak ($\text{QLE}_{\text{CPTC}} = \frac{60}{121} G \approx 49.5868\% G$; $\text{CPTC} = \frac{15}{121} G \approx 12.3967\% G$; $\text{OFTTC} = \frac{21}{121} G \approx 17.3554\% G$; Combined Stack = $\frac{36}{121} G \approx \mathbf{29.752066\% \times G}$).
-    * For $L > L^*$: Although Federal QLE decreases at rate $-0.21$, Ontario OFTTC increases at $+0.35$, yielding a positive net slope of $+0.2975$. The combined benefit continues to increase linearly beyond $L^*$.
-    * **Formal Retraction / Withdrawal:** The previous assertion claiming $L^* = \frac{60}{121} G$ ($29.7521\% G$) is the 'domestic maximum' is **FORMALLY WITHDRAWN**. It is mathematically and legally the **Federal QLE Maximum / Transition Point**, not the combined benefit maximum.
+    * At $L = L^* = \frac{60}{121} G$: Federal QLE reaches its statutory transition peak ($\text{QLE}_{\text{CPTC}} = \mathbf{\frac{60}{121} G \approx 49.5868\% G}$; $\text{OFTTC} = \frac{21}{121} G \approx 17.3554\% G$; $\text{CPTC} = \frac{15}{121} G \approx 12.3967\% G$; Combined Credit = $\mathbf{\frac{36}{121} G \approx 29.752066\% \times G}$).
+    * For $L > L^*$: Although Federal QLE decreases at rate $-0.21$, Ontario OFTTC increases at $+0.35$, yielding a positive net slope of $+0.2975$. The combined domestic credit continues to increase linearly beyond $L^*$ up to $44.75\% \times G$ at $L = G$.
+    * **Formal Retraction / Withdrawal:** The previous assertion claiming $L^* = \frac{60}{121} G$ is the 'combined domestic maximum' is **FORMALLY WITHDRAWN**. $L^*$ is the **Federal QLE Transition Point**, not the combined benefit maximum.
   - **Proof 5 (Derivation of the Actual Theoretical Upper Bound at $L = G$):** Over the statutory domain $0 \le L_{\text{ON}} \le L_{\text{CA}} \le G$, the maximum possible combined credit occurs at the domain boundary $L_{\text{ON}} = L_{\text{CA}} = G$ (100% Ontario labor):
     $$\text{Total Benefit}_{\max}^{\text{theoretical}} = 0.15 \times G + 0.2975 \times G = \mathbf{0.4475 \times G = 44.75\% \times G}$$
     (Where $\text{OFTTC} = 0.35 G$, $\text{NPC} = 0.65 G$, $\text{QLE}_{\text{CPTC}} = 0.60 \times 0.65 G = 0.39 G$, $\text{CPTC} = 0.25 \times 0.39 G = 0.0975 G$).
 * **Corrected Supported Scenarios & Bounds (from Original Budgets):**
   - **Non-Certified Scenario:** Ineligible for CPTC/OFTTC ($0.00 credit); eligible instead for production services credits (PSTC / OPSTC) subject to Canadian resident labour expenditure proofs.
   - **Scenario 1: Federal QLE Transition Point ($L^* = \frac{60}{121} \times \text{Gross} \approx 49.5868\% G$):**
+    * At this transition point, Federal QLE is exactly $\frac{60}{121} \times G$, and the combined credit is $\frac{36}{121} \times G$.
     * LU (Gross $4,364,395.00): Max Federal QLE = **$2,164,162.81**; OFTTC = **$757,456.98**; CPTC = **$541,040.70**; Combined domestic stack = **$1,298,497.68** ($29.75\% G$).
     * FVD (Gross $4,517,687.00): Max Federal QLE = **$2,240,175.37**; OFTTC = **$784,061.38**; CPTC = **$560,043.84**; Combined domestic stack = **$1,344,105.22** ($29.75\% G$).
     * BH (Gross $2,482,023.00): Max Federal QLE = **$1,230,755.21**; OFTTC = **$430,764.32**; CPTC = **$307,688.80**; Combined domestic stack = **$738,453.12** ($29.75\% G$).
@@ -510,6 +509,7 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-04-CANADIAN-QLE-PAYROLL-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** Itemized Canadian payroll general ledger with CAVCO individual residency declarations confirming Canadian citizenship / permanent residency for BTL crew and ATL talent under ITA § 125.5.
+* **Claim vs Planning Distinction:** Itemized Canadian resident payroll ledgers are statutory **claim follow-ups** needed to substantiate an incurred-spend filing under ITA § 125.5, NOT automatic planning blockers. Planning scenarios evaluate direct line labor vs BTL physical pools without invented ratios.
 * **Retraction of Unsupported 40%–60% Labor Assumption:** Arbitrary default labor ratios (including any 40%–60% heuristic) are formally rejected. In accordance with Codex delta review and statutory rules, actual QLE requires itemized payroll records; planning scenarios must be independently bounded from original budget accounts without invented ratios.
 * **Statutory Service Stack Mechanics & Assistance Deduction (ITA § 125.5(1)):**
   - Under ITA § 125.5(1), Qualified Canadian Labour Expenditure (QCLE) is Canadian labour expenditure *net of assistance*: $\text{QCLE} = L_{\text{CA}} - \text{Assistance}$.
@@ -540,6 +540,7 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Blocker ID:** `BLOCKER-05-HIGH-EARNER-SALARY-CAPS-GAP`
 * **Classification:** Empirical Evidence Gap (`NOT_ESTABLISHED_EMPIRICAL_GAP`)
 * **Missing Facts:** Individual compensation schedule itemizing earnings per payee to apply the statutory $500,000 per-person cap in Georgia (O.C.G.A. § 48-7-40.26) and Illinois (35 ILCS 16/10), and the $1,000,000 per-person cap in Massachusetts (M.G.L. c. 62 § 6(l)).
+* **Claim vs Planning Distinction:** Individual payee payroll censuses in GA, IL, MA are statutory **claim follow-ups** needed to enforce statutory salary caps on filed claims, NOT automatic planning blockers.
 * **Supported Scenarios & Bounds:**
   - Uncapped Aggregate Spend Scenario: Engine saved baseline (qualifying full aggregate accounts).
   - Fully Capped Scenario: Deduction of excess earnings above statutory per-person caps once payee contracts are supplied.
@@ -547,16 +548,16 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Exact Producer Input Needed:** Producer payroll census listing individual earners in excess of $500,000 / $1,000,000.
 * **Comparison Matching:** Reconciled across 12 rows on FVD, BH, LLS; monetary variance claims revoked from open defect totals under `RET-05`.
 
-### 6.6 Blocker 6: Stacking Mutual Exclusivity Violation (`DISC-NY-001` in `stacking_rules.py:617`)
-* **Blocker ID:** `BLOCKER-06-NY-STACK-MUTUAL-EXCLUSIVITY-DEFECT`
-* **Classification:** Engine Code & Rule Defect (`OPEN_CODE_DEFECT_PENDING_CODEX_REVIEW`)
+### 6.6 Blocker 6: NY Production/Post Stacking Mutual Exclusivity Repaired in Canonical Code (`DISC-NY-001` Withdrawn)
+* **Blocker ID:** `BLOCKER-06-NY-STACK-MUTUAL-EXCLUSIVITY-REPAIRED`
+* **Classification:** Defect Repaired in Canonical Code / Claim Withdrawn (`REPAIRED_IN_CANONICAL_CODE_AT_14c5c03e` / `DEFECT_CLAIM_WITHDRAWN`)
 * **Missing Facts:** None (statutory authority is unambiguous and complete).
 * **Supported Scenarios & Bounds:**
   - Statutory Law: § 24 and § 31 cannot stack for the same film under NY Tax Law § 31*2(a)(1) & 5 NYCRR § 240.3(c) ($0.00 stack credit; `GATE_REJECTED`).
-  - Engine Code Defect: `stacking_rules.py:617` permits distinct-cost pairing (`same_cost_prohibited_distinct_costs_allowed`).
-* **Expected Engine Behavior:** Reject `stack_ny_prod_post` as mutually exclusive at the film/taxpayer level.
-* **Exact Producer Input Needed:** None (systemic engine rule repair required by Codex).
-* **Comparison Matching:** Reconciled across 4 rows on `stack_ny_prod_post`; classified as `COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)` because engine did not generate stack candidate and underlying rule is defective.
+  - Canonical Code Repair: Repaired in commit `14c5c03e` (`canonical-1.111.0`, stacking rules 1.5.0), where `ny_state_film + us_ny_post_production_credit` was changed to `mutually_exclusive` at the film level with controls in `test_ny_post_pair_31a1_controls.py`. The claim that this remains an open code defect in canonical code was resurrected from pre-14c5c03e / stale files and is **FORMALLY WITHDRAWN**.
+* **Expected Engine Behavior:** Both canonical code (`14c5c03e`+) and statutory law agree: the pair is mutually exclusive at the film level ($0.00 credit). Persist freshly generated results upon authorized database regeneration.
+* **Exact Producer Input Needed:** None (repaired in canonical codebase; database regeneration pending authorization).
+* **Comparison Matching:** Reconciled across 4 rows on `stack_ny_prod_post`; classified as `COMPARISON_NOT_ESTABLISHED (STACK_NOT_GENERATED / DISC-NY-001)` because engine in saved database `canonical-1.106.0` did not generate stack candidate and serves pre-regeneration state.
 
 ### 6.7 Blocker 7: Stale Database Results Pending Canonical Regeneration
 * **Blocker ID:** `BLOCKER-07-STALE-DATABASE-REGENERATION`
@@ -565,14 +566,25 @@ Every retained issue across the four anchor projects is categorized and detailed
 * **Affected Programs:** Mexico Federal Film Incentive (F-05), North Carolina Grant (F-03), New Brunswick Tier (F-01), Rhode Island Project Cap (F-04), LU Canadian Stacks (F-06), California Program 4.0 BTL spend classification.
 * **Supported Scenarios & Bounds:**
   - Saved Database: `canonical-1.106.0` values persisted in PostgreSQL (`frametax2_claude_optimizer_acceptance_20260919`).
-  - Canonical Code: Repaired behavior in `canonical-1.107.0` (commit `486bd15`).
-* **Expected Engine Behavior:** Persist freshly calculated results reflecting `canonical-1.107.0` once database regeneration is authorized.
+  - Canonical Code: Repaired behavior in `canonical-1.107.0` (commit `486bd15`) through `canonical-1.118.0` (commit `a9e9094f`).
+* **Expected Engine Behavior:** Persist freshly calculated results reflecting canonical engine once database regeneration is authorized.
 * **Exact Producer Input Needed:** None (system authorization for production regeneration required).
-### 6.8 Blocker 8: Claude Remediation Pricing Implemented but Pending UI Workflow & Real-Project Evidence
+* **Comparison Matching:** Unambiguously identified and separated from open code defects across all affected rows.
+
+### 6.8 Blocker 8: Three-Tier Reconciliation: Implemented Pricing in Code, Missing Producer UI/Facts, and Stale Served Results
 * **Blocker ID:** `BLOCKER-08-PRICING-IMPLEMENTED-PENDING-UI-AND-EVIDENCE`
-* **Classification:** Implemented Pricing Logic Pending UI Workflow & Production Evidence (`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`)
-* **Missing Facts & Workflow:** (1) Individual talent deal memos and payee compensation splits on real anchor projects; (2) Signed county shoot day logs and scoring musician certifications; (3) Overview/Inspector UI controls for human producers to view, enter, and toggle these facts on real projects.
-* **Committed Engine Behavior:** Pricing calculation logic is implemented and tested in code (engine 1.113.0..1.115.0) for individual ATL caps (`ny_atl_individual_cap.py`), dual post rates (30% MCTD / 35% outside MCTD), and subset-uplifts with prerequisites (`allocation_pricing.py`). When facts are supplied in synthetic tests, pricing functions calculate them correctly. However, in baseline evaluations without supplied facts, the individual cap helper is uncalled or inert, uplifts remain unpriced conditions, and database state remains `canonical-1.106.0`.
+* **Classification:** Three-Tier Implementation Reconciliation (`PRICING_IMPLEMENTED_PENDING_UI_AND_PRODUCTION_EVIDENCE` / `UNFINISHED_WORKFLOW`)
+* **Three Orthogonal Dimensions Separated:**
+  1. **Implemented Pricing Logic in Canonical Code (`canonical-1.111.0`..`canonical-1.118.0` at commit `e4a6a414`):**
+     - Pricing calculation mechanics are implemented in code for individual ATL caps (`backend/app/calculators/ny_atl_individual_cap.py`), dual post rates (30% MCTD / 35% outside MCTD), subset-uplifts with statutory prerequisites (`allocation_pricing.py`), and stacking mutual exclusivity (`14c5c03e`). When facts are supplied in synthetic test suites, pricing functions calculate them correctly.
+     - **Unverified Two-Producer Call Path:** While helper logic for executive/line producer roles exists in `ny_atl_individual_cap.py`, there is NO verified call path in standard baseline evaluations that caps or restricts unevidenced producer lines to 2 individuals without producer line facts (unstated roles remain qualified with an unresolved note). Do not claim the two-producer limit is implemented in runtime pricing without a verified call path and durable UI.
+  2. **Missing Producer UI & Production Facts:**
+     - Real anchor projects lack itemized general ledger deal memos, county shoot logs, or residency ledgers.
+     - Overview and Inspector UI lack interactive forms for producers to input payee splits, select qualifying producers, or enter county shoot logs.
+     - **Claim vs Planning Distinction:** Contracts, payroll, and certification remain statutory claim follow-ups for filed claims, NOT automatic planning blockers.
+  3. **Stale Served Database State:**
+     - Database `frametax2_claude_optimizer_acceptance_20260919` retains `canonical-1.106.0` rows.
+     - Repaired canonical code (`canonical-1.118.0`) is unserved on real projects pending authorized database regeneration.
 * **Expected Engine Behavior:** Expose durable fact controls in Overview/Inspector UI, wire individual cap helper into baseline pipeline with clear fallback handling, price conditional uplifts in planning scenarios, and run authorized database regeneration.
 * **Exact Producer Input Needed:** Producer entry in Overview/Inspector of individual talent compensation, county shoot logs, and facility location.
 * **Comparison Matching:** Reconciles Codex delta review and Claude Capability Ledger across all NY and uplift candidate evaluations.
