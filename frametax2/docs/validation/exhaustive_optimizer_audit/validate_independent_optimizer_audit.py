@@ -1045,22 +1045,33 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
         with open(na_hyb_csv_path, mode="r", encoding="utf-8") as f:
             hyb_reader = list(csv.DictReader(f))
             if len(hyb_reader) != 1601:
-                errors.append(f"NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv row count ({len(hyb_reader)}) != expected 1601 (9 explicit LLS MB-CA rows + 1592 saved NA rows).")
+                errors.append(f"NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv row count ({len(hyb_reader)}) != expected 1601 (9 explicit LLS MB-CA rows + 1590 saved NA rows + 2 historical LLS 106 rows).")
             overlap_violations = [r for r in hyb_reader if r.get("line_overlap_count") not in ("0", 0)]
             if overlap_violations:
                 errors.append(f"NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv has {len(overlap_violations)} rows with non-zero line_overlap_count!")
             art1 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_1_RETAINED_HYBRID"), None)
             art2 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_2_MB_LEG_SENSITIVITY_CONTINGENCY_NOT_STATED"), None)
             art3 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_3_ALL_MB_ALTERNATIVE_CONTINGENCY_NOT_STATED"), None)
-            if not art1 or art1.get("independent_expected_status") != "GATE_REJECTED" or art1.get("independent_incentive_floor_usd") != "0.00":
-                errors.append(f"LLS MB-CA Artifact 1 must be GATE_REJECTED with 0.00 floor credit, got: {art1}")
+            if (
+                not art1
+                or art1.get("independent_expected_status") != "GATE_REJECTED"
+                or art1.get("independent_incentive_floor_usd") != "N/A (NOT_PRICED_REJECTED_CANDIDATE)"
+                or art1.get("independent_npc_floor_usd") != "N/A (NOT_PRICED_REJECTED_CANDIDATE)"
+            ):
+                errors.append(f"LLS MB-CA Artifact 1 must be GATE_REJECTED with N/A (NOT_PRICED_REJECTED_CANDIDATE) floor credit and NPC, got: {art1}")
             if not art2 or art2.get("independent_incentive_floor_usd") != "2833096.20" or art2.get("independent_npc_floor_usd") != "9150557.80":
                 errors.append(f"LLS MB-CA Artifact 2 must have 2833096.20 floor credit and 9150557.80 NPC, got: {art2}")
             if not art3 or art3.get("independent_incentive_floor_usd") != "2845096.20" or art3.get("independent_npc_floor_usd") != "9138557.80":
                 errors.append(f"LLS MB-CA Artifact 3 must have 2845096.20 floor credit and 9138557.80 NPC, got: {art3}")
             c100_a2 = next((r for r in hyb_reader if r.get("row_category") == "LLS_MB_CA_ARTIFACT_2_MB_LEG_SENSITIVITY_CONTINGENCY_100%"), None)
-            if not c100_a2 or c100_a2.get("independent_incentive_floor_usd") != "2953096.20" or "NA-HYB-DEF-04" not in c100_a2.get("audit_disposition", ""):
-                errors.append(f"LLS MB-CA 100% Contingency Artifact 2 must have 2953096.20 floor credit and NA-HYB-DEF-04, got: {c100_a2}")
+            if (
+                not c100_a2
+                or c100_a2.get("independent_incentive_floor_usd") != "2833096.20"
+                or c100_a2.get("independent_npc_floor_usd") != "9150557.80"
+                or "2,953,096.20" not in c100_a2.get("statutory_basis_and_notes", "")
+                or c100_a2.get("audit_disposition") != "VERIFIED_FLOOR_WITH_CONDITIONAL_CONTINGENCY_DEPLOYMENT_SENSITIVITY"
+            ):
+                errors.append(f"LLS MB-CA 100% Contingency Artifact 2 must have 2833096.20 confirmed floor credit, 9150557.80 floor NPC, and 2,953,096.20 conditional deployed sensitivity, got: {c100_a2}")
 
     # 42. North American Hybrid Audit Handoff Document
     na_hyb_md_path = os.path.join(base_dir, "NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md")
@@ -1076,6 +1087,7 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "canonical-1.122.0",
                 "914a47c0-9b1e-4d47-867f-425e6d4792fa",
                 "9656c441-881e-4667-bec1-8841387408ce",
+                "N/A (NOT_PRICED_REJECTED_CANDIDATE)",
                 "2,833,096.20",
                 "2,845,096.20",
                 "9,150,557.80",
@@ -1088,6 +1100,7 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "NA-HYB-DEF-03",
                 "NA-HYB-DEF-04",
                 "NA-HYB-DEF-05",
+                "NA-HYB-DEF-06",
                 "STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN",
             )
             for tok in req_hyb_tokens:
