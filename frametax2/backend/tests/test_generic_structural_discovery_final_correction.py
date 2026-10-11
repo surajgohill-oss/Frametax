@@ -462,7 +462,7 @@ async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(
 
 
 @pytest.mark.asyncio
-async def test_same_jurisdiction_distinct_cost_rule_is_never_mislabeled_as_no_authority(db: AsyncSession):
+async def test_same_jurisdiction_distinct_cost_rule_is_never_mislabeled_as_no_authority():
     """A registered same_cost_prohibited_distinct_costs_allowed rule is a
     REAL rule, not an authority gap -- labeling it UNRESOLVED_NO_AUTHORITY
     would misrepresent a cited rule as an absence of one. This is checked
@@ -470,8 +470,11 @@ async def test_same_jurisdiction_distinct_cost_rule_is_never_mislabeled_as_no_au
     same-jurisdiction group-stack tests here) rather than requiring a
     specific real production to carry this exact pair today."""
     from app.calculators.canonical_stack_bridge import load_named_pair_rule
-    rule = load_named_pair_rule("ny_state_film", "us_ny_post_production_credit")
-    assert rule is not None and rule["rule_type"] == "same_cost_prohibited_distinct_costs_allowed"
+    from app.optimization.stacking_rules import _SLUG_PAIR_RULES
+    # NY's pair is NOT a distinct-cost pair: Tax Law 31(a)(1) makes it film-level mutually exclusive (see test_ny_post_pair_31a1_controls).
+    ny = load_named_pair_rule("ny_state_film", "us_ny_post_production_credit")
+    assert ny is not None and ny["rule_type"] == "mutually_exclusive"
+    assert _SLUG_PAIR_RULES, "the registry itself must be loaded"
     # The diagnostic helper must exist and correctly classify this rule
     # type as something other than a genuine authority gap.
     src = _SRC
@@ -483,70 +486,10 @@ async def test_same_jurisdiction_distinct_cost_rule_is_never_mislabeled_as_no_au
 # REG-5: cost-pool-aware same-jurisdiction pricing (canonical-1.78.0)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.asyncio
-async def test_reg5_cost_pool_pricing_matches_hand_calculation(db: AsyncSession):
-    """REG-5's real audit fixture: US-NY home, $3,000,000 of atl_director
-    spend (ny_state_film's own eligible category, no closed list) plus
-    $1,500,000 of post_production spend (us_ny_post_production_credit's
-    own closed-positive-list category). Both programs' real registered
-    RateRules are flat, unconditional (base tier, no upstate/scoring
-    uplift facts supplied): ny_state_film 30% (RateRule tier_id
-    'us-ny-base-30'), us_ny_post_production_credit 35% (RateRule tier_id
-    'us-ny-post-flat-35'). Hand calculation:
-        ny_state_film:                  $3,000,000 x 0.30 = $900,000.00
-        us_ny_post_production_credit:   $1,500,000 x 0.35 = $525,000.00
-        total:                                              $1,425,000.00
-    Asserts the exact persisted dollar figures, PRICED status, disjoint
-    per-pool line_ids that together conserve the full $4,500,000 budget,
-    and the new same_jurisdiction_distinct_cost_pool_stack classification
-    -- never a fabricated or approximated figure."""
-    import sys
-    sys.path.insert(0, str(Path(ce.__file__).parent.parent.parent))
-    from scripts.build_audit_control_fixtures import FIXTURES, build_and_evaluate
-
-    reg5_fixture = next(f for f in FIXTURES if f[0] == "REG-5")
-    result = await build_and_evaluate(db, ce, *reg5_fixture)
-    assert "error" not in result, result.get("error")
-    assert result["exact_match_found"], (
-        f"REG-5's target program set was not found among "
-        f"{result['total_rows_this_fingerprint']} rows for this fingerprint"
-    )
-    match = result["exact_match"]
-    assert match["status"] == "PRICED", match
-
-    row = (
-        await db.execute(
-            text(
-                "SELECT scr.calculation_trace_json, scr.total_incentive_value_usd, "
-                "scr.true_net_cost_usd, scr.total_budget_usd "
-                "FROM structure_calculation_results scr WHERE scr.id = :rid"
-            ),
-            {"rid": str(match["result_id"])},
-        )
-    ).mappings().first()
-    trace = row["calculation_trace_json"]
-
-    assert trace["structural_family"] == "same_jurisdiction_distinct_cost_pool_stack"
-    assert trace["cost_pool_closed_program"] == "us_ny_post_production_credit"
-    assert trace["cost_pool_remainder_program"] == "ny_state_film"
-    assert trace["cost_pool_closed_qpe_usd"] == pytest.approx(1_500_000.0, abs=0.01)
-    assert trace["cost_pool_remainder_qpe_usd"] == pytest.approx(3_000_000.0, abs=0.01)
-    assert trace["cost_pool_closed_incentive_usd"] == pytest.approx(525_000.0, abs=0.01)
-    assert trace["cost_pool_remainder_incentive_usd"] == pytest.approx(900_000.0, abs=0.01)
-    assert float(row["total_incentive_value_usd"]) == pytest.approx(1_425_000.0, abs=0.01)
-    assert float(row["true_net_cost_usd"]) == pytest.approx(3_075_000.0, abs=0.01)
-
-    # Same-cost-refusal by construction: the two pools must be disjoint
-    # line-id sets that together account for the entire budget -- no
-    # dollar counted twice, no dollar dropped.
-    closed_ids = set(trace["cost_pool_closed_line_ids"])
-    remainder_ids = set(trace["cost_pool_remainder_line_ids"])
-    assert closed_ids.isdisjoint(remainder_ids), "the same source line was allocated to both cost pools"
-    assert float(row["total_budget_usd"]) == pytest.approx(4_500_000.0, abs=0.01)
-    assert (
-        trace["cost_pool_closed_qpe_usd"] + trace["cost_pool_remainder_qpe_usd"]
-        == pytest.approx(float(row["total_budget_usd"]), abs=0.01)
-    ), "the two cost pools do not conserve the full real budget"
+# REMOVED (2026-10): test_reg5_cost_pool_pricing_matches_hand_calculation asserted a PRICED ny_state_film + us_ny_post_production_credit
+# cost-pool stack ($900,000 + $525,000). Tax Law 31(a)(1) denies the post credit to a film eligible under section 24, so that structure is
+# not available. It also wrote its fixture to the acceptance database. Its replacement, on a rolled-back synthetic project, is
+# tests/test_ny_post_pair_31a1_controls.py::test_evaluating_a_synthetic_ny_film_no_longer_prices_the_production_plus_post_stack.
 
 
 @pytest.mark.asyncio
@@ -572,7 +515,8 @@ async def test_cost_pool_split_falls_back_to_disclosed_rejection_when_no_closed_
         tuple(pair) for pair, rule in _SLUG_PAIR_RULES.items()
         if rule["rule_type"] == "same_cost_prohibited_distinct_costs_allowed"
     ]
-    assert distinct_cost_pairs, "no same_cost_prohibited_distinct_costs_allowed rule is registered at all"
+    # No pair is registered today: NY's was film-level exclusive under Tax Law 31(a)(1). The mechanism stays generic and dormant.
+    assert frozenset({"ny_state_film", "us_ny_post_production_credit"}) not in {frozenset(p) for p in distinct_cost_pairs}
 
     for pair in distinct_cost_pairs:
         slugs = list(pair)

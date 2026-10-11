@@ -2266,12 +2266,22 @@ US_NY_DOCTRINE = register(DoctrineRecord(
             conditions=(
                 RateCondition(
                     condition_id="us-ny-upstate-and-scoring-uplifts",
-                    description="+10% upstate (>50% of principal "
-                                "photography days in designated counties) "
-                                "+10% scoring (>=5 musicians) — both real, "
-                                "confirmed uplifts, neither pre-evaluable "
-                                "without shoot-location and scoring facts "
-                                "this engine does not have",
+                    description="PRODUCTION-credit upstate uplift: +10% on "
+                                "qualified LABOR incurred in the listed upstate "
+                                "counties for a production budget over $500,000 "
+                                "(Tax Law 24(a)(5), displayed revision 2025-07-11; "
+                                "ESD Guidelines May 2023 p.2), a labor base that "
+                                "INCLUDES qualifying above-the-line salaries within "
+                                "the 40% ATL group limit; if more than 50% of "
+                                "principal-photography days are in those counties, "
+                                "other qualified costs incurred there also earn +10% "
+                                "(Guidelines p.2). +10% scoring (>=5 musicians). Not "
+                                "pre-evaluable without shoot-location, county and "
+                                "scoring facts this engine does not have. The POST "
+                                "credit's upstate uplift is a different base "
+                                "(31(a)(6): post wages at a qualified upstate facility, "
+                                "excluding writers, directors, composers, producers "
+                                "and performers) and is not claimed here",
                     quote="An additional 10% credit on qualified labor "
                           "expenses ... An additional 10% credit for "
                           "scoring costs (esd.ny.gov)",
@@ -2305,9 +2315,10 @@ US_NY_DOCTRINE = register(DoctrineRecord(
             conditions=(
                 RateCondition(
                     condition_id="us-ny-upstate-and-scoring-uplifts-pp",
-                    description="Same upstate/scoring uplifts as the 50% "
-                                "ceiling tier, carried forward on this "
-                                "higher band.",
+                    description="Same PRODUCTION-credit upstate (qualified labor "
+                                "incl. qualifying ATL; see the 50% tier) and scoring "
+                                "uplifts as the 50% ceiling tier, carried forward on "
+                                "this higher band.",
                     quote="An additional 10% credit on qualified labor "
                           "expenses ... An additional 10% credit for "
                           "scoring costs (esd.ny.gov)",

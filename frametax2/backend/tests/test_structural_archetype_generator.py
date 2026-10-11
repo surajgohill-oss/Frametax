@@ -502,37 +502,25 @@ def test_registered_control_4_ireland_uk_uses_separate_jurisdictional_components
 
 
 def test_registered_control_5_ny_distinct_cost_stacking():
-    """ny_state_film + us_ny_post_production_credit, corrected disposition
-    SAME_COST_PROHIBITED_DISTINCT_COSTS_ALLOWED: an isolated NY budget
-    with real, DISJOINT principal and post cost pools (post >= $1M, the
-    real statutory minimum) must price BOTH components; principal-
-    photography spend must never enter post QPE."""
+    """SUPERSEDED DISPOSITION (Tax Law 31(a)(1), 2026-10): the old control priced ny_state_film + us_ny_post_production_credit on disjoint
+    pools. The post credit is denied to a film eligible under section 24, so disjoint pools are NOT enough: the pair is rejected as
+    mutually_exclusive. The full positive/negative set lives in test_ny_post_pair_31a1_controls.py."""
     principal = _comp("ny_state_film", "US-NY", 3_000_000.0, line_id="REG5-PRINCIPAL",
                        component_type="principal_production")
     post = _comp("us_ny_post_production_credit", "US-NY", 1_500_000.0, line_id="REG5-POST",
                  component_type="post")
-    res = generate_structural_candidate([principal, post], gross_budget_usd=4_500_000.0)
-    assert res.executable is True, res.rejection_reason
-    principal_econ = next(ce for ce in res.component_economics if ce.component.program_slug == "ny_state_film")
-    post_econ = next(ce for ce in res.component_economics if ce.component.program_slug == "us_ny_post_production_credit")
-    assert principal_econ.segment.qpe_usd == pytest.approx(3_000_000.0)
-    assert post_econ.segment.qpe_usd == pytest.approx(1_500_000.0)
-    # No shared line_id -- principal spend never enters post's own QPE.
     assert not (principal.line_ids & post.line_ids)
-    assert res.total_guaranteed_incentive_usd == pytest.approx(
-        principal_econ.guaranteed_incentive_usd + post_econ.guaranteed_incentive_usd
-    )
+    res = generate_structural_candidate([principal, post], gross_budget_usd=4_500_000.0)
+    assert res.executable is False
+    assert res.blocking_pairs and res.blocking_pairs[0].disposition == "mutually_exclusive"
 
 
 def test_registered_control_5b_ny_post_below_real_threshold_rejects():
-    """The same distinct-cost structure with a post pool BELOW the real
-    $1,000,000 statutory minimum must be precisely rejected -- proving
-    the real threshold is enforced, not bypassed by the structural
-    composition mechanism."""
-    principal = _comp("ny_state_film", "US-NY", 3_000_000.0, line_id="REG5B-PRINCIPAL")
+    """A post-ONLY NY film (no production credit claimed) with a post pool BELOW the real $1,000,000 statutory minimum must be precisely
+    rejected -- the real threshold is enforced by the structural composition mechanism."""
     post = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="REG5B-POST",
-                 component_type="post")
-    res = generate_structural_candidate([principal, post], gross_budget_usd=3_400_000.0)
+                 component_type="principal_production", spend_category="post_production")
+    res = generate_structural_candidate([post], gross_budget_usd=400_000.0)
     assert res.executable is False
     assert "us_ny_post_production_credit" in res.rejection_reason
 
@@ -1040,7 +1028,9 @@ def test_cache_key_pairs_component_type_with_its_own_jurisdiction_never_a_positi
     threshold_rejects above, the real confirmed-failing case this test
     reuses verbatim) -- must NOT collide in the cache merely because
     _structure_id() itself does not encode component_type."""
-    principal = _comp("ny_state_film", "US-NY", 3_000_000.0, line_id="CACHE6-PRINCIPAL")
+    # the principal is a Georgia credit: ny_state_film + the NY post credit is film-level mutually exclusive (Tax Law 31(a)(1)), which would
+    # reject BOTH variants and defeat this cache-collision control; a post-only NY routing beside another state's credit is composable.
+    principal = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, line_id="CACHE6-PRINCIPAL")
     below_threshold_post = _comp(
         "us_ny_post_production_credit", "US-NY", 400_000.0,
         line_id="CACHE6-POST", component_type="post",
@@ -1119,7 +1109,7 @@ def test_cache_result_objects_are_frozen_and_cannot_leak_mutable_state_across_ca
 def _intrinsic_fixtures():
     ok_a = _comp("uk_avec", "GB", 2_500_000.0, line_id="INT-GB")
     ok_b = _comp("ie_section_481", "IE", 2_500_000.0, line_id="INT-IE", component_type="vfx")
-    principal = _comp("ny_state_film", "US-NY", 3_000_000.0, line_id="INT-NY-P")
+    principal = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, line_id="INT-NY-P")   # not ny_state_film: that pair is film-level exclusive
     low_post = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="INT-NY-POST", component_type="post")
     low_upside = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="INT-NY-POST", component_type="selective_upside")
     dup_a = _comp("uk_avec", "GB", 1_000_000.0, line_id="INT-DUP")

@@ -19,7 +19,7 @@ from __future__ import annotations
 #: so a stacking-compatibility/reduction-rule change invalidates cached
 #: served evaluations, including combined-structure results. Bump on any
 #: material change.
-STACKING_RULES_VERSION = "1.4.0"  # 1.4.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- added ca_federal_pstc+ca_federal_cptc (mutually_exclusive), found missing via direct primary-source research (canada.ca CAVCO CPTC and PSTC application guidelines, both fetched and quoted directly): "a corporation cannot receive both the PSTC and the CPTC for the same production" / "The PSTC is not available where a production has received the Canadian Film or Video Production Tax Credit." Every OTHER program's own PSTC-equivalent pairing against CPTC (ca_bc_pstc, on_opstc) already had this rule; the federal PSTC/CPTC pair itself did not, despite being the most direct application of the same statutory distinction (ITA §125.4 domestic content vs §125.5 foreign service).
+STACKING_RULES_VERSION = "1.5.0"  # 1.5.0: NY_TAX_LAW_31A1 -- ny_state_film + us_ny_post_production_credit is mutually_exclusive again (film-level eligibility under Tax Law 31(a)(1): the post credit is denied to a taxpayer eligible under section 24 for the film, so disjoint cost pools do not satisfy it; 31(a)(4) same-cost bar is separate). Supersedes the 1.3.0 distinct-cost disposition for this pair.  # 1.4.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- added ca_federal_pstc+ca_federal_cptc (mutually_exclusive), found missing via direct primary-source research (canada.ca CAVCO CPTC and PSTC application guidelines, both fetched and quoted directly): "a corporation cannot receive both the PSTC and the CPTC for the same production" / "The PSTC is not available where a production has received the Canadian Film or Video Production Tax Credit." Every OTHER program's own PSTC-equivalent pairing against CPTC (ca_bc_pstc, on_opstc) already had this rule; the federal PSTC/CPTC pair itself did not, despite being the most direct application of the same statutory distinction (ITA §125.4 domestic content vs §125.5 foreign service).
 # 1.3.0: CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION -- added ca_bc_pstc+ca_bc_dave (ADDITIVE, EVID-004) and ca_federal_cptc+ca_sk_creative_saskatchewan_grant (allowed, ARCH-11's own canonical example), both previously missing from the registry entirely; corrected ny_state_film+us_ny_post_production_credit from blanket mutually_exclusive to same_cost_prohibited_distinct_costs_allowed (CODEX_STACKING_REGISTRY_RECONCILIATION.csv: WRONG_DISPOSITION), consumed by the new generic structural_archetype_generator as non-blocking (distinct-cost enforced structurally) and by the older same-jurisdiction bridge as still-blocking (no distinct-cost awareness there).
 # 1.2.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT -- added on_ofttc+ocase and on_opstc+ocase spend_reduction rules (confirmed directly against ontariocreates.ca's own official OCASE page), matching CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015.
 # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
@@ -590,40 +590,20 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "animation/VFX labour expenditure (ontariocreates.ca)."
         ),
     },
-    # CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION /
-    # CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION (Task 5): the real,
-    # substantive constraint from US_NY_POST_DOCTRINE (tax.ny.gov: "if the
-    # film post-production credit is claimed for qualified post-production
-    # costs, no other income tax credit may be claimed for those costs")
-    # PROHIBITS claiming the SAME cost base twice -- it does NOT prohibit
-    # the two programs from ever coexisting in one structure when each
-    # claims a genuinely DISTINCT, separately-allocated cost pool.
-    # CODEX_STACKING_REGISTRY_RECONCILIATION.csv classifies the prior
-    # blanket "mutually_exclusive" disposition here WRONG_DISPOSITION,
-    # corrected to SAME_COST_PROHIBITED_DISTINCT_COSTS_ALLOWED. This new
-    # rule_type is handled DIFFERENTLY by the two stacking mechanisms that
-    # consume it: canonical_stack_bridge.py's older same-jurisdiction
-    # group-stacking bridge has no distinct-cost awareness (it prices
-    # each member off the SAME whole segment) and must keep treating this
-    # as a hard block, exactly like mutually_exclusive, to avoid a real
-    # same-cost double-count; app.calculators.structural_archetype_
-    # generator's newer, per-component generator ALREADY refuses any two
-    # components sharing a source budget-line ID before this rule is even
-    # consulted, so distinct-cost composition is safe there and this
-    # disposition is non-blocking at that layer. See
-    # test_registered_control_5_ny_distinct_cost_stacking (isolated NY
-    # budget, real >=$1,000,000 post-only pool, disjoint line_ids from
-    # the principal pool) for the runtime proof.
+    # NY Tax Law 31(a)(1): the post credit is not available to a taxpayer ELIGIBLE under section 24 for the film. That is a film-level
+    # eligibility condition, distinct from the 31(a)(4) same-cost bar, so disjoint line_ids / cost pools do NOT make the pair
+    # composable. (The 1.3.0 "same cost prohibited, distinct costs allowed" disposition was wrong for this pair and is superseded;
+    # the generic rule type and its consumers remain for any pair whose authority really is cost-pool based.)
     frozenset({"ny_state_film", "us_ny_post_production_credit"}): {
-        "rule_type": "same_cost_prohibited_distinct_costs_allowed",
+        "rule_type": "mutually_exclusive",
         "condition_text": (
-            "New York's principal film production credit (ny_state_film) and the "
-            "Empire State Post-Production Credit (us_ny_post_production_credit) may "
-            "never claim the SAME qualified costs (tax.ny.gov: 'no other income tax "
-            "credit may be claimed for those costs'), but a production may claim the "
-            "principal credit for its production spend and the post credit for a "
-            "genuinely separate, separately-allocated post-only cost pool within one "
-            "structure -- same-cost is prohibited, distinct-cost routing is allowed."
+            "New York Tax Law section 31(a)(1) (revision displayed 2025-07-11) allows the Empire State post-production credit to a "
+            "qualified film production company 'unless eligible for the credit under section twenty-four': a film that is eligible "
+            "for the production credit (ny_state_film) is not eligible for the post credit, so a structure may not claim both for "
+            "one film even when the cost pools are disjoint. This film-level condition is separate from the same-cost bar in "
+            "section 31(a)(4). ESD Program Guidelines (May 2023, p.3) state the same limit: the post credit is available if the "
+            "project was filmed predominantly outside the State or was ineligible for the production credit. The post credit "
+            "belongs only in a post-production-only routing of a film that does not claim the production credit."
         ),
     },
     # OFTTC is government assistance reducing CPTC qualified labour (ITA §125.4)

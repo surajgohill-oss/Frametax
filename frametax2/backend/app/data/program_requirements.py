@@ -303,8 +303,15 @@ register(ProgramRequirementsProfile(
               "lower figure is used here as the conservative floor.",
     ),
     additional_facts={
-        "upstate_uplift": "+10% on qualified labor for >=$500K-budget productions shooting >50% of principal "
-                          "photography days in designated upstate counties",
+        "upstate_uplift": "+10% on qualified LABOR incurred in the designated upstate counties for a production budget over $500,000 "
+                          "(Tax Law 24(a)(5), displayed 2025-07-11; ESD Guidelines May 2023 p.2); the labor base INCLUDES qualifying "
+                          "above-the-line salaries within the 40% ATL limit; if more than 50% of principal-photography days are in those "
+                          "counties, other qualified costs incurred there also earn +10% (Guidelines p.2)",
+        "atl_per_individual_cap_guidance": "OPEN: ESD Guidelines May 2023 p.2 (changes effective April 1, 2023) state ATL salaries are "
+                                           "'subject to a $500,000 cap per individual and limited to 40% of all other qualified production "
+                                           "costs'; Tax Law 24 as displayed (revision 2025-07-11) states the 40% group limit and at most two "
+                                           "producers but no per-person dollar cap. Not applied: applicability to a given anchor is unresolved "
+                                           "and a per-person cap cannot be applied to an aggregate account without the payee split.",
         "scoring_uplift": "+10% on scoring costs if scoring pays a minimum of 5 musicians",
         "min_spend_nyc_metro_usd": "1,000,000",
     },
@@ -329,7 +336,14 @@ register(ProgramRequirementsProfile(
               "from the CT-261/IT-261 form instructions the official page defers to — PARSED, disclosed.",
     ),
     additional_facts={
-        "mutual_exclusivity": "CONFIRMED mutually exclusive with us_ny_film_credit for the same costs (official)",
+        "mutual_exclusivity": "MUTUALLY EXCLUSIVE at the film level. Tax Law 31(a)(1) (displayed 2025-07-11): the post credit is not available to a taxpayer eligible under "
+                              "section 24 for the film (film-level, separate from the 31(a)(4) same-cost bar); disjoint cost pools do not "
+                              "satisfy it. ESD Guidelines May 2023 p.3: available if filmed predominantly outside NY or ineligible for the "
+                              "production credit.",
+        "upstate_uplift": "+10% on wages or salaries for post-production work at a qualified facility in the listed upstate counties, "
+                          "film budget of at least $500,000 (Tax Law 31(a)(6)); EXCLUDES writers, directors, composers, producers and "
+                          "performers (background actors with no scripted lines are not excluded). A different base from the production "
+                          "credit's upstate labor uplift; not modeled as a priced tier.",
         "vfx_animation_subthreshold": "lesser of $500,000 or 10% of total post-production cost",
         "eligible_production_profile": "production shot substantially outside NY, post routed to an NY facility",
     },
