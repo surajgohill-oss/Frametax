@@ -45,7 +45,7 @@ export default function EconomicWell({ pot, awardRisk = false, className = "", q
           className="wsx-bar"
           role="img"
           aria-label={supported
-            ? `Incentive composition: confirmed ${fmt(pot.confirmedIncentive)} of maximum-potential ${fmt(pot.maxIncentive)}${amber > 0 ? `, additional conditional ${fmt(pot.maxIncentive - pot.confirmedIncentive)}` : ""}`
+            ? `Incentive composition: confirmed ${fmt(pot.confirmedIncentive)} of maximum-potential ${fmt(pot.maxIncentive)}${amber > 0 && pot.upside != null ? `, additional conditional ${fmt(pot.upside)}` : ""}`
             : "Incentive composition not established"}
         >
           {jade > 0 && <span className="jade" style={{ flexGrow: jade }} />}

@@ -83,11 +83,11 @@ test("Workspace card and Inspector use the shared reader and perform no arithmet
   // Card labels (economic card interior v2, 2026-10-08): maximum-potential NPC leads, confirmed NPC beneath it.
   assert.match(ws, /Maximum-potential NPC/);
   assert.match(ws, /Maximum-potential incentive/);
-  assert.match(ws, /Confirmed NPC/);
+  assert.match(ws, /NPC at confirmed incentive/);
   assert.match(ws, /Confirmed incentive/);
-  assert.match(ws, /MFNI ADJUSTMENT NOT YET MODELED/);
-  assert.match(ws, /NPC AFTER MFNI/);
-  assert.match(ws, /Assumptions editing not yet available/);
+  // Card refinement (2026-10-10): one honest MFNI row; no post-MFNI figure and no editor until a canonical owner is served.
+  assert.match(ws, /<span>MFNI<\/span><span>Not yet modeled<\/span>/);
+  assert.doesNotMatch(ws, /NPC AFTER MFNI|Assumptions editing not yet available/);
   assert.match(insp, /Max potential incentive/);
   assert.match(insp, /Needed to reach the maximum/);
   for (const [name, text] of [["Workspace", ws], ["Inspector", insp]]) {
@@ -196,10 +196,11 @@ test("economic card interior: one shared well, no gross budget / rate / CONDITIO
   assert.doesNotMatch(well + ws + ov, /Gross budget/i.test(ws) ? /x^/ : /Gross budget/, "Gross budget is never printed inside a card");
   assert.doesNotMatch(ov, /compactIncentiveRate|rateLine|Vs\. current/, "no rate/percentage line on the Overview card face");
   assert.doesNotMatch(read("lib/productionOptions.js").match(/export function cardStatus[\s\S]*?\n}\n/)[0], /return "CONDITIONAL"/);
-  // order: maximum-potential NPC, confirmed NPC, incentives, bar, MFNI, attainability
-  const order = ["Maximum-potential NPC", "Confirmed NPC", "Confirmed incentive", "wsx-bar", "wsx-econ-mfni", "wsx-econ-need"].map((s) => well.indexOf(s));
+  // order (card refinement 2026-10-10): maximum-potential NPC, NPC at confirmed incentive, incentives + qualified spend, MFNI, bar, requirement
+  const order = ["Maximum-potential NPC", "NPC at confirmed incentive", "Confirmed incentive", "Qualified spend", "wsx-econ-mfni", "wsx-bar-wrap", "wsx-econ-need"].map((s) => well.indexOf(s));
   assert.deepEqual(order, [...order].sort((x, y) => x - y));
   assert.ok(order.every((i) => i >= 0));
-  // Workspace: qualified spend only after the well
-  assert.ok(ws.indexOf("<EconomicWell") < ws.indexOf('className="wsx-qs"'));
+  // Workspace hands qualified spend to the well; it no longer renders its own orphaned footer row
+  assert.match(ws, /<EconomicWell [^>]*qualifiedSpend=\{qualifiedSpend\}/);
+  assert.doesNotMatch(ws, /className="wsx-qs"/);
 });

@@ -227,8 +227,9 @@ test("ScenarioCard's whole card body is inspectable (click + keyboard), footer/l
   assert.match(src, /role="button"/);
   assert.match(src, /onClick=\{openInspect\}/);
   assert.match(src, /onKeyDown=\{handleCardKeyDown\}/);
-  assert.match(src, /e\.stopPropagation\(\); openInspect\(\)/, "the Inspect button itself must not double-fire via bubbling");
-  assert.match(src, /e\.stopPropagation\(\); onCompare\(structure\)/, "Compare must not also open Inspector");
+  // Card refinement (2026-10-10): the whole card opens the Inspector, so the separate Inspect and Compare buttons are gone.
+  assert.doesNotMatch(src, /e\.stopPropagation\(\); openInspect\(\)/);
+  assert.doesNotMatch(src, /onCompare\(structure\)/);
   assert.match(src, /e\.stopPropagation\(\); onSetLeading/, "Set as leading must not also open Inspector");
 });
 

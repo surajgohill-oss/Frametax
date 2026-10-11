@@ -143,7 +143,8 @@ test("the optimizer scenario-count copy is compact producer language and omits t
 test("Normal-mode and Optimizer-mode card titles route through different, unmodified label sources (compactScenarioIdentity vs buildScenarioLabel) — the six-card selection contract and card content are untouched by this responsive-layout pass", () => {
   const jsx = readSrc(join("screens", "production", "Workspace.jsx"));
   assert.match(jsx, /OPTIMIZER_CLASSIFICATIONS\.has\(structure\.classification\)\s*\?\s*buildScenarioLabel\(structure\)\s*:\s*compactName/, "ScenarioCard must still branch title source by classification, unchanged from the prior optimizer-label closeout");
-  assert.match(jsx, /className="wsx-nm"/, "the card title must still render inside .wsx-nm — no new badge or redesigned card");
+  assert.match(jsx, /function FitName\([^)]*className = "wsx-nm"/, "the card title must still render inside .wsx-nm (via the autofit FitName)");
+  assert.match(jsx, /<FitName [^>]*title=\{titleTip\}>/, "both title branches render through FitName");
 });
 
 test(".wsx-lh-id (the card-title column) keeps min-width: 0 so a long optimizer component-routing title wraps inside .wsx-nm instead of pushing the rank/role badge out of the card", () => {
