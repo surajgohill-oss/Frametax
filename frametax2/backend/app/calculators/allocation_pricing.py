@@ -53,6 +53,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field, replace as _dataclasses_replace
 
+from app.calculators.ny_atl_individual_cap import limits_facts_from_amount_facts
 from app.calculators import treaty_engine as te
 from app.calculators.optimization_engine import RiskCase, build_risk_cases
 from app.calculators.production_allocation import (
@@ -546,12 +547,19 @@ def _resolve_incentive_dollar_cap(
     return cap_usd, cap_type, basis, None, None
 
 
-def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts):
+#: Programs whose resolved rate ceiling is a conditional BASE-rate scenario (NY post: 35% outside the commuter district over a guaranteed 30%),
+#: not a whole-base uplift that the subset rules replace. Their potential keeps the scenario rate; every other subset program keeps the floor rate.
+_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit"})
+
+
+def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None):
     """Price only evidenced portions; missing portions remain disclosed bounds.
 
-    Each amount key is uplift_basis:<program>:<uplift>:<source line id>, and
-    the SAME key must be in evidenced_facts to attest its rule predicates.
-    Never infer a subset from a program-wide approval or a gross subtotal.
+    A line's uplift basis is confirmed when its statutory prerequisite fact is evidenced AND either the rule's whole-base fact is
+    evidenced (every eligible qualified line is wholly inside the base) or the line carries its own evidenced portion. Each
+    per-line amount key is uplift_basis:<program>:<uplift>:<source line id>, and the SAME key must be in evidenced_facts to attest
+    its rule predicates. Never infer a subset from a program-wide approval or a gross subtotal. An uplift that exists only by
+    application contributes nothing, not even a bound, until its prerequisite fact is evidenced.
     """
     import math
     from app.data.program_rate_rules import get_subset_uplift_rules
@@ -574,6 +582,12 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             continue
         if rule.excluded_fact and rule.excluded_fact in facts:
             continue
+        if rule.min_gross_budget_usd is not None and gross_budget_usd is not None and gross_budget_usd < rule.min_gross_budget_usd:
+            continue
+        prerequisite_ok = rule.prerequisite_fact is None or rule.prerequisite_fact in facts
+        if rule.potential_requires_prerequisite and not prerequisite_ok:
+            continue
+        whole_base = rule.whole_base_fact is not None and rule.whole_base_fact in facts
         confirmed = potential = 0.0
         missing = []
         for line in lines:
@@ -588,8 +602,14 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             if key in facts and amount is not None:
                 if not math.isfinite(amount) or amount < 0 or amount > qualified + .005:
                     raise ValueError(f"{key}: evidenced subset must be finite and within its qualified line amount")
-                confirmed += amount
-                potential += amount
+                counted = amount
+            elif whole_base:
+                counted = qualified
+            else:
+                counted = None
+            if counted is not None and prerequisite_ok:
+                confirmed += counted
+                potential += counted
             else:
                 potential += qualified
                 missing.append(line.line_id)
@@ -597,17 +617,22 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
         floor_parts[group] = max(floor_parts.get(group, 0.0), confirmed * rule.rate)
         potential_parts[group] = max(potential_parts.get(group, 0.0), min(qpe, potential) * rule.rate)
         if missing:
+            reasons = []
+            if not prerequisite_ok:
+                reasons.append(f"prerequisite fact '{rule.prerequisite_fact}' not evidenced")
+            reasons.append("evidenced rule-compliant portions needed for source lines: " + ", ".join(missing))
             conditions.append({"condition_id": f"{slug}:{rule.uplift_id}:qualified_subset",
                 "description": rule.source_ref,
                 "kind": "qualified_subset_uplift", "condition_state": "UNRESOLVED",
-                "satisfied": None, "note": "Requires evidenced rule-compliant portions for source lines: " + ", ".join(missing)})
+                "satisfied": None, "note": "Requires " + "; ".join(reasons)})
     # A QE cap can constrain which lines enter the claim. Without a claim
     # selection, attested raw subsets cannot create an over-cap uplift.
     raw_qpe = sum(qualifying.values())
     if raw_qpe > qpe + .005 and any(floor_parts.values()):
         raise ValueError("Subset uplift with a capped QPE base requires an explicit qualified claim-line selection")
     floor = round(qpe * base_rate + sum(floor_parts.values()), 2)
-    potential = round(qpe * base_rate + sum(potential_parts.values()), 2)
+    # The potential keeps the resolved rate ceiling (e.g. a conditional higher base rate) when it exceeds the guaranteed base rate.
+    potential = round(qpe * max(base_rate, ceiling_rate or 0.0) + sum(potential_parts.values()), 2)
     return floor, potential, tuple(conditions)
 
 
@@ -752,6 +777,7 @@ def price_segment(
         scenario_local_btl=bool(
             home_jurisdiction_code and jurisdiction_code != home_jurisdiction_code and not scenario_btl_nonlocal
         ),
+        **limits_facts_from_amount_facts(amount_facts),
     )
     register = derive_qualification_register(
         lines, program_slug=slug, facts=facts, rate=0.0,
@@ -1701,7 +1727,8 @@ def price_segment(
     subset_conditions = ()
     try:
         subset_pricing = _price_subset_uplifts(slug, lines, register, qpe, rr.floor_rate,
-            production_type, amount_facts, evidenced_requirement_facts)
+            production_type, amount_facts, evidenced_requirement_facts, gross_budget_usd=gross_budget_usd,
+            ceiling_rate=rr.modeled_rate if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else None)
     except ValueError as exc:
         return SegmentEconomics(jurisdiction_code=jurisdiction_code, program_slug=slug,
             claims_incentive=True, allocated_usd=allocated, account_codes=codes,

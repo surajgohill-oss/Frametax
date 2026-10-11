@@ -52,6 +52,7 @@ from app.calculators.qualification_derivation import BudgetLine, ProductionFacts
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.enums import ProjectFactSourceType
 from app.models.jurisdiction import Jurisdiction
+from app.calculators.ny_atl_individual_cap import limits_facts_from_amount_facts
 from app.models.project import Project
 from app.models.project_fact import ProjectFact
 
@@ -774,6 +775,19 @@ async def build_project_economic_inputs(
     for _k, _v in to_amount_facts(_cdn_labour_result).items():
         _base_amount_facts.setdefault(_k, _v)
 
+    # NY above-the-line limits (ESD guidelines effective April 1, 2023; Tax Law 24(a)(5)): derived numeric facts only, so the
+    # saved evaluation fingerprint and every segment pricer see exactly the same inputs. Never an estimate: the period flag is
+    # set only when the project's costs are established as post-effective, and a payee is mapped only from stated line facts.
+    from app.calculators import ny_atl_individual_cap as _ny_atl
+    from app.services.ny_producer_facts import expand_uplift_basis as _expand_uplift_basis
+    _uplift_amounts, _uplift_evidenced = _expand_uplift_basis(fact_rows)
+    for _k, _v in _uplift_amounts.items():
+        _base_amount_facts.setdefault(_k, _v)
+    if _ny_atl.period_applies(target_shoot_year=project.target_shoot_year, lifecycle=getattr(project.lifecycle, "value", project.lifecycle)):
+        _base_amount_facts.setdefault(_ny_atl.FACT_PERIOD_APPLIES, 1.0)
+    for _k, _v in _ny_atl.payee_amount_facts(fact_rows, {str(l.line_id) for l in lines}).items():
+        _base_amount_facts.setdefault(_k, _v)
+
     from app.models.production_requirement import ProductionRequirement
     requirements_on_file = (await session.execute(
         select(ProductionRequirement.id).where(ProductionRequirement.project_id == project_id)
@@ -815,7 +829,7 @@ async def build_project_economic_inputs(
         ),
         evidenced_program_facts=(
             _evidenced_program_facts(fact_rows) | await physical_requirement_fingerprint_facts(session, project_id)
-            | _content_gate_tokens(fact_rows)
+            | _content_gate_tokens(fact_rows) | _uplift_evidenced
         ),
         amount_facts=_base_amount_facts,
         # Financing ALREADY inside the source gross budget. Derived from the
@@ -860,6 +874,7 @@ def production_facts_for(
         accounts_outside_jurisdiction=inputs.accounts_outside_jurisdiction,
         offshore_payroll_accounts=inputs.offshore_payroll_accounts,
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
+        **limits_facts_from_amount_facts(inputs.amount_facts),
         # SCENARIO default: a candidate OTHER than the production's home jurisdiction models relocated BTL as local.
         scenario_local_btl=bool(
             jurisdiction_code and jurisdiction_code != inputs.jurisdiction_code and not inputs.scenario_btl_nonlocal

@@ -171,6 +171,11 @@ class ProductionFacts:
     #: Evidenced program-fact ids (positive evidence only). A contingency election is a deployment expectation, not legal
     #: evidence: a program's contingency prerequisites (get_contingency_prerequisites) are settled only by these facts.
     evidenced_facts: frozenset[str] = frozenset()
+    #: NY production credit only: the April 1, 2023 above-the-line limits are established for this project's costs, and the
+    #: (line_id, payee ordinal) pairs for accounts tied to an identified payee with complete compensation (see
+    #: app.calculators.ny_atl_individual_cap). Empty/False leaves every other program byte-identical.
+    ny_atl_limits_apply: bool = False
+    ny_atl_payee_by_line: tuple = ()
 
     def work_outside(self, account_code: str, category: str) -> bool:
         if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
@@ -542,4 +547,12 @@ def derive_qualification_register(
                   upside=round(amt * rate, 2),
                   grey_reason=GreyReason.PROGRAM_REGIME_UNCLASSIFIED)
 
+    from app.data.program_slug_aliases import canonical_slug as _canonical
+    if facts.ny_atl_limits_apply and _canonical(program_slug) == "ny_state_film":
+        from app.calculators.ny_atl_individual_cap import apply_ny_atl_limits
+        register = apply_ny_atl_limits(
+            register,
+            {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items},
+            dict(facts.ny_atl_payee_by_line),
+        )
     return register

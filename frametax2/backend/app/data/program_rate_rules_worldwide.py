@@ -2246,101 +2246,23 @@ US_NY_DOCTRINE = register(DoctrineRecord(
             conditions=(
                 RateCondition(
                     condition_id="us-ny-atl-cap",
-                    description="ATL qualified salaries capped at 40% of "
-                                "all other qualified costs — an ATL-vs-other-"
-                                "QPE MAXIMUM (not a minimum, and not a QPE-"
-                                "vs-total-budget ratio); this engine has no "
-                                "ATL/other QPE split modeled, so it cannot "
-                                "pre-evaluate this condition.",
+                    description="Above-the-line compensation is limited to 40% of all "
+                                "other qualified production costs (Tax Law 24(a)(5)) and, "
+                                "per ESD guidance effective April 1, 2023, to $500,000 per "
+                                "individual. Both limits are applied line by line in the "
+                                "qualification register (calculators/ny_atl_individual_cap.py), "
+                                "not at rate resolution; the per-individual limit needs an "
+                                "identified payee with complete compensation.",
                     quote="ATL qualified salaries cannot exceed 40% of "
                           "all other qualified costs (esd.ny.gov)",
-                    kind="unmodeled_spend_split_ratio",
+                    kind="applied_in_qualification_register",
                 ),
             ),
         ),
-        DoctrineRateTier(
-            tier_id="us-ny-upstate-scoring-ceiling-50",
-            rate=0.50,
-            is_band_ceiling=True,
-            min_qpe_usd=250_000.0,
-            conditions=(
-                RateCondition(
-                    condition_id="us-ny-upstate-and-scoring-uplifts",
-                    description="PRODUCTION-credit upstate uplift: +10% on "
-                                "qualified LABOR incurred in the listed upstate "
-                                "counties for a production budget over $500,000 "
-                                "(Tax Law 24(a)(5), displayed revision 2025-07-11; "
-                                "ESD Guidelines May 2023 p.2), a labor base that "
-                                "INCLUDES qualifying above-the-line salaries within "
-                                "the 40% ATL group limit; if more than 50% of "
-                                "principal-photography days are in those counties, "
-                                "other qualified costs incurred there also earn +10% "
-                                "(Guidelines p.2). +10% scoring (>=5 musicians). Not "
-                                "pre-evaluable without shoot-location, county and "
-                                "scoring facts this engine does not have. The POST "
-                                "credit's upstate uplift is a different base "
-                                "(31(a)(6): post wages at a qualified upstate facility, "
-                                "excluding writers, directors, composers, producers "
-                                "and performers) and is not claimed here",
-                    quote="An additional 10% credit on qualified labor "
-                          "expenses ... An additional 10% credit for "
-                          "scoring costs (esd.ny.gov)",
-                    kind="discretionary_band",
-                ),
-            ),
-        ),
-        # CINEGLOBE — FINAL CANONICAL RECOVERY / RECONNECTION CLOSEOUT:
-        # this ceiling ("Production Plus") was already real, existing,
-        # disclosed knowledge in jurisdiction_comparison.py's own NY
-        # profile notes/data_gaps ("'Production Plus' offers a further
-        # +5-10% for companies with multiple NY productions, not modeled
-        # (producer-election fact this engine doesn't have)") — an
-        # EXISTS_BUT_DISCONNECTED finding: known to the comparison-profile
-        # layer, never reconnected into the pricing engine's own served
-        # RateRule/RateCondition path, so it never surfaced as even a
-        # disclosed opportunity on a real priced NY candidate. This tier
-        # reconnects it as a distinct highest ceiling (base 30% + upstate
-        # 10% + scoring 10% + Production Plus up to 10% = 60%), gated by
-        # the SAME existing project_fact_dependent_uplift condition kind
-        # (USER_FACT_REQUIRED) CBA-002 already classifies — never
-        # auto-applied, never assumed, disclosed as a real opportunity
-        # for a multi-NY-production company. NOT a new standalone
-        # program — it is the base us_ny_film_credit's own highest tier,
-        # per this project's own program-vs-enhancement ontology.
-        DoctrineRateTier(
-            tier_id="us-ny-production-plus-ceiling-60",
-            rate=0.60,
-            is_band_ceiling=True,
-            min_qpe_usd=250_000.0,
-            conditions=(
-                RateCondition(
-                    condition_id="us-ny-upstate-and-scoring-uplifts-pp",
-                    description="Same PRODUCTION-credit upstate (qualified labor "
-                                "incl. qualifying ATL; see the 50% tier) and scoring "
-                                "uplifts as the 50% ceiling tier, carried forward on "
-                                "this higher band.",
-                    quote="An additional 10% credit on qualified labor "
-                          "expenses ... An additional 10% credit for "
-                          "scoring costs (esd.ny.gov)",
-                    kind="discretionary_band",
-                ),
-                RateCondition(
-                    condition_id="us-ny-production-plus-multi-production",
-                    description="'Production Plus' offers a further +5-10% "
-                                "for companies with multiple NY productions "
-                                "— a real, disclosed program enhancement "
-                                "requiring a producer-election project fact "
-                                "(does this production's company have "
-                                "other concurrent NY productions?) this "
-                                "engine does not collect by default.",
-                    quote="'Production Plus' offers a further +5-10% for "
-                          "companies with multiple NY productions "
-                          "(esd.ny.gov, via jurisdiction_comparison.py's "
-                          "existing New York profile)",
-                    kind="project_fact_dependent_uplift",
-                ),
-            ),
-        ),
+        # The former whole-base "ceiling" tiers (50% upstate+scoring, 60% Production Plus) are REMOVED: each stacked +10% increments on the
+        # whole base although the statute applies them to narrower bases (listed-county wages, other listed-county costs only if the
+        # majority of principal-photography days are there, scoring paid to five musicians, and Production Plus by application). They
+        # are priced on those bases by allocation_pricing._price_subset_uplifts from program_rate_rules.SUBSET_UPLIFT_RULES["ny_state_film"].
     ),
 ))
 register_rate_rules(rate_rules_for(US_NY_DOCTRINE))
@@ -2429,6 +2351,69 @@ US_NY_POST_DOCTRINE = register(DoctrineRecord(
                           "revision displayed 2025-07-11; ESD Guidelines April 2025 p.2)",
                     kind="project_fact_dependent_eligibility",
                     required_boolean_fact_key="ny_post_facility_outside_mctd",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-mutual-exclusivity",
+                    description="MUTUALLY EXCLUSIVE with the main ny_state_film "
+                                "Production Credit for the same costs — a structure "
+                                "must never claim both for the same segment. This "
+                                "program applies ONLY to a post-production-only "
+                                "routing (production shot elsewhere), never to a "
+                                "full-relocation structure.",
+                    quote="if the film post-production credit is claimed for "
+                          "qualified post-production costs, no other income tax "
+                          "credit may be claimed for those costs (tax.ny.gov)",
+                    kind="mutually_exclusive_alternative_program",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-upstate-wage-uplift-not-modeled",
+                    description="POST-credit upstate uplift (Tax Law 31(a)(6), displayed revision "
+                                "2025-07-11): +10% of WAGES AND SALARIES paid to directly employed "
+                                "individuals at a qualified post facility in the listed upstate counties, "
+                                "for a film budget of at least $500,000. A different base from the "
+                                "production credit's: it EXCLUDES writers, directors, composers, "
+                                "producers and performers (background actors with no scripted lines "
+                                "aside). Not a whole-base rate and not priced here -- it needs a "
+                                "facility-county and eligible-wage split this engine does not hold.",
+                    quote="ten percent of the amount of wages or salaries paid to individuals directly "
+                          "employed ... other than writers, directors, composers, producers and "
+                          "performers (Tax Law 31(a)(6), nysenate.gov)",
+                    kind="uplift_on_narrower_base_not_modeled",
+                ),
+                RateCondition(
+                    condition_id="us-ny-post-vfx-animation-subthreshold",
+                    description="A separate VFX/animation sub-threshold (lesser of "
+                                "$500K or 10% of total post-production cost) applies "
+                                "within the qualifying post spend — not "
+                                "pre-evaluable without a VFX-specific cost split",
+                    quote="the costs of visual effects and animation must be equal "
+                          "to or greater than the lesser of $500,000 or 10% of the "
+                          "total post-production cost for visual effects and "
+                          "animation (secondary aggregator, corroborating tax.ny.gov)",
+                    kind="min_qpe_usd",
+                ),
+            ),
+        ),
+        DoctrineRateTier(
+            tier_id="us-ny-post-outside-mctd-35-conditional",
+            rate=0.35,
+            is_band_ceiling=True,
+            min_qpe_usd=1_000_000.0,
+            conditions=(
+                RateCondition(
+                    condition_id="us-ny-post-facility-outside-mctd",
+                    description="35% applies only to post-production costs incurred at a qualified "
+                                "facility OUTSIDE the Metropolitan Commuter Transportation District "
+                                "(Public Authorities Law 1262). Inside the district the rate is 30%. "
+                                "PLANNING SCENARIO: the facility location is not yet stated, so 35% is shown "
+                                "as a conditional rate above the guaranteed 30%. It disappears once the producer "
+                                "evidences 'ny_post_facility_inside_mctd' and becomes the guaranteed rate once "
+                                "'ny_post_facility_outside_mctd' is evidenced; never assumed.",
+                    quote="thirty percent ... within the metropolitan commuter transportation district; "
+                          "thirty-five percent ... elsewhere in the state (Tax Law 31(a)(2), nysenate.gov, "
+                          "revision displayed 2025-07-11; ESD Guidelines April 2025 p.2)",
+                    kind="project_fact_dependent_eligibility",
+                    blocked_by_boolean_fact_keys=("ny_post_facility_outside_mctd", "ny_post_facility_inside_mctd"),
                 ),
                 RateCondition(
                     condition_id="us-ny-post-mutual-exclusivity",

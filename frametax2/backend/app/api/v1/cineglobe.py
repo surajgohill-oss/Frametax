@@ -865,6 +865,31 @@ async def post_project_assumptions(
     return {"answers": {f.fact_key: f.value for f in fact_rows}}
 
 
+class NyProgramFacts(BaseModel):
+    evidenced: dict[str, Any] = {}
+    payees: list[dict[str, Any]] = []
+    uplift_basis: list[dict[str, Any]] = []
+
+
+@router.post("/projects/{project_id}/ny-program-facts")
+async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Backend write path for producer-stated New York facts (post facility location, majority-days/scoring/Production Plus
+    prerequisites, identified payees with complete compensation, evidenced uplift portions). Stored in the existing ProjectFact
+    table and covered by the evaluation fingerprint; a later evaluation prices them. Unknown is a cleared (null) fact, never
+    false. The Overview/Inspector controls for these facts are a separate pending UI stage."""
+    from app.services.ny_producer_facts import write_ny_program_facts
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        applied = await write_ny_program_facts(db, project.id, evidenced=body.evidenced, payees=body.payees, uplift_basis=body.uplift_basis)
+    except ValueError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc))
+    await db.commit()
+    return {"applied": applied}
+
+
 # Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
 # candidate-jurisdiction inclusion/exclusion election. Same real
 # ProjectFact table/precedence every producer-settable fact already uses

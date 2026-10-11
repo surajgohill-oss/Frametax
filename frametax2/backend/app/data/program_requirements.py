@@ -306,17 +306,17 @@ register(ProgramRequirementsProfile(
         "upstate_uplift": "+10% on qualified LABOR incurred in the designated upstate counties for a production budget over $500,000 "
                           "(Tax Law 24(a)(5), displayed 2025-07-11; ESD Guidelines May 2023 p.2); the labor base INCLUDES qualifying "
                           "above-the-line salaries within the 40% ATL limit; if more than 50% of principal-photography days are in those "
-                          "counties, other qualified costs incurred there also earn +10% (Guidelines p.2)",
+                          "counties, other qualified costs incurred there also earn +10% (Guidelines p.2). Priced as subset uplifts "
+                          "(rate_rules.SUBSET_UPLIFT_RULES['ny_state_film']): labor needs the stated fact 'ny_all_costs_in_listed_counties' or a per-account "
+                          "evidenced portion; other costs additionally need 'ny_majority_principal_photography_days_in_listed_counties'; scoring (+10%, Tax Law 24(a)(2)) "
+                          "needs 'ny_scoring_five_musicians_in_state' and the scoring portion of the music account; Production Plus (24(a)(6), +10% or +5%) is by "
+                          "application and counts only once its tier fact is stated. Unevidenced portions remain a disclosed bound, not a floor.",
         "atl_per_individual_cap_guidance": "DATED AGENCY RULE, APPLIES TO IDENTIFIED PAYEES ONLY: ESD Film Tax Credit Program Guidelines, "
                                            "April 2025 version (file dated 20250418; same text in the May 2023 version), changes effective "
                                            "April 1, 2023: ATL salaries are 'subject to a $500,000 cap per individual and limited to 40% of all "
                                            "other qualified production costs'. Tax Law 24 as displayed (revision 2025-07-11) states the 40% group "
                                            "limit and at most two producers but no per-person dollar cap; that silence does not disprove the "
-                                           "agency rule. Executable in calculators/ny_atl_individual_cap.py: capped only for an identified payee "
-                                           "whose compensation is evidenced complete, and only for costs incurred on or after 2023-04-01. An "
-                                           "aggregate parsed account, or a payee whose other compensation is not evidenced, stays UNRESOLVED "
-                                           "and is never capped or assumed. UNRESOLVED: no producer input path for payee identity yet feeds the "
-                                           "pricing engine, so engine prices carry no per-individual reduction.",
+                                           "agency rule. Executed in the qualification register (calculators/ny_atl_individual_cap.py): an identified payee with evidenced-complete NY compensation is cut at $500,000 (excess EXCLUDED, summed across that payee's accounts), only for costs established as on or after 2023-04-01; an account not tied to an identified payee stays at its qualified amount with an explicit UNRESOLVED note and is never capped or assumed. The 40% group limit is applied definitively, pro rata, after the individual cap. Payee identity and complete compensation are stated through POST /projects/{id}/ny-program-facts (backend path; the Overview/Inspector control is a pending UI stage). Unresolved: the two-producer limit (only one executive and one line producer qualify) and composer fees inside music accounts are not tested.",
         "scoring_uplift": "+10% on scoring costs if scoring pays a minimum of 5 musicians",
         "min_spend_nyc_metro_usd": "1,000,000",
     },
@@ -348,11 +348,13 @@ register(ProgramRequirementsProfile(
         "upstate_uplift": "+10% on wages or salaries for post-production work at a qualified facility in the listed upstate counties, "
                           "film budget of at least $500,000 (Tax Law 31(a)(6)); EXCLUDES writers, directors, composers, producers and "
                           "performers (background actors with no scripted lines are not excluded). A different base from the production "
-                          "credit's upstate labor uplift; not modeled as a priced tier.",
+                          "credit's upstate labor uplift. Priced as a subset uplift (rate_rules.SUBSET_UPLIFT_RULES) on the evidenced wage portion of each "
+                          "post account only; unevidenced portions stay a disclosed bound.",
         "rate_by_facility_location": "30% of qualified post-production costs at a facility inside the Metropolitan Commuter Transportation "
                                      "District; 35% at a qualified facility elsewhere in the state (Tax Law 31(a)(2), displayed 2025-07-11; ESD "
-                                     "Guidelines April 2025 p.2). Priced at 30% unless the producer fact 'ny_post_facility_outside_mctd' is "
-                                     "evidenced. UNRESOLVED: no producer input path sets that fact yet.",
+                                     "Guidelines April 2025 p.2). 30% is the guaranteed rate; 35% is shown as a conditional planning scenario until "
+                                     "the producer states 'ny_post_facility_outside_mctd' (becomes guaranteed) or 'ny_post_facility_inside_mctd' (scenario removed), "
+                                     "stated through POST /projects/{id}/ny-program-facts (backend path; the UI control is a pending stage).",
         "vfx_animation_subthreshold": "lesser of $500,000 or 10% of total post-production cost",
         "eligible_production_profile": "production shot substantially outside NY, post routed to an NY facility",
     },

@@ -169,6 +169,11 @@ class RateCondition:
     # receives -- absence is UNKNOWN/unsatisfied, never assumed true.
     required_boolean_fact_key: str | None = None
 
+    #: The inverse gate: when ANY of these evidenced facts is present the tier is ineligible. Used for a conditional scenario
+    #: tier that must disappear once the producer evidences the alternative (e.g. NY post facility inside vs outside the
+    #: Metropolitan Commuter Transportation District). Absence leaves the tier eligible as an unresolved scenario.
+    blocked_by_boolean_fact_keys: tuple[str, ...] = ()
+
     # True (the default) when an unsatisfied amount_fact_min/
     # required_boolean_fact_key condition removes its OWN tier from
     # eligibility entirely (correct for an ordinary flat-rate/floor tier:
@@ -467,6 +472,9 @@ CONDITION_KIND_STATE: dict[str, str] = {
     # never mistaken for the producer's own modeled rate.
     "investor_side_rate_proxy_not_producer_qpe": CONDITION_STATE_DISCLOSURE_ONLY,
     "atl_subcap_not_enforced": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # A limit that the qualification register already applies line by line (e.g. NY above-the-line limits); shown for
+    # provenance, never re-decided at rate-resolution time.
+    "applied_in_qualification_register": CONDITION_STATE_DISCLOSURE_ONLY,
     # Funding availability/appropriation risk is a real, material,
     # non-statutory risk factor -- disclosed, never treated as a legal gate.
     "material_funding_risk_not_modeled": CONDITION_STATE_DISCLOSURE_ONLY,
@@ -2229,6 +2237,8 @@ def _amount_and_boolean_conditions_met(
         if cond.required_boolean_fact_key is not None:
             if cond.required_boolean_fact_key not in evidenced:
                 return False
+        if cond.blocked_by_boolean_fact_keys and any(k in evidenced for k in cond.blocked_by_boolean_fact_keys):
+            return False
         if cond.fx_native_currency is not None and cond.fx_native_threshold_amount is not None:
             converted = _fx_native_amount(qpe_usd, cond.fx_native_currency, fx_context)
             if converted is None or converted[0] < cond.fx_native_threshold_amount:
@@ -2915,6 +2925,12 @@ def resolve_program_rate(
 
     if not tier.is_band_ceiling:
         band_note = ""
+    elif not any(c.kind == "discretionary_band" for c in tier.conditions):
+        band_note = (
+            " This higher rate applies only if the project fact named in its condition is evidenced; until then it is a "
+            "conditional planning scenario, not an award or a guarantee"
+            + (f", and the guaranteed rate is {floor_rate:.0%}." if has_guaranteed_floor else ".")
+        )
     elif has_guaranteed_floor:
         band_note = (
             " The source says 'up to' this rate — it is a modeling ceiling subject to "
@@ -2959,7 +2975,20 @@ class EligibleSubsetUpliftRule:
     eligible_production_types: frozenset[str] | None = None
     excluded_fact: str | None = None
     source_ref: str = ""
+    #: Evidenced fact that must be present before ANY of this uplift is confirmed (a statutory prerequisite such as
+    #: "majority of principal-photography days in the listed counties"). Absent: the uplift stays an unconfirmed bound.
+    prerequisite_fact: str | None = None
+    #: Evidenced fact attesting that EVERY eligible qualified line is wholly within the uplift's base, so no per-line
+    #: subset is needed. Without it each line needs its own `uplift_basis:` evidenced amount.
+    whole_base_fact: str | None = None
+    #: True for an uplift that exists only by application/election (e.g. NY Production Plus): without its prerequisite
+    #: fact it contributes nothing, not even a bound.
+    potential_requires_prerequisite: bool = False
+    #: The film's gross budget must be at least this (statutory minimum budget); below it the uplift does not apply.
+    min_gross_budget_usd: float | None = None
 
+
+_NY_LABOR_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
 
 # Bases require line-specific evidenced USD portions. A whole-program rate
 # confirmation cannot stand in for the qualified subset or its predicates.
@@ -2968,6 +2997,39 @@ SUBSET_UPLIFT_RULES = {
         EligibleSubsetUpliftRule("outside_la_zone", .05, source_ref="CFC Program 4.0 Guidelines Jan 2026 III.2: applicable-period qualified out-of-zone expenses; prorate mixed-use goods"),
         EligibleSubsetUpliftRule("local_hire_outside_la", .10, eligible_categories=frozenset({"btl_crew_labor", "btl_resident_labor", "payroll_fringes"}), source_ref="CFC Program 4.0 Guidelines Jan 2026 III.3: qualified resident wages, residence AND work outside LA zone; proof required"),
         EligibleSubsetUpliftRule("qualified_vfx", .05, eligible_categories=frozenset({"vfx"}), excluded_fact="ca_film_independent_category", source_ref="CFC Program 4.0 Guidelines Jan 2026 III.1: eligible non-independent/TV category; $10m CA VFX OR 75% worldwide VFX; eligible vendor categories"),
+    ),
+    "ny_state_film": (
+        EligibleSubsetUpliftRule(
+            "upstate_labor", .10, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="ny_all_costs_in_listed_counties",
+            min_gross_budget_usd=500_000.0,
+            source_ref="Tax Law 24(a)(5) (displayed 2025-07-11) and ESD Guidelines April 2025 p.2: +10% of wages, salaries or other compensation constituting qualified "
+                       "production costs for services performed and property used in the listed counties, film budget of at least $500,000; includes qualifying above-the-line "
+                       "compensation after the ATL limits"),
+        EligibleSubsetUpliftRule(
+            "upstate_other_costs", .10, excluded_categories=_NY_LABOR_CATEGORIES, whole_base_fact="ny_all_costs_in_listed_counties",
+            prerequisite_fact="ny_majority_principal_photography_days_in_listed_counties", min_gross_budget_usd=500_000.0,
+            source_ref="Tax Law 24(a)(5) and ESD Guidelines April 2025 p.2: other qualified costs in the listed counties also earn +10% only if the majority of "
+                       "principal-photography shooting days were shot there"),
+        EligibleSubsetUpliftRule(
+            "scoring", .10, eligible_categories=frozenset({"music"}), prerequisite_fact="ny_scoring_five_musicians_in_state",
+            source_ref="Tax Law 24(a)(2) (displayed 2025-07-11): qualified costs attributable to scoring incurred within the state earn +10% when the scoring costs "
+                       "include payment to a minimum of five musicians; a music account that also holds licensing needs the scoring portion per line"),
+        EligibleSubsetUpliftRule(
+            "production_plus_10", .10, exclusive_group="production_plus", whole_base_fact="ny_production_plus_10pct_tier",
+            prerequisite_fact="ny_production_plus_10pct_tier", potential_requires_prerequisite=True,
+            source_ref="Tax Law 24(a)(6) Production Plus program: additional 10% of qualified production costs in New York by application, where the applicant's "
+                       "initial applications total at least $100 million; participation is evidenced, never assumed"),
+        EligibleSubsetUpliftRule(
+            "production_plus_5", .05, exclusive_group="production_plus", whole_base_fact="ny_production_plus_5pct_tier",
+            prerequisite_fact="ny_production_plus_5pct_tier", potential_requires_prerequisite=True,
+            source_ref="Tax Law 24(a)(6) Production Plus program: additional 5% where the applicant's initial applications total at least $20 million"),
+    ),
+    "us_ny_post_production_credit": (
+        EligibleSubsetUpliftRule(
+            "upstate_post_wages", .10, eligible_categories=frozenset({"post_production", "sound", "vfx"}), min_gross_budget_usd=500_000.0,
+            source_ref="Tax Law 31(a)(6) (displayed 2025-07-11): +10% of wages or salaries paid to individuals directly employed at a qualified post facility in the "
+                       "listed counties, other than writers, directors, composers, producers and performers; facility fees, equipment and vendor charges are not wages, "
+                       "so each line needs its evidenced wage portion"),
     ),
     "us_nm_film_credit": (
         EligibleSubsetUpliftRule("rural_location", .10, excluded_categories=frozenset({"btl_nonresident_labor"}), source_ref="TRD FYI-370 July 2025 p4: qualifying rural-location goods/services; rental prorating; excludes nonresident BTL"),
