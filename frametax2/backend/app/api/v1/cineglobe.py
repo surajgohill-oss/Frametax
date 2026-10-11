@@ -869,6 +869,8 @@ class NyProgramFacts(BaseModel):
     evidenced: dict[str, Any] = {}
     payees: list[dict[str, Any]] = []
     uplift_basis: list[dict[str, Any]] = []
+    producer_roles: list[dict[str, Any]] = []
+    composer_portions: list[dict[str, Any]] = []
 
 
 @router.post("/projects/{project_id}/program-facts")
@@ -882,7 +884,8 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     try:
-        applied = await write_ny_program_facts(db, project.id, evidenced=body.evidenced, payees=body.payees, uplift_basis=body.uplift_basis)
+        applied = await write_ny_program_facts(db, project.id, evidenced=body.evidenced, payees=body.payees, uplift_basis=body.uplift_basis,
+                                              producer_roles=body.producer_roles, composer_portions=body.composer_portions)
     except ValueError as exc:
         await db.rollback()
         raise HTTPException(status_code=422, detail=str(exc))

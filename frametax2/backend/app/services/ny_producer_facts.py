@@ -83,14 +83,23 @@ async def _upsert(session: AsyncSession, project_id, key: str, value: str | None
                                 source_type=ProjectFactSourceType.USER_OVERRIDE.value, review_status=ReviewStatus.APPROVED.value))
 
 
+PRODUCER_ROLES = ("executive", "line", "other")
+
+
 async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced: dict | None = None,
-                                 payees: list[dict] | None = None, uplift_basis: list[dict] | None = None) -> dict:
-    """Validate and persist producer-stated NY facts. `evidenced`: {fact id: true|null} (null clears -> Unknown).
-    `payees`: [{line_id, payee_id, compensation_complete}] (payee_id null clears). `uplift_basis`: [{program, uplift, line_id,
-    amount_usd}] (amount_usd null clears). Raises ValueError with the reason on any invalid entry; nothing is written then."""
+                                 payees: list[dict] | None = None, uplift_basis: list[dict] | None = None,
+                                 producer_roles: list[dict] | None = None, composer_portions: list[dict] | None = None) -> dict:
+    """Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
+    mutually exclusive pair (inside/outside the commuter district, Production Plus 10%/5% tier) REPLACES the stored partner in the same
+    transaction, so two contradictory elections can never be stored; stating both in one request is rejected. `payees`:
+    [{line_id, payee_id, compensation_complete}] (payee_id null clears). `producer_roles`: [{line_id, role: executive|line|other|null}].
+    `composer_portions`: [{line_id, amount_usd}] -- the part of a music account that is composer compensation (null clears).
+    `uplift_basis`: [{program, uplift, line_id, amount_usd}] (amount_usd null clears). Raises ValueError with the reason on any invalid
+    entry; nothing is written then."""
     from app.data.program_rate_rules import SUBSET_UPLIFT_RULES
     evidenced, payees, uplift_basis = evidenced or {}, payees or [], uplift_basis or []
-    lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis) else {}
+    producer_roles, composer_portions = producer_roles or [], composer_portions or []
+    lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions) else {}
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
             raise ValueError(f"'{fid}' is not a settable program fact")
@@ -104,6 +113,18 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             raise ValueError(f"payee line {p.get('line_id')!r} is not a line of this project's budget")
         if p.get("payee_id") is not None and not str(p["payee_id"]).strip():
             raise ValueError("payee_id must be a non-empty identifier or null")
+    for r in producer_roles:
+        if str(r.get("line_id")) not in lines:
+            raise ValueError(f"producer role line {r.get('line_id')!r} is not a line of this project's budget")
+        if r.get("role") is not None and r["role"] not in PRODUCER_ROLES:
+            raise ValueError(f"producer role must be one of {PRODUCER_ROLES} or null")
+    for c in composer_portions:
+        if str(c.get("line_id")) not in lines:
+            raise ValueError(f"composer line {c.get('line_id')!r} is not a line of this project's budget")
+        amount = c.get("amount_usd")
+        if amount is not None and (isinstance(amount, bool) or not isinstance(amount, (int, float)) or not math.isfinite(amount)
+                                   or amount < 0 or amount > lines[str(c["line_id"])] + 0.005):
+            raise ValueError(f"composer portion for line {c['line_id']} must be a finite number within the line's budget amount")
     for u in uplift_basis:
         rule_ids = {r.uplift_id for r in SUBSET_UPLIFT_RULES.get(u.get("program"), ())}
         if u.get("uplift") not in rule_ids:
@@ -114,7 +135,15 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if amount is not None and (isinstance(amount, bool) or not isinstance(amount, (int, float)) or not math.isfinite(amount)
                                    or amount < 0 or amount > lines[str(u["line_id"])] + 0.005):
             raise ValueError(f"uplift amount for line {u['line_id']} must be a finite number within the line's budget amount")
+    replaced: list[str] = []
     for fid, value in evidenced.items():
+        partner = NY_EVIDENCED_FACTS[fid]
+        if value is True and partner:
+            stored = (await session.execute(select(ProjectFact).where(
+                ProjectFact.project_id == project_id, ProjectFact.fact_key == EVIDENCED_PREFIX + partner))).scalar_one_or_none()
+            if stored is not None:
+                await session.delete(stored)       # the producer changed the answer: the contradictory partner is cleared atomically
+                replaced.append(partner)
         await _upsert(session, project_id, EVIDENCED_PREFIX + fid, "true" if value is True else None, "boolean")
     for p in payees:
         lid = str(p["line_id"])
@@ -122,6 +151,11 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         await _upsert(session, project_id, f"line_fact:{lid}:payee_id", pid, "string")
         await _upsert(session, project_id, f"line_fact:{lid}:payee_compensation_complete",
                       "true" if (pid and p.get("compensation_complete") is True) else None, "boolean")
+    for r in producer_roles:
+        await _upsert(session, project_id, f"line_fact:{str(r['line_id'])}:producer_role", r.get("role"), "string")
+    for c in composer_portions:
+        amount = c.get("amount_usd")
+        await _upsert(session, project_id, f"line_fact:{str(c['line_id'])}:composer_compensation_usd", None if amount is None else repr(float(amount)), "number")
     if uplift_basis:
         row = (await session.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key == UPLIFT_BASIS_FACT_KEY))).scalar_one_or_none()
         data = json.loads(row.value) if row is not None and row.value else {}
@@ -133,4 +167,6 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
                 by_line[str(u["line_id"])] = float(u["amount_usd"])
         await _upsert(session, project_id, UPLIFT_BASIS_FACT_KEY, json.dumps(data, sort_keys=True), "json")
     await session.flush()
-    return {"evidenced": sorted(evidenced), "payee_lines": [str(p["line_id"]) for p in payees], "uplift_lines": [str(u["line_id"]) for u in uplift_basis]}
+    return {"evidenced": sorted(evidenced), "replaced": replaced, "payee_lines": [str(p["line_id"]) for p in payees],
+            "producer_role_lines": [str(r["line_id"]) for r in producer_roles], "composer_lines": [str(c["line_id"]) for c in composer_portions],
+            "uplift_lines": [str(u["line_id"]) for u in uplift_basis]}

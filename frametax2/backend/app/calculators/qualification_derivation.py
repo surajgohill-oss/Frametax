@@ -176,6 +176,9 @@ class ProductionFacts:
     #: app.calculators.ny_atl_individual_cap). Empty/False leaves every other program byte-identical.
     ny_atl_limits_apply: bool = False
     ny_atl_payee_by_line: tuple = ()
+    #: (line_id, USD) composer compensation inside a music account, and (line_id, role code) producer roles -- producer-stated.
+    ny_atl_composer_by_line: tuple = ()
+    ny_atl_producer_role_by_line: tuple = ()
 
     def work_outside(self, account_code: str, category: str) -> bool:
         if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
@@ -554,5 +557,7 @@ def derive_qualification_register(
             register,
             {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items},
             dict(facts.ny_atl_payee_by_line),
+            composer_by_line=dict(facts.ny_atl_composer_by_line), role_by_line=dict(facts.ny_atl_producer_role_by_line),
+            subaccounts_by_line={l.line_id: l.source_subaccounts for l in line_items if l.source_subaccounts},
         )
     return register
