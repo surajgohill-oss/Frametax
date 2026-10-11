@@ -128,7 +128,7 @@ function scenarioOptionLabel(structure) {
 // comment for the full contract.
 
 // Autofit title: starts at `max` px and shrinks (down to `min`) until the text fits its fixed box, re-fitting when the box resizes.
-function FitName({ children, title, max = 22, min = 11, className = "wsx-nm" }) {
+function FitName({ children, title, max = 22, min = 11, wrap = false, className = "wsx-nm" }) {
   const ref = useRef(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -145,16 +145,21 @@ function FitName({ children, title, max = 22, min = 11, className = "wsx-nm" }) 
     };
     // One line first (never a flag stranded above its name); wrap onto the second row only when one line cannot hold it.
     const fit = () => {
-      el.style.whiteSpace = "nowrap";
-      if (shrink(max, Math.max(min, max - 6))) return;
-      el.style.whiteSpace = "normal";
-      shrink(max - 2, min);
+      if (!wrap) {
+        el.style.whiteSpace = "nowrap";
+        if (shrink(max, Math.max(min, max - 6))) return;
+        el.style.whiteSpace = "normal";
+        shrink(max - 2, min);
+        return;
+      }
+      el.style.whiteSpace = "normal";   // wraps around the floated status stack
+      shrink(max, min);
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [children, max, min]);
+  }, [children, max, min, wrap]);
   return <div ref={ref} className={`${className} wsx-fit`} title={title}>{children}</div>;
 }
 
@@ -349,8 +354,8 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, isBestPri
               No rate or percentage on the card face -- those stay in the Inspector. */}
           {isOptimizerCard ? (
             <>
-              <div className="wsx-lh-top">{headerActions}</div>
-              <FitName max={20} title={titleTip}>{flags ? `${flags} ${name}` : name}</FitName>
+              {headerActions}
+              <FitName max={20} wrap title={titleTip}>{flags ? `${flags} ${name}` : name}</FitName>
             </>
           ) : (
             <>

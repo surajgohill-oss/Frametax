@@ -2167,3 +2167,20 @@
 
 .wsx-lh-top { justify-content: flex-end; }
 .wsx-lh-top .wsx-lh-act { flex: none; }
+
+/* CARD REFINEMENT 6: optimizer header = title block anchored top-left, wrapping beside a right-hand stack (status above, Set as
+   leading below). */
+.wsx-lh.multi .wsx-lh-id { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.wsx-lh.multi .wsx-lh-id .wsx-fit { align-self: flex-start; flex: 1; min-width: 0; height: 52px; }
+.wsx-lh.multi .wsx-lh-act { flex-direction: column-reverse; align-items: flex-end; justify-content: flex-start; gap: 6px; }
+.wsx-lh.multi .wsx-lh-act .wsx-badge { line-height: 16px; }
+.wsx-rack:has(.wsx-lh.multi) .wsx-lh { height: 70px; min-height: 70px; }
+.wsx-rack:has(.wsx-lh.multi) .wsx-lane.anchor .wsx-lh { height: 68px; min-height: 68px; }
+
+/* CARD REFINEMENT 7: the status / Set-as-leading stack floats top-right and the title wraps around it, then spans the full width
+   beneath it, anchored top-left (overflow: clip keeps the title block from becoming a float-blocking formatting context). */
+.wsx-lh.multi .wsx-lh-id { display: block; }
+.wsx-lh.multi .wsx-lh-act { float: right; margin: 0 0 4px 10px; }
+.wsx-lh.multi .wsx-lh-id .wsx-fit { display: block; overflow: clip; height: 64px; align-self: auto; }
+.wsx-rack:has(.wsx-lh.multi) .wsx-lh { height: 78px; min-height: 78px; }
+.wsx-rack:has(.wsx-lh.multi) .wsx-lane.anchor .wsx-lh { height: 76px; min-height: 76px; }
