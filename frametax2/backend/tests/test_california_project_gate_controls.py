@@ -122,19 +122,30 @@ def test_lls_manitoba_california_hybrid_fails_the_california_gate_so_the_stale_r
     assert "0.3% of the production budget" in res.rejection_reason and "0.0% of principal photography" in res.rejection_reason
 
 
-def test_lls_independent_manitoba_only_reconstruction_against_the_stale_row():
-    """Hand reconstruction from the raw category totals (assumptions are the test's contract, not engine output):
-    A1 labour = atl_producer + atl_cast + atl_writer + atl_director + btl_crew_labor (payroll fringes excluded: employer payroll deductions are not
-       eligible salaries; 'miscellaneous' is unclassified and not assumed to be labour) = 2,935,298 -> 45% cost-of-salaries credit = 1,320,884.10
-    A2 cost-of-production alternative: 30% of all eligible Manitoba expenditures; assumed ineligible: finance costs 1,700,000, the unspent
-       contingency 400,000, the residuals reserve 400,000 and travel 60,561 -> eligible 9,423,093 -> 2,826,927.90
-    The corporation claims one, so the planning figure is the larger (A2); NPC = gross - credit. The stale row's Manitoba floor (4,249,644.30) was
-    45% of a 9,443,654 all-spend base and is NOT supportable; California adds nothing."""
+def test_lls_independent_manitoba_reconstruction_against_the_stale_row_and_the_current_engine():
+    """Hand reconstruction from the raw category totals; the assumptions are this test's contract, not engine output.
+    A1 cost-of-salaries credit: 45% of labour = atl_producer + atl_cast + atl_writer + atl_director + btl_crew_labor (payroll fringes excluded as employer
+       payroll deductions; 'miscellaneous' is unclassified and not assumed to be labour) = 2,935,298 -> 1,320,884.10
+    A2 cost-of-production alternative: 30% of all eligible Manitoba expenditures. Assumed ineligible: finance costs 1,700,000, the unspent contingency
+       400,000 and the residuals reserve 400,000 (obligations, not incurred spend). In-Manitoba travel 60,561 is assumed ELIGIBLE: the budget does not
+       separate per diems / living expenses (ineligible) from other travel, so excluding it is a sensitivity (-18,168.30), not an assumption.
+       Eligible (all production in Manitoba) = 11,983,654 - 2,500,000 = 9,483,654 -> 2,845,096.20
+    The corporation claims one credit, so the planning figure is the larger (A2). California adds nothing (gate fails). The stale row's Manitoba floor
+    (4,249,644.30) was 45% of a 9,443,654 ALL-SPEND base, which is not the cost-of-salaries base."""
     labour = sum(LLS[c] for c in ("atl_producer", "atl_cast", "atl_writer", "atl_director", "btl_crew_labor"))
     assert labour == 2_935_298.0 and round(0.45 * labour, 2) == 1_320_884.10
-    eligible = SAVED["gross"] - LLS["finance_costs"] - LLS["contingency"] - LLS["residuals_reserve"] - LLS["travel"]
-    assert eligible == 9_423_093.0 and round(0.30 * eligible, 2) == 2_826_927.90
+    eligible = SAVED["gross"] - LLS["finance_costs"] - LLS["contingency"] - LLS["residuals_reserve"]
+    assert eligible == 9_483_654.0 and round(0.30 * eligible, 2) == 2_845_096.20
+    sensitivity_no_travel = round(0.30 * (eligible - LLS["travel"]), 2)
+    assert sensitivity_no_travel == 2_826_927.90 and round(2_845_096.20 - sensitivity_no_travel, 2) == 18_168.30
     planning = max(round(0.45 * labour, 2), round(0.30 * eligible, 2))
-    assert planning == 2_826_927.90 and round(SAVED["gross"] - planning, 2) == 9_156_726.10
-    assert round(SAVED["total_incentive"] - planning, 2) == 1_436_716.40, "the stale row overstates the incentive by this much under these assumptions"
-    assert round(SAVED["npc"] - (SAVED["gross"] - planning), 2) == -1_436_716.40
+    new_npc = round(SAVED["gross"] - planning, 2)
+    assert planning == 2_845_096.20 and new_npc == 9_138_557.80
+    # the current engine, run on the same inputs as one all-Manitoba candidate (DB-free, no real project), reproduces the hand figure to the cent
+    from app.calculators.production_allocation import COMPONENT_BY_SPEND_CATEGORY
+    everything = _comp("principal_production", "CA-MB", MB, [
+        _alloc(str(i), amount, COMPONENT_BY_SPEND_CATEGORY.get(cat, "principal_photography"), "CA-MB", str(i), cat) for i, (cat, amount) in enumerate(LLS.items())])
+    res = _run([everything], SAVED["gross"])
+    assert res.executable is True and res.total_guaranteed_incentive_usd == pytest.approx(planning) and res.npc_usd == pytest.approx(new_npc)
+    # versus the stale row (canonical-1.110.0): overstated incentive and understated NPC by the same amount
+    assert round(SAVED["total_incentive"] - planning, 2) == 1_418_548.10 and round(new_npc - SAVED["npc"], 2) == 1_418_548.10
