@@ -23,7 +23,7 @@ def _scoped(code: str) -> bool:
     return code == "US" or code.startswith(("US-", "CA", "MX"))
 
 
-def _price(jur: str, slug: str, qpe: float, fx=None):
+def _price(jur: str, slug: str, qpe: float, fx=None, confirmed=None):
     alloc = AccountAllocation(
         account_code="3100", description="below-the-line production spend", amount_usd=qpe, component="production",
         jurisdiction_code=jur, assignment_kind=AssignmentKind.FIXED, rationale="scope control", governing_decision="scope-control",
@@ -32,6 +32,7 @@ def _price(jur: str, slug: str, qpe: float, fx=None):
     return price_segment(
         jurisdiction_code=jur, program_slug=slug, allocations=[alloc], spend_category_by_code={"3100": "btl_crew_labor"},
         offshore_payroll_accounts=frozenset(), production_type="feature_film", gross_budget_usd=qpe * 1.4, fx_context=fx,
+        confirmed_ceiling_programs=confirmed,
     )
 
 
@@ -158,21 +159,30 @@ def test_mxn_is_a_tracked_currency_so_a_live_refresh_fetches_it():
     assert pn._JURISDICTION_CURRENCY["MX"] == "MXN" and "MXN" in pn.ALL_TRACKED_CURRENCIES
 
 
+MX_CONFIRMED = frozenset({"mx_federal_film_incentive_2026"})   # the Comite Tecnico's authorization of the full 30% for this project (producer-confirmed scenario)
+
+
+def test_mexico_is_an_unconfirmed_committee_ceiling_until_the_award_is_confirmed():
+    # Lineamientos (DOF 2026-03-30) lineamiento 4 III: the Comite Tecnico sets the percentage per project; 30% is only the ceiling.
+    seg = _price("MX", "mx_federal_film_incentive_2026", 12_000_000.0, _fx(MXN=20.0))
+    assert not seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation and seg.incentive_floor_usd in (None, 0, 0.0)
+
+
 def test_mexico_cap_converts_through_the_fx_context_and_binds_a_large_credit():
     rate = 20.0  # synthetic MXN per USD
-    big = _price("MX", "mx_federal_film_incentive_2026", 12_000_000.0, _fx(MXN=rate))
+    big = _price("MX", "mx_federal_film_incentive_2026", 12_000_000.0, _fx(MXN=rate), MX_CONFIRMED)
     cap_usd = 40_000_000.0 / rate
     assert big.executable and big.incentive_cap_type == "per_project_native"
     assert big.incentive_cap_usd == pytest.approx(cap_usd)
     assert big.incentive_floor_usd == pytest.approx(cap_usd)           # 30% x 12m = 3.6m > 2.0m cap
-    mid = _price("MX", "mx_federal_film_incentive_2026", 3_000_000.0, _fx(MXN=rate))
+    mid = _price("MX", "mx_federal_film_incentive_2026", 3_000_000.0, _fx(MXN=rate), MX_CONFIRMED)
     assert mid.incentive_floor_usd == pytest.approx(3_000_000.0 * 0.30) and mid.incentive_cap_applied_usd == 0.0
 
 
 def test_mexico_minimum_spend_is_evaluated_natively_in_mxn():
     rate = 20.0
-    below = _price("MX", "mx_federal_film_incentive_2026", 39_999_999.0 / rate, _fx(MXN=rate))
-    above = _price("MX", "mx_federal_film_incentive_2026", 40_000_000.0 / rate, _fx(MXN=rate))
+    below = _price("MX", "mx_federal_film_incentive_2026", 39_999_999.0 / rate, _fx(MXN=rate), MX_CONFIRMED)
+    above = _price("MX", "mx_federal_film_incentive_2026", 40_000_000.0 / rate, _fx(MXN=rate), MX_CONFIRMED)
     assert not below.executable and above.executable
 
 

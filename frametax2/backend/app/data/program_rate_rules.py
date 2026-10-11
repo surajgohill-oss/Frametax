@@ -3050,14 +3050,18 @@ SUBSET_UPLIFT_RULES = {
     ),
     "ca_mb_film_video_credit": (
         EligibleSubsetUpliftRule(
-            "frequent_filming", .10, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="mb_frequent_filming_bonus",
-            source_ref="Manitoba Film & Music: +10% when this is the third film shot in Manitoba within a two-year period"),
+            "frequent_filming", .10, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="mb_frequent_filming_third_film_in_two_years",
+            prerequisite_fact="mb_frequent_filming_principal_owner_declared",
+            source_ref="Manitoba Film & Music TC1 Cost of Salaries Guidelines (June 2024) section I: +10% on the third film shot in Manitoba within a two-year period "
+                       "(series: one credit per two hours of airtime), and a declared Principal Owner (at least 50% of the voting shares throughout principal photography)"),
         EligibleSubsetUpliftRule(
-            "manitoba_producer", .05, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="mb_manitoba_producer_bonus",
-            source_ref="Manitoba Film & Music: +5% for co-producing with a Manitoba producer"),
+            "manitoba_producer", .05, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="mb_resident_producer_screen_credit",
+            source_ref="Manitoba Film & Music TC1 guidelines section K: +5% when a Manitoba resident fills the role of Producer, Co-Producer or Executive Producer and receives a screen credit as such"),
         EligibleSubsetUpliftRule(
-            "rural_northern", .05, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="mb_rural_northern_bonus",
-            source_ref="Manitoba Film & Music: +5% for shooting no less than 50% of the Manitoba production days at least 35 km from Winnipeg centre"),
+            "rural_northern", .05, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="mb_rural_majority_days_35km",
+            prerequisite_fact="mb_rural_permanent_establishment_35km",
+            source_ref="Manitoba Film & Music TC1 guidelines section J: +5% when the applicant has a permanent establishment in Manitoba at least 35 km from Winnipeg "
+                       "AND at least 50% of the Manitoba shooting days (7.5 hours of principal photography = one day) took place at least 35 km from Winnipeg's centre"),
     ),
     "ca_qc_pstc": (
         EligibleSubsetUpliftRule(

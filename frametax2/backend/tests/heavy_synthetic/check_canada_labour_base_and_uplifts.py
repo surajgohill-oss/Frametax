@@ -71,7 +71,8 @@ async def test_labour_bases_and_every_uplift_price_when_their_base_is_stated_and
         await write_ny_program_facts(db, pid, evidenced={
             "on_ofttc_labour_outside_gta": True, "on_ofttc_first_time_producer": True,
             "bc_labour_in_regional_zone": True, "bc_labour_in_distant_location_zone": True,
-            "mb_frequent_filming_bonus": True, "mb_manitoba_producer_bonus": True, "mb_rural_northern_bonus": True,
+            "mb_frequent_filming_third_film_in_two_years": True, "mb_frequent_filming_principal_owner_declared": True,
+            "mb_resident_producer_screen_credit": True, "mb_rural_permanent_establishment_35km": True, "mb_rural_majority_days_35km": True,
         })
         await _evaluate(db, pid)
         ofttc = await _entry(db, pid, "on_ofttc")

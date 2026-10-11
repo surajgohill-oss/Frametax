@@ -553,7 +553,8 @@ _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_cre
 
 #: Programs with an elective alternative credit on a different base: slug -> (alternative rate on total qualifying spend, label).
 _ALTERNATIVE_ELECTION_PROGRAMS = {
-    "ca_mb_film_video_credit": (0.30, "The Manitoba cost-of-production credit (30% of all eligible Manitoba production expenditures)"),
+    "ca_mb_film_video_credit": (0.30, "The Manitoba cost-of-production credit (30% of all eligible Manitoba production expenditures)",
+                                0.08, "mb_production_company_bonus_eligible"),
 }
 
 
@@ -1755,16 +1756,22 @@ def price_segment(
     election_notes: tuple[str, ...] = ()
     alternative = _ALTERNATIVE_ELECTION_PROGRAMS.get(slug)
     if alternative is not None:
-        alt_rate, alt_label = alternative
-        alt_usd = round(qpe * alt_rate, 2)
-        if alt_usd > floor_incentive_usd:
-            election_notes = (f"{alt_label} is the higher of the two elective credits for this base (${alt_usd:,.2f} vs ${floor_incentive_usd:,.2f}); "
+        alt_rate, alt_label, bonus_rate, bonus_fact = alternative
+        bonus_stated = bonus_fact in (evidenced_requirement_facts or frozenset())
+        alt_floor = round(qpe * (alt_rate + (bonus_rate if bonus_stated else 0.0)), 2)
+        alt_potential = round(qpe * (alt_rate + bonus_rate), 2)
+        if alt_floor > floor_incentive_usd:
+            election_notes = (f"{alt_label} is the higher of the two elective credits for this base (${alt_floor:,.2f} vs ${floor_incentive_usd:,.2f}); "
                               "the corporation claims one, so the planning figure uses it.",)
-            floor_incentive_usd = alt_usd
+            floor_incentive_usd = alt_floor
         else:
-            election_notes = (f"{alt_label} (${alt_usd:,.2f}) is the alternative elective credit and is lower than the credit priced here; "
+            election_notes = (f"{alt_label} (${alt_floor:,.2f}) is the alternative elective credit and is lower than the credit priced here; "
                               "the corporation claims one.",)
-        ceiling_incentive_usd = max(ceiling_incentive_usd, floor_incentive_usd)
+        if not bonus_stated:
+            election_notes += (f"Its +{bonus_rate:.0%} Manitoba production company bonus (co-production with an eligible Manitoba production company) is "
+                               f"a bound of ${alt_potential:,.2f} until '{bonus_fact}' is stated.",)
+        ceiling_incentive_usd = max(ceiling_incentive_usd, floor_incentive_usd, alt_potential if not bonus_stated else floor_incentive_usd)
+        ceiling_requires_confirmation = ceiling_requires_confirmation or (not bonus_stated and alt_potential > floor_incentive_usd)
 
     # ── Cluster 7: dollar caps constrain the INCENTIVE ───────────────────
     # Canonical sequence: qualifying base x rate (+ uplift) = gross

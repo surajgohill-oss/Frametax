@@ -4380,8 +4380,17 @@ MX_DOCTRINE = register(DoctrineRecord(
     ),
     tiers=(
         DoctrineRateTier(
-            tier_id="mx-flat-30", rate=0.30, is_band_ceiling=False,
+            tier_id="mx-up-to-30-committee-ceiling", rate=0.30, is_band_ceiling=True,
             conditions=(RateCondition(
+                condition_id="mx-committee-sets-the-percentage",
+                description="The credit is 'hasta el 30%' (Decreto, Primero) and the percentage a project may apply is SET BY THE COMITE TECNICO per "
+                            "project from its eligibility analysis (Lineamientos, DOF 2026-03-30, lineamiento 4 fraccion III: 'Determinar el porcentaje "
+                            "del estimulo fiscal que podra aplicar el Sujeto autorizado'; lineamiento 13 refers to 'el porcentaje maximo'; lineamiento 19 "
+                            "lists the five criteria -- proveeduria, presupuestal, territorial, cultural, formacion -- analysed in the Constancia de "
+                            "autorizacion). 30% is the ceiling, not a guaranteed rate; there is no numeric scoring formula.",
+                quote="Determinar el porcentaje del estimulo fiscal que podra aplicar el Sujeto autorizado (Lineamientos, DOF 30/03/2026, lineamiento 4, III)",
+                kind="discretionary_band"),
+                RateCondition(
                 condition_id="mx-min-spend-native-mxn",
                 description="Minimum qualifying Mexico spend for a feature / narrative / animation "
                             "title: MXN 40,000,000 (documentary MXN 20,000,000; animation/VFX/post-only "
@@ -7070,8 +7079,10 @@ CA_AB_DOCTRINE = register(DoctrineRecord(
     annual_cap_usd=None, requires_cultural_test=False,
     citation="thereactionlab.com (corroborated): 'Film & Television Tax "
               "Credit of 22% or 30%, depending on level of Alberta "
-              "ownership.' Confirms catalog's 22% general tier, adds a "
-              "real ownership-based 30% ceiling.",
+              "ownership.' Primary re-read 2026-10-11 (alberta.ca FTTC page, guidelines updated effective May 14, 2026): applicants may apply for a 22% "
+              "or 30% credit on eligible Alberta production costs; total production costs of at least CAD 499,999 excluding GST; the 30% rate "
+              "needs the ownership / Alberta producer / copyright / 60%-cost-or-70%-labour tests; there is no stated per-project maximum credit "
+              "(the Authorization Letter sets it).",
     source_ref="thereactionlab.com-alberta",
     provenance=SourceProvenance(
         issuing_authority="Government of Alberta (Jobs, Economy and Trade); Film and Television Tax Credit Act and Film and Television Tax Credit Regulation",
@@ -7084,18 +7095,26 @@ CA_AB_DOCTRINE = register(DoctrineRecord(
                              "never been cross-referenced into program_rate_rules's own "
                              "SourceProvenance. No new research performed.",
     ),
-    tiers=(DoctrineRateTier(tier_id="ca-ab-general-22", rate=0.22, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="ca-ab-alberta-owned-30", rate=0.30, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="ca-ab-ownership-level-required",
-                                 description="30% requires a specific "
-                                             "level of Alberta ownership "
-                                             "of the production company -- "
-                                             "not pre-evaluable without an "
-                                             "ownership-structure fact",
-                                 quote="depending on level of Alberta "
-                                       "ownership (thereactionlab.com)",
-                                 kind="discretionary_band"),)),),
+    tiers=(DoctrineRateTier(
+               tier_id="ca-ab-alberta-owned-30", rate=0.30, is_band_ceiling=False,
+               conditions=(RateCondition(
+                   condition_id="ca-ab-30pct-criteria-stated",
+                   description="The 30% rate requires ALL of: at least 50% of the project owned by eligible Alberta individuals; one Alberta-based producer "
+                               "with a single-card credit; Alberta-based copyright; AND either 60% of total production costs as eligible Alberta production "
+                               "costs OR 70% of labour costs as Alberta salary or wages (alberta.ca FTTC page, guidelines effective 2026-05-14). A statutory "
+                               "test, not a discretionary award: guaranteed once the producer states the criteria are met.",
+                   quote="at least 50% of the project must be owned by eligible individuals ... at least 60% of the total production costs ... or at least "
+                         "70% of the total labour costs (alberta.ca)",
+                   kind="project_fact_dependent_eligibility", required_boolean_fact_key="ab_fttc_30pct_criteria_met"),)),
+           DoctrineRateTier(
+               tier_id="ca-ab-alberta-owned-30-conditional", rate=0.30, is_band_ceiling=True,
+               conditions=(RateCondition(
+                   condition_id="ca-ab-30pct-criteria-unstated",
+                   description="PLANNING SCENARIO: the 30% criteria (ownership, Alberta producer, copyright, 60% cost / 70% labour test) are not yet stated; "
+                               "30% is shown above the guaranteed 22% and becomes the guaranteed rate once 'ab_fttc_30pct_criteria_met' is evidenced.",
+                   quote="applicants may apply for a 22% or 30% tax credit rate (alberta.ca)",
+                   kind="project_fact_dependent_eligibility", blocked_by_boolean_fact_keys=("ab_fttc_30pct_criteria_met",)),)),
+           DoctrineRateTier(tier_id="ca-ab-general-22", rate=0.22, is_band_ceiling=False),),
 ))
 register_rate_rules(rate_rules_for(CA_AB_DOCTRINE))
 
@@ -7210,7 +7229,7 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
               "productions will depend on budget availability'; eligibility of expenses is 'at the sole discretion of THC'; per-project maximums apply "
               "(feature films $800,000) and a company yearly maximum of $1M. The provincial refundable film TAX CREDIT was eliminated in the 2011-12 "
               "budget (CBC, The Coast). The earlier record of a flat 25%/30% credit came from a secondary aggregator and is superseded. Dated: these "
-              "guidelines are 2017-2018; the current-year guidelines were not found.",
+              "guidelines are 2017-2018; no official current-year text was found (gnb.ca now points to the Arts Culture NB portal). Secondary corroboration 2026-10-11 (Playback 2022, Cast & Crew, Entertainment Partners): still a choice of labour-based (40% of resident labour) or all-spend (25% service/variety, 30% NB-based) incentive, feature maximum $800,000, annual program budget raised in 2022.",
     source_ref="nb-thc-film-guidelines-2017-2018-primary",
     # A funded, discretionary incentive with 'maximum of' rates: every tier is a CEILING with a THC-discretion condition and NO guaranteed floor,
     # so the pricer shows it as an unconfirmed ceiling with zero guaranteed value (it supersedes the 1.5.1 flat 25%/30% treatment, F-01).

@@ -217,6 +217,28 @@ def evaluate_requirements_gate(
                 f"${actual:,.0f} meets the ${float(threshold):,.0f} floor",
             ))
 
+    # ── a minimum on the production's total cost stated in a native currency (Alberta: CAD 499,999) ─
+    native = getattr(profile, "min_total_budget_native", None)
+    if native:
+        from app.calculators.production_normalization import build_fx_context
+        currency, amount = native
+        rate = build_fx_context().rates.get(currency)
+        if gross_budget_usd is None or not rate:
+            evaluations.append(RequirementEvaluation(
+                "min_total_budget_native", ROLE_ELIGIBILITY, UNKNOWN,
+                f"threshold {currency} {float(amount):,.0f}; "
+                + ("production figure not available" if rate else f"no {currency} rate on file to convert it")))
+        else:
+            floor_usd = float(amount) / float(rate)
+            if gross_budget_usd + 0.01 < floor_usd:
+                evaluations.append(RequirementEvaluation(
+                    "min_total_budget_native", ROLE_ELIGIBILITY, FAILED,
+                    f"${gross_budget_usd:,.0f} is below the {currency} {float(amount):,.0f} floor (${floor_usd:,.0f} at the canonical rate)"))
+            else:
+                evaluations.append(RequirementEvaluation(
+                    "min_total_budget_native", ROLE_ELIGIBILITY, SATISFIED,
+                    f"${gross_budget_usd:,.0f} meets the {currency} {float(amount):,.0f} floor (${floor_usd:,.0f} at the canonical rate)"))
+
     # ── eligibility facts the budget cannot decide: DISCLOSED, not gating ─
     for requirement in _DISCLOSED_ELIGIBILITY:
         value = getattr(profile, requirement, None)

@@ -35,9 +35,13 @@ NY_EVIDENCED_FACTS = {
     "on_ofttc_labour_outside_gta": None,
     "bc_labour_in_regional_zone": None,
     "bc_labour_in_distant_location_zone": None,
-    "mb_frequent_filming_bonus": None,
-    "mb_manitoba_producer_bonus": None,
-    "mb_rural_northern_bonus": None,
+    "mb_frequent_filming_third_film_in_two_years": None,
+    "mb_frequent_filming_principal_owner_declared": None,
+    "mb_resident_producer_screen_credit": None,
+    "mb_rural_permanent_establishment_35km": None,
+    "mb_rural_majority_days_35km": None,
+    "mb_production_company_bonus_eligible": None,
+    "ab_fttc_30pct_criteria_met": None,
     "mb_two_residents_trained_per_nonresident": "mb_one_resident_trained_per_nonresident",
     "mb_one_resident_trained_per_nonresident": "mb_two_residents_trained_per_nonresident",
 }
@@ -115,6 +119,10 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             raise ValueError(f"payee line {p.get('line_id')!r} is not a line of this project's budget")
         if p.get("payee_id") is not None and not str(p["payee_id"]).strip():
             raise ValueError("payee_id must be a non-empty identifier or null")
+        if p.get("payee_type") is not None:
+            from app.calculators.per_payee_limits import PAYEE_TYPE_CODES
+            if p["payee_type"] not in PAYEE_TYPE_CODES:
+                raise ValueError(f"payee_type must be one of {sorted(PAYEE_TYPE_CODES)} or null")
     for r in producer_roles:
         if str(r.get("line_id")) not in lines:
             raise ValueError(f"producer role line {r.get('line_id')!r} is not a line of this project's budget")
@@ -153,6 +161,8 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         await _upsert(session, project_id, f"line_fact:{lid}:payee_id", pid, "string")
         await _upsert(session, project_id, f"line_fact:{lid}:payee_compensation_complete",
                       "true" if (pid and p.get("compensation_complete") is True) else None, "boolean")
+        if "payee_type" in p:
+            await _upsert(session, project_id, f"line_fact:{lid}:payee_type", p["payee_type"] if pid else None, "string")
     for r in producer_roles:
         await _upsert(session, project_id, f"line_fact:{str(r['line_id'])}:producer_role", r.get("role"), "string")
     for c in composer_portions:

@@ -179,6 +179,8 @@ class ProductionFacts:
     #: (line_id, USD) composer compensation inside a music account, and (line_id, role code) producer roles -- producer-stated.
     ny_atl_composer_by_line: tuple = ()
     ny_atl_producer_role_by_line: tuple = ()
+    #: (line_id, payee type code) for payees whose type is stated (employee, loan-out, ...): GA's per-person cap applies to W-2 payees only.
+    payee_type_by_line: tuple = ()
 
     def work_outside(self, account_code: str, category: str) -> bool:
         if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
@@ -560,6 +562,12 @@ def derive_qualification_register(
             composer_by_line=dict(facts.ny_atl_composer_by_line), role_by_line=dict(facts.ny_atl_producer_role_by_line),
             subaccounts_by_line={l.line_id: l.source_subaccounts for l in line_items if l.source_subaccounts},
         )
+    from app.calculators.per_payee_limits import PAYEE_CAPS, apply_payee_cap
+    _cap_rule = PAYEE_CAPS.get(_canonical(program_slug))
+    if _cap_rule is not None and (facts.ny_atl_payee_by_line or any(a.amount_usd > _cap_rule.cap_usd for a in register)):
+        register = apply_payee_cap(
+            register, {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items},
+            dict(facts.ny_atl_payee_by_line), dict(facts.payee_type_by_line), _cap_rule)
     if _canonical(program_slug) == "ca_mb_film_video_credit" and not facts.scenario_local_btl:
         from app.calculators.mb_nonresident_limit import apply_mb_nonresident_limit
         register = apply_mb_nonresident_limit(

@@ -120,6 +120,9 @@ class ProgramRequirementsProfile:
     min_shoot_days: Optional[int] = None
     atl_cap_pct_of_other_costs: Optional[float] = None
     per_person_cap_usd: Optional[float] = None
+    #: A minimum on the production's TOTAL cost stated in a native currency, (ISO code, amount); converted through the canonical FX context by
+    #: the requirements gate. Preferred over a hard-coded USD figure for a non-USD threshold.
+    min_total_budget_native: Optional[tuple] = None
     per_project_cap_usd: Optional[float] = None
 
     # ── Application / timing ────────────────────────────────────────────
@@ -4130,6 +4133,7 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="ca_ab_fttc", jurisdiction_code="CA-AB",
+    min_total_budget_native=("CAD", 499_999.0),   # total production costs of at least CAD 499,999 excluding GST (alberta.ca, guidelines effective 2026-05-14)
     local_entity_required=True,        # applicant must be incorporated or registered in Alberta and not exempt under the Alberta Corporate Tax Act
     cultural_test_required=False,      # no cultural/content test; the 30% tier turns on Alberta ownership/credit/copyright/spend criteria
     preapproval_mandatory=False,       # PUBLISHED ABSENCE: applications accepted up to 120 days AFTER principal photography commences

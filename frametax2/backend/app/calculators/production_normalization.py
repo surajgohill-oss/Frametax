@@ -183,7 +183,7 @@ class FXRateSource(str, enum.Enum):
 #        currency cap into USD via a real, dated, sourced rate -- current
 #        only; no historical 1m/6m/12m CZK/ZAR snapshot was fetched (not
 #        needed by either cap, and not fabricated).
-FX_RATES_VERSION = "2.2.0"
+FX_RATES_VERSION = "2.3.0"  # 2.3.0: MXN added to all four snapshot dates from the ECB reference rates (api.frankfurter.dev)
 
 # date string ("YYYY-MM-DD") -> {currency: local units per USD}
 FX_RATE_SNAPSHOTS: dict[str, dict[str, float]] = {
@@ -206,13 +206,15 @@ FX_RATE_SNAPSHOTS: dict[str, dict[str, float]] = {
         # reported as "fresh" beyond what FX_FRESHNESS_STATUS already says
         # for this whole snapshot.
         "AUD": 1.5219, "MAD": 9.847, "THB": 35.612,
+        # MXN: ECB reference rate via api.frankfurter.dev for this exact date (fetched 2026-10-11; same provider as EUR/GBP/CAD/CZK/ZAR).
+        "MXN": 17.4908,
     },
     "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613, "CAD": 1.3988,
-                   "AUD": 1.5187, "MAD": 9.831, "THB": 35.548},                        # ~1 month prior
+                   "AUD": 1.5187, "MAD": 9.831, "THB": 35.548, "MXN": 17.2243},   # ~1 month prior
     "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309, "CAD": 1.3877,
-                   "AUD": 1.5064, "MAD": 9.772, "THB": 35.301},                        # ~6 months prior
+                   "AUD": 1.5064, "MAD": 9.772, "THB": 35.301, "MXN": 17.8986},   # ~6 months prior
     "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099, "CAD": 1.3701,
-                   "AUD": 1.4998, "MAD": 9.719, "THB": 35.087},                        # ~12 months prior
+                   "AUD": 1.4998, "MAD": 9.719, "THB": 35.087, "MXN": 18.7366},   # ~12 months prior
 }
 FX_LIVE_SNAPSHOT_DATE = "2026-07-13"
 FX_HORIZON_DATES: dict[str, str] = {

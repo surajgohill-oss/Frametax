@@ -4,8 +4,14 @@ Source (Manitoba Film & Music and Manitoba Finance corporate tax credits pages, 
 cannot exceed 30% of the eligible salaries paid to Manitoba residents when two or more Manitoba residents are trained for each
 non-resident employee, or 10% when only one resident is trained.
 
-Applied to the accounts the budget itself labels non-resident BTL labour against its resident BTL labour accounts. Residency of a generic
-'crew' account is not evidenced, so only explicitly resident accounts form the base (a stricter, never an invented, denominator).
+Primary text: Manitoba Film & Music TC1 Cost of Salaries Tax Credit Guidelines (June 2024), section H: the deeming provision applies only to
+TECHNICAL positions (never producers, directors, actors, performers or any above-the-line position), needs at least one Manitoba trainee per
+deemed non-resident, and caps eligible non-resident salaries at 30% of total eligible Manitoba salaries (two or more trainees per deemed
+non-resident) or 10% (one); the ratio is the production average.
+
+Applied to the accounts the budget itself labels non-resident BTL labour against the other qualifying labour accounts (above-the-line, resident
+and generic crew), which are presumed Manitoba residents under the planning scenario: Personal Residency Declarations are a claim follow-up, not
+a planning blocker. A non-resident above-the-line account cannot be deemed, but the budget's ATL categories carry no residency label.
 The training ratio is a stated producer fact: with 'mb_two_residents_trained_per_nonresident' the 30% limit applies, with
 'mb_one_resident_trained_per_nonresident' the 10% limit, and with neither the amount between 10% and 30% is a GREY producer-fact question
 (none of it counted) while only the part above 30% is excluded outright. Inert for a relocation scenario that hires BTL labour locally."""
@@ -26,7 +32,8 @@ def apply_mb_nonresident_limit(register, category_by_line: dict[str, str], evide
     nonres = [i for i, e in enumerate(register) if e.state == Q and category_by_line.get(e.line_id) == "btl_nonresident_labor"]
     if not nonres:
         return list(register)
-    resident = round(sum(e.amount_usd for e in register if e.state == Q and category_by_line.get(e.line_id) == "btl_resident_labor"), 2)
+    labour = ("atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor")
+    resident = round(sum(e.amount_usd for e in register if e.state == Q and category_by_line.get(e.line_id) in labour), 2)
     total = round(sum(register[i].amount_usd for i in nonres), 2)
     strict, loose = round(NONRESIDENT_STRICT_PCT * resident, 2), round(NONRESIDENT_LOOSE_PCT * resident, 2)
     if FACT_TWO_TRAINED in evidenced:

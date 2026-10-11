@@ -72,11 +72,13 @@ def payee_amount_facts(fact_rows, line_ids: set[str]) -> dict[str, float]:
     """Derived NY amount facts from stated line facts: `ny_atl_payee:<line_id>` -> payee ordinal, only for lines whose rows
     `payee_id` and `payee_compensation_complete` (= true) both exist (equal ordinals are the same individual);
     `ny_composer_portion:<line_id>` -> the stated composer compensation inside a music account; `ny_producer_role:<line_id>` -> role code."""
-    raw = _line_fact_rows(fact_rows, line_ids, ("payee_id", "payee_compensation_complete", "composer_compensation_usd", "producer_role"))
+    raw = _line_fact_rows(fact_rows, line_ids, ("payee_id", "payee_compensation_complete", "composer_compensation_usd", "producer_role", "payee_type"))
     ids = {lid: f["payee_id"] for lid, f in raw.items()
            if f.get("payee_id") and f.get("payee_compensation_complete", "").lower() in ("true", "1", "yes")}
     ordinal = {name: float(i + 1) for i, name in enumerate(sorted(set(ids.values())))}
     out = {FACT_PAYEE_PREFIX + lid: ordinal[name] for lid, name in ids.items()}
+    from app.calculators.per_payee_limits import payee_type_amount_facts
+    out.update(payee_type_amount_facts(raw))
     for lid, f in raw.items():
         try:
             c = float(f["composer_compensation_usd"]) if f.get("composer_compensation_usd") else None
@@ -95,7 +97,8 @@ def limits_facts_from_amount_facts(amount_facts) -> dict:
     def pairs(prefix, cast):
         return tuple(sorted((k[len(prefix):], cast(v)) for k, v in amounts.items() if k.startswith(prefix)))
     return {"ny_atl_limits_apply": bool(amounts.get(FACT_PERIOD_APPLIES)), "ny_atl_payee_by_line": pairs(FACT_PAYEE_PREFIX, int),
-            "ny_atl_composer_by_line": pairs(FACT_COMPOSER_PREFIX, float), "ny_atl_producer_role_by_line": pairs(FACT_PRODUCER_ROLE_PREFIX, int)}
+            "ny_atl_composer_by_line": pairs(FACT_COMPOSER_PREFIX, float), "ny_atl_producer_role_by_line": pairs(FACT_PRODUCER_ROLE_PREFIX, int),
+            "payee_type_by_line": pairs("payee_type_code:", int)}
 
 
 def composer_portion_from_subaccounts(children, line_amount: float) -> float | None:

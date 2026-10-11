@@ -18,14 +18,23 @@ def _fx():
     return CanonicalFXContext(snapshot_date="2026-10-11", rates={"MXN": TEST_MXN_PER_USD}, source="test scenario", freshness_status="fresh")
 
 
-def test_mexico_minimum_spend_is_evaluated_natively_and_never_assumed_met():
-    # MXN 40,000,000 minimum = USD 2,000,000 at the scenario rate
-    ok = resolve_program_rate(MX, production_type="feature_film", qpe_usd=2_500_000.0, fx_context=_fx())
-    assert ok is not None and ok.modeled_rate == pytest.approx(0.30) and not ok.is_band_ceiling and ok.has_guaranteed_floor
-    assert resolve_program_rate(MX, production_type="feature_film", qpe_usd=1_500_000.0, fx_context=_fx()) is None   # MXN 30M < 40M
-    # No MXN rate on file: the minimum cannot be tested, so the credit is not priced (fail closed), never assumed met.
+def test_mexico_percentage_is_set_by_the_committee_so_30_percent_is_a_ceiling_and_the_minimum_stays_native():
+    r = resolve_program_rate(MX, production_type="feature_film", qpe_usd=2_500_000.0, fx_context=_fx())
+    assert r is not None and r.modeled_rate == pytest.approx(0.30) and r.is_band_ceiling and r.has_guaranteed_floor is False
+    assert any(c.condition_id == "mx-committee-sets-the-percentage" and c.satisfied is None for c in r.conditions_evaluated)
+    # MXN 40,000,000 minimum = USD 2,000,000 at the scenario rate: below it nothing resolves at all
+    assert resolve_program_rate(MX, production_type="feature_film", qpe_usd=1_500_000.0, fx_context=_fx()) is None
     no_rate = CanonicalFXContext(snapshot_date="2026-10-11", rates={"EUR": 0.9}, source="test scenario", freshness_status="fresh")
     assert resolve_program_rate(MX, production_type="feature_film", qpe_usd=50_000_000.0, fx_context=no_rate) is None
+
+
+def test_the_engine_fx_table_now_carries_a_sourced_mxn_rate_on_every_snapshot_date():
+    from app.calculators import production_normalization as pn
+    for date in ("2026-07-13", "2026-06-12", "2026-01-13", "2025-07-11"):
+        assert pn.FX_RATE_SNAPSHOTS[date]["MXN"] > 10
+    ctx = pn.build_fx_context()
+    r = resolve_program_rate(MX, production_type="feature_film", qpe_usd=3_000_000.0, fx_context=ctx)     # 3m USD x 17.4908 = MXN 52.5m >= 40m
+    assert r is not None and r.is_band_ceiling
 
 
 async def test_slovenia_ceiling_only_program_is_visible_with_zero_guaranteed_value_and_a_stated_reason():
