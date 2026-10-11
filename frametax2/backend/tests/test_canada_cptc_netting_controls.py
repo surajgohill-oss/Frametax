@@ -1,8 +1,10 @@
-"""F-14: CPTC qualified labour is reduced by provincial assistance before the credit is computed. Rolled-back synthetic records only; the
-CPTC labour basis below is a STATED planning fact (amount_fact), not payroll evidence. Hand computation:
-  OFTTC            = 35% x eligible Ontario labour (director 400,000 + crew 1,500,000) = 665,000
-  CPTC net basis   = 1,500,000 (qualifying labour) - 665,000 = 835,000   ->  CPTC = 25% x 835,000 = 208,750 (unnetted would be 375,000)
-  stack total      = 665,000 + 208,750 = 873,750 ; stacking reduction = 375,000 - 208,750 = 166,250."""
+"""F-14, re-derived from primary authority (CRA RC4164, Form T1131 guide, lines 421-430, 423, 618): assistance, including ANY provincial tax
+credit, reduces the PRODUCTION COST, and CPTC qualified labour = min(labour expenditure, 60% x (production cost - assistance)). Labour itself is not
+reduced, the whole provincial credit counts, and it matters only when the 60% cap falls below the labour. Rolled-back synthetic records; the CPTC
+labour basis is a STATED planning fact, not payroll evidence. Hand computation, budget 2,500,000 (labour 1,500,000 CPTC / 1,900,000 Ontario):
+  OFTTC 35% x 1,900,000 = 665,000 ; cap = 60% x (2,500,000 - 665,000) = 1,101,000 < 1,500,000 -> CPTC = 25% x 1,101,000 = 275,250 (unlimited: 375,000)
+  stack 940,250 ; reduction 99,750.   Quebec 25% x 2,500,000 = 625,000 ; cap 1,125,000 -> CPTC 281,250 ; stack 906,250.
+  Large non-labour budget (gross 7,900,000): cap = 60% x (7,900,000 - 665,000) = 4,341,000 > 1,500,000 -> CPTC stays 375,000 despite the OFTTC."""
 from __future__ import annotations
 
 import uuid
@@ -20,23 +22,38 @@ LINES = (("2000", "DIRECTOR FEE", "atl_director", "atl", 400_000.0), ("3000", "C
          ("3100", "EQUIPMENT RENTAL", "btl_equipment_rental", "btl", 600_000.0))
 
 
-async def test_cptc_is_computed_on_labour_net_of_the_provincial_credit_and_never_stacks_with_opstc():
+async def _stack(db_lines):
     async with isolated_session() as db:
-        pid = await create_synthetic_project(db, lines=LINES, home_code="CA-ON")
+        pid = await create_synthetic_project(db, lines=db_lines, home_code="CA-ON")
         await add_synthetic_people(db, pid, [("director", "Dir One", "CA", True), ("writer", "Wri One", "CA", True)])
         db.add(ProjectFact(id=uuid.uuid4(), project_id=uuid.UUID(pid), fact_key="amount_fact:ca_federal_cptc_qualified_labour_usd", value="1500000",
                            source_type=ProjectFactSourceType.USER_OVERRIDE))
         await db.commit()
         await evaluate_project(db, pid)
         entries = await served_structures(db, pid)
-        by = {tuple(sorted(e["program_slugs"])): e for e in entries if e["structure_type"] == "multi_program"}
-        alone = next(e for e in entries if e["program_slugs"] == ["ca_federal_cptc"] and e["candidate_status"] == "PRICED")
-        assert alone["confirmed_incentive_floor_usd"] == pytest.approx(0.25 * 1_500_000)             # unnetted on its own
-        stack = by[("ca_federal_cptc", "on_ofttc")]
-        assert stack["candidate_status"] == "PRICED" and stack["stacking_rule_type"] == "spend_reduction"
-        assert stack["per_program_adjusted_usd"]["on_ofttc"] == pytest.approx(0.35 * 1_900_000)
-        assert stack["per_program_adjusted_usd"]["ca_federal_cptc"] == pytest.approx(0.25 * (1_500_000 - 665_000))
-        assert stack["confirmed_incentive_floor_usd"] == pytest.approx(873_750.0) and stack["stacking_reduction_usd"] == pytest.approx(166_250.0)
-        # CPTC (domestic content) and OPSTC (service) are mutually exclusive, alone or inside a larger group
-        assert by[("ca_federal_cptc", "on_opstc")]["candidate_status"] == "RULE_REJECTED"
-        assert by[("ca_federal_cptc", "on_ofttc", "on_opstc")]["candidate_status"] == "RULE_REJECTED"
+        return {tuple(sorted(e["program_slugs"])): e for e in entries if e["structure_type"] == "multi_program"}, \
+            next(e for e in entries if e["program_slugs"] == ["ca_federal_cptc"] and e["candidate_status"] == "PRICED")
+
+
+async def test_cptc_cap_is_measured_on_production_cost_net_of_assistance_not_on_labour():
+    by, alone = await _stack(LINES)
+    assert alone["confirmed_incentive_floor_usd"] == pytest.approx(0.25 * 1_500_000)
+    ofttc = by[("ca_federal_cptc", "on_ofttc")]
+    assert ofttc["candidate_status"] == "PRICED" and ofttc["stacking_rule_type"] == "spend_reduction"
+    assert ofttc["per_program_adjusted_usd"]["on_ofttc"] == pytest.approx(665_000.0)
+    assert ofttc["per_program_adjusted_usd"]["ca_federal_cptc"] == pytest.approx(0.25 * 0.60 * (2_500_000 - 665_000))
+    assert ofttc["confirmed_incentive_floor_usd"] == pytest.approx(940_250.0) and ofttc["stacking_reduction_usd"] == pytest.approx(99_750.0)
+    quebec = by[("ca_federal_cptc", "ca_qc_pstc")]
+    assert quebec["per_program_adjusted_usd"]["ca_federal_cptc"] == pytest.approx(0.25 * 0.60 * (2_500_000 - 625_000))
+    assert quebec["confirmed_incentive_floor_usd"] == pytest.approx(906_250.0)
+    # CPTC (domestic content) and OPSTC (service) stay mutually exclusive, alone or inside a larger group
+    assert by[("ca_federal_cptc", "on_opstc")]["candidate_status"] == "RULE_REJECTED"
+    assert by[("ca_federal_cptc", "on_ofttc", "on_opstc")]["candidate_status"] == "RULE_REJECTED"
+
+
+async def test_a_provincial_credit_does_not_reduce_cptc_when_the_cost_cap_is_not_binding():
+    big = LINES[:2] + (("3100", "EQUIPMENT RENTAL", "btl_equipment_rental", "btl", 6_000_000.0),)
+    by, _ = await _stack(big)
+    ofttc = by[("ca_federal_cptc", "on_ofttc")]
+    assert ofttc["per_program_adjusted_usd"]["ca_federal_cptc"] == pytest.approx(375_000.0), "60% x (7.9M - 665k) = 4.34M exceeds the 1.5M labour"
+    assert ofttc["stacking_reduction_usd"] == pytest.approx(0.0)

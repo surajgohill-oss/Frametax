@@ -610,17 +610,22 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
     frozenset({"on_ofttc", "ca_federal_cptc"}): {
         "rule_type": "spend_reduction",
         "condition_text": (
-            "OFTTC tax credit is government assistance under ITA §125.4(1)(b) and must be "
-            "deducted from Qualified Canadian Labour Expenditure (QCLE) before computing CPTC. "
-            "Net QCLE = gross QCLE minus OFTTC amount received or receivable."
+            "CRA RC4164 (Form T1131 guide, lines 421-430 and 423): any provincial tax credit allowed in connection with the production, "
+            "OFTTC included, is assistance. Assistance reduces the PRODUCTION COST, which sets the CPTC cap: qualified labour expenditure = "
+            "the lesser of the labour expenditure (line 618, not reduced by assistance) and 60% x (production cost - assistance). The whole "
+            "OFTTC counts (no labour/property apportionment), and it limits CPTC only when the 60% cap then falls below the labour expenditure."
         ),
     },
     # QC SODEC domestic credit reduces CPTC basis
     frozenset({"qc_film_production", "ca_federal_cptc"}): {
         "rule_type": "spend_reduction",
         "condition_text": (
-            "Quebec SODEC film production credit is government assistance under ITA §125.4(1)(b). "
-            "QC credit amount must be deducted from QCLE before computing CPTC."
+            "CRA RC4164 (Form T1131 guide, lines 421-430 and 423): any provincial tax credit allowed in connection with the production is "
+            "assistance. The whole Quebec credit (labour and property alike) reduces the PRODUCTION COST that sets the CPTC cap: qualified labour "
+            "expenditure = the lesser of the labour expenditure and 60% x (production cost - assistance); labour itself is not reduced. "
+            "Nothing found in the CRA guide or the SODEC fact sheets (2024-2026) bars a CPTC production from the Quebec services credit; SODEC bars "
+            "combining it only with other Quebec credits. The Quebec domestic-content credit, the usual counterpart of a certified production, "
+            "is not modeled."
         ),
     },
     # UK AVEC + IE Section 481 — allowed for multi-territory co-productions

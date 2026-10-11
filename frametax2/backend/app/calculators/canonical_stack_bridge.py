@@ -156,6 +156,27 @@ class StackCandidate:
     # Defaulted empty so every existing caller that has not been updated
     # to populate it keeps working unchanged.
     qualifying_line_ids: frozenset[str] = field(default_factory=frozenset)
+    #: CPTC only (CRA RC4164 / Form T1131 guide): the labour basis the 25% applies to before the cost cap, the production cost the 60% cap is
+    #: measured on, and assistance already stated at project level. Assistance in a stack (any provincial tax credit, fund or grant) reduces
+    #: the production cost that sets the cap; it never reduces labour expenditure directly. None leaves the generic spend-reduction engine.
+    rate_basis_usd: float | None = None
+    production_cost_usd: float | None = None
+    stated_assistance_usd: float = 0.0
+
+
+CPTC_SLUG = "ca_federal_cptc"
+CPTC_COST_CAP_PCT = 0.60     # Form T1131 Part 5: Amount B = 60% of (production cost - assistance)
+
+
+def cptc_stack_fields(program_slug: str, rate_resolution, production_cost_usd: float | None, amount_facts: dict | None = None) -> dict:
+    """StackCandidate keyword arguments for the federal CPTC (empty for every other program)."""
+    if program_slug != CPTC_SLUG or rate_resolution is None or production_cost_usd is None:
+        return {}
+    basis = getattr(rate_resolution, "qpe_basis_used", None)
+    if basis is None:
+        return {}
+    return {"rate_basis_usd": float(basis), "production_cost_usd": float(production_cost_usd),
+            "stated_assistance_usd": float((amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)}
 
 
 @dataclass
@@ -348,6 +369,38 @@ def _build_group_result(
 
     adj_result = apply_stacking_adjustments(incentive_results, rules)
     legal = evaluate_legal_stacking(claimed_program_ids=slugs, stacking_rules=rules)
+    program_values, adjustment_dicts = dict(adj_result.program_values), [
+        {"program_a_id": a.program_a_id, "program_b_id": a.program_b_id, "rule_type": a.rule_type, "description": a.description,
+         "original_value_usd": a.original_value_usd, "adjustment_usd": a.adjustment_usd, "adjusted_value_usd": a.adjusted_value_usd}
+        for a in adj_result.adjustments
+    ]
+    cptc = next((c for c in candidates if c.program_slug == CPTC_SLUG and c.rate_basis_usd is not None and c.production_cost_usd is not None), None)
+    if cptc is not None:
+        reducers = {}
+        for r in rules:
+            if r["rule_type"] == "spend_reduction" and CPTC_SLUG in (r["program_a_id"], r["program_b_id"]) and r.get("reduces") not in (None, CPTC_SLUG):
+                reducers[r["reduces"]] = program_values.get(r["reduces"], 0.0)
+        if reducers:
+            assistance = round(sum(reducers.values()), 2)
+            cap = round(CPTC_COST_CAP_PCT * max(0.0, cptc.production_cost_usd - cptc.stated_assistance_usd - assistance), 2)
+            qualified = round(min(cptc.rate_basis_usd, cap), 2)
+            original = float(cptc.selected_incentive_usd)
+            adjusted = round(min(original, qualified * cptc.effective_rate), 2)
+            adjustment_dicts = [d for d in adjustment_dicts if not (d["rule_type"] == "spend_reduction" and d["program_b_id"] == CPTC_SLUG)]
+            program_values[CPTC_SLUG] = adjusted
+            total_assistance = assistance or 1.0
+            for slug_r, amount in reducers.items():
+                share = (original - adjusted) * (amount / total_assistance)
+                adjustment_dicts.append({
+                    "program_a_id": slug_r, "program_b_id": CPTC_SLUG, "rule_type": "spend_reduction",
+                    "description": (f"Assistance ${assistance:,.0f} (provincial tax credit / fund) reduces the production cost that sets the CPTC cap "
+                                    f"(CRA RC4164 T1131 lines 421-430): qualified labour = min(labour ${cptc.rate_basis_usd:,.0f}, "
+                                    f"{CPTC_COST_CAP_PCT:.0%} x (cost ${cptc.production_cost_usd:,.0f} - assistance ${cptc.stated_assistance_usd + assistance:,.0f}) = ${cap:,.0f}) "
+                                    f"= ${qualified:,.0f}; labour itself is not reduced."),
+                    "original_value_usd": original, "adjustment_usd": -share, "adjusted_value_usd": adjusted,
+                })
+    total_raw = adj_result.total_raw_value_usd
+    total_adjusted = round(sum(program_values.values()), 2) if cptc is not None and reducers else adj_result.total_adjusted_value_usd
 
     # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B:
     # scan every INDIVIDUAL pairwise rule in this group -- never the
@@ -405,27 +458,14 @@ def _build_group_result(
         program_slugs=slugs,
         rule_type=_rule_type_for_group(rules),
         condition_text="; ".join(r["condition_text"] for r in rules if r.get("condition_text")) or None,
-        raw_incentive_usd=adj_result.total_raw_value_usd,
-        adjusted_incentive_usd=adj_result.total_adjusted_value_usd,
-        stacking_reduction_usd=max(
-            0.0, adj_result.total_raw_value_usd - adj_result.total_adjusted_value_usd
-        ),
-        per_program_adjusted_usd=adj_result.program_values,
+        raw_incentive_usd=total_raw,
+        adjusted_incentive_usd=total_adjusted,
+        stacking_reduction_usd=max(0.0, total_raw - total_adjusted),
+        per_program_adjusted_usd=program_values,
         per_program_qpe_usd={
             c.program_slug: float(c.qualifying_spend_usd or 0.0) for c in candidates
         },
-        adjustments=[
-            {
-                "program_a_id": a.program_a_id,
-                "program_b_id": a.program_b_id,
-                "rule_type": a.rule_type,
-                "description": a.description,
-                "original_value_usd": a.original_value_usd,
-                "adjustment_usd": a.adjustment_usd,
-                "adjusted_value_usd": a.adjusted_value_usd,
-            }
-            for a in adj_result.adjustments
-        ],
+        adjustments=adjustment_dicts,
         legal_review_required=legal.legal_review_required,
         violations=[
             {

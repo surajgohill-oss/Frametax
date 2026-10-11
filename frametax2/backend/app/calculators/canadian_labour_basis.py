@@ -270,9 +270,14 @@ def _line_eligible_amount(amount_usd: float, facts: LineLabourFacts, *, program_
         reason_lt = "full amount eligible (employee/individual, no look-through cap applies)."
 
     eligible = max(0.0, min(base, amount_usd))
-    if facts.assistance_usd:
+    if facts.assistance_usd and program_slug != "ca_federal_cptc":
         eligible = max(0.0, eligible - facts.assistance_usd)
-        reason_lt += f" Reduced by ${facts.assistance_usd:,.2f} line-level assistance per [T1131] line 423/[CPTC-GUIDE]."
+        reason_lt += f" Reduced by ${facts.assistance_usd:,.2f} line-level assistance."
+    elif facts.assistance_usd:
+        # CRA RC4164 (T1131 guide): assistance (line 423, including any provincial tax credit) reduces the PRODUCTION COST (line 421), which sets the
+        # 60% cap (lines 421-430); line 618 labour expenditure is NOT reduced by it. It is therefore deducted from net production cost in
+        # derive_canadian_labour_basis, never from this labour line.
+        reason_lt += f" ${facts.assistance_usd:,.2f} line-level assistance reduces net production cost (the 60% cap), not this labour line (T1131 line 423/430)."
     return eligible, reason_lt
 
 
@@ -329,12 +334,16 @@ def derive_canadian_labour_basis(
                 excluded_usd=round(line.amount_usd - eligible_usd, 2), reason=reason,
             ))
 
-    net_production_cost = round(max(0.0, gross_budget_usd - project_level_assistance_usd), 2)
+    line_assistance = round(sum(
+        (facts_by_line[l.line_id].assistance_usd or 0.0) for l in eligible_lines
+        if l.line_id in facts_by_line
+    ), 2)
+    net_production_cost = round(max(0.0, gross_budget_usd - project_level_assistance_usd - line_assistance), 2)
     # [CPTC-GUIDE]/[T1131]: Amount B = 60% of net production cost after
     # assistance. Qualified labour expenditure = the LESSER of Amount B
     # and cumulative labour expenditure (evidenced_eligible here).
     cptc_cap = round(0.60 * net_production_cost, 2)
-    net_labour = dict(evidenced_eligible)  # assistance already applied per-line above
+    net_labour = dict(evidenced_eligible)  # CPTC: assistance acts through net_production_cost (T1131 line 423 -> 430); PSTC: applied per line above
     statutory_cap = {"ca_federal_cptc": cptc_cap, "ca_federal_pstc": None}  # no PSTC cap confirmed in fetched text
 
     qualified: dict[str, float | None] = {}
