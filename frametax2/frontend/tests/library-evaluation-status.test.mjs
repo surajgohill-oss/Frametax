@@ -69,7 +69,7 @@ test("bounded optimizer lists: the hook merges further pages read only and the W
   assert.match(hook, /getOptimizerListPage\(projectId, kind, cursor\)/);
   assert.match(hook, /!have\.has\(e\.structure_id\)/, "pages merge without duplicating an entry");
   const api = readFileSync(join(SRC, "api.js"), "utf8");
-  assert.match(api, /evaluation\/optimizer-list\?kind=/);
+  assert.match(api, /request2\(`\$\{PROJECTS_BASE\}\/\$\{projectId\}\/evaluation\/optimizer-list\?kind=/, "the route lives under /api/v1/projects, not /cineglobe");
   const ws = readFileSync(join(SRC, "screens", "production", "Workspace.jsx"), "utf8");
   assert.match(ws, /Load more options/);
   assert.match(hook, /suppressed: "optimizer_scenarios_music_suppressed"/, "the policy-suppressed list pages through the same hook");
@@ -78,5 +78,5 @@ test("bounded optimizer lists: the hook merges further pages read only and the W
   assert.match(uni, /loadMore\("suppressed"\)/);
   const insp = readFileSync(join(SRC, "shell", "Inspector.jsx"), "utf8");
   assert.match(insp, /getJurisdictionWinner\(projectId, ref\.code\)/, "the omitted segment trace is read on demand");
-  assert.match(readFileSync(join(SRC, "api.js"), "utf8"), /evaluation\/jurisdiction-winner\//);
+  assert.match(readFileSync(join(SRC, "api.js"), "utf8"), /request2\(`\$\{PROJECTS_BASE\}\/\$\{projectId\}\/evaluation\/jurisdiction-winner\//);
 });
