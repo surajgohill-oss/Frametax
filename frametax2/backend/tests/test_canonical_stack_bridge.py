@@ -264,3 +264,15 @@ def test_federal_pstc_pairs_without_primary_stacking_text_stay_unruled_and_block
     pstc = StackCandidate("ca_federal_pstc", "CA-QC", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
     qc = StackCandidate("ca_qc_pstc", "CA-QC", 150_000.0, 0.25, 600_000.0, "tax_credit")
     assert price_program_pair_stack(pstc, qc) is None, "no named rule: never a partially trusted combination"
+
+
+def test_the_manitoba_pstc_reduction_is_disclosed_as_a_conservative_bound_never_as_exact_netting():
+    pstc = StackCandidate("ca_federal_pstc", "CA-MB", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
+    mb = StackCandidate("ca_mb_film_video_credit", "CA-MB", 270_000.0, 0.45, 600_000.0, "tax_credit")
+    result = price_program_pair_stack(pstc, mb)
+    assert any("CONSERVATIVE BOUND, NOT exact netting" in n for n in result.disclosed_limitations)
+    assert all("CONSERVATIVE BOUND" in a["description"] for a in result.adjustments if {a["program_a_id"], a["program_b_id"]} == {"ca_federal_pstc", "ca_mb_film_video_credit"})
+    ontario = price_program_pair_stack(
+        StackCandidate("ca_federal_pstc", "CA-ON", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0),
+        StackCandidate("on_opstc", "CA-ON", 215_000.0, 0.215, 1_000_000.0, "tax_credit"))
+    assert not any("CONSERVATIVE BOUND" in n for n in ontario.disclosed_limitations), "the Ontario labour-portion netting is stated by the Ontario guidelines, not a bound"

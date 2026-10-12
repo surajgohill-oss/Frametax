@@ -580,6 +580,15 @@ def _generate_structural_candidate_uncached(
         # tax-credit-typed programs (e.g. on_ofttc+ocase, ca_federal_cptc+
         # on_ofttc) is not applied, and must be disclosed rather than
         # silently served as though it were.
+        from app.calculators.canonical_stack_bridge import conservative_netting_note
+        from dataclasses import replace as _dc_replace
+        for rule in guaranteed_rules:
+            _note = conservative_netting_note(rule["program_a_id"], rule["program_b_id"]) if rule["rule_type"] == "spend_reduction" else None
+            if _note:
+                disclosed_limitations.append(_note)
+                stacking_adjustments = tuple(
+                    _dc_replace(a, description=f"{a.description} [{_note}]") if {a.program_a_id, a.program_b_id} == {rule["program_a_id"], rule["program_b_id"]} else a
+                    for a in stacking_adjustments)
         for rule in guaranteed_rules:
             if rule["rule_type"] != "spend_reduction":
                 continue

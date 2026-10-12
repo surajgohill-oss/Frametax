@@ -191,6 +191,20 @@ def _is_slug(slug: str, canonical: str) -> bool:
     return canonical in _slug_and_alias_candidates(slug)
 
 
+MB_SLUG = "ca_mb_film_video_credit"
+MB_CONSERVATIVE_NOTE = (
+    "CONSERVATIVE BOUND, NOT exact netting: ITA 125.5(1) deducts only the part of the Manitoba credit reasonably in respect of the federal labour expenditure, but the Manitoba labour "
+    "share is not held, so the whole Manitoba credit (bounded by the federal labour) is deducted. The federal PSTC shown is therefore a floor; the exact reduction needs the stated "
+    "Manitoba labour share (a claim follow-up)."
+)
+
+
+def conservative_netting_note(slug_a: str, slug_b: str) -> str | None:
+    """The disclosure for a pair whose netting is a stated conservative bound (federal PSTC with the Manitoba credit), else None."""
+    pair = (_is_slug(slug_a, PSTC_SLUG) and _is_slug(slug_b, MB_SLUG)) or (_is_slug(slug_b, PSTC_SLUG) and _is_slug(slug_a, MB_SLUG))
+    return MB_CONSERVATIVE_NOTE if pair else None
+
+
 def cptc_net_cost_adjusted(original: float, rate: float, labour_basis: float, production_cost: float, stated_assistance: float, assistance: float):
     """CRA RC4164 / Form T1131: qualified labour = min(labour, 60% x (production cost - assistance)); credit = rate x qualified, never above the
     standalone credit. Returns (adjusted credit, cap, qualified labour). Shared by the same-jurisdiction stack and the structural generator."""
@@ -473,6 +487,13 @@ def _build_group_result(
     ]
 
     disclosed_limitations: list[str] = []
+    for rule in rules:
+        _note = conservative_netting_note(rule["program_a_id"], rule["program_b_id"]) if rule["rule_type"] == "spend_reduction" else None
+        if _note:
+            disclosed_limitations.append(_note)
+            for d in adjustment_dicts:
+                if {d["program_a_id"], d["program_b_id"]} == {rule["program_a_id"], rule["program_b_id"]}:
+                    d["description"] = f"{d['description']} [{_note}]"
     for rule in rules:
         if rule["rule_type"] != "spend_reduction":
             continue
