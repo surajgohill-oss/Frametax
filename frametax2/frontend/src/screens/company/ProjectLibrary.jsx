@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
 import {
-  libraryStageKey, libraryStageLabel, libraryFilterMatches, isActiveProject, readLibraryFilter, writeLibraryFilter,
+  libraryStageKey, libraryStageLabel, libraryFilterMatches, isActiveProject, isEvaluated, readLibraryFilter, writeLibraryFilter,
 } from "../../lib/libraryStatus";
 import { getTheme, toggleTheme } from "../../lib/theme";
 import NewProjectModal from "../../components/NewProjectModal";
@@ -181,7 +181,7 @@ export default function ProjectLibrary() {
                   // with real served results opens directly into it; every
                   // other project keeps the existing Project Record /
                   // ingestion flow unchanged.
-                  p.is_served_production ? `/projects/${p.id}/overview` : `/company/library/${p.id}`
+                  isEvaluated(p) ? `/projects/${p.id}/overview` : `/company/library/${p.id}`
                 )}
               >
                 <div className="lib-art">

@@ -74,6 +74,12 @@ export default function ProjectRecord() {
     }
   }
 
+  function recalculate() {
+    // explicit, user-initiated: never triggered by opening results
+    if (!window.confirm("Recalculate this evaluation on the current engine? Your retained results stay available until it completes, and it can take a long time.")) return;
+    runEvaluation();
+  }
+
   useEffect(() => {
     setRecord(null);
     setTab("Overview");
@@ -87,6 +93,7 @@ export default function ProjectRecord() {
   const { project, organization, aliases, artwork, documents, people, facts, locations, analysis, activity } = record;
   const meta = lifecycleMeta(project.lifecycle);
   const isServedProduction = project.is_served_production;
+  const isStale = !isServedProduction && project.evaluation_freshness === "STALE";
 
   async function selectMaster(assetId) {
     await setMasterArtwork(project.id, assetId);
@@ -165,14 +172,19 @@ export default function ProjectRecord() {
             <button className="hero-action primary" onClick={() => navigate(`/projects/${project.id}/overview`)}>
               Open Production →
             </button>
+          ) : isStale ? (
+            // Retained evaluation history controls the stage: results are opened read only (opening never evaluates); recalculating is a separate, explicit action.
+            <>
+              <button className="hero-action primary" onClick={() => navigate(`/projects/${project.id}/overview`)}>
+                Open Results →
+              </button>
+              <button className="hero-action" onClick={recalculate} disabled={evalRunning} title="Re-run the evaluation on the current engine; may take a long time">
+                {evalRunning ? "Recalculating…" : "Recalculate"}
+              </button>
+            </>
           ) : (
             <button className="hero-action primary" onClick={runEvaluation} disabled={evalRunning}>
-              {evalRunning ? "Evaluating…" : analysis.evaluation_begun ? "Re-run Evaluation" : "Begin Evaluation"}
-            </button>
-          )}
-          {!isServedProduction && analysis.evaluation_begun && (
-            <button className="hero-action" onClick={() => navigate(`/projects/${project.id}/overview`)}>
-              Enter Workspace →
+              {evalRunning ? "Evaluating…" : "Begin Evaluation"}
             </button>
           )}
           {!isServedProduction && (
@@ -399,7 +411,7 @@ function AnalysisPanel({ analysis, full }) {
       <div className="oh"><b>Analysis</b></div>
       <div className="stat"><span className="l">Evaluation</span>
         <span className="v" style={{ color: analysis.evaluation_begun ? "var(--jade)" : undefined }}>
-          {analysis.evaluation_begun ? "In progress" : "Not begun"}
+          {analysis.retained_evaluation ? "Retained results (stale)" : analysis.evaluation_begun ? "In progress" : "Not begun"}
         </span>
       </div>
       <div className="stat"><span className="l">Structures generated</span><span className="v mono">{analysis.structures_available}</span></div>

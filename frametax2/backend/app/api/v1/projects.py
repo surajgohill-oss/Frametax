@@ -514,6 +514,9 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
     else:
         structure_count = 0
 
+    # Retained evaluation history controls the stage: a project with a stale retained generation is EVALUATED (its results can be opened, read only, and recalculated
+    # explicitly); only a project with no retained generation at all is unevaluated.
+    _freshness = (await evaluation_freshness(db, [project.id])).get(project.id, {"state": "NONE", "reason": None, "retained_engine_version": None})
     activity = (await db.execute(
         select(ProjectActivity).where(ProjectActivity.project_id == project.id)
         .order_by(ProjectActivity.created_at.desc()).limit(20)
@@ -558,6 +561,9 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
             # the SAME generic structure_count condition `evaluation_begun`
             # already computes below — never a title/production match.
             "is_served_production": structure_count > 0,
+            "evaluation_freshness": _freshness["state"],
+            "evaluation_stale_reason": _freshness["reason"],
+            "retained_engine_version": _freshness["retained_engine_version"],
         },
         "organization": {"id": str(organization.id), "name": organization.name} if organization else None,
         "aliases": [a.alias for a in aliases],
@@ -595,7 +601,8 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
             for l in locations
         ],
         "analysis": {
-            "evaluation_begun": structure_count > 0,
+            "evaluation_begun": structure_count > 0 or _freshness["state"] == "STALE",
+            "retained_evaluation": _freshness["state"] == "STALE",
             "structures_available": structure_count,
             "leading_structure_name": leading_structure.name if leading_structure else None,
             "leading_true_net_cost_usd": (

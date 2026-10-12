@@ -152,6 +152,12 @@ export default function Overview() {
 
   return (
     <div className="screen ovxg-screen">
+      {production?.evaluation_freshness === "STALE" && (
+        <div className="empty-state" role="status" data-retained-results="true">
+          Retained results from {production.retained_engine_version || "an earlier engine"} — these figures are not current. Opening them did not run an evaluation;
+          use Recalculate on the Project Record to refresh.
+        </div>
+      )}
       <FXStrip
         economics={economics} structure={structure}
         structureIsLeading={structureIsLeading} structureIsCurrentLocation={structureIsCurrentLocation}

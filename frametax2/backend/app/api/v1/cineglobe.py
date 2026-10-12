@@ -1529,8 +1529,15 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
     # previously fully read-only and could serve an arbitrarily stale
     # generation forever with no user action able to refresh it short of
     # a manual "Begin Evaluation".
-    await ensure_fx_freshness(db)
-    await evaluate_project(db, project_id)
+    # RETAINED HISTORY CONTROLS OPENING (read only): a project whose evaluation is stale (older engine, or inputs changed since) is OPENED from its retained generation, labelled
+    # stale. Opening never evaluates -- recalculating is the explicit POST /evaluation/begin action -- so this route must not call evaluate_project() for it. A project with a
+    # current generation keeps the cheap idempotent refresh; a never-evaluated project keeps its prior behaviour.
+    from app.services.portfolio_globe_view import evaluation_freshness
+    _fresh = (await evaluation_freshness(db, [project.id]))[project.id]["state"]
+    retained_only = _fresh == "STALE"
+    if not retained_only:
+        await ensure_fx_freshness(db)
+        await evaluate_project(db, project_id)
 
     # CineGlobe canonical pricing path + discovery repair, Task 1: this
     # route previously special-cased Little Utopia by exact project TITLE
@@ -1549,7 +1556,7 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
     # here; if a project has no persisted evaluation yet, it renders the
     # same honest "not yet evaluated" shape every other unevaluated
     # project does, never a different code path.
-    view = await build_production_and_structures(db, project_id)
+    view = await build_production_and_structures(db, project_id, allow_retained=retained_only)
     if view.get("status") != "OK":
         raise HTTPException(status_code=404, detail=view.get("status", "PROJECT_NOT_FOUND"))
     # Codex Defect 5: pkg/economics/people/facts adapted from this
@@ -1557,7 +1564,7 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
     # Little Utopia's, never a second calculation. legal/recommendations
     # stay honest empty shapes; no generic evidence-graph/recommendation
     # engine exists yet for any project outside the LU demo state.
-    sections = await build_generic_pkg_and_economics(db, project_id)
+    sections = await build_generic_pkg_and_economics(db, project_id, allow_retained=retained_only)
     # State endpoint performance fix: for a large production (FVD, Lips
     # Like Sugar) this payload is 20+ MB of already-plain JSON-native
     # dicts/lists/floats/strings (canonical_production_view.py never

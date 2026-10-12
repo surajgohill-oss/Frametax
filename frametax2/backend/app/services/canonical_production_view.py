@@ -1482,7 +1482,7 @@ def _ranking_entry(entry: dict) -> dict:
     return base
 
 
-async def _load_baseline_results(session: AsyncSession, project_id, fingerprint: str) -> list[tuple]:
+async def _load_baseline_results(session: AsyncSession, project_id, fingerprint: str, engine_version: str | None = None) -> list[tuple]:
     """(StructureCalculationResult, structure name) for the current generation's BASELINE row(s),
     newest first -- WITHOUT reading the generation.
 
@@ -1493,7 +1493,7 @@ async def _load_baseline_results(session: AsyncSession, project_id, fingerprint:
     ORM object (526,155 for F#K Valentine's Day) to find that one row. A generation with no summary
     (never one written by canonical-1.88.0+) has no served baseline."""
     try:
-        summary = await load_generation_summary(session, project_id, fingerprint, engine_version=ENGINE_VERSION)
+        summary = await load_generation_summary(session, project_id, fingerprint, engine_version=engine_version or ENGINE_VERSION)
     except GenerationSummaryUnavailable:
         return []
     scr = StructureCalculationResult
@@ -1506,7 +1506,7 @@ async def _load_baseline_results(session: AsyncSession, project_id, fingerprint:
             .where(
                 ProductionStructure.project_id == project_id,
                 scr.input_fingerprint == fingerprint,
-                scr.engine_version == ENGINE_VERSION,
+                scr.engine_version == (engine_version or ENGINE_VERSION),
                 scr.generation_ordinal.in_(ordinals[i:i + 5000]),
                 scr.calculation_trace_json["is_baseline"].astext == "true",
             )
@@ -1623,7 +1623,7 @@ def decode_candidate_cursor(cursor: str) -> tuple[str, int]:
 
 async def build_production_and_structures(
     session: AsyncSession, project_id, *,
-    candidate_limit: int = CANDIDATE_PAGE_DEFAULT_LIMIT, candidate_offset: int = 0,
+    candidate_limit: int = CANDIDATE_PAGE_DEFAULT_LIMIT, candidate_offset: int = 0, allow_retained: bool = False,
 ) -> dict:
     """Generic, project_id-driven replacement for GET /cineglobe/production
     + GET /cineglobe/structures, sourced from canonical_evaluation.py's
@@ -1689,11 +1689,29 @@ async def build_production_and_structures(
     # reaudit: FVD and Lips Like Sugar could previously diverge).
     from app.services.canonical_evaluation import current_generation_fingerprint
     fingerprint = await current_generation_fingerprint(session, project.id)
+    # RETAINED HISTORY (read only): when the project has no CURRENT generation but does have a retained one, serve the newest retained generation, labelled stale. Nothing is
+    # evaluated, no snapshot is rebuilt and the saved leading selection is not reconciled (it would otherwise be cleared against a generation it was never made in).
+    retained_info = None
+    if allow_retained:
+        from app.services.retained_generation import retained_generation
+        _has_current = False
+        if fingerprint:
+            try:
+                await load_generation_summary(session, project.id, fingerprint, engine_version=engine_version)
+                _has_current = True
+            except GenerationSummaryUnavailable:
+                _has_current = False
+        if not _has_current:
+            _retained = await retained_generation(session, project.id)
+            if _retained is not None:
+                engine_version, fingerprint = _retained
+                retained_info = {"evaluation_freshness": "STALE", "retained_engine_version": engine_version,
+                                 "stale_reason": "INPUT_CHANGED" if engine_version == ENGINE_VERSION else "ENGINE_VERSION"}
     # USER-SELECTED LEADER (2026-10-08): the evaluation re-points leading_structure_id to its own leader on every new
     # generation; a producer's "Set as Leading" choice is re-applied here by stable identity (or left on the canonical
     # leader and disclosed as unavailable). Kept out of canonical_evaluation.py on purpose: that file's bytes are part
     # of every project's input fingerprint, so editing it would make every production stale.
-    if fingerprint is not None:
+    if fingerprint is not None and retained_info is None:
         await reconcile_selection(session, project, engine_version=ENGINE_VERSION, fingerprint=fingerprint)
 
     # Bounded read (2026-09-19): this view previously built a structure entry for EVERY
@@ -2819,6 +2837,8 @@ async def build_production_and_structures(
 
     from app.services.served_payload_projection import apply_served_projections
     apply_served_projections(structures["allocated_structures"])
+    production = {**production, "evaluation_freshness": (retained_info or {}).get("evaluation_freshness", "CURRENT"),
+                  "retained_engine_version": (retained_info or {}).get("retained_engine_version"), "stale_reason": (retained_info or {}).get("stale_reason")}
     return {"status": "OK", "production": production, "structures": structures}
 
 
@@ -2857,7 +2877,7 @@ async def _contingency_pct_fact(session, project_id):
         return None
 
 
-async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> dict:
+async def build_generic_pkg_and_economics(session: AsyncSession, project_id, *, allow_retained: bool = False) -> dict:
     """Real pkg/economics/people/facts for a generic (non-demo) project,
     from persisted data only. Honest empty values where nothing exists —
     never fabricated, never Little Utopia's."""
@@ -2901,11 +2921,25 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     # never a second freshness architecture.
     from app.services.canonical_evaluation import current_generation_fingerprint
     current_fingerprint = await current_generation_fingerprint(session, project.id)
+    _baseline_engine = None
+    if allow_retained:       # read-only retained history: the same switch as build_production_and_structures
+        from app.services.retained_generation import retained_generation
+        _current_ok = False
+        if current_fingerprint:
+            try:
+                await load_generation_summary(session, project.id, current_fingerprint, engine_version=ENGINE_VERSION)
+                _current_ok = True
+            except GenerationSummaryUnavailable:
+                _current_ok = False
+        if not _current_ok:
+            _retained = await retained_generation(session, project.id)
+            if _retained is not None:
+                _baseline_engine, current_fingerprint = _retained
     # Bounded read (2026-09-19): this previously loaded EVERY row of the current generation
     # (526,155 ORM objects for F#K Valentine's Day) only to pick out the baseline. The baseline
     # is fetched directly (see _load_baseline_results); the generation is never read.
     baseline_rows = (
-        [r for r, _ in await _load_baseline_results(session, project.id, current_fingerprint)]
+        [r for r, _ in await _load_baseline_results(session, project.id, current_fingerprint, _baseline_engine)]
         if current_fingerprint else []
     )
     leading_result = next(

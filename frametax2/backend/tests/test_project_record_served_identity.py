@@ -108,10 +108,17 @@ async def test_library_grid_card_carries_the_same_served_signal_as_the_record(db
         input_fingerprint="served-identity-test-fingerprint",
     )
     db.add(result)
+    # Since canonical-1.88.0 every generation also writes its one summary row; the Library's served predicate (served_fingerprints) reads that row, so a realistic generation
+    # carries it (a bare result row without a summary is a shape no evaluation produces).
+    from app.models.production import EvaluationGenerationSummary
+    db.add(EvaluationGenerationSummary(
+        project_id=project.id, input_fingerprint="served-identity-test-fingerprint", engine_version=ENGINE_VERSION, total_rows=1, priced_count=0, unpriced_count=1,
+        by_disposition={}, by_reason=[], non_rejected_ordinals=[0], persisted_rows=1, aggregated_candidates=0, aggregated_priced=0, aggregate_groups=0))
     await db.commit()
     assert project.leading_structure_id is None  # never repointed -- the exact case that was silently broken
 
-    cards = await list_projects(organization_id=None, db=db)
+    # The listing is organization-scoped and fails closed without one (settings.CURRENT_ORGANIZATION_ID is unset in the isolated test environment), so scope it explicitly.
+    cards = await list_projects(organization_id=str(project.organization_id), db=db)
     card = next((c for c in cards if str(c.id) == str(project.id)), None)
     assert card is not None
     assert card.is_served_production is True, (

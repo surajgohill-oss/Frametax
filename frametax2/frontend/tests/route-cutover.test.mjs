@@ -95,7 +95,7 @@ test("Overview UI contract: Project Library card click routes by the project's o
   // Inspector/Sidebar Closeout Phase 1: leading_structure_id is narrower
   // than served state (it can legitimately stay unset for a mature,
   // fully-served production) and must no longer gate this route.
-  assert.match(src, /p\.is_served_production\s*\?\s*`\/projects\/\$\{p\.id\}\/overview`/, "a served production must be opened directly");
+  assert.match(src, /isEvaluated\(p\)\s*\?\s*`\/projects\/\$\{p\.id\}\/overview`/, "an evaluated (served or retained) production must be opened directly");
   assert.match(src, /`\/company\/library\/\$\{p\.id\}`/, "a not-yet-evaluated project must keep the existing Project Record flow");
   assert.doesNotMatch(src, /fa5cade5-0669-4816-bfe6-72146f8d3bae/, "must not hard-code Little Utopia's project_id");
 });

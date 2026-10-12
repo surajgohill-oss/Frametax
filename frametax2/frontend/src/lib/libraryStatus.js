@@ -5,7 +5,7 @@
 // only read the list endpoint and never evaluate.
 // Durable visibility is NOT calculation freshness: a project with a retained but stale generation (`evaluation_freshness === "STALE"`, older
 // engine or changed inputs) stays an evaluated project and is labelled stale; only a project with no retained generation at all is Submitted.
-const isEvaluated = (project) => !!project?.is_served_production || project?.evaluation_freshness === "STALE";
+export const isEvaluated = (project) => !!project?.is_served_production || project?.evaluation_freshness === "STALE";
 
 export function libraryStageKey(project) {
   const key = (project?.lifecycle || "evaluation").toLowerCase();

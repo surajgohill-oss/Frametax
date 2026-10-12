@@ -35,11 +35,10 @@ const stripComments = (src) =>
 test("UNEVALUATED: the Evaluate/Begin Evaluation action remains available and is not conditioned on served state alone", () => {
   const src = stripComments(read("screens/company/ProjectRecord.jsx"));
   assert.match(src, /runEvaluation/, "runEvaluation action must exist");
-  assert.match(
-    src,
-    /analysis\.evaluation_begun\s*\?\s*"Re-run Evaluation"\s*:\s*"Begin Evaluation"/,
-    "an unevaluated (or re-evaluatable) production must still expose Evaluate/Re-run Evaluation",
-  );
+  // Begin Evaluation is reserved for a genuinely unevaluated project (no retained history); a stale evaluated project gets Open Results plus an explicit, confirmed Recalculate.
+  assert.match(src, /"Begin Evaluation"/, "an unevaluated production must still expose Begin Evaluation");
+  assert.match(src, /"Recalculate"/, "a stale evaluated production exposes an explicit Recalculate");
+  assert.match(src, /Open Results →/, "a stale evaluated production opens its retained results");
 });
 
 test("EVALUATED: the legacy 'Go to Workspace' lifecycle gate is absent from the served-production CTA", () => {
@@ -72,7 +71,10 @@ test("EVALUATED: canonical production navigation/results are reachable directly 
 
 test("GENERIC: Project Library routing derives from canonical served state, never leading_structure_id or a project identity check", () => {
   const src = stripComments(read("screens/company/ProjectLibrary.jsx"));
-  assert.match(src, /p\.is_served_production \? `\/projects\/\$\{p\.id\}\/overview`/, "routing must key off is_served_production");
+  // Retained evaluation history controls navigation: isEvaluated() is the served state OR a retained (stale) generation (lib/libraryStatus.js, derived from is_served_production
+  // and evaluation_freshness); opening results never evaluates.
+  assert.match(src, /isEvaluated\(p\) \? `\/projects\/\$\{p\.id\}\/overview`/, "routing must key off the evaluated state (served or retained)");
+  assert.match(stripComments(read("lib/libraryStatus.js")), /project\?\.is_served_production/, "isEvaluated is derived from the canonical served state");
   assert.doesNotMatch(src, /leading_structure_id/, "leading_structure_id must not gate Library routing (too narrow — can be unset on a mature, served production)");
   assert.doesNotMatch(src, /p\.title\s*===/, "no title-based branching");
   // No UUID literal anywhere in the routing file.
@@ -83,5 +85,6 @@ test("GENERIC: the Project Record's served-state read is the same field name the
   const recordSrc = stripComments(read("screens/company/ProjectRecord.jsx"));
   const librarySrc = stripComments(read("screens/company/ProjectLibrary.jsx"));
   assert.match(recordSrc, /project\.is_served_production/, "ProjectRecord must read is_served_production");
-  assert.match(librarySrc, /p\.is_served_production/, "ProjectLibrary must read the same is_served_production field");
+  assert.match(librarySrc, /isEvaluated\(p\)/, "ProjectLibrary routes by isEvaluated, which reads the same is_served_production field plus retained history");
+  assert.match(recordSrc, /project\.evaluation_freshness/, "ProjectRecord reads the retained-history state the Library uses");
 });
