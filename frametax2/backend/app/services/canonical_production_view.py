@@ -2817,6 +2817,8 @@ async def build_production_and_structures(
         },
     }
 
+    from app.services.served_payload_projection import apply_served_projections
+    apply_served_projections(structures["allocated_structures"])
     return {"status": "OK", "production": production, "structures": structures}
 
 
