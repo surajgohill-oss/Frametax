@@ -285,7 +285,9 @@ def check_all_pairs(components: list["StructuralComponent"]) -> list[PairwiseChe
     return checks
 
 
-def _price_component(component: StructuralComponent) -> SegmentEconomics:
+def _price_component(component: StructuralComponent, gross_budget_usd: float | None = None,
+                     contingency_expected_utilization_pct: float | None = None,
+                     worldwide_category_spend_usd: dict[str, float] | None = None) -> SegmentEconomics:
     # Locked Structural Policy point 10 (application/preapproval/annual
     # allocation/first-come are disclosures, not discretionary vetoes):
     # reuses the SAME established, already-accepted producer-controlled
@@ -304,7 +306,23 @@ def _price_component(component: StructuralComponent) -> SegmentEconomics:
             component.evidenced_requirement_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
         ),
         amount_facts=component.amount_facts,
+        gross_budget_usd=gross_budget_usd,
+        contingency_expected_utilization_pct=contingency_expected_utilization_pct,
+        worldwide_category_spend_usd=worldwide_category_spend_usd,
     )
+
+
+def _worldwide_category_spend(components, gross_budget_usd) -> dict[str, float] | None:
+    """Per-category worldwide spend of the structure, only when its components account for the whole gross budget (otherwise a partial
+    sum would understate the denominator of a share-of-worldwide eligibility test, so the figure stays unknown)."""
+    total = 0.0
+    out: dict[str, float] = {}
+    for c in components:
+        for a in c.allocations:
+            category = a.spend_category or c.spend_category_by_code.get(a.account_code) or "miscellaneous"
+            out[category] = round(out.get(category, 0.0) + a.amount_usd, 2)
+            total += a.amount_usd
+    return out if gross_budget_usd and abs(total - gross_budget_usd) <= 1.0 else None
 
 
 def _generate_structural_candidate_uncached(
@@ -316,6 +334,7 @@ def _generate_structural_candidate_uncached(
     local_cost_delta_usd: float = 0.0,
     _component_cache: dict[tuple, SegmentEconomics] | None = None,
     planned_cost_reduction_usd: float = 0.0,
+    contingency_expected_utilization_pct: float | None = None,
 ) -> StructuralCandidateResult:
     """Full (uncached) structural pricing -- see generate_structural_candidate."""
     structure_id = _structure_id(components)
@@ -389,6 +408,7 @@ def _generate_structural_candidate_uncached(
     from app.calculators.project_eligibility_gates import evaluate_project_gate
     _gate_rows = [(a.jurisdiction_code, a.amount_usd, a.component, x.component_type) for x in components for a in x.allocations]
     _principal = next((x.jurisdiction_code for x in components if x.component_type == "principal_production"), None)
+    _worldwide = _worldwide_category_spend(components, gross_budget_usd)
     _conditional_gates: dict[int, object] = {}
     for c in components:
         _gate = evaluate_project_gate(c.program_slug, c.jurisdiction_code, _gate_rows, _principal, c.amount_facts)
@@ -408,7 +428,7 @@ def _generate_structural_candidate_uncached(
     comp_econ: list[ComponentEconomics] = []
     selective_zero_notes: list[str] = []
     for c in components:
-        seg = _price_component_cached(c, _component_cache)
+        seg = _price_component_cached(c, _component_cache, gross_budget_usd, contingency_expected_utilization_pct, _worldwide)
         if id(c) in _conditional_gates and seg.executable:
             from app.calculators.allocation_pricing import conditional_project_gate_segment
             seg = conditional_project_gate_segment(seg, _conditional_gates[id(c)])
@@ -593,6 +613,8 @@ def _generate_structural_candidate_uncached(
 
 def _price_component_cached(
     component: StructuralComponent, cache: dict[tuple, SegmentEconomics] | None,
+    gross_budget_usd: float | None = None, contingency_expected_utilization_pct: float | None = None,
+    worldwide_category_spend_usd: dict[str, float] | None = None,
 ) -> SegmentEconomics:
     """Per-component pricing memo (LLS anchor-cardinality repair, 2026-10-01).
     price_segment's result depends only on (jurisdiction, program, the exact
@@ -603,12 +625,12 @@ def _price_component_cached(
     this cache. A hit returns the identical (frozen) SegmentEconomics a fresh
     call would."""
     if cache is None:
-        return _price_component(component)
+        return _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd)
     key = (component.jurisdiction_code, component.program_slug, component.production_type,
-           component.pricing_key)
+           component.pricing_key, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None)
     hit = cache.get(key)
     if hit is None:
-        hit = _price_component(component)
+        hit = _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd)
         cache[key] = hit
     return hit
 
@@ -688,6 +710,7 @@ def generate_structural_candidate(
     _cache: dict[tuple, "StructuralCandidateResult"] | None = None,
     _component_cache: dict[tuple, SegmentEconomics] | None = None,
     planned_cost_reduction_usd: float = 0.0,
+    contingency_expected_utilization_pct: float | None = None,
 ) -> StructuralCandidateResult:
     """The one generic entry point. Never a per-archetype function --
     every one of the twelve corrected Codex archetypes is just a
@@ -706,6 +729,7 @@ def generate_structural_candidate(
         return _generate_structural_candidate_uncached(
             components, gross_budget_usd, anchor_npc_usd, travel_incremental_delta_usd,
             fx_delta_usd, local_cost_delta_usd, _component_cache, planned_cost_reduction_usd,
+            contingency_expected_utilization_pct,
         )
     from app.services import _lls_profile_sink as _prof
     _prof.tick("pricing_calls_total")
@@ -718,6 +742,7 @@ def generate_structural_candidate(
         with _prof.timed("intrinsic_pricing"):
             base = _generate_structural_candidate_uncached(
                 components, gross_budget_usd, None, 0.0, 0.0, 0.0, _component_cache, planned_cost_reduction_usd,
+                contingency_expected_utilization_pct,
             )
         _cache[key] = _slim(base)
         _prof.tick("pricing_cache_miss_executable" if base.executable else "pricing_cache_miss_rejected")

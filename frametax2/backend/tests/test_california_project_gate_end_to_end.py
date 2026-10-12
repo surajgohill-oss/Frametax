@@ -32,5 +32,7 @@ async def test_manitoba_shoot_with_california_vfx_is_rejected_by_the_project_gat
     paired = [r for r in rows if "ca_mb_film_video_credit" in (r[2] or [])] + [("AGG", g.reason_class, g.program_slugs, g.candidate_status) for g in ca_groups if "ca_mb_film_video_credit" in (g.program_slugs or [])]
     assert paired, "the Manitoba + California combination must stay visible (retained row or exactly-counted aggregate group)"
     assert not [r for r in rows if r[0] == "PRICED" and r[3] == "CA-MB"], "no PRICED California-credit candidate may have a Manitoba principal shoot"
-    assert not [g for g in ca_groups if g.candidate_status == "PRICED" and "ca_mb_film_video_credit" in (g.program_slugs or [])]
+    # Only a MANITOBA-shot production is gated out. A California principal shoot with Manitoba post/VFX service work (primary US-CA) satisfies the gate
+    # (all principal photography in California) and may price once the Manitoba cost-of-production credit reaches a no-labour service component.
+    assert not [g for g in ca_groups if g.candidate_status == "PRICED" and g.primary_jurisdiction == "CA-MB" and "ca_mb_film_video_credit" in (g.program_slugs or [])]
     assert any(r[1] == "PROJECT_ELIGIBILITY_GATE_FAILED" for r in paired), paired[:5]

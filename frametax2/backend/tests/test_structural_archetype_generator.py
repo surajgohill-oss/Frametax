@@ -519,11 +519,18 @@ def test_registered_control_5_ny_distinct_cost_stacking():
 def test_registered_control_5b_ny_post_below_real_threshold_rejects():
     """A post-ONLY NY film (no production credit claimed) with a post pool BELOW the real $1,000,000 statutory minimum must be precisely
     rejected -- the real threshold is enforced by the structural composition mechanism."""
+    # Tax Law 31 as amended 2025: qualified post costs must be at least the LESSER of $1,000,000 or 75% of the WORLDWIDE post cost. $400,000 of a
+    # $1,000,000 worldwide post cost is below the lesser threshold ($750,000) and rejects; the same $400,000 as the whole post cost passes ($300,000).
     post = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="REG5B-POST",
-                 component_type="principal_production", spend_category="post_production")
-    res = generate_structural_candidate([post], gross_budget_usd=400_000.0)
+                 component_type="post", spend_category="post_production")
+    elsewhere = _comp("us_ga_film_credit", "US-GA", 600_000.0, line_id="REG5B-OTHER-POST",
+                      component_type="principal_production", spend_category="post_production")
+    res = generate_structural_candidate([elsewhere, post], gross_budget_usd=1_000_000.0)
     assert res.executable is False
     assert "us_ny_post_production_credit" in res.rejection_reason
+    whole = _comp("us_ny_post_production_credit", "US-NY", 400_000.0, line_id="REG5B-WHOLE",
+                  component_type="principal_production", spend_category="post_production")
+    assert generate_structural_candidate([whole], gross_budget_usd=400_000.0).executable is True
 
 
 def test_registered_control_5c_ny_same_line_cannot_claim_both_programs():
@@ -1031,7 +1038,8 @@ def test_cache_key_pairs_component_type_with_its_own_jurisdiction_never_a_positi
     _structure_id() itself does not encode component_type."""
     # the principal is a Georgia credit: ny_state_film + the NY post credit is film-level mutually exclusive (Tax Law 31(a)(1)), which would
     # reject BOTH variants and defeat this cache-collision control; a post-only NY routing beside another state's credit is composable.
-    principal = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, line_id="CACHE6-PRINCIPAL")
+    # The NY post amount must be below its gateway: the lesser of $1,000,000 or 75% of the WORLDWIDE post cost, so the Georgia principal carries post cost.
+    principal = _comp("us_ga_film_credit", "US-GA", 3_000_000.0, line_id="CACHE6-PRINCIPAL", spend_category="post_production")
     below_threshold_post = _comp(
         "us_ny_post_production_credit", "US-NY", 400_000.0,
         line_id="CACHE6-POST", component_type="post",

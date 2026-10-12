@@ -77,7 +77,7 @@ from app.calculators.qualification_model import (
     QualificationState,
     _ALTERNATIVE_TERRITORIAL_TEXT,
 )
-from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate
+from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate, percent_gateway_minimum_qpe
 from app.data.authority_coverage_registry import get_coverage_status
 from app.data.program_rate_rules import (
     _fx_native_amount,
@@ -648,6 +648,14 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     return round(floor_base + sum(floor_parts.values()), 2), round(potential_base + sum(potential_parts.values()), 2), tuple(conditions)
 
 
+def _segment_category_spend(allocations, spend_category_by_code) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for a in allocations:
+        category = a.spend_category or spend_category_by_code.get(a.account_code) or "miscellaneous"
+        out[category] = round(out.get(category, 0.0) + a.amount_usd, 2)
+    return out
+
+
 def price_segment(
     jurisdiction_code: str,
     program_slug: str | None,
@@ -664,6 +672,7 @@ def price_segment(
     fx_context=None,
     home_jurisdiction_code: str | None = None,
     scenario_btl_nonlocal: bool = False,
+    worldwide_category_spend_usd: dict[str, float] | None = None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -1208,10 +1217,14 @@ def price_segment(
             _derived_amount_facts[_cond.amount_fact_key] = _derived_subtotal
     amount_facts = _derived_amount_facts
 
+    _rate_amount_facts = amount_facts
+    _post_min = percent_gateway_minimum_qpe(slug, worldwide_category_spend_usd)
+    if _post_min is not None:
+        _rate_amount_facts = {**(amount_facts or {}), f"min_qpe_override:{slug}": _post_min}
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
                                gross_budget_usd=gross_budget_usd,
                                evidenced_facts=evidenced_requirement_facts,
-                               amount_facts=amount_facts, fx_context=fx_context)
+                               amount_facts=_rate_amount_facts, fx_context=fx_context)
 
     # A CEILING IS A LIMIT, NEVER A GUARANTEED RATE. When a program's only
     # tiers are band ceilings there is no statutory floor to fall back on,
@@ -1237,6 +1250,8 @@ def price_segment(
         segment_allocated_usd=allocated,
         gross_budget_usd=gross_budget_usd,
         evidenced_facts=evidenced_requirement_facts,
+        category_spend_usd=_segment_category_spend(allocations, spend_category_by_code),
+        worldwide_category_spend_usd=worldwide_category_spend_usd,
     )
     # Canonical optimizer/Globe wiring remediation (2026-09-04), P0-1:
     # Codex's four-project audit proved this WAS a real, live defect --
@@ -1383,6 +1398,15 @@ def price_segment(
             ),
         )
 
+    if rr is None and slug in _ALTERNATIVE_ELECTION_PROGRAMS and qpe > 0:
+        # The labour-base rate did not resolve (no eligible labour in this segment, e.g. an explicit service line), but the elective
+        # cost-of-production credit applies to ALL eligible expenditures and needs no labour base. Price it through the election below
+        # instead of returning early: a zero-rate labour credit, so the higher-of comparison selects the alternative.
+        from app.data.program_rate_rules import RateResolution
+        rr = RateResolution(
+            program_slug=slug, modeled_rate=0.0, floor_rate=0.0, is_band_ceiling=False, tier_id="alternative-election-only",
+            basis="No eligible labour base in this segment; only the elective cost-of-production credit on all eligible expenditures applies.",
+            conditions_evaluated=(), unverified_claims=(), conflicts=(), has_guaranteed_floor=True)
     if rr is None:
         cap_blocker = (
             (f"{jurisdiction_code}/{slug}: ${qpe_cap_applied:,.0f} of eligible "
@@ -1491,6 +1515,11 @@ def price_segment(
             )
         _basis_upper_bound = qpe
         _basis_bound_label = f"qualifying allocated spend ${qpe:,.2f}"
+        if (slug == "ca_federal_cptc" and qpe_cap_applied > 0 and not rr.qpe_basis_line_components
+                and isinstance(_basis, (int, float)) and not isinstance(_basis, bool) and _basis > _basis_upper_bound):
+            # CRA RC4164 / Form T1131: the credit base is the LESSER of the labour expenditure and 60% of the production cost net of
+            # assistance. The QPE cap above is that 60% limit, so labour above it is trimmed to it rather than the segment being rejected.
+            _basis = _basis_upper_bound
         if rr.qpe_basis_line_components:
             _traced_lines = [
                 a for a in allocations
@@ -2092,6 +2121,7 @@ def price_allocated_structure(
 
     segments: list[SegmentEconomics] = []
     _gate_rows = [(a.jurisdiction_code, a.amount_usd, a.component, "") for a in allocation.assignments]
+    _worldwide_by_category = _segment_category_spend(allocation.assignments, spend_category_by_code)
     for jur in sorted(by_jur):
         seg = price_segment(
             jurisdiction_code=jur,
@@ -2109,6 +2139,7 @@ def price_allocated_structure(
             fx_context=fx_context,
             home_jurisdiction_code=home_jurisdiction_code,
             scenario_btl_nonlocal=scenario_btl_nonlocal,
+            worldwide_category_spend_usd=_worldwide_by_category,
         )
         # Project-level eligibility (California Program 4.0: 75% of budget OR 75% of principal photography in California) cannot be decided
         # by one segment alone; a failed gate zeroes this segment's credit and keeps the candidate visible with an affirmative rejection.

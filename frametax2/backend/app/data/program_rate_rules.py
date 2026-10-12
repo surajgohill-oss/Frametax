@@ -2369,7 +2369,7 @@ def classify_rate_resolution_failure(
     for rule in rules:
         if production_type not in rule.production_types:
             continue
-        if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
+        if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < _effective_min_qpe(rule, amount_facts)):
             continue
         if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd, fx_context):
             continue
@@ -2543,6 +2543,15 @@ def _resolve_us_or_opif_composite(
     )
 
 
+def _effective_min_qpe(rule, amount_facts) -> float:
+    """A tier's minimum QPE, lowered (never raised) by a caller-computed share-of-worldwide branch. New York's post credit requires qualified
+    post costs of at least the LESSER of $1,000,000 or 75% of the worldwide post cost (tax.ny.gov/legal/2025/pit-corp-changes.htm); the
+    dollar floor on the tier is only the first branch, so price_segment supplies min(dollar, share x worldwide) under this key when the
+    worldwide figure is known. Absent the key, the dollar floor stands."""
+    override = (amount_facts or {}).get(f"min_qpe_override:{rule.program_slug}")
+    return min(rule.min_qpe_usd, float(override)) if override is not None else rule.min_qpe_usd
+
+
 def resolve_program_rate(
     program_slug: str,
     production_type: str,
@@ -2609,7 +2618,7 @@ def resolve_program_rate(
     for rule in sorted(rules, key=lambda r: -r.rate):
         if production_type not in rule.production_types:
             continue
-        if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
+        if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < _effective_min_qpe(rule, amount_facts)):
             continue
         if not _amount_and_boolean_conditions_met(rule, amount_facts, evidenced_facts, qpe_usd, fx_context):
             continue
