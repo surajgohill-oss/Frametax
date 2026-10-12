@@ -163,3 +163,44 @@ async def list_served_candidates(
         **allocated["candidates_page"],
         "structures": allocated["structures"], "ranking": allocated["ranking"],
     }
+
+
+_OPTIMIZER_LISTS = {
+    "evaluated": "evaluated_optimizer_alternatives", "recommended": "recommended_optimizer_options", "opportunities": "optimizer_opportunities_requiring_facts",
+    "candidates": "optimizer_candidates", "scenarios": "optimizer_scenarios",
+}
+
+
+@router.get("/{project_id}/evaluation/optimizer-list")
+async def list_optimizer_entries(
+    project_id: uuid.UUID,
+    kind: str = Query("evaluated", description="evaluated | recommended | opportunities | candidates | scenarios"),
+    limit: int = Query(50, ge=1, le=100),
+    cursor: str | None = Query(None, description="next_cursor from the previous page; omit for the first page"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Every entry of one optimizer list, one bounded page at a time, in the list's deterministic served order. The production view returns page 1 of each list (with its
+    ``<list>_page`` meta); follow ``next_cursor`` while ``has_more`` is true to receive every entry exactly once. Serves the CURRENT generation, or the newest RETAINED one (labelled
+    stale) when the project has no current generation. Read-only: never evaluates. A cursor minted for another generation is refused (409)."""
+    if kind not in _OPTIMIZER_LISTS:
+        raise HTTPException(status_code=422, detail=f"kind must be one of {sorted(_OPTIMIZER_LISTS)}")
+    if await db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    offset, fp16 = 0, None
+    if cursor is not None:
+        try:
+            fp16, offset = decode_candidate_cursor(cursor)
+        except InvalidPageCursor as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    name = _OPTIMIZER_LISTS[kind]
+    view = await build_production_and_structures(db, project_id, allow_retained=True, optimizer_list_offsets={name: offset}, optimizer_list_limit=limit)
+    if view.get("status") != "OK" or not view["production"].get("served_input_fingerprint"):
+        return {"status": "NO_EVALUATION", "kind": kind, "returned": 0, "has_more": False, "next_cursor": None, "entries": []}
+    served_fp = view["production"]["served_input_fingerprint"]
+    if fp16 is not None and fp16 != served_fp[:16]:
+        raise HTTPException(status_code=409, detail="cursor belongs to a different evaluation generation; restart from the first page")
+    allocated = view["structures"]["allocated_structures"]
+    return {
+        "status": "OK", "kind": kind, "engine_version": view["production"]["served_engine_version"], "input_fingerprint": served_fp,
+        "evaluation_freshness": view["production"]["evaluation_freshness"], **allocated.get(f"{name}_page", {}), "entries": allocated.get(name, []),
+    }

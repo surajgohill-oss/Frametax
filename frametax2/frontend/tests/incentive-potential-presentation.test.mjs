@@ -128,7 +128,11 @@ test("hover bodies and every segment-Inspector opener render the shared contract
   const hover = read("components/GlobeHoverCard.jsx");
   assert.equal((hover.match(/<PotentialFields pot=/g) || []).length, 4,
     "the three priced structure bodies plus the complete-contract jurisdiction body");
-  assert.match(hover, /hidePotential=\{!!hover\.structureDetail\?\.incentive_potential\}/, "a route hover renders the contract once");
+  // A route hover renders the contract once because the route bodies render PotentialFields themselves and never embed the jurisdiction record: that record (whose own
+  // potential block can be hidden) is used only by the aggregated, non-route marker body. (The earlier assertion expected a hidePotential prop at a route call site that the
+  // hover redesign removed; the invariant it guarded is asserted here directly.)
+  assert.equal((hover.match(/<JurisdictionRecordBody /g) || []).length, 1, "the jurisdiction record has a single call site");
+  assert.match(hover, /function AggregatedUniverseBody\(\{ hover \}\) \{\s*return \(\s*<>\s*<JurisdictionRecordBody hover=\{hover\} \/>/, "and it is the aggregated marker body");
   assert.doesNotMatch(hover, /pot\.\w+\s*[-+*/]\s*pot\./);
   const insp = read("shell/Inspector.jsx");
   assert.equal((insp.match(/<IncentivePotentialRows pot=\{data\.incentive_potential\}/g) || []).length, 2, "structure + segment Inspector");

@@ -49,3 +49,27 @@ test("a retained but stale generation keeps the project visible and labelled sta
   assert.equal(libraryFilterMatches("submitted", stale), false);
   assert.equal(libraryFilterMatches("active", never), false);
 });
+
+test("retained evaluation history controls the Record actions, the Library navigation and the Overview label; opening never evaluates", () => {
+  const record = readFileSync(join(SRC, "screens", "company", "ProjectRecord.jsx"), "utf8");
+  assert.match(record, /Open Results →/);
+  assert.match(record, /Recalculate/);
+  assert.match(record, /window\.confirm\(/, "recalculating is explicit and confirmed");
+  // Begin Evaluation is only the genuinely unevaluated branch: it follows the stale branch
+  assert.ok(record.indexOf("isStale ?") < record.indexOf("Begin Evaluation"));
+  const lib = readFileSync(join(SRC, "screens", "company", "ProjectLibrary.jsx"), "utf8");
+  assert.match(lib, /isEvaluated\(p\) \? `\/projects\/\$\{p\.id\}\/overview`/);
+  const overview = readFileSync(join(SRC, "screens", "production", "Overview.jsx"), "utf8");
+  assert.match(overview, /evaluation_freshness === "STALE"/);
+  assert.doesNotMatch(lib, /beginEvaluation|runEvaluation/);
+});
+
+test("bounded optimizer lists: the hook merges further pages read only and the Workspace offers them", () => {
+  const hook = readFileSync(join(SRC, "lib", "useCineGlobe.js"), "utf8");
+  assert.match(hook, /getOptimizerListPage\(projectId, kind, cursor\)/);
+  assert.match(hook, /!have\.has\(e\.structure_id\)/, "pages merge without duplicating an entry");
+  const api = readFileSync(join(SRC, "api.js"), "utf8");
+  assert.match(api, /evaluation\/optimizer-list\?kind=/);
+  const ws = readFileSync(join(SRC, "screens", "production", "Workspace.jsx"), "utf8");
+  assert.match(ws, /Load more options/);
+});

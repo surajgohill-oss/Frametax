@@ -428,7 +428,7 @@ function GlobeChrome({ productionName, nScenarios, nMarkers, nArcsInRoute }) {
 
 export default function Workspace() {
   const { projectId: routeProjectId } = useParams();
-  const { data, error, loading, refetch } = useCineGlobe(routeProjectId);
+  const { data, error, loading, refetch, loadMoreOptimizerList } = useCineGlobe(routeProjectId);
   const location = useLocation();
   const navTab = location.state?.tab;
   // "See all N" mode preservation (Overview.jsx's OptimizerCategorySummary
@@ -861,6 +861,12 @@ export default function Workspace() {
                   {/* PRODUCTION-FIT (2026-10-01): exact counts served by the backend
                       (optimizer_production_fit_counts); never recomputed here. */}
                   {fitCounts ? ` · location fit: ${fitCounts.fit_confirmed} confirmed · ${fitCounts.fit_unconfirmed} unconfirmed · ${fitCounts.weak_fit} low-fit` : ""}
+                  {/* Bounded initial response: each optimizer list is served as a first page; every other entry is read from the page route on request (read only). */}
+                  {["evaluated", "recommended", "opportunities"].some((k) => allocated[{ evaluated: "evaluated_optimizer_alternatives", recommended: "recommended_optimizer_options", opportunities: "optimizer_opportunities_requiring_facts" }[k] + "_page"]?.has_more) && (
+                    <button className="wsx-more" data-load-more-options="true" onClick={() => ["evaluated", "recommended", "opportunities"].forEach((k) => loadMoreOptimizerList(k))}>
+                      {" "}Load more options
+                    </button>
+                  )}
                 </span>
               );
             })()}

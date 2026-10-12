@@ -79,3 +79,60 @@ def test_the_projection_is_pure_and_deterministic_and_materially_smaller():
     assert scenario_reference(src["optimizer_scenarios"][0]) == scenario_reference(src["optimizer_scenarios"][0]) and src == snapshot
     assert candidate_projection(src["optimizer_candidates"][0]) == candidate_projection(src["optimizer_candidates"][0]) and src == snapshot
     assert len(json.dumps(one)) < 0.6 * len(json.dumps(src))
+
+
+# ── bounded pages of the optimizer lists: no unbounded initial response, every entry reachable ──────────────────────────────────────────────────────────
+
+import random
+
+from app.services.served_payload_projection import OPTIMIZER_LIST_PAGE_LIMIT, page_optimizer_lists
+
+
+def _big(n, seed=3):
+    rng = random.Random(seed)
+    entries = []
+    for i in range(n):
+        e = _entry(i, rng.choice(["EVALUATED_ALTERNATIVE", "NEUTRAL", "COSTS_MORE"]))
+        e.update(savings_vs_current_usd=rng.choice([None, rng.uniform(-5e5, 5e5)]), npc_verified_usd=rng.uniform(1e6, 3e6), fit_priority=rng.choice([1, 2, 3, None]),
+                 dominance_status=rng.choice(["DOMINATED", "NON_DOMINATED"]))
+        entries.append(e)
+    return {"evaluated_optimizer_alternatives": entries, "optimizer_candidates": copy.deepcopy(entries), "optimizer_scenarios": copy.deepcopy(entries),
+            "recommended_optimizer_options": [], "producer_optimizer_options": [], "optimizer_opportunities_requiring_facts": copy.deepcopy(entries[:120])}
+
+
+def test_the_initial_response_is_bounded_whatever_the_universe_and_every_entry_is_reachable_exactly_once():
+    small, large = _big(300), _big(6000)
+    p_small, p_large = page_optimizer_lists(copy.deepcopy(small), fingerprint="f" * 64), page_optimizer_lists(copy.deepcopy(large), fingerprint="f" * 64)
+    assert len(p_large["evaluated_optimizer_alternatives"]) == OPTIMIZER_LIST_PAGE_LIMIT and p_large["evaluated_optimizer_alternatives_page"]["total"] == 6000
+    assert len(json.dumps(p_large)) < 1.05 * len(json.dumps(p_small)), "the initial response does not grow with the universe"
+    ids = []
+    offset = 0
+    while True:
+        page = page_optimizer_lists(copy.deepcopy(large), fingerprint="f" * 64, offsets={"evaluated_optimizer_alternatives": offset})
+        ids += [e["structure_id"] for e in page["evaluated_optimizer_alternatives"]]
+        meta = page["evaluated_optimizer_alternatives_page"]
+        if not meta["has_more"]:
+            break
+        offset += OPTIMIZER_LIST_PAGE_LIMIT
+    assert len(ids) == 6000 and len(set(ids)) == 6000, "every entry exactly once across the pages"
+
+
+def test_the_page_order_is_the_frontends_order_so_the_first_page_is_the_head_of_what_the_producer_sees():
+    entries = _big(400)["evaluated_optimizer_alternatives"]
+    page = page_optimizer_lists({"evaluated_optimizer_alternatives": copy.deepcopy(entries)}, fingerprint="a" * 64)["evaluated_optimizer_alternatives"]
+    inf = float("inf")
+    rank = {"EVALUATED_ALTERNATIVE": 0, "NEUTRAL": 1, "COSTS_MORE": 2}
+    expected = sorted(entries, key=lambda e: (e["fit_priority"] if e["fit_priority"] is not None else 2, rank[e["recommendation_status"]], 1 if e["dominance_status"] == "DOMINATED" else 0,
+                                              inf if e["savings_vs_current_usd"] is None else -e["savings_vs_current_usd"], e["npc_verified_usd"], e["economic_identity"]))
+    assert [e["structure_id"] for e in page] == [e["structure_id"] for e in expected[:OPTIMIZER_LIST_PAGE_LIMIT]]
+
+
+def test_the_saved_leader_is_always_in_the_candidate_page_and_pages_are_deterministic_and_bound_to_a_generation():
+    data = _big(500)
+    leader = data["optimizer_candidates"][-1]["structure_id"]
+    a = page_optimizer_lists(copy.deepcopy(data), fingerprint="b" * 64, pin_ids=frozenset({leader}))
+    assert leader in {e["structure_id"] for e in a["optimizer_candidates"]} and a["optimizer_candidates_page"]["pinned"] in (0, 1)
+    b = page_optimizer_lists(copy.deepcopy(data), fingerprint="b" * 64, pin_ids=frozenset({leader}))
+    assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+    other = page_optimizer_lists(copy.deepcopy(data), fingerprint="c" * 64)
+    assert a["evaluated_optimizer_alternatives_page"]["next_cursor"] != other["evaluated_optimizer_alternatives_page"]["next_cursor"]

@@ -64,6 +64,9 @@ export function getProjectState(projectId) {
   _projectStateInFlight.set(projectId, promise);
   return promise;
 }
+// Optimizer lists are served as a bounded first page with a cursor; this reads the next page of one list (read only, never evaluates).
+export const getOptimizerListPage = (projectId, kind, cursor) =>
+  request(`/projects/${projectId}/evaluation/optimizer-list?kind=${encodeURIComponent(kind)}&limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
 // Company Globe / sidebar mini-globe: every ACTIVE project's leading structure in ONE request
 // (app/services/portfolio_globe_view.py) -- never one full /state per project. Single-flight like getProjectState.
 let _portfolioInFlight = null;

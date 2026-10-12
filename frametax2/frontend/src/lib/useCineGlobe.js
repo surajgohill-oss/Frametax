@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  getEconomics, getFacts, getLegal, getPackage, getPeople, getProduction,
+  getEconomics, getFacts, getLegal, getOptimizerListPage, getPackage, getPeople, getProduction,
   getProjectState, getRecommendations, getStructures,
 } from "../api";
 import { useAppState } from "../state/AppState";
@@ -72,5 +72,26 @@ export function useCineGlobe(projectId) {
     return () => window.removeEventListener("cineglobe:refetch", load);
   }, [load]);
 
-  return { ...state, refetch: load };
+  // The next page of one bounded optimizer list, merged into the served data so every surface sees it (deduped by structure id; read only).
+  const LISTS = { evaluated: "evaluated_optimizer_alternatives", recommended: "recommended_optimizer_options", opportunities: "optimizer_opportunities_requiring_facts" };
+  const loadMoreOptimizerList = useCallback(async (kind) => {
+    const name = LISTS[kind];
+    const allocated = state.data?.structures?.allocated_structures;
+    const cursor = allocated?.[`${name}_page`]?.next_cursor;
+    if (!projectId || !name || !cursor) return;
+    const page = await getOptimizerListPage(projectId, kind, cursor);
+    if (!mounted.current || page?.status !== "OK") return;
+    setState((s) => {
+      const a = s.data?.structures?.allocated_structures;
+      if (!a) return s;
+      const have = new Set((a[name] || []).map((e) => e.structure_id));
+      const merged = [...(a[name] || []), ...(page.entries || []).filter((e) => !have.has(e.structure_id))];
+      const { entries, status, kind: _k, engine_version, input_fingerprint, evaluation_freshness, ...meta } = page;
+      const next = { ...a, [name]: merged, [`${name}_page`]: meta };
+      if (kind === "recommended") next.producer_optimizer_options = merged;
+      return { ...s, data: { ...s.data, structures: { ...s.data.structures, allocated_structures: next } } };
+    });
+  }, [projectId, state.data]);
+
+  return { ...state, refetch: load, loadMoreOptimizerList };
 }

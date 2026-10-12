@@ -1624,6 +1624,7 @@ def decode_candidate_cursor(cursor: str) -> tuple[str, int]:
 async def build_production_and_structures(
     session: AsyncSession, project_id, *,
     candidate_limit: int = CANDIDATE_PAGE_DEFAULT_LIMIT, candidate_offset: int = 0, allow_retained: bool = False,
+    optimizer_list_offsets: dict | None = None, optimizer_list_limit: int | None = None,
 ) -> dict:
     """Generic, project_id-driven replacement for GET /cineglobe/production
     + GET /cineglobe/structures, sourced from canonical_evaluation.py's
@@ -2837,8 +2838,14 @@ async def build_production_and_structures(
 
     from app.services.served_payload_projection import apply_served_projections
     apply_served_projections(structures["allocated_structures"])
+    from app.services.served_payload_projection import OPTIMIZER_LIST_PAGE_LIMIT, page_optimizer_lists
+    page_optimizer_lists(
+        structures["allocated_structures"], fingerprint=fingerprint, offsets=optimizer_list_offsets,
+        limit=optimizer_list_limit or OPTIMIZER_LIST_PAGE_LIMIT,
+        pin_ids=frozenset({str(project.leading_structure_id)}) if project.leading_structure_id else frozenset())
     production = {**production, "evaluation_freshness": (retained_info or {}).get("evaluation_freshness", "CURRENT"),
-                  "retained_engine_version": (retained_info or {}).get("retained_engine_version"), "stale_reason": (retained_info or {}).get("stale_reason")}
+                  "retained_engine_version": (retained_info or {}).get("retained_engine_version"), "stale_reason": (retained_info or {}).get("stale_reason"),
+                  "served_engine_version": engine_version, "served_input_fingerprint": fingerprint}
     return {"status": "OK", "production": production, "structures": structures}
 
 

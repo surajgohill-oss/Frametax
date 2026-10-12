@@ -94,3 +94,74 @@ def apply_served_projections(allocated: dict) -> dict:
         "omitted_from_collection_copies": sorted(COLLECTION_UNREAD_KEYS),
     }
     return allocated
+
+
+# ── bounded pages of the optimizer lists ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+#: Each optimizer list is served as a deterministic first page plus a cursor; every entry stays reachable through GET /projects/{id}/evaluation/optimizer-list. The page order is
+#: the order the frontend sorts these lists into (workspaceScenarioMode.js), so the first page is exactly the head of what the producer sees and a later page continues it.
+OPTIMIZER_LIST_PAGE_LIMIT = 50
+_TIER_RANK = {"PRACTICAL_HYBRID": 0, "FORMAL_COPRODUCTION": 1, "ADVANCED_MULTI_JURISDICTION": 2}
+_EVAL_STATUS_RANK = {"EVALUATED_ALTERNATIVE": 0, "NEUTRAL": 1, "COSTS_MORE": 2, "BASELINE_UNRESOLVED": 3}
+_INF = float("inf")
+PAGED_LISTS = ("evaluated_optimizer_alternatives", "recommended_optimizer_options", "producer_optimizer_options", "optimizer_opportunities_requiring_facts",
+               "optimizer_candidates", "optimizer_scenarios")
+
+
+def _npc(e) -> float:
+    for k in ("npc_verified_usd", "npc_with_adjustments_usd"):
+        if e.get(k) is not None:
+            return float(e[k])
+    return _INF
+
+
+def _neg_savings(e) -> float:
+    v = e.get("savings_vs_current_usd")
+    return _INF if v is None else -float(v)
+
+
+def _evaluated_key(e):
+    return (e.get("fit_priority") if e.get("fit_priority") is not None else 2, _EVAL_STATUS_RANK.get(e.get("recommendation_status"), 9),
+            1 if e.get("dominance_status") == "DOMINATED" else 0, _neg_savings(e), _npc(e), e.get("economic_identity") or "")
+
+
+def _recommended_key(e):
+    return (_TIER_RANK.get(e.get("practicality_tier"), 9), _neg_savings(e), _npc(e), e.get("economic_identity") or "")
+
+
+def _candidate_key(e):
+    return (_TIER_RANK.get(e.get("practicality_tier"), 9), _npc(e), e.get("economic_identity") or "", e.get("structure_id") or "")
+
+
+_ORDER = {
+    "evaluated_optimizer_alternatives": (_evaluated_key, "fit_priority, status, dominance, savings desc, npc, identity"),
+    "recommended_optimizer_options": (_recommended_key, "tier, savings desc, npc, identity"),
+    "producer_optimizer_options": (_recommended_key, "tier, savings desc, npc, identity"),
+    "optimizer_opportunities_requiring_facts": (None, "served order"),
+    "optimizer_candidates": (_candidate_key, "tier, npc, identity"),
+    "optimizer_scenarios": (_candidate_key, "tier, npc, identity"),
+}
+
+
+def page_optimizer_lists(allocated: dict, *, fingerprint: str | None, offsets: dict | None = None, limit: int = OPTIMIZER_LIST_PAGE_LIMIT, pin_ids=frozenset()) -> dict:
+    """Replace each paged list with its deterministic page and add ``<list>_page`` ({limit, returned, total, offset, has_more, next_cursor, order}). ``total`` is the exact
+    size of the full list. ``pin_ids`` (the saved leader) are always included in optimizer_candidates, so a leader lookup never misses; pinned extras are counted in the meta."""
+    from app.services.canonical_production_view import encode_candidate_cursor
+    offsets = offsets or {}
+    for name in PAGED_LISTS:
+        full = allocated.get(name)
+        if not isinstance(full, list):
+            continue
+        key, order = _ORDER[name]
+        ordered = sorted(full, key=key) if key else list(full)
+        offset = max(0, int(offsets.get(name, 0)))
+        page = ordered[offset:offset + limit]
+        pinned = []
+        if name == "optimizer_candidates" and pin_ids:
+            shown = {e.get("structure_id") for e in page}
+            pinned = [e for e in ordered if e.get("structure_id") in pin_ids and e.get("structure_id") not in shown]
+        has_more = offset + limit < len(ordered)
+        allocated[name] = page + pinned
+        allocated[f"{name}_page"] = {
+            "limit": limit, "offset": offset, "returned": len(page), "pinned": len(pinned), "total": len(ordered), "has_more": has_more,
+            "next_cursor": encode_candidate_cursor(fingerprint or "", offset + limit) if has_more else None, "order": order}
+    return allocated
