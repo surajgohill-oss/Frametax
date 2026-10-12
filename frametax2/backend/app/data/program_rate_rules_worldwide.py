@@ -8202,8 +8202,12 @@ US_UT_DOCTRINE = register(DoctrineRecord(
               "a 4.5% loan-out withholding rate -- neither is a rate "
               "change; catalog's 20%/25% figures carried forward unchallenged.",
     source_ref="catalog-unchallenged+greenslate.com-extension-only",
-    tiers=(DoctrineRateTier(tier_id="us-ut-base-20", rate=0.20, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="us-ut-ceiling-25", rate=0.25, is_band_ceiling=True,
+    # Utah Film Commission, Incentive Program Summary & FAQ (April 2025, read 2026-10-12): the Motion Picture Incentive Program needs "Over $500K in qualified
+    # spend" (the $100,000-$500,000 band is the separate Community Film Incentive Program with its own residency tests); the 25% tier needs "Over $1M in
+    # qualified spend" plus 75% Utah-resident cast and crew OR 75% of production days in rural Utah. The $500K-$1M band also carries a 75% Utah-resident cast and
+    # crew condition, a producer fact disclosed as a claim follow-up, not modeled here.
+    tiers=(DoctrineRateTier(tier_id="us-ut-base-20", rate=0.20, is_band_ceiling=False, min_qpe_usd=500_000.01),
+           DoctrineRateTier(tier_id="us-ut-ceiling-25", rate=0.25, is_band_ceiling=True, min_qpe_usd=1_000_000.01,
                              conditions=(RateCondition(
                                  condition_id="us-ut-rate-not-reconfirmed",
                                  description="20-25% range carried "

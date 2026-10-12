@@ -1687,17 +1687,19 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     # among the 4 real Ontario programs, directly re-measured. Every
     # combination's own real stacking-rule type governs its disposition,
     # never a blanket "CPTC must be absent" rule this test used to assert.
-    assert len(multi_entries) == 7
+    # The expected combinations are DERIVED from the stacking-rule registry, not pinned: a same-jurisdiction group is generated only when EVERY pair has a
+    # named publishable rule, and it can price only when no pair is mutually_exclusive.
+    from itertools import combinations
+    from app.calculators.canonical_stack_bridge import _PUBLISHABLE_RULE_TYPES, load_named_pair_rule
+    ocase = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    four = ["ca_federal_cptc", "on_ofttc", "on_opstc", ocase]
+    rule_type = lambda a, b: (load_named_pair_rule(a, b) or {}).get("rule_type")
+    expected_generated = {frozenset(c) for n in (2, 3, 4) for c in combinations(four, n)
+                          if all(rule_type(a, b) in _PUBLISHABLE_RULE_TYPES for a, b in combinations(c, 2))}
+    expected_priced = {c for c in expected_generated if not any(rule_type(a, b) == "mutually_exclusive" for a, b in combinations(sorted(c), 2))}
+    assert len(multi_entries) == len(expected_generated)
     multi_slug_sets = {frozenset(e["program_slugs"]) for e in multi_entries}
-    assert multi_slug_sets == {
-        frozenset({"ca_federal_cptc", "on_ofttc"}),
-        frozenset({"ca_federal_cptc", "on_opstc"}),
-        frozenset({"on_ofttc", "on_opstc"}),
-        frozenset({"on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}),
-        frozenset({"on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}),
-        frozenset({"ca_federal_cptc", "on_ofttc", "on_opstc"}),
-        frozenset({"on_ofttc", "on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}),
-    }
+    assert multi_slug_sets == expected_generated
     # The invariant this test exists to guard is unchanged: a mutually-
     # exclusive pair (on_ofttc + on_opstc, "Codex B2 identity ruling:
     # rekeyed from ca_on_opstc") must never price as a combined structure
@@ -1708,15 +1710,11 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     assert mutually_exclusive_pair["scenario_category"] == "NOT_AVAILABLE"
     assert mutually_exclusive_pair["is_fully_priced"] is False
     priced_multi = [e for e in multi_entries if e["is_fully_priced"]]
-    # NA-CODEX-08 (2026-10-12): CPTC + OPSTC is a spend_reduction pair, not a prohibition (Ontario Creates OPSTC Guidelines s.1.01), so it joins the
-    # compatible combinations; the triples containing the exclusive OFTTC/OPSTC pair are still rejected. (Data-dependent: needs the FVD fixture project.)
-    assert len(priced_multi) == 4, (
-        "exactly the 4 genuinely spend_reduction/compatible combinations "
-        "(CPTC+OFTTC, CPTC+OPSTC, OPSTC+OCASE, OFTTC+OCASE) must price; the rest are real, "
-        "disclosed mutually_exclusive or Canadian-labour-basis rejections"
-    )
-    assert frozenset({"ca_federal_cptc", "on_opstc"}) in {frozenset(e["program_slugs"]) for e in priced_multi}
-
+    # NA-CODEX-08: CPTC + OPSTC is a spend_reduction pair (Ontario Creates OPSTC Guidelines s.1.01), so it prices; every group containing the exclusive
+    # OFTTC/OPSTC pair is a disclosed rejection. Derived above from the registry (4 of the 7 generated groups), not pinned.
+    priced_sets = {frozenset(e["program_slugs"]) for e in priced_multi}
+    assert priced_sets == expected_priced
+    assert frozenset({"ca_federal_cptc", "on_opstc"}) in priced_sets
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():
     """Path B: ontario_computer_animation_and_special_effects_tax_credit_

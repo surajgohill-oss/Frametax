@@ -41,6 +41,9 @@ class ProjectGate:
     #: "whole_credit": a failed gate removes the whole credit (California, Pennsylvania). "non_payroll": it removes only the non-payroll expense credit,
     #: the payroll credit having its own, separate test (Massachusetts).
     scope: str = "whole_credit"
+    #: Components whose costs leave the denominator when NONE of them is incurred in the jurisdiction (Nevada: "if all postproduction costs are incurred outside of the
+    #: State, then at least 60% of the total preproduction and production costs must be spent in the State").
+    post_exception_components: frozenset = frozenset()
 
 
 PROJECT_GATES: dict[str, ProjectGate] = {
@@ -62,6 +65,13 @@ PROJECT_GATES: dict[str, ProjectGate] = {
         "Massachusetts DOR Film Incentive Tax Credit: production expense credit needs Massachusetts production expenses to exceed 75% of total production "
         "expenses OR at least 75% of filming days in Massachusetts; the payroll credit is separate", spend_strict=True, scope="non_payroll"),
 }
+
+PROJECT_GATES["us_nv_film_credit"] = ProjectGate(
+    "US-NV", 0.60, None, "", "Nevada budget-share requirement",
+    "Nevada Film Office, Transferable Tax Credits program FAQ (updated 2025-07-01, read 2026-10-12): a production must spend at least 60% of its total budget in the State "
+    "including preproduction, production and postproduction; if all postproduction costs are incurred outside the State, at least 60% of preproduction and production "
+    "costs must be spent in the State; a minimum of $500,000 in qualified expenditures must be spent in the State (the dollar branch is the rate tier minimum)",
+    post_exception_components=frozenset({"post", "vfx", "music"}))
 
 #: Payroll categories: untouched by a non_payroll-scope gate (Massachusetts payroll credit).
 PAYROLL_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
@@ -100,6 +110,11 @@ def evaluate_project_gate(program_slug: str | None, jurisdiction_code: str, rows
         return None
     rows = [(j, float(a), c, t) for j, a, c, t in rows]
     total = sum(a for _, a, _, _ in rows)
+    if gate.post_exception_components:
+        post_rows = [(j, a) for j, a, c, _ in rows if c in gate.post_exception_components]
+        if post_rows and not any(j == jurisdiction_code for j, _ in post_rows):
+            rows = [r for r in rows if r[2] not in gate.post_exception_components]
+            total = sum(a for _, a, _, _ in rows)
     spend_share = (sum(a for j, a, _, _ in rows if j == jurisdiction_code) / total) if total > 0 else 0.0
     eps = 1e-9
     spend_met = spend_share > gate.spend_min + eps if gate.spend_strict else spend_share + eps >= gate.spend_min

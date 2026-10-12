@@ -181,6 +181,10 @@ class ProjectEconomicInputs:
     #: never rewritten; the saved utilization % only yields the PLANNED cost basis below.
     contingency_reserve_usd: float = 0.0
 
+    #: Producer-stated deployments of the contingency reserve into real destination categories ({account code: ContingencyAllocation}); empty when none is
+    #: stated. The reserve and gross are never rewritten; a deployed amount is priced by its destination category's own rule.
+    contingency_allocations: dict = field(default_factory=dict)
+
     @property
     def contingency_planned_reduction_usd(self) -> float:
         """Undeployed reserve = reserve x (1 - utilization). Zero while the producer has not stated a utilization (unknown is
@@ -780,6 +784,7 @@ async def build_project_economic_inputs(
     # set only when the project's costs are established as post-effective, and a payee is mapped only from stated line facts.
     from app.calculators import ny_atl_individual_cap as _ny_atl
     from app.services.ny_producer_facts import expand_uplift_basis as _expand_uplift_basis
+    from app.services.contingency_deployment_facts import parse_contingency_deployments as _parse_contingency_deployments
     _uplift_amounts, _uplift_evidenced = _expand_uplift_basis(fact_rows)
     for _k, _v in _uplift_amounts.items():
         _base_amount_facts.setdefault(_k, _v)
@@ -818,6 +823,7 @@ async def build_project_economic_inputs(
         contingency_expected_utilization_pct=_fact_float(
             fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
         ),
+        contingency_allocations=_parse_contingency_deployments(fact_rows, lines, spend_category_by_code),
         contingency_reserve_usd=round(sum(
             float(l.amount_usd or 0.0) for l in lines
             if str(l.spend_category or "").lower().endswith("contingency")

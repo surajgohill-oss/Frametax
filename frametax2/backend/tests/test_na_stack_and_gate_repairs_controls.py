@@ -17,6 +17,7 @@ from app.calculators.project_eligibility_gates import GATE_FAILED_PREFIX, evalua
 from app.calculators.qualification_derivation import BudgetLine
 from app.calculators.structural_archetype_generator import StructuralComponent, generate_structural_candidate
 
+NYP = "us_ny_post_production_credit"
 MB, MA, PA, MN, AL = "ca_mb_film_video_credit", "us_ma_film_tax_credit", "us_pa_film_production_credit", "us_mn_film_production_credit", "us_al_film_incentive"
 
 
@@ -204,3 +205,109 @@ def test_a_deployed_contingency_reserve_is_priced_by_its_destination_category_th
                            contingency_allocations={"7902": deployed})
     assert _seg(through_generator, "us_ga_film_credit").qpe_usd == pytest.approx(direct.qpe_usd)          # identical eligible deployment in both pricing paths
     assert _seg(through_generator, "us_ga_film_credit").incentive_floor_usd == pytest.approx(direct.incentive_floor_usd)
+
+
+# ── NY upstate uplift: the production credit's wage base INCLUDES qualifying ATL; the post credit's EXCLUDES writers, directors, composers, producers, performers ─
+
+def _ny(slug, rows, gross, facts=frozenset(), amount_facts=None, worldwide=None):
+    a = [_alloc(str(1000 + i), m, "principal_production", "US-NY", f"L{i}", c) for i, (c, m) in enumerate(rows)]
+    return price_segment("US-NY", slug, a, {x.account_code: x.spend_category for x in a}, frozenset(), gross_budget_usd=gross,
+                         evidenced_requirement_facts=facts, amount_facts=amount_facts, worldwide_category_spend_usd=worldwide)
+
+
+def test_the_production_upstate_uplift_includes_above_the_line_wages_and_the_budget_minimum_is_enforced():
+    # Tax Law 24(a)(5): +10% of wages/salaries constituting qualified costs in the listed counties, budget of at least $500,000, ATL included after the ATL limit.
+    rows = [("atl_director", 400_000.0), ("btl_crew_labor", 1_500_000.0), ("btl_equipment_rental", 600_000.0)]
+    base = _ny("ny_state_film", rows, 2_500_000.0)
+    assert base.incentive_floor_usd == pytest.approx(750_000.0)                       # 30% x 2,500,000; the uplift is an unconfirmed bound
+    stated = _ny("ny_state_film", rows, 2_500_000.0, frozenset({"ny_all_costs_in_listed_counties"}))
+    assert stated.incentive_floor_usd == pytest.approx(750_000.0 + 0.10 * 1_900_000.0)       # wages = director 400,000 + crew 1,500,000 (ATL included)
+    below_minimum = _ny("ny_state_film", rows[1:2], 400_000.0, frozenset({"ny_all_costs_in_listed_counties"}))
+    assert below_minimum.incentive_floor_usd == pytest.approx(0.30 * 1_500_000.0)             # gross 400,000 is under the 500,000 film-budget minimum: no uplift
+
+
+def test_the_post_upstate_uplift_prices_only_evidenced_wage_portions_of_post_lines_never_an_above_the_line_role():
+    # Tax Law 31(a)(6): +10% of wages paid to individuals directly employed at a qualified post facility in the listed counties, excluding writers, directors,
+    # composers, producers and performers; facility fees and vendor charges are not wages, so each line needs its evidenced wage portion.
+    rows = [("post_production", 600_000.0), ("sound", 200_000.0), ("atl_director", 100_000.0)]
+    ww = {"post_production": 600_000.0, "sound": 200_000.0}
+    key = "uplift_basis:us_ny_post_production_credit:upstate_post_wages:"
+    plain = _ny(NYP, rows, 2_500_000.0, worldwide=ww)
+    assert plain.qpe_usd == pytest.approx(800_000.0)                                  # the director account is outside the post credit's closed list
+    assert plain.incentive_floor_usd == pytest.approx(0.30 * 800_000.0)
+    post_wage = _ny(NYP, rows, 2_500_000.0, frozenset({key + "L0"}), {key + "L0": 150_000.0}, ww)
+    assert post_wage.incentive_floor_usd == pytest.approx(0.30 * 800_000.0 + 0.10 * 150_000.0)   # 240,000 + 15,000
+    atl_wage = _ny(NYP, rows, 2_500_000.0, frozenset({key + "L2"}), {key + "L2": 50_000.0}, ww)
+    assert atl_wage.incentive_floor_usd == pytest.approx(0.30 * 800_000.0)            # a director's wages never enter the post uplift base
+    small_film = _ny(NYP, rows, 400_000.0, frozenset({key + "L0"}), {key + "L0": 150_000.0}, ww)
+    assert small_film.incentive_floor_usd == pytest.approx(0.30 * 800_000.0)          # film budget under 500,000: no uplift
+
+
+# ── Manitoba: eligible-corporation (25% T4 payroll) and Production Company Bonus conditions ─────────────────────────────────────────────────────────────────────
+
+def _mb(rows, gross, facts=frozenset()):
+    a = [_alloc(str(i), m, "principal_production", "CA-MB", f"L{i}", c) for i, (c, m) in enumerate(rows)]
+    return price_segment("CA-MB", MB, a, {x.account_code: x.spend_category for x in a}, frozenset(), gross_budget_usd=gross, evidenced_requirement_facts=facts)
+
+
+def test_manitoba_eligible_corporation_is_a_disclosed_planning_assumption_and_only_a_stated_failure_gates():
+    # Manitoba Film & Music TC-2 guidelines (Revised June 2024) Section C / Income Tax Act (Manitoba) s.7.5(1): at least 25% of the applicant's T4'able salaries
+    # and wages to eligible employees for work in Manitoba. Missing payroll evidence is a claim follow-up; it must not remove the planning scenario.
+    seg = _mb([("vfx", 200_000.0)], 2_000_000.0)
+    assert seg.executable is True and seg.incentive_floor_usd == pytest.approx(60_000.0)
+    assert any("s.7.5(1)" in n and "25%" in n and "claim follow-ups" in n for n in seg.notes)
+    failed = _mb([("vfx", 200_000.0)], 2_000_000.0, frozenset({"mb_t4_payroll_below_25pct_stated"}))
+    assert failed.executable is False and any("not an eligible corporation" in b for b in failed.blockers)
+
+
+def test_manitoba_production_company_bonus_is_38_percent_only_when_the_ownership_and_screen_credit_condition_is_stated():
+    bound = _mb([("vfx", 200_000.0)], 2_000_000.0)
+    assert bound.incentive_floor_usd == pytest.approx(60_000.0) and bound.incentive_ceiling_usd == pytest.approx(76_000.0)
+    assert any("screen credit" in n and "voting shares" in n for n in bound.notes)
+    stated = _mb([("vfx", 200_000.0)], 2_000_000.0, frozenset({"mb_production_company_bonus_eligible"}))
+    assert stated.incentive_floor_usd == pytest.approx(76_000.0)              # 38% x 200,000
+
+
+# ── Nevada (budget share + dollar floor) and Utah (dollar floor), from the official program pages read 2026-10-12 ───────────────────────────────────────────────
+
+NV, UT = "us_nv_film_credit", "us_ut_motion_picture_incentive"
+
+
+def test_nevada_needs_60_percent_of_the_total_budget_in_the_state_and_the_post_exception_is_all_or_nothing():
+    pp = lambda jur, amt, l: _alloc(l, amt, "principal_photography", jur, l, "btl_crew_labor")
+    post = lambda jur, amt, l: _alloc(l, amt, "post", jur, l, "post_production")
+    # 600,000 of 1,000,000 in Nevada = 60.0% passes; 599,000 fails
+    short = _run([_comp("principal_production", "US-NV", NV, [pp("US-NV", 599_000.0, "P")]), _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 401_000.0, "Q")])], 1_000_000.0)
+    assert short.executable is False and short.rejection_reason.startswith(GATE_FAILED_PREFIX)
+    exact = _run([_comp("principal_production", "US-NV", NV, [pp("US-NV", 600_000.0, "P")]), _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 400_000.0, "Q")])], 1_000_000.0)
+    assert exact.executable is True, exact.rejection_reason
+    # all post outside Nevada: only preproduction/production counts -- 600,000 of 900,000 is 66.7%, although of the total it would be 600,000 / 1,400,000 = 42.9%
+    exception = _run([_comp("principal_production", "US-NV", NV, [pp("US-NV", 600_000.0, "P")]), _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 300_000.0, "Q")]),
+                      _comp("post", "US-GA", "us_ga_film_credit", [post("US-GA", 500_000.0, "S")])], 1_400_000.0)
+    assert exception.executable is True, exception.rejection_reason
+    # some post inside Nevada: no exception, the total test applies (600,000 + 100,000 of 1,400,000 = 50%) and fails
+    no_exception = _run([_comp("principal_production", "US-NV", NV, [pp("US-NV", 600_000.0, "P")]), _comp("post", "US-NV", NV, [post("US-NV", 100_000.0, "S1")]),
+                         _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 300_000.0, "Q")]), _comp("post", "US-GA", "us_ga_film_credit", [post("US-GA", 400_000.0, "S2")])], 1_400_000.0)
+    assert no_exception.executable is False
+
+
+def test_utah_motion_picture_incentive_needs_over_500k_of_qualified_utah_spend_and_the_25_percent_tier_over_1m():
+    seg = lambda amt: price_segment("US-UT", UT, [_alloc("1", amt, "principal_production", "US-UT", "L", "btl_crew_labor")], {"1": "btl_crew_labor"}, frozenset(), gross_budget_usd=amt)
+    assert seg(400_000.0).executable is False                                           # the $100,000-$500,000 band is the separate Community Film Incentive Program
+    assert seg(500_000.0).executable is False                                           # "Over $500K": exactly 500,000 is not over
+    over = seg(600_000.0)
+    assert over.executable is True and over.incentive_floor_usd == pytest.approx(120_000.0)      # 20% of 600,000
+    assert seg(900_000.0).incentive_ceiling_usd == pytest.approx(0.20 * 900_000.0)         # the 25% tier needs over 1,000,000
+    assert seg(1_200_000.0).incentive_ceiling_usd == pytest.approx(0.25 * 1_200_000.0)
+
+
+# ── Ontario OPSTC (production cost over CAD 1,000,000) and Quebec PSTC (global budget at least CAD 250,000): native-currency gates ───────────────────────────────
+
+def test_native_currency_budget_gates_for_the_ontario_opstc_and_the_quebec_pstc():
+    from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate
+    from app.calculators.production_normalization import build_fx_context
+    cad = float(build_fx_context().rates["CAD"])
+    state = lambda slug, gross: next(e.state for e in evaluate_requirements_gate(slug, segment_allocated_usd=gross, gross_budget_usd=gross).evaluations
+                                     if e.requirement == "min_total_budget_native")
+    assert state("on_opstc", 1_000_000.0 / cad + 5.0) == "SATISFIED" and state("on_opstc", 1_000_000.0 / cad - 5.0) == "FAILED"
+    assert state("ca_qc_pstc", 250_000.0 / cad + 5.0) == "SATISFIED" and state("ca_qc_pstc", 250_000.0 / cad - 5.0) == "FAILED"

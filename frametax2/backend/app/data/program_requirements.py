@@ -1106,7 +1106,9 @@ register(ProgramRequirementsProfile(
     program_slug="on_opstc", jurisdiction_code="CA-ON",  # Codex B2 identity ruling: rekeyed from ca_on_opstc
     cultural_test_required=False,   # OPSTC is a production-SERVICES credit — no cultural/content test (unlike the domestic OFTTC)
     treaty_or_official_coproduction_required=False,
-    min_total_budget_usd=707_463.74,  # production cost must exceed CAD 1,000,000 for a feature (see notes for series thresholds)
+    # Ontario Creates OPSTC Guidelines s.1.04 (read 2026-10-12): the production cost must exceed CAD 1,000,000 for the WHOLE production (not the Ontario part), except a series or
+    # pilot (per-episode CAD 100,000 / 200,000). A native-currency gate converted at the canonical rate replaces the stale fixed USD conversion that was here.
+    min_total_budget_native=("CAD", 1_000_000.0),
     refundable=True,
     transferable=False,
     preapproval_mandatory=None,   # return-based refundable credit; Certificate of Eligibility applied for (not a pre-production approval gate) — left None
@@ -2964,6 +2966,8 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="ca_qc_pstc", jurisdiction_code="CA-QC",
+    # SODEC Quebec PSTC fact sheet (March 2026, read 2026-10-12): the production must have a global budget of at least CAD 250,000.
+    min_total_budget_native=("CAD", 250_000.0),
     local_entity_required=True,        # must be a Québec-incorporated corporation with an establishment in Québec
     cultural_test_required=False,      # production-SERVICES credit — no Québec-content test (contrast the separate Québec-content credit)
     preapproval_mandatory=True,        # SODEC Approval Certificate + Advance Ruling before claiming

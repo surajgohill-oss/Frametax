@@ -1250,6 +1250,13 @@ def price_segment(
     _post_min = percent_gateway_minimum_qpe(slug, worldwide_category_spend_usd)
     if _post_min is not None:
         _rate_amount_facts = {**(amount_facts or {}), f"min_qpe_override:{slug}": _post_min}
+    if slug == "ca_mb_film_video_credit" and "mb_t4_payroll_below_25pct_stated" in (evidenced_requirement_facts or frozenset()):
+        return SegmentEconomics(
+            jurisdiction_code=jurisdiction_code, program_slug=slug, claims_incentive=True, allocated_usd=allocated, account_codes=codes, executable=False,
+            qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved, doctrine=doctrine.value,
+            blockers=(f"{jurisdiction_code}/{slug}: the producer states that less than 25% of the applicant's T4'able salaries and wages go to eligible employees for work in "
+                      "Manitoba, so it is not an eligible corporation under Income Tax Act (Manitoba) s.7.5(1) (Manitoba Film & Music TC-2 guidelines, Revised June 2024, "
+                      "Section C). A stated failure is a gate; missing payroll evidence is only a claim follow-up.",))
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
                                gross_budget_usd=gross_budget_usd,
                                evidenced_facts=evidenced_requirement_facts,
@@ -1828,8 +1835,13 @@ def price_segment(
             election_notes = (f"{alt_label} (${alt_floor:,.2f}) is the alternative elective credit and is lower than the credit priced here; "
                               "the corporation claims one.",)
         if not bonus_stated:
-            election_notes += (f"Its +{bonus_rate:.0%} Manitoba production company bonus (co-production with an eligible Manitoba production company) is "
-                               f"a bound of ${alt_potential:,.2f} until '{bonus_fact}' is stated.",)
+            election_notes += (f"Its +{bonus_rate:.0%} Manitoba Production Company Bonus (a Manitoba Production Corporation owns voting shares of the applicant throughout "
+                               f"the taxation year and receives a producer, co-producer or executive-producer screen credit; principal photography after May 31, 2020) is "
+                               f"a bound of ${alt_potential:,.2f} until '{bonus_fact}' is stated (Manitoba Film & Music TC-2 guidelines, Revised June 2024, Section I).",)
+        election_notes += ("Planning assumption, not a certification: the applicant is an eligible corporation under Income Tax Act (Manitoba) s.7.5(1) -- a taxable Canadian "
+                           "corporation with a Manitoba permanent establishment, film production as its primary business, paying at least 25% of its T4'able salaries and wages to "
+                           "eligible employees for work on the film in Manitoba (payments to contractors and loan-outs do not count). Payroll evidence and the Manitoba Film & Music "
+                           "certificate are claim follow-ups; state 'mb_t4_payroll_below_25pct_stated' if the payroll structure fails the test.",)
         ceiling_incentive_usd = max(ceiling_incentive_usd, floor_incentive_usd, alt_potential if not bonus_stated else floor_incentive_usd)
         ceiling_requires_confirmation = ceiling_requires_confirmation or (not bonus_stated and alt_potential > floor_incentive_usd)
 

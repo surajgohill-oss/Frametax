@@ -41,6 +41,7 @@ NY_EVIDENCED_FACTS = {
     "mb_rural_permanent_establishment_35km": None,
     "mb_rural_majority_days_35km": None,
     "mb_production_company_bonus_eligible": None,
+    "mb_t4_payroll_below_25pct_stated": None,
     "ab_fttc_30pct_criteria_met": None,
     "mb_two_residents_trained_per_nonresident": "mb_one_resident_trained_per_nonresident",
     "mb_one_resident_trained_per_nonresident": "mb_two_residents_trained_per_nonresident",
