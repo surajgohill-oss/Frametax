@@ -44,6 +44,8 @@ SOURCE_EVIDENCE_JSON = os.path.join(REPO_ROOT, "docs", "validation", "FOUR_ANCHO
 SNAPSHOT_JSON = os.path.join(BASE_DIR, "SAVED_NA_HYBRID_DB_SNAPSHOT.json")
 OUT_CSV = os.path.join(BASE_DIR, "NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv")
 OUT_MD = os.path.join(BASE_DIR, "NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md")
+MANIFEST_CSV = os.path.join(BASE_DIR, "NORTH_AMERICAN_COVERAGE_MANIFEST.csv")
+MANIFEST_JSON = os.path.join(BASE_DIR, "NORTH_AMERICAN_COVERAGE_MANIFEST_SUMMARY.json")
 
 FROZEN_COMMITS = (
     "f5dc6a17858436c0809d7830151696d036aa159b",
@@ -777,7 +779,7 @@ def compute_independent_multi_program_stack_from_lines(
             open_base_usd,
             total_inc,
             "REPAIRED_ASSISTANCE_FORMULA_PENDING_CAVCO_AND_PAYROLL (NA-HYB-DEF-03 / NA-HYB-DEF-05)",
-            f"CRA Form T1131 / ITA § 125.4(1): OFTTC (35% × ${labour_cat_usd:,.2f} = ${ofttc_inc:,.2f}) reduces net production cost (${open_base_usd:,.2f} - ${ofttc_inc:,.2f}), setting CPTC 60% cap to ${cptc_cap:,.2f} (CPTC = ${cptc_inc:,.2f}, combined = ${total_inc:,.2f}). CAVCO certification and resident payroll schedule are claim follow-ups (NA-HYB-DEF-03); on BH, price_segment uses uncapped $1,478,106 standalone CPTC vs $1,396,584.60 60% net cap, inflating reported stacking_reduction_usd by +$20,380.35 (NA-HYB-DEF-05).",
+            f"CRA Form T1131 / ITA § 125.4(1): OFTTC (35% × ${labour_cat_usd:,.2f} = ${ofttc_inc:,.2f}) reduces net production cost (${open_base_usd:,.2f} - ${ofttc_inc:,.2f}), setting CPTC 60% cap to ${cptc_cap:,.2f} (CPTC = ${cptc_inc:,.2f}, combined = ${total_inc:,.2f}). CAVCO domestic (ITR § 1106(4)) or treaty co-production (ITR § 1106(3)) certification and resident payroll schedule are claim follow-ups (NA-HYB-DEF-03); on BH, price_segment uses uncapped $1,478,106 standalone CPTC vs $1,396,584.60 60% net cap, inflating reported stacking_reduction_usd by +$20,380.35 (NA-HYB-DEF-05).",
         )
 
     if slug_set == {"ca_federal_cptc", "ca_qc_pstc"}:
@@ -798,6 +800,14 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"ca_bc_dave", "ca_bc_pstc"}:
+        if vfx_usd <= 0.0:
+            return (
+                "RULE_REJECTED",
+                0.0,
+                0.0,
+                "SOURCE_BACKED_STATUTORY_REJECTION (ZERO_VFX_SPEND)",
+                "BC Income Tax Act s. 81.2(4): $0 VFX spend in budget; DAVE supplement requires qualifying BC digital animation/VFX labour.",
+            )
         return (
             "NOT_ESTABLISHED",
             0.0,
@@ -807,6 +817,14 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
+        if vfx_usd <= 0.0:
+            return (
+                "RULE_REJECTED",
+                0.0,
+                0.0,
+                "SOURCE_BACKED_STATUTORY_REJECTION (ZERO_VFX_SPEND)",
+                "Ontario Taxation Act §§ 42 & 43.4: $0 VFX spend in budget; OCASE requires qualifying Ontario computer animation/VFX labour.",
+            )
         opstc_inc = round(0.215 * open_base_usd, 2)
         ocase_inc = round(0.18 * vfx_usd, 2)
         return (
@@ -818,6 +836,14 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
+        if vfx_usd <= 0.0:
+            return (
+                "RULE_REJECTED",
+                0.0,
+                0.0,
+                "SOURCE_BACKED_STATUTORY_REJECTION (ZERO_VFX_SPEND)",
+                "Ontario Taxation Act §§ 42 & 43: $0 VFX spend in budget; OCASE requires qualifying Ontario computer animation/VFX labour.",
+            )
         ofttc_inc = round(0.35 * labour_cat_usd, 2)
         ocase_inc = round(0.18 * vfx_usd, 2)
         return (
@@ -826,6 +852,168 @@ def compute_independent_multi_program_stack_from_lines(
             round(ofttc_inc + ocase_inc, 2),
             "NOT_ESTABLISHED_EMPIRICAL_GAP (MISSING_CANADIAN_PAYROLL_AND_OCASE_VFX_LABOUR_SPLIT)",
             f"Ontario Taxation Act §§ 42 & 43: OFTTC (35% × ${labour_cat_usd:,.2f} = ${ofttc_inc:,.2f}) + OCASE (18% × ${vfx_usd:,.2f} = ${ocase_inc:,.2f}); requires CAVCO/OFTC certification, Ontario resident payroll schedule, and itemized OCASE VFX labour.",
+        )
+
+    # Mutually exclusive pairs in statutory law and stacking_rules.py
+    if slug_set == {"ny_state_film", "us_ny_post_production_credit"}:
+        return (
+            "RULE_REJECTED",
+            0.0,
+            0.0,
+            "SOURCE_BACKED_STATUTORY_REJECTION (NY_31A1_MUTUALLY_EXCLUSIVE_REPAIRED_AT_14c5c03e)",
+            "NY Tax Law § 31(a)(1) & 5 NYCRR § 240.3(c): a taxpayer claiming the § 24 Empire State Film Production Credit is statutorily barred from claiming the § 31 Post-Production Credit on the same film. Enforced as mutually_exclusive in stacking_rules.py (14c5c03e).",
+        )
+
+    if slug_set == {"ca_federal_cptc", "ca_federal_pstc"}:
+        return (
+            "RULE_REJECTED",
+            0.0,
+            0.0,
+            "SOURCE_BACKED_STATUTORY_REJECTION (ITA_125_4_125_5_MUTUALLY_EXCLUSIVE)",
+            "Income Tax Act (Canada) §§ 125.4(1) & 125.5(1) and CRA Guide RC4164: a production cannot claim both the domestic CPTC and the foreign/service PSTC.",
+        )
+
+    if slug_set == {"ca_federal_cptc", "on_opstc"}:
+        return (
+            "RULE_REJECTED",
+            0.0,
+            0.0,
+            "SOURCE_BACKED_STATUTORY_REJECTION (DOMESTIC_CPTC_VS_ONTARIO_SERVICE_OPSTC_MUTUALLY_EXCLUSIVE)",
+            "ITA § 125.4 & Ontario Taxation Act § 43.4 (stacking_rules.py mutually_exclusive): domestic CPTC and Ontario production services credit OPSTC are mutually exclusive.",
+        )
+
+    if slug_set == {"on_ofttc", "on_opstc"}:
+        return (
+            "RULE_REJECTED",
+            0.0,
+            0.0,
+            "SOURCE_BACKED_STATUTORY_REJECTION (ONTARIO_OFTTC_VS_OPSTC_MUTUALLY_EXCLUSIVE)",
+            "Ontario Taxation Act, 2007, S.O. 2007, c. 11, Sched. A, §§ 43(2) & 43.4: a production cannot claim both domestic OFTTC and service OPSTC.",
+        )
+
+    if slug_set == {"ca_federal_cptc", "ca_bc_pstc"}:
+        return (
+            "RULE_REJECTED",
+            0.0,
+            0.0,
+            "SOURCE_BACKED_STATUTORY_REJECTION (DOMESTIC_CPTC_VS_BC_PSTC_MUTUALLY_EXCLUSIVE)",
+            "ITA § 125.4 & BC Income Tax Act s. 81.2 (stacking_rules.py mutually_exclusive): domestic CPTC and BC Production Services Tax Credit are mutually exclusive.",
+        )
+
+    # Conditional Saskatchewan & unmodeled Quebec domestic pairs in stacking_rules.py
+    if slug_set == {"ca_federal_cptc", "ca_sk_creative_saskatchewan_grant"}:
+        qle_cap = round(0.60 * open_base_usd, 2)
+        cptc_inc = round(0.25 * min(labour_cat_usd, qle_cap), 2)
+        return (
+            "CONDITIONAL_NONDETERMINISTIC",
+            open_base_usd,
+            cptc_inc,
+            "CONDITIONAL_DISCRETIONARY_GRANT_STACK (SK_GRANT_ZERO_GUARANTEED_FLOOR)",
+            f"ITA § 125.4 + Creative Saskatchewan Film & TV Production Grant: ca_sk_creative_saskatchewan_grant is a discretionary competitive grant ($0.00 guaranteed floor); any SK grant awarded reduces CPTC net production cost as government assistance under ITA § 125.4(1).",
+        )
+
+    if slug_set == {"ca_federal_cptc", "ca_qc_qprdp"}:
+        return (
+            "CONDITIONAL_NONDETERMINISTIC",
+            0.0,
+            0.0,
+            "UNMODELED_DOMESTIC_QUEBEC_QPRDP_STACK (CP-02)",
+            "Loi sur les impôts (Quebec) ss. 1029.8.34 et seq. (QPRDP) + ITA § 125.4 (CPTC): listed in stacking_rules.py as conditional, but ca_qc_qprdp is not implemented in the 45-program canonical rate registry (CP-02).",
+        )
+
+    # Omitted Statutory Canadian Federal PSTC + Provincial Service Stacks & 3-Way Stacks (NA-HYB-DEF-07)
+    if slug_set == {"ca_federal_pstc", "on_opstc"}:
+        # Ontario OPSTC = 21.5% of open_base_usd (all-spend service credit under Ontario Taxation Act § 43.4).
+        # Under ITA § 125.5(1), Federal PSTC (16%) applies to qualified Canadian labour net of provincial assistance attributable to that labour (0.215 * labour_cat_usd).
+        opstc_inc = round(0.215 * open_base_usd, 2)
+        pstc_net_labour = round(max(0.0, labour_cat_usd * (1.0 - 0.215)), 2)
+        pstc_inc = round(0.16 * pstc_net_labour, 2)
+        return (
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            round(opstc_inc + pstc_inc, 2),
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_ON_OPSTC_SERVICE_STACK)",
+            f"ITA § 125.5(1) + Ontario Taxation Act § 43.4: standard Canadian foreign-service stack pairing 21.5% Ontario OPSTC (${opstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 21.5% OPSTC labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${opstc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py so canonical_stack_bridge.py never generates this stack (NA-HYB-DEF-07).",
+        )
+
+    if slug_set == {"ca_federal_pstc", "ca_bc_pstc"}:
+        bc_rate = 0.36 if project == "LLS" else (0.3628 if project == "LU" else 0.28)
+        bc_inc = round(bc_rate * labour_cat_usd, 2)
+        pstc_net_labour = round(max(0.0, labour_cat_usd - bc_inc), 2)
+        pstc_inc = round(0.16 * pstc_net_labour, 2)
+        return (
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            round(bc_inc + pstc_inc, 2),
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_BC_PSTC_SERVICE_STACK)",
+            f"ITA § 125.5(1) + BC Income Tax Act s. 81.2: standard Canadian foreign-service stack pairing BC PSTC (${bc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of BC PSTC assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${bc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+        )
+
+    if slug_set == {"ca_federal_pstc", "ca_qc_pstc"}:
+        qpstc_inc = round(0.25 * open_base_usd, 2)
+        pstc_net_labour = round(max(0.0, labour_cat_usd * (1.0 - 0.25)), 2)
+        pstc_inc = round(0.16 * pstc_net_labour, 2)
+        return (
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            round(qpstc_inc + pstc_inc, 2),
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_QC_PSTC_SERVICE_STACK)",
+            f"ITA § 125.5(1) + Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: standard Canadian foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 25% QPSTC labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${qpstc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+        )
+
+    if slug_set == {"ca_federal_pstc", "ca_mb_film_video_credit"}:
+        mb_inc = round(0.30 * open_base_usd, 2)
+        pstc_net_labour = round(max(0.0, labour_cat_usd * (1.0 - 0.30)), 2)
+        pstc_inc = round(0.16 * pstc_net_labour, 2)
+        return (
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            round(mb_inc + pstc_inc, 2),
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_MB_SERVICE_STACK)",
+            f"ITA § 125.5(1) + Manitoba ITA s. 7.6(6): Manitoba 30% Cost-of-Production credit (${mb_inc:,.2f}) + 16% Federal PSTC on Canadian labour net of 30% Manitoba assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${mb_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+        )
+
+    if slug_set == {"ca_federal_cptc", "on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
+        if vfx_usd <= 0.0:
+            return (
+                "RULE_REJECTED",
+                0.0,
+                0.0,
+                "SOURCE_BACKED_STATUTORY_REJECTION (ZERO_VFX_SPEND)",
+                "ITA § 125.4 + Ontario Taxation Act §§ 42–43: $0 VFX spend in budget; 3-way OCASE stack inapplicable.",
+            )
+        ofttc_inc = round(0.35 * labour_cat_usd, 2)
+        ocase_inc = round(0.18 * vfx_usd, 2)
+        cptc_cap = round(0.60 * max(0.0, open_base_usd - ofttc_inc - ocase_inc), 2)
+        cptc_qle = min(labour_cat_usd, cptc_cap)
+        cptc_inc = round(0.25 * cptc_qle, 2)
+        return (
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            round(ofttc_inc + ocase_inc + cptc_inc, 2),
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_3WAY_CPTC_OFTTC_OCASE_STACK)",
+            f"ITA § 125.4 + Ontario Taxation Act §§ 42–43: 3-way domestic stack where OFTTC (${ofttc_inc:,.2f}) and OCASE (${ocase_inc:,.2f}) both reduce net production cost for CPTC's 60% cap (${cptc_cap:,.2f} -> CPTC ${cptc_inc:,.2f}; combined = ${ofttc_inc + ocase_inc + cptc_inc:,.2f}). canonical_stack_bridge.py only generates 2-program pairs (NA-HYB-DEF-07).",
+        )
+
+    if slug_set == {"ca_federal_pstc", "on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
+        if vfx_usd <= 0.0:
+            return (
+                "RULE_REJECTED",
+                0.0,
+                0.0,
+                "SOURCE_BACKED_STATUTORY_REJECTION (ZERO_VFX_SPEND)",
+                "ITA § 125.5 + Ontario Taxation Act §§ 42 & 43.4: $0 VFX spend in budget; 3-way OCASE service stack inapplicable.",
+            )
+        opstc_inc = round(0.215 * open_base_usd, 2)
+        ocase_inc = round(0.18 * vfx_usd, 2)
+        pstc_net_labour = round(max(0.0, labour_cat_usd * (1.0 - 0.215)), 2)
+        pstc_inc = round(0.16 * pstc_net_labour, 2)
+        return (
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            round(opstc_inc + ocase_inc + pstc_inc, 2),
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_3WAY_PSTC_OPSTC_OCASE_STACK)",
+            f"ITA § 125.5 + Ontario Taxation Act §§ 42 & 43.4: 3-way service stack pairing OPSTC (${opstc_inc:,.2f}) + OCASE (${ocase_inc:,.2f}) + Federal PSTC (${pstc_inc:,.2f}; combined = ${opstc_inc + ocase_inc + pstc_inc:,.2f}). Omitted from canonical_stack_bridge.py (NA-HYB-DEF-07).",
         )
 
     raise ValueError(f"Unhandled multi-program stack: {jcode}|{slugs}")
@@ -1057,6 +1245,811 @@ def audit_full_na_universe(
     }
 
 
+ALL_NA_STACK_SPECS = [
+    ("CA-ON", ["ca_federal_cptc", "on_ofttc"], "IN_SLUG_PAIR_RULES_AND_SAVED_DB"),
+    ("CA-ON", ["on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"], "IN_SLUG_PAIR_RULES_AND_SAVED_DB"),
+    ("CA-ON", ["on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"], "IN_SLUG_PAIR_RULES_AND_SAVED_DB"),
+    ("CA-BC", ["ca_bc_dave", "ca_bc_pstc"], "IN_SLUG_PAIR_RULES_AND_SAVED_DB"),
+    ("CA-QC", ["ca_federal_cptc", "ca_qc_pstc"], "IN_SLUG_PAIR_RULES_AND_SAVED_DB"),
+    ("US-NY", ["ny_state_film", "us_ny_post_production_credit"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
+    ("CA", ["ca_federal_cptc", "ca_federal_pstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
+    ("CA-ON", ["ca_federal_cptc", "on_opstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
+    ("CA-ON", ["on_ofttc", "on_opstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
+    ("CA-BC", ["ca_federal_cptc", "ca_bc_pstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
+    ("CA-SK", ["ca_federal_cptc", "ca_sk_creative_saskatchewan_grant"], "ALLOWED_IN_SLUG_PAIR_RULES_DISCRETIONARY"),
+    ("CA-QC", ["ca_federal_cptc", "ca_qc_qprdp"], "CONDITIONAL_IN_SLUG_PAIR_RULES_UNMODELED_QPRDP"),
+    ("CA-ON", ["ca_federal_pstc", "on_opstc"], "OMITTED_FROM_SLUG_PAIR_RULES_NA_HYB_DEF_07"),
+    ("CA-BC", ["ca_federal_pstc", "ca_bc_pstc"], "OMITTED_FROM_SLUG_PAIR_RULES_NA_HYB_DEF_07"),
+    ("CA-QC", ["ca_federal_pstc", "ca_qc_pstc"], "OMITTED_FROM_SLUG_PAIR_RULES_NA_HYB_DEF_07"),
+    ("CA-MB", ["ca_federal_pstc", "ca_mb_film_video_credit"], "OMITTED_FROM_SLUG_PAIR_RULES_NA_HYB_DEF_07"),
+    ("CA-ON", ["ca_federal_cptc", "on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"], "OMITTED_3WAY_STACK_NA_HYB_DEF_07"),
+    ("CA-ON", ["ca_federal_pstc", "on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"], "OMITTED_3WAY_STACK_NA_HYB_DEF_07"),
+]
+
+NA_COPRODUCTION_SPECS = [
+    ("ca-mx-bilateral", "CA", "MX", 20.0, 20.0, 80.0, "PURE_NA_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["mx_federal_film_incentive_2026"]),
+    ("uk-ca-bilateral", "GB", "CA", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["uk_avec"], ["ca_federal_cptc", "ca_cmf"]),
+    ("ca-au-bilateral", "CA", "AU", 20.0, 20.0, 80.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["au_producer_offset"]),
+    ("ca-fr-bilateral", "CA", "FR", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["fr_tax_credit_cinema", "fr_cnc_production"]),
+    ("ca-de-bilateral", "CA", "DE", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["de_dfff"]),
+    ("ca-it-bilateral", "CA", "IT", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["it_tax_credit_foreign"]),
+    ("ca-es-bilateral", "CA", "ES", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], []),
+    ("ca-za-bilateral", "CA", "ZA", 20.0, 20.0, 80.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], []),
+    ("ca-ie-bilateral", "CA", "IE", 20.0, 20.0, 80.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["ie_section_481"]),
+    ("ca-nz-bilateral", "CA", "NZ", 20.0, 20.0, 80.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["nz_spgi"]),
+    ("ca-cn-bilateral", "CA", "CN", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], []),
+    ("ca-ch-bilateral", "CA", "CH", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], []),
+    ("ca-be-bilateral", "CA", "BE", 30.0, 20.0, 70.0, "CA_ROW_BILATERAL_TREATY", ["ca_federal_cptc", "ca_cmf"], ["be_tax_shelter"]),
+    ("ibermedia-multilateral", "MX", "IBERMEDIA", 20.0, 10.0, 80.0, "MX_MULTILATERAL_FRAMEWORK", ["ibermedia_programme"], []),
+    ("us-zero-audiovisual-treaties", "US", "NONE", 0.0, 0.0, 0.0, "US_STATUTORY_ZERO_TREATY_REJECTION", [], []),
+]
+
+
+def build_combinatorial_coverage_manifest(
+    proj_parts: Dict[str, Dict[str, Any]],
+    universe_legs: Dict[str, Dict[str, Any]],
+    stack_map: Dict[str, Dict[str, Any]],
+    snap: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Derives and reconciles the complete independent combinatorial North American coverage manifest
+    across FVD, BH, LU, and LLS for all 5 structural families:
+      - Family 1: NA Single-Program Full Relocations (4 projects x 45 NA programs = 180 combinations)
+      - Family 2: NA Same-Jurisdiction & Federal+Provincial Multi-Program Stacks (4 projects x 18 stacks = 72 combinations)
+      - Family 3A/3B/3C: NA Component Routes (810 legs), Reduced-Anchor Partitions (675 legs), and Complete r=1 Single-Component
+        Hybrids & Component Relocations (13 non-zero project-packages x 45 NA anchors x distinct-jurisdiction NA targets = 25,688 combinations)
+      - Family 4: Complete r=2 Two-Component Hybrids (8 non-zero project component-pairs x 45 NA anchors x ordered distinct-jurisdiction
+        NA target pairs = 651,632 combinations)
+      - Family 5: Applicable NA Co-Production & CAVCO Routes (4 projects x 15 treaty/framework routes = 60 combinations),
+        explicitly distinguishing CAVCO Domestic CPTC (ITA § 125.4 + ITR § 1106(4) 6/10 points), CAVCO Treaty Co-Production CPTC
+        (ITA § 125.4(1) + ITR § 1106(3) bilateral proportionality — domestic 6/10 point test does NOT apply), and Federal PSTC
+        (ITA § 125.5 + ITR § 9300 accredited service production — 0 points / no Canadian copyright required).
+    """
+    progs = sorted(set((k.split("|")[3], k.split("|")[4]) for k in universe_legs))
+    assert len(progs) == 45
+
+    # Precompute all 1,665 independent leg evaluations from source lines
+    ind_leg_cache: Dict[str, Tuple[str, float, float, float, str, str]] = {}
+    for proj in ["LU", "FVD", "BH", "LLS"]:
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        for (pkind, pid), lines_subset in proj_parts[proj]["partitions"].items():
+            for jc, ps in progs:
+                ukey = f"{proj}|{pkind}|{pid}|{jc}|{ps}"
+                ind_leg_cache[ukey] = compute_independent_leg_from_lines(
+                    proj, gross_usd, pkind, pid, lines_subset, jc, ps
+                )
+
+    manifest_rows: List[Dict[str, Any]] = []
+    family_summary: Dict[str, Dict[str, int]] = {}
+
+    def bump(fam: str, key: str, count: int = 1) -> None:
+        family_summary.setdefault(fam, {
+            "manifest_rows": 0,
+            "expected_combinations_represented": 0,
+            "ind_priced": 0,
+            "ind_not_established": 0,
+            "ind_conditional": 0,
+            "ind_rejected": 0,
+            "eng_1122_priced": 0,
+            "eng_1122_rejected_or_unpriced": 0,
+            "defect_affected_combinations": 0,
+        })
+        family_summary[fam][key] = family_summary[fam].get(key, 0) + count
+
+    # -------------------------------------------------------------------------
+    # Family 1: NA Single-Program Full Relocations (4 x 45 = 180 combinations)
+    # -------------------------------------------------------------------------
+    fam1 = "FAMILY_1_NA_SINGLE_PROGRAM_FULL_RELOCATION"
+    for proj in ["LU", "FVD", "BH", "LLS"]:
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        for jc, ps in progs:
+            ukey = f"{proj}|full|all_lines|{jc}|{ps}"
+            ind_st, ind_qpe, ind_inc, ind_up, ind_def, ind_note = ind_leg_cache[ukey]
+            eng_leg = universe_legs[ukey]
+            eng_exec = bool(eng_leg["executable"])
+            eng_qpe = float(eng_leg["qpe_usd"]) if eng_exec else 0.0
+            eng_inc = float(eng_leg["incentive_floor_usd"]) if eng_exec else 0.0
+            eng_st = "PRICED" if eng_exec else ("GATE_REJECTED" if not eng_leg["gate_passed"] else "RULE_REJECTED")
+
+            ind_valid = ind_st in ("PRICED", "NOT_ESTABLISHED")
+            ind_inc_str = f"{ind_inc:.2f}" if ind_valid else NA_NOT_PRICED
+            ind_npc_str = f"{round(gross_usd - ind_inc, 2):.2f}" if ind_valid else NA_NOT_PRICED
+            eng_inc_str = f"{eng_inc:.2f}" if eng_exec else NA_NOT_PRICED
+            eng_npc_str = f"{round(gross_usd - eng_inc, 2):.2f}" if eng_exec else NA_NOT_PRICED
+
+            if ind_def and (eng_exec != ind_valid or abs(eng_inc - ind_inc) > 0.05):
+                disp = f"OPEN_CODE_DEFECT ({ind_def})"
+                bump(fam1, "defect_affected_combinations", 1)
+            elif ind_st == "PRICED":
+                disp = "VERIFIED_INDEPENDENT_CALCULATION_ALIGNED_WITH_1122"
+            elif ind_st == "NOT_ESTABLISHED":
+                disp = "NOT_ESTABLISHED_GENUINE_CLAIM_EVIDENCE_LIMITATION_WITH_PLANNING_BOUND"
+            elif ind_st == "CONDITIONAL_NONDETERMINISTIC":
+                disp = "CONDITIONAL_DISCRETIONARY_OR_UNMODELED_ZERO_FLOOR"
+            else:
+                disp = f"SOURCE_BACKED_STATUTORY_REJECTION ({ind_st})"
+
+            bump(fam1, "manifest_rows", 1)
+            bump(fam1, "expected_combinations_represented", 1)
+            if ind_st == "PRICED":
+                bump(fam1, "ind_priced", 1)
+            elif ind_st == "NOT_ESTABLISHED":
+                bump(fam1, "ind_not_established", 1)
+            elif ind_st == "CONDITIONAL_NONDETERMINISTIC":
+                bump(fam1, "ind_conditional", 1)
+            else:
+                bump(fam1, "ind_rejected", 1)
+            bump(fam1, "eng_1122_priced" if eng_exec else "eng_1122_rejected_or_unpriced", 1)
+
+            manifest_rows.append({
+                "manifest_family": fam1,
+                "project": proj,
+                "combination_key": ukey,
+                "anchor_jurisdiction": jc,
+                "anchor_program_or_stack": ps,
+                "partition_or_route": "full:all_lines",
+                "target_jurisdiction_or_partner": "NONE",
+                "target_program_or_treaty": "NONE",
+                "expected_combinations_represented": 1,
+                "allocated_spend_usd": f"{gross_usd:.2f}",
+                "independent_status": ind_st,
+                "independent_qpe_floor_usd": f"{ind_qpe:.2f}",
+                "independent_incentive_floor_usd": ind_inc_str,
+                "independent_conditional_upside_usd": f"{ind_up:.2f}",
+                "independent_npc_floor_usd": ind_npc_str,
+                "engine_1122_status": eng_st,
+                "engine_1122_qpe_usd": f"{eng_qpe:.2f}",
+                "engine_1122_incentive_floor_usd": eng_inc_str,
+                "engine_1122_npc_usd": eng_npc_str,
+                "combinations_ind_priced": 1 if ind_st == "PRICED" else 0,
+                "combinations_ind_not_established": 1 if ind_st == "NOT_ESTABLISHED" else 0,
+                "combinations_ind_conditional": 1 if ind_st == "CONDITIONAL_NONDETERMINISTIC" else 0,
+                "combinations_ind_rejected": 1 if ind_st in ("GATE_REJECTED", "RULE_REJECTED") else 0,
+                "combinations_eng_1122_priced": 1 if eng_exec else 0,
+                "reconciliation_disposition": disp,
+                "statutory_authority_and_notes": ind_note,
+            })
+
+    # -------------------------------------------------------------------------
+    # Family 2: NA Same-Jurisdiction & Federal+Provincial Stacks (4 x 18 = 72)
+    # -------------------------------------------------------------------------
+    fam2 = "FAMILY_2_NA_SAME_JURISDICTION_STACK"
+    for proj in ["LU", "FVD", "BH", "LLS"]:
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        all_lines = proj_parts[proj]["partitions"][("full", "all_lines")]
+        for jc, slugs, stack_cat in ALL_NA_STACK_SPECS:
+            slug_pair = "+".join(slugs)
+            skey = f"{proj}|{jc}|{slug_pair}"
+            ind_st, ind_qpe, ind_inc, disp, note = compute_independent_multi_program_stack_from_lines(
+                proj, gross_usd, all_lines, jc, slugs
+            )
+            eng_st_obj = stack_map.get(skey, {})
+            eng_exec = bool(eng_st_obj.get("stack_generated"))
+            eng_st = "PRICED" if eng_exec else ("UNENUMERATED_IN_BRIDGE" if "OMITTED" in stack_cat else "RULE_REJECTED")
+            eng_qpe = float(eng_st_obj.get("leg_b_qpe_usd", 0.0)) if eng_exec else 0.0
+            eng_inc = float(eng_st_obj.get("combined_incentive_usd", 0.0)) if eng_exec else 0.0
+
+            ind_valid = ind_st in ("PRICED", "NOT_ESTABLISHED") and ind_inc > 0
+            ind_inc_str = f"{ind_inc:.2f}" if ind_valid else NA_NOT_PRICED
+            ind_npc_str = f"{round(gross_usd - ind_inc, 2):.2f}" if ind_valid else NA_NOT_PRICED
+            eng_inc_str = f"{eng_inc:.2f}" if eng_exec else NA_NOT_PRICED
+            eng_npc_str = f"{round(gross_usd - eng_inc, 2):.2f}" if eng_exec else NA_NOT_PRICED
+
+            bump(fam2, "manifest_rows", 1)
+            bump(fam2, "expected_combinations_represented", 1)
+            if ind_st == "PRICED":
+                bump(fam2, "ind_priced", 1)
+            elif ind_st == "NOT_ESTABLISHED":
+                bump(fam2, "ind_not_established", 1)
+            elif ind_st == "CONDITIONAL_NONDETERMINISTIC":
+                bump(fam2, "ind_conditional", 1)
+            else:
+                bump(fam2, "ind_rejected", 1)
+            bump(fam2, "eng_1122_priced" if eng_exec else "eng_1122_rejected_or_unpriced", 1)
+            if "NA-HYB-DEF-07" in disp or (proj == "BH" and "NA-HYB-DEF-05" in disp):
+                bump(fam2, "defect_affected_combinations", 1)
+
+            manifest_rows.append({
+                "manifest_family": fam2,
+                "project": proj,
+                "combination_key": skey,
+                "anchor_jurisdiction": jc,
+                "anchor_program_or_stack": slug_pair,
+                "partition_or_route": f"multi_program_stack:{stack_cat}",
+                "target_jurisdiction_or_partner": jc,
+                "target_program_or_treaty": slug_pair,
+                "expected_combinations_represented": 1,
+                "allocated_spend_usd": f"{gross_usd:.2f}",
+                "independent_status": ind_st,
+                "independent_qpe_floor_usd": f"{ind_qpe:.2f}",
+                "independent_incentive_floor_usd": ind_inc_str,
+                "independent_conditional_upside_usd": "0.00",
+                "independent_npc_floor_usd": ind_npc_str,
+                "engine_1122_status": eng_st,
+                "engine_1122_qpe_usd": f"{eng_qpe:.2f}",
+                "engine_1122_incentive_floor_usd": eng_inc_str,
+                "engine_1122_npc_usd": eng_npc_str,
+                "combinations_ind_priced": 1 if ind_st == "PRICED" else 0,
+                "combinations_ind_not_established": 1 if ind_st == "NOT_ESTABLISHED" else 0,
+                "combinations_ind_conditional": 1 if ind_st == "CONDITIONAL_NONDETERMINISTIC" else 0,
+                "combinations_ind_rejected": 1 if ind_st in ("GATE_REJECTED", "RULE_REJECTED") else 0,
+                "combinations_eng_1122_priced": 1 if eng_exec else 0,
+                "reconciliation_disposition": disp,
+                "statutory_authority_and_notes": note,
+            })
+
+    # -------------------------------------------------------------------------
+    # Family 3A & 3B: All 810 Component Partition Routes & 675 Reduced-Anchor Routes
+    # -------------------------------------------------------------------------
+    for proj in ["LU", "FVD", "BH", "LLS"]:
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        for (pkind, pid), lines_subset in proj_parts[proj]["partitions"].items():
+            if pkind == "full":
+                continue
+            fam_ab = "FAMILY_3A_NA_COMPONENT_ROUTE_EVALUATION" if pkind == "comp" else "FAMILY_3B_NA_ANCHOR_PARTITION_EVALUATION"
+            alloc_usd = round(sum(float(l["amount_usd"]) for l in lines_subset), 2)
+            for jc, ps in progs:
+                ukey = f"{proj}|{pkind}|{pid}|{jc}|{ps}"
+                ind_st, ind_qpe, ind_inc, ind_up, ind_def, ind_note = ind_leg_cache[ukey]
+                eng_leg = universe_legs[ukey]
+                eng_exec = bool(eng_leg["executable"])
+                eng_qpe = float(eng_leg["qpe_usd"]) if eng_exec else 0.0
+                eng_inc = float(eng_leg["incentive_floor_usd"]) if eng_exec else 0.0
+                eng_st = "PRICED" if eng_exec else ("GATE_REJECTED" if not eng_leg["gate_passed"] else "RULE_REJECTED")
+
+                ind_valid = ind_st in ("PRICED", "NOT_ESTABLISHED")
+                ind_inc_str = f"{ind_inc:.2f}" if ind_valid else NA_NOT_PRICED
+                ind_npc_str = f"{round(alloc_usd - ind_inc, 2):.2f}" if ind_valid else NA_NOT_PRICED
+                eng_inc_str = f"{eng_inc:.2f}" if eng_exec else NA_NOT_PRICED
+                eng_npc_str = f"{round(alloc_usd - eng_inc, 2):.2f}" if eng_exec else NA_NOT_PRICED
+
+                if ind_def and (eng_exec != ind_valid or abs(eng_inc - ind_inc) > 0.05):
+                    disp = f"OPEN_CODE_DEFECT ({ind_def})"
+                    bump(fam_ab, "defect_affected_combinations", 1)
+                elif ind_st == "PRICED":
+                    disp = "VERIFIED_INDEPENDENT_CALCULATION_ALIGNED_WITH_1122"
+                elif ind_st == "NOT_ESTABLISHED":
+                    disp = "NOT_ESTABLISHED_GENUINE_CLAIM_EVIDENCE_LIMITATION_WITH_PLANNING_BOUND"
+                elif ind_st == "CONDITIONAL_NONDETERMINISTIC":
+                    disp = "CONDITIONAL_DISCRETIONARY_OR_UNMODELED_ZERO_FLOOR"
+                else:
+                    disp = f"SOURCE_BACKED_STATUTORY_REJECTION ({ind_st})"
+
+                bump(fam_ab, "manifest_rows", 1)
+                bump(fam_ab, "expected_combinations_represented", 1)
+                if ind_st == "PRICED":
+                    bump(fam_ab, "ind_priced", 1)
+                elif ind_st == "NOT_ESTABLISHED":
+                    bump(fam_ab, "ind_not_established", 1)
+                elif ind_st == "CONDITIONAL_NONDETERMINISTIC":
+                    bump(fam_ab, "ind_conditional", 1)
+                else:
+                    bump(fam_ab, "ind_rejected", 1)
+                bump(fam_ab, "eng_1122_priced" if eng_exec else "eng_1122_rejected_or_unpriced", 1)
+
+                manifest_rows.append({
+                    "manifest_family": fam_ab,
+                    "project": proj,
+                    "combination_key": ukey,
+                    "anchor_jurisdiction": jc if pkind == "anchor" else "ANY_NON_CONFLICTING_ANCHOR",
+                    "anchor_program_or_stack": ps if pkind == "anchor" else "ANY_ANCHOR_PROGRAM",
+                    "partition_or_route": f"{pkind}:{pid}",
+                    "target_jurisdiction_or_partner": jc if pkind == "comp" else "N/A",
+                    "target_program_or_treaty": ps if pkind == "comp" else "N/A",
+                    "expected_combinations_represented": 1,
+                    "allocated_spend_usd": f"{alloc_usd:.2f}",
+                    "independent_status": ind_st,
+                    "independent_qpe_floor_usd": f"{ind_qpe:.2f}",
+                    "independent_incentive_floor_usd": ind_inc_str,
+                    "independent_conditional_upside_usd": f"{ind_up:.2f}",
+                    "independent_npc_floor_usd": ind_npc_str,
+                    "engine_1122_status": eng_st,
+                    "engine_1122_qpe_usd": f"{eng_qpe:.2f}",
+                    "engine_1122_incentive_floor_usd": eng_inc_str,
+                    "engine_1122_npc_usd": eng_npc_str,
+                    "combinations_ind_priced": 1 if ind_st == "PRICED" else 0,
+                    "combinations_ind_not_established": 1 if ind_st == "NOT_ESTABLISHED" else 0,
+                    "combinations_ind_conditional": 1 if ind_st == "CONDITIONAL_NONDETERMINISTIC" else 0,
+                    "combinations_ind_rejected": 1 if ind_st in ("GATE_REJECTED", "RULE_REJECTED") else 0,
+                    "combinations_eng_1122_priced": 1 if eng_exec else 0,
+                    "reconciliation_disposition": disp,
+                    "statutory_authority_and_notes": ind_note,
+                })
+
+    # -------------------------------------------------------------------------
+    # Family 3C: Complete r=1 Single-Component Hybrid & Component-Relocation Universe
+    # (13 project-packages x 45 NA anchors x distinct-jurisdiction NA targets = 25,688 combinations)
+    # -------------------------------------------------------------------------
+    fam3c = "FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE"
+    r1_packages_by_proj = {
+        "LU": ["vfx", "post_vfx_package"],
+        "FVD": ["vfx", "music_package", "post_vfx_package", "post_vfx_music_package"],
+        "BH": ["music_package", "post_vfx_package", "post_vfx_music_package"],
+        "LLS": ["vfx", "music_package", "post_vfx_package", "post_vfx_music_package"],
+    }
+    home_by_proj = {"LU": "MU", "FVD": "MT", "BH": "US-NM", "LLS": "US-CA"}
+
+    for proj, pkg_list in r1_packages_by_proj.items():
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        for pkg in pkg_list:
+            anchor_pid, comp_map = resolve_partition_ids_for_hybrid(proj, [pkg])
+            comp_pid = comp_map[pkg]
+            for a_jc, a_ps in progs:
+                a_ukey = f"{proj}|anchor|{anchor_pid}|{a_jc}|{a_ps}"
+                a_st, a_qpe, a_inc, a_up, a_def, _ = ind_leg_cache[a_ukey]
+                a_eng = universe_legs[a_ukey]
+                a_eng_exec = bool(a_eng["executable"])
+                a_eng_qpe = float(a_eng["qpe_usd"]) if a_eng_exec else 0.0
+                a_eng_inc = float(a_eng["incentive_floor_usd"]) if a_eng_exec else 0.0
+
+                n_tot = 0
+                n_ind_priced = 0
+                n_ind_ne = 0
+                n_ind_cond = 0
+                n_ind_rej = 0
+                n_eng_priced = 0
+                n_def = 0
+                best_ind_tuple: Optional[Tuple[float, float, str, str, str]] = None
+                best_eng_tuple: Optional[Tuple[float, float, str, str]] = None
+
+                for c_jc, c_ps in progs:
+                    if c_jc == a_jc:
+                        continue
+                    n_tot += 1
+                    c_ukey = f"{proj}|comp|{comp_pid}|{c_jc}|{c_ps}"
+                    c_st, c_qpe, c_inc, c_up, c_def, _ = ind_leg_cache[c_ukey]
+                    c_eng = universe_legs[c_ukey]
+                    c_eng_exec = bool(c_eng["executable"])
+                    c_eng_qpe = float(c_eng["qpe_usd"]) if c_eng_exec else 0.0
+                    c_eng_inc = float(c_eng["incentive_floor_usd"]) if c_eng_exec else 0.0
+
+                    comb_eng_exec = a_eng_exec and c_eng_exec
+                    if comb_eng_exec:
+                        n_eng_priced += 1
+                        tot_e_inc = round(a_eng_inc + c_eng_inc, 2)
+                        tot_e_qpe = round(a_eng_qpe + c_eng_qpe, 2)
+                        if best_eng_tuple is None or tot_e_inc > best_eng_tuple[0]:
+                            best_eng_tuple = (tot_e_inc, tot_e_qpe, c_jc, c_ps)
+
+                    a_ok = a_st in ("PRICED", "NOT_ESTABLISHED")
+                    c_ok = c_st in ("PRICED", "NOT_ESTABLISHED")
+                    if a_ok and c_ok:
+                        comb_st = "NOT_ESTABLISHED" if "NOT_ESTABLISHED" in (a_st, c_st) else "PRICED"
+                        if comb_st == "PRICED":
+                            n_ind_priced += 1
+                        else:
+                            n_ind_ne += 1
+                        tot_i_inc = round(a_inc + c_inc, 2)
+                        tot_i_qpe = round(a_qpe + c_qpe, 2)
+                        if best_ind_tuple is None or (comb_st == "PRICED" and best_ind_tuple[4] != "PRICED") or (comb_st == best_ind_tuple[4] and tot_i_inc > best_ind_tuple[0]):
+                            best_ind_tuple = (tot_i_inc, tot_i_qpe, c_jc, c_ps, comb_st)
+                    elif "CONDITIONAL_NONDETERMINISTIC" in (a_st, c_st) and not any(s in ("GATE_REJECTED", "RULE_REJECTED") for s in (a_st, c_st)):
+                        n_ind_cond += 1
+                    else:
+                        n_ind_rej += 1
+
+                    if (a_def or c_def) and (comb_eng_exec != (a_ok and c_ok)):
+                        n_def += 1
+
+                bump(fam3c, "manifest_rows", 1)
+                bump(fam3c, "expected_combinations_represented", n_tot)
+                bump(fam3c, "ind_priced", n_ind_priced)
+                bump(fam3c, "ind_not_established", n_ind_ne)
+                bump(fam3c, "ind_conditional", n_ind_cond)
+                bump(fam3c, "ind_rejected", n_ind_rej)
+                bump(fam3c, "eng_1122_priced", n_eng_priced)
+                bump(fam3c, "eng_1122_rejected_or_unpriced", n_tot - n_eng_priced)
+                bump(fam3c, "defect_affected_combinations", n_def)
+
+                is_home_reloc = (a_jc == home_by_proj[proj])
+                fam_tag = "r1_component_relocation_from_home" if is_home_reloc else "r1_ordinary_component_hybrid"
+                if best_ind_tuple is not None:
+                    b_inc, b_qpe, b_jc, b_ps, b_st = best_ind_tuple
+                    b_inc_str = f"{b_inc:.2f}"
+                    b_npc_str = f"{round(gross_usd - b_inc, 2):.2f}"
+                    b_t_jc, b_t_ps = b_jc, b_ps
+                else:
+                    b_st = a_st if a_st not in ("PRICED", "NOT_ESTABLISHED") else "GATE_REJECTED"
+                    b_qpe = 0.0
+                    b_inc_str = NA_NOT_PRICED
+                    b_npc_str = NA_NOT_PRICED
+                    b_t_jc, b_t_ps = "NONE_ELIGIBLE", "NONE_ELIGIBLE"
+
+                if best_eng_tuple is not None:
+                    e_inc, e_qpe, e_jc, e_ps = best_eng_tuple
+                    e_st = "PRICED"
+                    e_inc_str = f"{e_inc:.2f}"
+                    e_npc_str = f"{round(gross_usd - e_inc, 2):.2f}"
+                else:
+                    e_st = "GATE_REJECTED" if not a_eng["gate_passed"] else "RULE_REJECTED"
+                    e_qpe = 0.0
+                    e_inc_str = NA_NOT_PRICED
+                    e_npc_str = NA_NOT_PRICED
+                    e_jc, e_ps = "NONE", "NONE"
+
+                disp = (
+                    f"RECONCILED_R1_ENVELOPE (priced={n_ind_priced}, not_est={n_ind_ne}, cond={n_ind_cond}, rej={n_ind_rej}; "
+                    f"1122_priced={n_eng_priced}, defect_divergent={n_def})"
+                )
+                note = (
+                    f"Complete r=1 NA target envelope ({n_tot} distinct-jurisdiction NA targets) for anchor {a_jc}/{a_ps} ({anchor_pid}) + routed {pkg} ({comp_pid}). "
+                    f"Best statutory target: {b_t_jc}/{b_t_ps} ({b_inc_str}); Best 1.122.0 target: {e_jc}/{e_ps} ({e_inc_str})."
+                )
+                manifest_rows.append({
+                    "manifest_family": fam3c,
+                    "project": proj,
+                    "combination_key": f"{proj}|r1|{a_jc}|{a_ps}|{pkg}",
+                    "anchor_jurisdiction": a_jc,
+                    "anchor_program_or_stack": a_ps,
+                    "partition_or_route": f"{fam_tag}:{anchor_pid}+{comp_pid}",
+                    "target_jurisdiction_or_partner": f"ALL_{n_tot}_OTHER_NA_TARGETS (best_stat:{b_t_jc})",
+                    "target_program_or_treaty": f"best_stat:{b_t_ps} | best_1122:{e_jc}/{e_ps}",
+                    "expected_combinations_represented": n_tot,
+                    "allocated_spend_usd": f"{gross_usd:.2f}",
+                    "independent_status": b_st,
+                    "independent_qpe_floor_usd": f"{b_qpe:.2f}",
+                    "independent_incentive_floor_usd": b_inc_str,
+                    "independent_conditional_upside_usd": f"{a_up:.2f}",
+                    "independent_npc_floor_usd": b_npc_str,
+                    "engine_1122_status": e_st,
+                    "engine_1122_qpe_usd": f"{e_qpe:.2f}",
+                    "engine_1122_incentive_floor_usd": e_inc_str,
+                    "engine_1122_npc_usd": e_npc_str,
+                    "combinations_ind_priced": n_ind_priced,
+                    "combinations_ind_not_established": n_ind_ne,
+                    "combinations_ind_conditional": n_ind_cond,
+                    "combinations_ind_rejected": n_ind_rej,
+                    "combinations_eng_1122_priced": n_eng_priced,
+                    "reconciliation_disposition": disp,
+                    "statutory_authority_and_notes": note,
+                })
+
+    # -------------------------------------------------------------------------
+    # Family 4: Complete r=2 Two-Component Hybrid Universe
+    # (8 project component-pair splits x 45 NA anchors x ordered distinct-jurisdiction NA target pairs = 651,632 combinations)
+    # -------------------------------------------------------------------------
+    fam4 = "FAMILY_4_NA_R2_TWO_COMPONENT_HYBRID_ENVELOPE"
+    r2_pairs_by_proj = {
+        "LU": [("vfx", "post_vfx_package")],
+        "FVD": [("vfx", "post_vfx_package"), ("vfx", "post_vfx_music_package"), ("music_package", "post_vfx_package")],
+        "BH": [("music_package", "post_vfx_package")],
+        "LLS": [("vfx", "post_vfx_package"), ("vfx", "post_vfx_music_package"), ("music_package", "post_vfx_package")],
+    }
+
+    for proj, pair_list in r2_pairs_by_proj.items():
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        for c1_name, c2_name in pair_list:
+            anchor_pid, comp_map = resolve_partition_ids_for_hybrid(proj, [c1_name, c2_name])
+            c1_pid = comp_map[c1_name]
+            c2_pid = comp_map[c2_name]
+
+            for a_jc, a_ps in progs:
+                a_ukey = f"{proj}|anchor|{anchor_pid}|{a_jc}|{a_ps}"
+                a_st, a_qpe, a_inc, a_up, a_def, _ = ind_leg_cache[a_ukey]
+                a_eng = universe_legs[a_ukey]
+                a_eng_exec = bool(a_eng["executable"])
+                a_eng_qpe = float(a_eng["qpe_usd"]) if a_eng_exec else 0.0
+                a_eng_inc = float(a_eng["incentive_floor_usd"]) if a_eng_exec else 0.0
+                a_ok = a_st in ("PRICED", "NOT_ESTABLISHED")
+
+                # Pre-collect c1 and c2 legs for all progs where jc != a_jc
+                other_progs = [(jc, ps) for (jc, ps) in progs if jc != a_jc]
+                n_tot = 0
+                n_ind_priced = 0
+                n_ind_ne = 0
+                n_ind_cond = 0
+                n_ind_rej = 0
+                n_eng_priced = 0
+                n_def = 0
+
+                best_c1_ind: List[Tuple[float, float, str, str, str]] = []
+                best_c2_ind: List[Tuple[float, float, str, str, str]] = []
+                best_c1_eng: List[Tuple[float, float, str, str]] = []
+                best_c2_eng: List[Tuple[float, float, str, str]] = []
+
+                # Group by jurisdiction for fast exact combinatorial counting across (jc1 != jc2)
+                by_jc: Dict[str, List[Tuple[str, str]]] = {}
+                for jc, ps in other_progs:
+                    by_jc.setdefault(jc, []).append((jc, ps))
+                    c1_st, c1_qpe, c1_inc, _, _, _ = ind_leg_cache[f"{proj}|comp|{c1_pid}|{jc}|{ps}"]
+                    c2_st, c2_qpe, c2_inc, _, _, _ = ind_leg_cache[f"{proj}|comp|{c2_pid}|{jc}|{ps}"]
+                    if c1_st in ("PRICED", "NOT_ESTABLISHED"):
+                        best_c1_ind.append((c1_inc, c1_qpe, jc, ps, c1_st))
+                    if c2_st in ("PRICED", "NOT_ESTABLISHED"):
+                        best_c2_ind.append((c2_inc, c2_qpe, jc, ps, c2_st))
+                    e1 = universe_legs[f"{proj}|comp|{c1_pid}|{jc}|{ps}"]
+                    e2 = universe_legs[f"{proj}|comp|{c2_pid}|{jc}|{ps}"]
+                    if e1["executable"]:
+                        best_c1_eng.append((float(e1["incentive_floor_usd"]), float(e1["qpe_usd"]), jc, ps))
+                    if e2["executable"]:
+                        best_c2_eng.append((float(e2["incentive_floor_usd"]), float(e2["qpe_usd"]), jc, ps))
+
+                for jc1, p1_list in by_jc.items():
+                    for _, ps1 in p1_list:
+                        c1_st, _, _, _, c1_def, _ = ind_leg_cache[f"{proj}|comp|{c1_pid}|{jc1}|{ps1}"]
+                        c1_ok = c1_st in ("PRICED", "NOT_ESTABLISHED")
+                        e1_exec = bool(universe_legs[f"{proj}|comp|{c1_pid}|{jc1}|{ps1}"]["executable"])
+                        for jc2, p2_list in by_jc.items():
+                            if jc1 == jc2:
+                                continue
+                            for _, ps2 in p2_list:
+                                n_tot += 1
+                                c2_st, _, _, _, c2_def, _ = ind_leg_cache[f"{proj}|comp|{c2_pid}|{jc2}|{ps2}"]
+                                c2_ok = c2_st in ("PRICED", "NOT_ESTABLISHED")
+                                e2_exec = bool(universe_legs[f"{proj}|comp|{c2_pid}|{jc2}|{ps2}"]["executable"])
+
+                                comb_eng = a_eng_exec and e1_exec and e2_exec
+                                if comb_eng:
+                                    n_eng_priced += 1
+                                comb_ind = a_ok and c1_ok and c2_ok
+                                if comb_ind:
+                                    if "NOT_ESTABLISHED" in (a_st, c1_st, c2_st):
+                                        n_ind_ne += 1
+                                    else:
+                                        n_ind_priced += 1
+                                elif any(s in ("GATE_REJECTED", "RULE_REJECTED") for s in (a_st, c1_st, c2_st)):
+                                    n_ind_rej += 1
+                                else:
+                                    n_ind_cond += 1
+                                if (a_def or c1_def or c2_def) and (comb_eng != comb_ind):
+                                    n_def += 1
+
+                best_c1_ind.sort(key=lambda x: (1 if x[4] == "PRICED" else 0, x[0]), reverse=True)
+                best_c2_ind.sort(key=lambda x: (1 if x[4] == "PRICED" else 0, x[0]), reverse=True)
+                best_c1_eng.sort(reverse=True)
+                best_c2_eng.sort(reverse=True)
+
+                best_r2_ind = None
+                if a_ok:
+                    for i1 in best_c1_ind[:5]:
+                        for i2 in best_c2_ind[:5]:
+                            if i1[2] != i2[2]:
+                                st_comb = "NOT_ESTABLISHED" if "NOT_ESTABLISHED" in (a_st, i1[4], i2[4]) else "PRICED"
+                                cand = (round(a_inc + i1[0] + i2[0], 2), round(a_qpe + i1[1] + i2[1], 2), f"{i1[2]}/{i1[3]} + {i2[2]}/{i2[3]}", st_comb)
+                                if best_r2_ind is None or (cand[3] == "PRICED" and best_r2_ind[3] != "PRICED") or (cand[3] == best_r2_ind[3] and cand[0] > best_r2_ind[0]):
+                                    best_r2_ind = cand
+
+                best_r2_eng = None
+                if a_eng_exec:
+                    for e1 in best_c1_eng[:5]:
+                        for e2 in best_c2_eng[:5]:
+                            if e1[2] != e2[2]:
+                                cand_e = (round(a_eng_inc + e1[0] + e2[0], 2), round(a_eng_qpe + e1[1] + e2[1], 2), f"{e1[2]}/{e1[3]} + {e2[2]}/{e2[3]}")
+                                if best_r2_eng is None or cand_e[0] > best_r2_eng[0]:
+                                    best_r2_eng = cand_e
+
+                bump(fam4, "manifest_rows", 1)
+                bump(fam4, "expected_combinations_represented", n_tot)
+                bump(fam4, "ind_priced", n_ind_priced)
+                bump(fam4, "ind_not_established", n_ind_ne)
+                bump(fam4, "ind_conditional", n_ind_cond)
+                bump(fam4, "ind_rejected", n_ind_rej)
+                bump(fam4, "eng_1122_priced", n_eng_priced)
+                bump(fam4, "eng_1122_rejected_or_unpriced", n_tot - n_eng_priced)
+                bump(fam4, "defect_affected_combinations", n_def)
+
+                if best_r2_ind is not None:
+                    bi_inc, bi_qpe, bi_t, bi_st = best_r2_ind
+                    bi_inc_str = f"{bi_inc:.2f}"
+                    bi_npc_str = f"{round(gross_usd - bi_inc, 2):.2f}"
+                else:
+                    bi_st = a_st if not a_ok else "GATE_REJECTED"
+                    bi_qpe = 0.0
+                    bi_inc_str = NA_NOT_PRICED
+                    bi_npc_str = NA_NOT_PRICED
+                    bi_t = "NONE_ELIGIBLE"
+
+                if best_r2_eng is not None:
+                    be_inc, be_qpe, be_t = best_r2_eng
+                    be_st = "PRICED"
+                    be_inc_str = f"{be_inc:.2f}"
+                    be_npc_str = f"{round(gross_usd - be_inc, 2):.2f}"
+                else:
+                    be_st = "GATE_REJECTED" if not a_eng["gate_passed"] else "RULE_REJECTED"
+                    be_qpe = 0.0
+                    be_inc_str = NA_NOT_PRICED
+                    be_npc_str = NA_NOT_PRICED
+                    be_t = "NONE"
+
+                manifest_rows.append({
+                    "manifest_family": fam4,
+                    "project": proj,
+                    "combination_key": f"{proj}|r2|{a_jc}|{a_ps}|{c1_name}+{c2_name}",
+                    "anchor_jurisdiction": a_jc,
+                    "anchor_program_or_stack": a_ps,
+                    "partition_or_route": f"r2_ordinary_component_hybrid:{anchor_pid}+{c1_pid}+{c2_pid}",
+                    "target_jurisdiction_or_partner": f"ALL_{n_tot}_ORDERED_NA_PAIRS",
+                    "target_program_or_treaty": f"best_stat:{bi_t} | best_1122:{be_t}",
+                    "expected_combinations_represented": n_tot,
+                    "allocated_spend_usd": f"{gross_usd:.2f}",
+                    "independent_status": bi_st,
+                    "independent_qpe_floor_usd": f"{bi_qpe:.2f}",
+                    "independent_incentive_floor_usd": bi_inc_str,
+                    "independent_conditional_upside_usd": f"{a_up:.2f}",
+                    "independent_npc_floor_usd": bi_npc_str,
+                    "engine_1122_status": be_st,
+                    "engine_1122_qpe_usd": f"{be_qpe:.2f}",
+                    "engine_1122_incentive_floor_usd": be_inc_str,
+                    "engine_1122_npc_usd": be_npc_str,
+                    "combinations_ind_priced": n_ind_priced,
+                    "combinations_ind_not_established": n_ind_ne,
+                    "combinations_ind_conditional": n_ind_cond,
+                    "combinations_ind_rejected": n_ind_rej,
+                    "combinations_eng_1122_priced": n_eng_priced,
+                    "reconciliation_disposition": f"RECONCILED_R2_ENVELOPE (priced={n_ind_priced}, not_est={n_ind_ne}, rej={n_ind_rej}; 1122_priced={n_eng_priced})",
+                    "statutory_authority_and_notes": f"Complete r=2 NA target-pair envelope ({n_tot} pairs) for anchor {a_jc}/{a_ps} + ({c1_pid}, {c2_pid}).",
+                })
+
+    # -------------------------------------------------------------------------
+    # Family 5: Applicable NA Co-Production & Treaty Paths (4 x 15 = 60 combinations)
+    # -------------------------------------------------------------------------
+    fam5 = "FAMILY_5_NA_COPRODUCTION_PATH"
+    for proj in ["LU", "FVD", "BH", "LLS"]:
+        gross_usd = GENERATION_META[proj if proj != "LLS" else "LLS_110b"]["gross_usd"]
+        all_lines = proj_parts[proj]["partitions"][("full", "all_lines")]
+        fin_usd = round(sum(float(l["amount_usd"]) for l in all_lines if l["category"] == "finance_costs"), 2)
+        res_usd = round(sum(float(l["amount_usd"]) for l in all_lines if l["category"] == "residuals_reserve"), 2)
+        cont_usd = round(sum(float(l["amount_usd"]) for l in all_lines if l["category"] == "contingency"), 2)
+        open_base_usd = round(gross_usd - fin_usd - res_usd - cont_usd, 2)
+        labour_cats = {"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"}
+        labour_cat_usd = round(sum(float(l["amount_usd"]) for l in all_lines if l["category"] in labour_cats), 2)
+
+        for t_slug, p_a, p_b, maj_min, min_min, min_max, t_kind, u_maj, u_min in NA_COPRODUCTION_SPECS:
+            bump(fam5, "manifest_rows", 1)
+            bump(fam5, "expected_combinations_represented", 1)
+            bump(fam5, "eng_1122_rejected_or_unpriced", 1)
+
+            if t_kind == "US_STATUTORY_ZERO_TREATY_REJECTION":
+                bump(fam5, "ind_rejected", 1)
+                manifest_rows.append({
+                    "manifest_family": fam5,
+                    "project": proj,
+                    "combination_key": f"{proj}|copro|{t_slug}",
+                    "anchor_jurisdiction": "US",
+                    "anchor_program_or_stack": "ALL_30_US_STATE_PROGRAMS",
+                    "partition_or_route": "treaty_co_production:US_ZERO_TREATY_LAW",
+                    "target_jurisdiction_or_partner": "NONE",
+                    "target_program_or_treaty": t_slug,
+                    "expected_combinations_represented": 1,
+                    "allocated_spend_usd": f"{gross_usd:.2f}",
+                    "independent_status": "RULE_REJECTED",
+                    "independent_qpe_floor_usd": "0.00",
+                    "independent_incentive_floor_usd": NA_NOT_PRICED,
+                    "independent_conditional_upside_usd": "0.00",
+                    "independent_npc_floor_usd": NA_NOT_PRICED,
+                    "engine_1122_status": "RULE_REJECTED",
+                    "engine_1122_qpe_usd": "0.00",
+                    "engine_1122_incentive_floor_usd": NA_NOT_PRICED,
+                    "engine_1122_npc_usd": NA_NOT_PRICED,
+                    "combinations_ind_priced": 0,
+                    "combinations_ind_not_established": 0,
+                    "combinations_ind_conditional": 0,
+                    "combinations_ind_rejected": 1,
+                    "combinations_eng_1122_priced": 0,
+                    "reconciliation_disposition": "SOURCE_BACKED_STATUTORY_REJECTION (US_HAS_ZERO_AUDIOVISUAL_TREATIES)",
+                    "statutory_authority_and_notes": (
+                        "United States treaty law & treaty_engine.py: the US has zero bilateral or multilateral government-to-government "
+                        "audiovisual co-production treaties. A US production combining with Canada must use the foreign/service route "
+                        "(Federal PSTC under ITA § 125.5 & ITR § 9300 + provincial OPSTC/BC PSTC/QPSTC/CA-MB, which require CAVCO Accreditation "
+                        "Form T1177 and $0/0 Canadian content points) or a component hybrid."
+                    ),
+                })
+                continue
+
+            if t_kind == "MX_MULTILATERAL_FRAMEWORK":
+                bump(fam5, "ind_conditional", 1)
+                manifest_rows.append({
+                    "manifest_family": fam5,
+                    "project": proj,
+                    "combination_key": f"{proj}|copro|{t_slug}",
+                    "anchor_jurisdiction": "MX",
+                    "anchor_program_or_stack": "mx_federal_film_incentive_2026",
+                    "partition_or_route": "multilateral_co_production:ibermedia",
+                    "target_jurisdiction_or_partner": "IBERMEDIA_21_MEMBER_STATES",
+                    "target_program_or_treaty": t_slug,
+                    "expected_combinations_represented": 1,
+                    "allocated_spend_usd": f"{gross_usd:.2f}",
+                    "independent_status": "CONDITIONAL_NONDETERMINISTIC",
+                    "independent_qpe_floor_usd": "0.00",
+                    "independent_incentive_floor_usd": NA_TREATY,
+                    "independent_conditional_upside_usd": f"{round(0.30 * 0.50 * open_base_usd, 2):.2f}",
+                    "independent_npc_floor_usd": NA_TREATY,
+                    "engine_1122_status": "CO_PRO_OPPORTUNITY",
+                    "engine_1122_qpe_usd": "0.00",
+                    "engine_1122_incentive_floor_usd": NA_TREATY,
+                    "engine_1122_npc_usd": NA_TREATY,
+                    "combinations_ind_priced": 0,
+                    "combinations_ind_not_established": 0,
+                    "combinations_ind_conditional": 1,
+                    "combinations_ind_rejected": 0,
+                    "combinations_eng_1122_priced": 0,
+                    "reconciliation_disposition": "CONDITIONAL_MULTILATERAL_TREATY_OPPORTUNITY (MISSING_COPRODUCER_SPLIT)",
+                    "statutory_authority_and_notes": (
+                        "Ibermedia Multilateral Programme (Mexico + >=1 Ibermedia partner, 20%-80% financial contribution): "
+                        "unpriced in baseline pending co-producer split; Mexican side remains subject to Decreto Feb 15, 2026 (MXN 40M floor & committee authorization)."
+                    ),
+                })
+                continue
+
+            # Canada bilateral treaty co-productions (ITA § 125.4(1) & Income Tax Regulations § 1106(3))
+            # Planning benchmark at 50% Canadian co-producer share:
+            ca_share_50_qpe = round(0.50 * open_base_usd, 2)
+            ca_share_50_lab = round(0.50 * min(labour_cat_usd, round(0.60 * open_base_usd, 2)), 2)
+            ca_cptc_50_inc = round(0.25 * ca_share_50_lab, 2)
+            # And if paired with Manitoba (+8% treaty co-producer bonus = 38% all-spend on 50% CA share):
+            ca_mb_treaty_50_inc = round(0.38 * ca_share_50_qpe, 2)
+
+            bump(fam5, "ind_conditional", 1)
+            lu_personnel_note = (
+                " On LU, confirmed creative personnel include a UK (GB) writer and an Australian (AU) director, directly satisfying bilateral nationality rules for uk-ca-bilateral / ca-au-bilateral!"
+                if (proj == "LU" and t_slug in ("uk-ca-bilateral", "ca-au-bilateral"))
+                else ""
+            )
+            manifest_rows.append({
+                "manifest_family": fam5,
+                "project": proj,
+                "combination_key": f"{proj}|copro|{t_slug}",
+                "anchor_jurisdiction": "CA",
+                "anchor_program_or_stack": "ca_federal_cptc (ITR § 1106(3) Treaty Route)",
+                "partition_or_route": f"bilateral_treaty_co_production:{p_a}+{p_b} ({int(min_min)}%-{int(min_max)}%)",
+                "target_jurisdiction_or_partner": p_b if p_a == "CA" else p_a,
+                "target_program_or_treaty": f"{t_slug} -> {','.join(u_maj + u_min)}",
+                "expected_combinations_represented": 1,
+                "allocated_spend_usd": f"{gross_usd:.2f}",
+                "independent_status": "CO_PRO_OPPORTUNITY",
+                "independent_qpe_floor_usd": "0.00",
+                "independent_incentive_floor_usd": NA_TREATY,
+                "independent_conditional_upside_usd": f"{ca_mb_treaty_50_inc:.2f}",
+                "independent_npc_floor_usd": NA_TREATY,
+                "engine_1122_status": "CO_PRO_OPPORTUNITY",
+                "engine_1122_qpe_usd": "0.00",
+                "engine_1122_incentive_floor_usd": NA_TREATY,
+                "engine_1122_npc_usd": NA_TREATY,
+                "combinations_ind_priced": 0,
+                "combinations_ind_not_established": 0,
+                "combinations_ind_conditional": 1,
+                "combinations_ind_rejected": 0,
+                "combinations_eng_1122_priced": 0,
+                "reconciliation_disposition": "VERIFIED_UNPRICED_BILATERAL_TREATY_OPPORTUNITY_WITH_ITR_1106_3_BENCHMARK",
+                "statutory_authority_and_notes": (
+                    f"ITA § 125.4(1) & Income Tax Regulations § 1106(3) ('treaty co-production' under {t_slug}, {int(min_min)}%-{int(min_max)}% financial/creative corridor): "
+                    f"Crucially, the domestic 6/10 CAVCO Canadian creative-point test and 75% Canadian services/post cost tests in ITR § 1106(4) DO NOT APPLY to an official bilateral treaty co-production; "
+                    f"joint Telefilm/CAVCO + partner authority certification governs. Unpriced in baseline (RESOLUTION_UNRESOLVED_FACTS: no co-producer split stated); "
+                    f"at a 50% Canadian co-producer share (${ca_share_50_qpe:,.2f}), standalone Canadian CPTC benchmark = ${ca_cptc_50_inc:,.2f} and Manitoba 38% co-prod benchmark = ${ca_mb_treaty_50_inc:,.2f}.{lu_personnel_note}"
+                ),
+            })
+
+    with open(MANIFEST_CSV, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=list(manifest_rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(manifest_rows)
+
+    tot_manifest_rows = len(manifest_rows)
+    tot_expected_combos = sum(v["expected_combinations_represented"] for v in family_summary.values())
+    manifest_summary_obj = {
+        "total_manifest_rows": tot_manifest_rows,
+        "total_expected_combinations_reconciled": tot_expected_combos,
+        "families": family_summary,
+        "cavco_three_route_doctrine": {
+            "route_1_domestic_cptc": "ITA § 125.4 & Income Tax Regulations § 1106(4): requires CAVCO Part A/B Canadian Film or Video Production Certificate, 100% Canadian copyright ownership, >=6/10 CAVCO Canadian creative points, and >=75% Canadian services and post/lab costs. Rate: 25% of QLE capped at 60% of net production cost (max 15% of net production cost).",
+            "route_2_treaty_coproduction_cptc": "ITA § 125.4(1) & Income Tax Regulations § 1106(3) ('treaty co-production'): requires joint Telefilm Canada / CAVCO + foreign partner competent authority approval under an official bilateral audiovisual treaty (20%-80% or 30%-70% financial/creative proportionality). Domestic 6/10 CAVCO Canadian creative-point and 75% cost requirements in ITR § 1106(4) DO NOT APPLY to official treaty co-productions.",
+            "route_3_federal_pstc": "ITA § 125.5 & Income Tax Regulations § 9300 ('accredited production'): foreign/service production route requiring CAVCO Accreditation Certificate (Form T1177) and >$1,000,000 CAD aggregate feature budget; requires 0/10 Canadian creative points and no Canadian copyright ownership. Rate: 16% of qualified Canadian labour expenditure net of provincial assistance.",
+        },
+        "saved_db_copro_row_reconciliation": {
+            "total_saved_copro_rows_per_generation_bh_lls": 25,
+            "canada_bilateral_treaty_rows": 12,
+            "pure_na_ca_mx_bilateral_row": 1,
+            "row_bilateral_treaties_stamped_with_us_home_primary_jurisdiction": 13,
+            "omitted_ca_cn_bilateral_from_25": 1,
+        },
+    }
+    with open(MANIFEST_JSON, "w", encoding="utf-8") as f:
+        json.dump(manifest_summary_obj, f, indent=2)
+
+    print(f"[PASS] Wrote {tot_manifest_rows} manifest rows ({tot_expected_combos:,} expected combinations reconciled) to {MANIFEST_CSV}")
+    return manifest_summary_obj
+
+
 def build_coverage_matrix_and_report() -> None:
     with open(SOURCE_EVIDENCE_JSON, "r", encoding="utf-8") as f:
         ev_list = json.load(f)
@@ -1072,6 +2065,7 @@ def build_coverage_matrix_and_report() -> None:
 
     proj_parts = build_project_partitions_by_identity(ev_by_proj)
     universe_summary = audit_full_na_universe(proj_parts, universe_legs)
+    manifest_summary = build_combinatorial_coverage_manifest(proj_parts, universe_legs, stack_map, snap)
     lls_mb_ca = reconstruct_lls_mb_ca_independent(ev_by_proj["LLS"])
 
     csv_rows: List[Dict[str, Any]] = []
@@ -1658,7 +2652,7 @@ def build_coverage_matrix_and_report() -> None:
 
     print(f"[PASS] Wrote {len(csv_rows)} rows to {OUT_CSV}")
 
-    write_handoff_markdown(lls_mb_ca, csv_rows, stats_counter, agg_summary, universe_summary)
+    write_handoff_markdown(lls_mb_ca, csv_rows, stats_counter, agg_summary, universe_summary, manifest_summary)
     print(f"[PASS] Wrote handoff report to {OUT_MD}")
 
 
@@ -1668,6 +2662,7 @@ def write_handoff_markdown(
     stats_counter: Dict[str, Dict[str, int]],
     agg_summary: Dict[str, Any],
     universe_summary: Dict[str, Any],
+    manifest_summary: Dict[str, Any],
 ) -> None:
     priced_rows = [r for r in csv_rows if r["row_category"] in ("SAVED_NA_HYBRID_ROW", "SAVED_NA_MULTI_PROGRAM_STACK", "SAVED_NA_COMPONENT_RELOCATION")]
     disp_counts: Dict[str, int] = {}
@@ -1675,29 +2670,86 @@ def write_handoff_markdown(
         d = r["audit_disposition"]
         disp_counts[d] = disp_counts.get(d, 0) + 1
 
+    fams = manifest_summary["families"]
+
     with open(OUT_MD, "w", encoding="utf-8") as f:
-        f.write("# Independent North American Hybrid & Multi-Program Audit Handoff (`FVD`, `BH`, `LU`, `LLS`)\n\n")
-        f.write("**Audit Track:** North American Hybrid, Multi-Program & Component-Relocation Independent Audit  \n")
+        f.write("# Independent North American Optimization, Hybrid & Stacking Audit Handoff (`FVD`, `BH`, `LU`, `LLS`)\n\n")
+        f.write("**Audit Track:** North American Single-Program, Component-Route, Multi-Leg Hybrid, Same-Jurisdiction Stack & Co-Production Independent Audit  \n")
         f.write("**Frozen Canonical Engine Baseline:** `canonical-1.122.0`  \n")
         f.write(f"**Frozen Claude Remediation Commits:** `{FROZEN_COMMITS[0]}` (`f5dc6a17`), `{FROZEN_COMMITS[1]}` (`f0b042ba`), `{FROZEN_COMMITS[2]}` (`59566fd1`)  \n")
         f.write("**Saved Database Under Comparison:** `frametax2_claude_optimizer_acceptance_20260919` (`canonical-1.106.0` .. `canonical-1.110.0`)  \n")
-        f.write(f"**Coverage Matrix Deliverable:** `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv` (**{len(csv_rows):,} rows**: 9 explicit LLS Manitoba–California artifact & contingency-election rows + 1,590 saved NA rows across all four budgets, backed by **{universe_summary['total_universe_legs']:,}** independent NA universe leg evaluations across 37 exact line partitions × 45 NA programs)  \n")
+        f.write(f"**Combinatorial Coverage Manifest Deliverable:** `NORTH_AMERICAN_COVERAGE_MANIFEST.csv` & `NORTH_AMERICAN_COVERAGE_MANIFEST_SUMMARY.json` (**{manifest_summary['total_manifest_rows']:,} manifest rows** reconciling **{manifest_summary['total_expected_combinations_reconciled']:,} expected North American combinations** across all 5 structural families for `FVD`, `BH`, `LU`, and `LLS`)  \n")
+        f.write(f"**Saved-Row & Leg Coverage Matrix Deliverable:** `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv` (**{len(csv_rows):,} rows**: 9 explicit LLS Manitoba–California artifact & contingency-election rows + 1,590 saved NA rows across all four budgets, backed by **{universe_summary['total_universe_legs']:,}** independent NA universe leg evaluations across 37 exact line partitions × 45 NA programs)  \n")
         f.write("**Gate Status:** `STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN`\n\n")
         f.write("---\n\n")
 
         # Section 1
         f.write("## 1. Executive Summary & Audit Methodology\n\n")
-        f.write("In accordance with `PROJECT_RULES.md`, `docs/architecture/CAPABILITY_LEDGER.md`, `docs/validation/FOUR_ANCHOR_QPE_ISSUE_REGISTER.md`, and Codex's `CODEX_CA_GATE_REVIEW_20261011.md`, `CODEX_LLS_NA_HYBRID_LOAD_REVIEW_20261011.md`, and `CODEX_NY_CANADA_CHANGED_PATH_REVIEW_20261011.md`, this audit independently reconstructs the complete North American hybrid universe across all four anchor projects (`The Little Utopia` [`LU`], `F#K Valentine's Day` [`FVD`], `Bad Hombres` [`BH`], and `Lips Like Sugar` [`LLS`]) outside the engine from retained Movie Magic budget lines (`docs/validation/FOUR_ANCHOR_SOURCE_DETAIL_EVIDENCE.json`) and dated primary statutory authority.\n\n")
+        f.write("In accordance with `PROJECT_RULES.md`, `docs/architecture/CAPABILITY_LEDGER.md`, `docs/validation/FOUR_ANCHOR_QPE_ISSUE_REGISTER.md`, and Codex's `CODEX_CA_GATE_REVIEW_20261011.md`, `CODEX_LLS_NA_HYBRID_LOAD_REVIEW_20261011.md`, and `CODEX_NY_CANADA_CHANGED_PATH_REVIEW_20261011.md`, this audit independently derives and reconciles the complete North American optimization, component-relocation, multi-leg hybrid, same-jurisdiction stacking, and bilateral co-production coverage manifest across all four anchor projects (`The Little Utopia` [`LU`], `F#K Valentine's Day` [`FVD`], `Bad Hombres` [`BH`], and `Lips Like Sugar` [`LLS`]) outside the engine from retained Movie Magic budget lines (`docs/validation/FOUR_ANCHOR_SOURCE_DETAIL_EVIDENCE.json`) and dated primary statutory authority.\n\n")
         f.write("### Core Methodological Controls Enforced\n")
         f.write("1. **Independent Expectation First by Exact Account Identity (Zero Circularity):** Every segment allocation (`37` exact line-identity partitions across the four budgets), eligibility gate, QPE/labour base, statutory cap, uplift, government assistance deduction, line overlap (`0` shared `line_id`s across all partitions and saved hybrids), contingency treatment, and Net Production Cost (NPC) was calculated directly from `FOUR_ANCHOR_SOURCE_DETAIL_EVIDENCE.json` and primary statute/guidelines without reading engine QPE or incentive outputs.\n")
-        f.write("2. **Rejected Candidates Are Not Priced (`N/A (NOT_PRICED_REJECTED_CANDIDATE)`):** Whenever a hybrid or component-relocation candidate is rejected (`GATE_REJECTED`, `RULE_REJECTED`, `CONDITIONAL_NONDETERMINISTIC`, including `LLS` Manitoba–California Artifact 1), its incentive floor and NPC columns are recorded as `N/A (NOT_PRICED_REJECTED_CANDIDATE)` rather than a misleading `$0.00` credit with `NPC = Gross Budget`.\n")
-        f.write("3. **Contingency Election vs. Eligible Category Deployment:** Under Manitoba ITA s. 7.5(1)(g)–(h), a user's top-level `contingency_expected_utilization_pct` election (`50%` or `100%`) reduces undeployed planned cost once (`planned_cost_reduction_usd`) but is **not by itself evidence that the deployed reserve was spent on eligible Manitoba production categories**. Unallocated contingency is kept out of the confirmed QPE floor (`$2,833,096.20` on Artifact 2; `$2,845,096.20` on Artifact 3), while deployed-to-eligible-category contingency (`+$60,000` at `50%`, `+$120,000` at `100%`) is presented as a conditional deployment sensitivity scenario.\n")
-        f.write("4. **No Automatic Classification of BTL Department Totals as Labour:** Movie Magic topsheet department totals (`2000–3900`) bundle crew labour, equipment rentals, and materials and are never automatically treated as 100% labour.\n\n")
+        f.write("2. **Expected-vs-Audited Combinatorial Coverage Manifest (`NORTH_AMERICAN_COVERAGE_MANIFEST.csv`):** Because leg counts (`1,665`), saved database rows (`1,590`), and aggregate summary groups (`871`) alone do not prove combinatorial completeness, `NORTH_AMERICAN_COVERAGE_MANIFEST.csv` (`2,742` rows) explicitly enumerates and reconciles every required North American combination across single-program relocations (`180`), same-jurisdiction stacks (`72`), standalone component routes (`810`), reduced anchor partitions (`675`), `r=1` hybrid anchor-package envelopes (`585` rows reconciling all `25,584` distinct-jurisdiction `r=1` combinations including `308` `component_relocation` rows from `home_code`), `r=2` two-component hybrid envelopes (`360` rows reconciling all `668,832` ordered distinct-jurisdiction `r=2` combinations), and North American co-production paths (`60` rows across `15` treaty/non-treaty routes).\n")
+        f.write("3. **Three-Way Distinction Among Domestic CPTC (`ITR § 1106(4)`), Treaty Co-Production CPTC (`ITR § 1106(3)`), and Federal PSTC (`ITA § 125.5`):** Domestic CAVCO `6/10` Canadian creative-point requirements (`Income Tax Regulations § 1106(4)`) apply **only** to domestic `ca_federal_cptc`, **never** to official bilateral treaty co-productions (`ITR § 1106(3)`) and **never** to the foreign/service `ca_federal_pstc` (`ITA § 125.5`, `ITR § 9300`). Any prior audit phrasing that applied domestic `6/10` CAVCO creative points to treaty co-productions is **explicitly withdrawn**.\n")
+        f.write("4. **Rejected Candidates Are Not Priced (`N/A (NOT_PRICED_REJECTED_CANDIDATE)`):** Whenever a hybrid or component-relocation candidate is rejected (`GATE_REJECTED`, `RULE_REJECTED`, `CONDITIONAL_NONDETERMINISTIC`, including `LLS` Manitoba–California Artifact 1), its incentive floor and NPC columns are recorded as `N/A (NOT_PRICED_REJECTED_CANDIDATE)` rather than a misleading `$0.00` credit with `NPC = Gross Budget`.\n")
+        f.write("5. **Contingency Election vs. Eligible Category Deployment:** Under Manitoba ITA s. 7.5(1)(g)–(h), a user's top-level `contingency_expected_utilization_pct` election (`50%` or `100%`) reduces undeployed planned cost once (`planned_cost_reduction_usd`) but is **not by itself evidence that the deployed reserve was spent on eligible Manitoba production categories**. Unallocated contingency is kept out of the confirmed QPE floor (`$2,833,096.20` on Artifact 2; `$2,845,096.20` on Artifact 3), while deployed-to-eligible-category contingency (`+$60,000` at `50%`, `+$120,000` at `100%`) is presented as a conditional deployment sensitivity scenario.\n")
+        f.write("6. **No Automatic Classification of BTL Department Totals as Labour:** Movie Magic topsheet department totals (`2000–3900`) bundle crew labour, equipment rentals, and materials and are never automatically treated as 100% labour.\n\n")
         f.write("---\n\n")
 
-        # Section 2: LLS Manitoba-California Reconstruction
-        f.write("## 2. Priority 1 Deep-Dive: Independent Reconstruction of `LLS` Manitoba–California (`CA-MB` Principal + `US-CA` VFX)\n\n")
-        f.write("### 2.1 Exact Saved Database Row Identities Across Generations\n\n")
+        # Section 2: Independent Combinatorial Coverage Manifest & CAVCO/CPTC/Treaty/PSTC Distinction
+        f.write("## 2. Independent Combinatorial Coverage Manifest & Canadian Three-Route Doctrine (`FVD`, `BH`, `LU`, `LLS`)\n\n")
+        f.write("### 2.1 Reconciliation of Expected vs. Audited North American Combinations (`NORTH_AMERICAN_COVERAGE_MANIFEST.csv`)\n\n")
+        f.write("To prove completeness independently of engine top-K pruning or aggregate group counts, `NORTH_AMERICAN_COVERAGE_MANIFEST.csv` (**2,742 rows**) reconciles every expected North American combination across all 5 structural families:\n\n")
+        f.write("| Manifest Family | Combinatorial Definition (`FVD`, `BH`, `LU`, `LLS`) | Manifest Rows | Expected Combinations Reconciled | Ind. Deterministically Priced | Ind. Not Established (`$0` Guaranteed Floor; Requires Resident Payroll / CAVCO Cert) | Ind. Conditional (Day-Share / Treaty / Stacking Authority Follow-Up) | Ind. Statutorily / Structurally Rejected | Engine `1.122.0` Priced Combinations |\n")
+        f.write("| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n")
+        fam_labels = [
+            ("FAMILY_1_NA_SINGLE_PROGRAM_FULL_RELOCATION", "4 projects × 45 NA programs (`full_relocation` / `home_baseline`)"),
+            ("FAMILY_2_NA_SAME_JURISDICTION_STACK", "4 projects × 18 statutory/canonical NA multi-program stacks (5 in-DB + 5 mutually exclusive + 2 conditional + 6 omitted service/3-way stacks `NA-HYB-DEF-07`)"),
+            ("FAMILY_3A_NA_COMPONENT_ROUTE_EVALUATION", "18 component partitions (`3 LU + 5 FVD + 4 BH + 6 LLS`) × 45 NA target programs"),
+            ("FAMILY_3B_NA_ANCHOR_PARTITION_EVALUATION", "15 reduced anchor partitions (`2 LU + 5 FVD + 3 BH + 5 LLS`) × 45 NA anchor programs"),
+            ("FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE", "13 `r=1` packages (`2 LU + 4 FVD + 3 BH + 4 LLS`) × 45 NA anchors × distinct-jurisdiction NA targets (`25,584` combinations incl. `308` `component_relocation` from `home_code`)"),
+            ("FAMILY_4_NA_R2_TWO_COMPONENT_HYBRID_ENVELOPE", "8 `r=2` component-pair splits (`1 LU + 3 FVD + 1 BH + 3 LLS`) × 45 NA anchors × ordered distinct-jurisdiction NA target pairs (`668,832` combinations)"),
+            ("FAMILY_5_NA_COPRODUCTION_PATH", "4 projects × 15 North American co-production routes (`ca-mx-bilateral` pure NA treaty, 12 `CA + ROW` bilateral treaties, `ibermedia-multilateral`, `US` zero-treaty rejection)"),
+        ]
+        for fk, fdesc in fam_labels:
+            fs = fams[fk]
+            f.write(
+                f"| **`{fk}`** | {fdesc} | **{fs['manifest_rows']:,}** | **{fs['expected_combinations_represented']:,}** | "
+                f"{fs['ind_priced']:,} | {fs['ind_not_established']:,} | "
+                f"{fs['ind_conditional']:,} | {fs['ind_rejected']:,} | "
+                f"{fs['eng_1122_priced']:,} |\n"
+            )
+        f.write(
+            f"| **TOTAL ACROSS ALL 7 MANIFEST TABLES** | **Complete Four-Anchor North American Combinatorial Universe** | **{manifest_summary['total_manifest_rows']:,}** | **{manifest_summary['total_expected_combinations_reconciled']:,}** | "
+            f"**{sum(v['ind_priced'] for v in fams.values()):,}** | **{sum(v['ind_not_established'] for v in fams.values()):,}** | "
+            f"**{sum(v['ind_conditional'] for v in fams.values()):,}** | **{sum(v['ind_rejected'] for v in fams.values()):,}** | "
+            f"**{sum(v['eng_1122_priced'] for v in fams.values()):,}** |\n\n"
+        )
+
+        f.write("### 2.2 Three-Route Statutory Distinction: CAVCO Certification vs. Domestic CPTC (`ITR § 1106(4)`) vs. Treaty Co-Production CPTC (`ITR § 1106(3)`) vs. Federal PSTC (`ITA § 125.5`)\n\n")
+        f.write("> [!IMPORTANT]\n")
+        f.write("> **Formal Withdrawal of Conflated Creative-Point Requirement on Treaty Co-Productions:**\n")
+        f.write("> Any statement in earlier audit notes suggesting that Canadian treaty co-productions require `>= 6/10` domestic CAVCO Canadian creative points is **formally withdrawn**. Under the Canadian *Income Tax Act* (R.S.C. 1985, c. 1 (5th Supp.)) and *Income Tax Regulations* (C.R.C., c. 945), CAVCO administers three legally distinct certification routes:\n\n")
+        f.write("| Canadian Federal / Provincial Route | Governing Statute & Regulation | CAVCO / Competent Authority Certificate Required | Canadian Copyright & Creative-Point Rules | Cost-Proportion & Minimum-Budget Rules | Statutory Credit Rate, Cap & Provincial Stacking |\n")
+        f.write("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
+        f.write("| **Route 1: Domestic CPTC** (`ca_federal_cptc` — Domestic Production) | **ITA § 125.4** & **Income Tax Regulations § 1106(4)** (`\"Canadian film or video production\"`) | **CAVCO Part A / Part B Canadian Film or Video Production Certificate** | **100% Canadian copyright ownership** (`ITR § 1106(4)(a)`) AND **`>= 6/10` CAVCO Canadian creative points** (lead director/screenwriter Canadian + at least 1 of top 2 lead performers Canadian; `ITR § 1106(4)(b)` & `(5)`). | **`>= 75%` of total non-remuneration production services** paid to Canadians AND **`>= 75%` of post-production/lab costs** incurred in Canada (`ITR § 1106(4)(c)–(d)`). | **25% of Qualified Labour Expenditure (QLE)**, where QLE is capped at **60% of net production cost** (net of all federal/provincial assistance; max **15%** of net production cost). Stacks with domestic provincial credits (`on_ofttc`, `ca_bc_film_incentive_bc`, `ca_mb_film_video_credit`, `ca_ns`, `ca_sk`, `ca_nl`, `ca_ab`). |\n")
+        f.write("| **Route 2: Treaty Co-Production CPTC** (`ca_federal_cptc` — Official Bilateral Treaty Route) | **ITA § 125.4(1)** & **Income Tax Regulations § 1106(3)** (`\"treaty co-production\"`) | **Joint Telefilm Canada (administered with CAVCO) + Foreign Partner Competent Authority Provisional & Final Approval** under one of Canada's official bilateral audiovisual treaties (`13` treaties registered in `treaty_engine.py`, including `ca-mx-bilateral`, `uk-ca-bilateral`, `ca-au-bilateral`, `fr-ca-bilateral`, `de-ca-bilateral`). | **Shared copyright and financial/creative proportionality (`20%–80%` or `30%–70%`)** governed by the specific bilateral treaty. **Crucially, the domestic `6/10` CAVCO Canadian creative-point test and `75%` Canadian cost tests in `ITR § 1106(4)` DO NOT APPLY to a `\"treaty co-production\"` under `ITR § 1106(3)`.** | Canadian co-producer must incur at least the treaty minimum share (`20%` or `30%`) of total production expenditure; Canadian CPTC applies to the Canadian co-producer's share of Canadian resident QLE. | **25% of Canadian co-producer's QLE** (capped at 60% of the Canadian co-producer's net production cost after provincial assistance). Also unlocks domestic provincial co-production credits (`on_ofttc`, `ca_bc_film_incentive_bc` via DomesTC, `ca_mb_film_video_credit` including the **`+8%` Manitoba Co-Producer Bonus = 38%`**, `ca_ns`, `ca_ab`, `ca_nl`). |\n")
+        f.write("| **Route 3: Federal PSTC** (`ca_federal_pstc` — Foreign / Production Services Route) | **ITA § 125.5** & **Income Tax Regulations § 9300** (`\"accredited production\"`) | **CAVCO Accredited Film or Video Production Certificate (Form T1177)** | **Requires `0/10` Canadian creative points and NO Canadian copyright ownership** (specifically designed for US/foreign studio and independent relocation productions). | **Aggregate production cost must exceed `$1,000,000 CAD`** (for a feature film; `$100k/$200k CAD` per episode for TV). **No `75%` Canadian services or post-production threshold.** | **16% of Qualified Canadian Labour Expenditure** (Canadian resident employees/contractors working in Canada), **net of provincial production services assistance** (`ITA § 125.5(1)`). Mutually exclusive with `ca_federal_cptc`; stacks with provincial production services credits (`on_opstc`, `ca_bc_pstc`, `ca_qc_pstc`, `ca_mb_film_video_credit`) — **omitted in `_SLUG_PAIR_RULES` (`NA-HYB-DEF-07`)**. |\n\n")
+
+        f.write("### 2.3 Application of the Three-Route Doctrine & Co-Production Reconciliation Across `LU`, `FVD`, `BH`, and `LLS`\n\n")
+        f.write("1. **Domestic CPTC (`ITR § 1106(4)`) across `LU`, `FVD`, `BH`, `LLS`:** None of the four source budgets supply a domestic CAVCO Part A/B certificate, 100% Canadian copyright chain of title, or `>= 6/10` Canadian creative-point declaration (`LU` explicitly states a British [`GB`] writer, Australian [`AU`] director, and US/Russian lead cast). Accordingly, under the domestic route (`ITR § 1106(4)`), `ca_federal_cptc`, `on_ofttc`, and `ca_bc_film_incentive_bc` have a **`$0.00` guaranteed floor (`CONDITIONAL_UNVERIFIED_RESIDENCY_AND_CAVCO_CERT`)**.\n")
+        f.write("2. **Official Bilateral Treaty Co-Production (`ITR § 1106(3)`) across `LU`, `FVD`, `BH`, `LLS` (`FAMILY_5_NA_COPRODUCTION_PATH`, 60 manifest rows):**\n")
+        f.write("   - **Pure North American Treaty (`ca-mx-bilateral`, `CA + MX`, `20%–80%`):** Unlocks `ca_federal_cptc` (via `ITR § 1106(3)`) + provincial credits (`ca_bc_film_incentive_bc`, `on_ofttc`, `ca_qc_pstc`) on the Canadian co-producer's share and `mx_eficine_189` / `mx_fidecine` / `mx_cash_rebate_2026` on the Mexican co-producer's share **without requiring `6/10` Canadian creative points**.\n")
+        f.write("   - **`LU` Confirmed `GB` Writer & `AU` Director (`uk-ca-bilateral` [`GB + CA`, `20%–80%`] & `ca-au-bilateral` [`CA + AU`, `20%–80%`]):** Because `LU`'s retained production profile confirms a **British (`GB`) writer** (`1100 STORY & SCRIPT = $35,280`) and an **Australian (`AU`) director** (`1300 DIRECTOR = $33,962`), structuring `LU` as an official `uk-ca-bilateral` or `ca-au-bilateral` treaty co-production satisfies key creative nationality elements under `ITR § 1106(3)` **without needing domestic `6/10` Canadian points**. In the saved database (`LU` / `LU_106`), `uk-ca-bilateral` and `ca-au-bilateral` were stamped with `primary_jurisdiction = MU` (`home_code`) and therefore had `0` NA-filtered `scr` rows; both are explicitly evaluated in `NORTH_AMERICAN_COVERAGE_MANIFEST.csv`.\n")
+        f.write("   - **Reconciliation of the 25 Saved `CO_PRO_OPPORTUNITY` Rows in `BH` and `LLS`:** In `SAVED_NA_HYBRID_DB_SNAPSHOT.json`, `BH` and `LLS` each have `25` saved `CO_PRO_OPPORTUNITY` rows because `canonical_evaluation.py` stamps `primary_jurisdiction = home_code` (`US-NM` on `BH`, `US-CA` on `LLS`) on all surfaced bilateral treaties. Of those 25 rows, **12 involve Canada (`CA`)** (including `1` pure NA treaty `ca-mx-bilateral`), **13 are pure Rest-of-World (`ROW`) bilateral treaties** (`GB+AU`, `FR+DE`, etc., audited only for their NA-filter attribution), and **1 registered Canadian treaty (`ca-cn-bilateral`)** is omitted from the 25. The United States (`US`) has **zero** bilateral audiovisual co-production treaties (`STATUTORY_NO_US_BILATERAL_AUDIOVISUAL_TREATY`).\n")
+        f.write("3. **Federal PSTC (`ITA § 125.5` & `ITR § 9300`) & Omitted Canadian Service Stacks (`NA-HYB-DEF-07`):**\n")
+        f.write("   - On `FVD` (`$4,517,687`), `BH` (`$2,482,023`), `LU` (`$4,364,393`), and `LLS` (`$11,983,654`), all four full-relocation budgets exceed the `$1,000,000 CAD` (`~$730,000 USD`) feature threshold in `ITR § 9300` and require `0/10` Canadian creative points under `ca_federal_pstc`, requiring only a CAVCO Form T1177 Accreditation Certificate and verified Canadian resident payroll (`$0.00` guaranteed floor from topsheets alone).\n")
+        f.write("   - **Component Slice Gate on `ca_federal_pstc`:** Under `ITR § 9300(1)`, the `>$1,000,000 CAD` threshold applies to the **aggregate production budget of the film** (`total_budget`), or if applied to Canadian spend, every standalone post/VFX/music component slice (`$5,000–$858,004`) on `LU`, `FVD`, and `BH` (`$5,000–$166,646`) is also below `$730,000 USD`.\n")
+        f.write("   - **Active Code Defect `NA-HYB-DEF-07` (Omitted Canadian Federal PSTC + Provincial Production Services Stacks):** In `backend/app/services/stacking_rules.py` (`_SLUG_PAIR_RULES`) and `canonical_stack_bridge.py`, the engine enumerates domestic `ca_federal_cptc + provincial` pairs (`on_ofttc`, `ca_bc_film_incentive_bc`, `ca_mb_film_video_credit`, `ca_ns_production_incentive_fund`, `ca_qc_pstc`), **but completely omits the standard foreign/service production stacks** `ca_federal_pstc + on_opstc` (Ontario), `ca_federal_pstc + ca_bc_pstc` (British Columbia), `ca_federal_pstc + ca_qc_pstc` (Quebec), `ca_federal_pstc + ca_mb_film_video_credit` (Manitoba), and 3-way stacks with `on_ocase` (`CA-ON`). All `6` omitted stack families × `4` projects (`24` combinations) are independently calculated and reconciled in `FAMILY_2_NA_SAME_JURISDICTION_STACK` (`NORTH_AMERICAN_COVERAGE_MANIFEST.csv`).\n\n")
+        f.write("---\n\n")
+
+        # Section 3: LLS Manitoba-California Reconstruction
+        f.write("## 3. Priority 1 Deep-Dive: Independent Reconstruction of `LLS` Manitoba–California (`CA-MB` Principal + `US-CA` VFX)\n\n")
+        f.write("### 3.1 Exact Saved Database Row Identities Across Generations\n\n")
         f.write("| Generation Label | Engine Version | Input Fingerprint | `scr.id` | `structure_id` | Saved Status | Saved CA-MB Alloc ($) | Saved US-CA Alloc ($) | Saved CA-MB Credit ($) | Saved US-CA Credit ($) | Saved Total Credit ($) | Saved True NPC ($) |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- | :---: | ---: | ---: | ---: | ---: | ---: | ---: |\n")
         f.write("| **`LLS_110b`** (Latest) | `canonical-1.110.0` | `78ed9f199c4e5eb0...` | `914a47c0-9b1e-4d47-867f-425e6d4792fa` | `9656c441-881e-4667-bec1-8841387408ce` | `PRICED` | 11,943,654.00 | 40,000.00 | 4,249,644.30 | 14,000.00 | 4,263,644.30 | 7,720,009.70 |\n")
@@ -1705,7 +2757,7 @@ def write_handoff_markdown(
         f.write("| **`LLS_106`** (Historical) | `canonical-1.106.0` | `0c6459528b797538...` | `0338ace0-e929-42aa-89df-fd1fe7ff629c` | `110ce2e4-f121-433b-a9ff-591ee4718b77` | `PRICED` | 11,943,654.00 | 40,000.00 | 4,249,644.30 | 14,000.00 | 4,263,644.30 | 7,720,009.70 |\n\n")
         f.write("* **Line Conservation & Zero Overlap Proof:** Across all three saved rows, `LLS` (`doc_id = 6ae1bbec-f8f2-432b-a09f-9d9c8833944b`, **46 active budget lines**, gross **`$11,983,654.00`**) is partitioned into **45 lines (`$11,943,654.00`)** allocated to `CA-MB` (`principal_production`) and **1 line (`4400 VISUAL EFFECTS`, `line_id = f942e378-4679-4f6f-bcb9-e5a2a210b55f`, `$40,000.00`)** allocated to `US-CA` (`vfx`). Set intersection of `line_ids` is empty (**`overlap_count = 0`**), and `$11,943,654.00 + $40,000.00 = $11,983,654.00` (`$0.00` unallocated variance).\n\n")
 
-        f.write("### 2.2 Independent Statutory Analysis of the California `vfx` Leg (`4400 VISUAL EFFECTS = $40,000.00`)\n\n")
+        f.write("### 3.2 Independent Statutory Analysis of the California `vfx` Leg (`4400 VISUAL EFFECTS = $40,000.00`)\n\n")
         f.write("* **Dated Primary Authority:**\n")
         f.write("  1. **Prospective Relocation Rule — California Film & Television Tax Credit Program 4.0 Guidelines (California Film Commission, effective January 1, 2026; applies to allocation letters dated on or after July 1, 2025), Section II.A.1 (PDF p. 3):** A feature film (`$1,000,000` minimum production budget) is eligible **only if EITHER at least 75% of the total production budget is spent in California OR at least 75% of principal photography days occur wholly in California**.\n")
         f.write("  2. **Historical Reference Input — California Program 3.0 (Cal. Rev. & Tax. Code § 17053.98(b)(3)(A) & Cal. Code Regs. tit. 10, § 5520(a); LLS CFC Allocation Letter dated March 6, 2023):** Imposes the identical **75% California budget OR 75% California principal photography days** threshold (the 2023-03-06 letter approved LLS for a full California shoot with `$5,990,260` estimated QPE and `$1,198,052` credit at 20%, not a standalone `$40,000` VFX slice).\n")
@@ -1716,7 +2768,7 @@ def write_handoff_markdown(
         f.write("  - **In this explicit modeled hybrid scenario** (`principal_production` placed in `CA-MB`, only `vfx` placed in `US-CA`), 100% of modeled principal photography is placed outside California (`0% < 75%`), so the California leg fails the project eligibility gate (**`PROJECT_ELIGIBILITY_GATE_FAILED`**; whole hybrid candidate is `GATE_REJECTED` and `NOT_PRICED`).\n")
         f.write("  - **Mixed / Unmodeled Shoot Distinction:** If a structure does not model principal photography placement (or splits principal photography without day counts) and lacks producer-stated `ca_principal_photography_days_in_california_pct`, the gate is **`CONDITIONAL`** (`$0.00` guaranteed floor; conditional upside requires producer day confirmation), never a false pass.\n\n")
 
-        f.write("### 2.3 Independent Statutory Analysis of the Manitoba `principal_production` Leg (`$11,943,654.00`)\n\n")
+        f.write("### 3.3 Independent Statutory Analysis of the Manitoba `principal_production` Leg (`$11,943,654.00`)\n\n")
         f.write("* **Dated Primary Authority:**\n")
         f.write("  - **Manitoba Income Tax Act (C.C.S.M. c. I10, ss. 7.5–7.9, current from July 1, 2026 to October 8, 2026)** and **Manitoba Film & Video Production Tax Credit Guidelines (Manitoba Film & Music, June 2024)**.\n")
         f.write("* **Exact Account-by-Account Identity Classification of the 45 Manitoba Budget Lines (`$11,943,654.00`):**\n")
@@ -1734,14 +2786,14 @@ def write_handoff_markdown(
         f.write("  - **Stream B — 45% Cost-of-Salaries Credit (Manitoba ITA s. 7.6(2)–(5)):**\n")
         f.write("    * In `canonical-1.122.0`, lines mapped to `component_basis_spend_categories` (`1100` `$314,153` + `1200` `$1,414,198` + `1300` `$267,384` + `1400` `$863,388` + `3100 MAKEUP & HAIR DEPARTMENT` `$76,175`) sum to **`$2,935,298.00`** $\\to$ 45% base = **`$1,320,884.10`** (65% ceiling = **`$1,907,943.70`**). Stream A (`$2,833,096.20`) governs.\n\n")
 
-        f.write("### 2.4 Separation of the Three Distinct `LLS` Manitoba–California Artifacts\n\n")
+        f.write("### 3.4 Separation of the Three Distinct `LLS` Manitoba–California Artifacts\n\n")
         f.write("| Artifact ID & Name | Structure Type | Jurisdiction Allocation | Eligibility / Status | Confirmed QPE Floor ($) | Guaranteed Credit Floor ($) | Conditional Credit Upside ($) | Confirmed NPC Floor at `NOT_STATED` ($) | Variance vs Stale DB (`$4,263,644.30`) |\n")
         f.write("| :--- | :--- | :--- | :---: | ---: | ---: | ---: | ---: | ---: |\n")
         f.write("| **Artifact 1: Retained Hybrid** (`CA-MB` Principal + `US-CA` VFX) | `hybrid` (`ordinary_component_hybrid`) | `CA-MB`: `$11,943,654.00` (45 lines)<br>`US-CA`: `$40,000.00` (1 line `4400`) | **`GATE_REJECTED`** (`PROJECT_ELIGIBILITY_GATE_FAILED` on `US-CA` leg) | 0.00 | **`N/A (NOT_PRICED_REJECTED_CANDIDATE)`** | 0.00 | **`N/A (NOT_PRICED_REJECTED_CANDIDATE)`** | **+4,263,644.30** (Stale row invalidly priced) |\n")
         f.write("| **Artifact 2: Same-Allocation Manitoba Leg Sensitivity** (`CA-MB` on 45 lines; `US-CA` VFX earns `$0`) | `hybrid_leg_sensitivity` | `CA-MB`: `$11,943,654.00` (45 lines)<br>`US-CA`: `$40,000.00` (uncredited `$0`) | **`PRICED`** (Manitoba 30% Stream A) | 9,443,654.00 | **2,833,096.20** | +755,492.32 (`+8%` co-prod)<br>+120,000.00 (`30%` of `$400k` cont.) | **9,150,557.80** | **+1,430,548.10** (`$4,249,644.30` MB leg + `$14k` CA leg) |\n")
         f.write("| **Artifact 3: Relocated All-Manitoba Single-Jurisdiction Alternative** (`100%` in `CA-MB` incl. `$40,000` VFX) | `single_country` (`full_relocation`) | `CA-MB`: `$11,983,654.00` (all 46 lines incl. `4400 VFX`) | **`PRICED`** (Manitoba 30% Stream A) | 9,483,654.00 | **2,845,096.20** | +758,692.32 (`+8%` co-prod)<br>+120,000.00 (`30%` of `$400k` cont.) | **9,138,557.80** | **+1,418,548.10** (vs `$4,263,644.30` hybrid) / **+1,422,548.10** (vs `$4,267,644.30` stale all-MB row) |\n\n")
 
-        f.write("### 2.5 Four-Election Contingency Matrix (`NOT_STATED`, `0%`, `50%`, `100%` on `7100 Contingency = $400,000.00`)\n\n")
+        f.write("### 3.5 Four-Election Contingency Matrix (`NOT_STATED`, `0%`, `50%`, `100%` on `7100 Contingency = $400,000.00`)\n\n")
         f.write("> [!IMPORTANT]\n")
         f.write("> **Contingency Election vs. Eligible Category Deployment (Re-Adjudicating `NA-HYB-DEF-04`):**\n")
         f.write("> Under **Manitoba Income Tax Act s. 7.5(1)(g)–(h)**:\n")
@@ -1762,9 +2814,9 @@ def write_handoff_markdown(
             )
         f.write("\n---\n\n")
 
-        # Section 3: Full Four-Anchor NA Hybrid Coverage Summary
-        f.write("## 3. Priority 2: Full Four-Anchor North American Hybrid Universe Coverage (`LU`, `FVD`, `BH`, `LLS`)\n\n")
-        f.write("### 3.1 Exact Source-Account Partitions Across the Four Anchor Budgets (`37` Exact Line Partitions)\n\n")
+        # Section 4: Full Four-Anchor NA Hybrid Coverage Summary
+        f.write("## 4. Priority 2: Full Four-Anchor North American Hybrid Universe Coverage (`LU`, `FVD`, `BH`, `LLS`)\n\n")
+        f.write("### 4.1 Exact Source-Account Partitions Across the Four Anchor Budgets (`37` Exact Line Partitions)\n\n")
         f.write("| Project | Controlling Gross Budget ($) | `post` Only (`post_production + sound`) ($) | `vfx` (`4400`/`4600`/`6100`) ($) | `music_package` (`4600`/`5100`/`6000`) ($) | `post_vfx_package` (`post + vfx`) ($) | `post_vfx_music_package` (`post + vfx + music`) ($) | `contingency` Reserve ($) | Exact Excluded / Grey / Overhead Accounts Verified by Identity |\n")
         f.write("| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :--- |\n")
         f.write("| **`LU`** | 4,364,393.00<br>*(Leaf: 4,364,395.00)* | 9,068.00<br>*(`5000 EDITORIAL`, stated outside in LA)* | 52,500.00<br>*(`6100 VFX DEPT`)* | 0.00<br>*(`6000 MUSIC = $0`)* | 61,568.00<br>*(or `9,068.00` when `vfx` split)* | 61,568.00 | 301,131.00<br>*(`8300 Contigency : 7.5%`, 100% stated)* | `1600` ATL Travel `$397,279`; `3900` BTL Travel `$438,254`; `7000` Admin `$297,593`; `7100` Publicity `$24,348`; `7200` Insurance `$12,374`; `8100` Insurance `$48,181` |\n")
@@ -1772,7 +2824,7 @@ def write_handoff_markdown(
         f.write("| **`BH`** | 2,482,023.00 | 107,958.00<br>*(`4300 $31,018, 4500 $2,000, 4700 $35,515, 4800 $39,425`)* | 0.00 | 5,000.00<br>*(`4600 MUSIC`)* | 107,958.00 | 112,958.00 | 94,382.00<br>*(`CONTINGENCY`)* | `1600` SAG Deposit / Residual Reserve `$60,000` (`GREY_AREA`); `7600` Legal & Accounting `$24,000`; `7700` Insurance `$24,000`; `1500` ATL Travel `$80,850`; `3800` BTL Travel `$31,260` |\n")
         f.write("| **`LLS`** | 11,983,654.00 | 611,230.00<br>*(`3700 $189,550, 4500 $145,410, 4700 $39,520, 4800 $215,475, 4900 TITLES $10,500, 5800 $10,775`)* | 40,000.00<br>*(`4400 VISUAL EFFECTS`)* | 206,774.00<br>*(`4600 MUSIC`)* | 651,230.00<br>*(or `611,230.00` when `vfx` split)* | 858,004.00<br>*(or `818,004.00` when `vfx` split)* | 400,000.00<br>*(`7100 Contingency`)* | `6500-6700` Financing `$1,700,000` (`EXCLUDED`); `6800` Residuals Reserve `$400,000` (`GREY_AREA`); `7200` Bond Fee `$115,000`; `6200` Legal Costs `$150,000`; `6300` Insurance `$106,000`; `6400` General Expense `$84,195`; `1500` ATL Travel `$60,561` |\n\n")
 
-        f.write("### 3.2 Complete 1,665-Leg NA Universe & Dominated Search Bound Reconciliation (`37 Partitions × 45 NA Programs`)\n\n")
+        f.write("### 4.2 Complete 1,665-Leg NA Universe & Dominated Search Bound Reconciliation (`37 Partitions × 45 NA Programs`)\n\n")
         f.write("To prove coverage of the required North American hybrid universe independently of which rows happened to be retained as top-K or pruned as `DOMINATED_WITH_PROOF` in the saved database, every one of the **37 exact source-line partitions** across `LU` (6), `FVD` (11), `BH` (9), and `LLS` (11) was evaluated across all **45 North American programs** (`37 × 45 = 1,665` universe legs) both outside the engine from primary statute and against `canonical-1.122.0` (`59566fd1`):\n\n")
         f.write("| Project & Component Partition | Exact Account Codes | Allocated Spend ($) | Saved DB (`1.109.0`/`1.110.0`) Top Incumbent (Used in `DOMINATED_WITH_PROOF`) | `canonical-1.122.0` Top Priced NA Component Target | Independent Statutory Top NA Component Target (Primary Authority) |\n")
         f.write("| :--- | :--- | ---: | :--- | :--- | :--- |\n")
@@ -1791,7 +2843,7 @@ def write_handoff_markdown(
             )
         f.write("\n")
 
-        f.write("### 3.3 Saved Database NA Row & Aggregate Inventory by Generation\n\n")
+        f.write("### 4.3 Saved Database NA Row & Aggregate Inventory by Generation\n\n")
         f.write("| Generation | Engine Version | Saved NA `scr` Rows | `PRICED` Hybrids | `PRICED` Multi-Program Stacks | `PRICED` Component Relocations | `DOMINATED_WITH_PROOF` Hybrids | `CO_PRO_OPPORTUNITY` Treaty Rows | `evaluation_candidate_aggregates` Groups | Total NA Candidates Represented in Aggregates |\n")
         f.write("| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n")
         for g in ["LU", "LU_106", "FVD", "BH", "LLS_110b", "LLS_110a", "LLS_106"]:
@@ -1815,7 +2867,7 @@ def write_handoff_markdown(
             )
         f.write("\n")
 
-        f.write("### 3.4 Disposition Breakdown of All 662 Saved `PRICED` NA Rows (`LU`, `FVD`, `BH`, `LLS_110b` + Historical `PRICED` Extras)\n\n")
+        f.write("### 4.4 Disposition Breakdown of All 662 Saved `PRICED` NA Rows (`LU`, `FVD`, `BH`, `LLS_110b` + Historical `PRICED` Extras)\n\n")
         f.write("| Audit Disposition Classification | Row Count | Description & Reconciliation Summary |\n")
         f.write("| :--- | ---: | :--- |\n")
         for d_key, cnt in sorted(disp_counts.items(), key=lambda x: (-x[1], x[0])):
@@ -1823,31 +2875,31 @@ def write_handoff_markdown(
         f.write(f"| **Total Saved `PRICED` NA Rows Audited** | **{len(priced_rows)}** | Plus **928** `DOMINATED_WITH_PROOF` / `CO_PRO_OPPORTUNITY` rows and **9** explicit `LLS` MB–CA artifact/contingency rows = **{len(csv_rows):,} total matrix rows**. |\n\n")
         f.write("---\n\n")
 
-        # Section 4: Re-Adjudication of All Six Issue Groups
-        f.write("## 4. Re-Adjudication of the Six Reported Issue Groups Against `canonical-1.122.0` (`59566fd1`)\n\n")
-        f.write("### 4.1 Summary of Re-Adjudicated Dispositions Across All Six Issue Groups\n\n")
-        f.write("| Issue Group | Prior Claim in `9c84d0aa` | Re-Adjudicated Disposition Against `canonical-1.122.0` (`59566fd1`) | Verified Mechanism, Exact File/Line & Dollar Impact |\n")
+        # Section 5: Re-Adjudication of All Reported Issue Groups
+        f.write("## 5. Re-Adjudication of All Reported Issue Groups & Newly Identified Stacking Omission (`NA-HYB-DEF-07`) Against `canonical-1.122.0` (`59566fd1`)\n\n")
+        f.write("### 5.1 Summary of Re-Adjudicated Dispositions Across All Issue Groups\n\n")
+        f.write("| Issue Group | Prior Claim | Re-Adjudicated Disposition Against `canonical-1.122.0` (`59566fd1`) | Verified Mechanism, Exact File/Line & Dollar Impact |\n")
         f.write("| :--- | :--- | :--- | :--- |\n")
-        f.write("| **Group 1: `US-NY` ATL Cap (`NA-DEFECT-01`) & NY Post-Production Gateway (`NA-HYB-DEF-06`)** | Claimed NY 40% aggregate ATL cap (`NY Tax Law § 24(b)(1)`) was absent on NY hybrid anchors in `1.122.0`. | **NY 40% ATL Cap Claim WITHDRAWN as a current-code (`1.122.0`) defect (`REPAIRED_IN_1122_STALE_IN_DB`); NY § 31 Post-Production Gateway & § 24 Standalone Post Defect Verified (`NA-HYB-DEF-06`).** | When `ny_atl_limits_period_applies=True` (`structural_archetype_generator.py` L255 / `canonical_evaluation.py` L6235), `qualification_derivation.py` L536–712 (`_apply_ny_atl_cap`) **enforces** the 40% aggregate ATL cap (`0.40 × non_atl`) on `FVD` (`$2,181,358.20–$2,400,662.60`), `BH` (`$1,072,093.40–$1,223,234.60`), and `LLS` (`$8,073,137.80–$9,218,343.40`), while on `LU` total ATL (`$141,165`) is only `5.77% < 40%`. However, `program_requirements.py` L337 hardcodes `min_local_spend_usd = 1_000_000.0` on `us_ny_post_production_credit` (omitting NY Tax Law § 31(a)(2)–(3)'s `75%` post / `10%` VFX percentage branch and falsely rejecting all 18 post/VFX slices), while `ny_state_film` (§ 24) erroneously prices `LLS`'s `$611k–$858k` standalone post/VFX/music slices without NY principal photography (`NA-HYB-DEF-06`). |\n")
+        f.write("| **Group 1: `US-NY` ATL Cap (`NA-DEFECT-01`) & NY Post-Production Gateway (`NA-HYB-DEF-06`)** | Claimed NY 40% aggregate ATL cap (`NY Tax Law § 24(b)(1)`) was absent on NY hybrid anchors in `1.122.0`. | **NY 40% ATL Cap Claim WITHDRAWN as a current-code (`1.122.0`) defect (`REPAIRED_IN_1122_STALE_IN_DB`); NY § 31 Post-Production Gateway & § 24 Standalone Post Defect Verified (`NA-HYB-DEF-06`).** | When `ny_atl_limits_period_applies=True` (`structural_archetype_generator.py` L255 / `canonical_evaluation.py` L6235), `qualification_derivation.py` L536–712 (`_apply_ny_atl_cap`) **enforces** the 40% aggregate ATL cap (`0.40 × non_atl`) on `FVD` (`$2,181,358.20–$2,400,662.60`), `BH` (`$1,072,093.40–$1,223,234.60`), and `LLS` (`$8,073,137.80–$9,218,343.40`), while on `LU` total ATL (`$141,165`) is only `5.77% < 40%`. However, `program_requirements.py` L337 hardcodes `min_local_spend_usd = 1_000_000.0` on `us_ny_post_production_credit` (omitting NY Tax Law § 31(a)(2)–(3)'s `75%` post / `10%` VFX percentage branch and falsely rejecting all 18 post/VFX slices), while `ny_state_film` (§ 24) erroneously prices `LLS`'s `$611,230–$858,004` standalone post/VFX/music slices without NY principal photography (`NA-HYB-DEF-06`). |\n")
         f.write("| **Group 2: US State & Canadian Component Minimum-Spend & Project-Share Gates (`NA-HYB-DEF-01`)** | Reported 11 US state component gate omissions. | **CONFIRMED ACTIVE CODE DEFECT IN `1.122.0` (Expanded to 12 US States + `CA-NL`/`CA-AB`/`CA-QC`/`CA-ON OCASE` Component Slices).** | In `canonical-1.122.0`, `program_rate_rules_worldwide.py` has `min_qpe_usd=None` on `US-MN` (`$1M` min), `US-AL` (`$500k` min + applies 35% resident payroll rate to 100% of non-payroll spend), `US-CO` (`$100k/$1M` min + 50% workforce), `US-HI` (`$100k/$200k` min), `US-OK` (`$50k` min), `US-UT` (`$500k` min), `US-VA` (`$250k` min), `US-AZ` (`$1M` min), and `CA-AB` (`$499,999 CAD` min), while `project_eligibility_gates.py` omits `US-PA` (`>=60%` total budget), `US-MA` (`>75%` budget/days for non-payroll credit), `US-RI` (`>=51%` shoot days), and `US-NV` (`>=60%` total budget on `LLS` post/VFX). |\n")
         f.write("| **Group 3: Manitoba 30% Cost-of-Production Election Reachability (`NA-HYB-DEF-02`)** | Reported unreachable 30% election when segment `atl_*/btl_*` labour is `$0`. | **CONFIRMED CODE REACHABILITY DEFECT (`NA-HYB-DEF-02`) + STATUTORY 25% T4 CORPORATE GATE.** | In `allocation_pricing.py`, `_ALTERNATIVE_ELECTION_PROGRAMS[\"ca_mb_film_video_credit\"]` (L1759) is placed after `resolve_program_rate` on `ca-mb-base-45` (L1357, which requires `ca_mb_qualified_labour_usd >= 0.01`). Statutorily, Manitoba ITA s. 7.5(1)(d) also requires an eligible Manitoba corporation paying `>=25%` of T4 wages to Manitoba employees. |\n")
-        f.write("| **Group 4: Canadian Labour-Only Category Mapping (`NA-HYB-DEF-03`)** | Described `2000–3900` BTL accounts as omitted crew labour. | **RECLASSIFIED (`CLAIM_FOLLOWUP_AND_SUBACCOUNT_MAPPING_GAP` — BTL Department Totals Are Never Automatically 100% Labour).** | Movie Magic topsheet department totals (`2000–3900`) bundle labour, equipment rentals, and materials and must never be automatically classified as 100% labour. In `1.122.0`, `component_basis_spend_categories` admits 100% of topsheet `atl_*` and `btl_crew_labor` (`2800`/`3000`/`3100 MAKEUP & HAIR`) without residency/payroll evidence while ignoring `FVD`'s authored BTL labour subaccounts unless `line_fact:*` inputs are supplied. |\n")
+        f.write("| **Group 4: Canadian Labour-Only Category Mapping (`NA-HYB-DEF-03`) & Three-Route CAVCO Distinction** | Described `2000–3900` BTL accounts as omitted crew labour; earlier notes conflated domestic `6/10` CAVCO points with treaty co-productions. | **RECLASSIFIED (`CLAIM_FOLLOWUP_AND_SUBACCOUNT_MAPPING_GAP` — BTL Department Totals Are Never Automatically 100% Labour; Domestic `6/10` Creative-Point Application to Treaty Co-Productions WITHDRAWN).** | Movie Magic topsheet department totals (`2000–3900`) bundle labour, equipment rentals, and materials and must never be automatically classified as 100% labour. In `1.122.0`, `component_basis_spend_categories` admits 100% of topsheet `atl_*` and `btl_crew_labor` (`2800`/`3000`/`3100 MAKEUP & HAIR`) without residency/payroll evidence while ignoring `FVD`'s authored BTL labour subaccounts unless `line_fact:*` inputs are supplied. Domestic `6/10` CAVCO points apply only to domestic CPTC (`ITR § 1106(4)`), never to treaty co-productions (`ITR § 1106(3)`) or federal PSTC (`ITA § 125.5`). |\n")
         f.write("| **Group 5: Manitoba Contingency Election & Deployment (`NA-HYB-DEF-04`)** | Claimed `1.122.0` understates Manitoba floor credit at `50%`/`100%` contingency utilization. | **WITHDRAWN as a confirmed floor defect; reclassified to `CONDITIONAL_DEPLOYMENT_SENSITIVITY_AND_HYBRID_PASSTHROUGH_OMISSION`.** | Under Manitoba ITA s. 7.5(1)(g)–(h), an election (`50%` or `100%`) is not evidence that the reserve was deployed into eligible Manitoba categories (`ContingencyAllocation`). Confirmed floor credit remains `$2,833,096.20` (Art. 2) / `$2,845,096.20` (Art. 3); deployed-to-eligible contingency (`+$60k` at `50%`, `+$120k` at `100%`) is a conditional sensitivity scenario. Also verified that `structural_archetype_generator.py` L296 (`_price_component`) omits `contingency_expected_utilization_pct` on hybrids. |\n")
-        f.write("| **Group 6: Canadian Stacking (`ca_federal_cptc + ca_qc_pstc` & CPTC 60% Cap Base `NA-HYB-DEF-05`)** | Claimed primary authority explicitly prohibits `ca_federal_cptc + ca_qc_pstc`. | **Explicit-prohibition claim WITHDRAWN and reclassified per `CP-02` (`UNRESOLVED_PRIMARY_AUTHORITY_AND_CLAIM_FACTS`); `BH` CPTC 60% cap base mismatch (`NA-HYB-DEF-05`) CONFIRMED.** | Per `CP-02` (`FOUR_ANCHOR_QPE_ISSUE_REGISTER.md` L45), CRA RC4164 bars only CPTC + federal PSTC and SODEC March 2026 fact sheets bar only QPSTC + other Quebec credits; what is unresolved is whether CPTC reduces SODEC's Quebec base as assistance, Quebec ATL residency under footnote 2, and unmodeled Quebec domestic `QPRDP`. Meanwhile, on `BH`, standalone `price_segment` (`allocation_pricing.py` L1318) omits the 60% net production cost cap (`0.60 × $2,327,641 = $1,396,584.60`), pricing `$1,478,106` (`$369,526.50` vs `$349,146.15`) and inflating `stacking_reduction_usd` by **`+$20,380.35`** (`NA-HYB-DEF-05`). |\n\n")
+        f.write("| **Group 6: Canadian Stacking (`ca_federal_cptc + ca_qc_pstc` `CP-02`, CPTC 60% Cap Base `NA-HYB-DEF-05`, & Omitted Federal PSTC + Provincial Service Stacks `NA-HYB-DEF-07`)** | Claimed primary authority explicitly prohibits `ca_federal_cptc + ca_qc_pstc`. | **Explicit-prohibition claim WITHDRAWN and reclassified per `CP-02` (`UNRESOLVED_PRIMARY_AUTHORITY_AND_CLAIM_FACTS`); `BH` CPTC 60% cap base mismatch (`NA-HYB-DEF-05`) & Omitted Canadian Service Stacks (`NA-HYB-DEF-07`) CONFIRMED.** | Per `CP-02` (`FOUR_ANCHOR_QPE_ISSUE_REGISTER.md` L45), CRA RC4164 bars only CPTC + federal PSTC and SODEC March 2026 fact sheets bar only QPSTC + other Quebec credits; what is unresolved is whether CPTC reduces SODEC's Quebec base as assistance, Quebec ATL residency under footnote 2, and unmodeled Quebec domestic `QPRDP`. Meanwhile, on `BH`, standalone `price_segment` (`allocation_pricing.py` L1318) omits the 60% net production cost cap (`0.60 × $2,327,641 = $1,396,584.60`), pricing `$1,478,106` (`$369,526.50` vs `$349,146.15`) and inflating `stacking_reduction_usd` by **`+$20,380.35`** (`NA-HYB-DEF-05`). Furthermore, `_SLUG_PAIR_RULES` (`stacking_rules.py` L161) and `canonical_stack_bridge.py` omit `ca_federal_pstc + on_opstc`, `ca_federal_pstc + ca_bc_pstc`, `ca_federal_pstc + ca_qc_pstc`, `ca_federal_pstc + ca_mb_film_video_credit`, and 3-way OCASE stacks (`NA-HYB-DEF-07`). |\n\n")
 
-        f.write("### 4.2 Reconciliation of `component_relocation` Rows (`58 BH` `US-NM` Anchor + `48 LLS_110b` / `49 LLS_106` `US-CA` Anchor)\n\n")
+        f.write("### 5.2 Reconciliation of `component_relocation` Rows (`58 BH` `US-NM` Anchor + `48 LLS_110b` / `49 LLS_106` `US-CA` Anchor)\n\n")
         f.write("* **Correction of Path Attribution:** `component_relocation` rows are **not** legacy `0.1.0` artifacts; they are generated by the canonical single-component (`r=1`) relocation family from `home_code` in `canonical_evaluation.py` (lines 6634–6952).\n")
-        f.write("  - On **`BH` (`58` rows in `1.109.0`)**, `home_code` is **`US-NM` (`us_nm_film_credit`, 25%)**, routing `music_package` (`$5,000.00`), `post_vfx_package` (`$107,958.00`), or `post_vfx_music_package` (`$112,958.00`) to a second jurisdiction.\n")
-        f.write("  - On **`LLS` (`48` rows in `LLS_110b`/`LLS_110a`, `49` rows in `LLS_106`)**, `home_code` is **`US-CA` (`ca_film_30`, 35%)**, routing `vfx` (`$40,000.00`), `music_package` (`$206,774.00`), `post_vfx_package` (`$651,230.00`), or `post_vfx_music_package` (`$858,004.00`) to a second jurisdiction while `US-CA` retains `92.84%–99.67%` (`>= 75%`) of the total budget.\n")
-        f.write("  - Every one of these `component_relocation` rows is now independently evaluated on both its anchor leg (`US-NM` on `BH`; `US-CA` on `LLS`) and its routed component leg in `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv`.\n\n")
+        f.write("  - On **`BH` (`58` rows in `1.109.0`)**, `home_code` is **`US-NM` (`us_nm_film_credit`, 25%)**, routing `music_package` (`$5,000.00`), `post_vfx_package` (`$107,958.00`), or `post_vfx_music_package` (`$112,958.00`) to a second jurisdiction (`3 packages × 44 distinct-jurisdiction NA targets = 132` expected `component_relocation` combinations in `FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE`).\n")
+        f.write("  - On **`LLS` (`48` rows in `LLS_110b`/`LLS_110a`, `49` rows in `LLS_106`)**, `home_code` is **`US-CA` (`ca_film_30`, 35%)**, routing `vfx` (`$40,000.00`), `music_package` (`$206,774.00`), `post_vfx_package` (`$651,230.00`), or `post_vfx_music_package` (`$858,004.00`) to a second jurisdiction while `US-CA` retains `92.84%–99.67%` (`>= 75%`) of the total budget (`4 packages × 44 distinct-jurisdiction NA targets = 176` expected `component_relocation` combinations in `FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE`).\n")
+        f.write("  - Every one of these `component_relocation` rows and all `308` expected `home_code` `component_relocation` combinations are independently evaluated in `NORTH_AMERICAN_COVERAGE_MANIFEST.csv` and `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv`.\n\n")
         f.write("---\n\n")
 
-        # Section 5: Disclosed Planning Conditions & Remaining Production Evidence Follow-Ups
-        f.write("## 5. Separation of Completed Calculations vs. Genuinely Unavailable Claim Evidence\n\n")
-        f.write("In accordance with `PROJECT_RULES.md`, all deterministic statutory gate checks, QPE bases, caps, assistance deductions, and contingency sensitivities have been **completed outside the engine**. The following empirical items are genuinely unavailable in the retained topsheet/subaccount repository and remain explicitly open as **statutory claim follow-ups** (with sources attempted and next action):\n\n")
+        # Section 6: Disclosed Planning Conditions & Remaining Production Evidence Follow-Ups
+        f.write("## 6. Separation of Completed Calculations vs. Genuinely Unavailable Claim Evidence\n\n")
+        f.write("In accordance with `PROJECT_RULES.md`, all deterministic statutory gate checks, QPE bases, caps, assistance deductions, treaty benchmarks, and contingency sensitivities have been **completed outside the engine**. The following empirical items are genuinely unavailable in the retained topsheet/subaccount repository and remain explicitly open as **statutory claim follow-ups** (with sources attempted and next action):\n\n")
         f.write("| Unavailable Evidence Item | Affected Programs & Projects | Sources Attempted in Repository | Exact Next Action Required for Claim-Level Closure |\n")
         f.write("| :--- | :--- | :--- | :--- |\n")
-        f.write("| **1. Itemized Canadian & Provincial Resident Payroll Ledgers & CAVCO Certificates** | `ca_federal_cptc`, `ca_federal_pstc`, `on_ofttc`, `on_opstc`, `ca_bc_pstc`, `ca_bc_dave`, `ca_ns_production_incentive_fund`, `ca_mb_film_video_credit` (45% salary stream & 25% T4 corporate test), `ca_nl_all_spend_credit` (25% NL resident wage test) across `LU`, `FVD`, `BH`, `LLS` | Inspected `FOUR_ANCHOR_SOURCE_DETAIL_EVIDENCE.json`, `raw_text`, and subaccounts across all 4 PDFs; only `FVD` has BTL crew subaccounts, and none state Canadian/provincial tax residency or T4 status. | Obtain producer residency payroll breakdown (`line_fact:{line_id}:*`), Manitoba trainee logs (`s. 7.5(1)(d)`), and CAVCO Part A/B certificates (or OFTC/SODEC service certificates). |\n")
+        f.write("| **1. Itemized Canadian & Provincial Resident Payroll Ledgers & CAVCO Certificates (Domestic Part A/B, Treaty Approval, or Form T1177 PSTC Accreditation)** | `ca_federal_cptc` (`ITR § 1106(4)` domestic & `ITR § 1106(3)` treaty), `ca_federal_pstc` (`ITA § 125.5` & `ITR § 9300`), `on_ofttc`, `on_opstc`, `ca_bc_film_incentive_bc`, `ca_bc_pstc`, `ca_bc_dave`, `ca_ns_production_incentive_fund`, `ca_mb_film_video_credit` (45% salary stream & 25% T4 corporate test), `ca_nl_all_spend_credit` (25% NL resident wage test) across `LU`, `FVD`, `BH`, `LLS` | Inspected `FOUR_ANCHOR_SOURCE_DETAIL_EVIDENCE.json`, `raw_text`, and subaccounts across all 4 PDFs; only `FVD` has BTL crew subaccounts, and none state Canadian/provincial tax residency or T4 status. | Obtain producer residency payroll breakdown (`line_fact:{line_id}:*`), Manitoba trainee logs (`s. 7.5(1)(d)`), and the route-specific CAVCO certificate (Part A/B for domestic CPTC, joint Telefilm/CAVCO + partner approval for treaty CPTC, or Form T1177 for PSTC). |\n")
         f.write("| **2. Manitoba Co-Producer Voting-Share Agreement & Hotel Folios (`$300/night` Cap)** | `ca_mb_film_video_credit` (`LLS` `$60,561` `1500 ATL TRAVEL & LIVING`, `BH` `$80,850` `1500`, `FVD` `$174,546` `1600`, `LU` `$397,279` `1600`) | Inspected `LLS`, `BH`, `FVD`, `LU` travel subaccounts (`1501–1504` / `1601–1604`). | Obtain Manitoba co-producer agreement (for conditional `+8%` bonus) and itemized hotel folios (to separate eligible Manitoba lodging $\\le \\$300/\\text{night}$ from airfare/per-diems). |\n")
         f.write("| **3. Contingency Category Allocation Schedule (`ContingencyAllocation`)** | `ca_mb_film_video_credit` (`LLS` `7100 Contingency $400,000`, `LU` `8300 Contigency $301,131`, `FVD` `7902 $362,866`, `BH` `CONTINGENCY $94,382`) | Inspected `FOUR_ANCHOR_SOURCE_DETAIL_EVIDENCE.json` and `qualification_derivation.py` (`ContingencyAllocation`). | Supply line-level `ContingencyAllocation` mapping deployed contingency to specific eligible production accounts once contingency dissolution is known. |\n")
         f.write("| **4. Individual Talent & Producer Deal Memos (`$500k` / `$1M` Per-Payee Caps)** | `ny_state_film`, `us_ga_film_credit`, `us_il_film_production_services_credit`, `us_ma_film_tax_credit` on `BH` and `LLS` (`1200 PRODUCERS`, `1400 CAST`) | Inspected `BH` and `LLS` topsheets and subaccounts (`1206 PRODUCERS $1,259,000`, `1403 STARS & LEADS $320,000`, `1415 SUPPORTING CAST $224,705` on `LLS`; topsheet-only on `BH`). | Obtain individual cast and producer deal memos to verify per-individual W-2/loan-out caps (`$500k` in NY/GA/IL, `$1M` in MA) and NY's 2-producer limit. |\n")
@@ -1856,8 +2908,9 @@ def write_handoff_markdown(
         f.write("> [!IMPORTANT]\n")
         f.write("> **HANDOFF CONCLUSION:**\n")
         f.write("> **`STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN`**\n")
-        f.write(f"> All four anchor budgets (`LU`, `FVD`, `BH`, `LLS`) have been independently audited across all **{universe_summary['total_universe_legs']:,}** North American hybrid universe legs (`37` exact line-identity partitions × `45` NA programs), all **1,590** saved North American database rows, all **871** aggregate groups, and the **9** explicit `LLS` Manitoba–California artifact and contingency-election scenarios (**{len(csv_rows):,} rows** in `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv`). All six issue groups have been re-adjudicated against frozen `canonical-1.122.0` (`59566fd1`). No Rest-of-World (ROW) expansion has been started.\n")
+        f.write(f"> All four anchor budgets (`LU`, `FVD`, `BH`, `LLS`) have been independently audited across the complete **{manifest_summary['total_manifest_rows']:,}-row Combinatorial Coverage Manifest** (`NORTH_AMERICAN_COVERAGE_MANIFEST.csv`, reconciling all **{manifest_summary['total_expected_combinations_reconciled']:,} expected North American combinations** across single-program relocations, same-jurisdiction stacks, component routes, `r=1` and `r=2` hybrids, and co-production paths), all **{universe_summary['total_universe_legs']:,}** North American hybrid universe legs (`37` exact line-identity partitions × `45` NA programs), all **1,590** saved North American database rows, all **871** aggregate groups, and the **9** explicit `LLS` Manitoba–California artifact and contingency-election scenarios (**{len(csv_rows):,} rows** in `NORTH_AMERICAN_HYBRID_COVERAGE_MATRIX.csv`). All reported issue groups have been re-adjudicated against frozen `canonical-1.122.0` (`59566fd1`). No Rest-of-World (ROW) expansion has been started.\n")
 
 
 if __name__ == "__main__":
     build_coverage_matrix_and_report()
+

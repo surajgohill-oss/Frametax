@@ -1101,11 +1101,62 @@ def validate_artifacts(base_dir=BASE_DIR, silent=False):
                 "NA-HYB-DEF-04",
                 "NA-HYB-DEF-05",
                 "NA-HYB-DEF-06",
+                "NA-HYB-DEF-07",
+                "NORTH_AMERICAN_COVERAGE_MANIFEST.csv",
+                "696,213",
+                "Income Tax Regulations § 1106(3)",
+                "Income Tax Regulations § 1106(4)",
+                "ITA § 125.5",
+                "611,230.00",
+                "858,004.00",
                 "STATUS: ANCHOR ACCEPTANCE GATE REMAINS STRICTLY OPEN",
             )
             for tok in req_hyb_tokens:
                 if tok not in hyb_md:
                     errors.append(f"NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md missing required token: '{tok}'")
+            for bad_tok in ("611,932", "858,645"):
+                if bad_tok in hyb_md:
+                    errors.append(f"NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md contains stale/incorrect LLS slice amount: '{bad_tok}'")
+
+    # 43. North American Combinatorial Coverage Manifest & Summary JSON
+    na_man_csv_path = os.path.join(base_dir, "NORTH_AMERICAN_COVERAGE_MANIFEST.csv")
+    na_man_json_path = os.path.join(base_dir, "NORTH_AMERICAN_COVERAGE_MANIFEST_SUMMARY.json")
+    if not os.path.exists(na_man_csv_path):
+        errors.append(f"Missing file: {na_man_csv_path}")
+    elif not os.path.exists(na_man_json_path):
+        errors.append(f"Missing file: {na_man_json_path}")
+    else:
+        with open(na_man_csv_path, mode="r", encoding="utf-8") as f:
+            man_rows = list(csv.DictReader(f))
+        with open(na_man_json_path, mode="r", encoding="utf-8") as f:
+            man_sum = json.load(f)
+        if len(man_rows) != 2742:
+            errors.append(f"NORTH_AMERICAN_COVERAGE_MANIFEST.csv row count ({len(man_rows)}) != expected 2742.")
+        if man_sum.get("total_manifest_rows") != 2742 or man_sum.get("total_expected_combinations_reconciled") != 696213:
+            errors.append(f"NORTH_AMERICAN_COVERAGE_MANIFEST_SUMMARY.json totals mismatch: {man_sum.get('total_manifest_rows')} / {man_sum.get('total_expected_combinations_reconciled')}")
+        csv_combo_sum = sum(int(r.get("expected_combinations_represented", 0)) for r in man_rows)
+        if csv_combo_sum != 696213:
+            errors.append(f"NORTH_AMERICAN_COVERAGE_MANIFEST.csv sum of expected_combinations_represented ({csv_combo_sum}) != 696213.")
+        for idx, r in enumerate(man_rows, 1):
+            exp_c = int(r.get("expected_combinations_represented", 0))
+            acct_c = (
+                int(r.get("combinations_ind_priced", 0))
+                + int(r.get("combinations_ind_not_established", 0))
+                + int(r.get("combinations_ind_conditional", 0))
+                + int(r.get("combinations_ind_rejected", 0))
+            )
+            if exp_c <= 0 or exp_c != acct_c:
+                errors.append(f"Manifest row {idx} ({r.get('combination_key')}) fails combination conservation: expected={exp_c}, accounted={acct_c}")
+                break
+
+    # Also verify NORTH_AMERICAN_DISCREPANCY_REGISTER.md does not contain stale $611,932 / $858,645
+    na_reg_check_path = os.path.join(base_dir, "NORTH_AMERICAN_DISCREPANCY_REGISTER.md")
+    if os.path.exists(na_reg_check_path):
+        with open(na_reg_check_path, mode="r", encoding="utf-8") as f:
+            reg_txt = f.read()
+        for bad_tok in ("611,932", "858,645"):
+            if bad_tok in reg_txt:
+                errors.append(f"NORTH_AMERICAN_DISCREPANCY_REGISTER.md contains stale/incorrect LLS slice amount: '{bad_tok}'")
 
     return (len(errors) == 0, errors)
 
@@ -1123,7 +1174,7 @@ def run_negative_controls():
     import shutil
 
     nc_passed = 0
-    nc_total = 44
+    nc_total = 46
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy valid artifacts to tempdir
@@ -2146,7 +2197,7 @@ def run_negative_controls():
         # -------------------------------------------------------------
         # Negative Control 44: Rejection of Missing Frozen Commit in NA Hybrid Handoff
         # -------------------------------------------------------------
-        print("  [NC 44/44] Testing rejection of missing frozen commit in NA Hybrid Audit Handoff...")
+        print("  [NC 44/46] Testing rejection of missing frozen commit in NA Hybrid Audit Handoff...")
         na_hyb_md_f = os.path.join(tmpdir, "NORTH_AMERICAN_HYBRID_AUDIT_HANDOFF.md")
         with open(na_hyb_md_f, "r", encoding="utf-8") as f:
             orig_hyb_md = f.read()
@@ -2159,6 +2210,46 @@ def run_negative_controls():
             nc_passed += 1
         else:
             print("    -> FAIL: Validator failed to catch missing frozen commit in NA Hybrid Audit Handoff.")
+        with open(na_hyb_md_f, "w", encoding="utf-8") as f:
+            f.write(orig_hyb_md)
+
+        # -------------------------------------------------------------
+        # Negative Control 45: Rejection of Combination Conservation Violation in NA Coverage Manifest
+        # -------------------------------------------------------------
+        print("  [NC 45/46] Testing rejection of combination conservation violation in NORTH_AMERICAN_COVERAGE_MANIFEST.csv...")
+        na_man_f = os.path.join(tmpdir, "NORTH_AMERICAN_COVERAGE_MANIFEST.csv")
+        with open(na_man_f, "r", encoding="utf-8") as f:
+            man_rows_nc = list(csv.DictReader(f))
+        orig_man_nc = [dict(r) for r in man_rows_nc]
+        man_rows_nc[0]["combinations_ind_priced"] = "999"
+        with open(na_man_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(man_rows_nc[0].keys()))
+            w.writeheader()
+            w.writerows(man_rows_nc)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught combination conservation violation in NORTH_AMERICAN_COVERAGE_MANIFEST.csv.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch combination conservation violation in NORTH_AMERICAN_COVERAGE_MANIFEST.csv.")
+        with open(na_man_f, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(orig_man_nc[0].keys()))
+            w.writeheader()
+            w.writerows(orig_man_nc)
+
+        # -------------------------------------------------------------
+        # Negative Control 46: Rejection of Stale $611,932 Slice or Missing ITR 1106(3) Treaty Distinction
+        # -------------------------------------------------------------
+        print("  [NC 46/46] Testing rejection of stale $611,932 LLS slice / missing ITR § 1106(3) treaty distinction...")
+        tampered_hyb_md2 = orig_hyb_md.replace("611,230.00", "611,932.00")
+        with open(na_hyb_md_f, "w", encoding="utf-8") as f:
+            f.write(tampered_hyb_md2)
+        tampered_ok, _ = validate_artifacts(base_dir=tmpdir, silent=True)
+        if not tampered_ok:
+            print("    -> PASS: Validator correctly caught stale $611,932.00 LLS slice in NA Hybrid Audit Handoff.")
+            nc_passed += 1
+        else:
+            print("    -> FAIL: Validator failed to catch stale $611,932.00 LLS slice in NA Hybrid Audit Handoff.")
         with open(na_hyb_md_f, "w", encoding="utf-8") as f:
             f.write(orig_hyb_md)
 

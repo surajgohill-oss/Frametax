@@ -1,0 +1,95 @@
+{
+  "total_manifest_rows": 2742,
+  "total_expected_combinations_reconciled": 696213,
+  "families": {
+    "FAMILY_1_NA_SINGLE_PROGRAM_FULL_RELOCATION": {
+      "manifest_rows": 180,
+      "expected_combinations_represented": 180,
+      "ind_priced": 109,
+      "ind_not_established": 38,
+      "ind_conditional": 28,
+      "ind_rejected": 5,
+      "eng_1122_priced": 147,
+      "eng_1122_rejected_or_unpriced": 33,
+      "defect_affected_combinations": 8
+    },
+    "FAMILY_2_NA_SAME_JURISDICTION_STACK": {
+      "manifest_rows": 72,
+      "expected_combinations_represented": 72,
+      "ind_priced": 0,
+      "ind_not_established": 39,
+      "ind_conditional": 8,
+      "ind_rejected": 25,
+      "eng_1122_priced": 14,
+      "eng_1122_rejected_or_unpriced": 58,
+      "defect_affected_combinations": 24
+    },
+    "FAMILY_3A_NA_COMPONENT_ROUTE_EVALUATION": {
+      "manifest_rows": 810,
+      "expected_combinations_represented": 810,
+      "ind_priced": 142,
+      "ind_not_established": 15,
+      "ind_conditional": 90,
+      "ind_rejected": 563,
+      "eng_1122_priced": 345,
+      "eng_1122_rejected_or_unpriced": 465,
+      "defect_affected_combinations": 222
+    },
+    "FAMILY_3B_NA_ANCHOR_PARTITION_EVALUATION": {
+      "manifest_rows": 675,
+      "expected_combinations_represented": 675,
+      "ind_priced": 403,
+      "ind_not_established": 139,
+      "ind_conditional": 105,
+      "ind_rejected": 28,
+      "eng_1122_priced": 542,
+      "eng_1122_rejected_or_unpriced": 133,
+      "defect_affected_combinations": 28
+    },
+    "FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE": {
+      "manifest_rows": 585,
+      "expected_combinations_represented": 25584,
+      "ind_priced": 2323,
+      "ind_not_established": 1185,
+      "ind_conditional": 3440,
+      "ind_rejected": 18636,
+      "eng_1122_priced": 8459,
+      "eng_1122_rejected_or_unpriced": 17125,
+      "defect_affected_combinations": 5651
+    },
+    "FAMILY_4_NA_R2_TWO_COMPONENT_HYBRID_ENVELOPE": {
+      "manifest_rows": 360,
+      "expected_combinations_represented": 668832,
+      "ind_priced": 5963,
+      "ind_not_established": 4200,
+      "ind_conditional": 33043,
+      "ind_rejected": 625626,
+      "eng_1122_priced": 82471,
+      "eng_1122_rejected_or_unpriced": 586361,
+      "defect_affected_combinations": 77270
+    },
+    "FAMILY_5_NA_COPRODUCTION_PATH": {
+      "manifest_rows": 60,
+      "expected_combinations_represented": 60,
+      "ind_priced": 0,
+      "ind_not_established": 0,
+      "ind_conditional": 56,
+      "ind_rejected": 4,
+      "eng_1122_priced": 0,
+      "eng_1122_rejected_or_unpriced": 60,
+      "defect_affected_combinations": 0
+    }
+  },
+  "cavco_three_route_doctrine": {
+    "route_1_domestic_cptc": "ITA \u00a7 125.4 & Income Tax Regulations \u00a7 1106(4): requires CAVCO Part A/B Canadian Film or Video Production Certificate, 100% Canadian copyright ownership, >=6/10 CAVCO Canadian creative points, and >=75% Canadian services and post/lab costs. Rate: 25% of QLE capped at 60% of net production cost (max 15% of net production cost).",
+    "route_2_treaty_coproduction_cptc": "ITA \u00a7 125.4(1) & Income Tax Regulations \u00a7 1106(3) ('treaty co-production'): requires joint Telefilm Canada / CAVCO + foreign partner competent authority approval under an official bilateral audiovisual treaty (20%-80% or 30%-70% financial/creative proportionality). Domestic 6/10 CAVCO Canadian creative-point and 75% cost requirements in ITR \u00a7 1106(4) DO NOT APPLY to official treaty co-productions.",
+    "route_3_federal_pstc": "ITA \u00a7 125.5 & Income Tax Regulations \u00a7 9300 ('accredited production'): foreign/service production route requiring CAVCO Accreditation Certificate (Form T1177) and >$1,000,000 CAD aggregate feature budget; requires 0/10 Canadian creative points and no Canadian copyright ownership. Rate: 16% of qualified Canadian labour expenditure net of provincial assistance."
+  },
+  "saved_db_copro_row_reconciliation": {
+    "total_saved_copro_rows_per_generation_bh_lls": 25,
+    "canada_bilateral_treaty_rows": 12,
+    "pure_na_ca_mx_bilateral_row": 1,
+    "row_bilateral_treaties_stamped_with_us_home_primary_jurisdiction": 13,
+    "omitted_ca_cn_bilateral_from_25": 1
+  }
+}
