@@ -58,6 +58,17 @@ async def test_freshness_distinguishes_current_stale_by_engine_stale_by_inputs_a
     assert info[uuid.UUID(ids["engine_stale"])]["retained_engine_version"] == OLD_ENGINE
 
 
+async def test_the_retained_engine_version_is_the_numerically_latest_not_the_lexicographic_maximum():
+    import uuid
+    async with isolated_session() as db:
+        pid = await create_synthetic_project(db, home_code="MU")
+        for engine in ("canonical-1.99.0", "canonical-1.122.0", "canonical-1.100.0"):
+            db.add(_summary(uuid.UUID(pid), engine, engine[-6:].ljust(64, "d")))
+        await db.flush()
+        info = await evaluation_freshness(db, [uuid.UUID(pid)])
+    assert info[uuid.UUID(pid)]["retained_engine_version"] == "canonical-1.122.0"
+
+
 async def test_the_library_keeps_stale_productions_labelled_and_never_marks_them_served():
     async with isolated_session() as db:
         ids, org_id = await _setup(db)

@@ -122,6 +122,12 @@ async def served_fingerprints(session: AsyncSession, project_ids) -> dict[uuid.U
     return served
 
 
+def _engine_sort_key(version: str) -> tuple:
+    """canonical-1.99.0 sorts before canonical-1.122.0 numerically, not as text."""
+    import re
+    return tuple(int(n) for n in re.findall(r"\d+", version or ""))
+
+
 FRESHNESS_CURRENT, FRESHNESS_STALE, FRESHNESS_NONE = "CURRENT", "STALE", "NONE"
 STALE_ENGINE_VERSION, STALE_INPUT_CHANGED = "ENGINE_VERSION", "INPUT_CHANGED"
 
@@ -155,7 +161,7 @@ async def evaluation_freshness(session: AsyncSession, project_ids) -> dict[uuid.
             else:
                 out[pid] = {"state": FRESHNESS_STALE,
                             "reason": STALE_INPUT_CHANGED if ENGINE_VERSION in seen else STALE_ENGINE_VERSION,
-                            "retained_engine_version": max(seen)}
+                            "retained_engine_version": max(seen, key=_engine_sort_key)}
     return out
 
 
