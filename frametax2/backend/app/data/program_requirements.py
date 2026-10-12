@@ -4864,3 +4864,31 @@ register(ProgramRequirementsProfile(
               "describes, not a proven competitive-selection risk.",
     ),
 ))
+
+
+# Rhode Island Motion Picture Production Tax Credit -- R.I. Gen. Laws 44-31.2-5(a) (webserver.rilegislature.gov, read 2026-10-12): a production qualifies when its primary locations are in
+# the State AND its total production budget is at least $100,000, OR it incurs and pays at least $10,000,000 of State-certified production costs in a twelve-month period.
+# "Primary locations" (44-31.2-2(9)) host at least 51% of principal photography days, or at least 51% of the final production budget is spent there with at least five individuals
+# employed in the State; the project-level primary-location test lives in project_eligibility_gates.
+register(ProgramRequirementsProfile(
+    program_slug="us_ri_film_credit", jurisdiction_code="US-RI",
+    min_total_budget_usd=100_000.0,
+    evidence=EvidenceRecord(
+        source_title="R.I. Gen. Laws 44-31.2-5 and 44-31.2-2", source_url="https://webserver.rilegislature.gov/Statutes/TITLE44/44-31.2/44-31.2-5.htm",
+        issuing_authority="Rhode Island General Assembly", source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        notes="The $100,000 minimum is on the total production budget; the $10,000,000 certified-cost route waives the primary-location and budget tests.",
+    ),
+))
+
+# Oklahoma Filmed in Oklahoma Act rebate -- Oklahoma Film + Music Office FAQ (okfilmmusic.org/faq, read 2026-10-12): "A Production must have total expenditures of $50,000 or more to
+# be eligible for the rebate payment." The page does not say whether "total expenditures" means Oklahoma expenditures; the stand-alone post-production sibling states "minimum Oklahoma
+# spend of $50,000", so the Oklahoma-spend reading is an explicit planning assumption (the lower, less restrictive bound), not a confirmed rule.
+register(ProgramRequirementsProfile(
+    program_slug="us_ok_film_enhancement_rebate", jurisdiction_code="US-OK",
+    min_local_spend_usd=50_000.0,
+    evidence=EvidenceRecord(
+        source_title="Oklahoma Film + Music Office FAQ -- Filmed in Oklahoma Act", source_url="https://www.okfilmmusic.org/faq",
+        issuing_authority="Oklahoma Film + Music Office", source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        notes="Minimum $50,000; read as Oklahoma expenditures (planning assumption, not confirmed by the page).",
+    ),
+))

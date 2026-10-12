@@ -242,3 +242,25 @@ def test_conditional_rule_type_fails_closed_never_publishes():
     b = StackCandidate("ca_qc_qprdp", "CA-QC", 100_000.0, 0.10, 1_000_000.0, "tax_credit")
     assert price_program_group_stack([a, b]) is None
     assert price_program_pair_stack(a, b) is None
+
+
+def test_the_manitoba_credit_is_compatible_with_both_federal_credits_and_is_assistance_to_them():
+    # Manitoba Film & Music TC-2 guidelines (June 2024): compatible with the CPTC and the PSTC; the federal credits are not assistance to the Manitoba credit.
+    # PSTC 96,000 on labour 600,000; Manitoba labour credit 270,000 (45% x 600,000): conservative reduction min(270,000; 600,000) x 16% = 43,200 -> 52,800.
+    pstc = StackCandidate("ca_federal_pstc", "CA-MB", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
+    mb = StackCandidate("ca_mb_film_video_credit", "CA-MB", 270_000.0, 0.45, 600_000.0, "tax_credit")
+    result = price_program_pair_stack(pstc, mb)
+    assert result is not None and result.rule_type == "spend_reduction"
+    assert result.per_program_adjusted_usd == {"ca_federal_pstc": 52_800.0, "ca_mb_film_video_credit": 270_000.0} and result.stacking_reduction_usd == 43_200.0
+    # CPTC: labour 800,000, cost 1,000,000; cap 60% x (1,000,000 - 270,000) = 438,000 < labour -> 25% x 438,000 = 109,500
+    cptc = StackCandidate("ca_federal_cptc", "CA-MB", 200_000.0, 0.25, 1_000_000.0, "tax_credit", rate_basis_usd=800_000.0, production_cost_usd=1_000_000.0)
+    net = price_program_pair_stack(cptc, mb)
+    assert net.per_program_adjusted_usd["ca_federal_cptc"] == 109_500.0 and net.per_program_adjusted_usd["ca_mb_film_video_credit"] == 270_000.0
+
+
+def test_federal_pstc_pairs_without_primary_stacking_text_stay_unruled_and_block_by_absence():
+    from app.calculators.canonical_stack_bridge import load_named_pair_rule
+    assert load_named_pair_rule("ca_federal_pstc", "ca_bc_pstc") is None and load_named_pair_rule("ca_federal_pstc", "ca_qc_pstc") is None
+    pstc = StackCandidate("ca_federal_pstc", "CA-QC", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
+    qc = StackCandidate("ca_qc_pstc", "CA-QC", 150_000.0, 0.25, 600_000.0, "tax_credit")
+    assert price_program_pair_stack(pstc, qc) is None, "no named rule: never a partially trusted combination"

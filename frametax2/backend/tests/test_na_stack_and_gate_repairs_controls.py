@@ -311,3 +311,47 @@ def test_native_currency_budget_gates_for_the_ontario_opstc_and_the_quebec_pstc(
                                      if e.requirement == "min_total_budget_native")
     assert state("on_opstc", 1_000_000.0 / cad + 5.0) == "SATISFIED" and state("on_opstc", 1_000_000.0 / cad - 5.0) == "FAILED"
     assert state("ca_qc_pstc", 250_000.0 / cad + 5.0) == "SATISFIED" and state("ca_qc_pstc", 250_000.0 / cad - 5.0) == "FAILED"
+
+
+def test_manitoba_accommodation_limit_is_cad_300_per_night_and_is_disclosed_for_lodging_lines():
+    # The conflict (Manitoba Finance page: 250; Manitoba Film & Music TC-2 guidelines, Revised June 2024, reproducing the Act's "eligible accommodation expenditure": the lesser
+    # of the amount paid or $300 per night per unit) is resolved to the Act's text as reproduced by the administering agency in 2024; 250 is the pre-2012 figure.
+    with_lodging = _mb([("btl_crew_labor", 100_000.0), ("lodging", 80_000.0), ("vfx", 120_000.0)], 2_000_000.0)
+    assert any("CAD 300 per night" in n and "superseded" in n for n in with_lodging.notes)
+    without = _mb([("vfx", 200_000.0)], 2_000_000.0)
+    assert not any("CAD 300 per night" in n for n in without.notes)
+
+
+# ── Rhode Island (primary locations + CAD-free $100,000 budget), Oklahoma ($50,000) and Virginia ($250,000 tax-credit spend): primary text read 2026-10-12 ───────────────
+
+RI, OK, VA = "us_ri_film_credit", "us_ok_film_enhancement_rebate", "us_va_motion_picture_credit"
+
+
+def test_rhode_island_needs_primary_locations_a_100k_total_budget_and_the_10m_route_waives_the_location_test():
+    from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate
+    pp = lambda jur, amt, l: _alloc(l, amt, "principal_photography", jur, l, "btl_crew_labor")
+    # 51% of the final production budget in Rhode Island passes the spend branch (the five-individual employment condition is a claim follow-up); 50% does not
+    ok = _run([_comp("principal_production", "US-RI", RI, [pp("US-RI", 510_000.0, "P")]), _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 490_000.0, "Q")])], 1_000_000.0)
+    assert ok.executable is True, ok.rejection_reason
+    short = _run([_comp("principal_production", "US-RI", RI, [pp("US-RI", 500_000.0, "P")]), _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 500_000.0, "Q")])], 1_000_000.0)
+    ri_seg = _seg(short, RI)       # 50% of dollars with photography split between the two: the days branch is undetermined, so a conditional planning scenario
+    assert short.executable is True and ri_seg.incentive_floor_usd == 0.0 and ri_seg.ceiling_requires_confirmation
+    assert any(c["condition_id"] == "project-eligibility-days-undetermined" for c in ri_seg.ceiling_conditions)
+    outside = _run([_comp("principal_production", "CA-MB", MB, [pp("CA-MB", 900_000.0, "Q")]), _comp("vfx", "US-RI", RI, [_alloc("V", 100_000.0, "vfx", "US-RI", "V", "vfx")])], 1_000_000.0)
+    assert outside.executable is False and outside.rejection_reason.startswith(GATE_FAILED_PREFIX)    # all modeled photography outside Rhode Island
+    days = _run([_comp("principal_production", "US-RI", RI, [pp("US-RI", 500_000.0, "P")], {"ri_principal_photography_days_in_rhode_island_pct": 60.0}),
+                 _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 500_000.0, "Q")])], 1_000_000.0)
+    assert days.executable is True, days.rejection_reason
+    # $10,000,000 of certified Rhode Island costs waives the location test even at a 25% share
+    big = _run([_comp("principal_production", "US-RI", RI, [pp("US-RI", 10_000_000.0, "P")]), _comp("principal_production", "CA-MB", MB, [pp("CA-MB", 30_000_000.0, "Q")])], 40_000_000.0)
+    assert big.executable is True, big.rejection_reason
+    state = lambda gross: next(e.state for e in evaluate_requirements_gate(RI, segment_allocated_usd=gross, gross_budget_usd=gross).evaluations if e.requirement == "min_total_budget_usd")
+    assert state(100_000.0) == "SATISFIED" and state(99_999.0) == "FAILED"
+
+
+def test_oklahoma_needs_50k_and_virginia_needs_250k_of_qualified_spend():
+    seg = lambda slug, jur, amt: price_segment(jur, slug, [_alloc("1", amt, "principal_production", jur, "L", "btl_crew_labor")], {"1": "btl_crew_labor"}, frozenset(), gross_budget_usd=amt)
+    assert seg(OK, "US-OK", 49_999.0).executable is False and seg(OK, "US-OK", 50_000.0).executable is True
+    assert seg(VA, "US-VA", 249_999.0).executable is False
+    va = seg(VA, "US-VA", 250_000.0)
+    assert va.executable is True and va.incentive_floor_usd == pytest.approx(0.15 * 250_000.0)

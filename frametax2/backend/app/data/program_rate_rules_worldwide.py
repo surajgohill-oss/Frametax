@@ -4973,7 +4973,8 @@ US_RI_DOCTRINE = register(DoctrineRecord(
             tier_id="us-ri-flat-30",
             rate=0.30,
             is_band_ceiling=False,
-            min_qpe_usd=100_000.0,
+            # R.I. Gen. Laws 44-31.2-5(a) (read 2026-10-12): the $100,000 minimum is on the TOTAL production budget, with primary locations in the State (a project-level
+            # gate, project_eligibility_gates), not on this segment's qualifying spend; the requirements profile carries the budget minimum.
             conditions=(
                 RateCondition(
                     condition_id="us-ri-min-spend-waiver-and-caps-not-modeled",
@@ -6814,7 +6815,8 @@ US_VA_DOCTRINE = register(DoctrineRecord(
               "pass -- no dedicated Virginia source surfaced in the "
               "search batch; carried forward unchallenged, not re-confirmed.",
     source_ref="catalog-unchallenged-virginia",
-    tiers=(DoctrineRateTier(tier_id="us-va-flat-15", rate=0.15, is_band_ceiling=False,
+    # Virginia Film Office FAQ (read 2026-10-12): the tax credit "must have a minimum qualified Virginia spend of $250,000" (the Motion Picture Opportunity Fund grant has no minimum).
+    tiers=(DoctrineRateTier(tier_id="us-va-flat-15", rate=0.15, is_band_ceiling=False, min_qpe_usd=250_000.0,
                              conditions=(RateCondition(
                                  condition_id="us-va-rate-not-reconfirmed",
                                  description="15% carried forward from the "

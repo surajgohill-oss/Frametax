@@ -44,6 +44,8 @@ class ProjectGate:
     #: Components whose costs leave the denominator when NONE of them is incurred in the jurisdiction (Nevada: "if all postproduction costs are incurred outside of the
     #: State, then at least 60% of the total preproduction and production costs must be spent in the State").
     post_exception_components: frozenset = frozenset()
+    #: A local spend at or above this amount satisfies the gate outright (Rhode Island: $10,000,000 of certified costs waives the primary-location test).
+    waiver_local_spend_usd: float | None = None
 
 
 PROJECT_GATES: dict[str, ProjectGate] = {
@@ -65,6 +67,12 @@ PROJECT_GATES: dict[str, ProjectGate] = {
         "Massachusetts DOR Film Incentive Tax Credit: production expense credit needs Massachusetts production expenses to exceed 75% of total production "
         "expenses OR at least 75% of filming days in Massachusetts; the payroll credit is separate", spend_strict=True, scope="non_payroll"),
 }
+
+PROJECT_GATES["us_ri_film_credit"] = ProjectGate(
+    "US-RI", 0.51, 0.51, "ri_principal_photography_days_in_rhode_island_pct", "Rhode Island primary-location test",
+    "R.I. Gen. Laws 44-31.2-2(9) and 44-31.2-5(a) (read 2026-10-12): primary locations host at least 51% of principal photography days, or at least 51% of the final production "
+    "budget is spent there and at least five individuals are employed in the State (the five-individual condition is a claim follow-up, assumed met for a spend share of 51%+); "
+    "incurring and paying at least $10,000,000 of State-certified costs waives the test", waiver_local_spend_usd=10_000_000.0)
 
 PROJECT_GATES["us_nv_film_credit"] = ProjectGate(
     "US-NV", 0.60, None, "", "Nevada budget-share requirement",
@@ -117,7 +125,10 @@ def evaluate_project_gate(program_slug: str | None, jurisdiction_code: str, rows
             total = sum(a for _, a, _, _ in rows)
     spend_share = (sum(a for j, a, _, _ in rows if j == jurisdiction_code) / total) if total > 0 else 0.0
     eps = 1e-9
+    local_spend = sum(a for j, a, _, _ in rows if j == jurisdiction_code)
     spend_met = spend_share > gate.spend_min + eps if gate.spend_strict else spend_share + eps >= gate.spend_min
+    if gate.waiver_local_spend_usd is not None and local_spend + 0.005 >= gate.waiver_local_spend_usd:
+        spend_met = True
     if spend_met:
         return GateOutcome("PASS", spend_share, None, f"spend branch met ({spend_share:.1%} of the production budget)", None, gate.scope, gate.photography_fact_key)
     if gate.photography_min is None:

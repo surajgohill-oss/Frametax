@@ -1838,6 +1838,10 @@ def price_segment(
             election_notes += (f"Its +{bonus_rate:.0%} Manitoba Production Company Bonus (a Manitoba Production Corporation owns voting shares of the applicant throughout "
                                f"the taxation year and receives a producer, co-producer or executive-producer screen credit; principal photography after May 31, 2020) is "
                                f"a bound of ${alt_potential:,.2f} until '{bonus_fact}' is stated (Manitoba Film & Music TC-2 guidelines, Revised June 2024, Section I).",)
+        if any((a.spend_category or spend_category_by_code.get(a.account_code)) == "lodging" and a.amount_usd > 0 for a in allocations):
+            election_notes += ("Lodging in the Manitoba base is eligible only up to CAD 300 per night per accommodation unit, inclusive of taxes (Income Tax Act (Manitoba) 'eligible "
+                               "accommodation expenditure' as reproduced in the Manitoba Film & Music TC-2 guidelines, Revised June 2024; the older Manitoba Finance page's CAD 250 "
+                               "is superseded). The budget does not hold nights or nightly rates, so the cap is a claim follow-up and the lodging line is shown uncapped.",)
         election_notes += ("Planning assumption, not a certification: the applicant is an eligible corporation under Income Tax Act (Manitoba) s.7.5(1) -- a taxable Canadian "
                            "corporation with a Manitoba permanent establishment, film production as its primary business, paying at least 25% of its T4'able salaries and wages to "
                            "eligible employees for work on the film in Manitoba (payments to contractors and loan-outs do not count). Payroll evidence and the Manitoba Film & Music "

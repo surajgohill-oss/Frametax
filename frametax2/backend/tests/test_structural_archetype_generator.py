@@ -101,13 +101,20 @@ def test_same_country_pair_with_no_registered_rule_is_unresolved_and_blocks():
     explicitly lists this exact pair as UNRESOLVED, and Locked Structural
     Policy point 8 requires an unresolved-required pair to prevent
     verified pricing."""
+    # The CPTC + Manitoba pair this control first used is now RESOLVED by primary text (Manitoba Film & Music TC-2 guidelines, June 2024: compatible with the CPTC and PSTC;
+    # stacking rules 1.7.0), so the unresolved example is the federal PSTC with the BC PSTC: both Canadian, no primary stacking text found, still unruled.
     checks = check_all_pairs([
-        _comp("ca_federal_cptc", "CA", 1_000_000.0),
-        _comp("ca_mb_film_video_credit", "CA-MB", 500_000.0),
+        _comp("ca_federal_pstc", "CA", 1_000_000.0),
+        _comp("ca_bc_pstc", "CA-BC", 500_000.0),
     ])
     assert len(checks) == 1
     assert checks[0].blocks is True
     assert checks[0].disposition == "UNRESOLVED_NO_AUTHORITY"
+    resolved = check_all_pairs([
+        _comp("ca_federal_cptc", "CA", 1_000_000.0),
+        _comp("ca_mb_film_video_credit", "CA-MB", 500_000.0),
+    ])
+    assert len(resolved) == 1 and resolved[0].blocks is False and resolved[0].disposition == "spend_reduction"
 
 
 def test_structure_id_is_deterministic_and_order_independent():

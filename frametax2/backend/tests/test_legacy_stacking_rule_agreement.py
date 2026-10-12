@@ -35,3 +35,14 @@ def test_the_migration_text_states_the_registry_basis():
     for text in (mod.CPTC_OPSTC_TEXT, mod.PSTC_OPSTC_TEXT):
         assert "s.1.01" in text
     assert "LABOUR portion" in mod.PSTC_OPSTC_TEXT and "60%" in mod.CPTC_OPSTC_TEXT
+
+
+def test_the_manitoba_federal_rows_agree_with_the_registry():
+    spec = importlib.util.spec_from_file_location("mig0083", _PATH.with_name("0083_manitoba_federal_stacking_rules.py"))
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    assert (mod.revision, mod.down_revision) == ("0083", "0082")
+    reg = stacking_rules._SLUG_PAIR_RULES
+    for _id, a, b, _text in mod.ROWS:
+        assert reg[frozenset({a, b})]["rule_type"] == "spend_reduction"
+    assert len({r[0] for r in mod.ROWS}) == 2
+    assert frozenset({"ca_federal_pstc", "ca_bc_pstc"}) not in reg and frozenset({"ca_federal_pstc", "ca_qc_pstc"}) not in reg, "no rule without primary stacking text"

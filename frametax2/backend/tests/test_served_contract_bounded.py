@@ -581,11 +581,18 @@ async def test_hybrid_production_bounded_retention_keeps_every_proof_and_incumbe
     """The hybrid and multi-component incumbent-tracking sites and the dominance proofs, on a bounded partner universe: bounded retention keeps the accounting
     exact against a LEGACY full enumeration of the SAME universe (measured in this test, not pinned), keeps every proof's referenced incumbent, stays bounded,
     and an identical-input rerun is a zero-row reuse."""
+    await assert_hybrid_bounded_retention(db, isolated_hybrid_project, monkeypatch, restrict=True)
+
+
+async def assert_hybrid_bounded_retention(db, isolated_hybrid_project, monkeypatch, *, restrict: bool):
+    """The shared body: restrict=True bounds the partner universe (default suite); restrict=False runs the unbounded production (tests/heavy_synthetic), measuring its own legacy
+    enumeration instead of pinning counts."""
     from collections import Counter
     from sqlalchemy import text
     from app.services import candidate_retention as cret, canonical_production_view as cpv
     pid = isolated_hybrid_project.id
-    _restrict_partners(monkeypatch)
+    if restrict:
+        _restrict_partners(monkeypatch)
     Real = ce._BulkEvaluationWriter
 
     class _LegacyWriter(Real):
