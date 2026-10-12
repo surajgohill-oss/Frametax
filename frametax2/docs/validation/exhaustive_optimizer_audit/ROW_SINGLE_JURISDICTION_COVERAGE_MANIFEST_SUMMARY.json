@@ -1,0 +1,94 @@
+{
+  "audit_scope": "FOUR_ANCHOR_ROW_SINGLE_JURISDICTION_AND_SAME_JURISDICTION_STACKS",
+  "frozen_engine_version": "canonical-1.122.0",
+  "frozen_engine_commit": "59566fd17463b71e9796d41e8e080bf5d0ac27ea",
+  "planning_regime_date": "2026-10-11 (Prospective Relocation Planning Regime; FX Snapshot 2026-07-13)",
+  "projects_audited": [
+    "LU",
+    "FVD",
+    "BH",
+    "LLS"
+  ],
+  "denominators": {
+    "row_rate_rule_programs_per_project": 81,
+    "row_rate_rule_evaluations_4_projects": 324,
+    "row_same_jurisdiction_stack_pairs_per_project": 13,
+    "row_same_jurisdiction_stack_evaluations_4_projects": 52,
+    "total_individual_matrix_evaluations": 376,
+    "omitted_official_programs_per_project": 9,
+    "omitted_official_evaluations_4_projects": 36,
+    "non_rate_canonical_identities_per_project": 90,
+    "non_rate_canonical_evaluations_4_projects": 360,
+    "total_manifest_cases_reconciled": 772,
+    "uncovered_cases": 0
+  },
+  "matrix_reconciliation_class_counts": {
+    "EXACT_MATCH_VERIFIED": 261,
+    "ACTIVE_CODE_DEFECT_FALSE_ELIGIBILITY_PDV_BELOW_MIN_SPEND": 13,
+    "ACTIVE_CODE_DEFECT_ORPHAN_RATE_SLUG_AND_UNENFORCED_SAC_GATE": 4,
+    "ACTIVE_CODE_DEFECT_UNENFORCED_30PCT_ATL_CAP_AND_STALE_1_TO_1_EUR_CAP": 4,
+    "ACTIVE_CODE_DEFECT_QPE_UNDERCOUNT_AND_CONTINGENCY_RULE": 2,
+    "MATCHES_ENGINE_WITH_DISCLOSED_SUBCAP_SENSITIVITY": 8,
+    "ACTIVE_CODE_DEFECT_DISCRETIONARY_BLOCK_MISLABELED_STATUTORY_CONDITIONS_UNMET": 16,
+    "ACTIVE_CODE_DEFECT_PREFLIGHT_PROBE_VS_SEGMENT_MISMATCH_AND_MISSING_90PCT_CAP": 4,
+    "UNREGISTERED_MUTUAL_EXCLUSION_REJECTED_AS_UNRESOLVED_NO_AUTHORITY": 40,
+    "ACTIVE_CODE_DEFECT_WRONG_REJECTION_REASON_AND_INFLATED_LEG_QPE": 9,
+    "ACTIVE_CODE_DEFECT_PDV_PRICED_ON_ALL_PRODUCTION_SPEND": 7,
+    "ACTIVE_CODE_DEFECT_FALSE_MIN_SPEND_REJECTION": 1,
+    "REPAIRED_IN_1122_STALE_IN_SAVED_DB_1106": 2,
+    "ACTIVE_CODE_DEFECT_QPE_PROBE_UNDERCOUNT_BELOW_THRESHOLD": 1,
+    "FX_SNAPSHOT_DELTA_1110_VS_1122_AND_DOMESTIC_POST_SCOPE": 1,
+    "ACTIVE_CODE_DEFECT_LAWFUL_AU_PDV_STACK_FALSELY_REJECTED": 3
+  },
+  "matrix_defect_id_counts": {
+    "NONE": 261,
+    "ROW-DEF-002": 20,
+    "ROW-DEF-006": 4,
+    "ROW-DEF-005": 4,
+    "ROW-DEF-001": 4,
+    "ROW-DISCLOSED-LIMITATION-001": 8,
+    "ROW-DEF-007": 16,
+    "ROW-DEF-003": 4,
+    "ROW-DEF-004": 52,
+    "ROW-STALE-DB-001": 2,
+    "ROW-STALE-DB-002": 1
+  },
+  "project_source_budget_summary": {
+    "LU": {
+      "gross_budget_usd": 4364393.0,
+      "outside_fixed_usd": 9068.0,
+      "contingency_usd": 301131.0,
+      "open_local_qpe_usd": 4054196.0,
+      "post_pdv_strict_usd": 52500.0,
+      "es_statutory_qpe_usd": 3888683.0,
+      "es_engine_defective_qpe_usd": 3819151.0
+    },
+    "FVD": {
+      "gross_budget_usd": 4517687.0,
+      "outside_fixed_usd": 0.0,
+      "contingency_usd": 362866.0,
+      "open_local_qpe_usd": 3701238.0,
+      "post_pdv_strict_usd": 166646.0,
+      "es_statutory_qpe_usd": 1724759.0,
+      "es_engine_defective_qpe_usd": 825505.0
+    },
+    "BH": {
+      "gross_budget_usd": 2482023.0,
+      "outside_fixed_usd": 0.0,
+      "contingency_usd": 94382.0,
+      "open_local_qpe_usd": 2327641.0,
+      "post_pdv_strict_usd": 110958.0,
+      "es_statutory_qpe_usd": 878739.0,
+      "es_engine_defective_qpe_usd": 410393.0
+    },
+    "LLS": {
+      "gross_budget_usd": 11983654.0,
+      "outside_fixed_usd": 0.0,
+      "contingency_usd": 400000.0,
+      "open_local_qpe_usd": 9483654.0,
+      "post_pdv_strict_usd": 736762.0,
+      "es_statutory_qpe_usd": 6624531.0,
+      "es_engine_defective_qpe_usd": 4067955.0
+    }
+  }
+}
