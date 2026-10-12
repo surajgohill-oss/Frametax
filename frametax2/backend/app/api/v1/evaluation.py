@@ -205,3 +205,19 @@ async def list_optimizer_entries(
         "status": "OK", "kind": kind, "engine_version": view["production"]["served_engine_version"], "input_fingerprint": served_fp,
         "evaluation_freshness": view["production"]["evaluation_freshness"], **allocated.get(f"{name}_page", {}), "entries": allocated.get(name, []),
     }
+
+
+@router.get("/{project_id}/evaluation/jurisdiction-winner/{code}")
+async def get_jurisdiction_winner(project_id: uuid.UUID, code: str, db: AsyncSession = Depends(get_db)) -> dict:
+    """The complete best-per-jurisdiction winner for ``code`` (segment qualification traces, conditional programs, role qualification and opportunities included), read on demand
+    for the Inspector; the production view serves a compact copy. Serves the current generation or the newest retained one. Read-only: never evaluates."""
+    if await db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    view = await build_production_and_structures(db, project_id, allow_retained=True, compact_winners=False)
+    if view.get("status") != "OK" or not view["production"].get("served_input_fingerprint"):
+        return {"status": "NO_EVALUATION", "jurisdiction_code": code, "structure": None}
+    winner = (view["structures"]["allocated_structures"].get("best_per_jurisdiction") or {}).get(code)
+    if not isinstance(winner, dict):
+        raise HTTPException(status_code=404, detail=f"No jurisdiction winner for {code}")
+    return {"status": "OK", "jurisdiction_code": code, "engine_version": view["production"]["served_engine_version"],
+            "input_fingerprint": view["production"]["served_input_fingerprint"], "evaluation_freshness": view["production"]["evaluation_freshness"], "structure": winner}

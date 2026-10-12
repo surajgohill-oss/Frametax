@@ -1624,7 +1624,7 @@ def decode_candidate_cursor(cursor: str) -> tuple[str, int]:
 async def build_production_and_structures(
     session: AsyncSession, project_id, *,
     candidate_limit: int = CANDIDATE_PAGE_DEFAULT_LIMIT, candidate_offset: int = 0, allow_retained: bool = False,
-    optimizer_list_offsets: dict | None = None, optimizer_list_limit: int | None = None,
+    optimizer_list_offsets: dict | None = None, optimizer_list_limit: int | None = None, compact_winners: bool = True,
 ) -> dict:
     """Generic, project_id-driven replacement for GET /cineglobe/production
     + GET /cineglobe/structures, sourced from canonical_evaluation.py's
@@ -2837,7 +2837,7 @@ async def build_production_and_structures(
     }
 
     from app.services.served_payload_projection import apply_served_projections
-    apply_served_projections(structures["allocated_structures"])
+    apply_served_projections(structures["allocated_structures"], compact_winners=compact_winners)
     from app.services.served_payload_projection import OPTIMIZER_LIST_PAGE_LIMIT, page_optimizer_lists
     page_optimizer_lists(
         structures["allocated_structures"], fingerprint=fingerprint, offsets=optimizer_list_offsets,

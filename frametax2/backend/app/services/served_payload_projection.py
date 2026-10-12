@@ -64,7 +64,30 @@ def candidate_projection(entry: dict) -> dict:
     return out
 
 
-def apply_served_projections(allocated: dict) -> dict:
+#: Bulky per-winner detail omitted from the served best_per_jurisdiction copies (the complete winner is read on demand from the jurisdiction-winner route): the per-segment
+#: qualification trace (94% of a winner's segments) and three unread-in-collection lists. Every economics value, count, blocker, warning, ceiling field, fit field and segment scalar stays.
+WINNER_OMITTED_KEYS = frozenset({"conditional_programs", "role_qualification", "opportunities"})
+
+
+def winner_projection(code: str, entry: dict) -> dict:
+    out = {k: v for k, v in entry.items() if k not in WINNER_OMITTED_KEYS}
+    omitted = sorted(k for k in WINNER_OMITTED_KEYS if k in entry)
+    if isinstance(out.get("segments"), list):
+        segs = []
+        for i, seg in enumerate(out["segments"]):
+            if isinstance(seg, dict) and "qualification_trace" in seg:
+                seg = {**{k: v for k, v in seg.items() if k != "qualification_trace"}, "qualification_trace_omitted": len(seg["qualification_trace"] or []),
+                       "detail_ref": {"kind": "jurisdiction_winner", "code": code, "segment_index": i}}
+                if "segments[].qualification_trace" not in omitted:
+                    omitted.append("segments[].qualification_trace")
+            segs.append(seg)
+        out["segments"] = segs
+    if omitted:
+        out["detail_omitted"] = omitted
+    return out
+
+
+def apply_served_projections(allocated: dict, *, compact_winners: bool = True) -> dict:
     """In place on the assembled allocated_structures block; returns it."""
     def strip(coll, keys=COLLECTION_UNREAD_KEYS):
         return [_without(e, keys) for e in coll]
@@ -76,7 +99,9 @@ def apply_served_projections(allocated: dict) -> dict:
     if isinstance(allocated.get("unlockable_alternatives"), list):
         allocated["unlockable_alternatives"] = [candidate_projection(e) for e in allocated["unlockable_alternatives"]]
     if isinstance(allocated.get("best_per_jurisdiction"), dict):
-        allocated["best_per_jurisdiction"] = {k: (_without(v, COLLECTION_UNREAD_KEYS) if isinstance(v, dict) else v) for k, v in allocated["best_per_jurisdiction"].items()}
+        allocated["best_per_jurisdiction"] = {
+            k: ((winner_projection(k, _without(v, COLLECTION_UNREAD_KEYS)) if compact_winners else _without(v, COLLECTION_UNREAD_KEYS)) if isinstance(v, dict) else v)
+            for k, v in allocated["best_per_jurisdiction"].items()}
     if isinstance(allocated.get("top_by_structural_family"), dict):
         allocated["top_by_structural_family"] = {k: strip(v) for k, v in allocated["top_by_structural_family"].items()}
     if isinstance(allocated.get("optimizer_scenarios_music_suppressed"), list):
@@ -91,6 +116,7 @@ def apply_served_projections(allocated: dict) -> dict:
         "optimizer_scenarios": "reference index (full entries in recommended_optimizer_options + evaluated_optimizer_alternatives)",
         "optimizer_candidates": "compact projection (identity, topology, allocations and headline economics; bulky per-entry detail omitted)",
         "top_by_structure_type": "reference rows",
+        "best_per_jurisdiction": "compact winners (segment qualification traces and three detail lists omitted; full winner at GET /projects/{id}/evaluation/jurisdiction-winner/{code})" if compact_winners else "complete winners",
         "unlockable_alternatives": "compact projection",
         "omitted_from_served_copies": sorted(UNREAD_KEYS),
         "omitted_from_collection_copies": sorted(COLLECTION_UNREAD_KEYS),

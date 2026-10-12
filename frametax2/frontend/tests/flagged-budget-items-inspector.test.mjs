@@ -31,7 +31,10 @@ test("no blanket eligibility override: the Inspector adds no endpoint call beyon
   const src = strip(read("shell/Inspector.jsx"));
   assert.doesNotMatch(src, /markEligible|setEligib|forceQualif|overrideQualif|eligibilityOverride/i);
   const imports = [...src.matchAll(/import \{([^}]*)\} from "\.\.\/api";/g)].map((m) => m[1].trim());
-  assert.deepEqual(imports, ["postProjectContentGates"]);      // unchanged: the only API the Inspector itself calls
+  // the one mutation is unchanged; the one added call is the read-only GET of a jurisdiction winner's omitted segment trace (never a write, never an evaluation)
+  assert.deepEqual(imports, ["postProjectContentGates, getJurisdictionWinner"]);
+  const api = strip(read("api.js"));
+  assert.match(api, /export const getJurisdictionWinner = \(projectId, code\) =>\s*request\(`\/projects\/\$\{projectId\}\/evaluation\/jurisdiction-winner\/\$\{encodeURIComponent\(code\)\}`\);/, "a plain GET");
 });
 
 test("the contingency control is ONE shared component (rail and Inspector), saving the whitelisted fact then re-evaluating", () => {

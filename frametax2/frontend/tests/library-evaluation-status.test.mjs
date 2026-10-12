@@ -76,4 +76,7 @@ test("bounded optimizer lists: the hook merges further pages read only and the W
   const uni = readFileSync(join(SRC, "components", "JurisdictionUniverse.jsx"), "utf8");
   assert.match(uni, /optimizer_scenarios_music_suppressed_page/);
   assert.match(uni, /loadMore\("suppressed"\)/);
+  const insp = readFileSync(join(SRC, "shell", "Inspector.jsx"), "utf8");
+  assert.match(insp, /getJurisdictionWinner\(projectId, ref\.code\)/, "the omitted segment trace is read on demand");
+  assert.match(readFileSync(join(SRC, "api.js"), "utf8"), /evaluation\/jurisdiction-winner\//);
 });

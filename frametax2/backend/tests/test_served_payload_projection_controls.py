@@ -6,7 +6,7 @@ import copy
 import json
 
 from app.services.served_payload_projection import (
-    CANDIDATE_DETAIL_KEYS, COLLECTION_UNREAD_KEYS, UNREAD_KEYS, apply_served_projections, candidate_projection, scenario_reference)
+    CANDIDATE_DETAIL_KEYS, COLLECTION_UNREAD_KEYS, UNREAD_KEYS, WINNER_OMITTED_KEYS, apply_served_projections, candidate_projection, scenario_reference)
 
 
 def _entry(i, status="BELOW_THRESHOLD"):
@@ -63,7 +63,11 @@ def test_the_lists_the_frontend_reads_keep_every_entry_and_every_economics_and_d
                           ("producer_optimizer_options", COLLECTION_UNREAD_KEYS), ("optimizer_opportunities_requiring_facts", COLLECTION_UNREAD_KEYS),
                           ("structures", UNREAD_KEYS)):
         assert a[name] == [{k: v for k, v in e.items() if k not in dropped} for e in src[name]], name
-    assert a["best_per_jurisdiction"]["GB"] == {k: v for k, v in src["best_per_jurisdiction"]["GB"].items() if k not in COLLECTION_UNREAD_KEYS}
+    complete = apply_served_projections(copy.deepcopy(src), compact_winners=False)["best_per_jurisdiction"]["GB"]
+    assert complete == {k: v for k, v in src["best_per_jurisdiction"]["GB"].items() if k not in COLLECTION_UNREAD_KEYS}, "the on-demand winner is the complete entry"
+    compact = a["best_per_jurisdiction"]["GB"]
+    assert {k: v for k, v in compact.items() if k != "detail_omitted"} == {k: v for k, v in complete.items() if k not in WINNER_OMITTED_KEYS}, "only the named detail is omitted"
+    assert compact["detail_omitted"] == sorted(WINNER_OMITTED_KEYS & complete.keys())
     entries = (a["structures"] + a["optimizer_candidates"] + a["recommended_optimizer_options"] + a["evaluated_optimizer_alternatives"] + a["unlockable_alternatives"]
                + a["optimizer_opportunities_requiring_facts"] + list(a["best_per_jurisdiction"].values()) + a["top_by_structural_family"]["HYBRID_ANCHOR_COMPONENT"])
     assert all("conditional_compatibility" not in e for e in entries), "the unread key is gone from every served entry"
@@ -140,3 +144,14 @@ def test_the_saved_leader_is_always_in_the_candidate_page_and_pages_are_determin
     assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
     other = page_optimizer_lists(copy.deepcopy(data), fingerprint="c" * 64)
     assert a["evaluated_optimizer_alternatives_page"]["next_cursor"] != other["evaluated_optimizer_alternatives_page"]["next_cursor"]
+
+
+def test_a_compact_winner_keeps_every_segment_value_except_the_trace_and_points_at_it():
+    seg = {"jurisdiction_code": "GB", "qpe_usd": 5.0, "incentive_floor_usd": 1.0, "qualification_trace": [{"account_code": "1100", "state": "OK"}] * 3, "statutory_basis": "s. 1"}
+    winner = {**_entry(0), "segments": [copy.deepcopy(seg), {"jurisdiction_code": "MU", "qpe_usd": 2.0}]}
+    out = apply_served_projections({"best_per_jurisdiction": {"GB": winner}})["best_per_jurisdiction"]["GB"]
+    assert "qualification_trace" in winner["segments"][0], "the source is not mutated"
+    assert out["segments"][0] == {**{k: v for k, v in seg.items() if k != "qualification_trace"}, "qualification_trace_omitted": 3,
+                                  "detail_ref": {"kind": "jurisdiction_winner", "code": "GB", "segment_index": 0}}
+    assert out["segments"][1] == {"jurisdiction_code": "MU", "qpe_usd": 2.0}, "a segment without a trace is untouched"
+    assert "segments[].qualification_trace" in out["detail_omitted"]

@@ -80,7 +80,7 @@ function NeededForMaximum({ pot }) {
   );
 }
 import { useAppState } from "../state/AppState";
-import { postProjectContentGates } from "../api";
+import { postProjectContentGates, getJurisdictionWinner } from "../api";
 import { ContingencyLine } from "../components/ContingencyElection";
 import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, bestJurisdictionName, programDisplay } from "../lib/format";
 
@@ -421,8 +421,26 @@ function QuestionInspector({ data }) {
 // field is read verbatim from that payload — nothing here derives a
 // number client-side.
 
+// The served best-per-jurisdiction winners omit each segment's qualification trace (detail_ref); it is read on demand, read only.
+function useSegmentTrace(data) {
+  const ref = data.detail_ref;
+  const [fetched, setFetched] = useState(null);
+  useEffect(() => {
+    setFetched(null);
+    const projectId = typeof window !== "undefined" ? window.location.pathname.match(/\/projects\/([^/]+)/)?.[1] : null;
+    if (!ref || ref.kind !== "jurisdiction_winner" || !projectId) return undefined;
+    let live = true;
+    getJurisdictionWinner(projectId, ref.code).then((r) => {
+      const seg = r?.structure?.segments?.[ref.segment_index];
+      if (live && seg?.qualification_trace) setFetched(seg.qualification_trace);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [ref?.kind, ref?.code, ref?.segment_index]);
+  return fetched || data.qualification_trace || [];
+}
+
 function AllocationSegmentInspector({ data }) {
-  const trace = data.qualification_trace || [];
+  const trace = useSegmentTrace(data);
   const flaggedTrace = trace.filter((t) => isFlagged(t.state));
   return (
     <>
