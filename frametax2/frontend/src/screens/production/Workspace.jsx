@@ -882,7 +882,7 @@ export default function Workspace() {
             {workspaceMode === MODE_OPTIMIZER && (
               <>
                 <CoproductionFactsList allocated={allocated} openInspector={openInspector} />
-                <PolicySuppressedReferences allocated={allocated} openInspector={openInspector} />
+                <PolicySuppressedReferences allocated={allocated} openInspector={openInspector} loadMore={loadMoreOptimizerList} />
               </>
             )}
             {workspaceMode === MODE_NORMAL && (

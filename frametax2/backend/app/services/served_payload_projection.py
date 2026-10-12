@@ -79,6 +79,8 @@ def apply_served_projections(allocated: dict) -> dict:
         allocated["best_per_jurisdiction"] = {k: (_without(v, COLLECTION_UNREAD_KEYS) if isinstance(v, dict) else v) for k, v in allocated["best_per_jurisdiction"].items()}
     if isinstance(allocated.get("top_by_structural_family"), dict):
         allocated["top_by_structural_family"] = {k: strip(v) for k, v in allocated["top_by_structural_family"].items()}
+    if isinstance(allocated.get("optimizer_scenarios_music_suppressed"), list):
+        allocated["optimizer_scenarios_music_suppressed"] = strip(allocated["optimizer_scenarios_music_suppressed"])
     if isinstance(allocated.get("optimizer_scenarios"), list):
         allocated["optimizer_scenarios"] = [scenario_reference(e) for e in allocated["optimizer_scenarios"]]
     if isinstance(allocated.get("optimizer_candidates"), list):
@@ -104,7 +106,7 @@ _TIER_RANK = {"PRACTICAL_HYBRID": 0, "FORMAL_COPRODUCTION": 1, "ADVANCED_MULTI_J
 _EVAL_STATUS_RANK = {"EVALUATED_ALTERNATIVE": 0, "NEUTRAL": 1, "COSTS_MORE": 2, "BASELINE_UNRESOLVED": 3}
 _INF = float("inf")
 PAGED_LISTS = ("evaluated_optimizer_alternatives", "recommended_optimizer_options", "producer_optimizer_options", "optimizer_opportunities_requiring_facts",
-               "optimizer_candidates", "optimizer_scenarios")
+               "optimizer_candidates", "optimizer_scenarios", "optimizer_scenarios_music_suppressed")
 
 
 def _npc(e) -> float:
@@ -139,6 +141,7 @@ _ORDER = {
     "optimizer_opportunities_requiring_facts": (None, "served order"),
     "optimizer_candidates": (_candidate_key, "tier, npc, identity"),
     "optimizer_scenarios": (_candidate_key, "tier, npc, identity"),
+    "optimizer_scenarios_music_suppressed": (None, "served order"),
 }
 
 

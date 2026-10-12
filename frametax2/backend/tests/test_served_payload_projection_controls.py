@@ -97,7 +97,8 @@ def _big(n, seed=3):
                  dominance_status=rng.choice(["DOMINATED", "NON_DOMINATED"]))
         entries.append(e)
     return {"evaluated_optimizer_alternatives": entries, "optimizer_candidates": copy.deepcopy(entries), "optimizer_scenarios": copy.deepcopy(entries),
-            "recommended_optimizer_options": [], "producer_optimizer_options": [], "optimizer_opportunities_requiring_facts": copy.deepcopy(entries[:120])}
+            "recommended_optimizer_options": [], "producer_optimizer_options": [], "optimizer_opportunities_requiring_facts": copy.deepcopy(entries[:120]),
+            "optimizer_scenarios_music_suppressed": copy.deepcopy(entries)}
 
 
 def test_the_initial_response_is_bounded_whatever_the_universe_and_every_entry_is_reachable_exactly_once():
@@ -115,6 +116,9 @@ def test_the_initial_response_is_bounded_whatever_the_universe_and_every_entry_i
             break
         offset += OPTIMIZER_LIST_PAGE_LIMIT
     assert len(ids) == 6000 and len(set(ids)) == 6000, "every entry exactly once across the pages"
+    sup = p_large["optimizer_scenarios_music_suppressed"]
+    assert len(sup) == OPTIMIZER_LIST_PAGE_LIMIT and p_large["optimizer_scenarios_music_suppressed_page"]["total"] == 6000, "the policy-suppressed list is paged too"
+    assert [e["structure_id"] for e in sup] == [e["structure_id"] for e in large["optimizer_scenarios_music_suppressed"][:OPTIMIZER_LIST_PAGE_LIMIT]], "served order kept"
 
 
 def test_the_page_order_is_the_frontends_order_so_the_first_page_is_the_head_of_what_the_producer_sees():

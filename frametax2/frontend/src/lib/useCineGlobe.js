@@ -73,7 +73,7 @@ export function useCineGlobe(projectId) {
   }, [load]);
 
   // The next page of one bounded optimizer list, merged into the served data so every surface sees it (deduped by structure id; read only).
-  const LISTS = { evaluated: "evaluated_optimizer_alternatives", recommended: "recommended_optimizer_options", opportunities: "optimizer_opportunities_requiring_facts" };
+  const LISTS = { evaluated: "evaluated_optimizer_alternatives", recommended: "recommended_optimizer_options", opportunities: "optimizer_opportunities_requiring_facts", suppressed: "optimizer_scenarios_music_suppressed" };
   const loadMoreOptimizerList = useCallback(async (kind) => {
     const name = LISTS[kind];
     const allocated = state.data?.structures?.allocated_structures;

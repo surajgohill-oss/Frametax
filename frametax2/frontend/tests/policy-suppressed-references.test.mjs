@@ -50,7 +50,7 @@ test("the surface reads only the suppressed list and is absent when there is not
 test("Workspace and Project Globe render the secondary surface; primary cards are untouched", () => {
   const ws = readFileSync(new URL("../src/screens/production/Workspace.jsx", import.meta.url), "utf8");
   const globe = readFileSync(new URL("../src/screens/production/ProjectGlobe.jsx", import.meta.url), "utf8");
-  assert.match(ws, /<PolicySuppressedReferences allocated=\{allocated\} openInspector=\{openInspector\} \/>/);
-  assert.match(globe, /<PolicySuppressedReferences allocated=\{allocated\} openInspector=\{openInspector\} \/>/);
+  assert.match(ws, /<PolicySuppressedReferences allocated=\{allocated\} openInspector=\{openInspector\} loadMore=\{loadMoreOptimizerList\} \/>/);
+  assert.match(globe, /<PolicySuppressedReferences allocated=\{allocated\} openInspector=\{openInspector\} loadMore=\{loadMoreOptimizerList\} \/>/);
   assert.doesNotMatch(ws, /optimizer_scenarios_music_suppressed/, "Workspace cards never read the suppressed list");
 });

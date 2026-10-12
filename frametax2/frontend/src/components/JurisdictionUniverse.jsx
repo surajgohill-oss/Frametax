@@ -140,6 +140,11 @@ export function CoproductionFactsList({ allocated, openInspector }) {
               )}
             </div>
           ))}
+          {meta?.has_more && loadMore && (
+            <button type="button" className="wsx-more" data-testid="policy-suppressed-more" onClick={() => loadMore("suppressed")}>
+              Load more ({rows.length} of {total} shown)
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -148,14 +153,17 @@ export function CoproductionFactsList({ allocated, openInspector }) {
 
 // Policy-suppressed reference structures (music carve-out): a collapsed, secondary list -- never primary cards,
 // never Leading/Strong. Every row opens the same candidate Inspector, which shows the suppression explanation.
-export function PolicySuppressedReferences({ allocated, openInspector }) {
+export function PolicySuppressedReferences({ allocated, openInspector, loadMore }) {
   const rows = policySuppressedRows(allocated);
   const [open, setOpen] = useState(false);
   if (!rows.length) return null;
+  // Bounded initial response: only the first page is served; the exact total and the cursor come from the page meta.
+  const meta = allocated?.optimizer_scenarios_music_suppressed_page;
+  const total = meta?.total ?? rows.length;
   return (
     <div className="wsx-policy-suppressed" data-testid="policy-suppressed" style={{ margin: "4px 0 8px" }}>
       <button type="button" className="field-select" data-testid="policy-suppressed-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        {policySuppressedLabel(rows.length)}
+        {policySuppressedLabel(total)}
       </button>
       {open && (
         <div data-testid="policy-suppressed-list">

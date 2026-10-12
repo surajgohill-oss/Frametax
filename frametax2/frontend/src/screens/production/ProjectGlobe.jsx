@@ -69,7 +69,7 @@ export default function ProjectGlobe() {
   // polygons, borders, elevation, hover, tooltip, interaction state) is
   // touched.
   const { projectId } = useParams();
-  const { data, error, loading } = useCineGlobe(projectId);
+  const { data, error, loading, loadMoreOptimizerList } = useCineGlobe(projectId);
   const {
     inspector, openInspector, leadingStructureId, setLeadingStructureId, selectedJurisdiction, setSelectedJurisdiction,
     workspaceMode, setWorkspaceMode,
@@ -638,7 +638,7 @@ export default function ProjectGlobe() {
               )}
               {optimizerProj && (
                 <div key="policy-suppressed" className="sc-jurlist-section">
-                  <PolicySuppressedReferences allocated={allocated} openInspector={openInspector} />
+                  <PolicySuppressedReferences allocated={allocated} openInspector={openInspector} loadMore={loadMoreOptimizerList} />
                 </div>
               )}
               {(optimizerProj?.needsFactsBlocked || []).filter((r) => r.candidate_status !== "DOMINATED_WITH_PROOF").length > 0 && (

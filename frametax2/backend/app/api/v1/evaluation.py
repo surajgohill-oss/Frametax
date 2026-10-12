@@ -168,13 +168,14 @@ async def list_served_candidates(
 _OPTIMIZER_LISTS = {
     "evaluated": "evaluated_optimizer_alternatives", "recommended": "recommended_optimizer_options", "opportunities": "optimizer_opportunities_requiring_facts",
     "candidates": "optimizer_candidates", "scenarios": "optimizer_scenarios",
+    "suppressed": "optimizer_scenarios_music_suppressed",
 }
 
 
 @router.get("/{project_id}/evaluation/optimizer-list")
 async def list_optimizer_entries(
     project_id: uuid.UUID,
-    kind: str = Query("evaluated", description="evaluated | recommended | opportunities | candidates | scenarios"),
+    kind: str = Query("evaluated", description="evaluated | recommended | opportunities | candidates | scenarios | suppressed"),
     limit: int = Query(50, ge=1, le=100),
     cursor: str | None = Query(None, description="next_cursor from the previous page; omit for the first page"),
     db: AsyncSession = Depends(get_db),

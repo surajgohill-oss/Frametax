@@ -72,4 +72,8 @@ test("bounded optimizer lists: the hook merges further pages read only and the W
   assert.match(api, /evaluation\/optimizer-list\?kind=/);
   const ws = readFileSync(join(SRC, "screens", "production", "Workspace.jsx"), "utf8");
   assert.match(ws, /Load more options/);
+  assert.match(hook, /suppressed: "optimizer_scenarios_music_suppressed"/, "the policy-suppressed list pages through the same hook");
+  const uni = readFileSync(join(SRC, "components", "JurisdictionUniverse.jsx"), "utf8");
+  assert.match(uni, /optimizer_scenarios_music_suppressed_page/);
+  assert.match(uni, /loadMore\("suppressed"\)/);
 });
