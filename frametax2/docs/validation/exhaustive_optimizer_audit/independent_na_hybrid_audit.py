@@ -364,17 +364,30 @@ def compute_independent_leg_from_lines(
     # 2. California Film & Television Tax Credit Program 4.0 (ca_film_30)
     if pslug == "ca_film_30":
         spend_share = alloc_usd / gross_usd if gross_usd > 0 else 0.0
-        if is_comp or spend_share < 0.75 or alloc_usd < 1000000.0:
+        # CFC Program 4.0 Guidelines § II.A.1 / Cal. Rev. & Tax. Code § 17053.98(b)(3)(A):
+        # requires >=$1M min budget AND (>=75% total budget in CA OR >=75% principal photography days in CA).
+        # Per Codex adjudication (20261011), dollar share alone (<75%) cannot reject a principal photography partition
+        # because actual shooting days are not in topsheet facts. Non-principal slices (standalone post/VFX/music)
+        # where 0% photography occurs in CA fail the gate; principal photography partitions are conditionally modeled.
+        if is_comp and part_id in ("vfx", "music_package", "post_vfx_package", "post_vfx_music_package", "post_vfx_package_excl_vfx", "post_vfx_music_package_excl_vfx"):
             return (
                 "GATE_REJECTED", 0.0, 0.0, 0.0, "",
-                "CFC Program 4.0 Guidelines (Jan 1, 2026) § II.A.1 & Cal. Rev. & Tax. Code § 17053.98(b)(3)(A): requires >=75% total budget in CA OR >=75% principal photography days in CA (plus $1M min budget).",
+                "CFC Program 4.0 Guidelines § II.A.1: standalone post/VFX/music slice with 0% CA principal photography and <75% CA spend fails the statutory project gate.",
+            )
+        if alloc_usd < 1000000.0 and not is_comp:
+            return (
+                "GATE_REJECTED", 0.0, 0.0, 0.0, "",
+                "CFC Program 4.0 Guidelines § II.A.1: requires $1,000,000 minimum production budget.",
             )
         ca_qpe = _compute_ca_film_30_qpe_from_lines(lines_subset)
         ca_inc = round(0.35 * ca_qpe, 2)
-        return (
-            "PRICED", ca_qpe, ca_inc, 0.0, "",
-            "CFC Program 4.0 Guidelines (Jan 1, 2026): 35% base credit on non-ATL, non-legal, non-residuals California QPE.",
+        status = "PRICED" if spend_share >= 0.75 else "CONDITIONAL_NONDETERMINISTIC"
+        note = (
+            "CFC Program 4.0 Guidelines (Jan 1, 2026): 35% base credit on non-ATL, non-legal, non-residuals California QPE."
+            if spend_share >= 0.75 else
+            "CFC Program 4.0 Guidelines § II.A.1: spend share <75%; conditionally eligible subject to claim follow-up verifying >=75% principal photography days in CA."
         )
+        return (status, ca_qpe, ca_inc, 0.0, "", note)
 
     # 3. Canadian Labour-Based Programs (CPTC, PSTC, OFTTC, BC PSTC, BC DAVE, NS, OCASE)
     if pslug == "ca_federal_cptc":
@@ -421,10 +434,13 @@ def compute_independent_leg_from_lines(
                 "RULE_REJECTED", 0.0, 0.0, 0.0, "",
                 "BC Income Tax Act, R.S.B.C. 1996, c. 215, s. 81.2: applies to accredited BC labour expenditure only.",
             )
-        rate = 0.36 if project == "LLS" else (0.3628 if project == "LU" else 0.28)
+        # CRA BC PSTC: Under the prospective planning regime (effective post-2025), the basic PSTC rate is 28%
+        # (transitional 36% applied prior to rate reduction). Separately conditioned regional/distant uplifts require specific location facts.
+        # Fixed project-name branching (LU 36.28%, LLS 36%) was an oracle defect identified in Codex adjudication.
+        rate = 0.28
         return (
             "NOT_ESTABLISHED", open_base_usd, round(rate * labour_cat_usd, 2), 0.0, "NA-HYB-DEF-03",
-            "BC ITA s. 81.2: accredited BC resident payroll schedule is a claim follow-up; planning mode prices topsheet atl_*/btl_crew_labor categories (NA-HYB-DEF-03).",
+            "BC ITA s. 81.2 / CRA PSTC: 28% basic production services rate under common prospective planning regime. Accredited BC resident payroll schedule is a claim follow-up (NA-HYB-DEF-03); regional/distant uplifts kept separate.",
         )
 
     if pslug == "ca_bc_dave":
@@ -507,14 +523,17 @@ def compute_independent_leg_from_lines(
         )
 
     if pslug == "ca_ab_fttc":
-        if open_base_usd < 365000.0:
+        # Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4:
+        # Minimum spend requirement is CAD 499,999 (~$353k-$365k USD) of TOTAL production costs (gross_usd), NOT the local slice.
+        # Photography-in-Alberta condition remains a separate claim follow-up.
+        if gross_usd < 353000.0:
             return (
-                "GATE_REJECTED", 0.0, 0.0, 0.0, "NA-HYB-DEF-01 (CA-AB $499,999 CAD Min Spend Omitted)",
-                "Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4: requires >=$499,999 CAD (~$365,000 USD) minimum total eligible production costs; engine 1.122.0 has min_qpe_usd=None.",
+                "GATE_REJECTED", 0.0, 0.0, 0.0, "",
+                "Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4: requires >=$499,999 CAD minimum total production costs.",
             )
         return (
             "PRICED", open_base_usd, round(0.22 * open_base_usd, 2), 0.0, "",
-            "Alberta FTTC Act: 22% base credit on eligible Alberta production expenditures.",
+            "Alberta FTTC Act: 22% base credit on eligible Alberta production expenditures (total project budget satisfies CAD 499,999 test; Alberta filming days is a claim follow-up).",
         )
 
     if pslug == "ca_nl_all_spend_credit":
@@ -554,12 +573,15 @@ def compute_independent_leg_from_lines(
                 "RULE_REJECTED", 0.0, 0.0, 0.0, "",
                 "NY Tax Law § 31(a)(1)-(3): applies only to standalone post-production/VFX (mutually exclusive with § 24 production credit; music is ineligible).",
             )
-        # Under NY Tax Law § 31(a)(2)-(3), 100% of project post (>= 75% gateway) or 100% of project VFX (>= 10% gateway) routed to a NY QPF qualifies at 30%!
-        # However, program_requirements.py L337 hardcodes min_local_spend_usd = 1_000_000.0, falsely blocking all 18 slices across LU, FVD, BH, LLS!
+        # NY Tax Law § 31(a)(2)-(3): gateway requirement is:
+        #   (A) General post: qualified post spend at NY QPF must equal or exceed the lesser of $1,000,000 or 75% of worldwide post; OR
+        #   (B) Visual effects/animation: qualified VFX spend at NY QPF must equal or exceed the lesser of $500,000 or 10% of worldwide VFX (or total post).
+        # In a modeled component relocation routing the entire post or VFX package to NY, the 75% post / 10% VFX gateway is satisfied.
+        # However, program_requirements.py L337 hardcodes min_local_spend_usd = 1_000_000.0, omitting the alternative percentage gateways.
         ny_post_inc = round(0.30 * post_vfx_only_usd, 2)
         return (
-            "PRICED", post_vfx_only_usd, ny_post_inc, 0.0, "NA-HYB-DEF-06 (NY § 31 75% Post / 10% VFX Percentage Gateway Omitted in program_requirements.py)",
-            f"NY Tax Law § 31(a)(2)-(3): qualifies at 30% on NY QPF post/VFX spend (${post_vfx_only_usd:,.2f} -> ${ny_post_inc:,.2f}) because 100% (>=75% post / >=10% VFX) is routed to NY, whereas program_requirements.py L337 hardcodes min_local_spend_usd=$1,000,000 (NA-HYB-DEF-06).",
+            "PRICED", post_vfx_only_usd, ny_post_inc, 0.0, "NA-HYB-DEF-06 (NY § 31 Alternative Percentage Gateway Omitted in program_requirements.py)",
+            f"NY Tax Law § 31(a)(2)-(3): qualifies at 30% on NY QPF post/VFX spend (${post_vfx_only_usd:,.2f} -> ${ny_post_inc:,.2f}) under the statutory lesser-of gateway (75% post / 10% VFX), whereas engine program_requirements.py L337 hardcodes min_local_spend_usd=$1,000,000 (NA-HYB-DEF-06).",
         )
 
     # 6. US State Programs with Active Component Gate / Rate Defects in 1.122.0 (NA-HYB-DEF-01)
@@ -874,12 +896,23 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"ca_federal_cptc", "on_opstc"}:
+        # Ontario Creates OPSTC Guidelines (May 2025) § 1.01 explicitly confirms:
+        # "The OPSTC may be claimed alone, or in addition to a federal Film or Video Production Services Tax Credit
+        #  (or a Canadian Film or Video Production Tax Credit)."
+        # Therefore, CPTC + OPSTC is LAWFUL and NOT mutually exclusive (Codex NA-CODEX-08).
+        # Assistance netting: Under § 1.05(E) and ITA § 125.4(1), provincial OPSTC (21.5% on qualifying Ontario spend)
+        # constitutes government assistance that reduces the production cost basis for CPTC's 60% cap.
+        opstc_inc = round(0.215 * open_base_usd, 2)
+        cptc_cap = round(0.60 * max(0.0, open_base_usd - opstc_inc), 2)
+        cptc_qle = min(labour_cat_usd, cptc_cap)
+        cptc_inc = round(0.25 * cptc_qle, 2)
+        total_inc = round(opstc_inc + cptc_inc, 2)
         return (
-            "RULE_REJECTED",
-            0.0,
-            0.0,
-            "SOURCE_BACKED_STATUTORY_REJECTION (DOMESTIC_CPTC_VS_ONTARIO_SERVICE_OPSTC_MUTUALLY_EXCLUSIVE)",
-            "ITA § 125.4 & Ontario Taxation Act § 43.4 (stacking_rules.py mutually_exclusive): domestic CPTC and Ontario production services credit OPSTC are mutually exclusive.",
+            "NOT_ESTABLISHED",
+            open_base_usd,
+            total_inc,
+            "OPEN_CODE_DEFECT (NA-CODEX-08: ENGINE_FALSELY_REJECTS_CPTC_PLUS_ON_OPSTC)",
+            f"Ontario Creates OPSTC Guidelines (May 2025) § 1.01 & ITA § 125.4(1): CPTC + OPSTC is lawful. OPSTC (21.5% × ${open_base_usd:,.2f} = ${opstc_inc:,.2f}) reduces net production cost for CPTC 60% cap (${cptc_cap:,.2f} -> CPTC ${cptc_inc:,.2f}; combined = ${total_inc:,.2f}). Engine stacking_rules.py incorrectly marks this pair mutually_exclusive (NA-CODEX-08).",
         )
 
     if slug_set == {"on_ofttc", "on_opstc"}:
@@ -937,7 +970,7 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"ca_federal_pstc", "ca_bc_pstc"}:
-        bc_rate = 0.36 if project == "LLS" else (0.3628 if project == "LU" else 0.28)
+        bc_rate = 0.28  # Common prospective planning regime (CRA BC PSTC basic rate)
         bc_inc = round(bc_rate * labour_cat_usd, 2)
         pstc_net_labour = round(max(0.0, labour_cat_usd - bc_inc), 2)
         pstc_inc = round(0.16 * pstc_net_labour, 2)
@@ -1253,7 +1286,7 @@ ALL_NA_STACK_SPECS = [
     ("CA-QC", ["ca_federal_cptc", "ca_qc_pstc"], "IN_SLUG_PAIR_RULES_AND_SAVED_DB"),
     ("US-NY", ["ny_state_film", "us_ny_post_production_credit"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
     ("CA", ["ca_federal_cptc", "ca_federal_pstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
-    ("CA-ON", ["ca_federal_cptc", "on_opstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
+    ("CA-ON", ["ca_federal_cptc", "on_opstc"], "LAWFUL_BUT_ENGINE_FALSELY_REJECTS_NA_CODEX_08"),
     ("CA-ON", ["on_ofttc", "on_opstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
     ("CA-BC", ["ca_federal_cptc", "ca_bc_pstc"], "MUTUALLY_EXCLUSIVE_IN_SLUG_PAIR_RULES"),
     ("CA-SK", ["ca_federal_cptc", "ca_sk_creative_saskatchewan_grant"], "ALLOWED_IN_SLUG_PAIR_RULES_DISCRETIONARY"),

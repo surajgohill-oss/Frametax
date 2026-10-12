@@ -11,15 +11,15 @@
       "ind_rejected": 5,
       "eng_1122_priced": 147,
       "eng_1122_rejected_or_unpriced": 33,
-      "defect_affected_combinations": 8
+      "defect_affected_combinations": 9
     },
     "FAMILY_2_NA_SAME_JURISDICTION_STACK": {
       "manifest_rows": 72,
       "expected_combinations_represented": 72,
       "ind_priced": 0,
-      "ind_not_established": 39,
+      "ind_not_established": 43,
       "ind_conditional": 8,
-      "ind_rejected": 25,
+      "ind_rejected": 21,
       "eng_1122_priced": 14,
       "eng_1122_rejected_or_unpriced": 58,
       "defect_affected_combinations": 24
@@ -27,13 +27,13 @@
     "FAMILY_3A_NA_COMPONENT_ROUTE_EVALUATION": {
       "manifest_rows": 810,
       "expected_combinations_represented": 810,
-      "ind_priced": 142,
+      "ind_priced": 156,
       "ind_not_established": 15,
       "ind_conditional": 90,
-      "ind_rejected": 563,
+      "ind_rejected": 549,
       "eng_1122_priced": 345,
       "eng_1122_rejected_or_unpriced": 465,
-      "defect_affected_combinations": 222
+      "defect_affected_combinations": 208
     },
     "FAMILY_3B_NA_ANCHOR_PARTITION_EVALUATION": {
       "manifest_rows": 675,
@@ -44,29 +44,29 @@
       "ind_rejected": 28,
       "eng_1122_priced": 542,
       "eng_1122_rejected_or_unpriced": 133,
-      "defect_affected_combinations": 28
+      "defect_affected_combinations": 33
     },
     "FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE": {
       "manifest_rows": 585,
       "expected_combinations_represented": 25584,
-      "ind_priced": 2323,
-      "ind_not_established": 1185,
-      "ind_conditional": 3440,
-      "ind_rejected": 18636,
+      "ind_priced": 2610,
+      "ind_not_established": 1285,
+      "ind_conditional": 3517,
+      "ind_rejected": 18172,
       "eng_1122_priced": 8459,
       "eng_1122_rejected_or_unpriced": 17125,
-      "defect_affected_combinations": 5651
+      "defect_affected_combinations": 5264
     },
     "FAMILY_4_NA_R2_TWO_COMPONENT_HYBRID_ENVELOPE": {
       "manifest_rows": 360,
       "expected_combinations_represented": 668832,
-      "ind_priced": 5963,
-      "ind_not_established": 4200,
-      "ind_conditional": 33043,
-      "ind_rejected": 625626,
+      "ind_priced": 8266,
+      "ind_not_established": 5364,
+      "ind_conditional": 36422,
+      "ind_rejected": 618780,
       "eng_1122_priced": 82471,
       "eng_1122_rejected_or_unpriced": 586361,
-      "defect_affected_combinations": 77270
+      "defect_affected_combinations": 74551
     },
     "FAMILY_5_NA_COPRODUCTION_PATH": {
       "manifest_rows": 60,

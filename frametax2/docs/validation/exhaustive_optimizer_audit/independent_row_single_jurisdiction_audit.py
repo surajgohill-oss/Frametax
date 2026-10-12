@@ -582,9 +582,11 @@ def evaluate_independent_single_program(
         elif slug in ("au_qld_pdv_rebate", "au_sa_pdv_rebate"):
             min_aud = 250000.0
             min_usd = round(min_aud / FX_RATES_PER_USD["AUD"], 2)
-            # Note: Screen Queensland PDV incentive is 15% under current guidelines (10% in engine tier)
-            rate = 0.15 if slug == "au_qld_pdv_rebate" else 0.10
-            auth = "Screen Queensland PDV Incentive Guidelines (15% on QLD PDV spend; min AUD 250,000)" if slug == "au_qld_pdv_rebate" else "South Australian Film Corporation (SAFC) PDV Rebate Guidelines (10% on SA PDV spend; min AUD 250,000)"
+            # Screen Queensland PDV Guidelines (updated effective 4/9/2026): maximum incentive rate reduced from 15% to 10%
+            # (all references to 15% no longer apply; discretionary cap of 10% applies; min AUD 250,000 QLD PDV QPE).
+            # South Australian Film Corporation (SAFC) PDV Rebate: 10% on SA PDV spend; min AUD 250,000.
+            rate = 0.10
+            auth = "Screen Queensland PDV Incentive Guidelines (effective 4/9/2026: capped at 10% on QLD PDV spend; min AUD 250,000)" if slug == "au_qld_pdv_rebate" else "South Australian Film Corporation (SAFC) PDV Rebate Guidelines (10% on SA PDV spend; min AUD 250,000)"
             passes_min = pdv_aud >= min_aud
         else:
             # new_zealand_screen_production_grant_—_international_post_vfx
@@ -1009,7 +1011,9 @@ def evaluate_independent_same_jurisdiction_stack(
         {"au_pdv_offset", "au_sa_pdv_rebate"},
     ):
         state_slug = ({"au_pdv_offset", s1, s2} - {"au_pdv_offset"}).pop()
-        state_rate = 0.15 if state_slug == "au_qld_pdv_rebate" else 0.10
+        # Under Screen Queensland guidelines effective 4/9/2026, QLD PDV rate is capped at 10% (not 15%).
+        # Combined Federal (30%) + State rate is 40% for QLD, NSW (30%+10%=40%), and SA (30%+10%=40%).
+        state_rate = 0.10
         combined_rate = round(0.30 + state_rate, 4)
         # Federal au_pdv_offset requires >= AUD 500,000 ($328,536.70 USD); State requires AUD 500k (NSW) or AUD 250k (QLD/SA).
         # For the stack to execute both legs, PDV QAPE must meet >= AUD 500,000 ($328,536.70 USD).
