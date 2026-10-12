@@ -53,6 +53,11 @@ FROZEN_COMMITS = (
     "59566fd17463b71e9796d41e8e080bf5d0ac27ea",
 )
 
+FX_CAD_PER_USD = 1.4135  # Frozen prospective planning FX rate (2026-07-13 snapshot: 1 USD = 1.4135 CAD)
+ALBERTA_MIN_TOTAL_BUDGET_CAD = 499999.0
+ALBERTA_MIN_TOTAL_BUDGET_USD = round(ALBERTA_MIN_TOTAL_BUDGET_CAD / FX_CAD_PER_USD, 2)  # $353,731.16 USD
+
+
 GENERATION_META = {
     "LU": {
         "project": "LU",
@@ -434,13 +439,18 @@ def compute_independent_leg_from_lines(
                 "RULE_REJECTED", 0.0, 0.0, 0.0, "",
                 "BC Income Tax Act, R.S.B.C. 1996, c. 215, s. 81.2: applies to accredited BC labour expenditure only.",
             )
-        # CRA BC PSTC: Under the prospective planning regime (effective post-2025), the basic PSTC rate is 28%
-        # (transitional 36% applied prior to rate reduction). Separately conditioned regional/distant uplifts require specific location facts.
-        # Fixed project-name branching (LU 36.28%, LLS 36%) was an oracle defect identified in Codex adjudication.
-        rate = 0.28
+        # CRA BC Production Services Tax Credit (PSTC) — Primary Authority (Canada.ca & BC ITA s. 81.2):
+        # Under CRA guidelines, the basic Production Services Tax Credit is 28% of accredited qualified BC labour
+        # expenditure for productions beginning principal photography ON OR BEFORE December 31, 2024.
+        # For productions that begin principal photography AFTER December 31, 2024 (effective January 1, 2025),
+        # the basic PSTC rate INCREASES from 28% to 36%.
+        # In our prospective planning regime (planning date 2026-10-11, shooting commencing post-2024-12-31),
+        # the applicable basic rate is 36% (not the historical 28%). Separately conditioned regional (6%)
+        # and distant location (6%) uplifts require specific location facts and remain separate.
+        rate = 0.36
         return (
             "NOT_ESTABLISHED", open_base_usd, round(rate * labour_cat_usd, 2), 0.0, "NA-HYB-DEF-03",
-            "BC ITA s. 81.2 / CRA PSTC: 28% basic production services rate under common prospective planning regime. Accredited BC resident payroll schedule is a claim follow-up (NA-HYB-DEF-03); regional/distant uplifts kept separate.",
+            "BC ITA s. 81.2 / CRA PSTC: 36% basic production services rate under prospective planning regime (CRA: 36% for principal photography beginning after Dec 31, 2024; 28% applies only to historical pre-2025 shoots). Accredited BC resident payroll schedule is a claim follow-up (NA-HYB-DEF-03); regional/distant uplifts kept separate.",
         )
 
     if pslug == "ca_bc_dave":
@@ -526,14 +536,18 @@ def compute_independent_leg_from_lines(
         # Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4:
         # Minimum spend requirement is CAD 499,999 (~$353k-$365k USD) of TOTAL production costs (gross_usd), NOT the local slice.
         # Photography-in-Alberta condition remains a separate claim follow-up.
-        if gross_usd < 353000.0:
+        # Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4:
+        # Minimum total production cost is CAD 499,999 (native statutory threshold).
+        # At documented prospective FX rate (1.4135 CAD/USD, 2026-07-13 snapshot), CAD 499,999 = $353,731.16 USD.
+        # This threshold applies to TOTAL production costs (gross_usd), not the local slice.
+        if gross_usd < ALBERTA_MIN_TOTAL_BUDGET_USD:
             return (
                 "GATE_REJECTED", 0.0, 0.0, 0.0, "",
-                "Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4: requires >=$499,999 CAD minimum total production costs.",
+                f"Alberta Film and Television Tax Credit Act, S.A. 2019, c. F-13.5, s. 4: requires >=CAD {ALBERTA_MIN_TOTAL_BUDGET_CAD:,.0f} (${ALBERTA_MIN_TOTAL_BUDGET_USD:,.2f} USD at 1.4135 CAD/USD) minimum total production costs.",
             )
         return (
             "PRICED", open_base_usd, round(0.22 * open_base_usd, 2), 0.0, "",
-            "Alberta FTTC Act: 22% base credit on eligible Alberta production expenditures (total project budget satisfies CAD 499,999 test; Alberta filming days is a claim follow-up).",
+            f"Alberta FTTC Act: 22% base credit on eligible Alberta production expenditures (total project budget gross_usd satisfies native CAD {ALBERTA_MIN_TOTAL_BUDGET_CAD:,.0f} / ${ALBERTA_MIN_TOTAL_BUDGET_USD:,.2f} USD threshold; Alberta filming days is a claim follow-up).",
         )
 
     if pslug == "ca_nl_all_spend_credit":
@@ -970,7 +984,8 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"ca_federal_pstc", "ca_bc_pstc"}:
-        bc_rate = 0.28  # Common prospective planning regime (CRA BC PSTC basic rate)
+        # CRA BC PSTC rate is 36% for shoots commencing post-2024-12-31 (28% for historical pre-2025 shoots)
+        bc_rate = 0.36
         bc_inc = round(bc_rate * labour_cat_usd, 2)
         pstc_net_labour = round(max(0.0, labour_cat_usd - bc_inc), 2)
         pstc_inc = round(0.16 * pstc_net_labour, 2)
@@ -979,7 +994,7 @@ def compute_independent_multi_program_stack_from_lines(
             open_base_usd,
             round(bc_inc + pstc_inc, 2),
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_BC_PSTC_SERVICE_STACK)",
-            f"ITA § 125.5(1) + BC Income Tax Act s. 81.2: standard Canadian foreign-service stack pairing BC PSTC (${bc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of BC PSTC assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${bc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+            f"ITA § 125.5(1) + BC Income Tax Act s. 81.2: prospective foreign-service stack pairing 36% BC PSTC (${bc_inc:,.2f}, post-2024-12-31 rate) with 16% Federal PSTC on Canadian labour net of BC PSTC assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${bc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
         )
 
     if slug_set == {"ca_federal_pstc", "ca_qc_pstc"}:

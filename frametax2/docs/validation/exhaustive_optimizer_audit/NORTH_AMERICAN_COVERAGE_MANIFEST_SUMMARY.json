@@ -11,7 +11,7 @@
       "ind_rejected": 5,
       "eng_1122_priced": 147,
       "eng_1122_rejected_or_unpriced": 33,
-      "defect_affected_combinations": 9
+      "defect_affected_combinations": 5
     },
     "FAMILY_2_NA_SAME_JURISDICTION_STACK": {
       "manifest_rows": 72,
@@ -44,7 +44,7 @@
       "ind_rejected": 28,
       "eng_1122_priced": 542,
       "eng_1122_rejected_or_unpriced": 133,
-      "defect_affected_combinations": 33
+      "defect_affected_combinations": 18
     },
     "FAMILY_3C_NA_R1_HYBRID_ANCHOR_PACKAGE_ENVELOPE": {
       "manifest_rows": 585,
