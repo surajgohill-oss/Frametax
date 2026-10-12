@@ -6,7 +6,8 @@ import { principalOf } from "./globeStructure.js";
 export function resolvePortfolioRow(row, selection = null) {
   const structure = selection ? selection.structure : row.leading?.structure ?? null;
   return {
-    project: { id: row.project_id, title: row.title, lifecycle: row.lifecycle, is_served_production: true },
+    project: { id: row.project_id, title: row.title, lifecycle: row.lifecycle, is_served_production: row.is_served_production ?? true,
+               evaluation_freshness: row.economics_freshness || "CURRENT", evaluation_stale_reason: row.economics_stale_reason ?? null },
     grossBudgetUsd: row.gross_budget_usd, homeCode: row.home_code, structure,
     principal: structure ? principalOf(structure) : row.baseline_jurisdiction,
     selectionKnown: selection ? !!selection.selectionKnown : true,

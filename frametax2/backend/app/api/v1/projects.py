@@ -31,7 +31,7 @@ from app.models.project_activity import ProjectActivity
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.budget import BudgetDocument
 from app.services.leading_selection import selection_identity
-from app.services.portfolio_globe_view import served_fingerprints
+from app.services.portfolio_globe_view import evaluation_freshness, served_fingerprints
 from app.demo.little_utopia_state import PRODUCTION_NAME
 from app.schemas.project import MaterialsCompleteness, ProjectCard, ProjectCreate, ProjectRead, ProjectUpdate
 
@@ -179,7 +179,8 @@ async def list_projects(
     # current-evaluation reader (build_project_workspace_view,
     # canonical_production_view) already keys off, so "served" here means
     # exactly what it means everywhere else in this codebase.
-    served_project_ids = set(await served_fingerprints(db, project_ids))
+    freshness = await evaluation_freshness(db, project_ids)
+    served_project_ids = {pid for pid, info in freshness.items() if info["state"] == "CURRENT"}
 
     cards: list[ProjectCard] = []
     for p in projects:
@@ -193,6 +194,9 @@ async def list_projects(
                 deck="deck" in cats, schedule="schedule" in cats,
             ),
             is_served_production=p.id in served_project_ids,
+            evaluation_freshness=freshness.get(p.id, {}).get("state", "NONE"),
+            evaluation_stale_reason=freshness.get(p.id, {}).get("reason"),
+            retained_engine_version=freshness.get(p.id, {}).get("retained_engine_version"),
         ))
     return cards
 

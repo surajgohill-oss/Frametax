@@ -141,3 +141,12 @@ test("the legend has no plate and no principal/participant key", () => {
   const src = readFileSync(join(SRC, "screens/company/CompanyGlobe.jsx"), "utf8");
   assert.doesNotMatch(src, /company-legend|White edge|participant:/);
 });
+
+test("a stale payload row keeps its stale label on the resolved Globe project and is not drawn as served", () => {
+  const row = { project_id: "p1", title: "T", lifecycle: "EVALUATION", is_served_production: false, economics_freshness: "STALE",
+                economics_stale_reason: "INPUT_CHANGED", gross_budget_usd: 1, home_code: "MU", baseline_jurisdiction: "MU", leading: { structure: null } };
+  const resolved = resolvePortfolioRow(row);
+  assert.equal(resolved.project.is_served_production, false);
+  assert.equal(resolved.project.evaluation_freshness, "STALE");
+  assert.equal(resolved.principal, "MU");
+});

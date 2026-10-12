@@ -122,6 +122,68 @@ async def served_fingerprints(session: AsyncSession, project_ids) -> dict[uuid.U
     return served
 
 
+FRESHNESS_CURRENT, FRESHNESS_STALE, FRESHNESS_NONE = "CURRENT", "STALE", "NONE"
+STALE_ENGINE_VERSION, STALE_INPUT_CHANGED = "ENGINE_VERSION", "INPUT_CHANGED"
+
+
+async def evaluation_freshness(session: AsyncSession, project_ids) -> dict[uuid.UUID, dict]:
+    """project_id -> {"state", "reason", "retained_engine_version"}: durable evaluation visibility, kept apart from calculation freshness.
+
+    CURRENT: a generation exists at the current engine and the project's recomputed input fingerprint (exactly served_fingerprints).
+    STALE: the project has a retained, complete generation that is not current -- reason ENGINE_VERSION (none at the current engine) or
+    INPUT_CHANGED (the current engine has one, but the inputs have since changed). Its economics are labelled stale, never hidden, and
+    reading this never evaluates or regenerates anything.
+    NONE: no retained generation at all (a genuinely unevaluated, 'submitted' project)."""
+    from app.models.production import EvaluationGenerationSummary
+    from app.services.canonical_evaluation import ENGINE_VERSION
+
+    ids = list(project_ids)
+    served = await served_fingerprints(session, ids)
+    out: dict[uuid.UUID, dict] = {pid: {"state": FRESHNESS_CURRENT, "reason": None, "retained_engine_version": ENGINE_VERSION} for pid in served}
+    rest = [pid for pid in ids if pid not in served]
+    if rest:
+        rows = (await session.execute(
+            select(EvaluationGenerationSummary.project_id, EvaluationGenerationSummary.engine_version)
+            .where(EvaluationGenerationSummary.project_id.in_(rest)))).all()
+        engines: dict[uuid.UUID, set[str]] = {}
+        for pid, engine in rows:
+            engines.setdefault(pid, set()).add(engine)
+        for pid in rest:
+            seen = engines.get(pid)
+            if not seen:
+                out[pid] = {"state": FRESHNESS_NONE, "reason": None, "retained_engine_version": None}
+            else:
+                out[pid] = {"state": FRESHNESS_STALE,
+                            "reason": STALE_INPUT_CHANGED if ENGINE_VERSION in seen else STALE_ENGINE_VERSION,
+                            "retained_engine_version": max(seen)}
+    return out
+
+
+async def _stale_row(session: AsyncSession, project: Project, lifecycle: str, info: dict) -> dict:
+    from app.models.jurisdiction import Jurisdiction
+
+    snapshot = project.portfolio_globe_snapshot or {}
+    home_code = snapshot.get("home_code")
+    if not home_code and project.home_jurisdiction_id is not None:
+        home_code = (await session.execute(select(Jurisdiction.code).where(Jurisdiction.id == project.home_jurisdiction_id))).scalar_one_or_none()
+    chosen = str(project.leading_structure_id) if project.leading_structure_id else None
+    structure, source = resolve_leader(snapshot, user_structure_id=chosen, user_selected=bool(chosen)) if snapshot.get("structures") else (None, "baseline")
+    return {
+        "project_id": str(project.id),
+        "title": project.title,
+        "lifecycle": lifecycle,
+        "is_served_production": False,
+        "economics_freshness": FRESHNESS_STALE,
+        "economics_stale_reason": info["reason"],
+        "retained_engine_version": info["retained_engine_version"],
+        "gross_budget_usd": snapshot.get("gross_budget_usd") if project.total_budget_usd is None else float(project.total_budget_usd),
+        "baseline_jurisdiction": snapshot.get("baseline_jurisdiction") or home_code,
+        "home_code": home_code,
+        "leading_structure_id": chosen,
+        "leading": {"source": source, "user_selected": source == "user", "unavailable": False, "structure": structure},
+    }
+
+
 async def build_portfolio_globe(session: AsyncSession, organization_id) -> dict[str, Any]:
     from app.api.v1.projects import _is_producer_visible
     from app.services.canonical_evaluation import ENGINE_VERSION
@@ -133,13 +195,21 @@ async def build_portfolio_globe(session: AsyncSession, organization_id) -> dict[
         )).scalars().all() if _is_producer_visible(p.title)
     ]
     served = await served_fingerprints(session, [p.id for p in projects])
+    freshness = await evaluation_freshness(session, [p.id for p in projects])
     rows: list[dict] = []
     rebuilt = 0
     for project in projects:
         fingerprint = served.get(project.id)
         lifecycle = (project.lifecycle or "EVALUATION").upper()
-        if fingerprint is None or lifecycle == "ARCHIVED":
-            continue  # Submitted (no served generation) and Archived are not active
+        info = freshness.get(project.id) or {"state": FRESHNESS_NONE, "reason": None, "retained_engine_version": None}
+        if lifecycle == "ARCHIVED" or info["state"] == FRESHNESS_NONE:
+            continue  # Submitted (no retained generation at all) and Archived are not active
+        if fingerprint is None:
+            # Durable visibility is not calculation freshness: a project with a retained but stale generation stays on the Globe, drawn at its
+            # anchor (or its explicit leading choice from the retained snapshot), with the economics labelled stale. Nothing is evaluated,
+            # rebuilt or reconciled here -- a stale generation is never read as current and never rewrites the saved selection.
+            rows.append(await _stale_row(session, project, lifecycle, info))
+            continue
         snapshot = project.portfolio_globe_snapshot
         if not snapshot_is_current(snapshot, engine_version=ENGINE_VERSION, fingerprint=fingerprint):
             view = await build_production_and_structures(session, project.id)
@@ -161,6 +231,8 @@ async def build_portfolio_globe(session: AsyncSession, organization_id) -> dict[
             "title": project.title,
             "lifecycle": lifecycle,
             "is_served_production": True,
+            "economics_freshness": FRESHNESS_CURRENT,
+            "economics_stale_reason": None,
             "gross_budget_usd": snapshot.get("gross_budget_usd") if project.total_budget_usd is None else float(project.total_budget_usd),
             "baseline_jurisdiction": snapshot.get("baseline_jurisdiction"),
             "home_code": snapshot.get("home_code"),
@@ -176,5 +248,6 @@ async def build_portfolio_globe(session: AsyncSession, organization_id) -> dict[
     return {
         "projects": rows,
         "excluded_not_active": len(projects) - len(rows),
+        "stale_economics": sum(1 for r in rows if r.get("economics_freshness") == FRESHNESS_STALE),
         "snapshots_rebuilt": rebuilt,
     }

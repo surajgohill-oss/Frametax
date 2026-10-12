@@ -86,3 +86,9 @@ class ProjectCard(ProjectRead):
     artwork_url: str | None = None
     materials: MaterialsCompleteness
     is_served_production: bool = False
+    #: Durable evaluation visibility, kept apart from calculation freshness (is_served_production stays the CURRENT-generation signal).
+    #: CURRENT = served; STALE = a retained complete generation exists but is not current (reason ENGINE_VERSION or INPUT_CHANGED), its
+    #: economics are labelled stale rather than the project disappearing; NONE = never evaluated ("Submitted").
+    evaluation_freshness: str = "NONE"
+    evaluation_stale_reason: str | None = None
+    retained_engine_version: str | None = None

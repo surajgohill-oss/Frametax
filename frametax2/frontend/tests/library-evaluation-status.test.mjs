@@ -38,3 +38,14 @@ test("All Active excludes Submitted and Archived; Submitted and All filter as sp
   assert.equal(libraryFilterMatches("evaluation", submitted), false);
   assert.equal(libraryFilterMatches("evaluation", evaluated), true);
 });
+
+test("a retained but stale generation keeps the project visible and labelled stale; never evaluated stays Submitted", () => {
+  const stale = { lifecycle: "EVALUATION", is_served_production: false, evaluation_freshness: "STALE", evaluation_stale_reason: "ENGINE_VERSION" };
+  const never = { lifecycle: "EVALUATION", is_served_production: false, evaluation_freshness: "NONE" };
+  assert.equal(libraryStageKey(stale), "evaluation");
+  assert.equal(libraryStageLabel(stale, evalMeta), "Evaluation · economics stale");
+  assert.equal(libraryStageLabel(never, evalMeta), "Submitted");
+  assert.equal(libraryFilterMatches("active", stale), true);
+  assert.equal(libraryFilterMatches("submitted", stale), false);
+  assert.equal(libraryFilterMatches("active", never), false);
+});

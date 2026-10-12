@@ -3,13 +3,18 @@
 // project the backend does not yet serve a COMPLETE, CURRENT canonical generation for (`is_served_production`, the same
 // predicate every current-evaluation reader uses). Derived, never hardcoded per title/id; the Library and Company Globe
 // only read the list endpoint and never evaluate.
+// Durable visibility is NOT calculation freshness: a project with a retained but stale generation (`evaluation_freshness === "STALE"`, older
+// engine or changed inputs) stays an evaluated project and is labelled stale; only a project with no retained generation at all is Submitted.
+const isEvaluated = (project) => !!project?.is_served_production || project?.evaluation_freshness === "STALE";
+
 export function libraryStageKey(project) {
   const key = (project?.lifecycle || "evaluation").toLowerCase();
-  return key === "evaluation" && !project?.is_served_production ? "submitted" : key;
+  return key === "evaluation" && !isEvaluated(project) ? "submitted" : key;
 }
 
 export function libraryStageLabel(project, meta) {
-  return meta.key === "evaluation" && !project?.is_served_production ? "Submitted" : meta.label;
+  if (meta.key === "evaluation" && !isEvaluated(project)) return "Submitted";
+  return project?.evaluation_freshness === "STALE" ? `${meta.label} · economics stale` : meta.label;
 }
 
 // Active = Evaluation and every later workflow stage; Submitted (not yet evaluated) and Archived (closed) are not.
