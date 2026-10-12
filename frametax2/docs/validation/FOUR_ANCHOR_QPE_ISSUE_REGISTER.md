@@ -119,3 +119,5 @@ Executed (LLS-CA-01 pass, foreground under `perl -e 'alarm shift; exec @ARGV'`, 
 
 
 Executed (CA-gate correction pass, foreground under `perl -e 'alarm shift; exec @ARGV'`, nothing left running): `test_california_project_gate_controls.py` 18 passed (mutant treating conditional as a pass fails 4); gate files plus the end-to-end persisted-class control 17 passed (25.3 s) before the reconstruction tests were rewritten; no other suite rerun.
+
+NA-ADJUDICATION-01 (2026-10-11, engine 1.123.0, commits 46324d7e calculation / 9031d55f visibility): corrected Manitoba alternative-credit early exit, NY post worldwide gateways, CPTC 60% cap trim, hybrid gross and contingency-election passthrough, and stale-production visibility in the Library and Globe. Open: federal PSTC named pairs, AG's 20,380.35 CPTC delta (net-cost exclusions unadjudicated), NA-HYB-DEF-01 state gates, Manitoba 25% T4 gate, NY VFX/post cumulation, contingency allocations passthrough, served verification. See the ledger section NA-ADJUDICATION-01.
