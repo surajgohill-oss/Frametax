@@ -558,9 +558,8 @@ def evaluate_independent_single_program(
         ind_qpe = None
         ind_rate_floor = None
         ind_rate_ceil = 0.40
-        # Under ITAA 1997 s.376-170(4)(b), ATL/development remuneration is capped at 20% of total film expenditure
-        cap_80 = round(0.80 * (gross - buckets["outside_fixed_usd"]), 2)
-        cond_qpe = min(buckets["open_local_qpe_usd"], cap_80)
+        # 80% QAPE cap withdrawn as unsupported
+        cond_qpe = buckets["open_local_qpe_usd"]  # no 80% cap: unsupported by Screen Australia guidance (see ROW_EVIDENCE_GAP_CLOSURE_ADDENDUM.md)
         ind_inc_floor = None
         ind_inc_ceil = round(cond_qpe * 0.40, 2)
         ind_npc = None
