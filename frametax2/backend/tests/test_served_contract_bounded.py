@@ -128,6 +128,37 @@ async def isolated_hybrid_project(db: AsyncSession):
         yield project
 
 
+
+def _first_diff(a, b, path=""):
+    """The first differing path between two JSON-like values (bounded, cheap). Replaces a raw string comparison of two multi-MB documents: on a mismatch pytest
+    spent minutes computing a character diff, which looked like a hang."""
+    if type(a) is not type(b):
+        return path, str(a)[:120], str(b)[:120]
+    if isinstance(a, dict):
+        for k in sorted(set(a) | set(b), key=str):
+            if k not in a or k not in b:
+                return f"{path}/{k}", "missing" if k not in a else "present", "missing" if k not in b else "present"
+            d = _first_diff(a[k], b[k], f"{path}/{k}")
+            if d:
+                return d
+    elif isinstance(a, list):
+        if len(a) != len(b):
+            return path, f"len {len(a)}", f"len {len(b)}"
+        for i, (x, y) in enumerate(zip(a, b)):
+            d = _first_diff(x, y, f"{path}[{i}]")
+            if d:
+                return d
+    elif a != b:
+        return path, str(a)[:120], str(b)[:120]
+    return None
+
+
+def _assert_same_view(a, b):
+    import hashlib
+    da, db_ = (hashlib.sha256(json.dumps(v, sort_keys=True).encode()).hexdigest() for v in (a, b))
+    assert da == db_, f"served view is not deterministic; first difference: {_first_diff(a, b)}"
+
+
 async def _evaluate(db, project):
     econ = await ce.evaluate_project(db, project.id)
     assert econ["status"] in ("EVALUATION_COMPLETE", "EVALUATION_REUSED"), econ["status"]
@@ -228,7 +259,7 @@ async def test_production_view_returns_one_bounded_deterministic_page_with_exact
 
     view = await build_production_and_structures(db, pid)
     view2 = await build_production_and_structures(db, pid)
-    assert json.dumps(view, sort_keys=True) == json.dumps(view2, sort_keys=True)  # deterministic
+    _assert_same_view(view, view2)  # deterministic
     a = view["structures"]["allocated_structures"]
     page = a["candidates_page"]
 
@@ -256,17 +287,29 @@ async def test_production_view_returns_one_bounded_deterministic_page_with_exact
     assert a["discovery"]["generated_structures"] == summary.total_rows
     universe = a["rejection_universe"]
     assert universe["total_count"] == summary.unpriced_count and universe["by_disposition"] == econ["unpriceable_by_disposition"]
-    assert universe["first_page"]["returned"] <= ce.UNPRICEABLE_PAGE_DEFAULT_LIMIT
+    # the persisted-row page is bounded by the default limit; the jurisdiction-accounting rows are appended beside it and counted separately
+    # (accounting_rows), bounded by the number of jurisdictions examined, never by the rejection universe
+    assert universe["first_page"]["returned"] - universe["first_page"].get("accounting_rows", 0) <= ce.UNPRICEABLE_PAGE_DEFAULT_LIMIT
+    assert universe["first_page"].get("accounting_rows", 0) <= 400
     assert len(a["unlockable_alternatives"]) <= CANDIDATE_PAGE_MAX_LIMIT
     assert a["unlockable_alternatives_has_more"] is (a["unlockable_alternatives_total"] > len(a["unlockable_alternatives"]))
     assert len(json.dumps(a["coverage"]["executable_jurisdictions"])) < 20_000  # distinct jurisdictions only
-    assert len(json.dumps(view)) < 8_000_000  # 100 detailed candidates (<= ~50 KB each) + counts, never the universe
+    # the payload-size contract is its own test (below) so a size regression cannot hide the pagination assertions that follow
 
     # a small page limit forces real pagination through the same builder
     small = await build_production_and_structures(db, pid, candidate_limit=7)
     sa = small["structures"]["allocated_structures"]
     assert len(sa["structures"]) == min(7, served_total) and sa["candidates_page"]["limit"] == 7
     assert sa["candidate_accounting"] == acc  # counts do not depend on the page
+
+
+async def test_production_view_payload_stays_under_the_bounded_size_contract(db: AsyncSession, isolated_project: Project):
+    await _evaluate(db, isolated_project)
+    view = await build_production_and_structures(db, isolated_project.id)
+    a = view["structures"]["allocated_structures"]
+    sizes = sorted(((len(json.dumps(v)), k) for k, v in a.items()), reverse=True)[:6]
+    total = len(json.dumps(view))
+    assert total < 8_000_000, f"100 detailed candidates (<= ~50 KB each) + counts, never the universe; got {total} bytes, largest sections {sizes}"
 
 
 async def test_candidates_route_pages_every_served_candidate_exactly_once_and_refuses_foreign_cursors(
@@ -443,11 +486,16 @@ async def test_isolated_production_legacy_full_enumeration_equals_bounded_retent
     # ---- retained rows: byte-identical economics (ids embedded in traces are per-generation)
     _uuid = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
-    def no_ids(v):
+    # The bounded writer STAMPS two persisted-contract fields the legacy (canonical-1.88.0) enumeration never wrote: the GD-2 structural classification and
+    # the lazily enriched marginal-jurisdiction benefits (1.97.0). They are additions, not economics: the byte-identical comparison excludes exactly these
+    # two keys, and the retained rows are separately required to CARRY them (below), so the coverage is kept rather than dropped.
+    _STAMPED = ("structural_classification", "marginal_jurisdiction_benefits_usd")
+
+    def no_ids(v, top=True):
         if isinstance(v, dict):
-            return {k: no_ids(x) for k, x in v.items() if k not in ("engine_version", "input_fingerprint")}
+            return {k: no_ids(x, False) for k, x in v.items() if k not in ("engine_version", "input_fingerprint") and not (top and k in _STAMPED)}
         if isinstance(v, list):
-            return [no_ids(x) for x in v]
+            return [no_ids(x, False) for x in v]
         return "<id>" if isinstance(v, str) and _uuid.match(v) else v
 
     def mask(r):
@@ -456,10 +504,19 @@ async def test_isolated_production_legacy_full_enumeration_equals_bounded_retent
                 r.warnings, r.economic_identity, repr(sorted(no_ids(r.trace or {}).items())))
     legacy_masked = {r.name: mask(r) for r in legacy_rows}
     assert all(mask(r) == legacy_masked[r.name] for r in new_rows)
+    assert all((r.trace or {}).get("structural_classification") for r in new_rows), "every retained row carries the stamped classification"
+    assert all("structural_classification" not in (r.trace or {}) for r in legacy_rows), "the legacy enumeration is the pre-GD-2 contract"
+    assert all("marginal_jurisdiction_benefits_usd" in (r.trace or {}) for r in new_rows if r.structure_type == "hybrid" and is_priced(r))
 
     # ---- aggregated remainder == regrouping of the legacy rows that were not retained
+    from app.services.structural_classification import classify_structure
+
+    def stamped(r):      # the legacy rows pre-date the GD-2 stamp the bounded writer applies at the single call site, so apply the same pure classification
+        t = dict(r.trace or {})
+        t["structural_classification"] = classify_structure(t, r.structure_type, status(r) == "PRICED")
+        return t
     regroup = Counter(
-        cagg.candidate_group_key(cagg.candidate_group_identity(status(r) or "", r.structure_type, r.trace or {}, r.claimed_program_ids))
+        cagg.candidate_group_key(cagg.candidate_group_identity(status(r) or "", r.structure_type, stamped(r), r.claimed_program_ids))
         for r in legacy_rows if r.name not in keep)
     got = {k: c for k, c in (await db.execute(text(
         "SELECT group_key, candidate_count FROM evaluation_candidate_aggregates "
@@ -499,38 +556,74 @@ async def test_isolated_production_legacy_full_enumeration_equals_bounded_retent
 
 # ── real hybrid + multi-component search: bounded retention, proofs, incumbents, reuse ──────
 
-#: Measured ONCE as the LEGACY full enumeration (every candidate a row) of this exact fixture.
-_HYBRID_LEGACY_ENUMERATION = {
-    "RULE_REJECTED": 252530, "PRICED": 588, "DOMINATED_WITH_PROOF": 308, "CO_PRO_OPPORTUNITY": 25,
-    "FEASIBILITY_REVIEW_REQUIRED": 14, "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 10,
-}
+_BOUNDED_PARTNERS = ("GB", "IE", "MT", "FR", "CA-ON", "US-GA")
+
+
+def _restrict_partners(monkeypatch):
+    """Bound the hybrid search universe to a handful of partners (home + _BOUNDED_PARTNERS) so a full hybrid enumeration finishes in seconds while keeping
+    the hybrid / multi-component incumbent sites and dominance proofs this test exists to cover. The unbounded 250k-candidate production is the heavy
+    check in tests/heavy_synthetic/check_hybrid_bounded_retention_full.py (explicit path)."""
+    import dataclasses
+    real = ce.discover_executable_jurisdictions
+
+    def bounded(*a, **k):
+        d = real(*a, **k)
+        keep = set(_BOUNDED_PARTNERS) | {k.get("home_code")}
+        return dataclasses.replace(
+            d, accepted=tuple((c, sl) for c, sl in d.accepted if c in keep),
+            examinations=tuple(e for e in d.examinations if e.jurisdiction_code in keep))
+    monkeypatch.setattr(ce, "discover_executable_jurisdictions", bounded)
 
 
 async def test_hybrid_production_bounded_retention_keeps_every_proof_and_incumbent_and_reuses_for_free(
-    db: AsyncSession, isolated_hybrid_project: Project,
+    db: AsyncSession, isolated_hybrid_project: Project, monkeypatch,
 ):
-    """A throw-away production whose real search enumerates 253,475 candidates (the real hybrid and
-    multi-component incumbent-tracking sites and 308 dominance proofs): bounded retention keeps the
-    accounting exact against the legacy enumeration, keeps every proof's referenced incumbent, stays
-    bounded, and an identical-input rerun is a zero-row reuse."""
+    """The hybrid and multi-component incumbent-tracking sites and the dominance proofs, on a bounded partner universe: bounded retention keeps the accounting
+    exact against a LEGACY full enumeration of the SAME universe (measured in this test, not pinned), keeps every proof's referenced incumbent, stays bounded,
+    and an identical-input rerun is a zero-row reuse."""
+    from collections import Counter
     from sqlalchemy import text
-    from app.services import candidate_retention as cret
+    from app.services import candidate_retention as cret, canonical_production_view as cpv
     pid = isolated_hybrid_project.id
+    _restrict_partners(monkeypatch)
+    Real = ce._BulkEvaluationWriter
+
+    class _LegacyWriter(Real):
+        def __init__(self, session, *a, **k):
+            super().__init__(session, *a, bounded_retention=False, **k)
+
+    legacy_engine = "canonical-test-legacy-enumeration"
+    with monkeypatch.context() as m:
+        m.setattr(ce, "_BulkEvaluationWriter", _LegacyWriter)
+        m.setattr(ce, "ENGINE_VERSION", legacy_engine)
+        m.setattr(cpv, "ENGINE_VERSION", legacy_engine)
+        legacy = await ce.evaluate_project(db, pid)
+        assert legacy["status"] == "EVALUATION_COMPLETE"
+    legacy_rows = (await db.execute(text(
+        "select scr.calculation_trace_json->>'candidate_status' st from structure_calculation_results scr join production_structures ps on ps.id=scr.structure_id "
+        "where ps.project_id=:p and scr.engine_version=:ev"), {"p": pid, "ev": legacy_engine})).all()
+    measured = Counter(r.st for r in legacy_rows)
+    legacy_total = sum(measured.values())
+    assert measured["PRICED"] > 0 and measured["DOMINATED_WITH_PROOF"] > 0, "the bounded universe must still exercise hybrid pricing and dominance proofs"
+
+    monkeypatch.setattr(cret, "GLOBAL_TOP", 3)
+    monkeypatch.setattr(cret, "TYPE_TOP", 3)
+    monkeypatch.setattr(cpv, "TYPE_TOP", 3)
     econ = await ce.evaluate_project(db, pid)          # commit() enforces generated == persisted + aggregated
     assert econ["status"] == "EVALUATION_COMPLETE"
     fp = econ["state_fingerprint"]
     summary = await ce.load_generation_summary(db, pid, fp)
-    legacy_total = sum(_HYBRID_LEGACY_ENUMERATION.values())
     assert summary.total_rows == legacy_total == summary.persisted_rows + summary.aggregated_candidates
-    assert summary.priced_count == _HYBRID_LEGACY_ENUMERATION["PRICED"] == econ["priced_count"]
+    assert summary.priced_count == measured["PRICED"] == econ["priced_count"]
     by = dict(summary.by_disposition)
-    assert by == {k: v for k, v in _HYBRID_LEGACY_ENUMERATION.items() if k != "PRICED"}      # exact, incl. aggregated rejections
+    assert by == {k: v for k, v in measured.items() if k != "PRICED"}      # exact, incl. aggregated rejections
 
     G = "ps.project_id=:p and scr.engine_version=:ev and scr.input_fingerprint=:fp"
     P = {"p": pid, "ev": ce.ENGINE_VERSION, "fp": fp}
     J = "structure_calculation_results scr join production_structures ps on ps.id=scr.structure_id"
     persisted = (await db.execute(text(f"select count(*) from {J} where {G}"), P)).scalar()
-    assert persisted == summary.persisted_rows < legacy_total / 100                       # bounded by policy, not enumeration
+    assert persisted == summary.persisted_rows < legacy_total                              # bounded by policy, not enumeration
+    assert summary.aggregated_candidates > 0, "the small policy must actually aggregate"
     types = (await db.execute(text(f"select count(distinct scr.structure_type) from {J} where {G}"), P)).scalar()
     non_priced = (await db.execute(text(f"select count(*) from {J} where {G} and scr.true_net_cost_usd is null"), P)).scalar()
     priced_rows = persisted - non_priced
@@ -538,7 +631,7 @@ async def test_hybrid_production_bounded_retention_keeps_every_proof_and_incumbe
 
     # every persisted proof is complete AND its incumbent is a persisted row
     proofs = (await db.execute(text(f"select scr.calculation_trace_json trace from {J} where {G} and scr.calculation_trace_json->>'candidate_status'='DOMINATED_WITH_PROOF'"), P)).all()
-    assert len(proofs) == _HYBRID_LEGACY_ENUMERATION["DOMINATED_WITH_PROOF"]
+    assert len(proofs) == measured["DOMINATED_WITH_PROOF"]
     rows = (await db.execute(text(f"select ps.id::text sid, scr.calculation_trace_json->>'structural_generator_structure_id' gen from {J} where {G}"), P)).all()
     known = {r.sid for r in rows} | {r.gen for r in rows if r.gen}
     referenced = 0

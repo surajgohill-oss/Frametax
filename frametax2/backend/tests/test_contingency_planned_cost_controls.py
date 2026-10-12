@@ -6,6 +6,7 @@ what part of the DEPLOYED reserve qualifies; the NPC cost reduction is applied e
 from __future__ import annotations
 
 import pathlib
+import uuid
 import re
 
 import pytest
@@ -108,22 +109,15 @@ from app.models.project import Project  # noqa: E402
 from app.models.project_fact import ProjectFact  # noqa: E402
 from app.services.canonical_project_economics import FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT, _fact_float  # noqa: E402
 
-ORG_ID = "11381771-5b1c-4980-9117-e3e47a4cb354"
-
-
 @pytest.fixture
 async def synthetic_project_session():
-    async with engine.connect() as conn:
-        outer = await conn.begin()
-        session = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
-        project = Project(title="SYNTHETIC contingency control (rolled back)", organization_id=ORG_ID)
-        session.add(project)
-        await session.flush()
-        try:
-            yield session, project
-        finally:
-            await session.close()
-            await outer.rollback()           # nothing from this test is ever committed
+    """A synthetic project inside a rolled-back transaction on the ISOLATED test database only (tests/isolated_records.isolated_session refuses any other database).
+    The previous fixture hard-coded the real organization id, which exists only in the acceptance database, so it could not run where tests are allowed to run."""
+    from tests.isolated_records import create_synthetic_project, isolated_session
+    async with isolated_session() as session:
+        pid = await create_synthetic_project(session, home_code="MU")
+        project = await session.get(Project, uuid.UUID(pid))
+        yield session, project
 
 
 async def _reload(session, project_id):

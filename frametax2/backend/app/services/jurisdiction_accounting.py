@@ -68,6 +68,11 @@ DATA_INCOMPLETE = "DATA_INCOMPLETE"   # served `disposition` value for a catalog
 
 _CACHE: dict[tuple, dict] = {}
 _CACHE_MAX = 8
+#: The enrichment applied IN PLACE to the retained blocked rows the caller serves, kept per ledger key so a cached ledger re-applies it to the
+#: freshly loaded rows: without this the first call served enriched rows and every later call (same generation) served the bare ones.
+_ENRICHMENT_CACHE: dict[tuple, dict[tuple, dict]] = {}
+_ENRICHED_KEYS = ("incentive_potential", "content_gates", "content_gate_summary", "blocker_detail", "disposition",
+                  "blocked_cause", "hard_block_reason", "missing_facts_reason", "first_exit_stage")
 
 
 async def _canonical_jurisdictions(session: AsyncSession) -> tuple[dict[str, str], dict[str, str]]:
@@ -271,6 +276,8 @@ async def build_jurisdiction_accounting(
     """The complete first-exit ledger for one evaluation generation (cached per fingerprint + engine)."""
     key = (str(project.id), fingerprint, engine_version, production_type)
     if key in _CACHE:
+        for _r in served_blocked_rows or []:
+            _r.update(_ENRICHMENT_CACHE.get(key, {}).get((_r.get("primary_jurisdiction"), _r.get("program_slug")), {}))
         return _CACHE[key]
 
     from app.calculators.production_discovery import discover_executable_jurisdictions
@@ -474,10 +481,10 @@ async def build_jurisdiction_accounting(
             if outcome and outcome["source"] == "retained" and _served is not None:
                 # already served as a retained blocked row: enrich THAT row in place with the shared potential / gates /
                 # scenario assumptions / minimum-spend verdict (one owner, never two divergent copies)
-                for _k in ("incentive_potential", "content_gates", "content_gate_summary", "blocker_detail", "disposition",
-                           "blocked_cause", "hard_block_reason", "missing_facts_reason", "first_exit_stage"):
+                for _k in _ENRICHED_KEYS:
                     if _k in base:
                         _served[_k] = base[_k]
+                        _ENRICHMENT_CACHE.setdefault(key, {}).setdefault((code, slug), {})[_k] = base[_k]
                 row = None
             else:
                 row = base
@@ -543,6 +550,7 @@ async def build_jurisdiction_accounting(
         },
     }
     if len(_CACHE) >= _CACHE_MAX:
+        _ENRICHMENT_CACHE.pop(next(iter(_CACHE)), None)
         _CACHE.pop(next(iter(_CACHE)))
     _CACHE[key] = ledger
     return ledger
