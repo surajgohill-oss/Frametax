@@ -84,6 +84,7 @@ def winner_projection(code: str, entry: dict) -> dict:
         out["segments"] = segs
     if omitted:
         out["detail_omitted"] = omitted
+        out["detail_ref"] = {"kind": "jurisdiction_winner", "code": code}
     return out
 
 

@@ -78,5 +78,9 @@ test("bounded optimizer lists: the hook merges further pages read only and the W
   assert.match(uni, /loadMore\("suppressed"\)/);
   const insp = readFileSync(join(SRC, "shell", "Inspector.jsx"), "utf8");
   assert.match(insp, /getJurisdictionWinner\(projectId, ref\.code\)/, "the omitted segment trace is read on demand");
+  assert.match(insp, /function WinnerDetailSections/);
+  assert.match(insp, /data-testid="winner-conditional-programs"/);
+  assert.match(insp, /data-winner-trace-open/);
+  assert.match(readFileSync(join(SRC, "lib", "globeData.js"), "utf8"), /detail_ref: structure\.detail_ref \?\? undefined/);
   assert.match(readFileSync(join(SRC, "api.js"), "utf8"), /request2\(`\$\{PROJECTS_BASE\}\/\$\{projectId\}\/evaluation\/jurisdiction-winner\//);
 });

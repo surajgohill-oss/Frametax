@@ -66,7 +66,7 @@ def test_the_lists_the_frontend_reads_keep_every_entry_and_every_economics_and_d
     complete = apply_served_projections(copy.deepcopy(src), compact_winners=False)["best_per_jurisdiction"]["GB"]
     assert complete == {k: v for k, v in src["best_per_jurisdiction"]["GB"].items() if k not in COLLECTION_UNREAD_KEYS}, "the on-demand winner is the complete entry"
     compact = a["best_per_jurisdiction"]["GB"]
-    assert {k: v for k, v in compact.items() if k != "detail_omitted"} == {k: v for k, v in complete.items() if k not in WINNER_OMITTED_KEYS}, "only the named detail is omitted"
+    assert {k: v for k, v in compact.items() if k not in ("detail_omitted", "detail_ref")} == {k: v for k, v in complete.items() if k not in WINNER_OMITTED_KEYS}, "only the named detail is omitted"
     assert compact["detail_omitted"] == sorted(WINNER_OMITTED_KEYS & complete.keys())
     entries = (a["structures"] + a["optimizer_candidates"] + a["recommended_optimizer_options"] + a["evaluated_optimizer_alternatives"] + a["unlockable_alternatives"]
                + a["optimizer_opportunities_requiring_facts"] + list(a["best_per_jurisdiction"].values()) + a["top_by_structural_family"]["HYBRID_ANCHOR_COMPONENT"])
@@ -155,3 +155,4 @@ def test_a_compact_winner_keeps_every_segment_value_except_the_trace_and_points_
                                   "detail_ref": {"kind": "jurisdiction_winner", "code": "GB", "segment_index": 0}}
     assert out["segments"][1] == {"jurisdiction_code": "MU", "qpe_usd": 2.0}, "a segment without a trace is untouched"
     assert "segments[].qualification_trace" in out["detail_omitted"]
+    assert out["detail_ref"] == {"kind": "jurisdiction_winner", "code": "GB"}, "the structure-level Inspector reads its conditional programs and traces from here"

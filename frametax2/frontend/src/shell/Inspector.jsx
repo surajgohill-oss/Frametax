@@ -439,6 +439,69 @@ function useSegmentTrace(data) {
   return fetched || data.qualification_trace || [];
 }
 
+// The complete jurisdiction winner (conditional programs, every segment's qualification trace), read on demand, read only; null until loaded or when the structure is not a compact winner.
+function useWinnerDetail(ref) {
+  const [state, setState] = useState({ status: "idle", winner: null });
+  useEffect(() => {
+    setState({ status: "idle", winner: null });
+    const projectId = typeof window !== "undefined" ? window.location.pathname.match(/\/projects\/([^/]+)/)?.[1] : null;
+    if (!ref || ref.kind !== "jurisdiction_winner" || !projectId) return undefined;
+    let live = true;
+    setState({ status: "loading", winner: null });
+    getJurisdictionWinner(projectId, ref.code)
+      .then((r) => { if (live) setState({ status: r?.structure ? "ready" : "error", winner: r?.structure || null }); })
+      .catch(() => { if (live) setState({ status: "error", winner: null }); });
+    return () => { live = false; };
+  }, [ref?.kind, ref?.code]);
+  return state;
+}
+
+function WinnerDetailSections({ data, components }) {
+  const { openInspector } = useAppState();
+  const detail = useWinnerDetail(data.detail_ref);
+  if (!data.detail_ref) return null;
+  if (detail.status === "loading") return <p className="text-tertiary small" data-winner-detail="loading">Loading full program detail…</p>;
+  if (detail.status === "error") return <p className="text-tertiary small" data-winner-detail="error">The full program detail could not be loaded.</p>;
+  if (detail.status !== "ready") return null;
+  const programs = detail.winner.conditional_programs || [];
+  const segments = detail.winner.segments || [];
+  return (
+    <div data-winner-detail="ready">
+      {programs.length > 0 && (
+        <div className="inspector-sect" data-testid="winner-conditional-programs">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Conditional programs ({programs.length})</p>
+          <div className="row-list">
+            {programs.map((p, i) => (
+              <div className="row-item" key={`${p.node_id || p.program_name}-${i}`} style={{ cursor: "default" }}>
+                <div className="row-main">
+                  <div className="row-title small">{p.program_name || p.node_id}</div>
+                  <div className="row-sub">{humanizeToken(String(p.status || ""))}{p.documented_cap_usd != null ? <> · documented cap <Money value={p.documented_cap_usd} bare /></> : ""}</div>
+                  {p.pricing_note && <div className="row-sub">{p.pricing_note}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {components.some((c) => c.detail_ref) && (
+        <div className="inspector-sect" data-testid="winner-segment-traces">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Qualification traces</p>
+          {components.map((c, i) => {
+            const seg = c.detail_ref ? segments[c.detail_ref.segment_index] : null;
+            if (!seg) return null;
+            return (
+              <button key={`${c.code}-${i}`} type="button" className="ghost-action" data-winner-trace-open={c.detail_ref.segment_index}
+                onClick={() => openInspector("allocation-segment", { ...seg, structureLabel: data.label })}>
+                {jurisdictionName(c.code)}{c.program_slug ? ` · ${programDisplay(c.program_slug)}` : ""} — account trace ({(seg.qualification_trace || []).length})
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AllocationSegmentInspector({ data }) {
   const trace = useSegmentTrace(data);
   const flaggedTrace = trace.filter((t) => isFlagged(t.state));
@@ -761,6 +824,7 @@ function StructureDetailInspector({ data }) {
           </div>
         </div>
       )}
+      <WinnerDetailSections data={data} components={components} />
       {data.blockers?.length > 0 && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why this structure isn't fully priced</p>

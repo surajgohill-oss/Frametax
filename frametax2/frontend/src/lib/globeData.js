@@ -730,6 +730,8 @@ export function buildCandidateDetail(structure) {
     rate_floor: row.rate_floor ?? null,
     rate_ceiling: row.rate_ceiling ?? null,
     is_band_ceiling: !!row.is_band_ceiling,
+    // compact jurisdiction winners: where this segment's omitted qualification trace is read on demand (Inspector)
+    detail_ref: row.detail_ref ?? undefined,
   } : {
     code: row.jurisdiction_code ?? null,
     program_slug: row.program_slug ?? null,
@@ -776,6 +778,8 @@ export function buildCandidateDetail(structure) {
     blockers: structure.blockers || [],
     warnings: structure.warnings || [],
     components,
+    // compact jurisdiction winner: the complete winner (conditional programs, segment traces) is read on demand by the Inspector
+    detail_ref: structure.detail_ref ?? undefined,
     // PRODUCER_OPTIMIZER_SCENARIO_CANONICALIZATION (2026-09-21): present only on an
     // optimizer_scenarios representative (canonical_production_view.py) — the count of
     // raw search/enumeration iterations this one canonical scenario collapsed. Absent
