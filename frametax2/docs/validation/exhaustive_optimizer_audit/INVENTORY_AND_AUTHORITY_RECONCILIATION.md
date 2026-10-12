@@ -23,6 +23,11 @@
 
 ## 2. Rest-of-World Program Inventory Reconciliation
 
+> [!IMPORTANT]
+> **Distinction Between Internal Engine Inventory Reconciliation vs. Independent Official Coverage:**
+> - **Internal Inventory Reconciliation (DELIVERED):** Confirms exact 1:1 mathematical conservation between the engine's internal structures (164 Canonical Program Identities in `canonical_program_identity.py`, 81 RateRules in `program_rate_rules_worldwide.py`, 347 Global Inventory entries in `global_inventory*.py`, and 13 Same-Jurisdiction Stack pairs).
+> - **Independent Official Coverage (OPEN):** External reconciliation against primary legislation and film commission directories across all 190+ sovereign and sub-national jurisdictions is **NOT 100% complete**. Disclosing the engine catalogue structure does NOT prove external statutory completeness.
+
 ### 2.1 Universe Dimensions in Frozen Engine 1.122
 - **Canonical Identities (`row_identities`):** **164 total entries** registered in `canonical_program_identity.py` / `canonical_program_consolidation.py`.
   - `CURRENT` Priceable Validated: **48**
@@ -53,19 +58,19 @@
 
 ---
 
-## 3. Separation of Frozen 1.122 Engine Findings vs. Claude Remediation
+## 3. Separation of Frozen 1.122 Engine Findings vs. Remediation Commit History
 
-To preserve rigorous audit provenance, findings must be strictly attributed to their origin:
+To preserve rigorous audit provenance, findings must be strictly attributed to their origin, and remediation claims must cite exact commits in the remediation checkout (`/Users/Suraj/cineglobe-claude-global-optimizer-remediation/frametax2`):
 
-| Defect / Feature ID | Frozen Engine `canonical-1.122.0` (`59566fd1`) State | Claude Subsequent Remediation Branch | Audit Adjudication & Responsibility |
+| Defect / Feature ID | Frozen Engine `canonical-1.122.0` (`59566fd1`) State | Verified Remediation Commit | Audit Adjudication & Scope Boundary |
 |:---|:---|:---|:---|
-| **`NA-CODEX-08`** (Ontario CPTC + OPSTC) | `stacking_rules.py` line 161 hardcodes `("ca_federal_cptc", "on_opstc")` as `mutually_exclusive`. `check_all_pairs` rejects the stack. | Claude repairs `stacking_rules.py` to allow the pair with assistance netting. | Confirmed as an **active engine defect** in frozen 1.122. Independent audit calculator correctly prices the pair under Ontario Creates Guidelines § 1.01. |
-| **`NA-HYB-DEF-06`** (NY § 31 Post Gate) | `program_requirements.py` line 337 hardcodes `min_local_spend_usd = 1_000_000.0`. Omits statutory 75% post / 10% VFX percentage gateways. | Claude repairs gateway logic in requirements bridge. | Confirmed as an **active engine defect** in frozen 1.122. Standalone post/VFX slices meeting percentage thresholds are validly priced outside the engine. |
-| **`NA-HYB-DEF-07`** (PSTC Provincial Stacks) | `stacking_rules.py` completely omits foreign service pairs (`ca_federal_pstc + on_opstc`, `ca_bc_pstc`, `ca_qc_pstc`, `ca_mb`). | Claude wires missing pairs in `stacking_rules.py` and `canonical_stack_bridge.py`. | Confirmed as an **active engine defect** in frozen 1.122. Only Ontario is proven independently; BC/QC/MB remain open pending individual netting authority. |
-| **`ROW-DEF-001`** (Spain Category 2 Base) | `program_spend_rules.py:782-795` omits `miscellaneous`, `production_sound`, and `general_administration`. | Claude repairs category inclusions in `ES_RULES`. | Confirmed as an **active engine coverage defect** in frozen 1.122; dollar impact is conditional on Spanish supplier spend split. |
-| **`ROW-DEF-002`** (ROW PDV Spending Base) | `program_spend_rules.py:169-172` places all 5 ROW PDV programs in `OPEN_DEFAULT_INCLUDE`, pricing on full production. | Claude moves PDV programs to `POST_VFX_ONLY`. | Confirmed as an **active engine classification defect** in frozen 1.122. |
-| **`ROW-DEF-004`** (ROW Same-Jurisdiction Stacks) | `canonical_stack_bridge.py` has zero rules for 13 ROW pairs, falsely rejecting lawful AU Federal+State stacks as `UNRESOLVED_NO_AUTHORITY`. | Claude adds pair rules to bridge. | Confirmed as an **active engine defect** in frozen 1.122. |
-| **Project Visibility Regression** | Freshness predicate in `canonical_evaluation.py` hides FVD, BH, and LU from Project Library and Company Globe. | Claude restores durable project visibility in services. | Engine obligation; outside audit scope. |
+| **`NA-CODEX-08`** (Ontario CPTC + OPSTC) | `stacking_rules.py` line 161 hardcodes `("ca_federal_cptc", "on_opstc")` as `mutually_exclusive`. `check_all_pairs` rejects the stack. | **Commit `3a8f7370`** (engine 1.125.0): rewrote OPSTC stacking rules, removed false exclusivity, and implemented assistance netting. | Confirmed as an **active engine defect in frozen 1.122**. Independent audit calculator correctly prices the pair under Ontario Creates Guidelines § 1.01. |
+| **`NA-HYB-DEF-02` / `NA-HYB-DEF-07`** (Manitoba Federal Stacks & Gates) | Manitoba 30% Cost-of-Production credit blocked on zero-labour segments; missing federal PSTC stack pair in `_SLUG_PAIR_RULES`. | **Commit `29740f70`** (engine 1.127.0) & **Commit `c52e2cd7`** (engine 1.128.0): resolved Manitoba federal stacks, disclosed PSTC reduction as a conservative bound. | Confirmed as an **active engine defect in frozen 1.122**. Modeled as conservative planning bound in audit calculator. |
+| **`NA-HYB-DEF-06`** (NY § 31 Post Gate) | `program_requirements.py` line 337 hardcodes `min_local_spend_usd = 1_000_000.0`. Omits statutory 75% post / 10% VFX percentage gateways. | **Pending / Unrepaired in Remediation Checkout**: Not present in remediation checkout commit history. | Confirmed as an **active engine defect in frozen 1.122**. Standalone post/VFX slices meeting percentage thresholds are validly priced outside the engine. |
+| **`ROW-DEF-001`** (Spain Category 2 Base) | `program_spend_rules.py:782-795` omits `miscellaneous`, `production_sound`, and `general_administration`. | **UNREPAIRED IN REMEDIATION CHECKOUT** (no commit exists in remediation branch modifying `ES_RULES` in `program_spend_rules.py`). | Prior claim that Claude repaired Spain is **WITHDRAWN**. Stans as an active frozen 1.122 coverage observation; dollar impact is conditional on Spanish supplier spend split. |
+| **`ROW-DEF-002`** (ROW PDV Spending Base) | `program_spend_rules.py:169-172` places all 5 ROW PDV programs in `OPEN_DEFAULT_INCLUDE`, pricing on full production. | **UNREPAIRED IN REMEDIATION CHECKOUT** (no commit exists in remediation branch moving ROW PDV programs to `POST_VFX_ONLY`). | Prior claim that Claude repaired PDV programs is **WITHDRAWN**. Remains an active frozen 1.122 engine classification defect (`ROW-DEF-002`). |
+| **`ROW-DEF-004`** (ROW Same-Jurisdiction Stacks) | `canonical_stack_bridge.py` has zero rules for 13 ROW pairs, falsely rejecting lawful AU Federal+State stacks as `UNRESOLVED_NO_AUTHORITY`. | **UNREPAIRED IN REMEDIATION CHECKOUT** (no commit exists in remediation branch wiring ROW same-jurisdiction pairs). | Prior claim that Claude repaired ROW stacks is **WITHDRAWN**. Remains an active frozen 1.122 engine defect (`ROW-DEF-004`). |
+| **Project Visibility Regression** | Freshness predicate in `canonical_evaluation.py` hides FVD, BH, and LU from Project Library and Company Globe. | **Commit `9d29ecb6`**: retained evaluation history controls stage, navigation, and actions; opening retained results never evaluates. | Engine served-layer repair; outside audit scope. |
 
 ---
 

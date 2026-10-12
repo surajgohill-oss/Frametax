@@ -984,41 +984,64 @@ def compute_independent_multi_program_stack_from_lines(
         )
 
     if slug_set == {"ca_federal_pstc", "ca_bc_pstc"}:
-        # CRA BC PSTC rate is 36% for shoots commencing post-2024-12-31 (28% for historical pre-2025 shoots)
+        # Primary Authority: ITA § 125.5(1) & CRA Form T1177 / Guide RC4385:
+        # Federal PSTC applies to qualified Canadian labour expenditure net of assistance.
+        # Under BC Income Tax Act Part 5 s. 82.1, BC PSTC is a pure labour-based credit (36% of accredited BC labour post-2024-12-31).
+        # Since BC PSTC is 100% labour assistance, 100% of the BC credit reduces the federal Canadian labour base:
+        #   net_labour = labour_cat_usd - bc_inc = labour_cat_usd * (1 - 0.36) = 0.64 * labour_cat_usd.
+        #   Federal PSTC = 16% * (0.64 * labour_cat_usd) = 10.24% * labour_cat_usd.
+        #   Combined theoretical yield = 36% + 10.24% = 46.24% of qualifying BC labour.
         bc_rate = 0.36
         bc_inc = round(bc_rate * labour_cat_usd, 2)
         pstc_net_labour = round(max(0.0, labour_cat_usd - bc_inc), 2)
         pstc_inc = round(0.16 * pstc_net_labour, 2)
+        total_inc = round(bc_inc + pstc_inc, 2)
         return (
             "NOT_ESTABLISHED",
             open_base_usd,
-            round(bc_inc + pstc_inc, 2),
+            total_inc,
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_BC_PSTC_SERVICE_STACK)",
-            f"ITA § 125.5(1) + BC Income Tax Act s. 81.2: prospective foreign-service stack pairing 36% BC PSTC (${bc_inc:,.2f}, post-2024-12-31 rate) with 16% Federal PSTC on Canadian labour net of BC PSTC assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${bc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+            f"ITA § 125.5(1) + BC Income Tax Act s. 82.1: prospective foreign-service stack pairing 36% BC PSTC (${bc_inc:,.2f}, post-2024-12-31 rate) with 16% Federal PSTC on Canadian labour net of 100% labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
         )
 
     if slug_set == {"ca_federal_pstc", "ca_qc_pstc"}:
+        # Primary Authority: ITA § 125.5(1) & CRA Guide RC4385 / Form T1177 vs. Quebec Taxation Act s. 1029.8.36.0.0.4:
+        # Quebec QPSTC (25% all-spend base rate) provides assistance on both labour and non-labour production costs.
+        # Per Ontario Creates Guidelines § 1.05(E) and CRA assistance principles:
+        # (1) Conservative / Labour-Attributable Netting: If QPSTC assistance is allocated proportionally across all spend,
+        #     the labour portion of QPSTC assistance is 25% of labour spend (net labour = 75% of labour).
+        # (2) Total-Assistance Ceiling / Conservative Bound: If total QPSTC dollar assistance (25% * open_base_usd)
+        #     is deducted directly from Canadian labour, net labour may be further reduced.
+        # Under planning baseline, modeled at proportional labour allocation (net labour = 75% labour).
         qpstc_inc = round(0.25 * open_base_usd, 2)
         pstc_net_labour = round(max(0.0, labour_cat_usd * (1.0 - 0.25)), 2)
         pstc_inc = round(0.16 * pstc_net_labour, 2)
+        total_inc = round(qpstc_inc + pstc_inc, 2)
         return (
             "NOT_ESTABLISHED",
             open_base_usd,
-            round(qpstc_inc + pstc_inc, 2),
+            total_inc,
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_QC_PSTC_SERVICE_STACK)",
-            f"ITA § 125.5(1) + Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: standard Canadian foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 25% QPSTC labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${qpstc_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+            f"ITA § 125.5(1) + Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 25% QPSTC proportional labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07). Full statutory netting text remains open.",
         )
 
     if slug_set == {"ca_federal_pstc", "ca_mb_film_video_credit"}:
+        # Primary Authority: ITA § 125.5(1) & CRA Guide RC4385 vs. Manitoba Income Tax Act s. 7.6(6):
+        # Manitoba Cost-of-Production credit (30% all-spend) is an all-spend credit.
+        # Under CRA assistance principles, provincial assistance attributable to labour reduces the federal labour base.
+        # If proportional (30% labour assistance): net labour = 70% of labour_cat_usd.
+        # Note: If gross dollar assistance (30% * open_base_usd) is applied against labour as a conservative bound (Codex c52e2cd7),
+        # net labour can be smaller. Disclosed as conservative planning bound; exact statutory netting text remains open.
         mb_inc = round(0.30 * open_base_usd, 2)
         pstc_net_labour = round(max(0.0, labour_cat_usd * (1.0 - 0.30)), 2)
         pstc_inc = round(0.16 * pstc_net_labour, 2)
+        total_inc = round(mb_inc + pstc_inc, 2)
         return (
             "NOT_ESTABLISHED",
             open_base_usd,
-            round(mb_inc + pstc_inc, 2),
+            total_inc,
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_MB_SERVICE_STACK)",
-            f"ITA § 125.5(1) + Manitoba ITA s. 7.6(6): Manitoba 30% Cost-of-Production credit (${mb_inc:,.2f}) + 16% Federal PSTC on Canadian labour net of 30% Manitoba assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${mb_inc + pstc_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+            f"ITA § 125.5(1) + Manitoba ITA s. 7.6(6): foreign-service stack pairing 30% Manitoba Cost-of-Production credit (${mb_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 30% proportional labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07). Full statutory netting text remains open.",
         )
 
     if slug_set == {"ca_federal_cptc", "on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
