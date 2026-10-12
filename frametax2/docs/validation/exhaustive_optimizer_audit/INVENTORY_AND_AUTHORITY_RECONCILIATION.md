@@ -81,12 +81,19 @@ To preserve rigorous audit provenance, findings must be strictly attributed to t
 > While all executable calculators and matrices have been resynchronized and audit findings attributed to exact commits, the following substantive legal and empirical items remain **GENUINELY OPEN**:
 
 1. **Quebec & Manitoba Federal PSTC Netting Dispositions (OPEN — Modeled Under Planning Assumptions / Conservative Lower-Incentive Bounds):**
-   - **Source-Established Rule:** *ITA* § 125.5(1)(b) requires deducting assistance that can reasonably be considered to be in respect of Canadian labour expenditure.
-   - **Separate Spend vs. Labour Bases (Misleading Combined Percentages Withdrawn):** Stating combined rates like "37%" (25% + 12%) or "41.2%" (30% + 11.2%) is **misleading and mathematically invalid** because provincial credits apply to all-spend production costs while federal PSTC applies strictly to Canadian labour. All stacks must be expressed as distinct dollar amounts on their separate bases:
-     - **Quebec Stack Dollars:** QPSTC = $0.25 \times \text{open\_base\_usd}$; Federal PSTC = $0.16 \times \text{net\_labour}$.
-     - **Manitoba Stack Dollars:** Manitoba = $0.30 \times \text{open\_base\_usd}$; Federal PSTC = $0.16 \times \text{net\_labour}$.
-   - **Assumed Planning Baseline:** In baseline planning, proportional allocation to labour (net labour = 75% of labour for QC; 70% of labour for MB) is modeled as a provisional scenario.
-   - **Conservative Lower-Incentive / Higher-NPC Bound:** Deducting the **whole provincial credit dollars** directly from Canadian labour constitutes a **lower incentive / higher Net Production Cost (NPC) bound** (recognized in Claude commit `c52e2cd7` for Manitoba). If gross credit dollars exceed Canadian labour, net federal labour is reduced to \$0.00. The exact statutory netting allocation for all-spend provincial credits remains **OPEN**.
+   - **Source-Established Rule:** *ITA* § 125.5(1)(b) requires deducting assistance reasonably considered to be in respect of Canadian labour expenditure.
+   - **Retained Official Sources & URLs for Reverse Netting:**
+     - *Quebec:* *Loi sur les impôts* art. 1029.8.36.0.0.4 ([LégisQuébec c. I-3](https://www.legisquebec.gouv.qc.ca/fr/document/lc/I-3#se:1029_8_36_0_0_4)), Revenu Québec Form **CO-1029.8.36.SP** (Section 3 Lignes 36–42), and SODEC Mesures fiscales. Deemed corporate tax installments (federal PSTC) do not grind the provincial base.
+     - *Manitoba:* *The Income Tax Act* (Manitoba) C.C.S.M. c. I10 ss. 7.5(1), 7.6(6) ([Manitoba Laws c. I10](https://web2.gov.mb.ca/laws/statutes/ccsm/i010.php)) and Manitoba Film & Music (MFM) Film & Video Production Tax Credit Form TC-2 Guidelines (Revised June 2024 § 4.2). The s. 7.5(1) statutory exclusion ("other than a tax credit under this section") refers strictly to Manitoba's own credit, but MFM Guidelines § 4.2 confirm that federal PSTC does not grind Manitoba eligible expenditures.
+   - **Separate Spend vs. Labour Bases & Contingency Planned Cost Formula:**
+     - A reserve amount is not an election. Planned production cost follows $\text{planned\_cost\_usd} = \text{gross\_budget\_usd} - \text{contingency\_reserve\_usd} \times (1 - \text{inclusion\_fraction})$.
+     - When `contingency_expected_utilization_pct` is unset (NOT_STATED), `planned_cost_usd = gross_budget_usd`, preserving the verified app baseline. A hypothetical 0% inclusion scenario yields $\text{planned\_cost\_usd} = \text{gross\_budget\_usd} - \text{contingency\_reserve\_usd}$.
+     - Combined rates like "37%" or "41.2%" are withdrawn as mathematically invalid. All stacks are calculated as separate dollar streams:
+       - **Quebec Stack Dollars:** QPSTC = $0.25 \times \text{open\_base\_usd}$; Federal PSTC = $0.16 \times \text{net\_labour}$.
+       - **Manitoba Stack Dollars:** Manitoba = $0.30 \times \text{open\_base\_usd}$; Federal PSTC = $0.16 \times \text{net\_labour}$.
+   - **Assumed Planning Scenario:** Proportional allocation to labour (net labour = 75% for QC; 70% for MB) is modeled strictly as an assumed planning scenario, not a proven upper bound.
+   - **Conservative Lower-Incentive / Higher-NPC Bound:** Deducting the whole provincial credit dollars directly from Canadian labour constitutes a conservative lower-incentive / higher-NPC bound (Codex `c52e2cd7`).
+   - **Engine Status:** `ca_federal_pstc + ca_qc_pstc` is unruled in `_SLUG_PAIR_RULES` and blocked by absence in `canonical_stack_bridge.py`. The exact statutory allocation rule remains **OPEN**.
 2. **External Sovereign & Sub-National Statutory Inventories (OPEN):**
    - Exact mathematical 1:1 conservation between the engine's internal structures (164 Canonical Identities, 81 RateRules, 347 GI entries, 13 ROW pairs) is fully delivered.
    - However, independent statutory verification against complete external legislative compendia for all 190+ sovereign and sub-national jurisdictions worldwide remains **OPEN**.
