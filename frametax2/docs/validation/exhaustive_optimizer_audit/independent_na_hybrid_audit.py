@@ -1001,7 +1001,7 @@ def compute_independent_multi_program_stack_from_lines(
             open_base_usd,
             total_inc,
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_BC_PSTC_SERVICE_STACK)",
-            f"ITA § 125.5(1) + BC Income Tax Act s. 82.1: prospective foreign-service stack pairing 36% BC PSTC (${bc_inc:,.2f}, post-2024-12-31 rate) with 16% Federal PSTC on Canadian labour net of 100% labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
+            f"ITA § 125.5(1)(b) & BC Income Tax Act s. 82.1: statutory foreign-service stack pairing 36% BC PSTC (${bc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 100% BC labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07).",
         )
 
     if slug_set == {"ca_federal_pstc", "ca_qc_pstc"}:
@@ -1021,8 +1021,8 @@ def compute_independent_multi_program_stack_from_lines(
             "NOT_ESTABLISHED",
             open_base_usd,
             total_inc,
-            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_QC_PSTC_SERVICE_STACK)",
-            f"ITA § 125.5(1) + Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 25% QPSTC proportional labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07). Full statutory netting text remains open.",
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_QC_PSTC_SERVICE_STACK / ASSUMED_PROPORTIONAL_NETTING_OPEN)",
+            f"ITA § 125.5(1) & Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour (${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Netting uses an ASSUMED proportional labour allocation (net labour = 75% labour); exact statutory netting text remains OPEN.",
         )
 
     if slug_set == {"ca_federal_pstc", "ca_mb_film_video_credit"}:
@@ -1040,8 +1040,8 @@ def compute_independent_multi_program_stack_from_lines(
             "NOT_ESTABLISHED",
             open_base_usd,
             total_inc,
-            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_MB_SERVICE_STACK)",
-            f"ITA § 125.5(1) + Manitoba ITA s. 7.6(6): foreign-service stack pairing 30% Manitoba Cost-of-Production credit (${mb_inc:,.2f}) with 16% Federal PSTC on Canadian labour net of 30% proportional labour assistance (${pstc_net_labour:,.2f} × 16% = ${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Omitted from _SLUG_PAIR_RULES in stacking_rules.py (NA-HYB-DEF-07). Full statutory netting text remains open.",
+            "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_MB_SERVICE_STACK / ASSUMED_PROPORTIONAL_NETTING_OPEN)",
+            f"ITA § 125.5(1) & Manitoba Income Tax Act s. 7.6(6): foreign-service stack pairing 30% Manitoba Cost-of-Production credit (${mb_inc:,.2f}) with 16% Federal PSTC on Canadian labour (${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Netting uses an ASSUMED proportional labour allocation (net labour = 70% labour; conservative gross assistance bound recognized per Codex c52e2cd7); exact statutory netting text remains OPEN.",
         )
 
     if slug_set == {"ca_federal_cptc", "on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
