@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 
 from app.calculators.allocation_pricing import price_segment
-from app.calculators.canonical_requirements_gate_bridge import FAILED, SATISFIED, UNKNOWN, evaluate_requirements_gate
+from app.calculators.canonical_requirements_gate_bridge import FAILED, NOT_APPLICABLE, SATISFIED, UNKNOWN, evaluate_requirements_gate
 from app.calculators.production_allocation import AccountAllocation, AssignmentKind
 from app.calculators.structural_archetype_generator import StructuralComponent, generate_structural_candidate
 
@@ -81,13 +81,33 @@ def test_the_post_gateway_fails_only_when_the_local_share_is_below_the_lesser_th
     assert _state(just_under, "ny_post_gateway") == FAILED
 
 
-def test_an_unknown_worldwide_figure_is_unknown_never_a_failure_and_a_vfx_shortfall_is_disclosed_not_failed():
+def test_an_unknown_worldwide_figure_is_unknown_never_a_failure():
     unknown = _gate({"post_production": 100_000.0}, None)
     assert _state(unknown, "ny_post_gateway") == UNKNOWN and not unknown.failed
-    vfx = _gate({"post_production": 1_000_000.0, "vfx": 100_000.0}, {"post_production": 1_000_000.0, "vfx": 2_000_000.0})
-    assert _state(vfx, "ny_post_gateway") == SATISFIED               # 1,100,000 local vs the lesser of 1,000,000 / 75% x 3,000,000
-    assert _state(vfx, "ny_vfx_gateway") == UNKNOWN                  # 100,000 < lesser of 500,000 / 200,000; cumulative-or-alternative not stated
-    assert not vfx.failed
+
+
+def test_each_category_has_its_own_statutory_test_and_a_category_with_no_claim_is_not_tested():
+    # Tax Law 31(a)(3)(i): post excluding VFX vs the lesser of 1,000,000 or 75% of worldwide post excluding VFX; (ii): VFX vs the lesser of 500,000 or 10%.
+    post_only = _gate({"post_production": 100_000.0}, {"post_production": 100_000.0, "vfx": 2_000_000.0})
+    assert _state(post_only, "ny_post_gateway") == SATISFIED and _state(post_only, "ny_vfx_gateway") == NOT_APPLICABLE
+    vfx_only_short = _gate({"vfx": 100_000.0}, {"post_production": 1_000_000.0, "vfx": 2_000_000.0})     # lesser of 500,000 / 200,000 = 200,000
+    assert _state(vfx_only_short, "ny_vfx_gateway") == FAILED and vfx_only_short.failed
+    vfx_ok = _gate({"vfx": 200_000.0}, {"vfx": 2_000_000.0})
+    assert _state(vfx_ok, "ny_vfx_gateway") == SATISFIED
+    # the VFX test is not diluted by non-VFX post cost: 750,000 of 1,000,000 post passes even though total post is 3,000,000
+    split = _gate({"post_production": 750_000.0}, {"post_production": 1_000_000.0, "vfx": 2_000_000.0})
+    assert _state(split, "ny_post_gateway") == SATISFIED
+
+
+def test_a_failed_category_is_excluded_and_the_passing_category_is_still_claimed():
+    world = {"post_production": 1_000_000.0, "vfx": 2_000_000.0}
+    both = _price(NYP, "US-NY", [("post_production", 1_000_000.0), ("vfx", 100_000.0)], 3_000_000.0, worldwide_category_spend_usd=world)
+    assert both.executable is True, both.blockers
+    assert both.qpe_usd == pytest.approx(1_000_000.0)                  # VFX 100,000 < 200,000 is not eligible; post 1,000,000 >= 750,000 is
+    assert both.excluded_usd == pytest.approx(100_000.0) and both.allocated_usd == pytest.approx(1_100_000.0)
+    assert any("Tax Law 31(a)(3)" in n for n in both.notes)
+    neither = _price(NYP, "US-NY", [("post_production", 100_000.0), ("vfx", 100_000.0)], 3_000_000.0, worldwide_category_spend_usd=world)
+    assert neither.executable is False
 
 
 def test_the_post_credit_prices_a_small_post_scope_through_the_real_kernel():

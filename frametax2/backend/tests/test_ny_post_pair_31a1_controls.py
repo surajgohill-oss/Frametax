@@ -31,7 +31,7 @@ def test_the_pair_is_mutually_exclusive_on_the_film_level_condition_not_on_cost_
     text = rule["condition_text"]
     assert "31(a)(1)" in text and "unless eligible for the credit under section twenty-four" in text
     assert "31(a)(4)" in text and "disjoint" in text
-    assert stacking_rules.STACKING_RULES_VERSION.startswith("1.5.")
+    assert tuple(int(n) for n in stacking_rules.STACKING_RULES_VERSION.split(".")) >= (1, 5, 0)
 
 
 def test_disjoint_cost_pools_do_not_make_the_production_and_post_credits_composable():

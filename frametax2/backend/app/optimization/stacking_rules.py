@@ -19,7 +19,7 @@ from __future__ import annotations
 #: so a stacking-compatibility/reduction-rule change invalidates cached
 #: served evaluations, including combined-structure results. Bump on any
 #: material change.
-STACKING_RULES_VERSION = "1.5.0"  # 1.5.0: NY_TAX_LAW_31A1 -- ny_state_film + us_ny_post_production_credit is mutually_exclusive again (film-level eligibility under Tax Law 31(a)(1): the post credit is denied to a taxpayer eligible under section 24 for the film, so disjoint cost pools do not satisfy it; 31(a)(4) same-cost bar is separate). Supersedes the 1.3.0 distinct-cost disposition for this pair.  # 1.4.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- added ca_federal_pstc+ca_federal_cptc (mutually_exclusive), found missing via direct primary-source research (canada.ca CAVCO CPTC and PSTC application guidelines, both fetched and quoted directly): "a corporation cannot receive both the PSTC and the CPTC for the same production" / "The PSTC is not available where a production has received the Canadian Film or Video Production Tax Credit." Every OTHER program's own PSTC-equivalent pairing against CPTC (ca_bc_pstc, on_opstc) already had this rule; the federal PSTC/CPTC pair itself did not, despite being the most direct application of the same statutory distinction (ITA §125.4 domestic content vs §125.5 foreign service).
+STACKING_RULES_VERSION = "1.6.0"  # 1.6.0: NA-CODEX-08 -- on_opstc + ca_federal_cptc is a spend_reduction (Ontario Creates OPSTC Guidelines s.1.01 permit the OPSTC alongside the CPTC; the provincial credit is assistance lowering the CPTC 60% cost cap), no longer mutually_exclusive; added on_opstc + ca_federal_pstc spend_reduction (only the OPSTC labour portion is assistance, s.3.02). OFTTC/OPSTC and CPTC/PSTC stay mutually_exclusive.  # 1.5.0: NY_TAX_LAW_31A1 -- ny_state_film + us_ny_post_production_credit is mutually_exclusive again (film-level eligibility under Tax Law 31(a)(1): the post credit is denied to a taxpayer eligible under section 24 for the film, so disjoint cost pools do not satisfy it; 31(a)(4) same-cost bar is separate). Supersedes the 1.3.0 distinct-cost disposition for this pair.  # 1.4.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- added ca_federal_pstc+ca_federal_cptc (mutually_exclusive), found missing via direct primary-source research (canada.ca CAVCO CPTC and PSTC application guidelines, both fetched and quoted directly): "a corporation cannot receive both the PSTC and the CPTC for the same production" / "The PSTC is not available where a production has received the Canadian Film or Video Production Tax Credit." Every OTHER program's own PSTC-equivalent pairing against CPTC (ca_bc_pstc, on_opstc) already had this rule; the federal PSTC/CPTC pair itself did not, despite being the most direct application of the same statutory distinction (ITA §125.4 domestic content vs §125.5 foreign service).
 # 1.3.0: CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION -- added ca_bc_pstc+ca_bc_dave (ADDITIVE, EVID-004) and ca_federal_cptc+ca_sk_creative_saskatchewan_grant (allowed, ARCH-11's own canonical example), both previously missing from the registry entirely; corrected ny_state_film+us_ny_post_production_credit from blanket mutually_exclusive to same_cost_prohibited_distinct_costs_allowed (CODEX_STACKING_REGISTRY_RECONCILIATION.csv: WRONG_DISPOSITION), consumed by the new generic structural_archetype_generator as non-blocking (distinct-cost enforced structurally) and by the older same-jurisdiction bridge as still-blocking (no distinct-cost awareness there).
 # 1.2.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT -- added on_ofttc+ocase and on_opstc+ocase spend_reduction rules (confirmed directly against ontariocreates.ca's own official OCASE page), matching CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015.
 # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
@@ -511,12 +511,28 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "receive both the CPTC and the PSTC — production type is mutually exclusive."
         ),
     },
+    # NA-CODEX-08 (2026-10-12): Ontario Creates OPSTC Guidelines (May 2025) s.1.01: "The OPSTC may be claimed alone, or in addition to a federal Film or
+    # Video Production Services Tax Credit (or a Canadian Film or Video Production Tax Credit)." The federal CPTC/PSTC exclusion is between the two
+    # FEDERAL credits (CAVCO) and is not generalized to a provincial services credit. Assistance (CRA RC4164 T1131 lines 421-430): the provincial credit
+    # reduces the production cost that sets the 60% CPTC cap; it does not reduce CPTC labour.
     frozenset({"on_opstc", "ca_federal_cptc"}): {
-        "rule_type": "mutually_exclusive",
+        "rule_type": "spend_reduction",
         "condition_text": (
-            "CPTC applies only to Canadian domestic content productions (ITA §125.4). "
-            "Ontario OPSTC applies only to accredited foreign service productions (ITA §125.5). "
-            "A production cannot simultaneously qualify for both — production type is mutually exclusive."
+            "Ontario Creates OPSTC Guidelines (May 2025) s.1.01 permit the OPSTC to be claimed in addition to the federal CPTC. CRA RC4164 (Form T1131 guide, "
+            "lines 421-430): the provincial credit is assistance that reduces the PRODUCTION COST which sets the CPTC cap: qualified labour expenditure = the lesser "
+            "of the labour expenditure and 60% x (production cost - assistance); labour itself is not reduced. The two federal credits (CPTC and PSTC) remain "
+            "mutually exclusive, and OFTTC (domestic) and OPSTC (service) remain mutually exclusive."
+        ),
+    },
+    # Ontario Creates OPSTC Guidelines s.3.02 (comparison with the federal PSTC): "Federal Tax Credits do not constitute assistance. Provincial tax credits
+    # constitute assistance. Only the labour portion of the OPSTC constitutes assistance." So the OPSTC reduces the PSTC labour expenditure by its labour
+    # portion only (OPSTC rate x Ontario labour), not by the whole credit.
+    frozenset({"on_opstc", "ca_federal_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Ontario Creates OPSTC Guidelines (May 2025) s.1.01 permit the OPSTC in addition to the federal PSTC; s.3.02: provincial tax credits are assistance but "
+            "only the LABOUR portion of the OPSTC constitutes assistance, which reduces the PSTC labour expenditure (labour portion = OPSTC rate x Ontario labour, "
+            "bounded by the credit itself). Federal credits are not assistance to the OPSTC."
         ),
     },
     frozenset({"on_ofttc", "on_opstc"}): {

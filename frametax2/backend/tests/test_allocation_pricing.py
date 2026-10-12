@@ -417,10 +417,16 @@ class TestWorldwideCoverage:
         # confirmed via the SAME examinations discovery already computed,
         # not guessed or hardcoded.
         examinations = out["discovery"]["examinations"]
-        expected = {
-            ex["jurisdiction_code"] for ex in examinations
-            if ex["production_capable"] and ex["jurisdiction_code"] != "MU"
-        }
+        # A capable jurisdiction is structurable when discovery accepted it or the structured profile registry holds its program slug
+        # (little_utopia_state: "slugs come from the same structured profile discovery used"). The federal "US" wrapper has no structured profile
+        # since the state programs replaced it (ba045e90), so it stays a visible discovery examination (capability_only, no rate rules, never priced)
+        # rather than a structure: nothing is silently dropped, and nothing is priced on an invented slug.
+        import app.calculators.jurisdiction_comparison as _jc
+        capable = {ex["jurisdiction_code"]: ex for ex in examinations if ex["production_capable"] and ex["jurisdiction_code"] != "MU"}
+        expected = {c for c, ex in capable.items() if ex["accepted"] or _jc.ALL_PROFILES.get(c) is not None}
+        assert set(capable) - expected == {c for c in capable if not capable[c]["accepted"] and _jc.ALL_PROFILES.get(c) is None}
+        for code in set(capable) - expected:
+            assert capable[code]["classification"] == "capability_only" and capable[code]["has_rate_rules"] is False, code
         assert targets == expected
         # at least one prices (MT, above its min spend); the others block
         # honestly — GR/IE on their own minimum-spend rule, the
@@ -448,9 +454,11 @@ class TestWorldwideCoverage:
         # discovery-accepted, non-baseline partners (see the invariant in
         # test_component_routing_auto_evaluated_for_every_executable_partner).
         examinations = out["discovery"]["examinations"]
+        import app.calculators.jurisdiction_comparison as _jc
         expected_evaluated = sum(
             1 for ex in examinations
             if ex["production_capable"] and ex["jurisdiction_code"] != "MU"
+            and (ex["accepted"] or _jc.ALL_PROFILES.get(ex["jurisdiction_code"]) is not None)
         )
         assert cats["component_routing_anchor"]["candidates_evaluated"] == expected_evaluated
         # co-production is EVALUATED-as-zero with a proven reason (MU has no

@@ -3641,6 +3641,7 @@ register(ProgramRequirementsProfile(
     ),
     additional_facts={
         "pennsylvania_spend_test": "Pennsylvania production expenses must be at least 60% of the film's total production expenses (proportional test; no absolute minimum spend published).",
+        "project_eligibility_gate": "Enforced on the whole structure (calculators/project_eligibility_gates.PROJECT_GATES): a segment whose Pennsylvania share of the structure's allocated spend is below 60% is not priced; the candidate stays visible as RULE_REJECTED / PROJECT_ELIGIBILITY_GATE_FAILED. No days branch and no waiver are modeled.",
         "rate": "25% transferable credit; +5% uplift for use of a qualified production facility (30% maximum).",
         "per_project_limit": "No single award may exceed 20% of the aggregate Film Tax Credits available in a fiscal year (a proportional cap, not a fixed dollar cap).",
         "annual_cap_vs_allocation": "Sources state a USD 100,000,000 annual cap alongside a current fiscal-year allocation of USD 60,000,000; under that allocation the 20% rule produces a USD 12,000,000 maximum single award. Both figures preserved — cap and allocation are distinct concepts and are not collapsed.",
@@ -3691,6 +3692,7 @@ register(ProgramRequirementsProfile(
     additional_facts={
         "two_distinct_credits": "Payroll credit 25% (gated on at least USD 50,000 total MA production expenses in a consecutive 12-month period) and production expense credit 25% (gated on the 75% tests below). Distinct tests, not a single blended credit.",
         "seventy_five_percent_tests": "Production expense credit requires Massachusetts production expenses to EXCEED 75% of total production expenses, OR at least 75% of filming days to take place in Massachusetts.",
+        "project_eligibility_gate": "Enforced on the whole structure for the NON-PAYROLL credit only (project_eligibility_gates.PROJECT_GATES, scope non_payroll): below the strict 75% spend share, non-payroll costs are excluded unless the producer states at least 75% of filming days in Massachusetts (amount fact ma_filming_days_in_massachusetts_pct); unknown days leave the non-payroll credit a conditional planning scenario. The payroll credit (total Massachusetts production expenses of at least $50,000) is separate and stays.",
         "payroll_exclusion_nature": "Payments to an employee whose total payments for the motion picture equal or exceed USD 1,000,000 are EXCLUDED from qualifying payroll entirely — this is an exclusion threshold, not a capped inclusion.",
         "monetization": "Transferable at market rate, or cashed out with the Commonwealth at 90% of face value after satisfying tax liabilities.",
         "caps": "No annual cap and no per-project cap are published.",
@@ -4643,6 +4645,9 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="us_mn_film_production_credit", jurisdiction_code="US-MN",
+    # Minn. Stat. 116U.27 subd. 1(h)(2) (revisor.mn.gov, read 2026-10-12): a qualifying project is a film "for which the taxpayer has expended at least
+    # $1,000,000 in any consecutive 12-month period beginning after expenditures are first paid in Minnesota for eligible production costs".
+    min_local_spend_usd=1_000_000.0,
     local_entity_required=False,       # not stated as a gate on revenue.state.mn.us
     cultural_test_required=False,      # not mentioned in the official page; consistent with all pre-existing internal records
     preapproval_mandatory=True,        # applicants apply through Explore Minnesota Film for eligibility determination and credit allocation before claiming

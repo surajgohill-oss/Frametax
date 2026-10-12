@@ -77,7 +77,8 @@ from app.calculators.qualification_model import (
     QualificationState,
     _ALTERNATIVE_TERRITORIAL_TEXT,
 )
-from app.calculators.canonical_requirements_gate_bridge import evaluate_requirements_gate, percent_gateway_minimum_qpe
+from app.calculators.canonical_requirements_gate_bridge import (
+    GATEWAY_FAILED_CATEGORY, evaluate_requirements_gate, percent_gateway_failed_categories, percent_gateway_minimum_qpe)
 from app.data.authority_coverage_registry import get_coverage_status
 from app.data.program_rate_rules import (
     _fx_native_amount,
@@ -593,6 +594,8 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             continue
         if rule.min_gross_budget_usd is not None and gross_budget_usd is not None and gross_budget_usd < rule.min_gross_budget_usd:
             continue
+        if rule.max_gross_budget_usd is not None and gross_budget_usd is not None and gross_budget_usd > rule.max_gross_budget_usd:
+            continue
         prerequisite_ok = rule.prerequisite_fact is None or rule.prerequisite_fact in facts
         if rule.potential_requires_prerequisite and not prerequisite_ok:
             continue
@@ -646,6 +649,17 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     floor_base = floor_base_usd if floor_base_usd is not None else qpe * base_rate
     potential_base = potential_base_usd if potential_base_usd is not None else qpe * max(base_rate, ceiling_rate or 0.0)
     return round(floor_base + sum(floor_parts.values()), 2), round(potential_base + sum(potential_parts.values()), 2), tuple(conditions)
+
+
+def _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts):
+    """The amount a percentage QPE cap is measured on. The federal CPTC cap is 60% of the production cost NET OF ASSISTANCE (CRA RC4164, T1131
+    lines 421-430), so assistance the producer has stated reduces the base here exactly as the stack engine reduces it (canonical_stack_bridge);
+    stack assistance is then deducted once more only for the programs actually stacked."""
+    base = gross_budget_usd if cap_rule.cap_base == "total_worldwide_budget" else allocated
+    if base is not None and slug == "ca_federal_cptc":
+        stated = float((amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)
+        base = max(0.0, base - stated)
+    return base
 
 
 def _segment_category_spend(allocations, spend_category_by_code) -> dict[str, float]:
@@ -723,6 +737,24 @@ def price_segment(
     coexist without collision."""
     allocated = round(sum(a.amount_usd for a in allocations), 2)
     codes = tuple(sorted({a.account_code for a in allocations}))
+
+    # Per-category percentage gateways (NY Tax Law 31(a)(3)): a category that misses its own test is not eligible, the other stays eligible.
+    # The failed category's costs are re-labelled to a category outside the program's positive list, so they are EXCLUDED and disclosed while the
+    # segment's allocated total is unchanged. If every claimed category fails, nothing is relabelled and the requirements gate fails the segment.
+    _gateway_notes: tuple[str, ...] = ()
+    if program_slug is not None and worldwide_category_spend_usd is not None:
+        _failed, _satisfied = percent_gateway_failed_categories(
+            program_slug, _segment_category_spend(allocations, spend_category_by_code), worldwide_category_spend_usd)
+        if _failed and _satisfied:
+            allocations = [
+                _dc_replace(a, spend_category=GATEWAY_FAILED_CATEGORY)
+                if (a.spend_category or spend_category_by_code.get(a.account_code)) in _failed else a
+                for a in allocations]
+            spend_category_by_code = {
+                **spend_category_by_code,
+                **{a.account_code: GATEWAY_FAILED_CATEGORY for a in allocations if a.spend_category == GATEWAY_FAILED_CATEGORY}}
+            _gateway_notes = (f"{program_slug}: the {', '.join(sorted(set(_failed)))} costs do not meet their own statutory share-of-worldwide test "
+                              "(Tax Law 31(a)(3)); only the category that does meet its test is claimed.",)
 
     if program_slug is None:
         return SegmentEconomics(
@@ -886,7 +918,7 @@ def price_segment(
         _pre_cap_rule = get_qpe_cap(slug)
         _limit = None
         if _pre_cap_rule is not None:
-            _pre_base = gross_budget_usd if _pre_cap_rule.cap_base == "total_worldwide_budget" else allocated
+            _pre_base = _qpe_cap_base(slug, _pre_cap_rule, gross_budget_usd, allocated, amount_facts)
             if _pre_base is not None:
                 _limit = _pre_base * _pre_cap_rule.cap_pct
 
@@ -1008,10 +1040,7 @@ def price_segment(
     qpe_cap_applied = 0.0
     cap_rule = get_qpe_cap(slug)
     if cap_rule is not None:
-        cap_base_amount = (
-            gross_budget_usd if cap_rule.cap_base == "total_worldwide_budget"
-            else allocated
-        )
+        cap_base_amount = _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts)
         if cap_base_amount is not None:
             cap_ceiling = round(cap_base_amount * cap_rule.cap_pct, 2)
             if qpe > cap_ceiling:
@@ -1883,7 +1912,7 @@ def price_segment(
         incentive_ceiling_usd=ceiling_incentive_usd,
         doctrine=doctrine.value,
         register_trace=trace,
-        notes=cap_notes + election_notes,
+        notes=cap_notes + election_notes + _gateway_notes,
         ceiling_requires_confirmation=ceiling_requires_confirmation,
         ceiling_conditions=(
             subset_conditions if subset_pricing is not None else tuple(
@@ -2009,14 +2038,50 @@ def _treaty_requirements(
 
 # ── Structure pricing ────────────────────────────────────────────────────────
 
-def conditional_project_gate_segment(seg: SegmentEconomics, gate) -> SegmentEconomics:
-    """A project-level gate whose days evidence is unknown or mixed: the credit is a disclosed CONDITIONAL planning scenario (no guaranteed floor, the
-    computed amount kept as the ceiling), never a proven pass or failure."""
+def conditional_project_gate_segment(seg: SegmentEconomics, gate, floor_segment: SegmentEconomics | None = None) -> SegmentEconomics:
+    """A project-level gate whose days evidence is unknown or mixed: the credit is a disclosed CONDITIONAL planning scenario (no guaranteed floor beyond
+    what the gate does not govern, the computed amount kept as the ceiling), never a proven pass or failure. floor_segment is the same segment priced
+    without the costs the gate governs (a non_payroll-scope gate leaves the payroll credit guaranteed)."""
+    fact = getattr(gate, "fact_key", "") or "the share of principal-photography days in the jurisdiction"
     condition = {"condition_id": "project-eligibility-days-undetermined", "description": gate.reason, "kind": "project_eligibility_gate",
                  "condition_state": "USER_FACT_REQUIRED", "satisfied": None,
-                 "note": "State the share of principal-photography days wholly in the jurisdiction (ca_principal_photography_days_in_california_pct)."}
-    return _dc_replace(seg, incentive_floor_usd=0.0, is_band_ceiling=True, ceiling_requires_confirmation=True,
+                 "note": f"State the share of principal-photography days wholly in the jurisdiction ({fact})."}
+    floor = floor_segment.incentive_floor_usd if floor_segment is not None and floor_segment.executable else 0.0
+    return _dc_replace(seg, incentive_floor_usd=floor, is_band_ceiling=True, ceiling_requires_confirmation=True,
                        ceiling_conditions=tuple(seg.ceiling_conditions) + (condition,))
+
+
+def non_payroll_relabelled(allocations, spend_category_by_code):
+    """The allocations with every NON-payroll line re-labelled as not eligible under a gate (payroll untouched): the segment re-priced on them carries
+    only the payroll credit."""
+    from app.calculators.project_eligibility_gates import PAYROLL_CATEGORIES
+    out, mapping = [], dict(spend_category_by_code)
+    for a in allocations:
+        category = a.spend_category or spend_category_by_code.get(a.account_code)
+        if category in PAYROLL_CATEGORIES:
+            out.append(a)
+        else:
+            out.append(_dc_replace(a, spend_category=GATEWAY_FAILED_CATEGORY))
+            mapping[a.account_code] = GATEWAY_FAILED_CATEGORY
+    return out, mapping
+
+
+def apply_project_gate(seg: SegmentEconomics, gate, payroll_only) -> SegmentEconomics:
+    """Apply a project-level gate outcome to a priced segment. payroll_only(): the same segment re-priced with non-payroll costs excluded, called only
+    for a non_payroll-scope gate that did not pass."""
+    if gate is None or gate.passed:
+        return seg
+    if getattr(gate, "scope", "whole_credit") == "non_payroll":
+        floor_seg = payroll_only()
+        if gate.failed:
+            if floor_seg.executable:
+                return _dc_replace(floor_seg, notes=tuple(floor_seg.notes) + (gate.reason,))
+            return _dc_replace(floor_seg, executable=False, blockers=tuple(floor_seg.blockers) + (gate.reason,))
+        return conditional_project_gate_segment(seg, gate, floor_seg)
+    if gate.failed:
+        return _dc_replace(seg, executable=False, incentive_floor_usd=0.0, incentive_ceiling_usd=0.0, incentive_uncapped_usd=None,
+                           ceiling_requires_confirmation=False, blockers=tuple(seg.blockers) + (gate.reason,))
+    return conditional_project_gate_segment(seg, gate)
 
 
 def price_allocated_structure(
@@ -2123,7 +2188,7 @@ def price_allocated_structure(
     _gate_rows = [(a.jurisdiction_code, a.amount_usd, a.component, "") for a in allocation.assignments]
     _worldwide_by_category = _segment_category_spend(allocation.assignments, spend_category_by_code)
     for jur in sorted(by_jur):
-        seg = price_segment(
+        _kw = dict(
             jurisdiction_code=jur,
             program_slug=spec.incentive_programs.get(jur),
             allocations=by_jur[jur],
@@ -2141,14 +2206,13 @@ def price_allocated_structure(
             scenario_btl_nonlocal=scenario_btl_nonlocal,
             worldwide_category_spend_usd=_worldwide_by_category,
         )
-        # Project-level eligibility (California Program 4.0: 75% of budget OR 75% of principal photography in California) cannot be decided
-        # by one segment alone; a failed gate zeroes this segment's credit and keeps the candidate visible with an affirmative rejection.
+        seg = price_segment(**_kw)
+        # Project-level eligibility (California 75% of budget OR 75% of principal-photography days; Pennsylvania 60% share; Massachusetts 75% for the
+        # non-payroll credit) cannot be decided by one segment alone; a failed gate removes the governed credit and keeps the candidate visible with an
+        # affirmative rejection, an undetermined one is a conditional planning scenario.
         _gate = evaluate_project_gate(spec.incentive_programs.get(jur), jur, _gate_rows, spec.primary_jurisdiction, amount_facts)
-        if _gate is not None and _gate.failed:
-            seg = _dc_replace(seg, executable=False, incentive_floor_usd=0.0, incentive_ceiling_usd=0.0, incentive_uncapped_usd=None,
-                              ceiling_requires_confirmation=False, blockers=tuple(seg.blockers) + (_gate.reason,))
-        elif _gate is not None and _gate.conditional:
-            seg = conditional_project_gate_segment(seg, _gate)
+        seg = apply_project_gate(seg, _gate, lambda _kw=_kw: price_segment(**{
+            **_kw, **dict(zip(("allocations", "spend_category_by_code"), non_payroll_relabelled(_kw["allocations"], _kw["spend_category_by_code"])))}))
         segments.append(seg)
         blockers.extend(seg.blockers)
 

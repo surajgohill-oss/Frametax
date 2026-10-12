@@ -472,14 +472,32 @@ def test_registered_control_2_ca_federal_cptc_plus_on_ofttc_prices():
     assert res.total_guaranteed_incentive_usd > 0
 
 
-def test_registered_control_3_ca_federal_cptc_plus_on_opstc_rejects():
+def test_registered_control_3_ca_federal_cptc_plus_on_opstc_is_allowed_and_netted_on_the_cptc_cost_cap():
+    # NA-CODEX-08: Ontario Creates OPSTC Guidelines (May 2025) s.1.01 permit the OPSTC alongside the federal CPTC; the provincial credit is assistance that
+    # lowers the production cost behind the CPTC 60% cap (CRA RC4164 T1131 lines 421-430). Cap not binding: OPSTC 21.5% x 1,800,000 = 387,000;
+    # CPTC 25% x 1,000,000 = 250,000; cap 60% x (2,800,000 - 387,000) = 1,447,800 > 1,000,000, so no reduction.
     components = [
         _comp("ca_federal_cptc", "CA", 1_000_000.0, line_id="REG3-FED", spend_category="atl_director"),
         _comp("on_opstc", "CA-ON", 1_800_000.0, line_id="REG3-ON", spend_category="atl_director"),
     ]
     res = generate_structural_candidate(components, gross_budget_usd=2_800_000.0)
-    assert res.executable is False
-    assert res.blocking_pairs and res.blocking_pairs[0].disposition == "mutually_exclusive"
+    assert res.executable is True, res.rejection_reason
+    assert res.post_adjustment_component_incentives_usd == {"ca_federal_cptc": 250_000.0, "on_opstc": 387_000.0}
+    # Cap binding: CPTC 1,500,000 and OPSTC 1,000,000 (21.5% = 215,000) on a 2,500,000 production: standalone cap 60% x 2,500,000 = 1,500,000 (credit
+    # 375,000); net of the OPSTC 60% x (2,500,000 - 215,000) = 1,371,000 -> CPTC 342,750, a 32,250 reduction.
+    tight = generate_structural_candidate([
+        _comp("ca_federal_cptc", "CA", 1_500_000.0, line_id="REG3B-FED", spend_category="atl_director"),
+        _comp("on_opstc", "CA-ON", 1_000_000.0, line_id="REG3B-ON", spend_category="atl_director"),
+    ], gross_budget_usd=2_500_000.0)
+    assert tight.executable is True, tight.rejection_reason
+    assert tight.post_adjustment_component_incentives_usd == {"ca_federal_cptc": 342_750.0, "on_opstc": 215_000.0}
+    assert tight.total_guaranteed_incentive_usd == 557_750.0
+    # the federal CPTC and PSTC stay mutually exclusive, and the OFTTC/OPSTC pair stays exclusive
+    pstc = generate_structural_candidate([
+        _comp("ca_federal_cptc", "CA", 1_000_000.0, line_id="REG3C-CPTC", spend_category="atl_director"),
+        _comp("ca_federal_pstc", "CA", 1_000_000.0, line_id="REG3C-PSTC", spend_category="atl_director"),
+    ], gross_budget_usd=2_000_000.0)
+    assert pstc.executable is False and pstc.blocking_pairs[0].disposition == "mutually_exclusive"
 
 
 def test_registered_control_4_ireland_uk_uses_separate_jurisdictional_components():
@@ -570,7 +588,8 @@ def test_cptc_ofttc_opstc_still_rejects_via_the_generic_generator():
     ]
     res = generate_structural_candidate(components, gross_budget_usd=3_300_000.0)
     assert res.executable is False
-    assert len(res.blocking_pairs) == 2
+    # only the OFTTC/OPSTC pair is exclusive now; CPTC with the OPSTC (Ontario Creates OPSTC Guidelines s.1.01) and with the OFTTC are composable
+    assert [(p.program_a, p.program_b) for p in res.blocking_pairs] == [("on_ofttc", "on_opstc")]
 
 
 def test_four_program_structure_rejects_if_any_of_six_pairs_prohibits():

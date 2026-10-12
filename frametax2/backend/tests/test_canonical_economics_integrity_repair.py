@@ -1320,10 +1320,11 @@ def test_cptc_ofttc_opstc_triple_is_rejected_not_priced():
     result = price_program_group_stack(group)
     assert result is not None, "the group must still be generated (disclosed), not silently omitted"
     assert result.contains_blocking_incompatibility is True
-    assert len(result.blocking_pairs) == 2  # cptc-opstc AND ofttc-opstc
+    # NA-CODEX-08 (2026-10-12): Ontario Creates OPSTC Guidelines s.1.01 permit the OPSTC alongside the federal CPTC, so only the domestic OFTTC versus the
+    # service OPSTC blocks; the CPTC/OPSTC pair is a spend_reduction (assistance), no longer a prohibition.
+    assert len(result.blocking_pairs) == 1  # ofttc-opstc only
     blocking_ids = {frozenset((p["program_a_id"], p["program_b_id"])) for p in result.blocking_pairs}
-    assert frozenset(("ca_federal_cptc", "on_opstc")) in blocking_ids
-    assert frozenset(("on_ofttc", "on_opstc")) in blocking_ids
+    assert blocking_ids == {frozenset(("on_ofttc", "on_opstc"))}
 
 
 def test_ofttc_ocase_and_opstc_ocase_can_price_real_confirmed_pairs():

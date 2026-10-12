@@ -48,6 +48,10 @@ class QualificationState(str, enum.Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
+#: A line re-labelled to this category by a statutory gateway/project gate is not eligible under that gate; every program excludes it.
+GATEWAY_FAILED_CATEGORY = "gateway_not_met"
+
+
 class AuthorityBasis(str, enum.Enum):
     """What kind of evidence backs this account's state."""
     EXPLICIT_STATUTE = "explicit_statute"                # cited program text

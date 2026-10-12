@@ -6991,40 +6991,11 @@ US_AL_DOCTRINE = register(DoctrineRecord(
                              "re-confirmed by this fetch -- retained "
                              "as a disclosed, unconfirmed provision.",
     ),
-    tiers=(DoctrineRateTier(tier_id="us-al-general-25", rate=0.25, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="us-al-resident-payroll-35", rate=0.35,
-                             is_band_ceiling=False,
-                             conditions=(RateCondition(
-                                 condition_id="us-al-resident-payroll-only",
-                                 description="35% applies to Alabama-"
-                                             "resident PAYROLL "
-                                             "specifically, not general "
-                                             "QPE -- confirmed directly "
-                                             "from revenue.alabama.gov",
-                                 quote="35 percent of the payroll paid to "
-                                       "Alabama residents "
-                                       "(revenue.alabama.gov)",
-                                 kind="material_funding_risk_not_modeled"),)),
-           DoctrineRateTier(tier_id="us-al-small-budget-resident-payroll-45",
-                             rate=0.45, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="us-al-small-budget-resident-payroll-only",
-                                 description="45% applies ONLY to "
-                                             "Alabama-resident PAYROLL "
-                                             "(not general QPE) for "
-                                             "productions with total "
-                                             "expenditure $100K-$499,999, "
-                                             "effective 2026-10-01 -- a "
-                                             "separate narrow bracket, not "
-                                             "the general program's ceiling. "
-                                             "NOT independently re-"
-                                             "confirmed by the batch's "
-                                             "official-source fetch.",
-                                 quote="45% rebate on payroll paid to "
-                                       "Alabama residents for productions "
-                                       "with total expenditures between "
-                                       "$100,000 and $499,999 (greenslate.com)",
-                                 kind="material_funding_risk_not_modeled"),)),),
+    # The 35% (and the small-budget 45%) apply to PAYROLL paid to Alabama residents only, not to general expenditures; they are priced as subset uplifts
+    # over the 25% base (program_rate_rules.SUBSET_UPLIFT_RULES["us_al_film_incentive"]) on the evidenced resident-payroll portion. The former whole-base
+    # 35% tier priced non-payroll services at the payroll rate (Codex NA adjudication, 2026-10-11). The small-budget bracket is now confirmed by the
+    # official page (read 2026-10-12): 45% of resident payroll when total production expenditures are at least $100,000 and not more than $499,999.
+    tiers=(DoctrineRateTier(tier_id="us-al-general-25", rate=0.25, is_band_ceiling=False),),
 ))
 register_rate_rules(rate_rules_for(US_AL_DOCTRINE))
 

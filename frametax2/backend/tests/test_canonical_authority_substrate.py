@@ -1631,7 +1631,7 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     no longer true by design -- that was always the explicitly deferred
     next phase this exact task implements. CA-ON now ALSO gets 4 additive
     multi_program structures: three pairs (federal CPTC + on_ofttc,
-    spend_reduction; federal CPTC + ca_on_opstc, mutually_exclusive --
+    spend_reduction; federal CPTC + ca_on_opstc, spend_reduction since NA-CODEX-08 --
     resolved via ca_on_opstc's known "on_opstc" alias in _SLUG_PAIR_RULES,
     a canonical-identity reconciliation, not a new rule; ca_on_opstc +
     on_ofttc, mutually_exclusive) plus one N-way triple (all three
@@ -1708,11 +1708,14 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     assert mutually_exclusive_pair["scenario_category"] == "NOT_AVAILABLE"
     assert mutually_exclusive_pair["is_fully_priced"] is False
     priced_multi = [e for e in multi_entries if e["is_fully_priced"]]
-    assert len(priced_multi) == 3, (
-        "exactly the 3 genuinely spend_reduction/compatible combinations "
-        "(CPTC+OFTTC, OPSTC+OCASE, OFTTC+OCASE) must price; the rest are real, "
+    # NA-CODEX-08 (2026-10-12): CPTC + OPSTC is a spend_reduction pair, not a prohibition (Ontario Creates OPSTC Guidelines s.1.01), so it joins the
+    # compatible combinations; the triples containing the exclusive OFTTC/OPSTC pair are still rejected. (Data-dependent: needs the FVD fixture project.)
+    assert len(priced_multi) == 4, (
+        "exactly the 4 genuinely spend_reduction/compatible combinations "
+        "(CPTC+OFTTC, CPTC+OPSTC, OPSTC+OCASE, OFTTC+OCASE) must price; the rest are real, "
         "disclosed mutually_exclusive or Canadian-labour-basis rejections"
     )
+    assert frozenset({"ca_federal_cptc", "on_opstc"}) in {frozenset(e["program_slugs"]) for e in priced_multi}
 
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():

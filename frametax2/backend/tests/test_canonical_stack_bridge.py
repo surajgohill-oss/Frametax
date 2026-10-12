@@ -66,15 +66,52 @@ def test_price_program_pair_stack_mutually_exclusive_zeroes_lower_value():
     # logic stacking_rules.py records for BC, just for Ontario instead),
     # confirmed to exercise the identical rule_type/zeroing behavior this
     # test was written to prove.
-    a = StackCandidate("ca_federal_cptc", "CA-ON", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
+    # NA-CODEX-08 (2026-10-12): CPTC + OPSTC is NOT exclusive (Ontario Creates OPSTC Guidelines s.1.01: the OPSTC "may be claimed alone, or in addition to a
+    # federal ... Production Services Tax Credit (or a Canadian Film or Video Production Tax Credit)"); the still-exclusive Ontario pair is the domestic
+    # OFTTC versus the service OPSTC, so this control now uses that pair.
+    a = StackCandidate("on_ofttc", "CA-ON", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
     b = StackCandidate("on_opstc", "CA-ON", 330_000.0, 0.33, 1_000_000.0, "tax_credit")
     result = price_program_pair_stack(a, b)
     assert result is not None
     assert result.rule_type == "mutually_exclusive"
-    assert result.per_program_adjusted_usd == {"ca_federal_cptc": 0.0, "on_opstc": 330_000.0}
+    assert result.per_program_adjusted_usd == {"on_ofttc": 0.0, "on_opstc": 330_000.0}
     assert result.adjusted_incentive_usd == 330_000.0
     assert result.jurisdiction_code == "CA-ON"
     assert result.disclosed_limitations == []
+
+
+def test_cptc_with_the_ontario_opstc_is_allowed_and_the_provincial_credit_is_assistance_to_the_cptc():
+    # generic arithmetic (no CPTC labour/cost fields supplied): CPTC reduced by min(OPSTC 330,000; qualifying 1,000,000) x 25% = 82,500
+    a = StackCandidate("ca_federal_cptc", "CA-ON", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
+    b = StackCandidate("on_opstc", "CA-ON", 330_000.0, 0.33, 1_000_000.0, "tax_credit")
+    result = price_program_pair_stack(a, b)
+    assert result is not None and result.rule_type == "spend_reduction"
+    assert result.per_program_adjusted_usd == {"ca_federal_cptc": 167_500.0, "on_opstc": 330_000.0}
+    assert result.adjusted_incentive_usd == 497_500.0 and result.stacking_reduction_usd == 82_500.0
+    # with the CRA fields: labour 800,000, cost 1,000,000 -> cap 60% x (1,000,000 - 330,000) = 402,000 < labour -> CPTC = 25% x 402,000 = 100,500
+    cptc = StackCandidate("ca_federal_cptc", "CA-ON", 200_000.0, 0.25, 1_000_000.0, "tax_credit",
+                          rate_basis_usd=800_000.0, production_cost_usd=1_000_000.0)
+    net = price_program_pair_stack(cptc, b)
+    assert net.per_program_adjusted_usd["ca_federal_cptc"] == 100_500.0 and net.adjusted_incentive_usd == 430_500.0
+
+
+def test_the_ontario_opstc_nets_only_its_labour_portion_against_the_federal_pstc():
+    # Ontario Creates OPSTC Guidelines s.3.02: only the labour portion of the OPSTC is assistance to the PSTC.
+    # PSTC 16% on labour 600,000 = 96,000; OPSTC 21.5% on 1,000,000 = 215,000 of which labour 21.5% x 600,000 = 129,000 is assistance.
+    # PSTC reduction = 129,000 x 16% = 20,640 -> 75,360 (the whole-credit reading would give 215,000 x 16% = 34,400).
+    pstc = StackCandidate("ca_federal_pstc", "CA-ON", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
+    opstc = StackCandidate("on_opstc", "CA-ON", 215_000.0, 0.215, 1_000_000.0, "tax_credit")
+    result = price_program_pair_stack(pstc, opstc)
+    assert result is not None and result.rule_type == "spend_reduction"
+    assert result.per_program_adjusted_usd == {"ca_federal_pstc": 75_360.0, "on_opstc": 215_000.0}
+    assert result.stacking_reduction_usd == 20_640.0 and result.adjusted_incentive_usd == 290_360.0
+
+
+def test_the_two_federal_credits_remain_mutually_exclusive_and_a_zeroed_credit_is_not_assistance():
+    cptc = StackCandidate("ca_federal_cptc", "CA", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
+    pstc = StackCandidate("ca_federal_pstc", "CA", 160_000.0, 0.16, 1_000_000.0, "tax_credit")
+    both = price_program_pair_stack(cptc, pstc)
+    assert both is not None and both.rule_type == "mutually_exclusive" and both.per_program_adjusted_usd == {"ca_federal_cptc": 250_000.0, "ca_federal_pstc": 0.0}
 
 
 def test_price_program_pair_stack_spend_reduction_applies_ontario_interaction_correctly():
@@ -148,10 +185,10 @@ def test_n_way_group_stack_all_pairs_covered():
     result = price_program_group_stack([a, b, c])
     assert result is not None
     assert set(result.program_slugs) == {"ca_federal_cptc", "ca_on_opstc", "on_ofttc"}
-    # ca_on_opstc is mutually exclusive with BOTH others and has the
-    # highest raw value, so it is the sole surviving value.
+    # OFTTC (domestic) is mutually exclusive with OPSTC (service); OPSTC has the higher raw value and survives, so OFTTC is zeroed and, no longer
+    # claimed, is not assistance to the CPTC. The OPSTC is allowed with the CPTC and reduces it: 250,000 - min(330,000; 1,000,000) x 25% = 167,500.
     assert result.per_program_adjusted_usd == {
-        "ca_federal_cptc": 0.0, "ca_on_opstc": 330_000.0, "on_ofttc": 0.0,
+        "ca_federal_cptc": 167_500.0, "ca_on_opstc": 330_000.0, "on_ofttc": 0.0,
     }
 
 

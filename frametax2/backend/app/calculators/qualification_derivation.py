@@ -71,6 +71,7 @@ from app.calculators.classify_budget_line_items import classify_line_item
 from app.calculators.qualification_model import (
     AccountQualification,
     AuthorityBasis,
+    GATEWAY_FAILED_CATEGORY,
     GreyReason,
     QualificationConfidence,
     QualificationState,
@@ -261,6 +262,12 @@ def derive_qualification_register(
                   AuthorityBasis.NOT_A_QUALIFICATION_QUESTION,
                   "Memo line — reported within gross budget but not a production "
                   "spend qualification question.")
+            continue
+
+        # 1b. A line a statutory share-of-worldwide gateway or project gate has ruled ineligible (re-labelled by the pricing kernel) is excluded for every program.
+        if category == GATEWAY_FAILED_CATEGORY:
+            _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH, AuthorityBasis.EXPLICIT_STATUTE,
+                  "This cost does not meet the program's statutory eligibility gateway for its category (share of worldwide cost or project eligibility test).")
             continue
 
         # 2. Finance costs are the optimizer's cashflow model, not QPE spend.

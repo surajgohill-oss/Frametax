@@ -71,7 +71,11 @@ def apply_stacking_adjustments(
     adjustments: list[StackingAdjustment] = []
     legal_review_flags: list[str] = []
 
-    for rule in stacking_rules:
+    # Exclusions first: a program zeroed by a mutually exclusive pair is not claimed, so it cannot be assistance that reduces another credit.
+    # Rule order inside each group is preserved (the caller already canonicalizes it).
+    ordered_rules = [r for r in stacking_rules if str(r.get("rule_type", "")) == "mutually_exclusive"] + [
+        r for r in stacking_rules if str(r.get("rule_type", "")) != "mutually_exclusive"]
+    for rule in ordered_rules:
         a_id = str(rule["program_a_id"])
         b_id = str(rule["program_b_id"])
 
@@ -161,7 +165,7 @@ def _apply_spend_reduction(
         # determine direction; no adjustment (unchanged legacy behavior).
         return
 
-    grant_amount = float(grant_r["economic_value_usd"])
+    grant_amount = min(float(grant_r["economic_value_usd"]), float(program_values.get(grant_id, grant_r["economic_value_usd"])))
     credit_qualifying_spend = float(credit_r.get("qualifying_spend_usd", 0.0))
     credit_effective_rate = float(credit_r.get("effective_rate", 0.0))
 

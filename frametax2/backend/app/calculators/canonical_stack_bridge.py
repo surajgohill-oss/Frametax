@@ -88,6 +88,8 @@ _SPEND_REDUCTION_DIRECTION: dict[frozenset, str] = {
     frozenset({"ca_cmf", "ca_federal_cptc"}): "ca_cmf",
     frozenset({"ca_federal_cptc", "ca_telefilm_dev"}): "ca_telefilm_dev",
     frozenset({"ca_federal_cptc", "on_ofttc"}): "on_ofttc",
+    frozenset({"ca_federal_cptc", "on_opstc"}): "on_opstc",
+    frozenset({"ca_federal_pstc", "on_opstc"}): "on_opstc",
     frozenset({"ca_federal_cptc", "qc_film_production"}): "qc_film_production",
     frozenset({"ca_bc_pstc", "ca_cmf"}): "ca_cmf",
     frozenset({"ca_cmf", "on_opstc"}): "ca_cmf",
@@ -165,11 +167,15 @@ class StackCandidate:
 
 
 CPTC_SLUG = "ca_federal_cptc"
+PSTC_SLUG = "ca_federal_pstc"
+OPSTC_SLUG = "on_opstc"
 CPTC_COST_CAP_PCT = 0.60     # Form T1131 Part 5: Amount B = 60% of (production cost - assistance)
 
 
 def cptc_stack_fields(program_slug: str, rate_resolution, production_cost_usd: float | None, amount_facts: dict | None = None) -> dict:
     """StackCandidate keyword arguments for the federal CPTC (empty for every other program)."""
+    if program_slug == PSTC_SLUG and rate_resolution is not None and getattr(rate_resolution, "qpe_basis_used", None) is not None:
+        return {"rate_basis_usd": float(rate_resolution.qpe_basis_used)}      # the labour basis the OPSTC labour portion is netted against
     if program_slug != CPTC_SLUG or rate_resolution is None or production_cost_usd is None:
         return {}
     basis = getattr(rate_resolution, "qpe_basis_used", None)
@@ -177,6 +183,26 @@ def cptc_stack_fields(program_slug: str, rate_resolution, production_cost_usd: f
         return {}
     return {"rate_basis_usd": float(basis), "production_cost_usd": float(production_cost_usd),
             "stated_assistance_usd": float((amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)}
+
+
+def _is_slug(slug: str, canonical: str) -> bool:
+    return canonical in _slug_and_alias_candidates(slug)
+
+
+def cptc_net_cost_adjusted(original: float, rate: float, labour_basis: float, production_cost: float, stated_assistance: float, assistance: float):
+    """CRA RC4164 / Form T1131: qualified labour = min(labour, 60% x (production cost - assistance)); credit = rate x qualified, never above the
+    standalone credit. Returns (adjusted credit, cap, qualified labour). Shared by the same-jurisdiction stack and the structural generator."""
+    cap = round(CPTC_COST_CAP_PCT * max(0.0, production_cost - stated_assistance - assistance), 2)
+    qualified = round(min(labour_basis, cap), 2)
+    return round(min(original, qualified * rate), 2), cap, qualified
+
+
+def pstc_labour_netted(original: float, rate: float, labour_basis: float, opstc_value: float, opstc_rate: float):
+    """Ontario Creates OPSTC Guidelines s.3.02: only the LABOUR portion of the OPSTC is assistance to the federal PSTC. Returns (adjusted credit,
+    labour assistance, reduction); Ontario labour is taken as the PSTC segment's labour basis."""
+    labour_assistance = round(min(opstc_value, opstc_rate * labour_basis), 2)
+    reduction = round(min(labour_assistance, labour_basis) * rate, 2)
+    return round(max(0.0, original - reduction), 2), labour_assistance, reduction
 
 
 @dataclass
@@ -382,10 +408,9 @@ def _build_group_result(
                 reducers[r["reduces"]] = program_values.get(r["reduces"], 0.0)
         if reducers:
             assistance = round(sum(reducers.values()), 2)
-            cap = round(CPTC_COST_CAP_PCT * max(0.0, cptc.production_cost_usd - cptc.stated_assistance_usd - assistance), 2)
-            qualified = round(min(cptc.rate_basis_usd, cap), 2)
             original = float(cptc.selected_incentive_usd)
-            adjusted = round(min(original, qualified * cptc.effective_rate), 2)
+            adjusted, cap, qualified = cptc_net_cost_adjusted(
+                original, cptc.effective_rate, cptc.rate_basis_usd, cptc.production_cost_usd, cptc.stated_assistance_usd, assistance)
             adjustment_dicts = [d for d in adjustment_dicts if not (d["rule_type"] == "spend_reduction" and d["program_b_id"] == CPTC_SLUG)]
             program_values[CPTC_SLUG] = adjusted
             total_assistance = assistance or 1.0
@@ -399,8 +424,32 @@ def _build_group_result(
                                     f"= ${qualified:,.0f}; labour itself is not reduced."),
                     "original_value_usd": original, "adjustment_usd": -share, "adjusted_value_usd": adjusted,
                 })
+    # Federal PSTC with the Ontario OPSTC: only the LABOUR portion of the OPSTC is assistance to the PSTC (Ontario Creates OPSTC Guidelines s.3.02),
+    # so the generic whole-credit reduction is replaced by (OPSTC rate x the PSTC labour basis, bounded by the credit) x the PSTC rate.
+    pstc = next((c for c in candidates if _is_slug(c.program_slug, PSTC_SLUG) and c.rate_basis_usd is not None), None)
+    opstc = next((c for c in candidates if _is_slug(c.program_slug, OPSTC_SLUG)), None)
+    pstc_netted = False
+    if pstc is not None and opstc is not None and any(
+            r["rule_type"] == "spend_reduction" and _is_slug(r["program_a_id"], PSTC_SLUG) + _is_slug(r["program_b_id"], OPSTC_SLUG) == 2
+            or r["rule_type"] == "spend_reduction" and _is_slug(r["program_b_id"], PSTC_SLUG) + _is_slug(r["program_a_id"], OPSTC_SLUG) == 2
+            for r in rules):
+        original = float(pstc.selected_incentive_usd)
+        adjusted, labour_assistance, reduction = pstc_labour_netted(
+            original, float(pstc.effective_rate), float(pstc.rate_basis_usd), float(opstc.selected_incentive_usd), float(opstc.effective_rate))
+        adjustment_dicts = [d for d in adjustment_dicts if not (d["rule_type"] == "spend_reduction" and d["program_b_id"] == pstc.program_slug)]
+        program_values[pstc.program_slug] = adjusted
+        adjustment_dicts.append({
+            "program_a_id": opstc.program_slug, "program_b_id": pstc.program_slug, "rule_type": "spend_reduction",
+            "description": (f"Only the labour portion of the OPSTC is assistance to the federal PSTC (Ontario Creates OPSTC Guidelines s.3.02): "
+                            f"{float(opstc.effective_rate):.1%} x labour ${float(pstc.rate_basis_usd):,.0f} = ${labour_assistance:,.0f} (bounded by the credit "
+                            f"${float(opstc.selected_incentive_usd):,.0f}) reduces PSTC labour; PSTC reduction = ${labour_assistance:,.0f} x {float(pstc.effective_rate):.1%} "
+                            f"= ${reduction:,.0f}. Ontario labour is taken as the PSTC segment's labour basis."),
+            "original_value_usd": original, "adjustment_usd": -reduction, "adjusted_value_usd": adjusted,
+        })
+        pstc_netted = True
     total_raw = adj_result.total_raw_value_usd
-    total_adjusted = round(sum(program_values.values()), 2) if cptc is not None and reducers else adj_result.total_adjusted_value_usd
+    total_adjusted = (round(sum(program_values.values()), 2) if (cptc is not None and reducers) or pstc_netted
+                      else adj_result.total_adjusted_value_usd)
 
     # CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT, Phase B:
     # scan every INDIVIDUAL pairwise rule in this group -- never the

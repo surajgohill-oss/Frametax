@@ -46,8 +46,14 @@ async def test_cptc_cap_is_measured_on_production_cost_net_of_assistance_not_on_
     quebec = by[("ca_federal_cptc", "ca_qc_pstc")]
     assert quebec["per_program_adjusted_usd"]["ca_federal_cptc"] == pytest.approx(0.25 * 0.60 * (2_500_000 - 625_000))
     assert quebec["confirmed_incentive_floor_usd"] == pytest.approx(906_250.0)
-    # CPTC (domestic content) and OPSTC (service) stay mutually exclusive, alone or inside a larger group
-    assert by[("ca_federal_cptc", "on_opstc")]["candidate_status"] == "RULE_REJECTED"
+    # NA-CODEX-08: Ontario Creates OPSTC Guidelines s.1.01 permit the OPSTC alongside the CPTC; it is assistance that lowers the cost behind the cap.
+    # OPSTC 21.5% x 2,500,000 = 537,500; cap 60% x (2,500,000 - 537,500) = 1,177,500 < 1,500,000 -> CPTC 25% x 1,177,500 = 294,375; stack 831,875.
+    opstc = by[("ca_federal_cptc", "on_opstc")]
+    assert opstc["candidate_status"] == "PRICED" and opstc["stacking_rule_type"] == "spend_reduction"
+    assert opstc["per_program_adjusted_usd"]["on_opstc"] == pytest.approx(537_500.0)
+    assert opstc["per_program_adjusted_usd"]["ca_federal_cptc"] == pytest.approx(0.25 * 0.60 * (2_500_000 - 537_500))
+    assert opstc["confirmed_incentive_floor_usd"] == pytest.approx(831_875.0) and opstc["stacking_reduction_usd"] == pytest.approx(80_625.0)
+    # the domestic OFTTC and the service OPSTC stay mutually exclusive, so the triple is still rejected
     assert by[("ca_federal_cptc", "on_ofttc", "on_opstc")]["candidate_status"] == "RULE_REJECTED"
 
 

@@ -287,7 +287,8 @@ def check_all_pairs(components: list["StructuralComponent"]) -> list[PairwiseChe
 
 def _price_component(component: StructuralComponent, gross_budget_usd: float | None = None,
                      contingency_expected_utilization_pct: float | None = None,
-                     worldwide_category_spend_usd: dict[str, float] | None = None) -> SegmentEconomics:
+                     worldwide_category_spend_usd: dict[str, float] | None = None,
+                     contingency_allocations: dict | None = None) -> SegmentEconomics:
     # Locked Structural Policy point 10 (application/preapproval/annual
     # allocation/first-come are disclosures, not discretionary vetoes):
     # reuses the SAME established, already-accepted producer-controlled
@@ -309,6 +310,7 @@ def _price_component(component: StructuralComponent, gross_budget_usd: float | N
         gross_budget_usd=gross_budget_usd,
         contingency_expected_utilization_pct=contingency_expected_utilization_pct,
         worldwide_category_spend_usd=worldwide_category_spend_usd,
+        contingency_allocations=contingency_allocations,
     )
 
 
@@ -335,6 +337,7 @@ def _generate_structural_candidate_uncached(
     _component_cache: dict[tuple, SegmentEconomics] | None = None,
     planned_cost_reduction_usd: float = 0.0,
     contingency_expected_utilization_pct: float | None = None,
+    contingency_allocations: dict | None = None,
 ) -> StructuralCandidateResult:
     """Full (uncached) structural pricing -- see generate_structural_candidate."""
     structure_id = _structure_id(components)
@@ -412,9 +415,9 @@ def _generate_structural_candidate_uncached(
     _conditional_gates: dict[int, object] = {}
     for c in components:
         _gate = evaluate_project_gate(c.program_slug, c.jurisdiction_code, _gate_rows, _principal, c.amount_facts)
-        if _gate is not None and _gate.conditional:
+        if _gate is not None and not _gate.passed and (_gate.conditional or _gate.scope == "non_payroll"):
             _conditional_gates[id(c)] = _gate
-        if _gate is not None and _gate.failed:
+        if _gate is not None and _gate.failed and _gate.scope == "whole_credit":
             return StructuralCandidateResult(
                 structure_id=structure_id, component_types=component_types,
                 program_slugs=program_slugs, jurisdiction_codes=jurisdiction_codes,
@@ -428,10 +431,16 @@ def _generate_structural_candidate_uncached(
     comp_econ: list[ComponentEconomics] = []
     selective_zero_notes: list[str] = []
     for c in components:
-        seg = _price_component_cached(c, _component_cache, gross_budget_usd, contingency_expected_utilization_pct, _worldwide)
-        if id(c) in _conditional_gates and seg.executable:
-            from app.calculators.allocation_pricing import conditional_project_gate_segment
-            seg = conditional_project_gate_segment(seg, _conditional_gates[id(c)])
+        seg = _price_component_cached(c, _component_cache, gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations)
+        if id(c) in _conditional_gates and (seg.executable or _conditional_gates[id(c)].scope == "non_payroll"):
+            from dataclasses import replace as _replace
+            from app.calculators.allocation_pricing import apply_project_gate, non_payroll_relabelled
+
+            def _payroll_only(c=c):
+                allocs, mapping = non_payroll_relabelled(c.allocations, c.spend_category_by_code)
+                return _price_component_cached(_replace(c, allocations=tuple(allocs), spend_category_by_code=mapping), _component_cache,
+                                               gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations)
+            seg = apply_project_gate(seg, _conditional_gates[id(c)], _payroll_only)
         if not seg.executable:
             if c.component_type in ("selective_upside", "fund_overlay"):
                 selective_zero_notes.append(
@@ -520,6 +529,49 @@ def _generate_structural_candidate_uncached(
         post_adjustment_component_incentives_usd = {
             pid: round(v, 2) for pid, v in adj.program_values.items()
         }
+        # Federal credits are netted by their own statutory bases (the same arithmetic canonical_stack_bridge applies to a same-jurisdiction stack),
+        # never by the generic whole-credit heuristic: CPTC assistance sets the 60% production-cost cap; only the labour portion of the OPSTC is
+        # assistance to the federal PSTC.
+        from app.calculators.canonical_stack_bridge import (
+            CPTC_SLUG, OPSTC_SLUG, PSTC_SLUG, _is_slug, cptc_net_cost_adjusted, pstc_labour_netted)
+        _by_slug = {ce.component.program_slug: ce for ce in guaranteed_econ}
+        _netted: list[StackingAdjustment] = []
+        for _slug, _ce in _by_slug.items():
+            _rate = _ce.segment.rate_floor or 0.0
+            _original = raw_component_incentives_usd[_slug]
+            if _rate <= 0 or _original <= 0:
+                continue
+            _basis = _original / _rate
+            if _is_slug(_slug, CPTC_SLUG):
+                _reducers = {r["reduces"] for r in guaranteed_rules if r["rule_type"] == "spend_reduction"
+                             and CPTC_SLUG in (r["program_a_id"], r["program_b_id"]) and r.get("reduces") not in (None, CPTC_SLUG)}
+                _assist = round(sum(raw_component_incentives_usd.get(x, 0.0) for x in _reducers), 2)
+                if _assist <= 0:
+                    continue
+                _stated = float((_ce.component.amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)
+                _adjusted, _cap, _qualified = cptc_net_cost_adjusted(_original, _rate, _basis, gross_budget_usd, _stated, _assist)
+                _desc = (f"Assistance ${_assist:,.0f} reduces the production cost that sets the CPTC cap (CRA RC4164 T1131 lines 421-430): qualified labour = "
+                         f"min(labour ${_basis:,.0f}, 60% x (cost ${gross_budget_usd:,.0f} - assistance ${_stated + _assist:,.0f}) = ${_cap:,.0f}) = ${_qualified:,.0f}; "
+                         "labour itself is not reduced.")
+                _partner = sorted(_reducers)[0]
+            elif _is_slug(_slug, PSTC_SLUG):
+                _o = next((x for x in _by_slug if _is_slug(x, OPSTC_SLUG)), None)
+                if _o is None or not _by_slug[_o].segment.rate_floor:
+                    continue
+                _adjusted, _la, _red = pstc_labour_netted(_original, _rate, _basis, raw_component_incentives_usd[_o], _by_slug[_o].segment.rate_floor)
+                _desc = (f"Only the labour portion of the OPSTC is assistance to the federal PSTC (Ontario Creates OPSTC Guidelines s.3.02): "
+                         f"${_la:,.0f} reduces PSTC labour; PSTC reduction ${_red:,.0f}. Ontario labour is taken as the PSTC segment's labour basis.")
+                _partner = _o
+            else:
+                continue
+            post_adjustment_component_incentives_usd[_slug] = _adjusted
+            _netted.append(StackingAdjustment(program_a_id=_partner, program_b_id=_slug, rule_type="spend_reduction", description=_desc,
+                                              original_value_usd=_original, adjustment_usd=round(_adjusted - _original, 2), adjusted_value_usd=_adjusted))
+        if _netted:
+            _slugs_done = {a.program_b_id for a in _netted}
+            adj_list = [a for a in adj.adjustments if not (a.rule_type == "spend_reduction" and a.program_b_id in _slugs_done)] + _netted
+            stacking_adjustments = tuple(adj_list)
+            total_guaranteed = round(sum(post_adjustment_component_incentives_usd.values()), 2)
         # Same disclosure canonical_stack_bridge._build_group_result already
         # makes for the identical, pre-existing limitation: the reused
         # apply_stacking_adjustments spend_reduction heuristic only
@@ -615,6 +667,7 @@ def _price_component_cached(
     component: StructuralComponent, cache: dict[tuple, SegmentEconomics] | None,
     gross_budget_usd: float | None = None, contingency_expected_utilization_pct: float | None = None,
     worldwide_category_spend_usd: dict[str, float] | None = None,
+    contingency_allocations: dict | None = None,
 ) -> SegmentEconomics:
     """Per-component pricing memo (LLS anchor-cardinality repair, 2026-10-01).
     price_segment's result depends only on (jurisdiction, program, the exact
@@ -625,12 +678,13 @@ def _price_component_cached(
     this cache. A hit returns the identical (frozen) SegmentEconomics a fresh
     call would."""
     if cache is None:
-        return _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd)
+        return _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations)
     key = (component.jurisdiction_code, component.program_slug, component.production_type,
-           component.pricing_key, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None)
+           component.pricing_key, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None,
+           repr(sorted((k, repr(v)) for k, v in (contingency_allocations or {}).items())))
     hit = cache.get(key)
     if hit is None:
-        hit = _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd)
+        hit = _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations)
         cache[key] = hit
     return hit
 
@@ -711,6 +765,7 @@ def generate_structural_candidate(
     _component_cache: dict[tuple, SegmentEconomics] | None = None,
     planned_cost_reduction_usd: float = 0.0,
     contingency_expected_utilization_pct: float | None = None,
+    contingency_allocations: dict | None = None,
 ) -> StructuralCandidateResult:
     """The one generic entry point. Never a per-archetype function --
     every one of the twelve corrected Codex archetypes is just a
@@ -729,7 +784,7 @@ def generate_structural_candidate(
         return _generate_structural_candidate_uncached(
             components, gross_budget_usd, anchor_npc_usd, travel_incremental_delta_usd,
             fx_delta_usd, local_cost_delta_usd, _component_cache, planned_cost_reduction_usd,
-            contingency_expected_utilization_pct,
+            contingency_expected_utilization_pct, contingency_allocations,
         )
     from app.services import _lls_profile_sink as _prof
     _prof.tick("pricing_calls_total")
@@ -742,7 +797,7 @@ def generate_structural_candidate(
         with _prof.timed("intrinsic_pricing"):
             base = _generate_structural_candidate_uncached(
                 components, gross_budget_usd, None, 0.0, 0.0, 0.0, _component_cache, planned_cost_reduction_usd,
-                contingency_expected_utilization_pct,
+                contingency_expected_utilization_pct, contingency_allocations,
             )
         _cache[key] = _slim(base)
         _prof.tick("pricing_cache_miss_executable" if base.executable else "pricing_cache_miss_rejected")

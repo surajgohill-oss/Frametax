@@ -3001,6 +3001,8 @@ class EligibleSubsetUpliftRule:
     potential_requires_prerequisite: bool = False
     #: The film's gross budget must be at least this (statutory minimum budget); below it the uplift does not apply.
     min_gross_budget_usd: float | None = None
+    #: The film's gross budget must not exceed this (e.g. Alabama's small-budget bracket ends at total production expenditures of $499,999).
+    max_gross_budget_usd: float | None = None
     #: Ceiling on the TOTAL base this uplift can apply to across all lines (e.g. an enhanced rate on only the first $240,000 of labour).
     base_cap_usd: float | None = None
 
@@ -3085,6 +3087,21 @@ SUBSET_UPLIFT_RULES = {
         EligibleSubsetUpliftRule(
             "distant_location", .06, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="bc_labour_in_distant_location_zone",
             source_ref="gov.bc.ca: Distant location production services tax credit (6%) on qualified BC labour in the distant location zone"),
+    ),
+    # Alabama (revenue.alabama.gov/tax-incentives/film-rebate, read 2026-10-12): the rebate is 25% of certain production expenditures incurred in Alabama
+    # PLUS 35% of the payroll paid to Alabama residents (a 10-point addition on resident payroll); a small-budget production (total expenditures of at
+    # least $100,000 and at most $499,999) receives 45% of resident payroll instead (a 20-point addition). Payroll to non-residents earns the 25% only.
+    "us_al_film_incentive": (
+        EligibleSubsetUpliftRule(
+            "resident_payroll_35", .10, eligible_categories=frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor"}),
+            exclusive_group="al_resident_payroll", whole_base_fact="al_all_payroll_to_alabama_residents",
+            source_ref="revenue.alabama.gov film rebate: 25 percent of certain production expenditures plus 35 percent of the payroll paid to Alabama residents"),
+        EligibleSubsetUpliftRule(
+            "small_budget_resident_payroll_45", .20, eligible_categories=frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor"}),
+            exclusive_group="al_resident_payroll", whole_base_fact="al_all_payroll_to_alabama_residents",
+            min_gross_budget_usd=100_000.0, max_gross_budget_usd=499_999.0,
+            source_ref="revenue.alabama.gov film rebate: small budget qualified production companies receive 45% of the payroll paid to Alabama residents when "
+                       "total production expenditures are at least $100,000 and not more than $499,999"),
     ),
     "us_nm_film_credit": (
         EligibleSubsetUpliftRule("rural_location", .10, excluded_categories=frozenset({"btl_nonresident_labor"}), source_ref="TRD FYI-370 July 2025 p4: qualifying rural-location goods/services; rental prorating; excludes nonresident BTL"),

@@ -66,51 +66,59 @@ ROLE_INFORMATIONAL = "INFORMATIONAL"
 #: misses a statutory floor is genuinely ineligible.
 _COMPUTABLE_ELIGIBILITY = ("min_total_budget_usd", "min_local_spend_usd")
 
-#: Percentage-of-worldwide gateways: slug -> ((requirement id, categories the numerator and denominator are measured on, dollar floor,
-#: worldwide share, whether a shortfall is a definite failure), ...). New York Tax Law 31 as amended by Part I of Chapter 59 of the Laws of 2025
-#: (tax.ny.gov/legal/2025/pit-corp-changes.htm, read 2026-10-11): qualified post-production costs must be at least the LESSER of $1 million or
-#: 75% of the total post-production cost; visual effects and animation costs at least the lesser of $500,000 or 10% of the total VFX and
-#: animation cost. The page lists the two tests without saying whether they are cumulative, so the VFX shortfall is UNKNOWN (disclosed), not a
-#: failure; the post test fails only when the worldwide figure is known and the local figure is below the lesser threshold.
+#: Percentage-of-worldwide gateways: slug -> ((requirement id, categories, dollar floor, worldwide share), ...). New York Tax Law 31(a)(3)
+#: (nysenate.gov TAX/31*2, read 2026-10-12): (i) qualified post costs EXCLUDING visual effects and animation must meet or exceed the lesser of
+#: $1,000,000 or 75% of the total post cost excluding VFX/animation paid or incurred at any facility; (ii) VFX and animation costs must meet or
+#: exceed the lesser of $500,000 or 10% of the total VFX/animation cost; (iii) both categories may be claimed together only if both tests are
+#: met. Each test therefore governs its own category: a category with no local claim is not tested, a failed category's costs are not
+#: eligible, and the other category stays eligible. The worldwide figure comes from the whole structure; unknown stays UNKNOWN.
 _PERCENT_GATEWAYS = {
     "us_ny_post_production_credit": (
-        ("ny_post_gateway", ("post_production", "sound", "vfx"), 1_000_000.0, 0.75, True),
-        ("ny_vfx_gateway", ("vfx",), 500_000.0, 0.10, False),
+        ("ny_post_gateway", ("post_production", "sound"), 1_000_000.0, 0.75),
+        ("ny_vfx_gateway", ("vfx",), 500_000.0, 0.10),
     ),
 }
+from app.calculators.qualification_model import GATEWAY_FAILED_CATEGORY  # noqa: E402  (re-exported for the pricing kernel)
+
+
+def _gateway_figures(categories, dollar_floor, share, category_spend_usd, worldwide_category_spend_usd):
+    local = None if category_spend_usd is None else round(sum(category_spend_usd.get(c, 0.0) for c in categories), 2)
+    world = None if worldwide_category_spend_usd is None else round(sum(worldwide_category_spend_usd.get(c, 0.0) for c in categories), 2)
+    threshold = None if world is None else round(min(dollar_floor, share * world), 2)
+    return local, world, threshold
 
 
 def percent_gateway_minimum_qpe(slug, worldwide_category_spend_usd) -> float | None:
-    """min(dollar floor, share x worldwide cost) for the program's FIRST (post) gateway, or None when the program has none or the worldwide
-    figure is unknown (the dollar floor on the rate tier then stands)."""
-    gateways = _PERCENT_GATEWAYS.get(slug)
-    if not gateways or worldwide_category_spend_usd is None:
-        return None
-    _req, categories, dollar_floor, share, _definite = gateways[0]
-    world = round(sum(worldwide_category_spend_usd.get(c, 0.0) for c in categories), 2)
-    return round(min(dollar_floor, share * world), 2) if world > 0 else None
+    """The rate tier's single dollar floor is replaced by 0 once the worldwide figure is known: the per-category gateways (evaluated by the
+    requirements gate and applied per category in price_segment) are the exact statutory test. None leaves the tier's dollar floor."""
+    return 0.0 if slug in _PERCENT_GATEWAYS and worldwide_category_spend_usd is not None else None
+
+
+def percent_gateway_failed_categories(slug, category_spend_usd, worldwide_category_spend_usd):
+    """(failed categories, satisfied categories) among the gateways that have a local claim; used to drop only the failing category's costs."""
+    failed, satisfied = [], []
+    for _req, categories, dollar_floor, share in _PERCENT_GATEWAYS.get(slug, ()):
+        local, _world, threshold = _gateway_figures(categories, dollar_floor, share, category_spend_usd, worldwide_category_spend_usd)
+        if not local or threshold is None:
+            continue
+        (satisfied if local + 0.01 >= threshold else failed).extend(categories)
+    return failed, satisfied
 
 
 def _percent_gateway_evaluations(slug, category_spend_usd, worldwide_category_spend_usd):
     out = []
-    for req_id, categories, dollar_floor, share, definite in _PERCENT_GATEWAYS[slug]:
-        local = None if category_spend_usd is None else round(sum(category_spend_usd.get(c, 0.0) for c in categories), 2)
-        world = None if worldwide_category_spend_usd is None else round(sum(worldwide_category_spend_usd.get(c, 0.0) for c in categories), 2)
-        if world is not None and world <= 0.0 and req_id != "ny_post_gateway":
-            out.append(RequirementEvaluation(req_id, ROLE_ELIGIBILITY, NOT_APPLICABLE, "no worldwide cost in this category"))
-            continue
-        if local is None or world is None:
+    for req_id, categories, dollar_floor, share in _PERCENT_GATEWAYS[slug]:
+        local, world, threshold = _gateway_figures(categories, dollar_floor, share, category_spend_usd, worldwide_category_spend_usd)
+        if local is not None and local <= 0.0:
+            out.append(RequirementEvaluation(req_id, ROLE_ELIGIBILITY, NOT_APPLICABLE, "no local claim in this category"))
+        elif local is None or world is None:
             out.append(RequirementEvaluation(req_id, ROLE_ELIGIBILITY, UNKNOWN,
                 f"lesser of ${dollar_floor:,.0f} or {share:.0%} of the worldwide cost; the worldwide figure is not available"))
-            continue
-        threshold = round(min(dollar_floor, share * world), 2)
-        text = f"${local:,.0f} local vs the lesser of ${dollar_floor:,.0f} or {share:.0%} of ${world:,.0f} worldwide = ${threshold:,.0f}"
-        if local + 0.01 >= threshold:
-            out.append(RequirementEvaluation(req_id, ROLE_ELIGIBILITY, SATISFIED, text))
         else:
-            out.append(RequirementEvaluation(req_id, ROLE_ELIGIBILITY, FAILED if definite else UNKNOWN,
-                text + ("" if definite else "; whether this test is cumulative with the post test is not stated in the page read")))
+            text = f"${local:,.0f} local vs the lesser of ${dollar_floor:,.0f} or {share:.0%} of ${world:,.0f} worldwide = ${threshold:,.0f}"
+            out.append(RequirementEvaluation(req_id, ROLE_ELIGIBILITY, SATISFIED if local + 0.01 >= threshold else FAILED, text))
     return out
+
 
 #: Mandatory requirements that need a project FACT the engine does not derive
 #: from a budget. These are recorded as explicit UNKNOWN and SURFACED, but
