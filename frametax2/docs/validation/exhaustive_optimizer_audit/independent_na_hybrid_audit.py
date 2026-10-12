@@ -1022,7 +1022,7 @@ def compute_independent_multi_program_stack_from_lines(
             open_base_usd,
             total_inc,
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_QC_PSTC_SERVICE_STACK / ASSUMED_PROPORTIONAL_NETTING_OPEN)",
-            f"ITA § 125.5(1) & Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f}) with 16% Federal PSTC on Canadian labour (${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Netting uses an ASSUMED proportional labour allocation (net labour = 75% labour); exact statutory netting text remains OPEN.",
+            f"ITA § 125.5(1) & Loi sur les impôts (Quebec) s. 1029.8.36.0.0.4: foreign-service stack pairing 25% Quebec QPSTC (${qpstc_inc:,.2f} on open spend base ${open_base_usd:,.2f}) with 16% Federal PSTC (${pstc_inc:,.2f} on Canadian labour base ${labour_cat_usd:,.2f}; combined dollar incentive = ${total_inc:,.2f}; blended rate is base-dependent, not 37%). Netting uses an ASSUMED proportional labour allocation (net labour = 75% of labour); deducting total QPSTC dollars ($qpstc_inc) directly from labour yields a lower incentive / higher NPC bound. Exact statutory netting text remains OPEN.",
         )
 
     if slug_set == {"ca_federal_pstc", "ca_mb_film_video_credit"}:
@@ -1041,7 +1041,7 @@ def compute_independent_multi_program_stack_from_lines(
             open_base_usd,
             total_inc,
             "OPEN_CODE_DEFECT (NA-HYB-DEF-07: OMITTED_FEDERAL_PSTC_PLUS_MB_SERVICE_STACK / ASSUMED_PROPORTIONAL_NETTING_OPEN)",
-            f"ITA § 125.5(1) & Manitoba Income Tax Act s. 7.6(6): foreign-service stack pairing 30% Manitoba Cost-of-Production credit (${mb_inc:,.2f}) with 16% Federal PSTC on Canadian labour (${pstc_inc:,.2f}; combined = ${total_inc:,.2f}). Netting uses an ASSUMED proportional labour allocation (net labour = 70% labour; conservative gross assistance bound recognized per Codex c52e2cd7); exact statutory netting text remains OPEN.",
+            f"ITA § 125.5(1) & Manitoba Income Tax Act s. 7.6(6): foreign-service stack pairing 30% Manitoba Cost-of-Production credit (${mb_inc:,.2f} on open spend base ${open_base_usd:,.2f}) with 16% Federal PSTC (${pstc_inc:,.2f} on Canadian labour base ${labour_cat_usd:,.2f}; combined dollar incentive = ${total_inc:,.2f}; blended rate is base-dependent, not 41.2%). Netting uses an ASSUMED proportional labour allocation (net labour = 70% of labour); deducting total Manitoba credit dollars ($mb_inc) directly from labour constitutes a lower incentive / higher NPC conservative bound (Codex c52e2cd7). Exact statutory netting text remains OPEN.",
         )
 
     if slug_set == {"ca_federal_cptc", "on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}:
