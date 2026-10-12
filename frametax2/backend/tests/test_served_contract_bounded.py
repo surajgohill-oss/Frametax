@@ -617,6 +617,16 @@ async def assert_hybrid_bounded_retention(db, isolated_hybrid_project, monkeypat
     monkeypatch.setattr(cret, "TYPE_TOP", 3)
     monkeypatch.setattr(cpv, "TYPE_TOP", 3)
     econ = await ce.evaluate_project(db, pid)          # commit() enforces generated == persisted + aggregated
+    await assert_bounded_generation(db, pid, econ, measured, legacy_total, legacy_engine)
+
+
+async def assert_bounded_generation(db, pid, econ, measured, legacy_total, legacy_engine, timings=None):
+    """Everything asserted about a bounded generation against a measured legacy enumeration (statuses ``measured``, rows ``legacy_total``, rows persisted under
+    ``legacy_engine``): coverage and accounting, bounded persistence, the retained global ranking against the legacy ranking, proof completeness and retained incumbents,
+    group accounting, and the zero-row reuse. Shared by the independent-enumeration body and the shared-stream body (tests/retention_shared_stream.py)."""
+    import time
+    from sqlalchemy import text
+    from app.services import candidate_retention as cret
     assert econ["status"] == "EVALUATION_COMPLETE"
     fp = econ["state_fingerprint"]
     summary = await ce.load_generation_summary(db, pid, fp)
@@ -635,6 +645,16 @@ async def assert_hybrid_bounded_retention(db, isolated_hybrid_project, monkeypat
     non_priced = (await db.execute(text(f"select count(*) from {J} where {G} and scr.true_net_cost_usd is null"), P)).scalar()
     priced_rows = persisted - non_priced
     assert priced_rows <= cret.BoundedRetention().bound(structure_types=types + 2, jurisdictions=64) + 8
+
+    # ranking: the bounded generation's retained global top equals the legacy enumeration's own top (verified NPC, ties by canonical economic identity); the legacy
+    # rows are a separate writer's persistence, so this compares two independent row sets, never a writer with itself
+    top = lambda fp: text(
+        "select scr.true_net_cost_usd npc, scr.economic_identity ident from structure_calculation_results scr join production_structures ps on ps.id=scr.structure_id "
+        f"where ps.project_id=:p and scr.engine_version=:ev {fp} and scr.calculation_trace_json->>'candidate_status'='PRICED' and scr.true_net_cost_usd is not null "
+        "order by scr.true_net_cost_usd, scr.economic_identity limit 3")
+    legacy_top = [tuple(r) for r in (await db.execute(top(""), {"p": pid, "ev": legacy_engine})).all()]
+    bounded_top = [tuple(r) for r in (await db.execute(top("and scr.input_fingerprint=:fp"), P)).all()]
+    assert legacy_top and bounded_top == legacy_top, ("retained global ranking differs from the legacy enumeration's", bounded_top, legacy_top)
 
     # every persisted proof is complete AND its incumbent is a persisted row
     proofs = (await db.execute(text(f"select scr.calculation_trace_json trace from {J} where {G} and scr.calculation_trace_json->>'candidate_status'='DOMINATED_WITH_PROOF'"), P)).all()
@@ -665,7 +685,10 @@ async def assert_hybrid_bounded_retention(db, isolated_hybrid_project, monkeypat
                           "(select count(*) from evaluation_candidate_aggregates where project_id=:p), "
                           "(select count(*) from evaluation_generation_summaries where project_id=:p)")
     before = tuple((await db.execute(counts(), {"p": pid})).one())
+    t_reuse = time.perf_counter()
     again = await ce.evaluate_project(db, pid)
+    if timings is not None:
+        timings["reuse_seconds"] = round(time.perf_counter() - t_reuse, 2)
     assert again["status"] == "EVALUATION_REUSED"
     assert tuple((await db.execute(counts(), {"p": pid})).one()) == before
     assert again["priced_count"] == econ["priced_count"] and again["baseline"] == econ["baseline"]
