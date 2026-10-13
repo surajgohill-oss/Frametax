@@ -223,7 +223,7 @@ function FlaggedItem({ item, election }) {
             {saved == null ? "no expected utilization stated" : `${saved}% expected use`}
             {" · "}the election sets the planned cost; each jurisdiction's rules separately decide how much of the deployed reserve qualifies.
           </p>
-          <ContingencyLine projectId={election.projectId} reserveUsd={item.amount ?? item.amount_usd} currentPct={saved} planning={election.planning} onSaved={election.onSaved} />
+          <ContingencyLine projectId={election.projectId} reserveUsd={item.amount ?? item.amount_usd} currentPct={saved} planning={election.planning} onSaved={election.onSaved} evaluateOnSave={election.evaluateOnSave !== false} />
         </div>
       ) : (
         <p className="text-tertiary small" style={{ margin: "6px 0 0" }} data-testid="flagged-no-input">

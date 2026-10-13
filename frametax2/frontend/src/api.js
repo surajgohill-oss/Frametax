@@ -277,6 +277,11 @@ export const setMasterArtwork = (projectId, assetId) =>
 export const beginEvaluation = (projectId) =>
   verb("POST", `${PROJECTS_BASE}/${projectId}/evaluation/begin`);
 
+// The producer's contingency deployment plan (GET/POST /cineglobe/projects/{id}/contingency-deployments): NOT_STATED until stated; a null plan clears it. Neither call evaluates.
+export const getContingencyDeployments = (projectId) => request(`/projects/${projectId}/contingency-deployments`);
+export const postContingencyDeployments = (projectId, deployments) =>
+  request(`/projects/${projectId}/contingency-deployments`, { method: "POST", body: JSON.stringify({ deployments }) });
+
 // Project Workspace — the view adapter (app/services/project_workspace_view.py)
 // behind the generic Overview/World/Script/Budget pages. Read-only: never
 // triggers evaluation, never computes economics — reshapes what

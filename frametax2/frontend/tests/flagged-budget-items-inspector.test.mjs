@@ -44,7 +44,7 @@ test("the contingency control is ONE shared component (rail and Inspector), savi
   assert.doesNotMatch(rail, /function ContingencyLine/);
   assert.match(shared, /export function ContingencyLine/);
   assert.match(shared, /postProjectAssumptions\(projectId, \{ contingency_expected_utilization_pct: pct \}\)/);
-  assert.match(shared, /await beginEvaluation\(projectId\)/);
+  assert.match(shared, /if \(evaluateOnSave\) await runEvaluation\(projectId\)/);   // the shared single-flight wrapper of Begin Evaluation; on retained (stale) results the save runs no silent evaluation
   assert.match(shared, /planning\?\.state === "ELECTED"/);                 // planned cost shown only for a real election
   assert.match(shared, /No utilization stated: planned cost = full budget/);
 });

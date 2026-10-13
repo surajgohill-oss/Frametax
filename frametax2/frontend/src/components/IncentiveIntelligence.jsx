@@ -3,7 +3,8 @@ import { Money, scenarioDisplay, buildScenarioLabel, hasAdministrativeAllocation
 import { readIncentivePotential } from "../lib/incentivePotential";
 import EconomicWell from "./EconomicWell";
 import { classifyStructure, selectAnchorLeadingOptimized, cardStatus, isBaselineStructure } from "../lib/productionOptions";
-import { postJurisdictionPreference, beginEvaluation } from "../api";
+import { postJurisdictionPreference } from "../api";
+import { runEvaluation } from "../lib/evaluationRun";
 
 // Batched producer-control closeout (2026-09-03), Batch 6: the fact_key
 // prefix must match canonical_evaluation.py's own
@@ -97,7 +98,7 @@ function OptionCard({ structure, cardIndex, onClick, projectId, onPreferenceSave
       // an explicit re-evaluation is required for the new exclusion
       // (now part of the fingerprint) to actually recompute the
       // candidate universe, not just persist a fact nothing reads yet.
-      await beginEvaluation(projectId);
+      await runEvaluation(projectId);
       onPreferenceSaved?.();
     } finally {
       setSavingPreference(false);
@@ -198,7 +199,7 @@ function ExcludedJurisdictions({ facts, projectId, onPreferenceSaved }) {
     setSavingCode(code);
     try {
       await postJurisdictionPreference(projectId, code, true);
-      await beginEvaluation(projectId);
+      await runEvaluation(projectId);
       onPreferenceSaved?.();
     } finally {
       setSavingCode(null);

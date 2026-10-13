@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Money, jurisdictionName } from "../lib/format";
 import { buildAccountBlocks, buildDepartmentBlocks } from "../lib/budgetBlocks";
-import { postProjectAssumptions, beginEvaluation } from "../api";
+import { postProjectAssumptions } from "../api";
+import { runEvaluation, useEvaluationRun } from "../lib/evaluationRun";
+import { RetainedSaveNote } from "./EvaluationStatus";
 import { ContingencyLine } from "./ContingencyElection";
 
 // Production Budget rail — approved Overview right column. Categories and
@@ -196,7 +198,9 @@ function SourceBudgetFinanceLine({ amountUsd }) {
   );
 }
 
-function FinanceCostLine({ projectId, currentUsd, onSaved }) {
+function FinanceCostLine({ projectId, currentUsd, onSaved, evaluateOnSave = true }) {
+  const [savedNotEvaluated, setSavedNotEvaluated] = useState(false);
+  const run = useEvaluationRun(projectId);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
@@ -218,7 +222,8 @@ function FinanceCostLine({ projectId, currentUsd, onSaved }) {
       // re-evaluation is required for the new financing_cost_usd (now
       // part of the fingerprint) to actually produce a fresh NPC, not
       // just a persisted-but-unread fact.
-      await beginEvaluation(projectId);
+      if (evaluateOnSave) await runEvaluation(projectId);
+      else setSavedNotEvaluated(true);
       onSaved?.();
       setEditing(false);
     } finally {
@@ -239,11 +244,11 @@ function FinanceCostLine({ projectId, currentUsd, onSaved }) {
               value={draft}
               placeholder="0"
               autoFocus
-              disabled={saving}
+              disabled={saving || run.running}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
             />
-            <button className="ghost-action small" disabled={saving} onClick={save}>
+            <button className="ghost-action small" disabled={saving || run.running} onClick={save}>
               {saving ? "Saving…" : "Save"}
             </button>
             <button className="ghost-action small" disabled={saving} onClick={() => setEditing(false)}>
@@ -257,6 +262,7 @@ function FinanceCostLine({ projectId, currentUsd, onSaved }) {
           </>
         )}
       </div>
+      {savedNotEvaluated && <RetainedSaveNote />}
     </div>
   );
 }
@@ -341,6 +347,7 @@ export default function BudgetRail({
         currentPct={contingencyPct}
         onSaved={onContingencySaved}
         planning={production?.contingency_planning}
+        evaluateOnSave={production?.evaluation_freshness !== "STALE"}
       />
 
       <SourceBudgetFinanceLine amountUsd={production?.finance_semantics?.source_budget_finance_usd} />
@@ -349,6 +356,7 @@ export default function BudgetRail({
         projectId={projectId}
         currentUsd={financingCostUsd}
         onSaved={onFinanceCostSaved}
+        evaluateOnSave={production?.evaluation_freshness !== "STALE"}
       />
 
       <InkindDisclosure economics={economics} />

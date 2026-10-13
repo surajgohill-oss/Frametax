@@ -10,6 +10,7 @@ import { buildGlobeView, activeStructure, buildCandidateDetail } from "../../lib
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, rankOrNpcOrder } from "../../lib/productionOptions";
 import ProductionDetails from "../../components/ProductionDetails";
+import EvaluationStatus from "../../components/EvaluationStatus";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
 import OptimizerCategorySummary from "../../components/OptimizerCategorySummary";
@@ -158,6 +159,7 @@ export default function Overview() {
           use Recalculate on the Project Record to refresh.
         </div>
       )}
+      <EvaluationStatus projectId={projectId} onCompleted={refetch} />
       <FXStrip
         economics={economics} structure={structure}
         structureIsLeading={structureIsLeading} structureIsCurrentLocation={structureIsCurrentLocation}
@@ -289,7 +291,7 @@ export default function Overview() {
             onSelectAccount={(line, alloc) => openInspector("account", {
               ...line,
               contingencyElection: /contingen/i.test(line.label || "") ? {
-                projectId, currentPct: contingencyPct, planning: production?.contingency_planning,
+                projectId, currentPct: contingencyPct, planning: production?.contingency_planning, evaluateOnSave: production?.evaluation_freshness !== "STALE",
                 onSaved: () => { refetch(); window.dispatchEvent(new Event("cineglobe:refetch")); },
               } : null,
               crossRef: alloc ? [{

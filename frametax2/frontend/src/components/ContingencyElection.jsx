@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Money } from "../lib/format";
-import { postProjectAssumptions, beginEvaluation } from "../api";
+import { postProjectAssumptions } from "../api";
+import { runEvaluation, useEvaluationRun } from "../lib/evaluationRun";
+import ContingencyDeployments from "./ContingencyDeployments";
+import EvaluationStatus, { RetainedSaveNote } from "./EvaluationStatus";
 
 // Compact Contingency Expected-Utilization control — Production Overview +
 // Project Globe UI regression repair, Section 5: lives INSIDE the Budget
@@ -11,8 +14,10 @@ import { postProjectAssumptions, beginEvaluation } from "../api";
 // where it renders, never what it does or how it's stored.
 const CONTINGENCY_OPTIONS = [0, 25, 50, 75, 100];
 
-export function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved, planning }) {
+export function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved, planning, evaluateOnSave = true }) {
   const [saving, setSaving] = useState(false);
+  const [savedNotEvaluated, setSavedNotEvaluated] = useState(false);
+  const run = useEvaluationRun(projectId);
   if (!reserveUsd) return null;
 
   async function choose(e) {
@@ -28,10 +33,12 @@ export function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved, pl
       // already part of the evaluation cache fingerprint, so without an
       // explicit re-evaluation here the served NPC/economics would stay
       // stale after a save until some unrelated future evaluation
-      // happened to run. beginEvaluation is the SAME existing, generic
-      // "Begin Evaluation" entry point (idempotent per fingerprint) —
-      // no new economics, no new endpoint.
-      await beginEvaluation(projectId);
+      // happened to run. runEvaluation is the shared single-flight wrapper of the
+      // SAME existing, generic "Begin Evaluation" entry point (idempotent per
+      // fingerprint): it reports the real running/completed/failed state and never
+      // starts a second run for a project that is already evaluating.
+      if (evaluateOnSave) await runEvaluation(projectId);
+      else setSavedNotEvaluated(true);
       onSaved?.();
     } finally {
       setSaving(false);
@@ -51,16 +58,19 @@ export function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved, pl
           <select
             className="brail-contingency-select"
             value={currentPct ?? ""}
-            disabled={saving}
+            disabled={saving || run.running}
             onChange={choose}
           >
-            <option value="">—</option>
+            <option value="">— not stated</option>
             {CONTINGENCY_OPTIONS.map((pct) => (
               <option key={pct} value={pct}>{pct}%</option>
             ))}
           </select>
         </span>
       </div>
+      <EvaluationStatus projectId={projectId} onCompleted={onSaved} compact />
+      {savedNotEvaluated && <RetainedSaveNote />}
+      <ContingencyDeployments projectId={projectId} onSaved={onSaved} evaluateOnSave={evaluateOnSave} />
       {/* Original gross and the reserve above are never rewritten; the election only sets the PLANNED cost used for NPC
           (undeployed reserve removed once). The jurisdiction QPE rules separately qualify the deployed reserve. */}
       {planning?.state === "ELECTED" ? (
