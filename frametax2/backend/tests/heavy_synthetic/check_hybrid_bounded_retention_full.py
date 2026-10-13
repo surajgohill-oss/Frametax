@@ -1,6 +1,7 @@
 """HEAVY synthetic check (explicit path; deliberately outside the default suite and NOT a skipped test): the UNBOUNDED hybrid production whose real search enumerates
-hundreds of thousands of candidates (minutes). It enumerates ONCE and feeds the same candidate stream to the bounded writer and an independent legacy full-enumeration writer
-(tests/retention_shared_stream.py), measuring the legacy rows itself, so it carries no pinned counts that could go stale. It runs inside the scope-limited alias / pair-rule / allocation
+hundreds of thousands of candidates (minutes). It enumerates ONCE and feeds the same candidate stream to the bounded writer and an independent in-memory StreamOracle (tests/retention_shared_stream.py;
+persisting every legacy row was ~75% of this check's wall time, so the real persisted legacy writer is covered by the bounded-universe control, which also validates the oracle against it cell by cell),
+measuring the legacy reference itself, so it carries no pinned counts that could go stale. It runs inside the scope-limited alias / pair-rule / allocation
 memos (`alias_memo_scope`, results identical, active only inside the scope) with the raised young-generation GC threshold, exactly as services/bounded_regeneration.py does for the real
 exhaustive hybrid search; both settings are restored afterwards. Phase timings, a 60 s heartbeat and a stack-sampling profile (inclusive and self counts per function, every 120 s) are printed (run with -s).
 
@@ -72,7 +73,7 @@ async def test_unbounded_hybrid_production_bounded_retention_matches_its_own_leg
     t0 = time.perf_counter()
     try:
         with alias_memo_scope():
-            await assert_hybrid_bounded_retention_shared_stream(db, isolated_hybrid_project, monkeypatch, restrict=False, timings=timings, heartbeat_seconds=60)
+            await assert_hybrid_bounded_retention_shared_stream(db, isolated_hybrid_project, monkeypatch, restrict=False, timings=timings, heartbeat_seconds=60, legacy="oracle")
     finally:
         gc.set_threshold(*old_thresholds)
         stop.set()

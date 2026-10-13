@@ -620,9 +620,9 @@ async def assert_hybrid_bounded_retention(db, isolated_hybrid_project, monkeypat
     await assert_bounded_generation(db, pid, econ, measured, legacy_total, legacy_engine)
 
 
-async def assert_bounded_generation(db, pid, econ, measured, legacy_total, legacy_engine, timings=None):
+async def assert_bounded_generation(db, pid, econ, measured, legacy_total, legacy_engine, timings=None, legacy_top=None):
     """Everything asserted about a bounded generation against a measured legacy enumeration (statuses ``measured``, rows ``legacy_total``, rows persisted under
-    ``legacy_engine``): coverage and accounting, bounded persistence, the retained global ranking against the legacy ranking, proof completeness and retained incumbents,
+    ``legacy_engine``, or ``legacy_top`` when the caller supplies the legacy ranking itself): coverage and accounting, bounded persistence, the retained global ranking against the legacy ranking, proof completeness and retained incumbents,
     group accounting, and the zero-row reuse. Shared by the independent-enumeration body and the shared-stream body (tests/retention_shared_stream.py)."""
     import time
     from sqlalchemy import text
@@ -652,7 +652,8 @@ async def assert_bounded_generation(db, pid, econ, measured, legacy_total, legac
         "select scr.true_net_cost_usd npc, scr.economic_identity ident from structure_calculation_results scr join production_structures ps on ps.id=scr.structure_id "
         f"where ps.project_id=:p and scr.engine_version=:ev {fp} and scr.calculation_trace_json->>'candidate_status'='PRICED' and scr.true_net_cost_usd is not null "
         "order by scr.true_net_cost_usd, scr.economic_identity limit 3")
-    legacy_top = [tuple(r) for r in (await db.execute(top(""), {"p": pid, "ev": legacy_engine})).all()]
+    if legacy_top is None:
+        legacy_top = [tuple(r) for r in (await db.execute(top(""), {"p": pid, "ev": legacy_engine})).all()]
     bounded_top = [tuple(r) for r in (await db.execute(top("and scr.input_fingerprint=:fp"), P)).all()]
     assert legacy_top and bounded_top == legacy_top, ("retained global ranking differs from the legacy enumeration's", bounded_top, legacy_top)
 
