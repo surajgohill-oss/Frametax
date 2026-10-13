@@ -865,6 +865,47 @@ async def post_project_assumptions(
     return {"answers": {f.fact_key: f.value for f in fact_rows}}
 
 
+class ContingencyDeploymentsBody(BaseModel):
+    deployments: dict[str, list[dict[str, Any]]] | None = None
+
+
+async def _deployment_plan(db: AsyncSession, project_id: str) -> dict[str, Any]:
+    from app.services.canonical_project_economics import build_project_economic_inputs
+    from app.services.contingency_deployment_facts import deployment_plan_view
+    result = await build_project_economic_inputs(db, project_id)
+    if result.inputs is None:
+        raise HTTPException(status_code=409, detail={"message": "The project's economic inputs are incomplete.", "blockers": list(result.blockers)})
+    return deployment_plan_view(result.inputs)
+
+
+@router.get("/projects/{project_id}/contingency-deployments")
+async def get_project_contingency_deployments(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """The producer's contingency deployment plan for one project (read only): NOT_STATED until the producer states one."""
+    if (await db.execute(select(Project.id).where(Project.id == project_id))).scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return await _deployment_plan(db, project_id)
+
+
+@router.post("/projects/{project_id}/contingency-deployments")
+async def post_project_contingency_deployments(project_id: str, body: ContingencyDeploymentsBody, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Replace the producer's contingency deployment plan (null or {} clears it back to NOT_STATED). Validated against the source budget (destination category read from the
+    budget line, total within each reserve; any invalid entry refuses the whole request, 400). Writes the one ``contingency_deployments`` project fact; it never evaluates, never
+    rewrites the budget gross or reserve, and changes the evaluation fingerprint, so a following evaluation prices it once."""
+    from app.services.canonical_project_economics import build_project_economic_inputs
+    from app.services.contingency_deployment_facts import validate_deployment_request, write_contingency_deployments
+    if (await db.execute(select(Project.id).where(Project.id == project_id))).scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    result = await build_project_economic_inputs(db, project_id)
+    if result.inputs is None:
+        raise HTTPException(status_code=409, detail={"message": "The project's economic inputs are incomplete.", "blockers": list(result.blockers)})
+    clean, errors = validate_deployment_request(body.deployments, result.inputs.budget_lines, result.inputs.spend_category_by_code)
+    if errors:
+        raise HTTPException(status_code=400, detail={"message": "Invalid contingency deployment plan.", "errors": errors})
+    await write_contingency_deployments(db, project_id, clean or None)
+    await db.commit()
+    return await _deployment_plan(db, project_id)
+
+
 class NyProgramFacts(BaseModel):
     evidenced: dict[str, Any] = {}
     payees: list[dict[str, Any]] = []
