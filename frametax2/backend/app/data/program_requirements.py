@@ -1140,6 +1140,8 @@ register(ProgramRequirementsProfile(
                                  "Tax Credit (CAVCO/CRA); a federal PSTC can stack with the OPSTC.",
         "min_total_budget_original": "Authoritative threshold is CAD 1,000,000 total production "
                                      "cost for a feature (USD figure shown is an internal conversion).",
+            "ontario_labour_gate_runtime_status": "OPEN (2026-10-12): the 25% Ontario-labour test is not enforced at runtime. The budget cannot establish the Ontario-resident labour split, and a provable-failure check would falsely fail LLS. Safe treatment: disclosed on the candidate, not priced as failed. Remaining requirement: producer-supplied Ontario labour expenditure as a project fact.",
+        "provincial_netting": "OPSTC Guidelines s.3.02 and ITA 125.5(1)(b)/RC4385 (read 2026-10-12): a provincial credit is assistance reasonably in respect of labour and reduces the federal PSTC labour basis only to that extent; the federal PSTC does not reduce the OPSTC base. Consumed by canonical_stack_bridge.pstc_netted_by_provincial.",
     },
 ))
 
@@ -2919,6 +2921,7 @@ register(ProgramRequirementsProfile(
         "application_fees_cad": "CAD 19,000 accreditation and CAD 5,000 major production certificate, for productions beginning principal photography after 2024-12-31 (authoritative original currency).",
         "caps": "No annual cap and no per-project cap are published on the official Province of BC page.",
         "open_item": "Statutory minimum production-cost thresholds for 'accredited production' are set in the Income Tax Act (British Columbia); not read in this pass and deliberately not guessed.",
+        "federal_pstc_netting": "BC Income Tax Act s.79(1) (federal PSTC is not assistance to the BC credit) and ITA 125.5(1)(b)/RC4385 (the BC credit is assistance reasonably in respect of labour and reduces the federal PSTC labour basis), read 2026-10-12. Runtime: canonical_stack_bridge.pstc_netted_by_provincial; the BC credit is wholly labour so the labour-share netting equals the full credit up to the PSTC labour basis.",
     },
 ))
 
@@ -3002,6 +3005,7 @@ register(ProgramRequirementsProfile(
         "base_is_all_spend": "The 25% base applies to all-spend production costs (qualified labour + qualified property), not labour only.",
         "process": "SODEC Approval Certificate plus an Advance Ruling application.",
         "distinct_programme": "Separate from the Québec-content production tax credit, which does apply a content test.",
+        "federal_pstc_netting": "Revenu Quebec CO-1029.8.36.SP note 7 and the SODEC PSTC fact sheet (March 2026), read 2026-10-12: the federal PSTC is not assistance to the Quebec credit, so the Quebec credit is not reduced by it. In the other direction the Quebec credit is assistance reasonably in respect of labour and reduces the federal PSTC labour basis (ITA 125.5(1)(b), RC4385). Runtime: canonical_stack_bridge.pstc_netted_by_provincial with an explicit apportionment assumption and a whole-credit lower bound disclosed.",
     },
 ))
 
@@ -3651,6 +3655,8 @@ register(ProgramRequirementsProfile(
         "annual_cap_vs_allocation": "Sources state a USD 100,000,000 annual cap alongside a current fiscal-year allocation of USD 60,000,000; under that allocation the 20% rule produces a USD 12,000,000 maximum single award. Both figures preserved — cap and allocation are distinct concepts and are not collapsed.",
         "monetization": "Use against Pennsylvania state tax liability, or sell/assign/transfer to another entity.",
         "statutory_basis": "Act 84 of 2016, Article XVII-D (Entertainment Production Tax Credit).",
+        "sixty_percent_pinpoint": "PA DCED Film Production Tax Credit Guidelines (10/28/2020), p.2, read 2026-10-12: Pennsylvania production expenses must be at least 60% of total production expenses. Recorded verbatim-in-substance; the page citation is the pinpoint for the runtime gate in calculators/project_eligibility_gates.",
+        "compensation_cap": "The same Guidelines cap compensation counted toward qualified Pennsylvania production expense at USD 15,000,000 per person; the cap is recorded here and is NOT modeled at runtime (the budget carries no per-person compensation split) - OPEN, safe treatment: the credit is priced on the allocated spend and the cap is disclosed.",
     },
 ))
 
@@ -4189,6 +4195,172 @@ register(ProgramRequirementsProfile(
         "post_commencement_application": "Applications accepted up to 120 days AFTER commencing principal photography in Alberta (effective 2024-06-07) — no pre-production approval gate.",
         "legislative_currency": "Film and Television Tax Credit Act, Regulation and Program Guidelines as amended, in force 2024-06-07.",
         "caps": "No annual programme cap and no per-project cap published in the pages reviewed.",
+    },
+))
+
+# ── NA-RECONCILIATION-09 (2026-10-12): profiles persisted from primary sources read this pass (each EvidenceRecord names the pinpoint passage). ─────────────────────────────────────
+register(ProgramRequirementsProfile(
+    program_slug="us_co_film_incentive", jurisdiction_code="US-CO",
+    local_entity_required=None, cultural_test_required=False,
+    min_local_spend_usd=1_000_000.0,   # non-originating company; the originating-company alternative is USD 100,000 (additional_facts)
+    preapproval_mandatory=True,        # conditional written approval BEFORE production activities in the state
+    refundable=True, transferable=False,
+    audit_required=True, cpa_or_approved_auditor_required=True,   # Colorado-performed CPA review
+    allocation_type=AllocationType.SUBJECT_TO_APPROPRIATION,
+    evidence=EvidenceRecord(
+        source_title="C.R.S. 24-48.5-116 (performance-based incentive for film production), as amended by Colorado Session Laws 2022, chapter 355",
+        source_url="https://content.leg.colorado.gov/sites/default/files/documents/2022A/bills/sl/2022a_sl_355.pdf",
+        issuing_authority="Colorado General Assembly (enacted statute); administered by the Colorado Office of Film, Television and Media",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        notes="Session law text (pp. 2540-2541): subsection (1)(a) '...an amount equal to twenty percent of the total amount of the production company's qualified local expenditures if the "
+              "total of such expenditures equals or exceeds one hundred thousand dollars' for a company that originates production activities in Colorado; (1)(b)(I) the same 20% 'if the total "
+              "of such expenditures equals or exceeds one million dollars' for a company that does not originate; (1)(b)(II) USD 250,000 for a television commercial or video game; (1.5) "
+              "executive-director discretion to exceed 20%. The 50% Colorado-resident workforce, pre-approval before production activities, wage withholding and Colorado CPA review come from "
+              "the current C.R.S. text reproduced at colorado.public.law/statutes/crs_24-48.5-116 (SECONDARY mirror of the official Title 24 PDF; its own header reads 'on or after July 1, 2012, "
+              "but before January 1, 2024, and on or after January 1, 2025'). RETRIEVAL FAILURES recorded in the evidence register: oedit.colorado.gov film pages (HTTP 403 and 404) and "
+              "coloradofilm.org (NOT the state office: an unrelated gambling page).",
+    ),
+    additional_facts={
+        "rate": "20% of qualified local expenditures (C.R.S. 24-48.5-116(1)); the executive director may authorize more (1.5), not modeled.",
+        "thresholds": "USD 100,000 qualified local expenditures for a company that originates production activities in Colorado (twelve months of Colorado production activity); USD 1,000,000 for a company that does not originate; USD 250,000 for a television commercial or video game of a non-originating company.",
+        "workforce": "At least 50% Colorado residents in the in-state workforce (current C.R.S. text, mirror).",
+        "appropriation": "Incentives are limited to the amount appropriated to the office for the fiscal year plus unspent prior appropriations; award is not an entitlement.",
+        "tax_credit_exclusion": "Expenditures claimed under the separate income tax credit (C.R.S. 39-22-559, tax years 2024 only per the mirror) cannot also earn the performance-based incentive.",
+        "open_item": "The enacted definition of 'qualified local expenditure' (C.R.S. 24-48.5-114) was not retrieved from an official page; the per-person wage cap in HB 24-1358 text was not confirmed as enacted. Both stay a claim follow-up.",
+    },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_hi_film_digital_media_credit", jurisdiction_code="US-HI",
+    local_entity_required=None, cultural_test_required=False,
+    min_local_spend_usd=100_000.0,
+    preapproval_mandatory=True,        # prequalify with DBEDT during development or pre-production (subsection (f))
+    refundable=True, annual_program_cap_usd=50_000_000.0,
+    allocation_type=AllocationType.FIRST_COME_FIRST_SERVED,   # excess over the annual aggregate rolls to the next year
+    sunset_date="2033-01-01",
+    evidence=EvidenceRecord(
+        source_title="HRS 235-17 Motion picture, digital media, and film production income tax credit",
+        source_url="https://www.capitol.hawaii.gov/hrscurrent/Vol04_Ch0201-0257/HRS0235/HRS_0235-0017.htm",
+        issuing_authority="Hawaii State Legislature (Hawaii Revised Statutes); administered by the Department of Taxation and DBEDT (Hawaii Film Office)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2022-07-01", access_date="2026-10-12",
+        notes="Header: '[Repeal and reenactment on January 1, 2033. L 2022, c 217, s 4.]'. (a)(1) 'Twenty-two per cent of the qualified production costs incurred by a qualified production in any "
+              "county of the State with a population of over seven hundred thousand; or (2) Twenty-seven per cent ... of seven hundred thousand or less'; (c) refund of the excess; (d)(2) 'Have "
+              "qualified production costs totaling at least $100,000'; (d)(3)-(8) shared-card end-title credit, reasonable efforts to hire local talent and crew, evidence for out-of-State "
+              "purchases, workforce-development contributions, tax-compliance and cooperation; (f) prequalify with DBEDT during development or pre-production; (n) USD 50,000,000 of credits per "
+              "year, excess carried to the next year. Qualified production costs: costs incurred within the State subject to general excise tax, including editing, visual effects, music and other "
+              "post-production (subsection (o)). RETRIEVAL: the plain fetch tool returned HTTP 403; the page was read through the in-app browser. CONTRADICTION recorded: the retained "
+              "catalog said SB 2580 'would add +5% (27%/32%)' and a USD 200,000 minimum; the enacted text states 22%/27% and USD 100,000.",
+    ),
+    additional_facts={
+        "rates": "22% in a county with population over 700,000 (Honolulu); 27% in a county of 700,000 or less (the neighbor islands); a production in several counties may prorate by county spend.",
+        "minimum": "Qualified production costs of at least USD 100,000 (HRS 235-17(d)(2)).",
+        "annual_cap": "USD 50,000,000 of credits in any year (HRS 235-17(n)); the excess is treated as applied for in the subsequent year.",
+        "claim_conditions": "Prequalify with DBEDT; shared-card end-title credit where applicable; evidence of local hiring efforts, of unsuccessful efforts to buy locally for out-of-State costs, of workforce-development contributions; tax filing compliance.",
+    },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_az_motion_picture_production", jurisdiction_code="US-AZ",
+    local_entity_required=True,        # a motion picture production company with a physical business office in Arizona
+    cultural_test_required=False,
+    preapproval_mandatory=True, refundable=True, transferable=False,
+    audit_required=True, cpa_or_approved_auditor_required=True,
+    annual_program_cap_usd=125_000_000.0, allocation_type=AllocationType.FIRST_COME_FIRST_SERVED,
+    sunset_date="2044-01-01",
+    evidence=EvidenceRecord(
+        source_title="A.R.S. 43-1165 (credit for motion picture production costs) and A.R.S. 41-1517 (Arizona motion picture production program)",
+        source_url="https://www.azleg.gov/ars/43/01165.htm",
+        issuing_authority="Arizona State Legislature (Arizona Revised Statutes); administered by the Arizona Commerce Authority",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2023-01-01", access_date="2026-10-12",
+        notes="43-1165 header '(Rpld. 1/1/44)'; (A)(1)(a)-(c) 15% up to USD 10,000,000 spend, 17.5% above 10,000,000 but below 35,000,000, 20% above 35,000,000; (A)(2) +2.5% on production labor costs "
+              "of Arizona residents; (A)(3) +2.5% for a qualified production facility or primary practical-location filming with Arizona post; (A)(4) +2.5% with a long-term tenant (lease of at least "
+              "five years); (D)(4) preapproval and postapproval by the Arizona commerce authority; applies to taxable years beginning from and after December 31, 2022. 41-1517 (azleg.gov/ars/41/01517.htm): "
+              "no minimum production cost, Arizona spend or budget; (I) annual caps USD 75,000,000 (2023), 100,000,000 (2024), 125,000,000 (2025 and each later year), up to USD 25,000,000 for "
+              "practical-location productions; (H) postapproval needs an audited statement from an Arizona-licensed CPA; (O) 'motion picture production company' means a person primarily engaged in "
+              "producing motion pictures that has a physical business office in this state; a qualified production facility is a built structure of at least ten thousand square feet. CONTRADICTION "
+              "recorded: secondary sources (Wrapbook) gave USD 250,000 / 10% of budget as a minimum and others none; the statutes state none. Third-party sources were used only to locate the statute.",
+    ),
+    additional_facts={
+        "tiers": "15% (spend up to USD 10,000,000); 17.5% (more than 10,000,000, less than 35,000,000); 20% (more than 35,000,000), applied to the production company's qualified production costs approved by the authority.",
+        "add_ons": "+2.5% Arizona-resident production labor costs; +2.5% qualified production facility (or practical location with Arizona pre/post/editing); +2.5% long-term tenant. Each needs a fact the budget does not hold.",
+        "minimum": "None stated in A.R.S. 43-1165 or 41-1517.",
+        "post_only": "The statutes do not name service or post-only productions; a post-only project does not appear to qualify (production activities must be conducted in Arizona).",
+    },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_nl_all_spend_credit", jurisdiction_code="CA-NL",
+    local_entity_required=True,        # an eligible corporation (permanent establishment in the province is NOT stated on the pages read)
+    cultural_test_required=False,
+    preapproval_mandatory=True,        # Part I application to NLFDC before the production commences
+    refundable=True, transferable=False,
+    evidence=EvidenceRecord(
+        source_title="All Spend Film and Video Production Tax Credit - Department of Finance, Government of Newfoundland and Labrador",
+        source_url="https://www.gov.nl.ca/fin/tax-programs-incentives/business/all-spend-film-and-video-production-tax-credit/",
+        issuing_authority="Government of Newfoundland and Labrador (Department of Finance), with the Newfoundland and Labrador Film Development Corporation",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        notes="'available to eligible corporations at the rate of 40% of eligible production costs ... to a maximum tax credit of $20 million annually per project'; a Part I application to NLFDC "
+              "'prior to the commencement of the production'; registration is not granted where the production is registered under the Film and Video Industry Tax Credit Regulations or has received "
+              "Film and Television Equity Investment Program funding; Part II within 18 months of the end of the taxation year; eligible costs 'may include' eligible salaries, service contracts, "
+              "parent-subsidy amounts, tangible property and accommodation. No minimum budget is stated. CONTRADICTION recorded: the CRA provincial page (canada.ca, effective April 7, 2022) still "
+              "shows a USD/CAD 10 million maximum and the NLFDC 2022-23 report and Part II form read 10 million, while the Department of Finance page and Budget 2025 state 20 million (CRA 'what's new': "
+              "increase effective February 28, 2025); the Finance page governs. NOT RETRIEVED: the definitions of eligible salaries (residency), assistance and the permanent-establishment test "
+              "(no official page read states them).",
+    ),
+    additional_facts={
+        "rate_and_cap": "40% of total eligible production costs net of government assistance (Part II form: TEPC = production costs minus assistance); CAD 20,000,000 per project per year (Finance page); the earlier CAD 10,000,000 figure predates the February 28, 2025 increase.",
+        "alternatives": "Not available to a production registered under the Film and Video Industry Tax Credit Regulations or funded by the Film and Television Equity Investment Program.",
+        "open_item": "Eligible-salary residency, assistance definition and any permanent-establishment condition are not stated on the official pages read; the credit is priced on eligible costs as modeled and these remain claim follow-ups.",
+    },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ontario_computer_animation_and_special_effects_tax_credit_ocase", jurisdiction_code="CA-ON",
+    local_entity_required=True,        # a Canadian corporation with a permanent establishment in Ontario filing an Ontario corporate tax return
+    cultural_test_required=False,
+    min_total_budget_native=None, refundable=True, transferable=False,
+    evidence=EvidenceRecord(
+        source_title="Ontario Computer Animation and Special Effects Tax Credit (OCASE) - Ontario Creates",
+        source_url="https://www.ontariocreates.ca/tax-incentives/ocase",
+        issuing_authority="Ontario Creates (administering the Taxation Act, 2007 (Ontario) credit)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2024-03-26", access_date="2026-10-12",
+        notes="'calculated as 18% of the eligible Ontario labour expenditures'; 'There is no cap on eligible Ontario labour expenditures'; the qualifying corporation 'has a permanent establishment in "
+              "Ontario and files an Ontario corporate tax return'; the production 'incurs an amount that exceeds $25,000 in Ontario labour expenditures', in the claim year or cumulatively with the prior "
+              "year; OCASE 'may be claimed on eligible expenditures in addition to the' OFTTC or OPSTC; for work that began on or after March 26, 2024 no OFTTC/OPSTC certificate is required; "
+              "'other tax credits, licence fees and equity investments are not considered assistance'. The page does not say whether OCASE is assistance for the federal credits (the OPSTC "
+              "Guidelines s.1.05(E) state it is not assistance for the OPSTC).",
+    ),
+    additional_facts={
+        "rate_and_base": "18% of eligible Ontario labour expenditures on eligible computer animation and special effects activities carried out in Ontario; no cap.",
+        "minimum": "More than CAD 25,000 of Ontario labour expenditures on the production (claim year or cumulative with the prior year); evaluated on the OCASE segment's own labour basis.",
+        "stacking": "Additional to the OFTTC or the OPSTC; not assistance for the OPSTC (OPSTC Guidelines s.1.05(E)); federal credits and Ontario credits other than the labour portion of the OPSTC follow the OPSTC Guidelines s.3.02 relations.",
+        "effective": "The current rules (no certificate, CAD 25,000 threshold, added genre exclusions) apply to work started on or after March 26, 2024; 2026 Budget amendments clarify the threshold calculation from that date.",
+    },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_federal_cptc", jurisdiction_code="CA",
+    local_entity_required=True,        # a qualified corporation that is Canadian-controlled
+    cultural_test_required=True,       # CAVCO Canadian-content certification (points test)
+    cultural_test_points=10, cultural_test_threshold=6,
+    preapproval_mandatory=False, refundable=True, transferable=False,
+    evidence=EvidenceRecord(
+        source_title="Canadian Film or Video Production Tax Credit Guide to Form T1131 (RC4164)",
+        source_url="https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/rc4164/canadian-film-video-production-tax-credit-guide-form-t1131.html",
+        issuing_authority="Canada Revenue Agency (Income Tax Act s.125.4), with CAVCO (Department of Canadian Heritage) certification",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        notes="Rate: 'The CPTC is a refundable tax credit equal to 25% of the qualified labour expenditure.' 'The qualified labour expenditure is the lesser of the amount of labour expenditures and 60% "
+              "of the net production cost' (net production cost = production cost minus any assistance received, entitled to be received, or expected to be received); Part 5 lines 421-430. "
+              "ASSISTANCE: 'any provincial tax credit allowed in connection with the Canadian film or video production is considered assistance' and reduces the PRODUCTION COST (line 423, then "
+              "line 430); the guide does not state that assistance reduces labour expenditures (Part 6 lines 601-618), so assistance reaches the claim only through the 60% limb; the CPTC itself "
+              "is not assistance for the CPTC. APPLICANT (Part 3): a qualified corporation, a prescribed taxable Canadian corporation whose activities consist primarily (more than 50%) of a "
+              "Canadian film or video production business through a permanent establishment in Canada, and Canadian-controlled under sections 26 to 28 of the Investment Canada Act; a CAVCO Part A "
+              "certificate and Part B Certificate of Completion are required (Part B application no later than 24 months after the end of the tax year in which principal photography began).",
+    ),
+    additional_facts={
+        "calculation": "25% x min(labour expenditure, 60% x (production cost - assistance)); assistance (including every provincial tax credit) reduces production cost only; labour is not reduced (T1131 Part 5 lines 421-430, Part 6).",
+        "applicant": "Qualified corporation, Canadian-controlled (Investment Canada Act ss.26-28), CAVCO certificate (Part A) and certificate of completion (Part B).",
+        "runtime_treatment": "Priced as a conditional planning figure with the certificate and control assumption disclosed on every CPTC segment, candidate and stack (engine 1.129.0); certification absence is a claim follow-up, not a failed gate (Codex NA adjudication 2026-10-11).",
     },
 ))
 

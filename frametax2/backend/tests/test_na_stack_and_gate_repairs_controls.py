@@ -357,9 +357,9 @@ def test_oklahoma_needs_50k_and_virginia_needs_250k_of_qualified_spend():
     assert va.executable is True and va.incentive_floor_usd == pytest.approx(0.15 * 250_000.0)
 
 
-def test_the_generator_discloses_the_manitoba_pstc_reduction_as_a_conservative_bound():
+def test_the_generator_nets_the_manitoba_labour_share_and_discloses_the_apportionment_and_the_whole_credit_lower_bound():
     res = _run([_comp("principal_production", "CA", "ca_federal_pstc", [_alloc("1", 600_000.0, "principal_production", "CA", "L0", "btl_crew_labor")]),
                 _comp("principal_production", "CA-MB", MB, [_alloc("2", 600_000.0, "principal_production", "CA-MB", "L1", "btl_crew_labor")])], 1_200_000.0)
     assert res.executable is True, res.rejection_reason
-    assert any("CONSERVATIVE BOUND, NOT exact netting" in n for n in res.disclosed_limitations)
-    assert all("CONSERVATIVE BOUND" in a.description for a in res.stacking_adjustments if {a.program_a_id, a.program_b_id} == {"ca_federal_pstc", MB})
+    assert any("Apportionment assumption" in n for n in res.disclosed_limitations)
+    assert any("labour portion" in a.description for a in res.stacking_adjustments if {a.program_a_id, a.program_b_id} == {"ca_federal_pstc", MB})

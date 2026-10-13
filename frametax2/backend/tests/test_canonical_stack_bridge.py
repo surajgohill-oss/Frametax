@@ -259,21 +259,37 @@ def test_the_manitoba_credit_is_compatible_with_both_federal_credits_and_is_assi
     assert net.per_program_adjusted_usd["ca_federal_cptc"] == 109_500.0 and net.per_program_adjusted_usd["ca_mb_film_video_credit"] == 270_000.0
 
 
-def test_federal_pstc_pairs_without_primary_stacking_text_stay_unruled_and_block_by_absence():
+def test_the_federal_pstc_with_the_bc_and_quebec_credits_now_have_named_rules_and_net_the_labour_portion():
     from app.calculators.canonical_stack_bridge import load_named_pair_rule
-    assert load_named_pair_rule("ca_federal_pstc", "ca_bc_pstc") is None and load_named_pair_rule("ca_federal_pstc", "ca_qc_pstc") is None
-    pstc = StackCandidate("ca_federal_pstc", "CA-QC", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
-    qc = StackCandidate("ca_qc_pstc", "CA-QC", 150_000.0, 0.25, 600_000.0, "tax_credit")
-    assert price_program_pair_stack(pstc, qc) is None, "no named rule: never a partially trusted combination"
+    for other in ("ca_bc_pstc", "ca_qc_pstc"):
+        rule = load_named_pair_rule("ca_federal_pstc", other)
+        assert rule is not None and rule["rule_type"] == "spend_reduction", other
+    # BC: 36% of BC labour 600,000 = 216,000, a labour credit, so wholly in respect of labour: PSTC 96,000 - 216,000 x 16% = 61,440 (the federal credit never reduces the BC credit).
+    pstc = StackCandidate("ca_federal_pstc", "CA-BC", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
+    bc = StackCandidate("ca_bc_pstc", "CA-BC", 216_000.0, 0.36, 600_000.0, "tax_credit")
+    result = price_program_pair_stack(pstc, bc)
+    assert result.per_program_adjusted_usd == {"ca_federal_pstc": 61_440.0, "ca_bc_pstc": 216_000.0}
+    assert not any("Apportionment assumption" in n for n in result.disclosed_limitations), "a labour credit nets in full: no apportionment"
+    # Quebec: 25% of all-spend cost 1,000,000 = 250,000; labour portion = 25% x 600,000 = 150,000 -> PSTC 96,000 - 24,000 = 72,000; the whole-credit lower bound (56,000) is disclosed.
+    qc = StackCandidate("ca_qc_pstc", "CA-QC", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
+    qc_result = price_program_pair_stack(StackCandidate("ca_federal_pstc", "CA-QC", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0), qc)
+    assert qc_result.per_program_adjusted_usd == {"ca_federal_pstc": 72_000.0, "ca_qc_pstc": 250_000.0}
+    assert any("Apportionment assumption" in n and "$56,000" in n for n in qc_result.disclosed_limitations)
 
 
-def test_the_manitoba_pstc_reduction_is_disclosed_as_a_conservative_bound_never_as_exact_netting():
+def test_the_manitoba_cost_credit_nets_its_labour_share_and_discloses_the_whole_credit_lower_bound():
+    # Manitoba cost-of-production credit: 30% of all eligible cost 1,000,000 = 300,000; labour share 30% x 600,000 = 180,000 -> PSTC 96,000 - 28,800 = 67,200;
+    # the whole credit (bounded by labour 600,000) would give 96,000 - 48,000 = 48,000, disclosed as the lower bound.
     pstc = StackCandidate("ca_federal_pstc", "CA-MB", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
-    mb = StackCandidate("ca_mb_film_video_credit", "CA-MB", 270_000.0, 0.45, 600_000.0, "tax_credit")
+    mb = StackCandidate("ca_mb_film_video_credit", "CA-MB", 300_000.0, 0.45, 1_000_000.0, "tax_credit", floor_rate=0.30)
     result = price_program_pair_stack(pstc, mb)
-    assert any("CONSERVATIVE BOUND, NOT exact netting" in n for n in result.disclosed_limitations)
-    assert all("CONSERVATIVE BOUND" in a["description"] for a in result.adjustments if {a["program_a_id"], a["program_b_id"]} == {"ca_federal_pstc", "ca_mb_film_video_credit"})
+    assert result.per_program_adjusted_usd == {"ca_federal_pstc": 67_200.0, "ca_mb_film_video_credit": 300_000.0}
+    assert any("Apportionment assumption" in n and "$48,000" in n for n in result.disclosed_limitations)
+    assert all("apportioned by rate x labour" in a["description"] for a in result.adjustments if {a["program_a_id"], a["program_b_id"]} == {"ca_federal_pstc", "ca_mb_film_video_credit"})
+
+
+def test_the_ontario_opstc_netting_is_stated_by_its_guidelines_and_carries_no_apportionment_assumption():
     ontario = price_program_pair_stack(
         StackCandidate("ca_federal_pstc", "CA-ON", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0),
         StackCandidate("on_opstc", "CA-ON", 215_000.0, 0.215, 1_000_000.0, "tax_credit"))
-    assert not any("CONSERVATIVE BOUND" in n for n in ontario.disclosed_limitations), "the Ontario labour-portion netting is stated by the Ontario guidelines, not a bound"
+    assert not any("Apportionment assumption" in n for n in ontario.disclosed_limitations), "the Ontario labour-portion netting is stated by the Ontario guidelines, not assumed"

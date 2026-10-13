@@ -45,4 +45,17 @@ def test_the_manitoba_federal_rows_agree_with_the_registry():
     for _id, a, b, _text in mod.ROWS:
         assert reg[frozenset({a, b})]["rule_type"] == "spend_reduction"
     assert len({r[0] for r in mod.ROWS}) == 2
-    assert frozenset({"ca_federal_pstc", "ca_bc_pstc"}) not in reg and frozenset({"ca_federal_pstc", "ca_qc_pstc"}) not in reg, "no rule without primary stacking text"
+
+
+def test_the_bc_quebec_and_ocase_federal_rows_agree_with_the_registry_and_state_their_primary_basis():
+    spec = importlib.util.spec_from_file_location("mig0084", _PATH.with_name("0084_federal_pstc_provincial_stacking_rules.py"))
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    assert (mod.revision, mod.down_revision) == ("0084", "0083")
+    reg = stacking_rules._SLUG_PAIR_RULES
+    assert len(mod.ROWS) == 4 and len({_rule for _rule in map(mod._rule_id, [r[0] for r in mod.ROWS])}) == 4
+    for _key, a, b, text in mod.ROWS:
+        assert reg[frozenset({a, b})]["rule_type"] == "spend_reduction", (a, b)
+        assert text.strip(), "a seeded rule states its basis"
+    assert "s.79(1)" in reg[frozenset({"ca_federal_pstc", "ca_bc_pstc"})]["condition_text"]
+    assert "note 7" in reg[frozenset({"ca_federal_pstc", "ca_qc_pstc"})]["condition_text"]
+    assert stacking_rules.STACKING_RULES_VERSION == "1.8.0"

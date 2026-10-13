@@ -91,6 +91,10 @@ _SPEND_REDUCTION_DIRECTION: dict[frozenset, str] = {
     frozenset({"ca_federal_cptc", "on_opstc"}): "on_opstc",
     frozenset({"ca_federal_pstc", "on_opstc"}): "on_opstc",
     frozenset({"ca_federal_pstc", "ca_mb_film_video_credit"}): "ca_mb_film_video_credit",
+    frozenset({"ca_federal_pstc", "ca_bc_pstc"}): "ca_bc_pstc",
+    frozenset({"ca_federal_pstc", "ca_qc_pstc"}): "ca_qc_pstc",
+    frozenset({"ca_federal_pstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}): "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+    frozenset({"ca_federal_cptc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}): "ontario_computer_animation_and_special_effects_tax_credit_ocase",
     frozenset({"ca_federal_cptc", "ca_mb_film_video_credit"}): "ca_mb_film_video_credit",
     frozenset({"ca_federal_cptc", "qc_film_production"}): "qc_film_production",
     frozenset({"ca_bc_pstc", "ca_cmf"}): "ca_cmf",
@@ -166,6 +170,9 @@ class StackCandidate:
     rate_basis_usd: float | None = None
     production_cost_usd: float | None = None
     stated_assistance_usd: float = 0.0
+    #: The program's ELECTED floor rate (the segment's own rate_floor: the Manitoba elective credit's rate, the labour credit's rate for BC, the all-spend rate for Quebec and Ontario).
+    #: A provincial credit that is assistance to the federal PSTC nets by this rate x the PSTC labour basis (bounded by the credit); None falls back to effective_rate.
+    floor_rate: float | None = None
 
 
 CPTC_SLUG = "ca_federal_cptc"
@@ -192,11 +199,46 @@ def _is_slug(slug: str, canonical: str) -> bool:
 
 
 MB_SLUG = "ca_mb_film_video_credit"
-MB_CONSERVATIVE_NOTE = (
-    "CONSERVATIVE BOUND, NOT exact netting: ITA 125.5(1) deducts only the part of the Manitoba credit reasonably in respect of the federal labour expenditure, but the Manitoba labour "
-    "share is not held, so the whole Manitoba credit (bounded by the federal labour) is deducted. The federal PSTC shown is therefore a floor; the exact reduction needs the stated "
-    "Manitoba labour share (a claim follow-up)."
-)
+BC_PSTC_SLUG = "ca_bc_pstc"
+QC_PSTC_SLUG = "ca_qc_pstc"
+OCASE_SLUG = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+#: Provincial credits that are assistance to the federal PSTC to the extent reasonably in respect of Canadian labour: ITA 125.5(1) "qualified Canadian labour expenditure" paragraph (b)
+#: (assistance "that can reasonably be considered to be in respect of" the Canadian labour expenditure); CRA RC4385 (Form T1177 guide): "any provincial tax credit allowed in connection
+#: with the accredited production is considered assistance"; Ontario Creates OPSTC Guidelines s.3.02: "Only the labour portion of the OPSTC constitutes assistance." The reverse never
+#: applies: the federal PSTC is not assistance to the Ontario OPSTC (Guidelines s.3.02), the Manitoba credit (TC-2 guidelines), the BC credit (Income Tax Act (BC) s.79(1) "assistance"
+#: excludes amounts deemed paid under ITA 125.4(3) or 125.5(3)) or the Quebec credit (Revenu Québec CO-1029.8.36.SP, note 7).
+PSTC_ASSISTING_SLUGS = ("on_opstc", MB_SLUG, BC_PSTC_SLUG, QC_PSTC_SLUG, OCASE_SLUG)
+#: The credits computed on ALL eligible cost (labour included) whose labour share is APPORTIONED by rate x labour: Ontario's is stated by its own guidelines (s.3.02); Manitoba's cost-of-production
+#: credit and Quebec's all-spend credit are not, so the apportionment is a disclosed assumption, with the whole-credit figure disclosed as the lower bound.
+PSTC_APPORTIONED_SLUGS = (MB_SLUG, QC_PSTC_SLUG)
+MB_COST_CREDIT_RATE = 0.30     # Manitoba Film & Music TC-2 guidelines: the cost-of-production credit (the elective alternative to the 45% cost-of-salaries credit)
+
+
+def pstc_netted_by_provincial(original: float, rate: float, labour_basis: float, partners):
+    """Net the federal PSTC by every provincial credit stacked with it. ``partners`` is [(slug, credit_usd, rate)]; each credit's labour portion is min(credit, rate x PSTC labour basis)
+    (a labour-only credit therefore nets in full, an all-spend credit by its labour share). Returns (adjusted PSTC, [(slug, labour_assistance)], reduction)."""
+    parts = [(slug, round(min(float(credit), float(prate) * labour_basis), 2)) for slug, credit, prate in partners]
+    total = round(sum(a for _, a in parts), 2)
+    reduction = round(min(total, labour_basis) * rate, 2)
+    return round(max(0.0, original - reduction), 2), parts, reduction
+
+
+def pstc_basis_phrase(slug: str) -> str:
+    if _is_slug(slug, OPSTC_SLUG):
+        return "Ontario Creates OPSTC Guidelines s.3.02: only the labour portion of the OPSTC is assistance"
+    if any(_is_slug(slug, x) for x in PSTC_APPORTIONED_SLUGS):
+        return "all-spend credit, labour share apportioned by rate x labour"
+    return "a credit computed on labour, wholly in respect of labour"
+
+
+def apportionment_note(slug: str, credit: float, rate: float, labour_basis: float, pstc_original: float, pstc_rate: float) -> str:
+    """Disclosure for an apportioned all-spend credit (Manitoba cost-of-production, Quebec): the labour share is an assumption, the whole-credit result is the stated lower bound."""
+    labour_part = round(min(float(credit), rate * labour_basis), 2)
+    whole = round(max(0.0, pstc_original - min(float(credit), labour_basis) * pstc_rate), 2)
+    name = "Manitoba" if _is_slug(slug, MB_SLUG) else "Quebec"
+    return (f"Apportionment assumption (not stated by the {name} authority): the {name} credit is computed on all eligible cost, labour included, so the part reasonably in respect of Canadian "
+            f"labour (ITA 125.5(1)) is taken as its rate {rate:.1%} x the PSTC labour basis ${labour_basis:,.0f} = ${labour_part:,.0f} (bounded by the credit ${float(credit):,.0f}); the CRA "
+            f"(RC4385) calls any provincial tax credit assistance without an allocation, and if the whole credit were assistance the federal PSTC would be ${whole:,.0f} instead.")
 
 
 #: Disclosed on every priced CPTC segment and every stack that contains the CPTC: its eligibility is a status the budget cannot establish (never a certification, never a gate).
@@ -205,12 +247,6 @@ CPTC_PLANNING_NOTE = (
     "jurisdiction record: CAVCO's CPTC is for Canadian-content productions; the foreign and service-production credit is the PSTC). Neither a CAVCO certificate nor Canadian control "
     "is stated for this production, so this credit is a conditional planning figure, not a guaranteed floor; the claim follow-ups are the certificate and the applicant's control."
 )
-
-
-def conservative_netting_note(slug_a: str, slug_b: str) -> str | None:
-    """The disclosure for a pair whose netting is a stated conservative bound (federal PSTC with the Manitoba credit), else None."""
-    pair = (_is_slug(slug_a, PSTC_SLUG) and _is_slug(slug_b, MB_SLUG)) or (_is_slug(slug_b, PSTC_SLUG) and _is_slug(slug_a, MB_SLUG))
-    return MB_CONSERVATIVE_NOTE if pair else None
 
 
 def cptc_net_cost_adjusted(original: float, rate: float, labour_basis: float, production_cost: float, stated_assistance: float, assistance: float):
@@ -223,10 +259,9 @@ def cptc_net_cost_adjusted(original: float, rate: float, labour_basis: float, pr
 
 def pstc_labour_netted(original: float, rate: float, labour_basis: float, opstc_value: float, opstc_rate: float):
     """Ontario Creates OPSTC Guidelines s.3.02: only the LABOUR portion of the OPSTC is assistance to the federal PSTC. Returns (adjusted credit,
-    labour assistance, reduction); Ontario labour is taken as the PSTC segment's labour basis."""
-    labour_assistance = round(min(opstc_value, opstc_rate * labour_basis), 2)
-    reduction = round(min(labour_assistance, labour_basis) * rate, 2)
-    return round(max(0.0, original - reduction), 2), labour_assistance, reduction
+    labour assistance, reduction); Ontario labour is taken as the PSTC segment's labour basis. One partner of pstc_netted_by_provincial."""
+    adjusted, parts, reduction = pstc_netted_by_provincial(original, rate, labour_basis, [("on_opstc", opstc_value, opstc_rate)])
+    return adjusted, parts[0][1], reduction
 
 
 @dataclass
@@ -451,26 +486,42 @@ def _build_group_result(
     # Federal PSTC with the Ontario OPSTC: only the LABOUR portion of the OPSTC is assistance to the PSTC (Ontario Creates OPSTC Guidelines s.3.02),
     # so the generic whole-credit reduction is replaced by (OPSTC rate x the PSTC labour basis, bounded by the credit) x the PSTC rate.
     pstc = next((c for c in candidates if _is_slug(c.program_slug, PSTC_SLUG) and c.rate_basis_usd is not None), None)
-    opstc = next((c for c in candidates if _is_slug(c.program_slug, OPSTC_SLUG)), None)
     pstc_netted = False
-    if pstc is not None and opstc is not None and any(
-            r["rule_type"] == "spend_reduction" and _is_slug(r["program_a_id"], PSTC_SLUG) + _is_slug(r["program_b_id"], OPSTC_SLUG) == 2
-            or r["rule_type"] == "spend_reduction" and _is_slug(r["program_b_id"], PSTC_SLUG) + _is_slug(r["program_a_id"], OPSTC_SLUG) == 2
-            for r in rules):
-        original = float(pstc.selected_incentive_usd)
-        adjusted, labour_assistance, reduction = pstc_labour_netted(
-            original, float(pstc.effective_rate), float(pstc.rate_basis_usd), float(opstc.selected_incentive_usd), float(opstc.effective_rate))
-        adjustment_dicts = [d for d in adjustment_dicts if not (d["rule_type"] == "spend_reduction" and d["program_b_id"] == pstc.program_slug)]
-        program_values[pstc.program_slug] = adjusted
-        adjustment_dicts.append({
-            "program_a_id": opstc.program_slug, "program_b_id": pstc.program_slug, "rule_type": "spend_reduction",
-            "description": (f"Only the labour portion of the OPSTC is assistance to the federal PSTC (Ontario Creates OPSTC Guidelines s.3.02): "
-                            f"{float(opstc.effective_rate):.1%} x labour ${float(pstc.rate_basis_usd):,.0f} = ${labour_assistance:,.0f} (bounded by the credit "
-                            f"${float(opstc.selected_incentive_usd):,.0f}) reduces PSTC labour; PSTC reduction = ${labour_assistance:,.0f} x {float(pstc.effective_rate):.1%} "
-                            f"= ${reduction:,.0f}. Ontario labour is taken as the PSTC segment's labour basis."),
-            "original_value_usd": original, "adjustment_usd": -reduction, "adjusted_value_usd": adjusted,
-        })
-        pstc_netted = True
+    netting_notes: list[str] = []
+    if pstc is not None:
+        partners = [c for c in candidates if any(_is_slug(c.program_slug, x) for x in PSTC_ASSISTING_SLUGS) and any(
+            r["rule_type"] == "spend_reduction" and _is_slug(r["program_a_id"], PSTC_SLUG) + _is_slug(r["program_b_id"], c.program_slug) == 2
+            or r["rule_type"] == "spend_reduction" and _is_slug(r["program_b_id"], PSTC_SLUG) + _is_slug(r["program_a_id"], c.program_slug) == 2
+            for r in rules)]
+        if partners:
+            original = float(pstc.selected_incentive_usd)
+            pstc_rate = float(pstc.effective_rate)
+            # The PSTC's labour basis is the base its own credit was priced on (credit = rate x labour): the resolution's qpe_basis_used can carry the segment's whole qualifying spend in a
+            # same-jurisdiction stack (LLS: 9,483,654 against a 2,935,298 labour basis), which would net the whole provincial credit and ignore the labour portion.
+            labour_basis = float(pstc.rate_basis_usd)
+            if pstc_rate > 0 and float(pstc.selected_incentive_usd) > 0:
+                labour_basis = min(labour_basis, float(pstc.selected_incentive_usd) / pstc_rate)
+            rates = {c.program_slug: float(c.floor_rate if c.floor_rate else c.effective_rate) for c in partners}
+            adjusted, parts, reduction = pstc_netted_by_provincial(
+                original, pstc_rate, labour_basis, [(c.program_slug, float(c.selected_incentive_usd), rates[c.program_slug]) for c in partners])
+            adjustment_dicts = [d for d in adjustment_dicts if not (d["rule_type"] == "spend_reduction" and d["program_b_id"] == pstc.program_slug)]
+            program_values[pstc.program_slug] = adjusted
+            total_la = round(sum(la for _, la in parts), 2)
+            scale = min(1.0, labour_basis / total_la) if total_la > 0 else 1.0
+            running = original
+            for i, (c, (slug_c, labour_assistance)) in enumerate(zip(partners, parts)):
+                share = round(labour_assistance * scale * pstc_rate, 2)
+                running = adjusted if i == len(parts) - 1 else round(running - share, 2)
+                adjustment_dicts.append({
+                    "program_a_id": slug_c, "program_b_id": pstc.program_slug, "rule_type": "spend_reduction",
+                    "description": (f"Only the labour portion of the {slug_c} credit is assistance to the federal PSTC (ITA 125.5(1); CRA RC4385; {pstc_basis_phrase(slug_c)}): "
+                                    f"{rates[slug_c]:.1%} x labour ${labour_basis:,.0f} = ${labour_assistance:,.0f} (bounded by the credit ${float(c.selected_incentive_usd):,.0f}) reduces PSTC labour; "
+                                    f"PSTC reduction = ${labour_assistance:,.0f} x {pstc_rate:.1%} = ${share:,.0f}. The PSTC segment's labour basis is taken as the provincial labour."),
+                    "original_value_usd": original, "adjustment_usd": -share, "adjusted_value_usd": running,
+                })
+                if any(_is_slug(slug_c, x) for x in PSTC_APPORTIONED_SLUGS):
+                    netting_notes.append(apportionment_note(slug_c, float(c.selected_incentive_usd), rates[slug_c], labour_basis, original, pstc_rate))
+            pstc_netted = True
     total_raw = adj_result.total_raw_value_usd
     total_adjusted = (round(sum(program_values.values()), 2) if (cptc is not None and reducers) or pstc_netted
                       else adj_result.total_adjusted_value_usd)
@@ -497,13 +548,7 @@ def _build_group_result(
     disclosed_limitations: list[str] = []
     if CPTC_SLUG in slugs:
         disclosed_limitations.append(CPTC_PLANNING_NOTE)
-    for rule in rules:
-        _note = conservative_netting_note(rule["program_a_id"], rule["program_b_id"]) if rule["rule_type"] == "spend_reduction" else None
-        if _note:
-            disclosed_limitations.append(_note)
-            for d in adjustment_dicts:
-                if {d["program_a_id"], d["program_b_id"]} == {rule["program_a_id"], rule["program_b_id"]}:
-                    d["description"] = f"{d['description']} [{_note}]"
+    disclosed_limitations.extend(netting_notes)
     for rule in rules:
         if rule["rule_type"] != "spend_reduction":
             continue

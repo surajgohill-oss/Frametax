@@ -108,17 +108,20 @@ async def test_manitoba_with_vfx_in_alberta_prices_each_leg_on_its_own_allocatio
     assert usd(e["npc_with_adjustments_usd"]) == usd(GROSS - expected) == 9_141_757.80
 
 
-async def test_the_federal_pstc_with_manitoba_is_the_conservative_whole_credit_bound(monkeypatch):
+async def test_the_federal_pstc_with_manitoba_nets_the_manitoba_labour_share_and_discloses_the_whole_credit_lower_bound(monkeypatch):
     async with isolated_session() as db:
         _, entries = await _evaluate(db, monkeypatch)
     e = _find(entries, label_starts="Manitoba — Canada Federal Production Services Tax Credit (PSTC)", participants=["CA-MB"], slugs={"ca_federal_pstc", "ca_mb_film_video_credit"})
     mb_credit = usd(0.30 * MB_BASE)
-    pstc = usd(0.16 * max(0.0, LABOUR_EXCL_FRINGES - mb_credit))      # ITA 125.5(1) read conservatively: the whole Manitoba credit nets the federal labour (its labour share is not held)
-    assert pstc == 14_432.29
+    pstc_original = usd(0.16 * LABOUR_EXCL_FRINGES)
+    labour_part = usd(min(mb_credit, 0.30 * LABOUR_EXCL_FRINGES))            # ITA 125.5(1): the part of the credit reasonably in respect of labour = rate x labour, bounded by the credit
+    pstc = usd(pstc_original - 0.16 * labour_part)
+    whole_credit_pstc = usd(pstc_original - 0.16 * min(mb_credit, LABOUR_EXCL_FRINGES))
+    assert (labour_part, pstc, whole_credit_pstc) == (880_589.40, 328_753.38, 14_432.29)
     by_slug = {s["program_slug"]: usd(s["incentive_floor_usd"]) for s in e["segments"]}
     assert by_slug["ca_mb_film_video_credit"] == mb_credit and by_slug["ca_federal_pstc"] == pstc
-    assert usd(e["npc_with_adjustments_usd"]) == usd(GROSS - mb_credit - pstc) == 9_124_125.51
-    assert any("CONSERVATIVE BOUND, NOT exact netting" in w for w in e["warnings"]), "the bound is disclosed, never presented as exact netting"
+    assert usd(e["npc_with_adjustments_usd"]) == usd(GROSS - mb_credit - pstc) == 8_809_804.42
+    assert any("Apportionment assumption" in w and "$14,432" in w for w in e["warnings"]), "the apportionment is an assumption and the whole-credit lower bound is disclosed"
 
 
 async def test_the_cptc_legs_keep_their_numbers_and_now_disclose_the_certification_and_control_assumption(monkeypatch):
@@ -157,7 +160,7 @@ async def test_contingency_is_applied_once_to_every_priced_candidate_and_never_w
 def test_the_displayed_to_corrected_bridges_close_to_the_cent():
     s1, s2 = STALE["structures"][MB_PRINCIPAL_CA_VFX], STALE["structures"][MB_AB_CA_MUSIC]
     cost_credit_on = lambda base: usd(0.30 * base)
-    # displayed Manitoba-principal / California-VFX hybrid -> same-allocation sensitivity -> relocated all-Manitoba -> with the federal PSTC
+    # displayed Manitoba-principal / California-VFX hybrid -> same-allocation sensitivity -> relocated all-Manitoba -> with the federal PSTC (whole-credit lower bound 14,432.29; labour-share netting 328,753.38)
     mb_alloc_base = usd(s1["allocations"][0][2] - FINANCE - RESERVE - RESIDUALS)
     assert mb_alloc_base == 9_443_654.0 and s1["component_incentives_usd"]["ca_mb_film_video_credit"] == usd(0.45 * mb_alloc_base) == 4_249_644.30, "the stale generation priced 45% on the all-spend base"
     step_basis = usd(s1["component_incentives_usd"]["ca_mb_film_video_credit"] - cost_credit_on(mb_alloc_base))
@@ -165,7 +168,7 @@ def test_the_displayed_to_corrected_bridges_close_to_the_cent():
     sensitivity = usd(s1["npc_usd"] + step_basis + step_ca)
     assert (step_basis, step_ca, sensitivity) == (1_416_548.10, 14_000.0, 9_150_557.80) == (step_basis, step_ca, usd(GROSS - cost_credit_on(mb_alloc_base)))
     assert usd(sensitivity - usd(0.30 * VFX)) == 9_138_557.80 == usd(GROSS - cost_credit_on(MB_BASE))
-    assert usd(9_138_557.80 - 14_432.29) == 9_124_125.51
+    assert usd(9_138_557.80 - 14_432.29) == 9_124_125.51 and usd(9_138_557.80 - 328_753.38) == 8_809_804.42
     # displayed Manitoba / Alberta-VFX / California-music hybrid -> same-allocation sensitivity -> music kept in Manitoba
     base2 = usd(s2["allocations"][1][2] - FINANCE - RESERVE - RESIDUALS)
     assert base2 == 9_236_880.0 and usd(s2["component_incentives_usd"]["ca_mb_film_video_credit"]) == usd(0.45 * base2) == 4_156_596.0

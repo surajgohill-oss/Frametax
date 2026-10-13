@@ -2374,6 +2374,7 @@ def _build_conditional_bilateral_scenario(
             qualifying_line_ids=frozenset(
                 a.line_id for a in register if a.state == QualificationState.QUALIFIES
             ),
+            floor_rate=(pricing.segments[0].rate_floor if getattr(pricing, "segments", None) else None),
             **cptc_stack_fields(priced_slug, rr, participant_inputs.gross_budget_usd, participant_inputs.amount_facts),
         ))
         priced_components.append({
@@ -5611,6 +5612,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             qualifying_line_ids=frozenset(
                 a.line_id for a in register if a.state == QualificationState.QUALIFIES
             ),
+            floor_rate=(pricing.segments[0].rate_floor if getattr(pricing, "segments", None) else None),
             **cptc_stack_fields(program_slug, rate_resolution, inputs.gross_budget_usd, inputs.amount_facts),
         ))
         _reloc_complete, _reloc_missing = _relocation_completeness(is_baseline, code, inputs)

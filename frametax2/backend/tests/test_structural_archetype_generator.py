@@ -101,11 +101,11 @@ def test_same_country_pair_with_no_registered_rule_is_unresolved_and_blocks():
     explicitly lists this exact pair as UNRESOLVED, and Locked Structural
     Policy point 8 requires an unresolved-required pair to prevent
     verified pricing."""
-    # The CPTC + Manitoba pair this control first used is now RESOLVED by primary text (Manitoba Film & Music TC-2 guidelines, June 2024: compatible with the CPTC and PSTC;
-    # stacking rules 1.7.0), so the unresolved example is the federal PSTC with the BC PSTC: both Canadian, no primary stacking text found, still unruled.
+    # The CPTC + Manitoba pair and the federal PSTC with the BC PSTC, the Quebec PSTC and OCASE are now RESOLVED by primary text (stacking rules 1.7.0 and 1.8.0), so the unresolved example
+    # is the federal PSTC with the Newfoundland and Labrador all-spend credit: both Canadian, no primary stacking text read, still unruled.
     checks = check_all_pairs([
         _comp("ca_federal_pstc", "CA", 1_000_000.0),
-        _comp("ca_bc_pstc", "CA-BC", 500_000.0),
+        _comp("ca_nl_all_spend_credit", "CA-NL", 500_000.0),
     ])
     assert len(checks) == 1
     assert checks[0].blocks is True
@@ -264,12 +264,13 @@ def test_ho004_canadian_domestic_plus_provincial_plus_ocase():
               component_type="vfx", line_id="HO004-OCASE", spend_category="vfx"),
     ]
     res = generate_structural_candidate(components, gross_budget_usd=3_100_000.0)
-    assert res.executable is False, (
-        "ca_federal_cptc+ocase is a genuine, undecided authority gap -- must not be "
-        "silently allowed"
-    )
-    assert any("ontario_computer_animation" in p.program_a or "ontario_computer_animation" in p.program_b
-               for p in res.blocking_pairs)
+    # NA-RECONCILIATION-09: CPTC+OCASE is now ruled (OCASE is assistance that reduces the production cost behind the 60% CPTC cap; CRA RC4164 lines 421-430), so the three-way prices.
+    assert res.executable is True, res.rejection_reason
+    # independent arithmetic: CPTC 25% x 1,000,000 = 250,000; OFTTC 35% x 1,800,000 = 630,000; OCASE 18% x 300,000 = 54,000; assistance 684,000 leaves the cost cap
+    # 60% x (3,100,000 - 684,000) = 1,449,600 above the 1,000,000 labour, so the CPTC is unreduced.
+    assert res.post_adjustment_component_incentives_usd == {"ca_federal_cptc": 250_000.0, "on_ofttc": 630_000.0, "ontario_computer_animation_and_special_effects_tax_credit_ocase": 54_000.0}
+    assert any({a.program_a_id, a.program_b_id} == {"ontario_computer_animation_and_special_effects_tax_credit_ocase", "ca_federal_cptc"} or "cost that sets the CPTC cap" in a.description
+               for a in res.stacking_adjustments)
 
 
 def test_ho005_canadian_service_plus_provincial_plus_ocase():
@@ -284,7 +285,12 @@ def test_ho005_canadian_service_plus_provincial_plus_ocase():
               component_type="vfx", line_id="HO005-OCASE", spend_category="vfx"),
     ]
     res = generate_structural_candidate(components, gross_budget_usd=3_100_000.0)
-    assert res.executable is False, "ca_federal_pstc+ocase is a genuine, undecided authority gap"
+    # NA-RECONCILIATION-09: PSTC+OCASE is now ruled (a provincial labour credit is assistance to the federal PSTC; OPSTC Guidelines s.1.05(E), CRA RC4385), so the three-way prices.
+    assert res.executable is True, res.rejection_reason
+    # independent arithmetic: PSTC 16% x 1,000,000 = 160,000; OPSTC 21.5% x 1,800,000 = 387,000; OCASE 18% x 300,000 = 54,000. Labour portions net the PSTC labour: OPSTC
+    # min(387,000; 21.5% x 1,000,000 = 215,000) = 215,000, OCASE min(54,000; 18% x 1,000,000) = 54,000 (wholly labour); reduction (215,000 + 54,000) x 16% = 43,040 -> 116,960.
+    assert res.post_adjustment_component_incentives_usd == {"ca_federal_pstc": 116_960.0, "on_opstc": 387_000.0,
+                                                             "ontario_computer_animation_and_special_effects_tax_credit_ocase": 54_000.0}
 
 
 def test_ho005b_opstc_plus_ocase_alone_prices():
