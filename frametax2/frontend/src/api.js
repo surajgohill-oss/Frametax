@@ -111,6 +111,11 @@ export const postProjectPeople = (projectId, answers) =>
 export const postProjectAssumptions = (projectId, answers) =>
   request(`/projects/${projectId}/assumptions`, { method: "POST", body: JSON.stringify({ answers }) });
 
+// The producer's stated production type (feature / series / documentary / animation; null = not stated). Stored as the project's format, mapped to the production type
+// the statutory rules are scoped by, part of the evaluation fingerprint. The call stores it and does NOT evaluate; the caller runs the shared single-flight evaluation.
+export const postProductionType = (projectId, format) =>
+  request(`/projects/${projectId}/production-type`, { method: "POST", body: JSON.stringify({ format }) });
+
 // Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
 // candidate-jurisdiction inclusion/exclusion election (the SAME real
 // ProjectFact write path as postProjectAssumptions above, a different

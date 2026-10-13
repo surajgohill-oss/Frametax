@@ -42,6 +42,7 @@ from app.models.project import Project
 from app.models.project_asset import ProjectAsset
 from app.models.project_fact import ProjectFact
 from app.services.canonical_project_economics import contingency_planning_view
+from app.services.production_type_election import production_type_view
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.economic_identity import canonical_economic_identity
@@ -2253,6 +2254,8 @@ async def build_production_and_structures(
             gross_budget_usd, contingency_reserve_usd,
             await _contingency_pct_fact(session, project.id),
         ),
+        # The producer's stated production type (Project.format) and what it means for eligibility; the one canonical view, edited from the Overview.
+        "production_type": production_type_view(project.format),
         "production_structure_default": None,
         # Item B (Final non-Globe closeout, 2026-09-04) — see the
         # discretionary_policy_view build immediately above.

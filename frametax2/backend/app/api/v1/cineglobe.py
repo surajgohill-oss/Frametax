@@ -906,6 +906,27 @@ async def post_project_contingency_deployments(project_id: str, body: Contingenc
     return await _deployment_plan(db, project_id)
 
 
+class ProductionTypeElection(BaseModel):
+    format: str | None = None
+
+
+@router.post("/projects/{project_id}/production-type")
+async def post_production_type(project_id: str, body: ProductionTypeElection, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """The producer's stated production type (feature / series / documentary / animation; null = not stated). It is the project's stored format, maps to the production_type the
+    statutory rules are scoped by, and is part of the evaluation fingerprint. This call stores it and does not evaluate: the UI runs the shared single-flight evaluation afterwards."""
+    from app.services.production_type_election import write_production_type
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        view = await write_production_type(db, project, body.format)
+    except ValueError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc))
+    await db.commit()
+    return {"production_type": view}
+
+
 class NyProgramFacts(BaseModel):
     evidenced: dict[str, Any] = {}
     payees: list[dict[str, Any]] = []

@@ -10,6 +10,7 @@ import { buildGlobeView, activeStructure, buildCandidateDetail } from "../../lib
 import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, rankOrNpcOrder } from "../../lib/productionOptions";
 import ProductionDetails from "../../components/ProductionDetails";
+import ProductionTypeLine from "../../components/ProductionTypeLine";
 import EvaluationStatus from "../../components/EvaluationStatus";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
@@ -168,6 +169,12 @@ export default function Overview() {
 
         {/* ── LEFT — Production Facts + Production Requirements ─────────── */}
         <div className="ovxg-col">
+          <ProductionTypeLine
+            projectId={projectId}
+            productionType={production?.production_type}
+            onSaved={() => { refetch(); window.dispatchEvent(new Event("cineglobe:refetch")); }}
+            evaluateOnSave={production?.evaluation_freshness !== "STALE"}
+          />
           <ProductionDetails
             people={people}
             requirements={production.physical_requirements}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Money } from "../lib/format";
+import { productionTypeLabel } from "../lib/productionType";
 import { API_ORIGIN } from "../api";
 import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 
@@ -149,7 +150,7 @@ export default function ProductionHero({
       <div className="ph-hero-identity">
         <h1 className="serif ph-hero-title">{production?.production_name || "—"}</h1>
         <div className="ph-hero-identity-sub">
-          <p className="ph-hero-sub">Feature Film</p>
+          <p className="ph-hero-sub" data-production-type-label={productionTypeLabel(production?.production_type) ?? ""}>{productionTypeLabel(production?.production_type) ?? "—"}</p>
           {stageControl}
         </div>
       </div>
