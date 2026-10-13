@@ -199,6 +199,14 @@ MB_CONSERVATIVE_NOTE = (
 )
 
 
+#: Disclosed on every priced CPTC segment and every stack that contains the CPTC: its eligibility is a status the budget cannot establish (never a certification, never a gate).
+CPTC_PLANNING_NOTE = (
+    "Planning assumption, not a certification: the CPTC is the federal credit for CAVCO-certified Canadian-content productions of a Canadian-controlled applicant (the repository's "
+    "jurisdiction record: CAVCO's CPTC is for Canadian-content productions; the foreign and service-production credit is the PSTC). Neither a CAVCO certificate nor Canadian control "
+    "is stated for this production, so this credit is a conditional planning figure, not a guaranteed floor; the claim follow-ups are the certificate and the applicant's control."
+)
+
+
 def conservative_netting_note(slug_a: str, slug_b: str) -> str | None:
     """The disclosure for a pair whose netting is a stated conservative bound (federal PSTC with the Manitoba credit), else None."""
     pair = (_is_slug(slug_a, PSTC_SLUG) and _is_slug(slug_b, MB_SLUG)) or (_is_slug(slug_b, PSTC_SLUG) and _is_slug(slug_a, MB_SLUG))
@@ -487,6 +495,8 @@ def _build_group_result(
     ]
 
     disclosed_limitations: list[str] = []
+    if CPTC_SLUG in slugs:
+        disclosed_limitations.append(CPTC_PLANNING_NOTE)
     for rule in rules:
         _note = conservative_netting_note(rule["program_a_id"], rule["program_b_id"]) if rule["rule_type"] == "spend_reduction" else None
         if _note:

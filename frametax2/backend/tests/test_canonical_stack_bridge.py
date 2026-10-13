@@ -133,7 +133,8 @@ def test_price_program_pair_stack_spend_reduction_applies_ontario_interaction_co
     assert result.per_program_adjusted_usd == {"on_ofttc": 200_000.0, "ca_federal_cptc": 200_000.0}
     assert result.adjusted_incentive_usd == 400_000.0
     assert result.stacking_reduction_usd == 50_000.0
-    assert result.disclosed_limitations == []  # no longer an unresolved case
+    from app.calculators.canonical_stack_bridge import CPTC_PLANNING_NOTE
+    assert result.disclosed_limitations == [CPTC_PLANNING_NOTE]  # no longer an unresolved case: the only disclosure is the CPTC planning assumption
 
 
 def test_price_program_pair_stack_spend_reduction_discloses_when_direction_genuinely_unknown():

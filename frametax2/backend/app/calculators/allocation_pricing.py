@@ -55,6 +55,7 @@ from dataclasses import dataclass, field, replace as _dataclasses_replace
 
 from dataclasses import replace as _dc_replace
 from app.calculators.ny_atl_individual_cap import limits_facts_from_amount_facts
+from app.calculators.canonical_stack_bridge import CPTC_PLANNING_NOTE
 from app.calculators.project_eligibility_gates import evaluate_project_gate
 from app.calculators import treaty_engine as te
 from app.calculators.optimization_engine import RiskCase, build_risk_cases
@@ -559,6 +560,10 @@ _ALTERNATIVE_ELECTION_PROGRAMS = {
     "ca_mb_film_video_credit": (0.30, "The Manitoba cost-of-production credit (30% of all eligible Manitoba production expenditures)",
                                 0.08, "mb_production_company_bonus_eligible"),
 }
+
+
+#: Planning assumptions disclosed on every priced segment of a program whose eligibility rests on a status the budget cannot establish (never a certification, never a gate).
+_PLANNING_ASSUMPTION_NOTES = {"ca_federal_cptc": (CPTC_PLANNING_NOTE,)}
 
 
 def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None,
@@ -1820,7 +1825,8 @@ def price_segment(
     # Producer-elected ALTERNATIVE credit on a different base (Manitoba: the 30% cost-of-production credit on all eligible Manitoba
     # expenditures instead of the 45% cost-of-salaries credit on labour). The corporation claims one, so the planning figure is the higher
     # dollar amount, and the other option is disclosed; neither is a stacked sum.
-    election_notes: tuple[str, ...] = ()
+    election_notes: tuple[str, ...] = _PLANNING_ASSUMPTION_NOTES.get(slug, ())
+    effective_rate_floor = rr.floor_rate
     alternative = _ALTERNATIVE_ELECTION_PROGRAMS.get(slug)
     if alternative is not None:
         alt_rate, alt_label, bonus_rate, bonus_fact = alternative
@@ -1831,6 +1837,9 @@ def price_segment(
             election_notes = (f"{alt_label} is the higher of the two elective credits for this base (${alt_floor:,.2f} vs ${floor_incentive_usd:,.2f}); "
                               "the corporation claims one, so the planning figure uses it.",)
             floor_incentive_usd = alt_floor
+            # the floor now comes from the elective credit, so the floor RATE is that credit's rate (the labour credit's resolved rate, 0% for a component with no labour, would
+            # contradict the dollars shown)
+            effective_rate_floor = alt_rate + (bonus_rate if bonus_stated else 0.0)
         else:
             election_notes = (f"{alt_label} (${alt_floor:,.2f}) is the alternative elective credit and is lower than the credit priced here; "
                               "the corporation claims one.",)
@@ -1922,7 +1931,7 @@ def price_segment(
         claims_incentive=True, allocated_usd=allocated,
         account_codes=codes, executable=True,
         qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
-        rate_floor=rr.floor_rate, rate_ceiling=(ceiling_incentive_usd / qpe if subset_pricing is not None and qpe else rr.modeled_rate),
+        rate_floor=effective_rate_floor, rate_ceiling=(ceiling_incentive_usd / qpe if subset_pricing is not None and qpe else rr.modeled_rate),
         is_band_ceiling=rr.is_band_ceiling, statutory_basis=rr.basis,
         incentive_floor_usd=floor_incentive_usd,
         incentive_ceiling_usd=ceiling_incentive_usd,
