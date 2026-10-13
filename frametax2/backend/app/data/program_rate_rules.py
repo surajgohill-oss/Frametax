@@ -2063,10 +2063,25 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
     # the Decreto defers per-project figures to a Lineamientos document not yet read, so the
     # authority tier is unchanged.
     "ca_nb_film_tax_credit": IncentiveValueCapRule(
-        program_slug="ca_nb_film_tax_credit", cap_currency="CAD", cap_native_amount=800_000.0,
-        description="Per-project maximum for a feature film (dramatic series also 800,000; other genres lower): CAD 800,000, with a company yearly maximum of CAD 1,000,000.",
-        quote="Feature Films $800,000 (THC Film guidelines 2017-2018; 'Individual production companies may be eligible for up to $1M ... in any given fiscal year')",
-        source_ref="nb-thc-film-guidelines-2017-2018-primary",
+        program_slug="ca_nb_film_tax_credit", cap_currency="CAD", cap_native_amount=2_000_000.0,
+        description="LIFT Company Cap: no one production company (including sub-companies) may receive more than CAD 2,000,000 (28% of the CAD 7 million program budget). The Major Production stream "
+                    "states no separate per-project maximum; the Micro stream's CAD 100,000 maximum is not modelled. The cap is per company, so prior awards to the same company are not netted here.",
+        quote="Company Cap: ... no one production company (including their sub-companies incorporated for specific projects) may represent more than 28% of the total LIFT $7M program budget "
+              "(Company Cap of $2M) (LIFT Film & TV Production Incentive 2026/2027 Guidelines)",
+        source_ref="nb-thc-lift-production-guidelines-2026-27-primary",
+    ),
+    "ca_ns_production_incentive_fund": IncentiveValueCapRule(
+        program_slug="ca_ns_production_incentive_fund", cap_currency="CAD", cap_native_amount=10_000_000.0,
+        description="Maximum funding payable to any one project from the Fund: CAD 10 million (s.3.1(e)).",
+        quote="The maximum funding from this Fund payable to any project is $10 million (CCTH Nova Scotia Film & Television Production Incentive Fund Guidelines, April 1, 2024, s.3.1(e))",
+        source_ref="ccth-nsfpif-guidelines-2024-04-01-primary",
+    ),
+    "ca_sk_creative_saskatchewan_grant": IncentiveValueCapRule(
+        program_slug="ca_sk_creative_saskatchewan_grant", cap_currency="CAD", cap_native_amount=5_000_000.0,
+        description="Maximum of CAD 5,000,000 per production for both the Saskatchewan Stream (30%) and the Service Production Stream (25%); previously recorded as annual_cap_usd at CAD-USD par.",
+        quote="equivalent to a maximum of 30% of all eligible Saskatchewan expenditures up to a maximum of $5,000,000 ... 25% ... up to a maximum of $5,000,000 (Creative Saskatchewan Feature Film "
+              "and Television Production Grant guidelines, fiscal 2026/27)",
+        source_ref="creativesask.ca-fy2026-27-guidelines-primary",
     ),
     "mx_federal_film_incentive_2026": IncentiveValueCapRule(
         program_slug="mx_federal_film_incentive_2026", cap_currency="MXN", cap_native_amount=40_000_000.0,

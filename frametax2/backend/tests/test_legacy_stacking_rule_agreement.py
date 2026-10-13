@@ -77,9 +77,17 @@ def test_the_na_unruled_pair_rows_agree_with_the_registry():
     mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
     assert (mod.revision, mod.down_revision) == ("0086", "0085")
     reg = stacking_rules._SLUG_PAIR_RULES
-    assert stacking_rules.STACKING_RULES_VERSION == "1.10.0"
+    assert tuple(int(x) for x in stacking_rules.STACKING_RULES_VERSION.split(".")) >= (1, 10, 0)      # 1.10.0 added these rows; later versions only add rules
     assert len(mod.ROWS) == 10 and len({mod._rule_id(r[0]) for r in mod.ROWS}) == 10
     for _key, a, b, rule_type, text in mod.ROWS:
         assert reg[frozenset({a, b})]["rule_type"] == rule_type, (a, b)
         assert text.strip()
     assert {r[3] for r in mod.ROWS if r[0] in ("dave+cptc", "ofttc+pstc")} == {"conditional"}
+
+
+def test_the_qprdp_spelling_is_retired_in_the_registry_and_the_legacy_rows_are_deleted_by_0087():
+    spec = importlib.util.spec_from_file_location("mig0087", _PATH.with_name("0087_retire_qprdp_stacking_spelling.py"))
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    assert (mod.revision, mod.down_revision) == ("0087", "0086")
+    assert not [k for k in stacking_rules._SLUG_PAIR_RULES if "ca_qc_qprdp" in k]
+    assert not [t for t in stacking_rules._NAME_SLUG_RULES if t[2] == "ca_qc_qprdp"]

@@ -112,12 +112,24 @@ class TestStage1EngineValidation:
         # (resolve_program_rate against this production's real type/QPE) —
         # not a re-derivation of the served count, an independent oracle
         # over the same two canonical program sources.
-        statutorily_ready_pairs = {
+        # Discovery resolves each program against the same discovery-only amount probe the amount-gated programs need (build_discovery_amount_probe), so the oracle uses it too.
+        # NA-RECONCILIATION-12: six US programs (AR, MO, MT, NJ, OH, WV) are rate-bearing but their states have NO capability profile (studio/crew/water data is not an incentive fact and
+        # was not invented), so discovery cannot accept them even with the capability gate off. They are listed explicitly, so the gap stays visible and this equality still means something.
+        from app.calculators.production_requirements import jurisdiction_capability_profile
+        from app.data.program_rate_rules import build_discovery_amount_probe
+        resolvable_pairs = {
             (code, slug) for code, slug in non_blocked_pairs
             if resolve_program_rate(
                 slug, production_type=MU_PRODUCTION_TYPE, qpe_usd=verified_qpe,
+                amount_facts=build_discovery_amount_probe(slug, verified_qpe, None, None),
             ) is not None
         }
+        undiscoverable_without_capability_profile = {pair for pair in resolvable_pairs if not jurisdiction_capability_profile(pair[0]).has_capability_data}
+        assert undiscoverable_without_capability_profile == {
+            ("US-AR", "us_ar_digital_motion_picture_incentive"), ("US-MO", "us_mo_motion_media_production_tax_credit"), ("US-MT", "us_mt_media_act_tax_credit"),
+            ("US-NJ", "us_nj_garden_state_film_credit"), ("US-OH", "us_oh_motion_picture_tax_credit"), ("US-WV", "us_wv_film_production_tax_credit"),
+        }, "a priced program whose state has no capability profile is not discoverable: seed the profile (not invented here) or this list changes"
+        statutorily_ready_pairs = resolvable_pairs - undiscoverable_without_capability_profile
         assert ("AU", "au_location_offset") not in statutorily_ready_pairs
         assert s1["incentive_ready_count"] == len(statutorily_ready_pairs)
         assert s1["total_executable_jurisdictions"] == len(jc.ALL_PROFILES)

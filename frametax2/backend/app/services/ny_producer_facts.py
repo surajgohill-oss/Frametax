@@ -43,6 +43,8 @@ NY_EVIDENCED_FACTS = {
     "mb_production_company_bonus_eligible": None,
     "mb_t4_payroll_below_25pct_stated": None,
     "ab_fttc_30pct_criteria_met": None,
+    "wv_ten_resident_hires_confirmed": None,
+    "nj_film_spend_outside_nyc_radius_confirmed": None,
     # NA-RECONCILIATION-11. Propositions that are ALSO content/approval gates (CPTC certificate and control, NL Part I registration, Colorado/Arizona pre-approval, OCASE permanent
     # establishment) are NOT repeated here: their one persistence owner is the Inspector content-gate control (POST /projects/{id}/content-gates, key <slug>__<kind>_confirmed).
     "on_opstc_ontario_labour_25pct_confirmed": None,

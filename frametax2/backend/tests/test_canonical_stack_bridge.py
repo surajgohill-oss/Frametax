@@ -229,20 +229,25 @@ def test_n_way_group_stack_order_invariant_under_permutation():
 
 
 def test_conditional_rule_type_fails_closed_never_publishes():
-    """Codex optimizer-correctness classification, point 1: a pair with a
-    KNOWN but UNRESOLVED (conditional) rule must never be published as a
-    priced combined structure — the legal fact is known, but automatic
-    economic resolution is not. ca_federal_cptc + ca_qc_qprdp is a real
-    'conditional' entry in _SLUG_PAIR_RULES (legal review required, no
-    automatic adjustment)."""
-    rule = load_named_pair_rule("ca_federal_cptc", "ca_qc_qprdp")
+    """Codex optimizer-correctness classification, point 1: a pair with a KNOWN but UNRESOLVED (conditional) rule must never be published as a priced combined structure -- the legal fact is
+    known, but automatic economic resolution is not. ca_federal_cptc + ca_bc_dave is a 'conditional' entry in _SLUG_PAIR_RULES (stacking rules 1.10.0: DAVE rides on a BC credit the planner
+    does not model and no primary text states the combination). (This control used the unofficial ca_qc_qprdp spelling until 1.11.0 retired it.)"""
+    rule = load_named_pair_rule("ca_federal_cptc", "ca_bc_dave")
     assert rule is not None
     assert rule["rule_type"] == "conditional"
 
-    a = StackCandidate("ca_federal_cptc", "CA-QC", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
-    b = StackCandidate("ca_qc_qprdp", "CA-QC", 100_000.0, 0.10, 1_000_000.0, "tax_credit")
+    a = StackCandidate("ca_federal_cptc", "CA-BC", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
+    b = StackCandidate("ca_bc_dave", "CA-BC", 100_000.0, 0.10, 1_000_000.0, "tax_credit")
     assert price_program_group_stack([a, b]) is None
     assert price_program_pair_stack(a, b) is None
+
+
+def test_the_unofficial_qprdp_label_resolves_to_the_quebec_services_credit_rule():
+    """SODEC and Revenu Quebec name one foreign-production credit (the refundable tax credit for film or television production services); the old ca_qc_qprdp spelling now resolves to it."""
+    legacy = load_named_pair_rule("ca_federal_cptc", "ca_qc_qprdp")
+    canonical = load_named_pair_rule("ca_federal_cptc", "ca_qc_pstc")
+    assert canonical is not None and canonical["rule_type"] == "spend_reduction"
+    assert legacy is None or legacy["rule_type"] == canonical["rule_type"]
 
 
 def test_the_manitoba_credit_is_compatible_with_both_federal_credits_and_is_assistance_to_them():

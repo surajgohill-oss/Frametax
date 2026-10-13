@@ -82,6 +82,22 @@ REPAIRS: dict[str, list[tuple[str, str, str, str]]] = {
 
 _R12 = "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)"
 _T12 = "tests/test_na_unruled_stack_pairs_controls.py"
+_R12B = "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)"
+REPAIRS.setdefault("ca_nb_film_tax_credit", []).append((C_CONFLICT, "doctrine recorded the 2017-18 THC incentive (25%/30%, CAD 800,000) while the live program is the LIFT 2026/27 grant (up to 25%, bonuses to 35%, company cap CAD 2,000,000); resolved from the LIFT guidelines PDF", _R12B, "tests/test_us_ca_mx_scope_integrity_controls.py"))
+REPAIRS.setdefault("ca_nb_film_tax_credit", []).append((C_DATA_MISSING, "no requirements profile", _R12B, "tests/test_na_canonical_reconciliation.py"))
+REPAIRS.setdefault("ca_ns_production_incentive_fund", []).append((C_CONFLICT, "doctrine priced 25% of LABOUR from one secondary source; the primary CCTH guidelines price all Eligible Nova Scotia Costs (Stream II 25%); rewritten, CAD 10,000,000 cap rule added, labour-basis control restated, profile CURRENT", _R12B, "tests/test_canada_rate_rules_controls.py"))
+REPAIRS.setdefault("ca_sk_creative_saskatchewan_grant", []).append((C_PROVENANCE, "no structured provenance although the 2026/27 guidelines were read; attached as the knowledge axis only (economic axis stays DISPLAY_ONLY_ZERO_GUARANTEED); CAD 5,000,000 par annual_cap_usd replaced by a native cap rule", _R12B, "tests/test_us_ca_mx_scope_integrity_controls.py"))
+for _slug, _what in (
+        ("us_co_film_income_tax_credit", "the separate Colorado income tax credit (39-22-559 as amended by HB 24-1358) had no record; the exclusion against the rebate (24-48.5-116(6)) is now a same-cost pair rule"),
+        ("us_oh_motion_picture_tax_credit", "coverage-only: no rate record although ORC 122.85 states the rate, base, threshold and pool"),
+        ("us_wv_film_production_tax_credit", "coverage-only: no rate record although the official page states 27% + 4%"),
+        ("us_nj_garden_state_film_credit", "coverage-only: no rate record although the Division of Taxation states 35% / 30%"),
+        ("us_mo_motion_media_production_tax_credit", "coverage-only: no rate record although the official pages state 20% to 42%"),
+        ("us_ar_digital_motion_picture_incentive", "coverage-only: no rate record although the AEDC page states 25% / 30%"),
+        ("us_mt_media_act_tax_credit", "coverage-only: no rate record although MCA 15-31-1007 states 20%"),
+        ("us_ny_empire_state_independent_film_credit", "coverage-only: no rate record although Tax Law 24-D states 30%")):
+    REPAIRS.setdefault(_slug, []).append((C_DISCONNECTED, _what, _R12B, "tests/test_na_canonical_reconciliation.py"))
+
 for _slug, _what in (
         ("ca_ab_fttc", "no named pair rule with the federal CPTC or PSTC (UNRESOLVED_NO_AUTHORITY blocked the stack)"),
         ("ca_nb_film_tax_credit", "no named pair rule with the federal CPTC or PSTC"),
@@ -92,8 +108,8 @@ for _slug, _what in (
 REPAIRS["on_ofttc"].append((C_DEFECT, "no named pair rule with the federal PSTC (conditional: no primary text)", _R12, _T12))
 REPAIRS["ca_federal_cptc"].append((C_DEFECT, "no named pair rule with Alberta, New Brunswick and Nova Scotia (spend_reduction) or BC DAVE (conditional)", _R12, _T12))
 REPAIRS["ca_federal_pstc"].append((C_DEFECT, "no named pair rule with Alberta, DAVE, New Brunswick, Nova Scotia, Saskatchewan (spend_reduction) or OFTTC (conditional)", _R12, _T12))
-REPAIRS["ca_ns_production_incentive_fund"].append((C_DATA_MISSING, "no requirements profile although the primary guidelines (April 2024) were retrievable", "program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)", "tests/test_na_canonical_reconciliation.py"))
-REPAIRS["ca_sk_creative_saskatchewan_grant"].append((C_DATA_MISSING, "no requirements profile although the 2026/27 guidelines were retrievable", "program_requirements.py profile (NA-RECONCILIATION-12)", "tests/test_na_canonical_reconciliation.py"))
+REPAIRS.setdefault("ca_ns_production_incentive_fund", []).append((C_DATA_MISSING, "no requirements profile although the primary guidelines (April 2024) were retrievable", "program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)", "tests/test_na_canonical_reconciliation.py"))
+REPAIRS.setdefault("ca_sk_creative_saskatchewan_grant", []).append((C_DATA_MISSING, "no requirements profile although the 2026/27 guidelines were retrievable", "program_requirements.py profile (NA-RECONCILIATION-12)", "tests/test_na_canonical_reconciliation.py"))
 
 # ── residual propositions that are not a single program's field (the commissioned residual inventory; frozen, not expanded) ────────────────────────────────────────────────────────
 RESIDUALS: list[dict] = [
@@ -106,11 +122,11 @@ RESIDUALS: list[dict] = [
      "treatment": "kept in production cost (higher cap) until stated; the contingency part (USD 94,382, effect 11,380.35) is wired to the producer's contingency election",
      "need": "producer statement whether the 60,000 is a paid, non-refundable expenditure or an unfunded reserve; BH is not evaluated here"},
     {"id": "ALLOCATION-QC-MB-NL", "slug": "ca_federal_pstc", "cls": C_DATA_MISSING,
-     "what": "labour share of an ALL-SPEND provincial credit (Quebec 25%, Manitoba 30% cost-of-production, Newfoundland and Labrador 40%) that nets the federal PSTC is taken as rate x PSTC labour basis; RC4385 says only that any provincial credit is assistance",
-     "treatment": "apportionment assumption plus the whole-credit lower bound disclosed on every affected stack",
+     "what": "the labour share of an ALL-SPEND provincial credit that nets the federal PSTC (Quebec 25%, Manitoba 30% cost-of-production, Newfoundland and Labrador 40%, Alberta 22%, and New Brunswick, Nova Scotia 25% and Saskatchewan when awarded) is taken as rate x PSTC labour basis; RC4385 says only that any provincial credit is assistance",
+     "treatment": "kept SEPARATE from verified netting: every adjustment is labelled VERIFIED NETTING (OPSTC s.3.02, BC DAVE: a labour-only credit) or ASSUMED ALLOCATION, the generator text splits verified and assumed labour assistance, and the whole-credit lower bound is disclosed on every assumed one",
      "need": "a CRA or provincial statement of the allocation (authority-stated labour portion)"},
     {"id": "PRODUCER-FACT-UI", "slug": "ca_federal_cptc", "cls": C_FACT,
-     "what": "producer program facts written through POST /projects/{id}/program-facts (OPSTC 25% Ontario labour, OCASE CAD 25,000 labour, Colorado workforce/CPA, Oregon and Texas award facts, Alabama payroll, BC DAVE activity, California independent category, and the older NY/Ontario/BC/Manitoba/Alberta keys) have no Overview/Inspector control and no api.js client; the facts that are also content/approval gates (CPTC certificate and control, NL Part I, Colorado/Arizona pre-approval, OCASE permanent establishment) DO have the Inspector content-gates control",
+     "what": "producer program facts written through POST /projects/{id}/program-facts (OPSTC 25% Ontario labour, OCASE CAD 25,000 labour, Colorado workforce/CPA, Oregon and Texas award facts, Alabama payroll, BC DAVE activity, California independent category, West Virginia 10-resident hires, New Jersey outside-the-30-mile-radius spend, and the older NY/Ontario/BC/Manitoba/Alberta keys) have no Overview/Inspector control and no api.js client; the facts that are also content/approval gates (CPTC certificate and control, NL Part I, Colorado/Arizona pre-approval, OCASE permanent establishment) DO have the Inspector content-gates control",
      "treatment": "Unknown is absence (a false is never stored); the fact enters the evaluation fingerprint; unstated facts hold the program at USER_FACT_REQUIRED and economics CONDITIONAL",
      "need": "a UI stage (Overview + Inspector, one canonical copy) with independent verification"},
     {"id": "AG-45-DENOMINATOR", "slug": "", "cls": C_SUPERSEDED,
@@ -122,21 +138,45 @@ RESIDUALS: list[dict] = [
      "treatment": "prospective planning is dated Program 4.0; the 2023 letter is historical reference only",
      "need": "producer-stated allocation-letter date and regime, shooting days, contingency election"},
     {"id": "STALE-REAL-GENERATIONS", "slug": "", "cls": C_STALE,
-     "what": "persisted generations of Little Utopia, F#K Valentine's Day, Lips Like Sugar and Bad Hombres predate engine canonical-1.130.0 and the migrations 0082-0085",
+     "what": "persisted generations of Little Utopia, F#K Valentine's Day, Lips Like Sugar and Bad Hombres predate engine canonical-1.130.0 and the migrations 0082-0088",
      "treatment": "retained and visible with stale economics disclosed; no cold evaluation was run",
      "need": "explicit authorization per production, then restart, migrations on the acceptance database and bounded regeneration"},
-    {"id": "CO-TAX-CREDIT-EXCLUSION", "slug": "us_co_film_incentive", "cls": C_DATA_MISSING,
-     "what": "the exclusion of expenditures claimed under the separate Colorado income tax credit (C.R.S. 39-22-559) rests on a secondary mirror; Title 39 was not read",
-     "treatment": "disclosed as a claim follow-up; no economics depend on it in a planning scenario",
-     "need": "official C.R.S. Title 39 text for 39-22-559"},
     {"id": "NL-ELIGIBLE-CORPORATION", "slug": "ca_nl_all_spend_credit", "cls": C_FACT,
      "what": "Regulation 31/23 s.4(1) eligible-corporation tests (permanent establishment, primarily film production, no CRTC licence, not tax-exempt) and Part I registration are producer facts",
      "treatment": "Part I registration is a clearable producer fact; the s.4(1) tests are claim follow-ups",
      "need": "producer statements"},
-    {"id": "QPRDP-IDENTITY", "slug": "ca_qc_qprdp", "cls": C_DISCONNECTED,
-     "what": "the catalog and the stacking registry carry 'Quebec Production Tax Credit - Foreign Productions (QPRDP)' (2 pair rules, CPTC conditional / Telefilm spend_reduction) with no canonical identity; the Quebec services credit is canonical as ca_qc_pstc and its CPTC pair is ruled by RC4164 and Revenu Quebec note 7",
-     "treatment": "unbound on purpose: binding it would let the legacy 'conditional' text outrank the primary-text spend_reduction rule",
-     "need": "an identity ruling (is QPRDP the Quebec services credit?) and retirement of the conflicting legacy rule"},
+    {"id": "BC-FIBC-IS-THE-BC-FILM-TV-CREDIT", "slug": "proposed_canada_british_columbia_film_incentive_bc_fibc", "cls": C_DATA_MISSING,
+     "what": "'Film Incentive BC' is Creative BC's name for the BC film and television tax credit (Income Tax Act (BC) Part 5): basic 35%, 40% for photography from 2025-01-01, regional 12.5%, distant 6%, DAVE 16%, scriptwriting 35%; the manifest called it a direct grant, and it is a domestic-content credit that the production services credit replaces for productions that do not meet its requirements",
+     "treatment": "evidence persisted in the manifest entry; no RateRule yet; no pair rules, so a structure containing it would block; BC DAVE rides on this credit (DAVE-CPTC)",
+     "need": "ITA (BC) s.80 and the Film and Television Tax Credit Regulation (labour base, Canadian-content certification), then rate record plus pairs with the PSTC, DAVE and CPTC"},
+    {"id": "NEW-STATE-CAPABILITY-PROFILES", "slug": "us_oh_motion_picture_tax_credit", "cls": C_DATA_MISSING,
+     "what": "Ohio, West Virginia, Missouri, New Jersey, Montana and Arkansas are rate-bearing but have no jurisdiction capability profile (studio, crew depth, water, post) and no cost benchmark, so production discovery cannot accept them as relocation candidates even with the capability gate off; their Jurisdiction rows are seeded (migration 0088) but only for code, name and USD",
+     "treatment": "priced when a production is based in the state or a component is assigned there; never offered as a relocation destination; listed explicitly in the harness oracle so the gap cannot hide",
+     "need": "capability facts for each state from a production-services source (not an incentive source) and a cost benchmark, then the profile entries"},
+    {"id": "AR-ADDON-INCONSISTENCY", "slug": "us_ar_digital_motion_picture_incentive", "cls": C_CONFLICT,
+     "what": "the AEDC page lists a 25% base with 10% and 5% add-ons but states a 30% total per expenditure; the statute (not cited on the page) was not read; selection is at the Executive Director's sole discretion",
+     "treatment": "both rates are ceilings with no guaranteed floor (displayed, never priced)",
+     "need": "the Arkansas Code sections and the AEDC rule that fix the add-on combination"},
+    {"id": "MO-UPLIFTS-AND-STATUTE", "slug": "us_mo_motion_media_production_tax_credit", "cls": C_DATA_MISSING,
+     "what": "the official pages give the 20% base, the 42% maximum, the minimum spend and the USD 16 million pool but not the uplift schedule, refundability, the RSMo section or a sunset",
+     "treatment": "20% floor with allocation disclosed; 42% ceiling unconditioned",
+     "need": "the Motion Media Tax Credit Program Guidelines PDF and the RSMo section"},
+    {"id": "MT-AVAILABILITY-AND-CAPS", "slug": "us_mt_media_act_tax_credit", "cls": C_DATA_MISSING,
+     "what": "Commerce has paused certification and states the first available credit is 2031; the calendar-year caps (Department of Revenue), minimum base investment (ARM 8.119.304-305) and sunset were not read",
+     "treatment": "20% ceiling with an unresolved availability condition: no guaranteed value",
+     "need": "the Department of Revenue cap schedule, MCA 15-31-1004/1005/1010 and the ARM thresholds"},
+    {"id": "NJ-STATUTE-AND-DISCRETION", "slug": "us_nj_garden_state_film_credit", "cls": C_DATA_MISSING,
+     "what": "the Division of Taxation page gives 35% / 30%, the vendor-share or USD 1 million gate, transferability and the 2039 end, but not the statute text, a film cap, refundability or whether NJEDA approval is discretionary",
+     "treatment": "30% floor, 35% on the stated outside-radius fact",
+     "need": "N.J.S.A. 54:10A-5.39 and the NJEDA program rules"},
+    {"id": "WV-STATUTE", "slug": "us_wv_film_production_tax_credit", "cls": C_DATA_MISSING,
+     "what": "the official WVDED page is a summary that cites no statute and does not state refundability or a sunset",
+     "treatment": "27% floor, 31% on the stated 10-resident full-time hire fact",
+     "need": "W. Va. Code 11-13X text and the legislative rule"},
+    {"id": "NY-IND-POOLS-AND-PAIR", "slug": "us_ny_empire_state_independent_film_credit", "cls": C_DATA_MISSING,
+     "what": "the statute text read from a public mirror gives 30% (+10% adders) and eligibility but the independent-credit pools, the program years and any exclusion against the section 24 film credit for the same film were not found",
+     "treatment": "30% floor with qualification and first-come allocation disclosed; the pair with ny_state_film stays UNRESOLVED_NO_AUTHORITY and blocks",
+     "need": "Tax Law 24, 24-D(e) allocation text from nysenate.gov and the ESD Part 172 final regulation"},
     {"id": "DAVE-CPTC", "slug": "ca_bc_dave", "cls": C_CAPABILITY,
      "what": "BC DAVE is tied to a BC credit (Income Tax Act (BC) s.82.3(1)(a) production services; s.81.2 film and television, which requires s.80); whether the CPTC can be claimed alongside depends on that BC credit, which the planner does not model; no primary text states DAVE with the CPTC",
      "treatment": "rule_type conditional: the combination blocks rather than prices as stacked",
@@ -145,26 +185,14 @@ RESIDUALS: list[dict] = [
      "what": "neither the Ontario Creates OFTTC page nor the PSTC guidelines address the OFTTC with the federal PSTC; the only route is an inference through the CPTC exclusion",
      "treatment": "rule_type conditional: the combination blocks",
      "need": "a primary statement from Ontario Creates or CAVCO"},
-    {"id": "NB-CURRENT-PROGRAM", "slug": "ca_nb_film_tax_credit", "cls": C_CONFLICT,
-     "what": "the doctrine records the 2017-18 THC incentive (40% labour / 25% / 30% all-spend, CAD 800,000 feature maximum) while gnb.ca now shows LIFT Production: Major stream base up to 25% of Total NB Spend with stackable bonuses to 35%, Micro stream up to 30% (maximum CAD 100,000), discretionary; the LIFT Program Guidelines PDF (bonus schedule, Major maximum, federal-credit text) was not retrieved",
-     "treatment": "tiers and cap unchanged (ceilings only, zero guaranteed value, coverage NON_PRICEABLE); the finding is persisted in the record citation",
-     "need": "the LIFT Program Guidelines PDF, then a doctrine rewrite and value-cap rule"},
-    {"id": "NS-CURRENT-PROGRAM", "slug": "ca_ns_production_incentive_fund", "cls": C_CONFLICT,
-     "what": "the doctrine prices 25% of Nova Scotia LABOUR (one secondary source); the April 2024 CCTH guidelines state 26% (Stream I) / 25% (Stream II) of ALL Eligible Nova Scotia Costs with Head-of-Department reductions and bonuses, a CAD 25,000 minimum and CAD 10,000,000 maximum; the Fund was renewed only to FY2025-26",
-     "treatment": "labour basis retained (pinned control) and the conflict persisted in the citation; requirements profile recorded as UNCERTAIN",
-     "need": "confirmation that the Fund is renewed for 2026-27, then an all-cost rewrite with Stream I ownership and Head-of-Department producer facts"},
-    {"id": "SK-PROVENANCE-WITHHELD", "slug": "ca_sk_creative_saskatchewan_grant", "cls": C_PROVENANCE,
-     "what": "the 2026/27 guidelines were read and are cited in the record, but structured SourceProvenance is withheld: attaching it makes the authority disposition VERIFIED_PRICEABLE, against the coverage ruling that this discretionary, assessed grant is display-only (B1)",
-     "treatment": "citation and requirements profile carry the primary evidence; the grant stays zero-guaranteed and non-priceable",
-     "need": "a decision whether a verified discretionary grant is priceable (ceiling only) or stays display-only, then provenance and the coverage row together"},
-    {"id": "SK-NS-NB-NATIVE-CAPS", "slug": "ca_sk_creative_saskatchewan_grant", "cls": C_DATA_MISSING,
-     "what": "Saskatchewan CAD 5,000,000 is recorded as annual_cap_usd at par and Nova Scotia CAD 10,000,000 has no cap rule; New Brunswick keeps the dated CAD 800,000",
-     "treatment": "ceiling-only programs: no guaranteed value depends on the caps",
-     "need": "native-currency IncentiveValueCapRule records once the doctrine rewrites above land"},
 ]
 
 #: catalog rows that are not one-to-one with a canonical identity, with the reason and the targets (explicit; every NA catalog row not auto-linked must be here)
 CATALOG_OVERRIDES: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
+    ("US", "digital product and motion picture industry incentive"): ("LINK", ("us_ar_digital_motion_picture_incentive",), "NA-RECONCILIATION-12: now rate-bearing"),
+    ("US", "garden state film and digital media jobs act \u2014 film credit"): ("LINK", ("us_nj_garden_state_film_credit",), "NA-RECONCILIATION-12: now rate-bearing"),
+    ("US", "media tax credit"): ("LINK", ("us_mt_media_act_tax_credit",), "NA-RECONCILIATION-12: now rate-bearing"),
+    ("US", "motion media production tax credit"): ("LINK", ("us_mo_motion_media_production_tax_credit",), "NA-RECONCILIATION-12: now rate-bearing"),
     ("CA", "bell fund — broadcast and digital content development"): ("NO_RECORD", (), "broadcaster/digital fund; stack spelling ca_bell_fund (2 rules) has no canonical identity"),
     ("CA", "canada media fund (cmf) / telefilm canada / cptc / pstc"): ("COMPOSITE", ("ca_cmf", "ca_federal_cptc", "ca_federal_pstc"), "composite catalog row; the Telefilm component has no canonical identity (ca_telefilm_dev)"),
     ("CA", "crtc — online streaming act (bill c-11) local content obligations"): ("NOT_INCENTIVE", (), "a regulatory content obligation, not a producer incentive: no economic instrument to price (cf. NON_ECONOMIC)"),
@@ -185,7 +213,7 @@ CATALOG_OVERRIDES: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     ("CA-PE", "pei film production investment fund"): ("NO_RECORD", (), "provincial investment fund; no canonical identity"),
     ("CA-QC", "qprdp / sodec"): ("COMPOSITE", ("ca_qc_pstc",), "Quebec services credit linked; the QPRDP component is an unbound legacy spelling (QPRDP-IDENTITY)"),
     ("CA-QC", "quebec film and television production tax credit (sodec)"): ("LINK", ("ca_qc_pstc",), "committee ruling: qc_film_production is a duplicate alias of ca_qc_pstc"),
-    ("CA-QC", "quebec production tax credit — foreign productions (qprdp)"): ("OPEN_IDENTITY", (), "legacy stack spelling ca_qc_qprdp is unbound (QPRDP-IDENTITY)"),
+    ("CA-QC", "quebec production tax credit — foreign productions (qprdp)"): ("LINK", ("ca_qc_pstc",), "NA-RECONCILIATION-12: 'QPRDP' is an unofficial label; SODEC and Revenu Québec name one foreign-production credit, the refundable tax credit for film or television production services (CO-1029.8.36.SP) = ca_qc_pstc"),
     ("MX", "efica 30% tax credit / imcine discretionary funds"): ("OPEN_IDENTITY", ("mx_federal_film_incentive_2026",), "the 30% federal incentive is canonical; that this catalog label ('EFICA') is that program is not proven by a retained record, and the IMCINE funds have no identity"),
     ("MX", "imcine — instituto mexicano de cinematografía — foprocine / fidecine"): ("NO_RECORD", (), "selective national funds; no canonical identity"),
     ("MX", "mexico eficine (article 226 tax credit) and procine fund"): ("LINK", ("mx_eficine_incentive",), "same program as the coverage record (name differs by '(Article 226)' punctuation)"),

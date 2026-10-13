@@ -282,9 +282,9 @@ def test_read_only_builder_never_reaches_write_capable_recovery():
         "read-only current_generation_fingerprint() — never reimplement its own"
     )
 
-    assert "build_project_economic_inputs(session, project.id, read_only=True)" in inspect.getsource(
+    assert "current_generation_fingerprint(session, project.id)" in inspect.getsource(
         project_workspace_view
-    ), "project_workspace_view must build economic inputs read-only on a GET"
+    ), "project_workspace_view must delegate fingerprint reconstruction to the shared read-only current_generation_fingerprint()"
 
 
 # ── CLUSTER 6 — a ceiling is a limit, never a guaranteed rate ────────────
@@ -363,7 +363,7 @@ def test_unconfirmed_conditional_ceiling_cannot_become_a_deterministic_rate():
     assert seg.allocated_usd == pytest.approx(5_000_000.0)
 
 
-def test_a_determinate_floorless_ceiling_still_prices():
+def test_a_determinate_floorless_ceiling_still_prices(monkeypatch):
     """No over-blocking. A program whose only tier is a band ceiling but
     whose conditions are ALL pre-evaluable is determinate and must keep
     pricing -- the repair targets unconfirmable discretion, not the shape.
@@ -382,17 +382,25 @@ def test_a_determinate_floorless_ceiling_still_prices():
     test protects: a floorless ceiling with determinate conditions must
     still price."""
     from app.data import program_rate_rules as prr
+    from app.data.program_rate_rules_worldwide import DoctrineRateTier, DoctrineRecord, rate_rules_for
 
-    rr = prr.resolve_program_rate(
-        "us_nc_film_entertainment_grant", production_type="feature_film", qpe_usd=5_000_000.0,
+    # NA-RECONCILIATION-12: no live program is a floorless ceiling with only pre-evaluable conditions any more (us_nc_film_entertainment_grant now carries an unresolved award
+    # condition, as do the rest), so the generic invariant is proven on a SYNTHETIC program registered for this test only: a 25% ceiling whose only condition is a minimum QPE.
+    slug = "synthetic_floorless_determinate_ceiling"
+    doc = DoctrineRecord(
+        jurisdiction_code="XX", program_slug=slug, program_name="Synthetic floorless determinate ceiling", confidence_tier="PARSED", incentive_type="cash_rebate",
+        is_refundable=None, is_transferable=None, min_spend_usd=None, annual_cap_usd=None, requires_cultural_test=False,
+        citation="synthetic control", source_ref="synthetic",
+        tiers=(DoctrineRateTier(tier_id="syn-ceiling-25", rate=0.25, is_band_ceiling=True, min_qpe_usd=1_000_000.0),),
     )
-    assert rr is not None and rr.has_guaranteed_floor is False
+    monkeypatch.setitem(prr._RULES_BY_PROGRAM, slug, tuple(rate_rules_for(doc)))
+    rr = prr.resolve_program_rate(slug, production_type="feature_film", qpe_usd=5_000_000.0)
+    assert rr is not None and rr.has_guaranteed_floor is False and rr.modeled_rate == pytest.approx(0.25)
     assert not any(e.satisfied is None for e in rr.conditions_evaluated)
 
-    seg = _probe_segment("us_nc_film_entertainment_grant")
+    seg = _probe_segment(slug)
     assert seg.executable is True
-    assert seg.incentive_floor_usd > 0
-
+    assert seg.incentive_floor_usd == pytest.approx(0.25 * seg.allocated_usd)
 
 
 def _probe_segment_amount(slug: str, amount_usd: float):
@@ -1046,7 +1054,7 @@ def test_npc_adds_financing_cost_on_top_of_gross():
     from app.calculators import allocation_pricing
 
     source = inspect.getsource(allocation_pricing.price_allocated_structure)
-    assert "gross_budget_usd - selected_incentive" in source
+    assert "gross_budget_usd - planned_cost_reduction_usd - selected_incentive" in source     # gross less the undeployed reserve (once) less the incentive
     assert "+ financing_cost_usd" in source
 
 
@@ -1362,13 +1370,10 @@ def test_four_member_structure_rejected_when_any_pair_is_prohibited():
         _stack_cand("on_opstc", "CA-ON"), _stack_cand(ocase, "CA-ON"),
     ]
     result = price_program_group_stack(group)
-    # ca_federal_cptc+ocase has no registered rule at all, so this exact
-    # 4-member group is not even fully_covered -- confirms it is REFUSED
-    # (never partially trusted), which is itself a correct outcome for a
-    # group containing a genuinely unresolved pair.
-    assert result is None, (
-        "a group with an unresolved (ca_federal_cptc+ocase) AND a prohibited "
-        "(on_ofttc+on_opstc) pair must never be treated as priceable"
+    # ca_federal_cptc+ocase is RULED since stacking rules 1.8.0 (spend_reduction: the provincial credit is assistance lowering the CPTC cost cap), so the group is covered; the
+    # prohibited on_ofttc+on_opstc pair (mutually_exclusive) still means the whole group is refused or flagged as containing a blocking incompatibility -- never priced as stackable.
+    assert result is None or result.contains_blocking_incompatibility is True, (
+        "a group containing a prohibited (on_ofttc+on_opstc) pair must never be treated as priceable"
     )
 
 

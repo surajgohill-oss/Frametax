@@ -121,7 +121,6 @@ _SPEND_REDUCTION_DIRECTION: dict[frozenset, str] = {
     frozenset({"ca_cmf", "qc_film_production"}): "ca_cmf",
     frozenset({"ca_telefilm_dev", "on_ofttc"}): "ca_telefilm_dev",
     frozenset({"ca_telefilm_dev", "qc_film_production"}): "ca_telefilm_dev",
-    frozenset({"ca_qc_qprdp", "ca_telefilm_dev"}): "ca_telefilm_dev",
     frozenset({"ca_bc_pstc", "ca_telefilm_dev"}): "ca_telefilm_dev",
     frozenset({"ca_bell_fund", "on_ofttc"}): "ca_bell_fund",
     frozenset({"au_nsw_screen", "au_screen_production"}): "au_screen_production",
@@ -237,6 +236,14 @@ def pstc_netted_by_provincial(original: float, rate: float, labour_basis: float,
     total = round(sum(a for _, a in parts), 2)
     reduction = round(min(total, labour_basis) * rate, 2)
     return round(max(0.0, original - reduction), 2), parts, reduction
+
+
+def netting_basis_label(slug: str) -> str:
+    """Whether the PSTC labour netting by this provincial credit is VERIFIED (the authority states the labour portion, or the credit is wholly labour) or an ASSUMED ALLOCATION (an all-spend credit whose
+    labour share the authorities do not state: rate x PSTC labour basis, with the whole-credit figure as the lower bound). Kept in the adjustment text so a verified reduction is never read as an assumed one."""
+    if any(_is_slug(slug, x) for x in PSTC_APPORTIONED_SLUGS):
+        return "ASSUMED ALLOCATION (not stated by the authority)"
+    return "VERIFIED NETTING (authority-stated or wholly in respect of labour)"
 
 
 def pstc_basis_phrase(slug: str) -> str:
@@ -422,7 +429,7 @@ def _rule_type_for_group(rules: list[dict]) -> str:
 #: correctly apply (allowed = no adjustment; mutually_exclusive = the
 #: higher-value program is deterministically retained; spend_reduction =
 #: a computable basis reduction). "conditional" (legal review required,
-#: no automatic value resolution — e.g. ca_federal_cptc+ca_qc_qprdp) and
+#: no automatic value resolution — e.g. ca_federal_cptc+ca_bc_dave) and
 #: any future "prohibited" entry are NOT publishable: the legal FACT is
 #: known, but the ECONOMIC resolution is not, so a combined structure
 #: must not be generated — never surfaced as if it were priced. This is
@@ -531,7 +538,7 @@ def _build_group_result(
                 running = adjusted if i == len(parts) - 1 else round(running - share, 2)
                 adjustment_dicts.append({
                     "program_a_id": slug_c, "program_b_id": pstc.program_slug, "rule_type": "spend_reduction",
-                    "description": (f"Only the labour portion of the {slug_c} credit is assistance to the federal PSTC (ITA 125.5(1); CRA RC4385; {pstc_basis_phrase(slug_c)}): "
+                    "description": (f"{netting_basis_label(slug_c)}: only the labour portion of the {slug_c} credit is assistance to the federal PSTC (ITA 125.5(1); CRA RC4385; {pstc_basis_phrase(slug_c)}): "
                                     f"{rates[slug_c]:.1%} x labour ${labour_basis:,.0f} = ${labour_assistance:,.0f} (bounded by the credit ${float(c.selected_incentive_usd):,.0f}) reduces PSTC labour; "
                                     f"PSTC reduction = ${labour_assistance:,.0f} x {pstc_rate:.1%} = ${share:,.0f}. The PSTC segment's labour basis is taken as the provincial labour."),
                     "original_value_usd": original, "adjustment_usd": -share, "adjusted_value_usd": running,

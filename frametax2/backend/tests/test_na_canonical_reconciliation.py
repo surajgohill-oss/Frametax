@@ -32,11 +32,11 @@ def test_the_denominator_is_the_live_registry_and_matches_an_independent_derivat
     u = na.frozen_universe()
     ind = na.independent_denominator()
     assert u["rate_bearing"] == ind["rate_bearing"]
-    assert len(u["rate_bearing"]) == 45
+    assert len(u["rate_bearing"]) == 53          # 45 + the seven coverage-only US programs given rate records in NA-RECONCILIATION-12 (plus the separate Colorado income tax credit; 60 canonical programs)
     # every coverage-record-derived NA program that is not rate-bearing is a coverage-only identity (the identity layer may add others by jurisdiction code)
     assert set(ind["coverage_only_from_coverage_records"]) <= set(u["coverage_only"])
     assert not set(u["rate_bearing"]) & set(u["coverage_only"])
-    assert len(u["rate_bearing"]) + len(u["coverage_only"]) == 59
+    assert len(u["rate_bearing"]) + len(u["coverage_only"]) == 60
 
 
 def test_every_rate_bearing_program_has_a_canonical_identity():
@@ -49,7 +49,7 @@ def test_every_rate_bearing_program_has_a_canonical_identity():
 
 def test_aliases_are_never_rows(matrix):
     program_slugs = {r["canonical_slug"] for r in matrix if r["row_layer"] in (na.LAYER_RATE, na.LAYER_COVERAGE)}
-    assert len(program_slugs) == 59, "one row per canonical program"
+    assert len(program_slugs) == 60, "one row per canonical program"
     aliases = {a for r in matrix if r["row_layer"] in (na.LAYER_RATE, na.LAYER_COVERAGE) for a in filter(None, (x.strip() for x in r["aliases"].split(",")))}
     assert not aliases & program_slugs
     for alias in ("qc_film_production", "us_ny_film_credit", "ca_on_opstc", "us_ca_film_credit", "proposed_united_states_new_york_film_tax_credit_post_production"):
@@ -74,7 +74,7 @@ def test_every_row_has_a_valid_class_and_open_rows_name_the_missing_evidence(mat
 def test_the_catalog_is_fully_accounted_and_nothing_is_unmapped(matrix):
     u = na.frozen_universe()
     cat = [r for r in matrix if r["row_kind"] == "CATALOG"]
-    assert len(cat) == len(u["catalog"]) == 78
+    assert len(cat) == len(u["catalog"]) == 82          # 78 + the four state-coded rows added in NA-RECONCILIATION-12 (OH, WV, NJ, MO)
     assert not [r for r in cat if r["proposition_id"] == "UNMAPPED"], "every NA catalog entry is linked or explicitly overridden"
     assert {(r["jurisdiction"], r["program_name"]) for r in cat} == set(u["catalog"])
     assert not set(k[0] for k in na.CATALOG_OVERRIDES) - {c for c, _ in u["catalog"]}
@@ -85,7 +85,7 @@ def test_the_catalog_is_fully_accounted_and_nothing_is_unmapped(matrix):
 def test_every_stacking_spelling_with_rules_is_canonical_aliased_or_listed(matrix):
     from app.optimization import stacking_rules as sr
     listed = {r["canonical_slug"] for r in matrix if r["row_layer"] == na.LAYER_STACK}
-    assert listed == {"ca_bell_fund", "ca_cmpa_foreign", "ca_nsi_fund", "ca_qc_qprdp", "ca_telefilm_dev"}
+    assert listed == {"ca_bell_fund", "ca_cmpa_foreign", "ca_nsi_fund", "ca_telefilm_dev"}          # ca_qc_qprdp retired: an unofficial label for the Quebec services credit (NA-RECONCILIATION-12)
     rule_slugs = {s for k in sr._SLUG_PAIR_RULES for s in k}
     assert listed <= rule_slugs
 
@@ -94,7 +94,7 @@ def test_residual_inventory_slugs_are_real_and_classes_valid():
     ids = {i.canonical_slug for i in cpi.all_canonical_identities()}
     for r in na.RESIDUALS:
         assert r["cls"] in na.CLASSES and r["need"].strip() and r["what"].strip() and r["treatment"].strip()
-        assert r["slug"] == "" or r["slug"] in ids or r["slug"] == "ca_qc_qprdp", r["id"]
+        assert r["slug"] == "" or r["slug"] in ids, r["id"]
     for slug, items in na.REPAIRS.items():
         assert slug in ids
         assert all(c in na.CLASSES for c, *_ in items)
@@ -119,7 +119,11 @@ def test_the_committed_artifacts_are_current(matrix):
 
 
 def test_the_formerly_unruled_pairs_are_ruled_and_the_two_without_primary_text_are_conditional_not_priced(matrix):
-    assert not [r for r in matrix if r["proposition_id"].startswith("STACK-PAIR:")], "no same-scope NA pair among the priced programs may remain unruled"
+    # The only same-scope pairs still unruled are the New York independent credit (Tax Law 24-D) with the section 24 film credit and the post-production credit: neither the 24-D text nor
+    # the section 24 / 31 text read on 2026-10-13 states whether the same film can claim both, so they stay UNRESOLVED_NO_AUTHORITY (blocking), recorded as NY-IND-POOLS-AND-PAIR.
+    left = {frozenset((r["canonical_slug"], r["proposition_id"].split(":", 1)[1])) for r in matrix if r["proposition_id"].startswith("STACK-PAIR:")}
+    ind = "us_ny_empire_state_independent_film_credit"
+    assert left == {frozenset(("ny_state_film", ind)), frozenset(("us_ny_post_production_credit", ind))}
     from app.calculators.canonical_stack_bridge import load_named_pair_rule
     formerly = [("ca_ab_fttc", "ca_federal_cptc"), ("ca_ab_fttc", "ca_federal_pstc"), ("ca_bc_dave", "ca_federal_cptc"), ("ca_bc_dave", "ca_federal_pstc"),
                 ("ca_federal_cptc", "ca_nb_film_tax_credit"), ("ca_federal_cptc", "ca_ns_production_incentive_fund"), ("ca_federal_pstc", "ca_nb_film_tax_credit"),

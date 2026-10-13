@@ -51,19 +51,35 @@ def _usd_amounts(text: str) -> set[float]:
 
 
 # ── F-01 (superseded by primary authority, 2026-10-11): New Brunswick's Production Incentive is a discretionary 'maximum of' incentive ───
-def test_new_brunswick_is_a_discretionary_ceiling_with_a_per_project_maximum_not_a_flat_credit():
-    # F-01 once made NB a confirmed flat 30% because the 30% tier was selected by production type. The primary THC guidelines (2017-2018)
-    # state 'a maximum of' 25%/30% of NB spend, support 'will depend on budget availability' and expense eligibility is 'at the sole
-    # discretion of THC', with a feature maximum of $800,000. Every tier is therefore a ceiling with an unresolved discretion condition.
+def test_new_brunswick_is_a_discretionary_lift_grant_with_ceilings_and_a_company_cap_not_a_flat_credit():
+    # The LIFT Film & TV Production Incentive 2026/2027 guidelines (gnb.ca): Major stream "Base Grant of up to 25%" of Total NB Spend plus stackable bonuses "to a combined total of 35%"; awards
+    # consider "overall demand and available funds"; Company Cap of $2M. Every tier is therefore a ceiling with an unresolved discretion condition and no guaranteed floor. (Supersedes the
+    # 2017-2018 THC guidelines this control once pinned: 25% / 30% and an 800,000 feature maximum.)
     doc = get_doctrine("ca_nb_film_tax_credit")
-    assert {round(t.rate, 2) for t in doc.tiers} == {0.25, 0.30}
+    assert {round(t.rate, 2) for t in doc.tiers} == {0.25, 0.35}
     assert all(t.is_band_ceiling and any(c.kind == "discretionary_band" for c in t.conditions) for t in doc.tiers)
     seg = _price("CA-NB", "ca_nb_film_tax_credit", 2_000_000.0)
     assert not seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation, "no guaranteed value for a discretionary maximum"
     assert seg.incentive_floor_usd in (None, 0, 0.0) and "no guaranteed floor" in " ".join(seg.blockers)
     from app.data.program_rate_rules import get_incentive_value_cap
     cap = get_incentive_value_cap("ca_nb_film_tax_credit")
-    assert cap.cap_currency == "CAD" and cap.cap_native_amount == 800_000.0
+    assert cap.cap_currency == "CAD" and cap.cap_native_amount == 2_000_000.0
+
+
+def test_saskatchewan_provenance_changes_the_knowledge_axis_only_and_the_grant_stays_display_only_zero_guaranteed():
+    # Existing discretionary-program policy (_B1_DISCRETIONARY_RULING): the 2026/27 Creative Saskatchewan grant is assessed and selective. Structured provenance is the knowledge axis; the economic axis is unchanged.
+    from app.data import authority_coverage_registry as acr
+    from app.data import program_authority_provenance as pa
+    assert acr._B1_DISCRETIONARY_RULING["ca_sk_production_grant"] == "DISPLAY_ONLY_ZERO_GUARANTEED"
+    assert acr.economic_block_for_program("ca_sk_creative_saskatchewan_grant") is not None, "the economic block must survive the provenance change"
+    from app.services.canonical_evaluation import _discretionary_policy_resolve, _is_discretionary_program
+    for slug in ("ca_sk_creative_saskatchewan_grant", "ca_nb_film_tax_credit", "us_ar_digital_motion_picture_incentive"):
+        assert _is_discretionary_program(slug), f"{slug} is gated by the existing discretionary-program policy"
+    assert _discretionary_policy_resolve("ca_sk_creative_saskatchewan_grant", {}) == "include"                      # default unchanged: no economics change
+    assert _discretionary_policy_resolve("ca_sk_creative_saskatchewan_grant", {"discretionary_policy_default": "exclude"}) == "exclude"   # the project policy governs, not the provenance
+    assert pa.authority_disposition("ca_sk_creative_saskatchewan_grant") == pa.AUTHORITY_VERIFIED_PRICEABLE
+    seg = _price("CA-SK", "ca_sk_creative_saskatchewan_grant", 2_000_000.0)
+    assert seg.incentive_floor_usd in (None, 0, 0.0) and not seg.executable
 
 
 def test_no_scoped_tier_is_a_band_ceiling_whose_only_conditions_are_already_satisfied_type_gates():

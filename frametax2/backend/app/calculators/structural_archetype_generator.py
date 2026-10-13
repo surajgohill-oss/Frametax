@@ -535,7 +535,7 @@ def _generate_structural_candidate_uncached(
         # never by the generic whole-credit heuristic: CPTC assistance sets the 60% production-cost cap; only the labour portion of the OPSTC is
         # assistance to the federal PSTC.
         from app.calculators.canonical_stack_bridge import (
-            CPTC_SLUG, PSTC_APPORTIONED_SLUGS, PSTC_ASSISTING_SLUGS, PSTC_SLUG, _is_slug, apportionment_note, cptc_net_cost_adjusted, pstc_netted_by_provincial)
+            CPTC_SLUG, PSTC_APPORTIONED_SLUGS, PSTC_ASSISTING_SLUGS, PSTC_SLUG, _is_slug, apportionment_note, cptc_net_cost_adjusted, netting_basis_label, pstc_netted_by_provincial)
         _by_slug = {ce.component.program_slug: ce for ce in guaranteed_econ}
         _netted: list[StackingAdjustment] = []
         for _slug, _ce in _by_slug.items():
@@ -565,8 +565,10 @@ def _generate_structural_candidate_uncached(
                 _adjusted, _parts, _red = pstc_netted_by_provincial(
                     _original, _rate, _basis, [(x, raw_component_incentives_usd[x], _by_slug[x].segment.rate_floor) for x in _assisting])
                 _la = round(sum(a for _, a in _parts), 2)
-                _desc = (f"Only the labour portion of {', '.join(sorted(_assisting))} is assistance to the federal PSTC (ITA 125.5(1); CRA RC4385; Ontario Creates OPSTC Guidelines s.3.02 "
-                         f"for the OPSTC): ${_la:,.0f} reduces PSTC labour; PSTC reduction ${_red:,.0f}. The PSTC segment's labour basis is taken as the provincial labour.")
+                _la_assumed = round(sum(a for x, a in _parts if any(_is_slug(x, y) for y in PSTC_APPORTIONED_SLUGS)), 2)
+                _desc = (f"{'; '.join(f'{x}: {netting_basis_label(x)}' for x in sorted(_assisting))}. Only the labour portion of {', '.join(sorted(_assisting))} is assistance to the federal PSTC (ITA 125.5(1); CRA RC4385; Ontario Creates OPSTC Guidelines s.3.02 "
+                         f"for the OPSTC): ${_la:,.0f} reduces PSTC labour (verified ${round(_la - _la_assumed, 2):,.0f}; assumed allocation ${_la_assumed:,.0f}); PSTC reduction ${_red:,.0f}. "
+                         "The PSTC segment's labour basis is taken as the provincial labour.")
                 for _x in _assisting:
                     if any(_is_slug(_x, y) for y in PSTC_APPORTIONED_SLUGS):
                         disclosed_limitations.append(apportionment_note(_x, raw_component_incentives_usd[_x], _by_slug[_x].segment.rate_floor, _basis, _original, _rate))

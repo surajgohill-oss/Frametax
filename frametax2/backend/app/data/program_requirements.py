@@ -4234,8 +4234,8 @@ register(ProgramRequirementsProfile(
         "qualified_local_expenditure": "C.R.S. 24-48.5-114(7) (HB 23-1275): a payment by a production company operating in Colorado to a person or business in Colorado in connection with production activities in Colorado; wages count up to USD 1,000,000 per employee or contractor (income tax withheld), and payments to a personal service corporation up to USD 1,000,000 per calendar year per corporation (information return). Runtime: per_payee_limits.PAYEE_CAPS['us_co_film_incentive'] excludes the excess for an identified payee with complete compensation; otherwise the account is carried as a planning figure with an UNRESOLVED note.",
         "availability_window": "Incentive available on or after July 1, 2012 but before January 1, 2024, and on or after January 1, 2025 (official text): a production in calendar year 2024 is not eligible. Not modeled as a date gate because the planning horizon is later than 2025-01-01.",
         "appropriation": "Incentives are limited to the amount appropriated to the office for the fiscal year plus unspent prior appropriations; award is not an entitlement.",
-        "tax_credit_exclusion": "Expenditures claimed under the separate income tax credit (C.R.S. 39-22-559, tax years 2024 only per the mirror) cannot also earn the performance-based incentive.",
-        "open_item": "CLOSED 2026-10-13: the enacted definition of 'qualified local expenditure' (C.R.S. 24-48.5-114(7)) and the per-payee USD 1,000,000 wage cap were read in the official statutes. Remaining: the separate income tax credit exclusion (C.R.S. 39-22-559) rests on the secondary mirror and Title 39 was not read.",
+        "tax_credit_exclusion": "C.R.S. 24-48.5-116(6) (C.R.S. 2024, read 2026-10-13): 'A production company shall not apply and the office shall not award a performance-based incentive for any qualified local expenditures, for which the production company has applied, for an income tax credit pursuant to section 39-22-559.' The separate credit is now a rate-bearing program (us_co_film_income_tax_credit) with a same-cost pair rule (stacking rules 1.12.0).",
+        "open_item": "CLOSED 2026-10-13: the enacted definition of 'qualified local expenditure' (C.R.S. 24-48.5-114(7)), the per-payee USD 1,000,000 wage cap and the exclusion against the income tax credit (24-48.5-116(6)) were read in the official statutes; the credit itself (39-22-559 as amended by HB 24-1358) is recorded as us_co_film_income_tax_credit.",
     },
 ))
 
@@ -5090,7 +5090,8 @@ register(ProgramRequirementsProfile(
 # Saskatchewan and Nova Scotia (NA-RECONCILIATION-12, primary guideline text read 2026-10-13). Fields not stated by the text stay None; CAD amounts live in additional_facts because the profile has no native local-spend or cap field.
 register(ProgramRequirementsProfile(
     program_slug="ca_sk_creative_saskatchewan_grant", jurisdiction_code="CA-SK",
-    local_entity_required=True,        # incorporated in Saskatchewan (or federally and registered there), head office in Saskatchewan, substantial Saskatchewan-resident control
+    local_entity_required=True,
+    allocation_type=AllocationType.DISCRETIONARY,        # an assessed, selective grant: the existing discretionary-program policy gates it (project default include/exclude, per-program override)        # incorporated in Saskatchewan (or federally and registered there), head office in Saskatchewan, substantial Saskatchewan-resident control
     cultural_test_required=False,
     refundable=None, transferable=False,
     evidence=EvidenceRecord(
@@ -5103,7 +5104,7 @@ register(ProgramRequirementsProfile(
               "calculations may be counted; budgets over CAD 250,000 require a single purpose production company. No federal-credit reduction clause was found. A discretionary, assessed grant.",
     ),
     additional_facts={
-        "rate_and_cap": "25% (Service Production) or 30% (Saskatchewan Stream) of all eligible Saskatchewan expenditures, each to CAD 5,000,000 per production; bonuses to 35% / 40%; the doctrine record's annual_cap_usd of 5,000,000 is a CAD figure at par and has no native-currency cap rule.",
+        "rate_and_cap": "25% (Service Production) or 30% (Saskatchewan Stream) of all eligible Saskatchewan expenditures, each to CAD 5,000,000 per production; bonuses to 35% / 40%; the CAD 5,000,000 cap is a native-currency IncentiveValueCapRule (the par annual_cap_usd was removed in NA-RECONCILIATION-12).",
         "application_timing": "Received prior to the completion of principal photography; whether expenditure before approval qualifies is not stated.",
         "confirmed_financing": "Market trigger / distribution agreement; 50% confirmed financing, 70% when the budget exceeds CAD 1 million; the grant and federal tax credit calculations may be counted as financing.",
         "federal_credit_interaction": "The guidelines count federal credits as financing and contain no reduction clause; an awarded grant is assistance to the federal credits (CRA RC4164 / RC4385) via stacking rules 1.10.0.",
@@ -5118,17 +5119,198 @@ register(ProgramRequirementsProfile(
     application_deadline=TimingFact(value="received prior to commencement of principal photography (principal photography may commence once an application has been submitted)", basis=TimingBasis.STATUTORY_DEADLINE),
     refundable=None, transferable=False,
     evidence=EvidenceRecord(
-        source_title="Nova Scotia Film & Television Production Incentive Fund Guidelines (April 1, 2024)",
-        source_url=None,
-        issuing_authority="Province of Nova Scotia, Department of Communities, Culture, Tourism and Heritage", source_type=SourceType.PRIMARY, status=RecordStatus.UNCERTAIN, effective_date="2024-04-01", access_date="2026-10-13",
-        notes="Fund renewed for annual funding only until the 2025-2026 fiscal year (s.1(a)) and subject to review by then (s.1(c)); FY2026-27 renewal not found, so the status is UNCERTAIN, not expired. Nova Scotia spend must be "
-              "greater than CAD 25,000 before HST (s.3.1(d)); maximum CAD 10 million per project (s.3.1(e)); Administrator has complete discretion (s.1(d)); confirmed financing 75% (budget of CAD 1 million or more) or 50%, to which the "
-              "Fund and federal tax credit calculations may be counted (s.3.1(g)); base incentive 26% (Stream I, Nova Scotian ownership and control of 50% or more) or 25% (Stream II) of all Eligible Nova Scotia Costs (s.6).",
+        source_title="Nova Scotia Film & Television Production Incentive Fund Guidelines (April 1, 2024) and the CCTH program page",
+        source_url="https://cch.novascotia.ca/sites/default/files/inline/documents/ftpif/nsfpif-guidelines.pdf",
+        issuing_authority="Province of Nova Scotia, Department of Communities, Culture, Tourism and Heritage", source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2024-04-01", access_date="2026-10-13",
+        notes="The live official page (cch.novascotia.ca/node/6105, read 2026-10-13) publishes this edition, states the changes are effective 1 April 2024 and takes applications. The guidelines' own fiscal-year wording says the Fund was "
+              "renewed only until the 2025-2026 fiscal year (s.1(a)) and was to be reviewed by then (s.1(c)); no 2026-27 renewal statement or newer edition was found, so the program is treated as CURRENT on the official page and the wording is "
+              "recorded as an unreconciled qualifier. Nova Scotia spend must be greater than CAD 25,000 before HST (s.3.1(d)); maximum CAD 10 million per project (s.3.1(e)); confirmed financing 75% (budget of CAD 1 million or more) "
+              "or 50%, to which the Fund and federal tax credit calculations may be counted (s.3.1(g)); base incentive 26% (Stream I, Nova Scotian ownership and control of 50% or more) or 25% (Stream II) of all Eligible Nova Scotia Costs (s.6).",
     ),
     additional_facts={
-        "rate_basis": "All Eligible Nova Scotia Costs (not labour only) -- conflicts with the labour-only basis of the rate record, which is retained pending confirmation that the Fund is renewed (see the rate record's citation).",
-        "head_of_department": "Base reduced by 0.5 percentage point per Head of Department position below the Nova Scotia-resident minimum; location (2), distant-location (up to 10), shooting-length (1) and further 1.5 + 1.5 point bonuses (s.6-7).",
-        "tax_credit_exclusion": "s.3.2: projects eligible for any Nova Scotia tax credit program are not eligible; equity tax credit financing is deducted from eligible costs.",
-        "minimum_and_cap": "Nova Scotia spend greater than CAD 25,000 before HST; maximum CAD 10,000,000 per project (native currency; no IncentiveValueCapRule yet).",
+        "rate_basis": "All Eligible Nova Scotia Costs (supplier-based, supplied or performed in Nova Scotia), not labour only; the doctrine record prices the Stream II 25% base (NA-RECONCILIATION-12).",
+        "head_of_department": "Base reduced by 0.5 percentage point per Head of Department position below the Nova Scotia-resident minimum; location (2), distant-location (up to 10), shooting-length (1) and Nova Scotia Content Incentive (1.5 + 1.5) points (s.6-7); none modelled.",
+        "tax_credit_exclusion": "s.3.2(a): projects eligible for any Nova Scotia tax credit program are not eligible; equity tax credit financing is deducted from eligible costs (s.3.2(b)). s.3.2(d): no individual's pay may be funded by more than CAD 150,000 of incentive.",
+        "minimum_and_cap": "Nova Scotia spend greater than CAD 25,000 before HST (native currency; no native-currency spend gate in the profile); maximum CAD 10,000,000 per project (IncentiveValueCapRule, native CAD).",
+        "federal_credit_interaction": "Federal tax credit calculations may be counted as confirmed financing; no federal-credit reduction clause. An awarded amount is assistance to the federal credits (RC4164 / RC4385) via stacking rules 1.10.0.",
     },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_nb_film_tax_credit", jurisdiction_code="CA-NB",
+    local_entity_required=True,
+    allocation_type=AllocationType.DISCRETIONARY,        # ranked on a points rubric and awarded within available funds: gated by the existing discretionary-program policy        # an incorporated New Brunswick production company with at least 50% New Brunswick-resident shareholders
+    cultural_test_required=False,
+    refundable=None, transferable=False,
+    evidence=EvidenceRecord(
+        source_title="LIFT: Leveraging Investment in Film & TV -- Film & TV Production Incentive 2026/2027 Program Guidelines",
+        source_url="https://www.gnb.ca/content/dam/GNB3/t/ch-cp/gfs-ssf/docs/lift-program-guidelines.pdf",
+        issuing_authority="Government of New Brunswick, Department of Tourism, Heritage and Culture", source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2026-04-01", access_date="2026-10-13",
+        notes="Stream 2 Major Production (budget over CAD 400,000): Base Grant up to 25% of Total NB Spend, stackable bonuses to a combined 35%; Stream 1 Micro Production (budget under CAD 400,000): up to 30%, maximum CAD 100,000. "
+              "Major eligibility: NB spend at least 20% of the total budget, confirmed financing at least 50% at application, NB copyright at least 33% (not for animation), at least one funding partner confirmed at application. "
+              "Company Cap CAD 2,000,000. Discretionary and ranked ('Grant recommendations will also consider overall demand and available funds'); 80% of the grant is released on signing and 20% on the final report. "
+              "The guidelines state no sunset and do not address federal tax credits.",
+    ),
+    additional_facts={
+        "stream_and_rates": "Major: base up to 25% of Total NB Spend, bonuses +3% Heads of Department and Lead Talent (30%+ NB residents), +3% or +4% rural or remote principal photography, +3% NB Made, to a combined 35%. Micro: up to 30%, maximum CAD 100,000.",
+        "financing_and_spend": "NB spend at least 20% (Major) or 25% (Micro) of the total budget; confirmed financing at least 50% (Major) or 40% (Micro); NB Spend may include up to 15% Eligible Deemed Spend; producer investment cannot exceed 10% of confirmed financing.",
+        "payment_timing": "80% on signing the contract, 20% on approval of the final report; the 80% decreases if Actual NB Spend is lower than applied for and the 20% never increases.",
+        "discretion": "Ranked on a points rubric and awarded within available funds: every rate is a ceiling with no guaranteed floor.",
+    },
+))
+
+
+# NA-RECONCILIATION-12, second pass: profiles for the US/Canadian programs that had none, built only from fields their official sources state (everything else stays None; the notes name what the source does not say).
+def _ev(title, url, authority, eff, notes, status=RecordStatus.CURRENT):
+    return EvidenceRecord(source_title=title, source_url=url, issuing_authority=authority, source_type=SourceType.PRIMARY, status=status, effective_date=eff, access_date="2026-10-13", notes=notes)
+
+
+register(ProgramRequirementsProfile(
+    program_slug="us_oh_motion_picture_tax_credit", jurisdiction_code="US-OH",
+    min_local_spend_usd=300_000.01, preapproval_mandatory=True, refundable=True, annual_program_cap_usd=50_000_000.0,
+    evidence=_ev("Ohio Revised Code 122.85", "https://codes.ohio.gov/ohio-revised-code/section-122.85", "Ohio General Assembly / Ohio Department of Development", "2025-09-30",
+                 "30% of eligible Ohio expenditures above USD 300,000; refundable; (B)(12) funding of at least 50% of the budget; (C)(4) USD 50 million of credits a fiscal year (USD 5 million reserved for Broadway); rolling review with priority for television series "
+                 "and miniseries; the director may certify and may rescind if production does not begin within ninety days; certificates issue after completion. Not stated: transferability, sunset, per-project cap."),
+    additional_facts={"approval": "Director certification and approval are required before the credit issues (ORC 122.85(B)-(C)); disclosed as allocation risk.", "base": "Eligible expenditures are goods or services purchased and consumed in Ohio, cast and crew wages included (A)(4)."},
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_wv_film_production_tax_credit", jurisdiction_code="US-WV",
+    min_local_spend_usd=50_000.0, transferable=True, preapproval_mandatory=True,
+    evidence=_ev("West Virginia Department of Economic Development, film incentives page", "https://westvirginia.gov/filmincentives/", "West Virginia Department of Economic Development", None,
+                 "27% base plus 4% with 10 or more West Virginia residents hired full-time; USD 50,000 minimum in a calendar year; no per-project, talent or fiscal-year credit cap; transferable; principal photography must begin within 120 days of approval and "
+                 "filming before approval risks rejection. Not stated: refundability, sunset, statute (the page is a summary)."),
+    additional_facts={"statute_gap": "W. Va. Code 11-13X and the legislative rule were not read."},
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_nj_garden_state_film_credit", jurisdiction_code="US-NJ",
+    transferable=True, sunset_date="2039-07-01",
+    evidence=_ev("New Jersey Division of Taxation, Garden State Film and Digital Media Jobs Act", "https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml", "New Jersey Division of Taxation / NJEDA", "2018-07-01",
+                 "35% of qualified film production expenses, 30% within the 30-mile radius of Eighth Avenue and Central Park West; at least 60% of expenses through New Jersey-authorized sellers or over USD 1 million of qualified expenses; diversity plan bonus up to 4%; "
+                 "transferable for no less than 75% of face value; seven-year carry-forward; tax years ending before July 1, 2039 (P.L. 2024, c.33). Not stated: a film cap, refundability, whether NJEDA approval is discretionary."),
+    additional_facts={"min_expense_gate": "At least 60% of production expenses (excluding post-production) through New Jersey-authorized sellers, or qualified expenses over USD 1 million per production."},
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_mo_motion_media_production_tax_credit", jurisdiction_code="US-MO",
+    min_local_spend_usd=50_000.0, preapproval_mandatory=True, audit_required=True, cpa_or_approved_auditor_required=True, transferable=True, annual_program_cap_usd=16_000_000.0,
+    evidence=_ev("Missouri Film Office and Department of Economic Development, Motion Media Production Tax Credit", "https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program", "Missouri Department of Economic Development", None,
+                 "20% base credit, several increases to a maximum of 42%; minimum spend USD 50,000 (30 minutes or less) or USD 100,000 (longer); USD 16 million a year (USD 8 million film, USD 8 million episodic); transferable; above-the-line wages up to 25% of qualified spend; "
+                 "2 to 8 registered apprentices or Missouri-resident veterans by qualifying expense; preliminary application before principal photography; final application within 90 days with a Missouri-licensed CPA report. Not stated: refundability, sunset, the RSMo section."),
+    additional_facts={"annual_pool": "Annual pool of USD 16 million, split USD 8 million film and USD 8 million episodic; the allocation type is not stated on the official pages."},
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_ar_digital_motion_picture_incentive", jurisdiction_code="US-AR",
+    min_local_spend_usd=200_000.0, preapproval_mandatory=True, expenditure_before_approval_qualifies=False, per_person_cap_usd=500_000.0, allocation_type=AllocationType.DISCRETIONARY, sunset_date="2031-06-30",
+    evidence=_ev("Arkansas Economic Development Commission, film production incentives", "https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives", "Arkansas Economic Development Commission", None,
+                 "25% base on goods, services and nonresident labour, add-ons of 10% and 5%, total stated as 30%; USD 200,000 within six months for one feature production (USD 50,000 for a postproduction project); wages limited to the first USD 500,000 per employee; incentive approval must "
+                 "precede any Arkansas expense; the Executive Director has sole discretion; sunset June 30, 2031; production rebate certificate within 180 days of the last expense; cash payments to vendors may not exceed 40% of verifiable costs. Not stated: refundability, transferability, the statute."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_mt_media_act_tax_credit", jurisdiction_code="US-MT",
+    preapproval_mandatory=True, refundable=False, transferable=True,
+    evidence=_ev("Montana Department of Commerce MEDIA Tax Credit page and MCA 15-31-1007", "https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit", "Montana Department of Commerce / Department of Revenue", "2019-07-01",
+                 "Certification with Commerce is required before principal photography (USD 500 fee) and is currently paused; the first available credit is 2031; the credit is 20% of Montana production expenditures plus add-ons, limited to 35% of base investment, transferable, "
+                 "carried forward five years, not refundable. Not stated: calendar-year caps (Department of Revenue), minimum base investment (ARM 8.119.304-305), sunset."),
+    additional_facts={"availability": "Certification applications paused; 'The first available credit will not become available until 2031.'"},
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_ny_empire_state_independent_film_credit", jurisdiction_code="US-NY",
+    local_entity_required=None, preapproval_mandatory=True, refundable=True, allocation_type=AllocationType.FIRST_COME_FIRST_SERVED,
+    evidence=_ev("N.Y. Tax Law 24-D; NYS Department of Taxation page; ESD Part 172 regulations", "https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm", "New York State Department of Taxation and Finance / Empire State Development", "2025-01-01",
+                 "30% of qualified production costs (+10% upstate and scoring adders); refundable (Taxation page, 2025-12-10); qualified film gross budget of at least USD 1 million (USD 250,000 for films shot mostly outside the NYC area); company not publicly traded or 51%+ "
+                 "owned by a publicly traded company; initial application to the department before principal photography, first-come, first-served in at least two periods a year; Level one is a budget of at most USD 15 million; a diversity plan is required. "
+                 "Not found: the independent-credit annual pools, the program years, transferability, and any exclusion against the section 24 credit for the same film."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_al_film_incentive", jurisdiction_code="US-AL",
+    annual_program_cap_usd=22_000_000.0,
+    evidence=_ev("Alabama Department of Revenue, film rebate", "https://www.revenue.alabama.gov/tax-incentives/film-rebate/", "Alabama Department of Revenue / Alabama Entertainment Office", None,
+                 "25% of production expenditures incurred in Alabama plus 35% of payroll paid to Alabama residents; annual cap USD 20 million, USD 22 million for the fiscal year ending Sept. 30, 2026. Not stated on the page: minimum spend, refundability, transferability, "
+                 "application timing; the HB379 small-budget 45% bracket (greenslate.com, effective 2026-10-01) is a disclosed, unconfirmed additional provision."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_ct_film_tax_credit", jurisdiction_code="US-CT",
+    min_local_spend_usd=100_000.0, transferable=True,
+    evidence=_ev("Connecticut DECD, Digital Media & Motion Picture Tax Credit", "https://portal.ct.gov/DECD/Content/Film-TV-Digital-Media/02_Learn_About_Tax_Incentives/02-Digital-Media-Motion-Picture-Tax-Credit", "Connecticut Department of Economic and Community Development", None,
+                 "Minimum expenditure USD 100,000; 10% (USD 100,000-500,000), 15% (USD 500,000-1,000,000), 30% (USD 1,000,000 or more); an eligible production company may sell, assign or transfer the credits. Annual cap, refundability and timing not stated on the page."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_nv_film_credit", jurisdiction_code="US-NV",
+    min_local_spend_usd=500_000.0, per_project_cap_usd=6_000_000.0, per_person_cap_usd=750_000.0, annual_program_cap_usd=10_000_000.0, refundable=False, transferable=True,
+    evidence=_ev("Nevada Film Office / Governor's Office of Economic Development, film incentive", "https://film.nv.gov/incentive/", "Nevada Governor's Office of Economic Development", None,
+                 "15% of cumulative qualified production costs (greater than USD 500,000) with at least 60% of the production budget spent in Nevada; plus 5% for more than 50% Nevada resident below-the-line crew and 5% for more than 50% of filming days in a Nevada county meeting a USD 10 million threshold; "
+                 "USD 6,000,000 per production and USD 10,000,000 in program funding; individual compensation capped at USD 750,000; credits expire four years after issuance. Not stated: application timing."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_sc_film_production_credit", jurisdiction_code="US-SC",
+    min_local_spend_usd=1_000_000.0,
+    evidence=_ev("South Carolina Department of Parks, Recreation and Tourism, production incentives", "https://www.scprt.com/film-commission/incentives/production-incentives", "South Carolina Department of Parks, Recreation and Tourism", None,
+                 "Supplier rebate up to 30% of qualifying goods and services bought from a South Carolina supplier; wage rebate up to 25% for South Carolina-resident personnel and 20% for non-resident performing artists and crew; minimum spend USD 1,000,000 in South Carolina. "
+                 "No annual cap is stated (the earlier catalog USD 15.5 million is unconfirmed). Not stated: refundability, transferability, timing."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_tn_performance_grant", jurisdiction_code="US-TN",
+    min_total_budget_usd=200_000.0, refundable=True, transferable=False,
+    evidence=_ev("Tennessee Film, Entertainment & Music Commission film incentives (OpenECD)", "https://www.tn.gov/transparenttn/state-financial-overview/open-ecd/openecd/film-incentives.html", "Tennessee Department of Economic and Community Development", "2012-07-01",
+                 "'projects with budgets over $200,000 will be eligible to receive grants equal to 25 percent of their qualified Tennessee expenditures'. Not stated: annual cap, timing, tier 2-4 county bonuses (a secondary claim, not modelled)."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_ut_motion_picture_incentive", jurisdiction_code="US-UT",
+    min_local_spend_usd=500_000.01, refundable=True, transferable=False, annual_program_cap_usd=20_000_000.0, allocation_type=AllocationType.SUBJECT_TO_APPROPRIATION,
+    evidence=_ev("Utah Film Commission, Motion Picture Incentive Program Summary & FAQ", "https://film.utah.gov/wp-content/uploads/2025/04/IncentiveProgram_SummaryFAQ_April2025.pdf", "Utah Film Commission", "2025-04-01",
+                 "20% to 25% post-performance cash rebate or fully refundable, non-transferable tax credit on qualified Utah dollars; over USD 500K qualified spend; the 25% tier needs over USD 1M plus 75% Utah-resident cast and crew or 75% rural production days; approval subject to "
+                 "available funds; USD 20 million a year of film incentive funding (March 2026 funding sheet, aggregate across the rebate and tax credit). Not stated: per-project cap; the statute was not read."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="us_va_motion_picture_credit", jurisdiction_code="US-VA",
+    min_local_spend_usd=250_000.0, preapproval_mandatory=True, refundable=True, annual_program_cap_usd=6_500_000.0,
+    evidence=_ev("Virginia Department of Taxation, Motion Picture Production Tax Credit (Refundable)", "https://www.tax.virginia.gov/other-credits", "Virginia Department of Taxation / Virginia Film Office", None,
+                 "15% of qualified expenses, 20% in an economically distressed area, plus Virginia-resident payroll credits; at least USD 250,000 of production costs in Virginia; refundable to individuals and corporations; the Film Office may issue no more than USD 6.5 million a fiscal year; "
+                 "application at least 30 days before principal photography. The Code section and sunset were not reconciled across sources."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_mb_film_video_credit", jurisdiction_code="CA-MB",
+    local_entity_required=True, refundable=True, transferable=False,
+    evidence=_ev("Manitoba Finance corporate tax credits and Manitoba Film & Music TC-2 guidelines", "https://www.gov.mb.ca/finance/business/ccredits.html", "Manitoba Finance / Manitoba Film & Music", "2024-06-01",
+                 "45% of eligible Manitoba labour (cost of salaries) with bonuses of 10% (third film in two years), 5% (Manitoba producer) and 5% (rural and northern) to 65%; compatible with both federal credits and not reduced by them (TC-2 guidelines, June 2024); a "
+                 "corporation with a permanent establishment in Manitoba. Not stated here: minimum spend, caps, timing."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="on_ofttc", jurisdiction_code="CA-ON",
+    evidence=_ev("Ontario Creates, Ontario Film and Television Tax Credit (OFTTC)", "https://www.ontariocreates.ca/tax-incentives/ofttc", "Ontario Creates", None,
+                 "35% of eligible Ontario labour expenditures incurred by a qualifying production company; 40% on the first 240,000 of qualifying labour for first-time producers (currency not stated; CAD in context); 10% regional bonus outside the Greater Toronto Area; jointly administered by Ontario Creates and the CRA. The page does not "
+                 "state refundability, transferability, Canadian-content certification specifics, a general minimum spend or a maximum cap; those stay unknown."),
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_bc_dave", jurisdiction_code="CA-BC",
+    refundable=True,
+    evidence=_ev("Province of British Columbia, Digital Animation, Visual Effects and Post-Production (DAVE) Tax Credit; Income Tax Act (BC) Part 5", "https://www2.gov.bc.ca", "Province of British Columbia", None,
+                 "A separate 16% DAVE credit on qualified BC labour (the same labour-only base as the BC PSTC); tied to a BC credit under Income Tax Act (BC) s.82.3(1)(a) (production services) or s.81.2 (film and television, which requires s.80). Not read: minimum spend, "
+                 "timing, certification, caps; the source URL is the provincial site root recorded with the original citation."),
+    additional_facts={"dependency": "DAVE rides on a BC credit the planner does not model; the CPTC pair is conditional (stacking rules 1.10.0)."},
+))
+
+
+register(ProgramRequirementsProfile(
+    program_slug="us_co_film_income_tax_credit", jurisdiction_code="US-CO",
+    min_local_spend_usd=100_000.0, preapproval_mandatory=True, expenditure_before_approval_qualifies=False, audit_required=True, cpa_or_approved_auditor_required=True,
+    annual_program_cap_usd=5_000_000.0, allocation_type=AllocationType.DISCRETIONARY, sunset_date="2032-01-01",
+    evidence=_ev("C.R.S. 39-22-559 as amended by HB 24-1358; C.R.S. 24-48.5-116(6)", "https://leg.colorado.gov/sites/default/files/documents/2024A/bills/2024a_1358_enr.pdf", "Colorado General Assembly / Colorado Office of Economic Development", "2024-01-01",
+                 "Credit not to exceed 22% of actual qualified local expenditures of at least USD 100,000 with a workforce of at least 50% Colorado residents, for income tax years before January 1, 2032; application and credit reservation before production activities begin; "
+                 "USD 5 million of reservations a calendar year; production activities completed by December 31, 2031; Colorado-licensed CPA review; the office sets the reserved amount in its discretion. Not stated: refundability, transferability."),
 ))

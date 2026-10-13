@@ -75,3 +75,28 @@ def test_discretionary_ceilings_carry_no_guaranteed_value_so_nothing_is_netted_a
     res = _pair(fed, 600_000.0, jur, slug, 600_000.0, 1_200_000.0)
     assert "no named" not in (res.rejection_reason or "").lower() and "UNRESOLVED_NO_AUTHORITY" not in (res.rejection_reason or "")
     assert res.executable is False and slug in (res.rejection_reason or "")
+
+
+def test_nova_scotia_all_cost_base_is_apportioned_to_labour_as_an_assumption_and_the_whole_credit_lower_bound_is_disclosed():
+    # Nova Scotia now prices 25% of ALL eligible cost (CCTH Guidelines s.6.2): 25% x (600,000 labour + 400,000 equipment) = 250,000. PSTC labour basis 600,000 (16% = 96,000).
+    res = _run([_comp("principal_production", "CA", PSTC, [_alloc("1", 600_000.0, "principal_production", "CA", "L0", "btl_crew_labor")]),
+                _comp("principal_production", "CA-NS", NS, [_alloc("2", 600_000.0, "principal_production", "CA-NS", "L1", "btl_crew_labor"),
+                                                            _alloc("3", 400_000.0, "principal_production", "CA-NS", "L2", "btl_equipment_rental")])], 1_600_000.0)
+    assert res.executable is True, res.rejection_reason
+    assert res.raw_component_incentives_usd[NS] == pytest.approx(250_000.0)
+    # ASSUMED labour share = 25% x 600,000 = 150,000 -> PSTC reduction 150,000 x 16% = 24,000 -> 72,000; whole-credit lower bound: 250,000 x 16% = 40,000 -> 56,000
+    assert res.post_adjustment_component_incentives_usd[PSTC] == pytest.approx(72_000.0)
+    note = next(n for n in res.disclosed_limitations if "Nova Scotia" in n and "Apportionment assumption" in n)
+    assert "$56,000" in note and "$150,000" in note
+    adj = next(a for a in res.stacking_adjustments if {a.program_a_id, a.program_b_id} == {NS, PSTC})
+    assert "ASSUMED ALLOCATION" in adj.description and "assumed allocation $150,000" in adj.description and "verified $0" in adj.description
+
+
+def test_a_labour_only_credit_is_labelled_verified_netting_and_an_apportioned_one_is_labelled_assumed():
+    from app.calculators.canonical_stack_bridge import netting_basis_label
+    assert netting_basis_label(DAVE).startswith("VERIFIED NETTING") and netting_basis_label("on_opstc").startswith("VERIFIED NETTING")
+    for slug in (AB, NB, NS, SK, "ca_mb_film_video_credit", "ca_qc_pstc", "ca_nl_all_spend_credit"):
+        assert netting_basis_label(slug).startswith("ASSUMED ALLOCATION"), slug
+    res = _pair(PSTC, 600_000.0, "CA-BC", DAVE, 600_000.0, 1_200_000.0)
+    adj = next(a for a in res.stacking_adjustments if {a.program_a_id, a.program_b_id} == {DAVE, PSTC})
+    assert "VERIFIED NETTING" in adj.description and "verified $96,000; assumed allocation $0" in adj.description

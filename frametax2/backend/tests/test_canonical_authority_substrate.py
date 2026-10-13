@@ -453,19 +453,15 @@ def test_priceability_delegates_to_served_coverage_veto():
 # ── Task 5 — residual-question ledger ───────────────────────────────────────
 
 def test_residual_ledger_captures_incomplete_fields():
-    """ca_federal_pstc replaces uk_avec as the "incomplete" control here.
-    uk_avec's own RATE_OR_AWARD_BASIS dimension resolved to PRESENT once
-    batch 3 promoted its DoctrineRecord to VERIFIED (a genuine, correct
-    consequence of that promotion, not a test-fudge) -- it no longer
-    demonstrates an unresolved RATE_OR_AWARD_BASIS. ca_federal_pstc is
-    still coverage-vetoed with only a PARSED RateRule and genuinely
-    carries both dimensions unresolved."""
-    entry = ledger_entry_for("ca_federal_pstc")
-    assert entry is not None
+    """The ledger must carry every unresolved dimension of an incomplete program, each with a real detail string. ca_federal_pstc was the control here until NA-RECONCILIATION-09/10 gave it
+    VERIFIED structured provenance (a correct consequence, not a test-fudge) and uk_avec before that; the control is now chosen from the live registry: any program whose ledger still
+    lists both RATE_OR_AWARD_BASIS and TERRITORIALITY as unresolved (75 do), so the invariant keeps being proven on a program that really is incomplete."""
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM
+    incomplete = [s for s in sorted(_RULES_BY_PROGRAM)
+                  if (e := ledger_entry_for(s)) is not None and {"RATE_OR_AWARD_BASIS", "TERRITORIALITY"} <= {q.dimension for q in e.residual_questions}]
+    assert incomplete, "fixture assumption: at least one incomplete program exists in the live registry"
+    entry = ledger_entry_for(incomplete[0])
     assert not entry.is_fully_resolved
-    dims = {q.dimension for q in entry.residual_questions}
-    assert "RATE_OR_AWARD_BASIS" in dims
-    assert "TERRITORIALITY" in dims
     for q in entry.residual_questions:
         assert q.detail, f"{q.dimension} residual question must carry a real detail string"
 
@@ -901,14 +897,20 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
 # comparison.py, the two additional sources wired in this pass. ──────────
 
 def test_program_requirements_primary_current_promotes_to_present():
-    """ca_federal_pstc has a real program_requirements.py profile:
-    refundable=True, evidence.source_type=PRIMARY, evidence.status=CURRENT.
-    consolidate() must read it and promote REFUNDABILITY to PRESENT --
-    before this recovery pass it was silently invisible (MISSING)."""
-    c = consolidate("ca_federal_pstc")
-    d = next(x for x in c.dimensions if x.dimension == "REFUNDABILITY")
-    assert d.status == PRESENT
-    assert "program_requirements" in d.source
+    """A program_requirements profile that is refundable=True with PRIMARY, CURRENT evidence and no stronger doctrine source for refundability must be read by consolidate() and promote
+    REFUNDABILITY to PRESENT, sourced from program_requirements. (ca_federal_pstc was the example until its VERIFIED DoctrineRecord became the stronger source; the example is now found in the
+    live registry.)"""
+    from app.data.program_requirements import RecordStatus, VerificationState, all_program_requirements, verification_state
+    promoted = []
+    for slug, profile in sorted(all_program_requirements().items()):
+        if profile.refundable is None or profile.evidence is None or profile.evidence.status != RecordStatus.CURRENT:
+            continue
+        if verification_state(slug) != VerificationState.PRIMARY_VERIFIED:
+            continue
+        d = next((x for x in consolidate(slug).dimensions if x.dimension == "REFUNDABILITY"), None)
+        if d is not None and d.status == PRESENT and "program_requirements" in d.source:
+            promoted.append(slug)
+    assert promoted, "at least one primary-current refundable profile must promote REFUNDABILITY to PRESENT through program_requirements"
 
 
 def test_program_requirements_secondary_or_stale_never_promotes_to_present():

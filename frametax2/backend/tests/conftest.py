@@ -46,3 +46,29 @@ def pytest_configure(config):  # noqa: ARG001
                 raise RealProjectWriteRefused(f"refused a write naming the real production {pid} (authorize the run explicitly with CINEGLOBE_AUTHORIZED_REAL_PROJECT_TESTS): {statement[:100]}")
 
     event.listen(engine.sync_engine, "before_cursor_execute", refuse)
+
+
+# Real-production regression tests (tests/real_production_registry.py) are deselected unless the run is explicitly authorized, and the deselection is always reported: they are never silently dropped.
+_DESELECTED_REAL_PRODUCTION: list[str] = []
+
+
+def pytest_collection_modifyitems(config, items):  # noqa: ARG001
+    from tests.real_production_registry import authorization_given, is_real_production_test
+
+    if authorization_given():
+        return
+    keep, drop = [], []
+    for item in items:
+        (drop if is_real_production_test(item.nodeid) else keep).append(item)
+    if drop:
+        _DESELECTED_REAL_PRODUCTION.extend(i.nodeid for i in drop)
+        config.hook.pytest_deselected(items=drop)
+        items[:] = keep
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):  # noqa: ARG001
+    if _DESELECTED_REAL_PRODUCTION:
+        files = sorted({n.split("::", 1)[0] for n in _DESELECTED_REAL_PRODUCTION})
+        terminalreporter.write_sep("=", f"{len(_DESELECTED_REAL_PRODUCTION)} real-production regression tests deselected (not run, not passed)", yellow=True)
+        terminalreporter.write_line("They evaluate or read a real anchor production, which needs explicit authorization (CINEGLOBE_AUTHORIZED_REAL_PROJECT_TESTS=<ids>) and a database that contains it.")
+        terminalreporter.write_line("Files: " + ", ".join(files))

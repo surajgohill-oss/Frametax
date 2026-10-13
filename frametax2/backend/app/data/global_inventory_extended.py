@@ -1974,6 +1974,99 @@ _EXTENDED_BENCHMARKS: list[CostBenchmarkEntry] = [
 ]
 
 
+# NA-RECONCILIATION-12: the four state programs that became rate-bearing (stacking-free, one program per state) carry a state-coded catalog row so the jurisdiction has a canonical name
+# (canonical_jurisdiction_name falls back to the inventory); each rate is the figure its official source states (see the DoctrineRecord for the quotation).
+NA12_STATE_PROGRAMS: list[GlobalProgramEntry] = [
+    GlobalProgramEntry(
+        jurisdiction_code="US-OH",
+        jurisdiction_name="United States — Ohio",
+        program_name="Ohio Motion Picture Tax Credit",
+        program_type="tax_credit",
+        base_rate=0.30,
+        max_rate=0.30,
+        is_refundable=True,
+        is_transferable=None,
+        min_spend_usd=300_000,
+        annual_cap_usd=None,
+        requires_cultural_test=False,
+        requires_local_entity=False,
+        confidence_tier=_DISC,
+        source_title="Ohio Revised Code 122.85",
+        source_url="https://codes.ohio.gov/ohio-revised-code/section-122.85",
+        effective_from="2009-07-01",
+        notes=(
+            "30% refundable credit on eligible Ohio expenditures above USD 300,000; USD 50 million of credits per fiscal year; director certification. Rate-bearing as us_oh_motion_picture_tax_credit."
+        ),
+        unknown_fields=["transferability", "sunset"],
+    ),
+    GlobalProgramEntry(
+        jurisdiction_code="US-WV",
+        jurisdiction_name="United States — West Virginia",
+        program_name="West Virginia Film Production Tax Credit",
+        program_type="transferable_tax_credit",
+        base_rate=0.27,
+        max_rate=0.31,
+        is_refundable=None,
+        is_transferable=True,
+        min_spend_usd=50_000,
+        annual_cap_usd=None,
+        requires_cultural_test=False,
+        requires_local_entity=False,
+        confidence_tier=_DISC,
+        source_title="West Virginia Department of Economic Development — film incentives",
+        source_url="https://westvirginia.gov/filmincentives/",
+        effective_from="current",
+        notes=(
+            "27% base plus 4% with 10 or more West Virginia full-time resident hires; USD 50,000 minimum in a calendar year; transferable. Rate-bearing as us_wv_film_production_tax_credit."
+        ),
+        unknown_fields=["refundability", "sunset", "statute"],
+    ),
+    GlobalProgramEntry(
+        jurisdiction_code="US-NJ",
+        jurisdiction_name="United States — New Jersey",
+        program_name="Garden State Film and Digital Media Jobs Act — Film Production Credit",
+        program_type="transferable_tax_credit",
+        base_rate=0.30,
+        max_rate=0.35,
+        is_refundable=None,
+        is_transferable=True,
+        min_spend_usd=None,
+        annual_cap_usd=None,
+        requires_cultural_test=False,
+        requires_local_entity=False,
+        confidence_tier=_DISC,
+        source_title="New Jersey Division of Taxation — Garden State Film and Digital Media Jobs Act",
+        source_url="https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml",
+        effective_from="2018-07-01",
+        notes=(
+            "35% of qualified film production expenses, 30% within 30 miles of Eighth Avenue and Central Park West; USD 1 million or 60% New Jersey-vendor gate; transferable; tax years ending before July 1, 2039. Rate-bearing as us_nj_garden_state_film_credit."
+        ),
+        unknown_fields=["refundability", "film_cap", "statute"],
+    ),
+    GlobalProgramEntry(
+        jurisdiction_code="US-MO",
+        jurisdiction_name="United States — Missouri",
+        program_name="Missouri Motion Media Production Tax Credit (Show MO)",
+        program_type="transferable_tax_credit",
+        base_rate=0.20,
+        max_rate=0.42,
+        is_refundable=None,
+        is_transferable=True,
+        min_spend_usd=50_000,
+        annual_cap_usd=None,
+        requires_cultural_test=False,
+        requires_local_entity=False,
+        confidence_tier=_DISC,
+        source_title="Missouri Film Office — Motion Media Production Tax Credit",
+        source_url="https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program",
+        effective_from="current",
+        notes=(
+            "20% base credit, increases to a maximum of 42%; USD 50,000 minimum spend (30 minutes or less) or USD 100,000; USD 16 million a year; transferable. Rate-bearing as us_mo_motion_media_production_tax_credit."
+        ),
+        unknown_fields=["uplift_schedule", "refundability", "sunset", "statute"],
+    ),
+]
+
 # Public exports — concatenate in global_inventory.py
 EXTENDED_PROGRAMS: list[GlobalProgramEntry] = _EXTENDED_PROGRAMS
 EXTENDED_BENCHMARKS: list[CostBenchmarkEntry] = _EXTENDED_BENCHMARKS

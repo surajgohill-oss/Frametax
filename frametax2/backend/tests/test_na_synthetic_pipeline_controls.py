@@ -62,3 +62,32 @@ async def test_a_write_naming_a_real_production_is_refused_on_any_session():
         with pytest.raises(RealProjectWriteRefused):
             await session.execute(delete(ProjectFact).where(ProjectFact.project_id == uuid.UUID("6c6f1c13-2d49-4bbc-bafb-2a12efa93112")))
         await session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_the_served_view_contract_holds_on_a_synthetic_production():
+    """The generic contract the real-production tests asserted on FVD/Lips (a status, a production, structures with program slugs and candidate statuses), proven on a synthetic production."""
+    from app.services.canonical_production_view import build_production_and_structures
+
+    async with isolated_session() as db:
+        pid = await create_synthetic_project(db, lines=LINES, home_code="US-TX")
+        await evaluate_project(db, pid)
+        view = await build_production_and_structures(db, pid)
+        assert view["status"] == "OK" and view["production"]["production_id"] == pid
+        entries = view["structures"]["allocated_structures"]["structures"]
+        assert entries, "a synthetic US-TX production discovers candidate structures"
+        assert all("program_slugs" in e and "candidate_status" in e for e in entries)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slug,rate", [("us_ny_empire_state_independent_film_credit", 0.30), ("us_ut_motion_picture_incentive", 0.20), ("us_va_motion_picture_credit", 0.15),
+                                       ("ca_ns_production_incentive_fund", 0.25), ("ca_ab_fttc", 0.22)])
+async def test_programs_with_corrected_bases_price_end_to_end_on_all_eligible_cost(slug, rate):
+    """Independent arithmetic: the production spends 3,000,000 in total (labour, equipment and post), so a full relocation prices the corrected all-eligible-cost base at rate x 3,000,000.
+    Nova Scotia is 25% of ALL eligible cost (CCTH Guidelines s.6.2), not of the 2,000,000 of labour; Alberta 22% (alberta.ca FTTC page); Utah, Virginia and New York per their official pages."""
+    async with isolated_session() as db:
+        pid = await create_synthetic_project(db, lines=LINES, home_code="US-TX")
+        await evaluate_project(db, pid)
+        entry = next((e for e in await served_structures(db, pid) if e["program_slugs"] == [slug] and e["structure_type"] == "full_relocation"), None)
+        assert entry is not None, f"{slug} is discovered as a full-relocation candidate"
+        assert entry["confirmed_incentive_floor_usd"] == pytest.approx(round(3_000_000.0 * rate, 2), abs=0.01)

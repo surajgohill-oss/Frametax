@@ -6816,21 +6816,27 @@ US_VA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-VA", program_slug="us_va_motion_picture_credit",
     program_name="Virginia Motion Picture Production Tax Credit",
     confidence_tier="PARSED", incentive_type="tax_credit",
-    is_refundable=None, is_transferable=None, min_spend_usd=None,
+    is_refundable=True, is_transferable=None, min_spend_usd=250_000.0,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="Pre-existing catalog figure (15%) NOT contradicted this "
-              "pass -- no dedicated Virginia source surfaced in the "
-              "search batch; carried forward unchallenged, not re-confirmed.",
-    source_ref="catalog-unchallenged-virginia",
+    citation="Virginia Department of Taxation, 'Motion Picture Production Tax Credit (Refundable)' (tax.virginia.gov/other-credits, read 2026-10-13): a production company that spends at least USD 250,000 on production "
+              "costs in Virginia earns 15% of qualified expenses, or 20% if it films in an area the Virginia Economic Development Partnership designates economically distressed, plus a payroll credit of 10% of "
+              "Virginia-resident payroll (20% when production expenses exceed USD 1 million) and 10% more for first-time actors or crew; the credit is refundable to individuals and corporations; the Virginia Film Office may "
+              "issue no more than USD 6.5 million of credits a fiscal year; the application must reach the Film Office at least 30 days before principal photography. The code section the enacted bill text places the credit "
+              "in (58.1-439.12:03) and its sunset were not reconciled with other summaries. Modelled: the 15% base on qualified spend of USD 250,000 or more; the 20% distressed-area rate and the payroll credits are not modelled.",
+    source_ref="tax.virginia.gov-motion-picture-credit-primary",
+    provenance=SourceProvenance(
+        issuing_authority="Virginia Department of Taxation / Virginia Film Office",
+        source_url="https://www.tax.virginia.gov/other-credits",
+        citation_detail="Motion Picture Production Tax Credit (Refundable): 15% of qualified expenses, 20% in economically distressed areas, USD 250,000 minimum, USD 6.5 million per fiscal year",
+        verified_date="2026-10-13",
+        interpretation_note="Official tax-department summary; the Code section and sunset were not reconciled. The USD 6.5 million annual pool is program-wide allocation risk, not a per-production cap.",
+    ),
     # Virginia Film Office FAQ (read 2026-10-12): the tax credit "must have a minimum qualified Virginia spend of $250,000" (the Motion Picture Opportunity Fund grant has no minimum).
     tiers=(DoctrineRateTier(tier_id="us-va-flat-15", rate=0.15, is_band_ceiling=False, min_qpe_usd=250_000.0,
                              conditions=(RateCondition(
                                  condition_id="us-va-rate-not-reconfirmed",
-                                 description="15% carried forward from the "
-                                             "pre-existing catalog entry, "
-                                             "not independently "
-                                             "re-confirmed this pass",
-                                 quote="(no source found this pass)",
+                                 description="15% is the base; the 20% distressed-area rate and the Virginia-resident payroll credits (10% / 20% / +10% first-time) are not modelled, and credits are issued from a USD 6.5 million annual pool by the Virginia Film Office.",
+                                 quote="15% of qualified expenses; or 20% of qualified expenses if you film in an economically distressed area (tax.virginia.gov)",
                                  kind="material_funding_risk_not_modeled"),)),),
 ))
 register_rate_rules(rate_rules_for(US_VA_DOCTRINE))
@@ -6982,6 +6988,278 @@ US_OK_DOCTRINE = register(DoctrineRecord(
                                  kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(US_OK_DOCTRINE))
+
+# ── NA-RECONCILIATION-12: the seven US programs that were coverage-only (no RateRule). Each rate below was read on 2026-10-13 from the cited official page or statute; nothing is estimated. ──
+US_OH_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-OH", program_slug="us_oh_motion_picture_tax_credit",
+    program_name="Ohio Motion Picture Tax Credit",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=True, is_transferable=False, min_spend_usd=300_000.0,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="Ohio Revised Code 122.85 (codes.ohio.gov, read 2026-10-13): (C)(1)(b) 'the credit equals thirty per cent' of the eligible expenditures base, the lesser of budgeted and actual eligible expenditures, "
+              "'purchased and consumed in this state' (A)(4); (C)(1)(a) no credit if the base is 'less than or equal to three hundred thousand dollars'; refundable; (B)(12) funding of at least 50% of the "
+              "production budget shown; (C)(4) not more than USD 50 million of credits per fiscal year (USD 5 million reserved for Broadway theatrical productions); the director 'may certify' and approves "
+              "on a rolling basis with priority for television series and miniseries; certificates issue only after the eligible production is complete. No bonus rate. No per-project cap. No sunset in the section.",
+    source_ref="ohio-revised-code-122.85-primary",
+    provenance=SourceProvenance(
+        issuing_authority="Ohio Department of Development / Ohio General Assembly",
+        source_url="https://codes.ohio.gov/ohio-revised-code/section-122.85",
+        citation_detail="ORC 122.85(A)(4), (B)(12), (C)(1)-(5), (D)",
+        effective_date="2025-09-30",
+        verified_date="2026-10-13",
+        interpretation_note="30% of eligible Ohio expenditures above USD 300,000; allocation is a director-approved, capped (USD 50 million a year) pool, disclosed as allocation risk, not a selective award.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-oh-flat-30", rate=0.30, is_band_ceiling=False, min_qpe_usd=300_000.01,
+                             conditions=(RateCondition(
+                                 condition_id="us-oh-director-approval-and-annual-pool",
+                                 description="The director must certify and approve the production; certificates issue after completion within an annual USD 50 million pool; at least 50% of the budget must be funded at application.",
+                                 quote="the director of development approves ... the amount allowed per fiscal year shall not exceed the sum of fifty million dollars (ORC 122.85(C))",
+                                 kind="material_funding_risk_not_modeled"),)),),
+))
+register_rate_rules(rate_rules_for(US_OH_DOCTRINE))
+
+US_WV_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-WV", program_slug="us_wv_film_production_tax_credit",
+    program_name="West Virginia Film Production Tax Credit",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=None, is_transferable=True, min_spend_usd=50_000.0,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="West Virginia Department of Economic Development program page (westvirginia.gov/filmincentives, read 2026-10-13; a summary page that cites no statute): 'up to 31% of qualified in-state spend' "
+              "= a 27% base plus 4% when 10 or more West Virginia residents are hired full-time during principal photography; a minimum of USD 50,000 accumulated in a calendar year; no per-project cap, no talent "
+              "cap, no credit cap per fiscal year; credits are transferable (sold or transferred to West Virginia taxpayers); principal photography must begin within 120 days of approval and filming before approval risks "
+              "rejection. Refundability and the sunset are not stated on the page.",
+    source_ref="westvirginia.gov-film-incentives-official-summary",
+    provenance=SourceProvenance(
+        issuing_authority="West Virginia Department of Economic Development",
+        source_url="https://westvirginia.gov/filmincentives/",
+        citation_detail="'27% base' + '4%' with 10 or more West Virginia residents hired full-time; USD 50,000 minimum in a calendar year",
+        
+        verified_date="2026-10-13",
+        interpretation_note="Official summary page; the statute (W. Va. Code 11-13X) was not read, so the confidence tier stays PARSED. The 4% needs a producer fact (10+ West Virginia full-time resident hires).",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-wv-base-27", rate=0.27, is_band_ceiling=False, min_qpe_usd=50_000.0),
+           DoctrineRateTier(tier_id="us-wv-resident-hire-31", rate=0.31, is_band_ceiling=False, min_qpe_usd=50_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="us-wv-ten-resident-hires-stated",
+                                 description="The additional 4% needs 10 or more West Virginia residents hired full-time during principal photography (talent or crew); 31% is guaranteed once that is stated.",
+                                 quote="10 or more WV residents are hired full-time during principal photography (westvirginia.gov)",
+                                 kind="project_fact_dependent_eligibility", required_boolean_fact_key="wv_ten_resident_hires_confirmed"),)),
+           DoctrineRateTier(tier_id="us-wv-resident-hire-31-conditional", rate=0.31, is_band_ceiling=True, min_qpe_usd=50_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="us-wv-ten-resident-hires-unstated",
+                                 description="PLANNING SCENARIO: 31% is shown above the guaranteed 27% until the 10-resident full-time hire fact is evidenced.",
+                                 quote="Receive up to 31% of qualified in-state spend (westvirginia.gov)",
+                                 kind="project_fact_dependent_eligibility", blocked_by_boolean_fact_keys=("wv_ten_resident_hires_confirmed",)),)),),
+))
+register_rate_rules(rate_rules_for(US_WV_DOCTRINE))
+
+US_NJ_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-NJ", program_slug="us_nj_garden_state_film_credit",
+    program_name="New Jersey Garden State Film and Digital Media Jobs Act - Film Production Credit",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=None, is_transferable=True, min_spend_usd=None,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="New Jersey Division of Taxation, Garden State Film and Digital Media Jobs Act page (nj.gov/treasury/taxation/gardenstatefilm.shtml, read 2026-10-13): 'The credit is 35% of the qualified film production "
+              "expenses paid by the taxpayer', but 30% of expenses for services and property used at a sound stage or location in New Jersey within a 30-mile radius of the intersection of Eighth Avenue and "
+              "Central Park West; eligibility needs at least 60% of production expenses (excluding post-production) through New Jersey-authorized sellers OR qualified expenses over USD 1 million per production; "
+              "a diversity plan can earn up to 4% more; credits are transferable (no less than 75% of face value) and carry forward seven years; tax years beginning on or after July 1, 2018 and ending before July 1, "
+              "2039 (P.L. 2024, c.33). The page states no film cap and does not say whether NJEDA approval is discretionary. Older secondary summaries that reverse the 30%/35% structure are superseded.",
+    source_ref="nj-division-of-taxation-garden-state-film-official",
+    provenance=SourceProvenance(
+        issuing_authority="New Jersey Division of Taxation / New Jersey Economic Development Authority",
+        source_url="https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml",
+        citation_detail="35% of qualified film production expenses; 30% within the 30-mile radius; P.L. 2024, c.33",
+        effective_date="2018-07-01",
+        verified_date="2026-10-13",
+        interpretation_note="The 30% rate applies to the location-based exception, so 30% is the guaranteed floor and 35% needs the producer fact that the spend is outside the 30-mile radius. The statute (N.J.S.A. 54:10A-5.39) was not read.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-nj-radius-30", rate=0.30, is_band_ceiling=False,
+                             conditions=(RateCondition(
+                                 condition_id="us-nj-eligibility-vendor-share-or-one-million",
+                                 description="Eligible only with at least 60% of production expenses (excluding post-production) through New Jersey-authorized sellers or qualified New Jersey expenses over USD 1 million; NJEDA approval is required; the diversity bonus (up to 4%) is not modelled.",
+                                 quote="at least 60% ... through NJ-authorized sellers, or qualified expenses must exceed $1 million per production (nj.gov Division of Taxation)",
+                                 kind="material_funding_risk_not_modeled"),)),
+           DoctrineRateTier(tier_id="us-nj-outside-radius-35", rate=0.35, is_band_ceiling=False,
+                             conditions=(RateCondition(
+                                 condition_id="us-nj-outside-nyc-radius-stated",
+                                 description="35% applies to expenses for services and property used outside the 30-mile radius of Eighth Avenue and Central Park West; guaranteed once that is stated.",
+                                 quote="The credit is 35% of the qualified film production expenses paid by the taxpayer (nj.gov Division of Taxation)",
+                                 kind="project_fact_dependent_eligibility", required_boolean_fact_key="nj_film_spend_outside_nyc_radius_confirmed"),)),
+           DoctrineRateTier(tier_id="us-nj-outside-radius-35-conditional", rate=0.35, is_band_ceiling=True,
+                             conditions=(RateCondition(
+                                 condition_id="us-nj-outside-nyc-radius-unstated",
+                                 description="PLANNING SCENARIO: 35% is shown above the guaranteed 30% until the location fact is evidenced.",
+                                 quote="30% ... within a 30-mile radius of the intersection (nj.gov Division of Taxation)",
+                                 kind="project_fact_dependent_eligibility", blocked_by_boolean_fact_keys=("nj_film_spend_outside_nyc_radius_confirmed",)),)),),
+))
+register_rate_rules(rate_rules_for(US_NJ_DOCTRINE))
+
+US_MO_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-MO", program_slug="us_mo_motion_media_production_tax_credit",
+    program_name="Missouri Motion Media Production Tax Credit (Show MO)",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=None, is_transferable=True, min_spend_usd=50_000.0,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="Missouri Film Office (mofilm.org) and Department of Economic Development program pages (read 2026-10-13): '20% Base Credit' with several percentage increases to a maximum of 42%; minimum spend USD 50,000 "
+              "(projects of 30 minutes or less) or USD 100,000 (longer); USD 16 million a year (USD 8 million film, USD 8 million episodic); transferable; above-the-line wages qualify up to 25% of total qualified spend; "
+              "2 to 8 registered apprentices or Missouri-resident veterans depending on qualifying expenses; the preliminary application is filed before principal photography and the final application, with a "
+              "Missouri-licensed CPA report, within 90 days of the last qualifying expense; news, talk shows, corporate, sports, galas and similar productions are excluded. The pages do not list the individual uplifts and "
+              "cite no RSMo section for the credit, and they do not state refundability or a sunset.",
+    source_ref="mofilm.org+ded.mo.gov-motion-media-official",
+    provenance=SourceProvenance(
+        issuing_authority="Missouri Department of Economic Development, Missouri Film Office",
+        source_url="https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program",
+        citation_detail="20% Base Credit; maximum 42%; USD 16 million annual cap",
+        
+        verified_date="2026-10-13",
+        interpretation_note="Base and maximum are official-page statements; the uplift schedule and statute were not read, so the stacked rate is a ceiling and the confidence tier stays PARSED.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-mo-base-20", rate=0.20, is_band_ceiling=False, min_qpe_usd=50_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="us-mo-allocation-and-hiring",
+                                 description="Awarded from a USD 16 million annual pool (USD 8 million film, USD 8 million episodic) after a preliminary application; requires registered apprentices or Missouri-resident veterans and a CPA-attested final application.",
+                                 quote="20% Base Credit ... $16 million per year (mofilm.org)",
+                                 kind="material_funding_risk_not_modeled"),)),
+           DoctrineRateTier(tier_id="us-mo-ceiling-42", rate=0.42, is_band_ceiling=True, min_qpe_usd=50_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="us-mo-stackable-uplifts",
+                                 description="Several percentage increases (the pages list none by name) raise the credit to a maximum of 42%; none is pre-evaluable.",
+                                 quote="several possible percentage increases ... maximum of 42% (mofilm.org)",
+                                 kind="discretionary_band"),)),),
+))
+register_rate_rules(rate_rules_for(US_MO_DOCTRINE))
+
+US_AR_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-AR", program_slug="us_ar_digital_motion_picture_incentive",
+    program_name="Arkansas Digital Product and Motion Picture Industry Incentive",
+    confidence_tier="PARSED", incentive_type="cash_rebate",
+    is_refundable=None, is_transferable=None, min_spend_usd=None,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="Arkansas Economic Development Commission film incentives page (arkansasedc.com, read 2026-10-13): a rebate or tax credit of 25% on goods, services and nonresident labour, with add-ons of 10% (below-the-line "
+              "full-time Arkansas resident or veteran payroll; veteran-owned small business spend) and 5% (Tier 3 or 4 county payroll or certified project), the page stating 'The total qualifying incentive amount for each expenditure is 30%'; "
+              "minimum spend USD 200,000 within six months for one feature production or USD 50,000 for a postproduction project; wages limited to the first USD 500,000 per employee; incentive approval must precede any "
+              "Arkansas expense; the Executive Director has 'sole discretion' over project selection and amounts; sunset June 30, 2031. The page cites no statute for the incentive itself and its 25% + 10% + 5% add-ons "
+              "do not sum to its stated 30% maximum, which is recorded as an unresolved inconsistency.",
+    source_ref="arkansasedc.com-film-incentives-official",
+    provenance=SourceProvenance(
+        issuing_authority="Arkansas Economic Development Commission",
+        source_url="https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives",
+        citation_detail="25% base; total 30%; Executive Director sole discretion; sunset June 30, 2031",
+        
+        verified_date="2026-10-13",
+        interpretation_note="Discretionary (sole discretion of the Executive Director): both rates are ceilings with no guaranteed floor. The 30% maximum conflicts with the listed add-ons and is kept as the stated cap.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-ar-base-25-ceiling", rate=0.25, is_band_ceiling=True,
+                             conditions=(RateCondition(
+                                 condition_id="us-ar-sole-discretion",
+                                 description="The AEDC Executive Director has sole discretion over project selection and incentive amounts, and approval must precede any Arkansas expense; minimum spend USD 200,000 (feature) within six months.",
+                                 quote="sole discretion ... Incentive approval must be granted before any Arkansas expenses are incurred (arkansasedc.com)",
+                                 kind="discretionary_band"),)),
+           DoctrineRateTier(tier_id="us-ar-total-30-ceiling", rate=0.30, is_band_ceiling=True,
+                             conditions=(RateCondition(
+                                 condition_id="us-ar-addons-total-30",
+                                 description="The 10% resident/veteran and 5% Tier 3-4 county add-ons raise the incentive to the stated 30% maximum; their conditions are not pre-evaluable.",
+                                 quote="The total qualifying incentive amount for each expenditure is 30% (arkansasedc.com)",
+                                 kind="discretionary_band"),)),),
+))
+register_rate_rules(rate_rules_for(US_AR_DOCTRINE))
+
+US_MT_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-MT", program_slug="us_mt_media_act_tax_credit",
+    program_name="Montana MEDIA Act Tax Credit",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=False, is_transferable=True, min_spend_usd=None,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="Montana Code Annotated 15-31-1007 as read through the statute text on 2026-10-13: a credit 'equal to 20% of the production expenditures in the state in the tax year' plus crew-compensation, "
+              "underserved-area (5%) and other add-ons, limited to 35% of the base investment; unused credits carry forward five years or transfer (15-31-1008); not refundable. Montana Department of Commerce "
+              "(commerce.mt.gov MEDIA Tax Credit page, read 2026-10-13): 'Commerce has paused the acceptance of certification applications' and 'The first available credit will not become available until 2031'; "
+              "certification is required before principal photography; USD 500 application fee; The Act took effect July 1, 2019. The annual caps sit on the Department of Revenue site and were not read.",
+    source_ref="mca-15-31-1007+commerce.mt.gov-media-tax-credit-official",
+    provenance=SourceProvenance(
+        issuing_authority="Montana Department of Commerce / Department of Revenue",
+        source_url="https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit",
+        citation_detail="MCA 15-31-1007 (20% of production expenditures in the state); certification paused; first available credit 2031",
+        effective_date="2019-07-01",
+        verified_date="2026-10-13",
+        interpretation_note="Certification is paused and no credit is available until 2031, so the 20% is a ceiling with an unresolved availability condition and no guaranteed floor.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-mt-base-20-ceiling", rate=0.20, is_band_ceiling=True,
+                             conditions=(RateCondition(
+                                 condition_id="us-mt-certification-paused-and-allocation",
+                                 description="Commerce has paused certification applications and the first available credit is not available until 2031; credits are allocated under annual caps on the Department of Revenue site.",
+                                 quote="Commerce has paused the acceptance of certification applications ... The first available credit will not become available until 2031 (commerce.mt.gov)",
+                                 kind="discretionary_band"),)),),
+))
+register_rate_rules(rate_rules_for(US_MT_DOCTRINE))
+
+US_NY_IND_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-NY", program_slug="us_ny_empire_state_independent_film_credit",
+    program_name="Empire State Independent Film Production Credit",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=True, is_transferable=None, min_spend_usd=None,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="N.Y. Tax Law 24-D (text read 2026-10-13 from a public mirror of the statute; the New York State Department of Taxation page, updated 2025-12-10, confirms 'this refundable credit'): the credit is 30% of "
+              "qualified production costs, plus 10% on wages and non-wage costs in listed upstate counties (film budget of at least USD 500,000) and 10% on in-state scoring with at least five musicians; qualified production "
+              "costs at a qualified film production facility must equal or exceed 75% of facility costs (otherwise 75% of non-facility shooting days in New York where facility costs are under USD 3 million); producer, writer, "
+              "director, performer and composer costs are limited to 40% of all other qualified costs; two qualified films a calendar year; the company must not be publicly traded or 51%+ owned by a publicly traded company; "
+              "minimum gross budget USD 1 million (USD 250,000 for films shot mostly outside the NYC area). ESD Part 172 (draft regulations dated 2026-03): applications go to the department before principal photography on a "
+              "first-come, first-served basis in at least two periods a year, Level one means a budget of at most USD 15 million, the credit is based on actual costs and never exceeds the initial estimate, a diversity plan is required. "
+              "The aggregate pools and the program's years were not read from the independent-credit text.",
+    source_ref="ny-tax-law-24-d+esd-part-172-regulations",
+    provenance=SourceProvenance(
+        issuing_authority="New York State Department of Taxation and Finance / Empire State Development",
+        source_url="https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm",
+        citation_detail="Tax Law 24-D(a)(2): 30% of qualified production costs; 10% upstate and scoring adders",
+        effective_date="2025-01-01",
+        verified_date="2026-10-13",
+        interpretation_note="Statute text came from a public mirror; the official Taxation page confirms the credit is refundable but states no rate. Allocation is first-come, first-served inside annual pools, disclosed as allocation risk.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-ny-ind-base-30", rate=0.30, is_band_ceiling=False,
+                             conditions=(RateCondition(
+                                 condition_id="us-ny-ind-qualification-and-pool",
+                                 description="Needs a qualified independent film production company (not publicly traded), a qualified film (gross budget of at least USD 1 million, or USD 250,000 for films shot mostly outside the NYC area), the 75% facility test, "
+                                             "an initial application before principal photography, and an allocation in a first-come, first-served period; talent costs are limited to 40% of other qualified costs.",
+                                 quote="the product of thirty percent and the qualified production costs paid or incurred in the production of a qualified film (Tax Law 24-D(a)(2)(i))",
+                                 kind="material_funding_risk_not_modeled"),)),
+           DoctrineRateTier(tier_id="us-ny-ind-upstate-40", rate=0.40, is_band_ceiling=True,
+                             conditions=(RateCondition(
+                                 condition_id="us-ny-ind-upstate-and-scoring-adders",
+                                 description="An additional 10% applies to wages and non-wage costs in the listed upstate counties (budget of at least USD 500,000) and to in-state scoring with five musicians; none is pre-evaluable from a topsheet.",
+                                 quote="an additional ten percent credit ... when incurred within the state (Tax Law 24-D(a)(2)(ii))",
+                                 kind="discretionary_band"),)),),
+))
+register_rate_rules(rate_rules_for(US_NY_IND_DOCTRINE))
+
+US_CO_TAX_CREDIT_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="US-CO", program_slug="us_co_film_income_tax_credit",
+    program_name="Colorado Film Incentive Tax Credit",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=None, is_transferable=None, min_spend_usd=100_000.0,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="C.R.S. 39-22-559 as amended by House Bill 24-1358 (enrolled text, leg.colorado.gov 2024a_1358_enr.pdf, read 2026-10-13): for income tax years commencing on or after January 1, 2024 and before January 1, 2032 a "
+              "production company 'making at least one hundred thousand dollars in actual qualified local expenditures and employing a workforce for any in-state production activity made up of at least fifty percent Colorado "
+              "residents' is allowed a credit 'not to exceed twenty-two percent of the actual qualified local expenditures'; the office reserves credits under a USD 5 million a year aggregate (5)(a), after an application "
+              "made 'prior to beginning production activities in the state', may issue a reservation 'not to exceed twenty-two percent of the estimated qualified local expenditures', production activities must be "
+              "completed by December 31, 2031, and a Colorado-licensed CPA reviews the actual expenditures; the section repeals December 31, 2034. 'Qualified local expenditure' follows C.R.S. 39-22-559(2)(i) "
+              "(payments to a person or business in Colorado; wages up to USD 1 million per employee or contractor). C.R.S. 24-48.5-116(6): a production company 'shall not apply and the office shall not award a "
+              "performance-based incentive for any qualified local expenditures, for which the production company has applied, for an income tax credit pursuant to section 39-22-559'.",
+    source_ref="crs-39-22-559+hb24-1358-enrolled-primary",
+    provenance=SourceProvenance(
+        issuing_authority="Colorado General Assembly / Colorado Office of Economic Development, Colorado Film, Television and Media Office",
+        source_url="https://leg.colorado.gov/sites/default/files/documents/2024A/bills/2024a_1358_enr.pdf",
+        citation_detail="C.R.S. 39-22-559(3), (5), (6) as amended by HB 24-1358: not to exceed 22% of actual qualified local expenditures; USD 5 million a year; reservation before production",
+        effective_date="2024-01-01",
+        verified_date="2026-10-13",
+        interpretation_note="The office sets the reserved amount up to 22% in its discretion, so 22% is a ceiling with no guaranteed floor; the 20% figure in the pre-amendment text is superseded by 'not to exceed twenty-two percent'.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-co-tax-credit-ceiling-22", rate=0.22, is_band_ceiling=True, min_qpe_usd=100_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="us-co-tax-credit-reservation-and-discretion",
+                                 description="A credit reservation from the Office of Economic Development before production begins, not to exceed 22% of estimated qualified local expenditures, within USD 5 million a year; at least a 50% Colorado-resident workforce.",
+                                 quote="not to exceed twenty-two percent of the actual qualified local expenditures (C.R.S. 39-22-559(3) as amended by HB 24-1358)",
+                                 kind="discretionary_band"),)),),
+))
+register_rate_rules(rate_rules_for(US_CO_TAX_CREDIT_DOCTRINE))
 
 # ── US-Alabama: Film Incentive ─────────────────────────────────────────────
 # Catalog had 25% flat (general program, kept). NEW: HB379 (signed,
@@ -7205,36 +7483,40 @@ CA_NS_DOCTRINE = register(DoctrineRecord(
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="thereactionlab.com: 'Base rate of 25% on eligible Nova "
-              "Scotia labour, with additional rural bonuses.' Confirms "
-              "catalog's 25% base; rural bonus magnitude not disclosed. PRIMARY CONFLICT 2026-10-13 (CCTH Nova Scotia Film & Television Production Incentive Fund Guidelines, April 1, 2024, s.1, 3.1, 4, 6): the base incentive is a percentage of ALL Eligible Nova Scotia Costs, not of labour only -- Stream I (Nova Scotian ownership and control 50%+) 26%, Stream II (under 50%) 25% -- reduced 0.5 point per Head of Department position below the Nova Scotia-resident minimum, plus location (2 points), distant-location (up to 10), shooting-length (1) and diversity/training/post/spend (1.5 + 1.5) bonuses; Nova Scotia spend must exceed CAD 25,000; the application must be received before principal photography; the maximum is CAD 10 million per project; the Administrator has complete discretion (s.1(d)); projects eligible for any Nova Scotia tax credit program are ineligible (s.3.2); federal credit calculations may be counted as confirmed financing. The Fund was renewed only to FY2025-26 and its FY2026-27 status was not found, so the labour-only basis below is NOT yet replaced (replacing it also reverses the pinned labour-basis control): OPEN.",
-    source_ref="thereactionlab.com-nova-scotia+ccth-nsfpif-guidelines-2024-04-01-primary",
+    citation="PRIMARY (NA-RECONCILIATION-12, read 2026-10-13): Nova Scotia Communities, Culture, Tourism and Heritage (CCTH) Film & Television Production Incentive Fund Guidelines, "
+              "April 1, 2024 edition, the document linked from the live cch.novascotia.ca program page (which states the changes are effective 1 April 2024 and is accepting applications). "
+              "s.6: Stream I (Nova Scotian ownership and control of 50% or more) base incentive 26%, Stream II (under 50%) base incentive 25%, each of 'all Eligible Nova Scotia Costs' -- all "
+              "expenditures on goods or services bought from a Nova Scotia-based supplier with a permanent physical establishment in the province and supplied, receipted, consumed or performed in "
+              "Nova Scotia (s.4(a)) -- NOT labour only; the base is reduced 0.5 percentage point for each Head of Department position below the Nova Scotia-resident minimum; location (2), "
+              "distant-location (up to 10 by zone) and shooting-length (1) points, plus Nova Scotia Content Incentive points (s.7: 1.5 + 1.5). Limits: Nova Scotia spend greater than CAD 25,000 "
+              "before HST (s.3.1(d)); maximum CAD 10 million per project (s.3.1(e)); application received before principal photography (s.3.1(f)); no individual's pay may be funded by more "
+              "than CAD 150,000 of incentive (s.3.2(d)); projects eligible for any Nova Scotia tax credit program are ineligible (s.3.2(a)); reality television, talk shows and other listed genres are "
+              "ineligible (s.3.2(c)); the Administrator has complete discretion over interpretation (s.1(d)). Federal tax credit calculations may be counted as confirmed financing and the "
+              "guidelines contain no federal-credit reduction clause. Currency: the guidelines say the Fund was renewed for annual funding until the 2025-2026 fiscal year, yet the official "
+              "page still publishes this edition and takes applications on 2026-10-13; no 2026-27 renewal statement or newer edition was found, so the program is treated as current on the official page with the "
+              "fiscal-year wording recorded as an unreconciled qualifier. SUPERSEDES the earlier single-secondary-source reading (thereactionlab.com: 25% of Nova Scotia LABOUR), which "
+              "contradicted the primary base. Modelled: the Stream II 25% base on the segment's qualifying Nova Scotia spend; Stream I 26% (ownership), the Head of Department reduction, the bonuses and "
+              "supplier residency are producer facts or amounts the topsheet cannot establish and are disclosed, not priced.",
+    source_ref="ccth-nsfpif-guidelines-2024-04-01-primary",
+    provenance=SourceProvenance(
+        issuing_authority="Province of Nova Scotia, Department of Communities, Culture, Tourism and Heritage",
+        source_url="https://cch.novascotia.ca/sites/default/files/inline/documents/ftpif/nsfpif-guidelines.pdf",
+        citation_detail="Nova Scotia Film & Television Production Incentive Fund Guidelines (April 1, 2024), s.3.1, 3.2, 4, 6, 7; program page https://cch.novascotia.ca/node/6105",
+        effective_date="2024-04-01",
+        verified_date="2026-10-13",
+        interpretation_note="Stream II (25%) is modelled as the guaranteed base because it needs no ownership fact; Stream I 26% requires 50%+ Nova Scotian ownership and control, a producer fact the "
+                             "planner does not hold. The guidelines' fiscal-year renewal wording ends 2025-2026 while the official page remains open: the fund is treated as current.",
+    ),
     tiers=(DoctrineRateTier(tier_id="ca-ns-base-25", rate=0.25, is_band_ceiling=False,
                              conditions=(
                 RateCondition(
-                    condition_id="ca-ns-labour-only-base",
-                    description="The recorded source states the base as 'eligible Nova Scotia labour' (a single secondary source): the rate applies to "
-                                "the segment's own qualifying labour-category lines, not to all qualifying spend. Eligibility of each labour account "
-                                "(e.g. Nova Scotia residency) is not evidenced from a topsheet.",
-                    quote="Base rate of 25% on eligible Nova Scotia labour, with additional rural bonuses (thereactionlab.com)",
-                    kind="project_fact_dependent_eligibility",
-                    amount_fact_key="ca_ns_qualified_labour_usd",
-                    amount_fact_min=0.01,
-                    is_component_basis=True,
-                    component_basis_spend_categories=(
-                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
-                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
-                    ),
-                ),RateCondition(
-                                 condition_id="ca-ns-rural-bonus-magnitude-undisclosed",
-                                 description="Additional rural bonuses "
-                                             "exist but their magnitude is "
-                                             "not disclosed by the source "
-                                             "checked -- not modeled as a "
-                                             "numeric ceiling",
-                                 quote="with additional rural bonuses "
-                                       "(thereactionlab.com)",
-                                 kind="material_funding_risk_not_modeled"),)),),
+                    condition_id="ca-ns-eligible-cost-supplier-residency-and-reductions",
+                    description="The base applies to Eligible Nova Scotia Costs (Nova Scotia-based suppliers with a permanent physical establishment, goods or services supplied, "
+                                "receipted, consumed or performed in Nova Scotia); supplier residency is not evidenced from a topsheet. The base is reduced 0.5 percentage point per Head of Department "
+                                "position below the Nova Scotia-resident minimum, and Stream I (26%), the location, distant-location and shooting-length points and the Nova Scotia Content Incentive "
+                                "(1.5 + 1.5) are not modelled.",
+                    quote="Base Incentive: Twenty-five (25) per cent of all Eligible Nova Scotia Costs (CCTH Guidelines April 1, 2024, s.6.2)",
+                    kind="material_funding_risk_not_modeled"),)),),
 ))
 register_rate_rules(rate_rules_for(CA_NS_DOCTRINE))
 
@@ -7245,37 +7527,45 @@ register_rate_rules(rate_rules_for(CA_NS_DOCTRINE))
 CA_NB_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-NB", program_slug="ca_nb_film_tax_credit",
     program_name="New Brunswick Film Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    is_refundable=True, is_transferable=False, min_spend_usd=None,
+    confidence_tier="PARSED", incentive_type="direct_grant",
+    is_refundable=None, is_transferable=False, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="New Brunswick Department of Tourism, Heritage and Culture (THC), Film guidelines 2017-2018 (primary; text extracted 2026-10-11): the "
-              "Production Incentive is EITHER a Labour-Based Incentive 'equal to a maximum of 40% of eligible salaries paid to New Brunswick residents' "
-              "OR an All-Spend Incentive 'equal to a maximum of 25% of all New Brunswick expenditures for variety and service productions, or to a "
-              "maximum 30% of all New Brunswick expenditures for New Brunswick based productions or co-productions'; 'approval of support for service "
-              "productions will depend on budget availability'; eligibility of expenses is 'at the sole discretion of THC'; per-project maximums apply "
-              "(feature films $800,000) and a company yearly maximum of $1M. The provincial refundable film TAX CREDIT was eliminated in the 2011-12 "
-              "budget (CBC, The Coast). The earlier record of a flat 25%/30% credit came from a secondary aggregator and is superseded. Dated: these "
-              "guidelines are 2017-2018; no official current-year text was found (gnb.ca now points to the Arts Culture NB portal). Secondary corroboration 2026-10-11 (Playback 2022, Cast & Crew, Entertainment Partners): still a choice of labour-based (40% of resident labour) or all-spend (25% service/variety, 30% NB-based) incentive, feature maximum $800,000, annual program budget raised in 2022. CURRENT-PROGRAM FINDING 2026-10-13 (gnb.ca LIFT: Leveraging Investment in Film & TV (Production), primary, no effective date stated): the live NB production support is a discretionary GRANT, not a tax credit: Major Production stream (budget over CAD 400,000) a base grant of up to 25% of Total NB Spend with stackable bonuses to a combined 35%; Micro Production stream (budget under CAD 400,000) up to 30% of Total NB Spend, maximum CAD 100,000; service productions eligible; 'not all applicants will receive a grant'; the page is silent on tax credit interaction; 2026-27 processing dates still being announced. This supersedes the 2017-18 40% labour / 25% / 30% structure and its CAD 800,000 feature maximum for current-year use, but the tiers and the cap below are NOT yet rewritten (the LIFT Program Guidelines PDF, which holds the bonus schedule, the Major-stream maximum and the federal-credit treatment, was not retrieved): OPEN, zero guaranteed value either way.",
-    source_ref="nb-thc-film-guidelines-2017-2018-primary+gnb.ca-lift-production-2026-10-13",
-    # A funded, discretionary incentive with 'maximum of' rates: every tier is a CEILING with a THC-discretion condition and NO guaranteed floor,
-    # so the pricer shows it as an unconfirmed ceiling with zero guaranteed value (it supersedes the 1.5.1 flat 25%/30% treatment, F-01).
+    citation="PRIMARY (NA-RECONCILIATION-12, read 2026-10-13): Government of New Brunswick, Tourism, Heritage and Culture, 'Leveraging Investment in Film & TV (LIFT) -- Film & TV Production Incentive "
+              "2026/2027' Program Guidelines (gnb.ca lift-program-guidelines.pdf, linked from gnb.ca/en/topic/culture-heritage/grants-finance/investment-production.html; processing date May 27, "
+              "2026, page now shows an August 27, 2026 deadline and further 2026-27 dates to be announced). This is a funded GRANT, not a tax credit (the provincial film tax credit was eliminated in the "
+              "2011-12 budget): Stream 2, Major Production (total budget over CAD 400,000): a Base Grant of up to 25% of Total NB Spend plus Stackable Bonuses to a combined 35% -- +3% Heads of Department and Lead "
+              "Talent (30%+ New Brunswick residents), +3% or +4% rural or remote principal photography (30-150 km / 151 km+ from Fredericton, Moncton or Saint John), +3% 'NB Made' (at least two content "
+              "thresholds); Stream 1, Micro Production (budget under CAD 400,000): up to 30% of Total NB Spend, maximum CAD 100,000 (not modelled: a service production over CAD 400,000 is a Major "
+              "Production). Major eligibility: NB spend at least 20% of the total budget, confirmed financing at least 50%, NB copyright ownership at least 33% (not for animation), a New "
+              "Brunswick-incorporated applicant with at least 50% New Brunswick-resident shareholders, at least one funding partner confirmed at application; co-productions and service productions are "
+              "eligible; Total NB Spend may include up to 15% Eligible Deemed Spend. Company Cap CAD 2,000,000 (28% of the CAD 7 million program budget) per production company including sub-companies; "
+              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. The guidelines "
+              "are silent on federal and other tax credits. SUPERSEDES the 2017-2018 THC guidelines (labour-based 40% / all-spend 25% / 30% incentive, CAD 800,000 feature maximum) for current use.",
+    source_ref="nb-thc-lift-production-guidelines-2026-27-primary",
+    provenance=SourceProvenance(
+        issuing_authority="Government of New Brunswick, Department of Tourism, Heritage and Culture",
+        source_url="https://www.gnb.ca/content/dam/GNB3/t/ch-cp/gfs-ssf/docs/lift-program-guidelines.pdf",
+        citation_detail="LIFT Film & TV Production Incentive 2026/2027 Program Guidelines (Stream 2 Major Production, Stackable Bonuses, Key Information: Company Cap); program page gnb.ca investment-production",
+        effective_date="2026-04-01",
+        verified_date="2026-10-13",
+        interpretation_note="Fiscal-year program (2026/2027); the guidelines carry no separate effective date. Discretionary, ranked and budget-limited: ceilings only, no guaranteed floor.",
+    ),
+    # A funded, discretionary grant with 'up to' rates: every tier is a CEILING with an unresolved award condition and NO guaranteed floor, so the pricer shows it as an unconfirmed ceiling with zero
+    # guaranteed value (F-01).
     tiers=(DoctrineRateTier(tier_id="ca-nb-all-spend-25-service-ceiling", rate=0.25, is_band_ceiling=True,
                              conditions=(RateCondition(
                                  condition_id="ca-nb-thc-discretion-and-budget",
-                                 description="Maximum 25% of all New Brunswick spend for variety and service productions; support depends on budget "
-                                             "availability, domestic productions have priority, eligibility is at THC's sole discretion, and the "
-                                             "per-project maximum applies.",
-                                 quote="to a maximum of 25% of all spend in NB ... approval of support for service productions will depend on budget "
-                                       "availability (THC Film guidelines 2017-2018)",
+                                 description="Base Grant of up to 25% of Total NB Spend (Major Production stream, budget over CAD 400,000); applications are ranked on a points rubric and awarded within available "
+                                             "funds ('not all applicants will receive a grant'); the Company Cap of CAD 2,000,000 applies.",
+                                 quote="a Base Grant of up to 25% of the project's Total NB Spend ... Grant recommendations will also consider overall demand and available funds "
+                                       "(LIFT Film & TV Production Incentive 2026/2027 Guidelines)",
                                  kind="discretionary_band"),)),
-           DoctrineRateTier(tier_id="ca-nb-all-spend-30-nb-based-ceiling", rate=0.30, is_band_ceiling=True,
+           DoctrineRateTier(tier_id="ca-nb-all-spend-35-with-bonuses-ceiling", rate=0.35, is_band_ceiling=True,
                              conditions=(RateCondition(
-                                 condition_id="ca-nb-thc-discretion-nb-based",
-                                 description="Maximum 30% of all New Brunswick spend for New Brunswick based productions or co-productions (a New "
-                                             "Brunswick production company retaining at least 20% of revenues and copyright); award and expense "
-                                             "eligibility are at THC's sole discretion within yearly funding.",
-                                 quote="a maximum 30% of all New Brunswick expenditures for New Brunswick based productions or co-productions "
-                                       "(THC Film guidelines 2017-2018)",
+                                 condition_id="ca-nb-thc-discretion-bonuses",
+                                 description="Base Grant plus Stackable Bonuses to a combined 35% of Total NB Spend (+3% Heads of Department and Lead Talent, +3% or 4% rural or remote photography, +3% NB Made); "
+                                             "each bonus needs a stated commitment to its threshold and the award stays discretionary and budget-limited.",
+                                 quote="Stackable Bonuses to a combined total of 35% of Total NB Spend per production (LIFT Film & TV Production Incentive 2026/2027 Guidelines)",
                                  kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(CA_NB_DOCTRINE))
@@ -8239,11 +8529,19 @@ US_UT_DOCTRINE = register(DoctrineRecord(
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com: confirmed 'Lawmakers passed legislation to "
-              "extend the state's tax credit program through 2030' and "
-              "a 4.5% loan-out withholding rate -- neither is a rate "
-              "change; catalog's 20%/25% figures carried forward unchallenged.",
-    source_ref="catalog-unchallenged+greenslate.com-extension-only",
+    citation="Utah Film Commission, Motion Picture Incentive Program Summary & FAQ (film.utah.gov, April 2025, read 2026-10-12 and re-read 2026-10-13): a 20% to 25% post-performance incentive paid as a cash rebate or a "
+              "fully refundable, non-transferable tax credit on qualified dollars spent in Utah, for narrative, documentary and episodic productions intended for commercial distribution, with approval 'subject to available "
+              "funds' (the Commission's funding sheet lists USD 20 million a year for film incentives); 'Over $500K in qualified spend' for the program and 'Over $1M' plus 75% Utah-resident cast and crew or 75% rural "
+              "production days for the 25% tier. Also greenslate.com: legislation extending the credit program through 2030 and a 4.5% loan-out withholding rate. The statute (Utah Code 63N-8-103/104) was not read.",
+    source_ref="film.utah.gov-incentive-faq-2025-04-primary+greenslate.com-extension",
+    provenance=SourceProvenance(
+        issuing_authority="Utah Film Commission (Governor's Office of Economic Opportunity)",
+        source_url="https://film.utah.gov/wp-content/uploads/2025/04/IncentiveProgram_SummaryFAQ_April2025.pdf",
+        citation_detail="Motion Picture Incentive Program Summary & FAQ (April 2025): 20% to 25%; over USD 500K qualified spend; 25% over USD 1M with 75% Utah cast and crew or rural days",
+        effective_date="2025-04-01",
+        verified_date="2026-10-13",
+        interpretation_note="Official program summary; the statute was not read, so the confidence tier stays PARSED. Approval is subject to available funds (allocation risk disclosed, not a selective award).",
+    ),
     # Utah Film Commission, Incentive Program Summary & FAQ (April 2025, read 2026-10-12): the Motion Picture Incentive Program needs "Over $500K in qualified
     # spend" (the $100,000-$500,000 band is the separate Community Film Incentive Program with its own residency tests); the 25% tier needs "Over $1M in
     # qualified spend" plus 75% Utah-resident cast and crew OR 75% of production days in rural Utah. The $500K-$1M band also carries a 75% Utah-resident cast and
@@ -8508,7 +8806,7 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
     program_name="Creative Saskatchewan Film and TV Production Grant",
     confidence_tier="PARSED", incentive_type="direct_grant",
     is_refundable=None, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=5_000_000.0, requires_cultural_test=False,
+    annual_cap_usd=None, requires_cultural_test=False,
     citation="hellodarwin.com/grantcompass.ca: 'Saskatchewan Stream "
               "offers... a maximum of 30% of all eligible Saskatchewan "
               "expenditures up to a maximum of $5,000,000, while the "
@@ -8520,6 +8818,15 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
               "Saskatchewan, with bonuses to a maximum of 40% (Saskatchewan Stream) and 35% (Service Production Stream). A discretionary, assessed "
               "grant: it stays display-only (authority_coverage_registry B1 ruling) and is never a guaranteed credit.",
     source_ref="creativesask.ca-fy2026-27-guidelines-primary+hellodarwin.com+grantcompass.ca-saskatchewan",
+    provenance=SourceProvenance(
+        issuing_authority="Creative Saskatchewan (Government of Saskatchewan Crown corporation)",
+        source_url="https://www.creativesask.ca/wp-content/uploads/2026/07/2026-27_FFTV_CLEAN_JULY.pdf",
+        citation_detail="Feature Film and Television Production Grant guidelines, fiscal year 2026/27 (effective April 1, 2026; July 2026 clean copy)",
+        effective_date="2026-04-01",
+        verified_date="2026-10-13",
+        interpretation_note="Discretionary, assessed grant: the 25% / 30% rates are what an applicant may apply for, bonuses to 35% / 40% are not modeled, and the guidelines do not reduce the grant by the "
+                             "federal credits. Provenance is the knowledge axis only; the economic axis stays DISPLAY_ONLY_ZERO_GUARANTEED (authority_coverage_registry _B1_DISCRETIONARY_RULING).",
+    ),
     tiers=(DoctrineRateTier(tier_id="ca-sk-service-production-25", rate=0.25, is_band_ceiling=False),
            DoctrineRateTier(tier_id="ca-sk-saskatchewan-stream-30", rate=0.30, is_band_ceiling=True,
                              conditions=(RateCondition(
