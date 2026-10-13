@@ -19,7 +19,7 @@ from __future__ import annotations
 #: so a stacking-compatibility/reduction-rule change invalidates cached
 #: served evaluations, including combined-structure results. Bump on any
 #: material change.
-STACKING_RULES_VERSION = "1.9.0"  # 1.9.0: NA-RECONCILIATION-10 -- ca_nl_all_spend_credit with the federal PSTC and CPTC (spend_reduction; NL Regulation 31/23 s.2(m): the federal credits are not NL assistance, the NL credit is assistance to the federal credits). 1.8.0: NA-RECONCILIATION-09 -- federal PSTC with the BC PSTC, the Quebec PSTC and OCASE, and OCASE with the CPTC (spend_reduction; labour portion of the provincial credit nets the PSTC, assistance reduces the CPTC cost cap), and the Manitoba labour share apportioned by rate x labour instead of the whole-credit bound. 1.7.0: federal CPTC and PSTC with the Manitoba film credit (Manitoba Film & Music TC-2 guidelines, Revised June 2024: compatible with both federal credits, and a federal film credit is excluded from Manitoba "government assistance"); BC and Quebec federal PSTC pairs remain unruled (no primary stacking text found).  # 1.6.0: NA-CODEX-08 -- on_opstc + ca_federal_cptc is a spend_reduction (Ontario Creates OPSTC Guidelines s.1.01 permit the OPSTC alongside the CPTC; the provincial credit is assistance lowering the CPTC 60% cost cap), no longer mutually_exclusive; added on_opstc + ca_federal_pstc spend_reduction (only the OPSTC labour portion is assistance, s.3.02). OFTTC/OPSTC and CPTC/PSTC stay mutually_exclusive.  # 1.5.0: NY_TAX_LAW_31A1 -- ny_state_film + us_ny_post_production_credit is mutually_exclusive again (film-level eligibility under Tax Law 31(a)(1): the post credit is denied to a taxpayer eligible under section 24 for the film, so disjoint cost pools do not satisfy it; 31(a)(4) same-cost bar is separate). Supersedes the 1.3.0 distinct-cost disposition for this pair.  # 1.4.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- added ca_federal_pstc+ca_federal_cptc (mutually_exclusive), found missing via direct primary-source research (canada.ca CAVCO CPTC and PSTC application guidelines, both fetched and quoted directly): "a corporation cannot receive both the PSTC and the CPTC for the same production" / "The PSTC is not available where a production has received the Canadian Film or Video Production Tax Credit." Every OTHER program's own PSTC-equivalent pairing against CPTC (ca_bc_pstc, on_opstc) already had this rule; the federal PSTC/CPTC pair itself did not, despite being the most direct application of the same statutory distinction (ITA §125.4 domestic content vs §125.5 foreign service).
+STACKING_RULES_VERSION = "1.10.0"  # 1.10.0: NA-RECONCILIATION-12 -- the ten unruled NA pairs: Alberta, New Brunswick, Nova Scotia and Saskatchewan with the federal credits and BC DAVE with the PSTC (spend_reduction, direction per RC4164 / ITA 125.5(1)(b)); BC DAVE with the CPTC and OFTTC with the PSTC conditional (no primary text). 1.9.0: NA-RECONCILIATION-10 -- ca_nl_all_spend_credit with the federal PSTC and CPTC (spend_reduction; NL Regulation 31/23 s.2(m): the federal credits are not NL assistance, the NL credit is assistance to the federal credits). 1.8.0: NA-RECONCILIATION-09 -- federal PSTC with the BC PSTC, the Quebec PSTC and OCASE, and OCASE with the CPTC (spend_reduction; labour portion of the provincial credit nets the PSTC, assistance reduces the CPTC cost cap), and the Manitoba labour share apportioned by rate x labour instead of the whole-credit bound. 1.7.0: federal CPTC and PSTC with the Manitoba film credit (Manitoba Film & Music TC-2 guidelines, Revised June 2024: compatible with both federal credits, and a federal film credit is excluded from Manitoba "government assistance"); BC and Quebec federal PSTC pairs remain unruled (no primary stacking text found).  # 1.6.0: NA-CODEX-08 -- on_opstc + ca_federal_cptc is a spend_reduction (Ontario Creates OPSTC Guidelines s.1.01 permit the OPSTC alongside the CPTC; the provincial credit is assistance lowering the CPTC 60% cost cap), no longer mutually_exclusive; added on_opstc + ca_federal_pstc spend_reduction (only the OPSTC labour portion is assistance, s.3.02). OFTTC/OPSTC and CPTC/PSTC stay mutually_exclusive.  # 1.5.0: NY_TAX_LAW_31A1 -- ny_state_film + us_ny_post_production_credit is mutually_exclusive again (film-level eligibility under Tax Law 31(a)(1): the post credit is denied to a taxpayer eligible under section 24 for the film, so disjoint cost pools do not satisfy it; 31(a)(4) same-cost bar is separate). Supersedes the 1.3.0 distinct-cost disposition for this pair.  # 1.4.0: CLAUDE_GENERIC_STRUCTURAL_DISCOVERY_FINAL_COMPLETION -- added ca_federal_pstc+ca_federal_cptc (mutually_exclusive), found missing via direct primary-source research (canada.ca CAVCO CPTC and PSTC application guidelines, both fetched and quoted directly): "a corporation cannot receive both the PSTC and the CPTC for the same production" / "The PSTC is not available where a production has received the Canadian Film or Video Production Tax Credit." Every OTHER program's own PSTC-equivalent pairing against CPTC (ca_bc_pstc, on_opstc) already had this rule; the federal PSTC/CPTC pair itself did not, despite being the most direct application of the same statutory distinction (ITA §125.4 domestic content vs §125.5 foreign service).
 # 1.3.0: CLAUDE_STRUCTURAL_STACKING_RUNTIME_COMPLETION -- added ca_bc_pstc+ca_bc_dave (ADDITIVE, EVID-004) and ca_federal_cptc+ca_sk_creative_saskatchewan_grant (allowed, ARCH-11's own canonical example), both previously missing from the registry entirely; corrected ny_state_film+us_ny_post_production_credit from blanket mutually_exclusive to same_cost_prohibited_distinct_costs_allowed (CODEX_STACKING_REGISTRY_RECONCILIATION.csv: WRONG_DISPOSITION), consumed by the new generic structural_archetype_generator as non-blocking (distinct-cost enforced structurally) and by the older same-jurisdiction bridge as still-blocking (no distinct-cost awareness there).
 # 1.2.0: CLAUDE_CORRECTED_GLOBAL_STACKING_AND_OPTIMIZER_CLOSEOUT -- added on_ofttc+ocase and on_opstc+ocase spend_reduction rules (confirmed directly against ontariocreates.ca's own official OCASE page), matching CODEX_LEGAL_COMPATIBILITY_ORACLE.csv EVID-014/EVID-015.
 # 1.1.0: CLAUDE_GLOBAL_ASSUMPTION_POLICY_AND_PRICEABLE_PROGRAM_FINALIZATION -- added the named ny_state_film/us_ny_post_production_credit mutually_exclusive pair rule (real same-cost non-double-dipping constraint from US_NY_POST_DOCTRINE) now that the program's blanket veto is removed and it prices.
@@ -610,6 +610,90 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
         "condition_text": (
             "NL All-Spend credit (Regulation 31/23) is not reduced by the federal CPTC (s.2(m)(ii) excludes ITA 125.4 credits from government assistance). The NL credit is provincial assistance "
             "that reduces the production cost setting the 60% CPTC cap (CRA RC4164 Form T1131, Part 5 lines 421-430); CPTC labour itself is not reduced."
+        ),
+    },
+    # NA-RECONCILIATION-12 (primary text read 2026-10-13): the ten NA pairs that had no named rule. CPTC side: CRA RC4164 (Form T1131 guide, Part 5 lines 421-430: "any provincial tax credit allowed in
+    # connection with the Canadian film or video production is considered assistance") -- provincial assistance lowers the production cost that sets the 60% cap; CPTC labour is not reduced. PSTC side:
+    # ITA 125.5(1)(b) and CRA RC4385 -- provincial assistance reasonably in respect of the Canadian labour expenditure lowers PSTC labour. A federal credit is never assistance to the provincial program
+    # unless that program's own text says so; where the provincial text is silent the direction stated by the federal text is applied and the silence is disclosed.
+    frozenset({"ca_ab_fttc", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Alberta Film and Television Tax Credit Guidelines (June 2026, s.2.4.7 and Appendix I): the Alberta credit is an all-spend credit that may be claimed with the federal CPTC and is not reduced by it. "
+            "The Alberta credit is provincial assistance to the CPTC: it reduces the production cost that sets the 60% CPTC cap (CRA RC4164, Part 5 lines 421-430); CPTC labour is not reduced."
+        ),
+    },
+    frozenset({"ca_ab_fttc", "ca_federal_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Alberta Film and Television Tax Credit Guidelines (June 2026, s.2.4.7 and Appendix I): the Alberta credit may be claimed with the federal PSTC and is not reduced by it. The Alberta credit is "
+            "assistance to the federal PSTC only to the extent reasonably in respect of Canadian labour (ITA 125.5(1)(b); CRA RC4385): it is computed on all eligible Alberta spend, so its labour share is taken "
+            "as rate x the PSTC labour basis (bounded by the credit) and the whole-credit figure is disclosed as the lower bound."
+        ),
+    },
+    frozenset({"ca_bc_dave", "ca_federal_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "BC DAVE is a labour-only credit (Income Tax Act (BC) Part 5, s.82.3; 'assistance' in s.79(1) excludes amounts deemed paid under ITA 125.4(3) or 125.5(3), so the federal PSTC does not reduce DAVE). "
+            "DAVE is provincial assistance in respect of Canadian labour and so reduces PSTC labour in full (ITA 125.5(1)(b); CRA RC4385), bounded by the DAVE credit."
+        ),
+    },
+    # DAVE with the federal CPTC: DAVE services-credit eligibility is tied to the BC production services credit (Income Tax Act (BC) s.82.3(1)(a)) and the domestic DAVE credit (s.81.2) to the BC film
+    # and television credit (s.80); the CPTC pairing is therefore not decided by a DAVE-to-CPTC statement and the dependency is a capability the optimizer does not model. Kept conditional, never priced stacked.
+    frozenset({"ca_bc_dave", "ca_federal_cptc"}): {
+        "rule_type": "conditional",
+        "condition_text": (
+            "BC DAVE is claimable only alongside a BC credit it is tied to (Income Tax Act (BC) s.82.3(1)(a): the production services credit; s.81.2: the film and television credit, which requires s.80). "
+            "Which BC credit (and therefore whether the CPTC can be claimed) applies is a production fact the planner does not hold; if the CPTC applies, DAVE is provincial assistance lowering the 60% cost "
+            "cap (CRA RC4164 lines 421-430). No primary text states the DAVE-with-CPTC combination directly: unresolved, not priced as stacked."
+        ),
+    },
+    frozenset({"ca_nb_film_tax_credit", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "New Brunswick Production Incentive (THC guidelines): a discretionary, funded incentive; the provincial text found does not address the federal credits. Federal side (CRA RC4164, Part 5 lines "
+            "421-430): provincial assistance lowers the production cost setting the 60% CPTC cap, so an awarded New Brunswick incentive reduces the cap; CPTC labour is not reduced. Only an awarded amount is "
+            "assistance: the ceiling is never netted."
+        ),
+    },
+    frozenset({"ca_nb_film_tax_credit", "ca_federal_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "New Brunswick Production Incentive (THC guidelines): discretionary, funded; the provincial text found does not address the federal credits. Federal side (ITA 125.5(1)(b); CRA RC4385): assistance "
+            "reasonably in respect of Canadian labour lowers PSTC labour; the incentive is either labour-based or all-spend, so its labour share is rate x the PSTC labour basis (disclosed assumption, whole "
+            "amount as lower bound). Only an awarded amount is assistance."
+        ),
+    },
+    frozenset({"ca_ns_production_incentive_fund", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Nova Scotia Film and Television Production Incentive Fund Guidelines (April 2024, s.3.2): federal tax credit calculations may be part of the confirmed financing and the Guidelines contain no "
+            "federal-reduction clause. Federal side (CRA RC4164, Part 5 lines 421-430): an awarded provincial amount lowers the production cost setting the 60% CPTC cap; CPTC labour is not reduced. Only an "
+            "awarded amount is assistance."
+        ),
+    },
+    frozenset({"ca_ns_production_incentive_fund", "ca_federal_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Nova Scotia Film and Television Production Incentive Fund Guidelines (April 2024, s.3.2): federal tax credit calculations may be part of the confirmed financing; no federal-reduction clause. "
+            "Federal side (ITA 125.5(1)(b); CRA RC4385): assistance reasonably in respect of Canadian labour lowers PSTC labour; the fund is computed on all eligible Nova Scotia cost, so its labour share is "
+            "rate x the PSTC labour basis (disclosed assumption, whole amount as lower bound). Only an awarded amount is assistance."
+        ),
+    },
+    frozenset({"ca_sk_creative_saskatchewan_grant", "ca_federal_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Creative Saskatchewan Film, TV and Video guidelines (FY 2026/27): a discretionary, assessed grant; federal credits may be counted as financing and the guidelines do not reduce the grant by them. "
+            "Federal side (ITA 125.5(1)(b); CRA RC4385): an awarded grant in respect of Canadian labour lowers PSTC labour; its labour share is rate x the PSTC labour basis (disclosed assumption, whole "
+            "amount as lower bound). Only an awarded amount is assistance: the zero-guaranteed ceiling is never netted."
+        ),
+    },
+    frozenset({"on_ofttc", "ca_federal_pstc"}): {
+        "rule_type": "conditional",
+        "condition_text": (
+            "No primary text states the OFTTC-with-PSTC combination: the Ontario Creates OFTTC page is silent on the federal PSTC and the PSTC guidelines do not name the OFTTC. The OFTTC is a domestic "
+            "Canadian-content credit and the PSTC is not available where the production received the CPTC (CAVCO PSTC guidelines), but that is an inference through the CPTC, not a statement. Unresolved, "
+            "not priced as stacked."
         ),
     },
     frozenset({"ca_mb_film_video_credit", "ca_federal_cptc"}): {

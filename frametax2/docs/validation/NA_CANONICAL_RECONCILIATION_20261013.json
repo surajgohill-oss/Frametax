@@ -1,6 +1,6 @@
 {
  "summary": {
-  "recon_version": "NA-RECONCILIATION-11",
+  "recon_version": "NA-RECONCILIATION-12",
   "as_of": "2026-10-13",
   "denominator": {
    "canonical_na_programs": 59,
@@ -13,24 +13,26 @@
   "rows": {
    "program_rows": 64,
    "catalog_rows": 78,
-   "proposition_rows": 150,
-   "total": 292
+   "proposition_rows": 144,
+   "total": 286
   },
   "program_class_counts": {
-   "CANONICAL_DATA_MISSING": 29,
-   "PROJECT_FACT_REQUIRED": 10,
+   "PROJECT_FACT_REQUIRED": 12,
+   "OPTIMIZER_CAPABILITY_MISSING": 1,
+   "CANONICAL_DATA_MISSING": 24,
+   "GENUINE_AUTHORITY_CONFLICT": 3,
    "IMPLEMENTATION_DEFECT": 2,
    "CANONICAL_AND_CONSUMED": 16,
-   "GENUINE_AUTHORITY_CONFLICT": 1,
    "EXISTS_BUT_DISCONNECTED": 1
   },
   "program_terminal_counts": {
-   "OPEN_CANONICAL_DATA_MISSING": 29,
-   "OPEN_PROJECT_FACT_REQUIRED": 10,
-   "CLOSED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN": 2,
-   "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN": 15,
-   "OPEN_GENUINE_AUTHORITY_CONFLICT": 1,
-   "CLOSED_CANONICAL_AND_CONSUMED": 1,
+   "OPEN_PROJECT_FACT_REQUIRED": 12,
+   "OPEN_OPTIMIZER_CAPABILITY_MISSING": 1,
+   "OPEN_CANONICAL_DATA_MISSING": 24,
+   "OPEN_GENUINE_AUTHORITY_CONFLICT": 3,
+   "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN": 2,
+   "PRICED_AUTHORITY_DIMENSIONS_OPEN": 15,
+   "NOT_PRICED_BY_DESIGN": 1,
    "OPEN_EXISTS_BUT_DISCONNECTED": 1
   },
   "authority_completeness_counts": {
@@ -46,13 +48,14 @@
    "EXISTS_BUT_DISCONNECTED": 2
   },
   "proposition_class_counts": {
+   "IMPLEMENTATION_DEFECT": 18,
    "PROJECT_FACT_REQUIRED": 42,
-   "CANONICAL_DATA_MISSING": 82,
+   "CANONICAL_DATA_MISSING": 64,
    "EXISTS_BUT_DISCONNECTED": 6,
-   "IMPLEMENTATION_DEFECT": 10,
+   "OPTIMIZER_CAPABILITY_MISSING": 1,
    "CANONICAL_AND_CONSUMED": 1,
-   "PROVENANCE_INCOMPLETE_EXISTING_RECORD": 6,
-   "GENUINE_AUTHORITY_CONFLICT": 1,
+   "PROVENANCE_INCOMPLETE_EXISTING_RECORD": 7,
+   "GENUINE_AUTHORITY_CONFLICT": 3,
    "SUPERSEDED_AUDIT_CLAIM": 1,
    "STALE_OUTPUT_REQUIRES_AUTHORIZED_REEVALUATION": 1
   }
@@ -93,22 +96,22 @@
    "jurisdiction": "CA-AB",
    "program_name": "Alberta Film and Television Tax Credit (FTTC)",
    "program_type": "tax_credit",
-   "live_registry_inclusion": "identity, rate-registry, doctrine, requirements",
+   "live_registry_inclusion": "identity, rate-registry, doctrine, requirements, stacking",
    "authority_disposition": "AUTHORITY_VERIFIED_PRICEABLE / coverage PRICEABLE_VALIDATED",
    "rate_status": "CONDITIONAL_TIER: floor 0.3, maximum 0.3, min spend None, per-project cap None, annual cap None",
    "rate_value_basis": "primary-source value",
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "no named pair rule; UNRULED same-scope partners: ca_federal_cptc, ca_federal_pstc",
+   "stacking_status": "spend_reduction=2",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py, test_prompt16_authority_disposition.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT; primary text on whether the two credits may be claimed together and how each treats the other as assistance; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
   {
    "canonical_slug": "ca_bc_dave",
@@ -126,15 +129,15 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING",
    "qualification_status": "NO_PROFILE",
-   "stacking_status": "allowed=1; UNRULED same-scope partners: ca_federal_cptc, ca_federal_pstc",
+   "stacking_status": "allowed=1, conditional=1, spend_reduction=1",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: canonical_program_identity.py (NA-RECONCILIATION-11)",
+   "defect_classification": "OPTIMIZER_CAPABILITY_MISSING",
+   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: canonical_program_identity.py (NA-RECONCILIATION-11); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
    "focused_test": "test_ca_bc_dave_component.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; primary text on whether the two credits may be claimed together and how each treats the other as assistance; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
+   "terminal_disposition": "OPEN_OPTIMIZER_CAPABILITY_MISSING",
+   "residual_evidence_needed": "a DAVE dependency model (which BC credit the DAVE claim rides on) and a primary statement or CRA position on DAVE with the CPTC; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
   {
    "canonical_slug": "ca_bc_pstc",
@@ -178,15 +181,15 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap PRESENT; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "allowed=1, conditional=1, mutually_exclusive=2, spend_reduction=11; UNRULED same-scope partners: ca_ab_fttc, ca_bc_dave, ca_nb_film_tax_credit, ca_ns_production_incentive_fund",
+   "stacking_status": "allowed=1, conditional=2, mutually_exclusive=2, spend_reduction=14",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE in force (credit rate 25%)",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: canonical_program_identity.py (NA-RECONCILIATION-11); IMPLEMENTATION_DEFECT: rate rules, canonical_evaluation.py, allocation_pricing.py (2a98e22c)",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: canonical_program_identity.py (NA-RECONCILIATION-11); IMPLEMENTATION_DEFECT: rate rules, canonical_evaluation.py, allocation_pricing.py (2a98e22c); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "a UI stage (Overview + Inspector, one canonical copy) with independent verification; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING; primary text on whether the two credits may be claimed together and how each treats the other as assistance; producer statement via POST /projects/{id}/content-gates (program_content_gates); producer statement whether the 60,000 is a paid, non-refundable expenditure or an unfunded reserve; BH is not evaluated here"
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "a UI stage (Overview + Inspector, one canonical copy) with independent verification; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING; producer statement via POST /projects/{id}/content-gates (program_content_gates); producer statement whether the 60,000 is a paid, non-refundable expenditure or an unfunded reserve; BH is not evaluated here"
   },
   {
    "canonical_slug": "ca_federal_pstc",
@@ -204,15 +207,15 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "mutually_exclusive=1, spend_reduction=6; UNRULED same-scope partners: ca_ab_fttc, ca_bc_dave, ca_nb_film_tax_credit, ca_ns_production_incentive_fund, ca_sk_creative_saskatchewan_grant, on_ofttc",
+   "stacking_status": "conditional=1, mutually_exclusive=1, spend_reduction=11",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE in force (credit rate 16%)",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "IMPLEMENTATION_DEFECT: canonical_stack_bridge.py, stacking_rules.py 1.8.0-1.9.0, migrations 0084-0085 (60c3a3fa, 2a98e22c)",
+   "repair_commit_or_file": "IMPLEMENTATION_DEFECT: canonical_stack_bridge.py, stacking_rules.py 1.8.0-1.9.0, migrations 0084-0085 (60c3a3fa, 2a98e22c); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "a CRA or provincial statement of the allocation (authority-stated labour portion); per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING; primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "residual_evidence_needed": "a CRA or provincial statement of the allocation (authority-stated labour portion); per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
   {
    "canonical_slug": "ca_film_30",
@@ -275,22 +278,22 @@
    "jurisdiction": "CA-NB",
    "program_name": "New Brunswick Film Tax Credit",
    "program_type": "tax_credit",
-   "live_registry_inclusion": "identity, rate-registry, doctrine, coverage",
+   "live_registry_inclusion": "identity, rate-registry, doctrine, coverage, stacking",
    "authority_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE / coverage AUTHORITY_UNRESOLVED_NON_PRICEABLE",
    "rate_status": "DISCRETIONARY_ZERO_GUARANTEED: floor None, maximum 0.3, min spend None, per-project cap None, annual cap None",
    "rate_value_basis": "explicit planning assumption (retained rate; primary provenance not established)",
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING",
    "qualification_status": "NO_PROFILE",
-   "stacking_status": "no named pair rule; UNRULED same-scope partners: ca_federal_cptc, ca_federal_pstc",
+   "stacking_status": "spend_reduction=2",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_structural_archetype_generator.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; primary text on whether the two credits may be claimed together and how each treats the other as assistance; the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
+   "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
+   "repair_commit_or_file": "IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "terminal_disposition": "OPEN_GENUINE_AUTHORITY_CONFLICT",
+   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; the LIFT Program Guidelines PDF, then a doctrine rewrite and value-cap rule; the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
   },
   {
    "canonical_slug": "ca_nl_all_spend_credit",
@@ -327,22 +330,22 @@
    "jurisdiction": "CA-NS",
    "program_name": "Nova Scotia Film & Television Production Incentive Fund",
    "program_type": "cash_rebate",
-   "live_registry_inclusion": "identity, rate-registry, doctrine, coverage",
+   "live_registry_inclusion": "identity, rate-registry, doctrine, coverage, requirements, stacking",
    "authority_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE / coverage AUTHORITY_UNRESOLVED_NON_PRICEABLE",
    "rate_status": "PROJECT_FACT_REQUIRED: floor 0.25, maximum 0.25, min spend None, per-project cap None, annual cap None",
    "rate_value_basis": "explicit planning assumption (retained rate; primary provenance not established)",
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING",
-   "qualification_status": "NO_PROFILE",
-   "stacking_status": "no named pair rule; UNRULED same-scope partners: ca_federal_cptc, ca_federal_pstc",
+   "qualification_status": "PRIMARY_VERIFIED",
+   "stacking_status": "spend_reduction=2",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; primary text on whether the two credits may be claimed together and how each treats the other as assistance; the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
+   "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
+   "repair_commit_or_file": "IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12); CANONICAL_DATA_MISSING: program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "OPEN_GENUINE_AUTHORITY_CONFLICT",
+   "residual_evidence_needed": "confirmation that the Fund is renewed for 2026-27, then an all-cost rewrite with Stream I ownership and Head-of-Department producer facts; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
   },
   {
    "canonical_slug": "ca_qc_pstc",
@@ -367,7 +370,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "IMPLEMENTATION_DEFECT: stacking_rules.py 1.8.0, migration 0084 (60c3a3fa)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "CLOSED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -379,22 +382,22 @@
    "jurisdiction": "CA-SK",
    "program_name": "Creative Saskatchewan Film and TV Production Grant",
    "program_type": "direct_grant",
-   "live_registry_inclusion": "identity, rate-registry, doctrine, coverage, stacking",
+   "live_registry_inclusion": "identity, rate-registry, doctrine, coverage, requirements, stacking",
    "authority_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE / coverage AUTHORITY_UNRESOLVED_NON_PRICEABLE",
    "rate_status": "DISCRETIONARY_ZERO_GUARANTEED: floor 0.25, maximum 0.3, min spend None, per-project cap None, annual cap 5000000.0",
    "rate_value_basis": "explicit planning assumption (retained rate; primary provenance not established)",
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap PARTIAL; resident/non-resident MISSING; payroll MISSING",
-   "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING",
-   "qualification_status": "NO_PROFILE",
-   "stacking_status": "allowed=1; UNRULED same-scope partners: ca_federal_pstc",
+   "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING",
+   "qualification_status": "PRIMARY_VERIFIED",
+   "stacking_status": "allowed=1, spend_reduction=1",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view (candidacy blocked: DISPLAY_ONLY_ZERO_GUARANTEED)",
    "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_program_pricing_reconciliation.py",
+   "repair_commit_or_file": "IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12); CANONICAL_DATA_MISSING: program_requirements.py profile (NA-RECONCILIATION-12)",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; primary text on whether the two credits may be claimed together and how each treats the other as assistance; the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
+   "residual_evidence_needed": "a decision whether a verified discretionary grant is priceable (ceiling only) or stays display-only, then provenance and the coverage row together; native-currency IncentiveValueCapRule records once the doctrine rewrites above land; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING; the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
   },
   {
    "canonical_slug": "mx_federal_film_incentive_2026",
@@ -419,7 +422,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_identity_authority_invariants.py, test_si_mx_controls.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -464,15 +467,15 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING",
    "qualification_status": "NO_PROFILE",
-   "stacking_status": "allowed=1, mutually_exclusive=1, spend_reduction=6; UNRULED same-scope partners: ca_federal_pstc",
+   "stacking_status": "allowed=1, conditional=1, mutually_exclusive=1, spend_reduction=6",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: canonical_program_identity.py (NA-RECONCILIATION-11)",
+   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: canonical_program_identity.py (NA-RECONCILIATION-11); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
    "focused_test": "test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canada_validation.py, test_canonical_authority_substrate.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; primary text on whether the two credits may be claimed together and how each treats the other as assistance; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
+   "residual_evidence_needed": "a primary statement from Ontario Creates or CAVCO; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
   {
    "canonical_slug": "on_opstc",
@@ -653,7 +656,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_contingency_hybrid_marginal_controls.py, test_generic_structural_discovery_final_correction.py, test_lls_lazy_marginal_enrichment.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -679,7 +682,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "IMPLEMENTATION_DEFECT: authority_coverage_registry.py 1.12.0 (NA-RECONCILIATION-11)",
    "focused_test": "test_na_authority_closure_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
   {
@@ -705,7 +708,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_identity_authority_invariants.py, test_payee_cap_and_canada_reconciliation_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, CAP, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -731,7 +734,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_program_intelligence_population.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -757,7 +760,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_program_intelligence_population.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -783,7 +786,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_na_stack_and_gate_repairs_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -809,7 +812,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
   {
@@ -835,7 +838,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_na_stack_and_gate_repairs_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
   {
@@ -861,7 +864,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
   {
@@ -887,7 +890,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -913,7 +916,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_budget_netting_independent_controls.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_final_wiring_selection_predicate.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, MINIMUM_SPEND, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
   {
@@ -991,7 +994,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_na_stack_and_gate_repairs_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
   {
@@ -1069,7 +1072,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_prompt16_authority_disposition.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
   {
@@ -1095,7 +1098,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_canonical_authority_substrate.py, test_na_stack_and_gate_repairs_controls.py, test_program_intelligence_population.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
   {
@@ -1251,7 +1254,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "test_prompt16_authority_disposition.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN",
+   "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
   {
@@ -1277,7 +1280,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "NOT_PRICED_BY_DESIGN",
    "residual_evidence_needed": ""
   },
   {
@@ -1823,7 +1826,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -1875,7 +1878,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -1927,7 +1930,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -1979,7 +1982,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2057,7 +2060,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2083,7 +2086,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2109,7 +2112,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2135,7 +2138,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2213,7 +2216,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2239,7 +2242,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2265,7 +2268,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2291,7 +2294,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2369,7 +2372,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2395,7 +2398,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2421,7 +2424,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2525,7 +2528,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2577,7 +2580,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2733,7 +2736,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -2915,7 +2918,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3019,7 +3022,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3045,7 +3048,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3071,7 +3074,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3097,7 +3100,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3123,7 +3126,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3149,7 +3152,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3175,7 +3178,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3201,7 +3204,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3227,7 +3230,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3253,7 +3256,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3279,7 +3282,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3305,7 +3308,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3331,7 +3334,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3357,7 +3360,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3383,7 +3386,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3409,7 +3412,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3435,7 +3438,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3461,7 +3464,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3487,7 +3490,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3513,7 +3516,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3539,7 +3542,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3565,7 +3568,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3591,7 +3594,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3617,7 +3620,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3643,7 +3646,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3669,7 +3672,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3695,7 +3698,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3721,7 +3724,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3747,7 +3750,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
   },
   {
@@ -3773,8 +3776,34 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_CANONICAL_AND_CONSUMED",
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
    "residual_evidence_needed": ""
+  },
+  {
+   "canonical_slug": "ca_ab_fttc",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-AB",
+   "program_name": "Alberta Film and Television Tax Credit (FTTC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with the federal CPTC or PSTC (UNRESOLVED_NO_AUTHORITY blocked the stack)",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
   },
   {
    "canonical_slug": "ca_ab_fttc",
@@ -3798,61 +3827,9 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py, test_prompt16_authority_disposition.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
-  },
-  {
-   "canonical_slug": "ca_ab_fttc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_cptc",
-   "aliases": "",
-   "jurisdiction": "CA-AB",
-   "program_name": "Alberta Film and Television Tax Credit (FTTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_ab_fttc + ca_federal_cptc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py, test_prompt16_authority_disposition.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_ab_fttc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_pstc",
-   "aliases": "",
-   "jurisdiction": "CA-AB",
-   "program_name": "Alberta Film and Television Tax Credit (FTTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_ab_fttc + ca_federal_pstc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py, test_prompt16_authority_disposition.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
   },
   {
    "canonical_slug": "ca_ab_fttc",
@@ -3876,7 +3853,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py, test_prompt16_authority_disposition.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_payee_cap_and_canada_reconciliation_controls.py, test_program_intelligence_population.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
@@ -3903,7 +3880,33 @@
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "canonical_program_identity.py (NA-RECONCILIATION-11)",
    "focused_test": "test_ca_bc_dave_component.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_bc_dave",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Digital Animation, Visual Effects and Post-Production (DAVE) Tax Credit",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with the federal PSTC (spend_reduction) or CPTC (conditional, no primary text)",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_ca_bc_dave_component.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_identity_authority_invariants.py",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -3962,7 +3965,7 @@
    "canonical_slug": "ca_bc_dave",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_cptc",
+   "proposition_id": "RESIDUAL:DAVE-CPTC",
    "aliases": "",
    "jurisdiction": "CA-BC",
    "program_name": "British Columbia Digital Animation, Visual Effects and Post-Production (DAVE) Tax Credit",
@@ -3970,45 +3973,19 @@
    "live_registry_inclusion": "",
    "authority_disposition": "",
    "rate_status": "",
-   "rate_value_basis": "not established",
+   "rate_value_basis": "",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_bc_dave + ca_federal_cptc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
+   "qualification_status": "BC DAVE is tied to a BC credit (Income Tax Act (BC) s.82.3(1)(a) production services; s.81.2 film and television, which requires s.80); whether the CPTC can be claimed alongside depends on that BC credit, which the planner does not model; no primary text states DAVE with the CPTC",
    "stacking_status": "",
    "temporal_status": "",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
    "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
+   "defect_classification": "OPTIMIZER_CAPABILITY_MISSING",
    "repair_commit_or_file": "",
    "focused_test": "test_ca_bc_dave_component.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_bc_dave",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_pstc",
-   "aliases": "",
-   "jurisdiction": "CA-BC",
-   "program_name": "British Columbia Digital Animation, Visual Effects and Post-Production (DAVE) Tax Credit",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_bc_dave + ca_federal_pstc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_ca_bc_dave_component.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "terminal_disposition": "OPEN_OPTIMIZER_CAPABILITY_MISSING",
+   "residual_evidence_needed": "a DAVE dependency model (which BC credit the DAVE claim rides on) and a primary statement or CRA position on DAVE with the CPTC"
   },
   {
    "canonical_slug": "ca_bc_dave",
@@ -4059,7 +4036,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "stacking_rules.py 1.8.0, migration 0084 (60c3a3fa)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canada_rate_rules_controls.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -4163,7 +4140,7 @@
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "canonical_program_identity.py (NA-RECONCILIATION-11)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -4189,7 +4166,33 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "rate rules, canonical_evaluation.py, allocation_pricing.py (2a98e22c)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_federal_cptc",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA",
+   "program_name": "Canadian Film or Video Production Tax Credit (CPTC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with Alberta, New Brunswick and Nova Scotia (spend_reduction) or BC DAVE (conditional)",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -4243,110 +4246,6 @@
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/content-gates (program_content_gates)"
-  },
-  {
-   "canonical_slug": "ca_federal_cptc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_ab_fttc",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canadian Film or Video Production Tax Credit (CPTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_cptc + ca_ab_fttc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_cptc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_bc_dave",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canadian Film or Video Production Tax Credit (CPTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_cptc + ca_bc_dave (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_cptc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_nb_film_tax_credit",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canadian Film or Video Production Tax Credit (CPTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_cptc + ca_nb_film_tax_credit (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_cptc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_ns_production_incentive_fund",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canadian Film or Video Production Tax Credit (CPTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_cptc + ca_ns_production_incentive_fund (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_b4_transitive_alias_gate.py, test_canada_cptc_netting_controls.py, test_canada_validation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
   },
   {
    "canonical_slug": "ca_federal_cptc",
@@ -4449,14 +4348,14 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "canonical_stack_bridge.py, stacking_rules.py 1.8.0-1.9.0, migrations 0084-0085 (60c3a3fa, 2a98e22c)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
    "canonical_slug": "ca_federal_pstc",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_ab_fttc",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
    "aliases": "",
    "jurisdiction": "CA",
    "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
@@ -4464,149 +4363,19 @@
    "live_registry_inclusion": "",
    "authority_disposition": "",
    "rate_status": "",
-   "rate_value_basis": "not established",
+   "rate_value_basis": "",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_pstc + ca_ab_fttc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
+   "qualification_status": "no named pair rule with Alberta, DAVE, New Brunswick, Nova Scotia, Saskatchewan (spend_reduction) or OFTTC (conditional)",
    "stacking_status": "",
    "temporal_status": "",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_pstc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_bc_dave",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_pstc + ca_bc_dave (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_pstc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_nb_film_tax_credit",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_pstc + ca_nb_film_tax_credit (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_pstc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_ns_production_incentive_fund",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_pstc + ca_ns_production_incentive_fund (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_pstc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_sk_creative_saskatchewan_grant",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_pstc + ca_sk_creative_saskatchewan_grant (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_federal_pstc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:on_ofttc",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_federal_pstc + on_ofttc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canadian_labour_basis.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
   },
   {
    "canonical_slug": "ca_federal_pstc",
@@ -4683,7 +4452,7 @@
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "allocation_pricing.CALIFORNIA_REGIME_NOTE (2a98e22c)",
    "focused_test": "test_b4_transitive_alias_gate.py, test_budget_netting_independent_controls.py, test_ca_la_validation.py, test_california_project_gate_controls.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -4787,7 +4556,7 @@
    "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, authority_coverage_registry.py 1.11.0 (2a98e22c)",
    "focused_test": "test_california_project_gate_controls.py, test_california_project_gate_end_to_end.py, test_canada_rate_rules_controls.py, test_canonical_economics_integrity_repair.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -4976,6 +4745,32 @@
    "canonical_slug": "ca_nb_film_tax_credit",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-NB",
+   "program_name": "New Brunswick Film Tax Credit",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with the federal CPTC or PSTC",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_nb_film_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
    "proposition_id": "PROVENANCE",
    "aliases": "",
    "jurisdiction": "CA-NB",
@@ -4994,7 +4789,7 @@
    "served_consumer": "",
    "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_structural_archetype_generator.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "residual_evidence_needed": "the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
   },
@@ -5020,7 +4815,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_structural_archetype_generator.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization"
   },
@@ -5028,7 +4823,7 @@
    "canonical_slug": "ca_nb_film_tax_credit",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_cptc",
+   "proposition_id": "RESIDUAL:NB-CURRENT-PROGRAM",
    "aliases": "",
    "jurisdiction": "CA-NB",
    "program_name": "New Brunswick Film Tax Credit",
@@ -5036,45 +4831,19 @@
    "live_registry_inclusion": "",
    "authority_disposition": "",
    "rate_status": "",
-   "rate_value_basis": "not established",
+   "rate_value_basis": "",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_nb_film_tax_credit + ca_federal_cptc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
+   "qualification_status": "the doctrine records the 2017-18 THC incentive (40% labour / 25% / 30% all-spend, CAD 800,000 feature maximum) while gnb.ca now shows LIFT Production: Major stream base up to 25% of Total NB Spend with stackable bonuses to 35%, Micro stream up to 30% (maximum CAD 100,000), discretionary; the LIFT Program Guidelines PDF (bonus schedule, Major maximum, federal-credit text) was not retrieved",
    "stacking_status": "",
    "temporal_status": "",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
    "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
+   "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_structural_archetype_generator.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_nb_film_tax_credit",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_pstc",
-   "aliases": "",
-   "jurisdiction": "CA-NB",
-   "program_name": "New Brunswick Film Tax Credit",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_nb_film_tax_credit + ca_federal_pstc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_structural_archetype_generator.py, test_us_ca_mx_scope_integrity_controls.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "terminal_disposition": "OPEN_GENUINE_AUTHORITY_CONFLICT",
+   "residual_evidence_needed": "the LIFT Program Guidelines PDF, then a doctrine rewrite and value-cap rule"
   },
   {
    "canonical_slug": "ca_nb_film_tax_credit",
@@ -5098,7 +4867,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_structural_archetype_generator.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -5125,7 +4894,7 @@
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "NL Regulation 31/23 persisted; stacking_rules.py 1.9.0; migration 0085; IncentiveValueCapRule (2a98e22c)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_california_project_gate_controls.py, test_canada_rate_rules_controls.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -5210,6 +4979,58 @@
    "canonical_slug": "ca_ns_production_incentive_fund",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-NS",
+   "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with the federal CPTC or PSTC",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_ns_production_incentive_fund",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-NS",
+   "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no requirements profile although the primary guidelines (April 2024) were retrievable",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "CANONICAL_DATA_MISSING",
+   "repair_commit_or_file": "program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_ns_production_incentive_fund",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
    "proposition_id": "PROVENANCE",
    "aliases": "",
    "jurisdiction": "CA-NS",
@@ -5224,11 +5045,11 @@
    "qualification_status": "real retained RateRule; structured primary provenance incomplete (production-acceptance warning, never an economic block)",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
    "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "residual_evidence_needed": "the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
   },
@@ -5236,7 +5057,7 @@
    "canonical_slug": "ca_ns_production_incentive_fund",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "QUALIFICATION-PROFILE",
+   "proposition_id": "RESIDUAL:NS-CURRENT-PROGRAM",
    "aliases": "",
    "jurisdiction": "CA-NS",
    "program_name": "Nova Scotia Film & Television Production Incentive Fund",
@@ -5244,71 +5065,19 @@
    "live_registry_inclusion": "",
    "authority_disposition": "",
    "rate_status": "",
-   "rate_value_basis": "not established",
+   "rate_value_basis": "",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no requirements profile: production-fit stays UNKNOWN (NO_REQUIREMENTS_ON_FILE); economics are unaffected",
+   "qualification_status": "the doctrine prices 25% of Nova Scotia LABOUR (one secondary source); the April 2024 CCTH guidelines state 26% (Stream I) / 25% (Stream II) of ALL Eligible Nova Scotia Costs with Head-of-Department reductions and bonuses, a CAD 25,000 minimum and CAD 10,000,000 maximum; the Fund was renewed only to FY2025-26",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
+   "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization"
-  },
-  {
-   "canonical_slug": "ca_ns_production_incentive_fund",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_cptc",
-   "aliases": "",
-   "jurisdiction": "CA-NS",
-   "program_name": "Nova Scotia Film & Television Production Incentive Fund",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_ns_production_incentive_fund + ca_federal_cptc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
-  },
-  {
-   "canonical_slug": "ca_ns_production_incentive_fund",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_pstc",
-   "aliases": "",
-   "jurisdiction": "CA-NS",
-   "program_name": "Nova Scotia Film & Television Production Incentive Fund",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_ns_production_incentive_fund + ca_federal_pstc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
-   "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "OPEN_GENUINE_AUTHORITY_CONFLICT",
+   "residual_evidence_needed": "confirmation that the Fund is renewed for 2026-27, then an all-cost rewrite with Stream I ownership and Head-of-Department producer facts"
   },
   {
    "canonical_slug": "ca_ns_production_incentive_fund",
@@ -5328,11 +5097,11 @@
    "qualification_status": "the publication contract's material dimensions not yet resolved by a researcher (PARTIAL/MISSING): RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING. The program still prices through the canonical doctrine default; this is a knowledge-completeness gap, not a pricing block",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -5359,7 +5128,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "stacking_rules.py 1.8.0, migration 0084 (60c3a3fa)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canonical_identity_authority_invariants.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -5392,6 +5161,58 @@
    "canonical_slug": "ca_sk_creative_saskatchewan_grant",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-SK",
+   "program_name": "Creative Saskatchewan Film and TV Production Grant",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with the federal PSTC",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_sk_creative_saskatchewan_grant",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:program_requirements.py profile (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-SK",
+   "program_name": "Creative Saskatchewan Film and TV Production Grant",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no requirements profile although the 2026/27 guidelines were retrievable",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "CANONICAL_DATA_MISSING",
+   "repair_commit_or_file": "program_requirements.py profile (NA-RECONCILIATION-12)",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_sk_creative_saskatchewan_grant",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
    "proposition_id": "PROVENANCE",
    "aliases": "",
    "jurisdiction": "CA-SK",
@@ -5406,11 +5227,11 @@
    "qualification_status": "real retained RateRule; structured primary provenance incomplete (production-acceptance warning, never an economic block)",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
    "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_program_pricing_reconciliation.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "residual_evidence_needed": "the issuing authority's own current source for the rate/base/cap propositions, attached as SourceProvenance"
   },
@@ -5418,7 +5239,7 @@
    "canonical_slug": "ca_sk_creative_saskatchewan_grant",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "QUALIFICATION-PROFILE",
+   "proposition_id": "RESIDUAL:SK-PROVENANCE-WITHHELD",
    "aliases": "",
    "jurisdiction": "CA-SK",
    "program_name": "Creative Saskatchewan Film and TV Production Grant",
@@ -5426,25 +5247,25 @@
    "live_registry_inclusion": "",
    "authority_disposition": "",
    "rate_status": "",
-   "rate_value_basis": "not established",
+   "rate_value_basis": "",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no requirements profile: production-fit stays UNKNOWN (NO_REQUIREMENTS_ON_FILE); economics are unaffected",
+   "qualification_status": "the 2026/27 guidelines were read and are cited in the record, but structured SourceProvenance is withheld: attaching it makes the authority disposition VERIFIED_PRICEABLE, against the coverage ruling that this discretionary, assessed grant is display-only (B1)",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
-   "defect_classification": "CANONICAL_DATA_MISSING",
+   "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_program_pricing_reconciliation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary requirement facts: entity, cultural/content test, preapproval and timing, minimum spend, cap, monetization"
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "OPEN_PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+   "residual_evidence_needed": "a decision whether a verified discretionary grant is priceable (ceiling only) or stays display-only, then provenance and the coverage row together"
   },
   {
    "canonical_slug": "ca_sk_creative_saskatchewan_grant",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_pstc",
+   "proposition_id": "RESIDUAL:SK-NS-NB-NATIVE-CAPS",
    "aliases": "",
    "jurisdiction": "CA-SK",
    "program_name": "Creative Saskatchewan Film and TV Production Grant",
@@ -5455,16 +5276,16 @@
    "rate_value_basis": "not established",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair ca_sk_creative_saskatchewan_grant + ca_federal_pstc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
+   "qualification_status": "Saskatchewan CAD 5,000,000 is recorded as annual_cap_usd at par and Nova Scotia CAD 10,000,000 has no cap rule; New Brunswick keeps the dated CAD 800,000",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_program_pricing_reconciliation.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "residual_evidence_needed": "native-currency IncentiveValueCapRule records once the doctrine rewrites above land"
   },
   {
    "canonical_slug": "ca_sk_creative_saskatchewan_grant",
@@ -5481,16 +5302,16 @@
    "rate_value_basis": "not established",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "the publication contract's material dimensions not yet resolved by a researcher (PARTIAL/MISSING): RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING. The program still prices through the canonical doctrine default; this is a knowledge-completeness gap, not a pricing block",
+   "qualification_status": "the publication contract's material dimensions not yet resolved by a researcher (PARTIAL/MISSING): RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING. The program still prices through the canonical doctrine default; this is a knowledge-completeness gap, not a pricing block",
    "stacking_status": "",
    "temporal_status": "",
-   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_program_pricing_reconciliation.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
+   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
   {
    "canonical_slug": "mx_federal_film_incentive_2026",
@@ -5697,7 +5518,33 @@
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "canonical_program_identity.py (NA-RECONCILIATION-11)",
    "focused_test": "test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canada_validation.py, test_canonical_authority_substrate.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "on_ofttc",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "aliases": "",
+   "jurisdiction": "CA-ON",
+   "program_name": "Ontario Film and Television Tax Credit (OFTTC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "no named pair rule with the federal PSTC (conditional: no primary text)",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "IMPLEMENTATION_DEFECT",
+   "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
+   "focused_test": "test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canada_validation.py, test_canonical_authority_substrate.py",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -5782,7 +5629,7 @@
    "canonical_slug": "on_ofttc",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
-   "proposition_id": "STACK-PAIR:ca_federal_pstc",
+   "proposition_id": "RESIDUAL:OFTTC-PSTC",
    "aliases": "",
    "jurisdiction": "CA-ON",
    "program_name": "Ontario Film and Television Tax Credit (OFTTC)",
@@ -5793,7 +5640,7 @@
    "rate_value_basis": "not established",
    "qpe_territorial_status": "",
    "authority_completeness": "",
-   "qualification_status": "no named stacking rule for the pair on_ofttc + ca_federal_pstc (same claim scope): the combination stays UNRESOLVED_NO_AUTHORITY and blocks",
+   "qualification_status": "neither the Ontario Creates OFTTC page nor the PSTC guidelines address the OFTTC with the federal PSTC; the only route is an inference through the CPTC exclusion",
    "stacking_status": "",
    "temporal_status": "",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_spend_rules",
@@ -5802,7 +5649,7 @@
    "repair_commit_or_file": "",
    "focused_test": "test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canada_validation.py, test_canonical_authority_substrate.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
+   "residual_evidence_needed": "a primary statement from Ontario Creates or CAVCO"
   },
   {
    "canonical_slug": "on_ofttc",
@@ -5853,7 +5700,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "rate rules + program-facts key (2a98e22c)",
    "focused_test": "test_canada_cptc_netting_controls.py, test_canada_rate_rules_controls.py, test_canada_validation.py, test_canonical_authority_substrate.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -5931,7 +5778,7 @@
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "canonical_program_identity.py (NA-RECONCILIATION-11)",
    "focused_test": "test_california_project_gate_controls.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_pricing_path_and_discovery.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -5957,7 +5804,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "rate rules, stacking_rules.py 1.8.0, migration 0084 (60c3a3fa, 2a98e22c)",
    "focused_test": "test_california_project_gate_controls.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_pricing_path_and_discovery.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -6139,7 +5986,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "authority_coverage_registry.py 1.12.0 (NA-RECONCILIATION-11)",
    "focused_test": "test_na_authority_closure_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -6165,7 +6012,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "program_rate_rules_worldwide.py (2a98e22c)",
    "focused_test": "test_na_authority_closure_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -6269,7 +6116,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "authority_coverage_registry.py 1.12.0; per_payee_limits.py (2a98e22c)",
    "focused_test": "test_na_authority_closure_controls.py, test_na_canonical_reconciliation.py, test_program_intelligence_population.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -6477,7 +6324,7 @@
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "authority_coverage_registry.py 1.12.0 (NA-RECONCILIATION-11)",
    "focused_test": "test_na_authority_closure_controls.py, test_na_canonical_reconciliation.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -6815,7 +6662,7 @@
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "canonical_program_identity.py; authority_coverage_registry.py binding (NA-RECONCILIATION-11)",
    "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_executable_registry.py, test_generic_structural_discovery_final_correction.py, test_na_adjudication_repairs_controls.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {
@@ -7049,7 +6896,7 @@
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "per_payee_limits.AGGREGATE_CATEGORY_CAPS (2a98e22c)",
    "focused_test": "test_na_authority_closure_controls.py, test_na_stack_and_gate_repairs_controls.py",
-   "terminal_disposition": "CLOSED_REPAIRED",
+   "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
   {

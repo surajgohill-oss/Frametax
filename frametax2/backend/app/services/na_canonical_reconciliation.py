@@ -1,4 +1,4 @@
-"""NORTH AMERICA CANONICAL RECONCILIATION (NA-RECONCILIATION-11, 2026-10-13).
+"""NORTH AMERICA CANONICAL RECONCILIATION (NA-RECONCILIATION-12, 2026-10-13).
 
 A READ-ONLY derivation over the existing canonical owners; it is not a registry, prices nothing and stores nothing. It freezes the live United States / Canada / Mexico program universe
 from the canonical identity layer and the rate registry, deduplicates aliases, and accounts for every member with exactly one finding class and a terminal disposition. Terminal accounting
@@ -12,6 +12,10 @@ Universe layers (a program appears once, aliases are listed on its row and are n
   PROPOSITION      one unresolved calculation-driving proposition (project fact, unruled stacking pair, missing profile, provenance, authority conflict, ...)
 
 The finding classes are the project's ten: see ``CLASSES``. A repaired defect keeps the class of the defect it was; a clean program is CANONICAL_AND_CONSUMED.
+
+Terminal vocabulary (no row is labelled CLOSED while a material obligation remains): OPEN_<class> (an unresolved calculation proposition); PRICED_AUTHORITY_DIMENSIONS_OPEN / PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN (the program prices through the canonical path and
+its repaired defects hold, but the publication contract's material dimensions are still unresolved); PRICED_REPAIRED / AUTHORITY_COMPLETE_CONSUMED (nothing open); NOT_PRICED_BY_DESIGN (a coverage-only selective, non-economic, superseded or duplicate
+identity: not an executable program); LINKED_TO_CANONICAL_PROGRAM (a catalog row resolved to its identity: the link is accounted, the program's own state is on its row); REPAIRED (a repaired proposition); RETIRED_SUPERSEDED.
 """
 from __future__ import annotations
 
@@ -21,7 +25,7 @@ from datetime import date
 from pathlib import Path
 
 AS_OF = "2026-10-13"
-RECON_VERSION = "NA-RECONCILIATION-11"
+RECON_VERSION = "NA-RECONCILIATION-12"
 
 C_CONSUMED = "CANONICAL_AND_CONSUMED"
 C_DISCONNECTED = "EXISTS_BUT_DISCONNECTED"
@@ -76,6 +80,21 @@ REPAIRS: dict[str, list[tuple[str, str, str, str]]] = {
     "on_opstc": [(C_DEFECT, "25% Ontario-labour gate was an unclearable AUTHORITY_UNRESOLVED condition", "rate rules + program-facts key (2a98e22c)", "tests/test_na_authority_closure_controls.py")],
 }
 
+_R12 = "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)"
+_T12 = "tests/test_na_unruled_stack_pairs_controls.py"
+for _slug, _what in (
+        ("ca_ab_fttc", "no named pair rule with the federal CPTC or PSTC (UNRESOLVED_NO_AUTHORITY blocked the stack)"),
+        ("ca_nb_film_tax_credit", "no named pair rule with the federal CPTC or PSTC"),
+        ("ca_ns_production_incentive_fund", "no named pair rule with the federal CPTC or PSTC"),
+        ("ca_sk_creative_saskatchewan_grant", "no named pair rule with the federal PSTC"),
+        ("ca_bc_dave", "no named pair rule with the federal PSTC (spend_reduction) or CPTC (conditional, no primary text)")):
+    REPAIRS.setdefault(_slug, []).append((C_DEFECT, _what, _R12, _T12))
+REPAIRS["on_ofttc"].append((C_DEFECT, "no named pair rule with the federal PSTC (conditional: no primary text)", _R12, _T12))
+REPAIRS["ca_federal_cptc"].append((C_DEFECT, "no named pair rule with Alberta, New Brunswick and Nova Scotia (spend_reduction) or BC DAVE (conditional)", _R12, _T12))
+REPAIRS["ca_federal_pstc"].append((C_DEFECT, "no named pair rule with Alberta, DAVE, New Brunswick, Nova Scotia, Saskatchewan (spend_reduction) or OFTTC (conditional)", _R12, _T12))
+REPAIRS["ca_ns_production_incentive_fund"].append((C_DATA_MISSING, "no requirements profile although the primary guidelines (April 2024) were retrievable", "program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)", "tests/test_na_canonical_reconciliation.py"))
+REPAIRS["ca_sk_creative_saskatchewan_grant"].append((C_DATA_MISSING, "no requirements profile although the 2026/27 guidelines were retrievable", "program_requirements.py profile (NA-RECONCILIATION-12)", "tests/test_na_canonical_reconciliation.py"))
+
 # ── residual propositions that are not a single program's field (the commissioned residual inventory; frozen, not expanded) ────────────────────────────────────────────────────────
 RESIDUALS: list[dict] = [
     {"id": "PA-STATUTE-VS-DCED", "slug": "us_pa_film_production_credit", "cls": C_CONFLICT,
@@ -118,6 +137,30 @@ RESIDUALS: list[dict] = [
      "what": "the catalog and the stacking registry carry 'Quebec Production Tax Credit - Foreign Productions (QPRDP)' (2 pair rules, CPTC conditional / Telefilm spend_reduction) with no canonical identity; the Quebec services credit is canonical as ca_qc_pstc and its CPTC pair is ruled by RC4164 and Revenu Quebec note 7",
      "treatment": "unbound on purpose: binding it would let the legacy 'conditional' text outrank the primary-text spend_reduction rule",
      "need": "an identity ruling (is QPRDP the Quebec services credit?) and retirement of the conflicting legacy rule"},
+    {"id": "DAVE-CPTC", "slug": "ca_bc_dave", "cls": C_CAPABILITY,
+     "what": "BC DAVE is tied to a BC credit (Income Tax Act (BC) s.82.3(1)(a) production services; s.81.2 film and television, which requires s.80); whether the CPTC can be claimed alongside depends on that BC credit, which the planner does not model; no primary text states DAVE with the CPTC",
+     "treatment": "rule_type conditional: the combination blocks rather than prices as stacked",
+     "need": "a DAVE dependency model (which BC credit the DAVE claim rides on) and a primary statement or CRA position on DAVE with the CPTC"},
+    {"id": "OFTTC-PSTC", "slug": "on_ofttc", "cls": C_DATA_MISSING,
+     "what": "neither the Ontario Creates OFTTC page nor the PSTC guidelines address the OFTTC with the federal PSTC; the only route is an inference through the CPTC exclusion",
+     "treatment": "rule_type conditional: the combination blocks",
+     "need": "a primary statement from Ontario Creates or CAVCO"},
+    {"id": "NB-CURRENT-PROGRAM", "slug": "ca_nb_film_tax_credit", "cls": C_CONFLICT,
+     "what": "the doctrine records the 2017-18 THC incentive (40% labour / 25% / 30% all-spend, CAD 800,000 feature maximum) while gnb.ca now shows LIFT Production: Major stream base up to 25% of Total NB Spend with stackable bonuses to 35%, Micro stream up to 30% (maximum CAD 100,000), discretionary; the LIFT Program Guidelines PDF (bonus schedule, Major maximum, federal-credit text) was not retrieved",
+     "treatment": "tiers and cap unchanged (ceilings only, zero guaranteed value, coverage NON_PRICEABLE); the finding is persisted in the record citation",
+     "need": "the LIFT Program Guidelines PDF, then a doctrine rewrite and value-cap rule"},
+    {"id": "NS-CURRENT-PROGRAM", "slug": "ca_ns_production_incentive_fund", "cls": C_CONFLICT,
+     "what": "the doctrine prices 25% of Nova Scotia LABOUR (one secondary source); the April 2024 CCTH guidelines state 26% (Stream I) / 25% (Stream II) of ALL Eligible Nova Scotia Costs with Head-of-Department reductions and bonuses, a CAD 25,000 minimum and CAD 10,000,000 maximum; the Fund was renewed only to FY2025-26",
+     "treatment": "labour basis retained (pinned control) and the conflict persisted in the citation; requirements profile recorded as UNCERTAIN",
+     "need": "confirmation that the Fund is renewed for 2026-27, then an all-cost rewrite with Stream I ownership and Head-of-Department producer facts"},
+    {"id": "SK-PROVENANCE-WITHHELD", "slug": "ca_sk_creative_saskatchewan_grant", "cls": C_PROVENANCE,
+     "what": "the 2026/27 guidelines were read and are cited in the record, but structured SourceProvenance is withheld: attaching it makes the authority disposition VERIFIED_PRICEABLE, against the coverage ruling that this discretionary, assessed grant is display-only (B1)",
+     "treatment": "citation and requirements profile carry the primary evidence; the grant stays zero-guaranteed and non-priceable",
+     "need": "a decision whether a verified discretionary grant is priceable (ceiling only) or stays display-only, then provenance and the coverage row together"},
+    {"id": "SK-NS-NB-NATIVE-CAPS", "slug": "ca_sk_creative_saskatchewan_grant", "cls": C_DATA_MISSING,
+     "what": "Saskatchewan CAD 5,000,000 is recorded as annual_cap_usd at par and Nova Scotia CAD 10,000,000 has no cap rule; New Brunswick keeps the dated CAD 800,000",
+     "treatment": "ceiling-only programs: no guaranteed value depends on the caps",
+     "need": "native-currency IncentiveValueCapRule records once the doctrine rewrites above land"},
 ]
 
 #: catalog rows that are not one-to-one with a canonical identity, with the reason and the targets (explicit; every NA catalog row not auto-linked must be here)
@@ -450,9 +493,9 @@ def build_matrix() -> list[dict]:
         if primary_open:
             terminal = f"OPEN_{principal}"
         elif repaired:
-            terminal = "CLOSED_REPAIRED" if not dims_open else "CLOSED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN"
+            terminal = "PRICED_REPAIRED" if not dims_open else "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN"
         else:
-            terminal = "CLOSED_CANONICAL_AND_CONSUMED" if not dims_open else "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN"
+            terminal = "AUTHORITY_COMPLETE_CONSUMED" if not dims_open else "PRICED_AUTHORITY_DIMENSIONS_OPEN"
         need = "; ".join(sorted({f[3] for f in open_findings})) if open_findings else ""
         basis = "primary-source value" if disp == pa.AUTHORITY_VERIFIED_PRICEABLE else "explicit planning assumption (retained rate; primary provenance not established)"
         rate_status = (f"{t['treatment']}: floor {t['deterministic_floor_rate']}, maximum {t['supported_maximum_rate']}, min spend {t['minimum_spend_usd']}, "
@@ -478,16 +521,16 @@ def build_matrix() -> list[dict]:
                               canonical_owner=owner(slug, True), served_consumer=("producer-facts: " + next((f["writer"] + " | " + f["unknown_semantics"] + " | fingerprint " + f["fingerprint"] + " | UI " + f["ui_control"]
                                                                                                      for f in facts if pid == "FACT:" + f["key"]), "")) if pid.startswith("FACT:") else "",
                               repair_commit_or_file=pid.replace("REPAIRED:", "") if pid.startswith("REPAIRED:") else "", focused_test=refs_s,
-                              terminal_disposition=("CLOSED_REPAIRED" if pid.startswith("REPAIRED:") else f"OPEN_{cls}"), residual_evidence_needed=nd, qualification_status=what))
+                              terminal_disposition=("REPAIRED" if pid.startswith("REPAIRED:") else f"OPEN_{cls}"), residual_evidence_needed=nd, qualification_status=what))
 
     # ── COVERAGE_ONLY ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     cov_class = {
         "UNPRICEABLE_AUTHORITY_INSUFFICIENT": (C_DATA_MISSING, "OPEN_CANONICAL_DATA_MISSING", "primary rate, base, cap, threshold and timing authority; a RateRule promotes it (a new batch, not a repair)"),
-        "NON_GUARANTEED_SELECTIVE": (C_CONSUMED, "CLOSED_CANONICAL_AND_CONSUMED", ""),
-        "NON_ECONOMIC": (C_CONSUMED, "CLOSED_CANONICAL_AND_CONSUMED", ""),
-        "SUPERSEDED": (C_CONSUMED, "CLOSED_CANONICAL_AND_CONSUMED", ""),
-        "DUPLICATE": (C_CONSUMED, "CLOSED_CANONICAL_AND_CONSUMED", ""),
-        "NO_CURRENT_INCENTIVE": (C_CONSUMED, "CLOSED_CANONICAL_AND_CONSUMED", ""),
+        "NON_GUARANTEED_SELECTIVE": (C_CONSUMED, "NOT_PRICED_BY_DESIGN", ""),
+        "NON_ECONOMIC": (C_CONSUMED, "NOT_PRICED_BY_DESIGN", ""),
+        "SUPERSEDED": (C_CONSUMED, "NOT_PRICED_BY_DESIGN", ""),
+        "DUPLICATE": (C_CONSUMED, "NOT_PRICED_BY_DESIGN", ""),
+        "NO_CURRENT_INCENTIVE": (C_CONSUMED, "NOT_PRICED_BY_DESIGN", ""),
         "CANONICAL_DATA_HANDOFF_DEFECT": (C_DISCONNECTED, "OPEN_EXISTS_BUT_DISCONNECTED", "a canonical identity binding (the only same-jurisdiction runtime program is a demonstrably different statutory program)"),
     }
     for slug in u["coverage_only"]:
@@ -538,7 +581,7 @@ def build_matrix() -> list[dict]:
             kind, note = "UNMAPPED", "no canonical identity found by name, override or state"
         p = gi_entries[(code, name)]
         cls = C_CONSUMED
-        term = "CLOSED_CANONICAL_AND_CONSUMED"
+        term = "LINKED_TO_CANONICAL_PROGRAM"
         need = ""
         if kind in ("NO_RECORD", "UNMAPPED"):
             cls, term, need = C_DATA_MISSING, "OPEN_CANONICAL_DATA_MISSING", "a canonical identity and rate/award record (a separate commissioned batch)"

@@ -64,8 +64,9 @@ def test_every_row_has_a_valid_class_and_open_rows_name_the_missing_evidence(mat
         assert r["terminal_disposition"], r["canonical_slug"]
         if r["terminal_disposition"].startswith("OPEN_"):
             assert r["residual_evidence_needed"].strip(), f"{r['canonical_slug']} {r['proposition_id']}: an OPEN row states the exact evidence still needed"
-        if r["terminal_disposition"].startswith(("CLOSED_CANONICAL_AND_CONSUMED", "CLOSED_CONSUMED_AUTHORITY_DIMENSIONS_OPEN")):
-            assert r["defect_classification"] == na.C_CONSUMED
+        assert not r["terminal_disposition"].startswith("CLOSED"), "no row is labelled CLOSED while an obligation can remain"
+        if r["terminal_disposition"] in ("AUTHORITY_COMPLETE_CONSUMED", "PRICED_AUTHORITY_DIMENSIONS_OPEN", "NOT_PRICED_BY_DESIGN", "LINKED_TO_CANONICAL_PROGRAM"):
+            assert r["defect_classification"] == na.C_CONSUMED or r["row_kind"] == "CATALOG"
         if r["terminal_disposition"].endswith("AUTHORITY_DIMENSIONS_OPEN"):
             assert "AUTHORITY_INCOMPLETE" in r["authority_completeness"] and r["residual_evidence_needed"].strip()
 
@@ -117,17 +118,16 @@ def test_the_committed_artifacts_are_current(matrix):
     assert [(r["canonical_slug"], r["row_layer"], r["proposition_id"]) for r in rows] == [(r["canonical_slug"], r["row_layer"], r["proposition_id"]) for r in matrix]
 
 
-def test_the_unruled_same_scope_stacking_pairs_are_visible_not_priced_and_not_hidden(matrix):
-    props = {r["proposition_id"] for r in matrix if r["row_kind"] == "PROPOSITION" and r["proposition_id"].startswith("STACK-PAIR:")}
-    pairs = {(r["canonical_slug"], r["proposition_id"].split(":", 1)[1]) for r in matrix if r["proposition_id"].startswith("STACK-PAIR:")}
-    # each unruled pair appears from both members' side; the ten pairs found in this pass
-    expect = {("ca_ab_fttc", "ca_federal_cptc"), ("ca_ab_fttc", "ca_federal_pstc"), ("ca_bc_dave", "ca_federal_cptc"), ("ca_bc_dave", "ca_federal_pstc"),
-              ("ca_federal_cptc", "ca_nb_film_tax_credit"), ("ca_federal_cptc", "ca_ns_production_incentive_fund"), ("ca_federal_pstc", "ca_nb_film_tax_credit"),
-              ("ca_federal_pstc", "ca_ns_production_incentive_fund"), ("ca_federal_pstc", "ca_sk_creative_saskatchewan_grant"), ("ca_federal_pstc", "on_ofttc")}
-    assert {tuple(sorted(p)) for p in pairs} == {tuple(sorted(p)) for p in expect}, props
+def test_the_formerly_unruled_pairs_are_ruled_and_the_two_without_primary_text_are_conditional_not_priced(matrix):
+    assert not [r for r in matrix if r["proposition_id"].startswith("STACK-PAIR:")], "no same-scope NA pair among the priced programs may remain unruled"
     from app.calculators.canonical_stack_bridge import load_named_pair_rule
-    for a, b in expect:
-        assert load_named_pair_rule(a, b) is None, "still unruled: the combination stays UNRESOLVED_NO_AUTHORITY"
+    formerly = [("ca_ab_fttc", "ca_federal_cptc"), ("ca_ab_fttc", "ca_federal_pstc"), ("ca_bc_dave", "ca_federal_cptc"), ("ca_bc_dave", "ca_federal_pstc"),
+                ("ca_federal_cptc", "ca_nb_film_tax_credit"), ("ca_federal_cptc", "ca_ns_production_incentive_fund"), ("ca_federal_pstc", "ca_nb_film_tax_credit"),
+                ("ca_federal_pstc", "ca_ns_production_incentive_fund"), ("ca_federal_pstc", "ca_sk_creative_saskatchewan_grant"), ("ca_federal_pstc", "on_ofttc")]
+    conditional = {("ca_bc_dave", "ca_federal_cptc"), ("ca_federal_pstc", "on_ofttc")}
+    for a, b in formerly:
+        rule = load_named_pair_rule(a, b)
+        assert rule is not None and rule["rule_type"] == ("conditional" if (a, b) in conditional else "spend_reduction"), (a, b)
 
 
 @pytest.mark.asyncio

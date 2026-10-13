@@ -58,7 +58,6 @@ def test_the_bc_quebec_and_ocase_federal_rows_agree_with_the_registry_and_state_
         assert text.strip(), "a seeded rule states its basis"
     assert "s.79(1)" in reg[frozenset({"ca_federal_pstc", "ca_bc_pstc"})]["condition_text"]
     assert "note 7" in reg[frozenset({"ca_federal_pstc", "ca_qc_pstc"})]["condition_text"]
-    assert stacking_rules.STACKING_RULES_VERSION == "1.9.0"
 
 
 def test_the_newfoundland_federal_rows_agree_with_the_registry_and_cite_the_regulation():
@@ -71,3 +70,16 @@ def test_the_newfoundland_federal_rows_agree_with_the_registry_and_cite_the_regu
         assert reg[frozenset({a, b})]["rule_type"] == "spend_reduction", (a, b)
         assert "Regulation 31/23" in text and "Regulation 31/23" in reg[frozenset({a, b})]["condition_text"]
         assert "s.2(m)" in reg[frozenset({a, b})]["condition_text"]
+
+
+def test_the_na_unruled_pair_rows_agree_with_the_registry():
+    spec = importlib.util.spec_from_file_location("mig0086", _PATH.with_name("0086_na_unruled_provincial_stacking_rules.py"))
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    assert (mod.revision, mod.down_revision) == ("0086", "0085")
+    reg = stacking_rules._SLUG_PAIR_RULES
+    assert stacking_rules.STACKING_RULES_VERSION == "1.10.0"
+    assert len(mod.ROWS) == 10 and len({mod._rule_id(r[0]) for r in mod.ROWS}) == 10
+    for _key, a, b, rule_type, text in mod.ROWS:
+        assert reg[frozenset({a, b})]["rule_type"] == rule_type, (a, b)
+        assert text.strip()
+    assert {r[3] for r in mod.ROWS if r[0] in ("dave+cptc", "ofttc+pstc")} == {"conditional"}

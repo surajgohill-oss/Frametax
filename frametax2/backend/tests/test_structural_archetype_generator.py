@@ -101,11 +101,11 @@ def test_same_country_pair_with_no_registered_rule_is_unresolved_and_blocks():
     explicitly lists this exact pair as UNRESOLVED, and Locked Structural
     Policy point 8 requires an unresolved-required pair to prevent
     verified pricing."""
-    # The CPTC + Manitoba pair and the federal PSTC with the BC PSTC, the Quebec PSTC, OCASE and the Newfoundland and Labrador all-spend credit are now RESOLVED by primary text (stacking rules
-    # 1.7.0 to 1.9.0), so the unresolved example is the federal PSTC with the New Brunswick film tax credit: both Canadian, no primary stacking text read, still unruled.
+    # The CPTC + Manitoba pair, the federal PSTC with the BC PSTC, the Quebec PSTC, OCASE and the NL all-spend credit, and (stacking rules 1.10.0) Alberta, DAVE, New Brunswick, Nova Scotia and
+    # Saskatchewan with the federal credits are now RESOLVED by primary text, so the unresolved example is the NOHFC production fund with the BC PSTC: both Canadian, no stacking text read.
     checks = check_all_pairs([
-        _comp("ca_federal_pstc", "CA", 1_000_000.0),
-        _comp("ca_nb_film_tax_credit", "CA-NB", 500_000.0),
+        _comp("nohfc_production_fund", "CA", 1_000_000.0),
+        _comp("ca_bc_pstc", "CA-BC", 500_000.0),
     ])
     assert len(checks) == 1
     assert checks[0].blocks is True
@@ -307,11 +307,11 @@ def test_ho005b_opstc_plus_ocase_alone_prices():
 
 
 def test_ho006_bc_service_plus_dave():
-    """ca_federal_pstc (1M service labour, national) + ca_bc_pstc (1.8M
-    BC labour) + ca_bc_dave (300K vfx labour) -- ca_bc_pstc+ca_bc_dave is
-    AUTHORITY_SUPPORTED ADDITIVE; ca_federal_pstc+ca_bc_pstc is
-    NATIONAL_SUBNATIONAL UNRESOLVED per the corrected oracle, so the
-    3-way control is expected blocked; the BC-only 2-way leg must price."""
+    """ca_federal_pstc (1M service labour, national) + ca_bc_pstc (1.8M BC labour) + ca_bc_dave (300K vfx labour): every pair is now ruled (BC PSTC + DAVE additive; federal PSTC with
+    the BC PSTC and with DAVE spend_reduction, stacking rules 1.8.0 and 1.10.0), so the 3-way prices. Independent arithmetic: federal PSTC 16% x 1,000,000 = 160,000; the BC PSTC labour
+    share is min(648,000, 36% x 1,000,000) = 360,000 and DAVE's is min(48,000, 16% x 1,000,000) = 48,000; reduction = 408,000 x 16% = 65,280; 160,000 - 65,280 = 94,720.
+    (Previously this control was expected blocked because the federal PSTC with DAVE was unruled; that absence is no longer the case, and an unruled pair still blocks -- see
+    test_same_country_pair_with_no_registered_rule_is_unresolved_and_blocks.)"""
     components = [
         _comp("ca_federal_pstc", "CA", 1_000_000.0, line_id="HO006-FED", spend_category="atl_director"),
         _comp("ca_bc_pstc", "CA-BC", 1_800_000.0, line_id="HO006-BC", spend_category="atl_director"),
@@ -319,7 +319,8 @@ def test_ho006_bc_service_plus_dave():
               spend_category="atl_director"),
     ]
     res = generate_structural_candidate(components, gross_budget_usd=3_100_000.0)
-    assert res.executable is False, "ca_federal_pstc+ca_bc_pstc remains a genuine authority gap"
+    assert res.executable is True, res.rejection_reason
+    assert res.post_adjustment_component_incentives_usd["ca_federal_pstc"] == pytest.approx(94_720.0)
 
     bc_only = [
         _comp("ca_bc_pstc", "CA-BC", 1_800_000.0, line_id="HO006B-BC", spend_category="atl_director"),

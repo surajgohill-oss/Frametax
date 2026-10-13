@@ -95,6 +95,14 @@ _SPEND_REDUCTION_DIRECTION: dict[frozenset, str] = {
     frozenset({"ca_federal_pstc", "ca_qc_pstc"}): "ca_qc_pstc",
     frozenset({"ca_federal_pstc", "ca_nl_all_spend_credit"}): "ca_nl_all_spend_credit",
     frozenset({"ca_federal_cptc", "ca_nl_all_spend_credit"}): "ca_nl_all_spend_credit",
+    frozenset({"ca_federal_cptc", "ca_ab_fttc"}): "ca_ab_fttc",
+    frozenset({"ca_federal_pstc", "ca_ab_fttc"}): "ca_ab_fttc",
+    frozenset({"ca_federal_pstc", "ca_bc_dave"}): "ca_bc_dave",
+    frozenset({"ca_federal_cptc", "ca_nb_film_tax_credit"}): "ca_nb_film_tax_credit",
+    frozenset({"ca_federal_pstc", "ca_nb_film_tax_credit"}): "ca_nb_film_tax_credit",
+    frozenset({"ca_federal_cptc", "ca_ns_production_incentive_fund"}): "ca_ns_production_incentive_fund",
+    frozenset({"ca_federal_pstc", "ca_ns_production_incentive_fund"}): "ca_ns_production_incentive_fund",
+    frozenset({"ca_federal_pstc", "ca_sk_creative_saskatchewan_grant"}): "ca_sk_creative_saskatchewan_grant",
     frozenset({"ca_federal_pstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}): "ontario_computer_animation_and_special_effects_tax_credit_ocase",
     frozenset({"ca_federal_cptc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"}): "ontario_computer_animation_and_special_effects_tax_credit_ocase",
     frozenset({"ca_federal_cptc", "ca_mb_film_video_credit"}): "ca_mb_film_video_credit",
@@ -205,15 +213,20 @@ BC_PSTC_SLUG = "ca_bc_pstc"
 QC_PSTC_SLUG = "ca_qc_pstc"
 NL_SLUG = "ca_nl_all_spend_credit"
 OCASE_SLUG = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+AB_SLUG = "ca_ab_fttc"
+DAVE_SLUG = "ca_bc_dave"
+NB_SLUG = "ca_nb_film_tax_credit"
+NS_SLUG = "ca_ns_production_incentive_fund"
+SK_SLUG = "ca_sk_creative_saskatchewan_grant"
 #: Provincial credits that are assistance to the federal PSTC to the extent reasonably in respect of Canadian labour: ITA 125.5(1) "qualified Canadian labour expenditure" paragraph (b)
 #: (assistance "that can reasonably be considered to be in respect of" the Canadian labour expenditure); CRA RC4385 (Form T1177 guide): "any provincial tax credit allowed in connection
 #: with the accredited production is considered assistance"; Ontario Creates OPSTC Guidelines s.3.02: "Only the labour portion of the OPSTC constitutes assistance." The reverse never
 #: applies: the federal PSTC is not assistance to the Ontario OPSTC (Guidelines s.3.02), the Manitoba credit (TC-2 guidelines), the BC credit (Income Tax Act (BC) s.79(1) "assistance"
 #: excludes amounts deemed paid under ITA 125.4(3) or 125.5(3)) or the Quebec credit (Revenu Québec CO-1029.8.36.SP, note 7).
-PSTC_ASSISTING_SLUGS = ("on_opstc", MB_SLUG, BC_PSTC_SLUG, QC_PSTC_SLUG, NL_SLUG, OCASE_SLUG)
+PSTC_ASSISTING_SLUGS = ("on_opstc", MB_SLUG, BC_PSTC_SLUG, QC_PSTC_SLUG, NL_SLUG, OCASE_SLUG, AB_SLUG, DAVE_SLUG, NB_SLUG, NS_SLUG, SK_SLUG)
 #: The credits computed on ALL eligible cost (labour included) whose labour share is APPORTIONED by rate x labour: Ontario's is stated by its own guidelines (s.3.02); Manitoba's cost-of-production
 #: credit and Quebec's all-spend credit are not, so the apportionment is a disclosed assumption, with the whole-credit figure disclosed as the lower bound.
-PSTC_APPORTIONED_SLUGS = (MB_SLUG, QC_PSTC_SLUG, NL_SLUG)
+PSTC_APPORTIONED_SLUGS = (MB_SLUG, QC_PSTC_SLUG, NL_SLUG, AB_SLUG, NB_SLUG, NS_SLUG, SK_SLUG)
 MB_COST_CREDIT_RATE = 0.30     # Manitoba Film & Music TC-2 guidelines: the cost-of-production credit (the elective alternative to the 45% cost-of-salaries credit)
 
 
@@ -235,10 +248,11 @@ def pstc_basis_phrase(slug: str) -> str:
 
 
 def apportionment_note(slug: str, credit: float, rate: float, labour_basis: float, pstc_original: float, pstc_rate: float) -> str:
-    """Disclosure for an apportioned all-spend credit (Manitoba cost-of-production, Quebec): the labour share is an assumption, the whole-credit result is the stated lower bound."""
+    """Disclosure for an apportioned all-spend credit (Manitoba cost-of-production, Quebec, Alberta, New Brunswick, Nova Scotia, Saskatchewan): the labour share is an assumption, the whole-credit result is the stated lower bound."""
     labour_part = round(min(float(credit), rate * labour_basis), 2)
     whole = round(max(0.0, pstc_original - min(float(credit), labour_basis) * pstc_rate), 2)
-    name = "Manitoba" if _is_slug(slug, MB_SLUG) else "Newfoundland and Labrador" if _is_slug(slug, NL_SLUG) else "Quebec"
+    names = {MB_SLUG: "Manitoba", NL_SLUG: "Newfoundland and Labrador", AB_SLUG: "Alberta", NB_SLUG: "New Brunswick", NS_SLUG: "Nova Scotia", SK_SLUG: "Saskatchewan"}
+    name = next((n for k, n in names.items() if _is_slug(slug, k)), "Quebec")
     return (f"Apportionment assumption (not stated by the {name} authority): the {name} credit is computed on all eligible cost, labour included, so the part reasonably in respect of Canadian "
             f"labour (ITA 125.5(1)) is taken as its rate {rate:.1%} x the PSTC labour basis ${labour_basis:,.0f} = ${labour_part:,.0f} (bounded by the credit ${float(credit):,.0f}); the CRA "
             f"(RC4385) calls any provincial tax credit assistance without an allocation, and if the whole credit were assistance the federal PSTC would be ${whole:,.0f} instead.")

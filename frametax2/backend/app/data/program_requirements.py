@@ -5085,3 +5085,50 @@ register(ProgramRequirementsProfile(
         notes="Minimum $50,000; read as Oklahoma expenditures (planning assumption, not confirmed by the page).",
     ),
 ))
+
+
+# Saskatchewan and Nova Scotia (NA-RECONCILIATION-12, primary guideline text read 2026-10-13). Fields not stated by the text stay None; CAD amounts live in additional_facts because the profile has no native local-spend or cap field.
+register(ProgramRequirementsProfile(
+    program_slug="ca_sk_creative_saskatchewan_grant", jurisdiction_code="CA-SK",
+    local_entity_required=True,        # incorporated in Saskatchewan (or federally and registered there), head office in Saskatchewan, substantial Saskatchewan-resident control
+    cultural_test_required=False,
+    refundable=None, transferable=False,
+    evidence=EvidenceRecord(
+        source_title="Creative Saskatchewan Feature Film and Television Production Grant guidelines, fiscal 2026/27",
+        source_url="https://www.creativesask.ca/wp-content/uploads/2026/07/2026-27_FFTV_CLEAN_JULY.pdf",
+        issuing_authority="Creative Saskatchewan", source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2026-04-01", access_date="2026-10-13",
+        notes="Saskatchewan Stream 30% (applicant owns or co-owns the project and controls copyright proportional to Creative Saskatchewan's participation) and Service Production Stream 25% "
+              "(no copyright requirement) of all eligible Saskatchewan expenditures, each to a maximum of CAD 5,000,000; bonuses to 40% / 35%; applications must be received prior to the completion of "
+              "principal photography; evidence of a relevant market trigger or distribution agreement and 50% confirmed financing (70% over a CAD 1 million budget), to which the grant and federal tax credit "
+              "calculations may be counted; budgets over CAD 250,000 require a single purpose production company. No federal-credit reduction clause was found. A discretionary, assessed grant.",
+    ),
+    additional_facts={
+        "rate_and_cap": "25% (Service Production) or 30% (Saskatchewan Stream) of all eligible Saskatchewan expenditures, each to CAD 5,000,000 per production; bonuses to 35% / 40%; the doctrine record's annual_cap_usd of 5,000,000 is a CAD figure at par and has no native-currency cap rule.",
+        "application_timing": "Received prior to the completion of principal photography; whether expenditure before approval qualifies is not stated.",
+        "confirmed_financing": "Market trigger / distribution agreement; 50% confirmed financing, 70% when the budget exceeds CAD 1 million; the grant and federal tax credit calculations may be counted as financing.",
+        "federal_credit_interaction": "The guidelines count federal credits as financing and contain no reduction clause; an awarded grant is assistance to the federal credits (CRA RC4164 / RC4385) via stacking rules 1.10.0.",
+    },
+))
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_ns_production_incentive_fund", jurisdiction_code="CA-NS",
+    local_entity_required=True,        # incorporated in Nova Scotia (or continued) with a permanent establishment in Nova Scotia (s.3.1(a)-(b))
+    cultural_test_required=False,
+    preapproval_mandatory=True,        # the application must be received before principal photography commences (s.3.1(f))
+    application_deadline=TimingFact(value="received prior to commencement of principal photography (principal photography may commence once an application has been submitted)", basis=TimingBasis.STATUTORY_DEADLINE),
+    refundable=None, transferable=False,
+    evidence=EvidenceRecord(
+        source_title="Nova Scotia Film & Television Production Incentive Fund Guidelines (April 1, 2024)",
+        source_url=None,
+        issuing_authority="Province of Nova Scotia, Department of Communities, Culture, Tourism and Heritage", source_type=SourceType.PRIMARY, status=RecordStatus.UNCERTAIN, effective_date="2024-04-01", access_date="2026-10-13",
+        notes="Fund renewed for annual funding only until the 2025-2026 fiscal year (s.1(a)) and subject to review by then (s.1(c)); FY2026-27 renewal not found, so the status is UNCERTAIN, not expired. Nova Scotia spend must be "
+              "greater than CAD 25,000 before HST (s.3.1(d)); maximum CAD 10 million per project (s.3.1(e)); Administrator has complete discretion (s.1(d)); confirmed financing 75% (budget of CAD 1 million or more) or 50%, to which the "
+              "Fund and federal tax credit calculations may be counted (s.3.1(g)); base incentive 26% (Stream I, Nova Scotian ownership and control of 50% or more) or 25% (Stream II) of all Eligible Nova Scotia Costs (s.6).",
+    ),
+    additional_facts={
+        "rate_basis": "All Eligible Nova Scotia Costs (not labour only) -- conflicts with the labour-only basis of the rate record, which is retained pending confirmation that the Fund is renewed (see the rate record's citation).",
+        "head_of_department": "Base reduced by 0.5 percentage point per Head of Department position below the Nova Scotia-resident minimum; location (2), distant-location (up to 10), shooting-length (1) and further 1.5 + 1.5 point bonuses (s.6-7).",
+        "tax_credit_exclusion": "s.3.2: projects eligible for any Nova Scotia tax credit program are not eligible; equity tax credit financing is deducted from eligible costs.",
+        "minimum_and_cap": "Nova Scotia spend greater than CAD 25,000 before HST; maximum CAD 10,000,000 per project (native currency; no IncentiveValueCapRule yet).",
+    },
+))
