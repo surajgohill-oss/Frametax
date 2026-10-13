@@ -6,6 +6,9 @@ export const RUN_RUNNING = "running";
 export const RUN_COMPLETED = "completed";
 export const RUN_FAILED = "failed";
 
+// One frozen idle snapshot: useSyncExternalStore requires get() to return the SAME reference until the state changes.
+const IDLE = Object.freeze({ status: RUN_IDLE, message: null, finishedAt: null });
+
 export function createEvaluationRunStore(begin) {
   const runs = new Map();             // projectId -> { status, message, finishedAt }
   const inflight = new Map();         // projectId -> Promise
@@ -14,7 +17,7 @@ export function createEvaluationRunStore(begin) {
   const set = (projectId, value) => { runs.set(projectId, value); emit(); };
 
   function get(projectId) {
-    return runs.get(projectId) || { status: RUN_IDLE, message: null, finishedAt: null };
+    return runs.get(projectId) || IDLE;
   }
 
   function run(projectId) {

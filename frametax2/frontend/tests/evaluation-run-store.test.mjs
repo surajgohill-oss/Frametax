@@ -29,6 +29,16 @@ test("the run state is the real operation: idle, then running while the request 
   assert.equal(store.isRunning("p1"), false);
 });
 
+test("get() returns the same snapshot reference until the state changes (required by useSyncExternalStore; a fresh object per read loops React)", async () => {
+  const store = createEvaluationRunStore(async () => ({}));
+  assert.equal(store.get("p1"), store.get("p1"), "idle");
+  assert.equal(store.get("p1"), store.get("other"), "idle snapshots are shared");
+  const run = store.run("p1");
+  assert.equal(store.get("p1"), store.get("p1"), "running");
+  await run;
+  assert.equal(store.get("p1"), store.get("p1"), "completed");
+});
+
 test("a second request for a project that is already running is the same run, never a duplicate; other projects are independent", async () => {
   let calls = 0;
   const d = deferred();
