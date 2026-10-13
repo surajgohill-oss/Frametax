@@ -17,9 +17,9 @@ EXPECTED_RULES = {
 }
 
 
-def _pair(federal, fed_amt, jur, slug, prov_amt, gross):
+def _pair(federal, fed_amt, jur, slug, prov_amt, gross, category="btl_crew_labor"):
     return _run([_comp("principal_production", "CA", federal, [_alloc("1", fed_amt, "principal_production", "CA", "L0", "btl_crew_labor")]),
-                 _comp("principal_production", jur, slug, [_alloc("2", prov_amt, "principal_production", jur, "L1", "btl_crew_labor")])], gross)
+                 _comp("principal_production", jur, slug, [_alloc("2", prov_amt, "principal_production", jur, "L1", category)])], gross)
 
 
 @pytest.mark.parametrize("pair,rule_type", sorted(EXPECTED_RULES.items()))
@@ -55,7 +55,8 @@ def test_alberta_credit_lowers_the_cptc_cost_cap_only_when_the_cap_binds():
 
 
 def test_dave_labour_credit_nets_the_pstc_in_full():
-    res = _pair(PSTC, 600_000.0, "CA-BC", DAVE, 600_000.0, 1_200_000.0)
+    # DAVE's base is BC labour directly attributable to digital animation or visual effects (ITA (BC) s.81.2(2) ALE): the 600,000 here is VFX-category labour.
+    res = _pair(PSTC, 600_000.0, "CA-BC", DAVE, 600_000.0, 1_200_000.0, category="vfx")
     assert res.executable is True, res.rejection_reason
     assert res.raw_component_incentives_usd[DAVE] == pytest.approx(96_000.0)                              # 16% x 600,000
     assert res.post_adjustment_component_incentives_usd[PSTC] == pytest.approx(96_000.0 - 96_000.0 * 0.16)  # 80,640: the whole DAVE credit is labour assistance
@@ -70,11 +71,22 @@ def test_nova_scotia_awarded_amount_nets_the_pstc_and_never_the_cptc_labour():
     assert cptc.post_adjustment_component_incentives_usd[CPTC] == pytest.approx(150_000.0)                 # cap 60% x (1,200,000 - 150,000) = 630,000 > labour: unchanged
 
 
-@pytest.mark.parametrize("fed,jur,slug", [(PSTC, "CA-NB", NB), (CPTC, "CA-NB", NB), (PSTC, "CA-SK", SK), (CPTC, "CA-SK", SK)])
-def test_discretionary_ceilings_carry_no_guaranteed_value_so_nothing_is_netted_and_nothing_is_unresolved(fed, jur, slug):
-    res = _pair(fed, 600_000.0, jur, slug, 600_000.0, 1_200_000.0)
+@pytest.mark.parametrize("fed,guaranteed", [(PSTC, 96_000.0), (CPTC, 150_000.0)])
+def test_new_brunswick_potential_rides_beside_the_federal_credit_and_nets_nothing(fed, guaranteed):
+    # The LIFT grant is discretionary: guaranteed ZERO, the 35% ceiling x 600,000 = 210,000 shown as conditional potential; the federal credit keeps its own value (PSTC 16% x 600,000 = 96,000;
+    # CPTC 25% x min(600,000, 60% x 1,200,000) = 150,000) and nothing is netted until an award is stated.
+    res = _pair(fed, 600_000.0, "CA-NB", NB, 600_000.0, 1_200_000.0)
+    assert res.executable is True, res.rejection_reason
+    assert res.total_guaranteed_incentive_usd == pytest.approx(guaranteed) and res.total_conditional_incentive_usd == pytest.approx(0.35 * 600_000.0)
+    assert not [a for a in res.stacking_adjustments if a.adjustment_usd]
+
+
+@pytest.mark.parametrize("fed", [PSTC, CPTC])
+def test_saskatchewan_is_display_only_so_it_never_prices_and_is_never_unruled(fed):
+    # The existing discretionary ruling (B1 DISPLAY_ONLY_ZERO_GUARANTEED) keeps the grant out of the pricing kernel; its pair is ruled, so the reason is the ruling, not a missing rule.
+    res = _pair(fed, 600_000.0, "CA-SK", SK, 600_000.0, 1_200_000.0)
     assert "no named" not in (res.rejection_reason or "").lower() and "UNRESOLVED_NO_AUTHORITY" not in (res.rejection_reason or "")
-    assert res.executable is False and slug in (res.rejection_reason or "")
+    assert res.executable is False and SK in (res.rejection_reason or "")
 
 
 def test_nova_scotia_all_cost_base_is_apportioned_to_labour_as_an_assumption_and_the_whole_credit_lower_bound_is_disclosed():
@@ -97,6 +109,12 @@ def test_a_labour_only_credit_is_labelled_verified_netting_and_an_apportioned_on
     assert netting_basis_label(DAVE).startswith("VERIFIED NETTING") and netting_basis_label("on_opstc").startswith("VERIFIED NETTING")
     for slug in (AB, NB, NS, SK, "ca_mb_film_video_credit", "ca_qc_pstc", "ca_nl_all_spend_credit"):
         assert netting_basis_label(slug).startswith("ASSUMED ALLOCATION"), slug
-    res = _pair(PSTC, 600_000.0, "CA-BC", DAVE, 600_000.0, 1_200_000.0)
+    res = _pair(PSTC, 600_000.0, "CA-BC", DAVE, 600_000.0, 1_200_000.0, category="vfx")
     adj = next(a for a in res.stacking_adjustments if {a.program_a_id, a.program_b_id} == {DAVE, PSTC})
     assert "VERIFIED NETTING" in adj.description and "verified $96,000; assumed allocation $0" in adj.description
+
+
+def test_dave_has_no_base_when_the_budget_holds_no_animation_or_effects_labour():
+    # ITA (BC) s.81.2(2): ALE is BC labour "directly attributable to prescribed digital animation or visual effects activities"; ordinary crew labour is never DAVE labour.
+    res = _pair(PSTC, 600_000.0, "CA-BC", DAVE, 600_000.0, 1_200_000.0)
+    assert res.executable is False or res.raw_component_incentives_usd.get(DAVE, 0.0) == 0.0

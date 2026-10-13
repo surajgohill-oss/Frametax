@@ -5314,3 +5314,15 @@ register(ProgramRequirementsProfile(
                  "Credit not to exceed 22% of actual qualified local expenditures of at least USD 100,000 with a workforce of at least 50% Colorado residents, for income tax years before January 1, 2032; application and credit reservation before production activities begin; "
                  "USD 5 million of reservations a calendar year; production activities completed by December 31, 2031; Colorado-licensed CPA review; the office sets the reserved amount in its discretion. Not stated: refundability, transferability."),
 ))
+
+
+register(ProgramRequirementsProfile(
+    program_slug="ca_bc_film_tv_tax_credit", jurisdiction_code="CA-BC",
+    local_entity_required=True, cultural_test_required=True, preapproval_mandatory=True, refundable=True,
+    evidence=_ev("Income Tax Act (BC) Part 5 (s.79, 80, 83.1, 84, 86) and the gov.bc.ca film and television tax credit page", "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv",
+                 "Province of British Columbia", "2025-01-01",
+                 "Basic credit 35% (20% + 10% + 5%), 40% when principal photography begins after December 31, 2024 (s.80(2), (4), (6), (8)), of qualified BC labour expenditure (the lesser of BC labour and "
+                 "60% x (cost - assistance) - LC); an eligibility certificate (s.86) and an application (s.85) are required; deemed paid under s.84 (refundable); not claimable with the production services "
+                 "credits for the same production (s.83.1). Not read: the s.85/86 deadlines and the regulation's certification criteria; regional, distant-location, training and scriptwriting credits not modelled."),
+    additional_facts={"alternative": "The production services credit (ca_bc_pstc) is the alternative for a production that does not meet the film and television requirements; the two cannot be claimed for one production (s.83.1)."},
+))

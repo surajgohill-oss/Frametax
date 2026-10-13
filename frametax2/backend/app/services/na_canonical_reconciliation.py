@@ -88,6 +88,7 @@ REPAIRS.setdefault("ca_nb_film_tax_credit", []).append((C_DATA_MISSING, "no requ
 REPAIRS.setdefault("ca_ns_production_incentive_fund", []).append((C_CONFLICT, "doctrine priced 25% of LABOUR from one secondary source; the primary CCTH guidelines price all Eligible Nova Scotia Costs (Stream II 25%); rewritten, CAD 10,000,000 cap rule added, labour-basis control restated, profile CURRENT", _R12B, "tests/test_canada_rate_rules_controls.py"))
 REPAIRS.setdefault("ca_sk_creative_saskatchewan_grant", []).append((C_PROVENANCE, "no structured provenance although the 2026/27 guidelines were read; attached as the knowledge axis only (economic axis stays DISPLAY_ONLY_ZERO_GUARANTEED); CAD 5,000,000 par annual_cap_usd replaced by a native cap rule", _R12B, "tests/test_us_ca_mx_scope_integrity_controls.py"))
 for _slug, _what in (
+        ("ca_bc_film_tv_tax_credit", "'Film Incentive BC' was a coverage-only handoff defect (mis-typed as a direct grant); it is the BC film and television tax credit (ITA (BC) s.80), now rate-bearing with its pairs (mutually exclusive with the BC PSTC by s.83.1, allowed with DAVE, spend_reduction with the CPTC, conditional with the federal PSTC)"),
         ("us_co_film_income_tax_credit", "the separate Colorado income tax credit (39-22-559 as amended by HB 24-1358) had no record; the exclusion against the rebate (24-48.5-116(6)) is now a same-cost pair rule"),
         ("us_oh_motion_picture_tax_credit", "coverage-only: no rate record although ORC 122.85 states the rate, base, threshold and pool"),
         ("us_wv_film_production_tax_credit", "coverage-only: no rate record although the official page states 27% + 4%"),
@@ -145,10 +146,6 @@ RESIDUALS: list[dict] = [
      "what": "Regulation 31/23 s.4(1) eligible-corporation tests (permanent establishment, primarily film production, no CRTC licence, not tax-exempt) and Part I registration are producer facts",
      "treatment": "Part I registration is a clearable producer fact; the s.4(1) tests are claim follow-ups",
      "need": "producer statements"},
-    {"id": "BC-FIBC-IS-THE-BC-FILM-TV-CREDIT", "slug": "proposed_canada_british_columbia_film_incentive_bc_fibc", "cls": C_DATA_MISSING,
-     "what": "'Film Incentive BC' is Creative BC's name for the BC film and television tax credit (Income Tax Act (BC) Part 5): basic 35%, 40% for photography from 2025-01-01, regional 12.5%, distant 6%, DAVE 16%, scriptwriting 35%; the manifest called it a direct grant, and it is a domestic-content credit that the production services credit replaces for productions that do not meet its requirements",
-     "treatment": "evidence persisted in the manifest entry; no RateRule yet; no pair rules, so a structure containing it would block; BC DAVE rides on this credit (DAVE-CPTC)",
-     "need": "ITA (BC) s.80 and the Film and Television Tax Credit Regulation (labour base, Canadian-content certification), then rate record plus pairs with the PSTC, DAVE and CPTC"},
     {"id": "NEW-STATE-CAPABILITY-PROFILES", "slug": "us_oh_motion_picture_tax_credit", "cls": C_DATA_MISSING,
      "what": "Ohio, West Virginia, Missouri, New Jersey, Montana and Arkansas are rate-bearing but have no jurisdiction capability profile (studio, crew depth, water, post) and no cost benchmark, so production discovery cannot accept them as relocation candidates even with the capability gate off; their Jurisdiction rows are seeded (migration 0088) but only for code, name and USD",
      "treatment": "priced when a production is based in the state or a component is assigned there; never offered as a relocation destination; listed explicitly in the harness oracle so the gap cannot hide",
@@ -189,6 +186,7 @@ RESIDUALS: list[dict] = [
 
 #: catalog rows that are not one-to-one with a canonical identity, with the reason and the targets (explicit; every NA catalog row not auto-linked must be here)
 CATALOG_OVERRIDES: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
+    ("CA", "film incentive bc (fibc)"): ("LINK", ("ca_bc_film_tv_tax_credit",), "NA-RECONCILIATION-12: Film Incentive BC is the BC film and television tax credit (ITA (BC) s.80), now rate-bearing"),
     ("US", "digital product and motion picture industry incentive"): ("LINK", ("us_ar_digital_motion_picture_incentive",), "NA-RECONCILIATION-12: now rate-bearing"),
     ("US", "garden state film and digital media jobs act \u2014 film credit"): ("LINK", ("us_nj_garden_state_film_credit",), "NA-RECONCILIATION-12: now rate-bearing"),
     ("US", "media tax credit"): ("LINK", ("us_mt_media_act_tax_credit",), "NA-RECONCILIATION-12: now rate-bearing"),

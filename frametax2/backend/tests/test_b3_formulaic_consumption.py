@@ -443,7 +443,9 @@ def test_us_tx_miip_zero_guaranteed_without_allocation_fact():
         assert c.satisfied is None, "no condition may be silently assumed satisfied"
 
     seg = _probe_segment("us_tx_miip", 5_000_000.0)
-    assert seg.executable is False, "no award yields zero guaranteed NPC"
+    # NA-RECONCILIATION-12: served as potential only -- nothing guaranteed, the 31% ceiling x 5,000,000 = 1,550,000 shown as the maximum.
+    assert seg.executable is True and seg.incentive_floor_usd == 0.0 and seg.ceiling_requires_confirmation, "no award yields zero guaranteed NPC"
+    assert seg.incentive_ceiling_usd == pytest.approx(1_550_000.0)
 
     base_facts = dict(
         evidenced_facts=frozenset({"us_tx_miip_award_confirmed", "us_tx_miip_pool_period_valid"}),
@@ -460,7 +462,7 @@ def test_us_tx_miip_zero_guaranteed_without_allocation_fact():
     awarded_cond = next(c for c in r_no_awarded_rate.conditions_evaluated if c.condition_id == "us-tx-ceiling-31-awarded-rate")
     assert awarded_cond.satisfied is None
     seg_no_awarded_rate = _probe_segment("us_tx_miip", 5_000_000.0, **base_facts)
-    assert seg_no_awarded_rate.executable is False, "an unconfirmed exact awarded rate must never auto-price the ceiling"
+    assert seg_no_awarded_rate.incentive_floor_usd == 0.0 and seg_no_awarded_rate.ceiling_requires_confirmation, "an unconfirmed exact awarded rate must never auto-price the ceiling"
 
     # Two DIFFERENT below-ceiling awarded rates must each price their OWN
     # exact rate, never the 31% maximum.

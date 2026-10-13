@@ -227,6 +227,16 @@ def discover_executable_jurisdictions(
                 _reject("capability_mismatch")
                 ok = False
                 capable = False
+            elif not cap.has_capability_data and priceable:
+                # NA-RECONCILIATION-12: a priced incentive whose state has NO structured capability profile is incentive-ready with production fit UNKNOWN -- unknown capability
+                # never rejects (match_capability's own rule; _feasibility_status already serves FEASIBILITY_UNKNOWN for it). It enters optimisation, flagged, never as a fit claim.
+                classification = "incentive_ready"
+                reason = ("Incentive-ready, production fit UNKNOWN: no structured capability profile exists for this jurisdiction, so "
+                          "capability is neither confirmed nor denied. A statutory incentive resolves, so it enters optimization "
+                          "(retained, not rejected); the missing capability data is disclosed, never guessed.")
+                ok = True
+                capable = False
+                accepted.append((code, slug))
             elif cm.production_capable and priceable:
                 classification = "incentive_ready"
                 reason = ("Production-capable AND incentive-ready: capabilities match the "

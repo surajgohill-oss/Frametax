@@ -95,6 +95,7 @@ _SPEND_REDUCTION_DIRECTION: dict[frozenset, str] = {
     frozenset({"ca_federal_pstc", "ca_qc_pstc"}): "ca_qc_pstc",
     frozenset({"ca_federal_pstc", "ca_nl_all_spend_credit"}): "ca_nl_all_spend_credit",
     frozenset({"ca_federal_cptc", "ca_nl_all_spend_credit"}): "ca_nl_all_spend_credit",
+    frozenset({"ca_bc_film_tv_tax_credit", "ca_federal_cptc"}): "ca_bc_film_tv_tax_credit",
     frozenset({"ca_federal_cptc", "ca_ab_fttc"}): "ca_ab_fttc",
     frozenset({"ca_federal_pstc", "ca_ab_fttc"}): "ca_ab_fttc",
     frozenset({"ca_federal_pstc", "ca_bc_dave"}): "ca_bc_dave",

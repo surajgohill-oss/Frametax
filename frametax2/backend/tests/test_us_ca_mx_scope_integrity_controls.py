@@ -59,8 +59,10 @@ def test_new_brunswick_is_a_discretionary_lift_grant_with_ceilings_and_a_company
     assert {round(t.rate, 2) for t in doc.tiers} == {0.25, 0.35}
     assert all(t.is_band_ceiling and any(c.kind == "discretionary_band" for c in t.conditions) for t in doc.tiers)
     seg = _price("CA-NB", "ca_nb_film_tax_credit", 2_000_000.0)
-    assert not seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation, "no guaranteed value for a discretionary maximum"
-    assert seg.incentive_floor_usd in (None, 0, 0.0) and "no guaranteed floor" in " ".join(seg.blockers)
+    # Served as POTENTIAL ONLY (NA-RECONCILIATION-12): zero guaranteed, the ceiling shown as the maximum, the award condition still unresolved.
+    assert seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation, "a discretionary maximum is conditional potential, never guaranteed"
+    assert seg.incentive_floor_usd == 0.0 and seg.incentive_ceiling_usd == pytest.approx(0.35 * 2_000_000.0)       # 35% combined LIFT ceiling x 2,000,000
+    assert "no guaranteed floor" in " ".join(seg.notes) or "ZERO" in " ".join(seg.notes)
     from app.data.program_rate_rules import get_incentive_value_cap
     cap = get_incentive_value_cap("ca_nb_film_tax_credit")
     assert cap.cap_currency == "CAD" and cap.cap_native_amount == 2_000_000.0
@@ -133,8 +135,11 @@ def test_connecticut_rate_ladder_follows_the_quoted_dollar_boundaries(qpe, rate)
 ])
 def test_a_program_stating_only_a_rate_ceiling_does_not_price_a_confirmed_floor(jur, slug):
     seg = _price(jur, slug, 3_000_000.0)
-    assert not seg.executable and seg.incentive_floor_usd == 0.0
-    assert any("CEILING" in b for b in seg.blockers), seg.blockers
+    # NA-RECONCILIATION-12: the ceiling is served as conditional POTENTIAL with a ZERO guaranteed floor (it used to drop the segment entirely).
+    rate = {"US-MD": 0.30, "US-SC": 0.30, "US-NC": 0.25}[jur]
+    assert seg.executable and seg.incentive_floor_usd == 0.0 and seg.ceiling_requires_confirmation
+    assert seg.incentive_ceiling_usd == pytest.approx(rate * 3_000_000.0)
+    assert any("CEILING" in n for n in seg.notes), seg.notes
 
 
 def test_nc_minimum_spend_still_gates_below_the_quoted_threshold():
@@ -181,7 +186,9 @@ MX_CONFIRMED = frozenset({"mx_federal_film_incentive_2026"})   # the Comite Tecn
 def test_mexico_is_an_unconfirmed_committee_ceiling_until_the_award_is_confirmed():
     # Lineamientos (DOF 2026-03-30) lineamiento 4 III: the Comite Tecnico sets the percentage per project; 30% is only the ceiling.
     seg = _price("MX", "mx_federal_film_incentive_2026", 12_000_000.0, _fx(MXN=20.0))
-    assert not seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation and seg.incentive_floor_usd in (None, 0, 0.0)
+    # potential only: 30% x 12,000,000 = 3.6m, clipped by the MXN 40m cap at 20 MXN/USD (2.0m); nothing guaranteed until the committee awards a percentage
+    assert seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation and seg.incentive_floor_usd == 0.0
+    assert seg.incentive_ceiling_usd == pytest.approx(2_000_000.0)
 
 
 def test_mexico_cap_converts_through_the_fx_context_and_binds_a_large_credit():

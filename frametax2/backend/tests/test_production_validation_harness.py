@@ -124,12 +124,14 @@ class TestStage1EngineValidation:
                 amount_facts=build_discovery_amount_probe(slug, verified_qpe, None, None),
             ) is not None
         }
-        undiscoverable_without_capability_profile = {pair for pair in resolvable_pairs if not jurisdiction_capability_profile(pair[0]).has_capability_data}
-        assert undiscoverable_without_capability_profile == {
+        # NA-RECONCILIATION-12: unknown capability never rejects, so every resolvable program is discoverable even where its jurisdiction has no capability profile
+        # (the six new US states are accepted with production fit UNKNOWN). The set of resolvable programs without a profile is pinned so a new gap shows up here.
+        no_profile = {pair for pair in resolvable_pairs if not jurisdiction_capability_profile(pair[0]).has_capability_data}
+        assert no_profile == {
             ("US-AR", "us_ar_digital_motion_picture_incentive"), ("US-MO", "us_mo_motion_media_production_tax_credit"), ("US-MT", "us_mt_media_act_tax_credit"),
             ("US-NJ", "us_nj_garden_state_film_credit"), ("US-OH", "us_oh_motion_picture_tax_credit"), ("US-WV", "us_wv_film_production_tax_credit"),
-        }, "a priced program whose state has no capability profile is not discoverable: seed the profile (not invented here) or this list changes"
-        statutorily_ready_pairs = resolvable_pairs - undiscoverable_without_capability_profile
+        }
+        statutorily_ready_pairs = resolvable_pairs
         assert ("AU", "au_location_offset") not in statutorily_ready_pairs
         assert s1["incentive_ready_count"] == len(statutorily_ready_pairs)
         assert s1["total_executable_jurisdictions"] == len(jc.ALL_PROFILES)

@@ -1060,14 +1060,14 @@ CA_BC_DAVE_DOCTRINE = register(DoctrineRecord(
                 # a free caller scalar, never generic BC/Canadian QPE).
                 RateCondition(
                     condition_id="ca-bc-dave-labour-only-base",
-                    description="The 16% applies ONLY to qualified BC "
-                                "LABOUR expenditure -- a real, exactly-"
-                                "traced-and-reconciled basis derived from "
-                                "this segment's own labour-category "
-                                "AccountAllocation lines, never the "
-                                "segment's total QPE and never generic "
-                                "BC/Canadian labour outside a DAVE-"
-                                "eligible activity.",
+                    description="The 16% applies ONLY to BC labour expenditure DIRECTLY ATTRIBUTABLE to "
+                                "prescribed digital animation or visual effects activities (Income Tax Act (BC) "
+                                "s.81.2(2) 'ALE'; s.82.3 'eligible activities') -- the real, traced basis is this "
+                                "segment's own VFX-category AccountAllocation lines (the same category OCASE "
+                                "reads). A budget with no VFX/animation lines has no DAVE base: the labour of the "
+                                "rest of the production is never DAVE labour. Prescribed digital post-production "
+                                "activities are also eligible but the prescribed list was not read, so post "
+                                "labour is not added to the base.",
                     quote="16% DAVE (animation/VFX/post) credit ... qualified "
                           "BC labour expenditure (gov.bc.ca, via this "
                           "project's own CA-BC profile)",
@@ -1075,10 +1075,7 @@ CA_BC_DAVE_DOCTRINE = register(DoctrineRecord(
                     amount_fact_key="ca_bc_dave_qualified_labour_usd",
                     amount_fact_min=0.01,
                     is_component_basis=True,
-                    component_basis_spend_categories=(
-                        "atl_writer", "atl_director", "atl_producer", "atl_cast",
-                        "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
-                    ),
+                    component_basis_spend_categories=("vfx",),
                 ),
                 RateCondition(
                     condition_id="ca-bc-dave-activity-scope",
@@ -1099,6 +1096,87 @@ CA_BC_DAVE_DOCTRINE = register(DoctrineRecord(
     ),
 ))
 register_rate_rules(rate_rules_for(CA_BC_DAVE_DOCTRINE))
+
+# ── British Columbia: Film and Television Tax Credit ("Film Incentive BC", Income Tax Act (BC) s.80) ──────────────────────────────────────────────────────────────────────────────────────────
+# NA-RECONCILIATION-12 (third pass). The BC DOMESTIC-content credit, read from Part 5 of the Act (bclaws.gov.bc.ca, King's Printer) and the gov.bc.ca film and television tax credit page (2026-10-13).
+# s.80(2)+(4)+(6): 20% + 10% + 5% = 35% of qualified BC labour expenditure; s.80(8): +5% when principal photography begins after December 31, 2024 (= 40%, the page's figure).
+# s.83.1: a corporation may not claim the s.80-82 credits and the production services credits (ss.82.1-82.3) for the same production. Regional (12.5%), distant-location (6%), training and
+# scriptwriting (35%) credits are further statutory credits that are disclosed and not modelled.
+def _bc_film_tv_conditions(prefix: str) -> tuple:
+    return (
+        RateCondition(
+            condition_id=f"{prefix}-labour-only-base",
+            description="The rate applies to qualified BC LABOUR expenditure (Income Tax Act (BC) s.79(1)): the real, traced labour-category lines of this segment, never its total QPE. Qualified BC "
+                        "labour is the lesser of BC labour and 60% x (total production cost - assistance) - LC; the 60% cap is applied to the total worldwide budget as for the CPTC.",
+            quote="20% ... 10% ... 5% of the corporation's qualified BC labour expenditure (Income Tax Act (BC) s.80(2), (4), (6))",
+            kind="project_fact_dependent_eligibility",
+            amount_fact_key="ca_bc_film_tv_qualified_labour_usd",
+            amount_fact_min=0.01,
+            is_component_basis=True,
+            component_basis_spend_categories=("atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"),
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-eligibility-certificate-and-content",
+            description="Needs an eligibility certificate under s.86 for an eligible production (s.80(1)(j)): a Canadian-individual producer, more than 50% of the copyright owned by an eligible production "
+                        "corporation, initial licensing controlled by it, no non-Canadian distribution in Canada within 24 months (s.80(1)(d)-(g)). The budget cannot establish it, so it is a "
+                        "producer-stated fact held at USER_FACT_REQUIRED: absent, the credit is a conditional planning figure, never Recommended and served CONDITIONAL.",
+            quote="eligible production ... eligibility certificate issued under section 86 (Income Tax Act (BC) s.80(1))",
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key="ca_bc_film_tv_tax_credit__cultural_test_confirmed",
+            gates_tier_eligibility=False,
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-eligible-production-corporation",
+            description="The applicant must be an eligible production corporation (s.79(1)): a BC-based Canadian corporation primarily in film or video production; the budget cannot establish it, so it is "
+                        "a producer-stated fact held at USER_FACT_REQUIRED until stated.",
+            quote="eligible production corporation (Income Tax Act (BC) s.79(1), s.80(1)(c.1))",
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key="ca_bc_film_tv_tax_credit__local_entity_or_partner_confirmed",
+            gates_tier_eligibility=False,
+        ),
+    )
+
+
+CA_BC_FILM_TV_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="CA-BC", program_slug="ca_bc_film_tv_tax_credit",
+    program_name="British Columbia Film and Television Tax Credit (Film Incentive BC)",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    is_refundable=True, is_transferable=None, min_spend_usd=None,
+    annual_cap_usd=None, requires_cultural_test=True,
+    citation="Income Tax Act (BC) Part 5 (bclaws.gov.bc.ca, read 2026-10-13): s.80(1) an eligible production (eligible production corporation, Canadian-individual producer, more than 50% copyright, "
+              "eligibility certificate under s.86); s.80(2) 20%, s.80(4) 10%, s.80(6) 5% of the corporation's qualified BC labour expenditure, and s.80(8) a further 5% when principal photography "
+              "begins after December 31, 2024; 'qualified BC labour expenditure' is the lesser of BC labour and 60% x (total production cost - assistance) - LC (s.79(1)); amounts are deemed paid "
+              "under s.84 (refundable); s.83.1: a corporation may not claim the s.80-82 credits and the s.82.1-82.3 production services credits for the same production. gov.bc.ca film and "
+              "television tax credit page (read 2026-10-13): basic 35%, or 40% for principal photography on or after January 1, 2025; regional 12.5%; distant location 6%; film training 30% of trainee "
+              "payments or 3% of qualifying labour; DAVE 16%; scriptwriting 35%. Modelled: the 35% basic credit (40% once the post-2024 photography fact is stated). Regional, distant-location, training "
+              "and scriptwriting credits are not modelled.",
+    source_ref="bc-ita-part-5-s80+gov.bc.ca-film-tv-tax-credit-primary",
+    provenance=SourceProvenance(
+        issuing_authority="Province of British Columbia (Ministry of Finance; King's Printer, Income Tax Act (BC))",
+        source_url="https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv",
+        citation_detail="Income Tax Act (BC) s.80(2), (4), (6), (8); s.79(1) 'qualified BC labour expenditure'; s.83.1",
+        effective_date="2025-01-01",
+        verified_date="2026-10-13",
+        interpretation_note="Statute text and the official page agree (35%; 40% from 2025-01-01). The 35% is guaranteed once the certificate and corporation facts are stated; the 40% needs the "
+                             "post-2024 photography fact. The cap uses the total worldwide budget as the cost base (an approximation net of assistance, as for the CPTC).",
+    ),
+    tiers=(
+        DoctrineRateTier(tier_id="ca-bc-film-tv-basic-35", rate=0.35, is_band_ceiling=False, conditions=_bc_film_tv_conditions("ca-bc-film-tv-35")),
+        DoctrineRateTier(tier_id="ca-bc-film-tv-basic-40", rate=0.40, is_band_ceiling=False,
+                         conditions=_bc_film_tv_conditions("ca-bc-film-tv-40") + (RateCondition(
+                             condition_id="ca-bc-film-tv-photography-after-2024-stated",
+                             description="The extra 5% (s.80(8)) applies when principal photography begins after December 31, 2024; 40% is guaranteed once that is stated.",
+                             quote="principal photography begins after December 31, 2024 ... 5% of the corporation's qualified BC labour expenditure (Income Tax Act (BC) s.80(8))",
+                             kind="project_fact_dependent_eligibility", required_boolean_fact_key="ca_bc_film_tv_photography_after_2024_confirmed"),)),
+        DoctrineRateTier(tier_id="ca-bc-film-tv-basic-40-conditional", rate=0.40, is_band_ceiling=True,
+                         conditions=_bc_film_tv_conditions("ca-bc-film-tv-40c") + (RateCondition(
+                             condition_id="ca-bc-film-tv-photography-after-2024-unstated",
+                             description="PLANNING SCENARIO: 40% is shown above the guaranteed 35% until the post-2024 photography fact is evidenced.",
+                             quote="35%, or 40% for productions starting principal photography on or after January 1, 2025 (gov.bc.ca)",
+                             kind="project_fact_dependent_eligibility", blocked_by_boolean_fact_keys=("ca_bc_film_tv_photography_after_2024_confirmed",)),)),
+    ),
+))
+register_rate_rules(rate_rules_for(CA_BC_FILM_TV_DOCTRINE))
 
 # ── Canada — Ontario: Production Services Tax Credit (OPSTC) ───────────────
 #

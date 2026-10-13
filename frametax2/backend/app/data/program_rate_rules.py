@@ -1676,6 +1676,13 @@ QPE_CAP_RULES: dict[str, QpeCapRule] = {
     # in production_normalization.FX_RATE_SNAPSHOTS — left undisclosed
     # rather than fabricated, same discipline as au_location_offset's AUD
     # minimum spend).
+    "ca_bc_film_tv_tax_credit": QpeCapRule(
+        program_slug="ca_bc_film_tv_tax_credit", cap_pct=0.60, cap_base="total_worldwide_budget",
+        description="Qualified BC labour expenditure is the lesser of BC labour and 60% x (total production cost - assistance) - LC (Income Tax Act (BC) s.79(1)). As for the CPTC, the "
+                     "60% cap is applied to the total worldwide budget (net-of-assistance is an approximation that can only reduce the credit).",
+        quote="PCT x (TPC - TA) - LC where PCT means ... 60% (Income Tax Act (BC) s.79(1), 'qualified BC labour expenditure')",
+        source_ref="bc-ita-part-5-s79",
+    ),
     "cz_film_incentive": QpeCapRule(
         program_slug="cz_film_incentive", cap_pct=0.80, cap_base="total_worldwide_budget",
         description="Eligible Czech spend is capped at 80% of the production's "

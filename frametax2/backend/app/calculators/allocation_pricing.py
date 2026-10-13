@@ -1426,11 +1426,17 @@ def price_segment(
                 ),
             )
 
-    # Codex final-nine remediation: a floorless ceiling must never price
+    # Codex final-nine remediation: a floorless ceiling must never be GUARANTEED
     # when any condition is UNRESOLVED (satisfied is None) OR genuinely
     # FAILED (satisfied is False, e.g. an evidenced numeric fact below its
     # statutory threshold, us_tx_miip's resident-percentage gates) --
     # both are "not confirmed clear", never conflated with pre-satisfied.
+    # NA-RECONCILIATION-12: such a segment is no longer dropped as unpriceable. It is served as POTENTIAL
+    # ONLY: guaranteed floor ZERO, the computed ceiling kept as the maximum, the unresolved award
+    # conditions listed as what must be confirmed (the same CONDITIONAL shape conditional_project_gate_segment
+    # serves). The ceiling is still never read as a rate the production will receive.
+    _potential_only = False
+    _potential_only_note = ""
     if (
         rr is not None
         and not rr.has_guaranteed_floor
@@ -1440,25 +1446,32 @@ def price_segment(
         unresolved_ids = ", ".join(
             e.condition_id for e in rr.conditions_evaluated if e.satisfied is not True
         )
-        return SegmentEconomics(
-            jurisdiction_code=jurisdiction_code, program_slug=slug,
-            claims_incentive=True, allocated_usd=allocated,
-            account_codes=codes, executable=False,
-            qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
-            doctrine=doctrine.value,
-            qpe_cap_applied_usd=qpe_cap_applied,
-            rate_ceiling=rr.modeled_rate, is_band_ceiling=True,
-            statutory_basis=rr.basis,
-            ceiling_requires_confirmation=True,
-            blockers=(
-                f"{jurisdiction_code}/{slug}: the program states only a rate CEILING "
-                f"({rr.modeled_rate:.0%}) with no guaranteed floor tier, and its "
-                f"award condition(s) [{unresolved_ids}] cannot be pre-evaluated. A "
-                "ceiling is a limit on what may be awarded, not evidence that it "
-                "will be. Segment is allocated and disclosed but carries NO "
-                "deterministic incentive value until the awarded rate is confirmed "
-                "for this production.",
-            ),
+        if any(e.satisfied is False for e in rr.conditions_evaluated):
+            # a condition that genuinely FAILED (an evidenced fact below its statutory threshold, an awarded rate above the ceiling) is a refusal, never potential
+            failed_ids = ", ".join(e.condition_id for e in rr.conditions_evaluated if e.satisfied is False)
+            return SegmentEconomics(
+                jurisdiction_code=jurisdiction_code, program_slug=slug,
+                claims_incentive=True, allocated_usd=allocated,
+                account_codes=codes, executable=False,
+                qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
+                doctrine=doctrine.value,
+                qpe_cap_applied_usd=qpe_cap_applied,
+                rate_ceiling=rr.modeled_rate, is_band_ceiling=True,
+                statutory_basis=rr.basis,
+                ceiling_requires_confirmation=False,
+                blockers=(
+                    f"{jurisdiction_code}/{slug}: the program states only a rate CEILING ({rr.modeled_rate:.0%}) with no guaranteed floor tier, and condition(s) [{failed_ids}] "
+                    "genuinely FAILED on the stated facts: no incentive, guaranteed or potential, is served for this production.",
+                ),
+            )
+        _potential_only = True
+        _potential_only_note = (
+            f"{jurisdiction_code}/{slug}: the program states only a rate CEILING "
+            f"({rr.modeled_rate:.0%}) with no guaranteed floor tier, and its "
+            f"award condition(s) [{unresolved_ids}] cannot be pre-evaluated. A "
+            "ceiling is a limit on what may be awarded, not evidence that it "
+            "will be: the guaranteed incentive is ZERO and the ceiling is shown as the "
+            "maximum potential until the award and its rate are confirmed for this production."
         )
 
     if rr is None and slug in _ALTERNATIVE_ELECTION_PROGRAMS and qpe > 0:
@@ -1578,10 +1591,10 @@ def price_segment(
             )
         _basis_upper_bound = qpe
         _basis_bound_label = f"qualifying allocated spend ${qpe:,.2f}"
-        if (slug == "ca_federal_cptc" and qpe_cap_applied > 0 and not rr.qpe_basis_line_components
+        if (slug in ("ca_federal_cptc", "ca_bc_film_tv_tax_credit") and qpe_cap_applied > 0 and not rr.qpe_basis_line_components
                 and isinstance(_basis, (int, float)) and not isinstance(_basis, bool) and _basis > _basis_upper_bound):
-            # CRA RC4164 / Form T1131: the credit base is the LESSER of the labour expenditure and 60% of the production cost net of
-            # assistance. The QPE cap above is that 60% limit, so labour above it is trimmed to it rather than the segment being rejected.
+            # CRA RC4164 / Form T1131 (CPTC) and Income Tax Act (BC) s.79(1) (BC film and television credit): the credit base is the LESSER of the labour expenditure and 60% of the
+            # production cost net of assistance. The QPE cap above is that 60% limit, so labour above it is trimmed to it rather than the segment being rejected.
             _basis = _basis_upper_bound
         if rr.qpe_basis_line_components:
             _traced_lines = [
@@ -1818,7 +1831,7 @@ def price_segment(
         rr.is_band_ceiling
         and any(e.satisfied is not True for e in rr.conditions_evaluated)
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
-    )
+    ) or _potential_only
 
     presumed_facts = presumed_facts_from_resolution(rr)
 
@@ -1947,14 +1960,14 @@ def price_segment(
         claims_incentive=True, allocated_usd=allocated,
         account_codes=codes, executable=True,
         qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
-        rate_floor=effective_rate_floor, rate_ceiling=(ceiling_incentive_usd / qpe if subset_pricing is not None and qpe else rr.modeled_rate),
+        rate_floor=(0.0 if _potential_only else effective_rate_floor), rate_ceiling=(ceiling_incentive_usd / qpe if subset_pricing is not None and qpe else rr.modeled_rate),
         is_band_ceiling=rr.is_band_ceiling, statutory_basis=rr.basis,
-        incentive_floor_usd=floor_incentive_usd,
+        incentive_floor_usd=(0.0 if _potential_only else floor_incentive_usd),
         incentive_ceiling_usd=ceiling_incentive_usd,
         doctrine=doctrine.value,
         register_trace=trace,
-        notes=cap_notes + election_notes + _gateway_notes,
-        ceiling_requires_confirmation=ceiling_requires_confirmation,
+        notes=cap_notes + election_notes + _gateway_notes + ((_potential_only_note,) if _potential_only else ()),
+        ceiling_requires_confirmation=(ceiling_requires_confirmation or _potential_only),
         ceiling_conditions=(
             subset_conditions if subset_pricing is not None else tuple(
                 {

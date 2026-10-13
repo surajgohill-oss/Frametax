@@ -122,7 +122,8 @@ class TestServedDiscoveryMetrics:
         # has more than one accepted program).
         expected_accepted_pairs = {
             (e["jurisdiction_code"], e["program_slug"]) for e in d["examinations"]
-            if e["production_capable"] and e["resolves_for_production"]
+            # unknown capability never rejects (NA-RECONCILIATION-12): a priced program whose jurisdiction has no capability profile is accepted with production fit UNKNOWN
+            if (e["production_capable"] or not e["has_capability_data"]) and e["resolves_for_production"]
         }
         expected_accepted_codes = {code for code, _slug in expected_accepted_pairs}
         assert set(d["metrics"]["accepted_jurisdictions"]) == expected_accepted_codes

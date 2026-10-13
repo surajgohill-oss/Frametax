@@ -32,7 +32,7 @@ def test_the_denominator_is_the_live_registry_and_matches_an_independent_derivat
     u = na.frozen_universe()
     ind = na.independent_denominator()
     assert u["rate_bearing"] == ind["rate_bearing"]
-    assert len(u["rate_bearing"]) == 53          # 45 + the seven coverage-only US programs given rate records in NA-RECONCILIATION-12 (plus the separate Colorado income tax credit; 60 canonical programs)
+    assert len(u["rate_bearing"]) == 54          # 45 + the seven coverage-only US programs given rate records in NA-RECONCILIATION-12 (plus the separate Colorado income tax credit and the BC film and television credit; 60 canonical programs)
     # every coverage-record-derived NA program that is not rate-bearing is a coverage-only identity (the identity layer may add others by jurisdiction code)
     assert set(ind["coverage_only_from_coverage_records"]) <= set(u["coverage_only"])
     assert not set(u["rate_bearing"]) & set(u["coverage_only"])

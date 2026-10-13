@@ -316,7 +316,7 @@ def test_ho006_bc_service_plus_dave():
         _comp("ca_federal_pstc", "CA", 1_000_000.0, line_id="HO006-FED", spend_category="atl_director"),
         _comp("ca_bc_pstc", "CA-BC", 1_800_000.0, line_id="HO006-BC", spend_category="atl_director"),
         _comp("ca_bc_dave", "CA-BC", 300_000.0, component_type="vfx", line_id="HO006-DAVE",
-              spend_category="atl_director"),
+              spend_category="vfx"),
     ]
     res = generate_structural_candidate(components, gross_budget_usd=3_100_000.0)
     assert res.executable is True, res.rejection_reason
@@ -325,7 +325,7 @@ def test_ho006_bc_service_plus_dave():
     bc_only = [
         _comp("ca_bc_pstc", "CA-BC", 1_800_000.0, line_id="HO006B-BC", spend_category="atl_director"),
         _comp("ca_bc_dave", "CA-BC", 300_000.0, component_type="vfx", line_id="HO006B-DAVE",
-              spend_category="atl_director"),
+              spend_category="vfx"),
     ]
     res_bc = generate_structural_candidate(bc_only, gross_budget_usd=2_100_000.0)
     assert res_bc.executable is True, res_bc.rejection_reason
@@ -371,7 +371,7 @@ def test_ho009_nz_principal_plus_bc_dave_plus_ny_post():
     components = [
         _comp("nz_spg_international", "NZ", 5_000_000.0, line_id="HO009-NZ"),
         _comp("ca_bc_dave", "CA-BC", 300_000.0, component_type="vfx", line_id="HO009-BC",
-              spend_category="atl_director"),
+              spend_category="vfx"),
         _comp("us_ny_post_production_credit", "US-NY", 1_500_000.0, component_type="post",
               line_id="HO009-NY"),
     ]

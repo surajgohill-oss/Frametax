@@ -347,19 +347,11 @@ def test_unconfirmed_conditional_ceiling_cannot_become_a_deterministic_rate():
     cannot be pre-evaluated, there is no deterministic rate -- the segment
     must fail closed, allocated and disclosed but carrying no incentive."""
     seg = _probe_segment("cl_corfo_incentive")
-    assert seg.executable is False
-    assert not seg.incentive_floor_usd
-    # ITEM 5: cl_corfo_incentive is ALSO declared AllocationType.COMPETITIVE
-    # ("only a small named set of projects win each call"), so the
-    # NON_GUARANTEED_SELECTIVE gate now fires first. Both reasons are true and
-    # both fail closed; this test's claim is that a non-deterministic rate
-    # never becomes a priced number, so accept either stated reason.
-    assert seg.blockers
-    assert any(
-        token in seg.blockers[0].lower()
-        for token in ("ceiling", "non_guaranteed_selective")
-    ), seg.blockers[0]
-    # Withheld, not erased.
+    # NA-RECONCILIATION-12: served as potential only -- zero guaranteed, the ceiling kept as the maximum, the award condition listed as unresolved.
+    assert seg.incentive_floor_usd == 0.0 and seg.ceiling_requires_confirmation
+    assert seg.incentive_ceiling_usd == pytest.approx(0.40 * 5_000_000.0)
+    assert seg.notes and any("ceiling" in n.lower() for n in seg.notes)
+    # Withheld from the guarantee, never erased.
     assert seg.allocated_usd == pytest.approx(5_000_000.0)
 
 

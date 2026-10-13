@@ -91,3 +91,21 @@ async def test_programs_with_corrected_bases_price_end_to_end_on_all_eligible_co
         entry = next((e for e in await served_structures(db, pid) if e["program_slugs"] == [slug] and e["structure_type"] == "full_relocation"), None)
         assert entry is not None, f"{slug} is discovered as a full-relocation candidate"
         assert entry["confirmed_incentive_floor_usd"] == pytest.approx(round(3_000_000.0 * rate, 2), abs=0.01)
+
+
+@pytest.mark.asyncio
+async def test_missing_cost_benchmarks_leave_mfni_unmodeled_and_never_suppress_the_scenario():
+    """No state or province has a cost benchmark (only US, CA, MX do). Ohio is discovered, priced at 30% x 3,000,000 = 900,000 and served with MFNI UNMODELED; the baseline is not applicable."""
+    from app.services.mfni_status import NOT_APPLICABLE, UNMODELED
+
+    async with isolated_session() as db:
+        pid = await create_synthetic_project(db, lines=LINES, home_code="US-TX")
+        await evaluate_project(db, pid)
+        rows = await served_structures(db, pid)
+        oh = next(e for e in rows if e["program_slugs"] == ["us_oh_motion_picture_tax_credit"] and e["structure_type"] == "full_relocation")
+        assert oh["candidate_status"] == "PRICED" and oh["confirmed_incentive_floor_usd"] == pytest.approx(900_000.0)
+        assert oh["mfni_status"]["status"] == UNMODELED and oh["mfni_status"]["unmodeled_jurisdictions"] == ["US-OH"]
+        assert oh["mfni_status"]["note"] in oh["disclosed_limitations"]
+        assert oh["is_directly_comparable"] is False, "an unmodeled relocation cost is never ranked against the base"
+        base = next(e for e in rows if e.get("is_baseline"))
+        assert base["mfni_status"]["status"] == NOT_APPLICABLE

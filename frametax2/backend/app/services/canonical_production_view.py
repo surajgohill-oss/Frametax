@@ -2095,6 +2095,15 @@ async def build_production_and_structures(
         baseline_entry = next((e for e in structure_entries if e["is_baseline"]), None)
         base_code = baseline_entry["primary_jurisdiction"] if baseline_entry else None
 
+    # MFNI status (NA-RECONCILIATION-12): a missing cost benchmark is disclosed per structure as UNMODELED -- never hidden, never a reason to drop the scenario (services/mfni_status.py).
+    from app.services.mfni_status import UNMODELED as _MFNI_UNMODELED, mfni_disclosure as _mfni_disclosure
+    for _e in structure_entries:
+        _codes = [_e.get("primary_jurisdiction")] + [a.get("jurisdiction_code") for a in (_e.get("component_allocations") or []) if isinstance(a, dict)]
+        _m = _mfni_disclosure(is_baseline=bool(_e.get("is_baseline")), jurisdiction_codes=[c for c in _codes if c], home_code=base_code)
+        _e["mfni_status"] = _m
+        if _m["status"] == _MFNI_UNMODELED and _m["note"] not in (_e.get("disclosed_limitations") or []):
+            _e["disclosed_limitations"] = list(_e.get("disclosed_limitations") or []) + [_m["note"]]
+
     budget_doc = (await session.execute(
         select(BudgetDocument).where(BudgetDocument.project_id == project.id)
         .order_by(BudgetDocument.created_at.desc())

@@ -33,10 +33,11 @@ def test_new_york_independent_guarantees_30_percent():
     assert _price("US-NY", "us_ny_empire_state_independent_film_credit", 1_000_000.0).incentive_floor_usd == pytest.approx(300_000.0)  # Tax Law 24-D(a)(2)(i)
 
 
-@pytest.mark.parametrize("jur,slug", [("US-AR", "us_ar_digital_motion_picture_incentive"), ("US-MT", "us_mt_media_act_tax_credit")])
-def test_discretionary_or_paused_programs_show_ceilings_with_no_guaranteed_value(jur, slug):
+@pytest.mark.parametrize("jur,slug,rate", [("US-AR", "us_ar_digital_motion_picture_incentive", 0.30), ("US-MT", "us_mt_media_act_tax_credit", 0.20), ("US-CO", "us_co_film_income_tax_credit", 0.22)])
+def test_discretionary_or_paused_programs_show_potential_with_a_zero_guaranteed_floor(jur, slug, rate):
     seg = _price(jur, slug, 1_000_000.0)
-    assert not seg.executable and seg.incentive_floor_usd in (None, 0, 0.0)
+    assert seg.executable and seg.incentive_floor_usd == 0.0 and seg.ceiling_requires_confirmation
+    assert seg.incentive_ceiling_usd == pytest.approx(rate * 1_000_000.0)                  # the stated ceiling x 1,000,000, never guaranteed
 
 
 def test_virginia_and_utah_keep_their_thresholds_after_the_official_pages_were_read():

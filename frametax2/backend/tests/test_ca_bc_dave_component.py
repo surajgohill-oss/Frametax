@@ -42,9 +42,11 @@ def test_generic_labor_without_activity_confirmation_never_receives_dave():
 def test_qualified_bc_labour_with_eligible_activity_reaches_component_calculation():
     """Real qualified BC labour lines + evidenced eligible DAVE activity
     fact -- must price 16% of the exact traced labour subtotal."""
+    # ITA (BC) s.81.2(2): the 16% applies to BC labour directly attributable to prescribed digital animation or visual effects activities -- the VFX-category line only;
+    # the 500,000 of ordinary crew labour is not DAVE labour.
     alloc = [
         _alloc("post", "btl_crew_labor", 500_000.0, "labour-1"),
-        _alloc("vfx", "atl_director", 100_000.0, "labour-2"),
+        _alloc("vfx", "vfx", 100_000.0, "labour-2"),
     ]
     result = price_segment(
         jurisdiction_code="CA-BC", program_slug="ca_bc_dave", allocations=alloc,
@@ -53,8 +55,8 @@ def test_qualified_bc_labour_with_eligible_activity_reaches_component_calculatio
         evidenced_requirement_facts=frozenset({"ca_bc_dave_eligible_activity_confirmed"}),
     )
     assert result.executable is True, f"blockers={result.blockers}"
-    # 16% of the exact traced labour subtotal (500,000 + 100,000 = 600,000).
-    assert result.incentive_floor_usd == pytest.approx(96_000.0, abs=0.01)
+    # 16% of the traced VFX labour subtotal (100,000 = 16,000); crew labour adds nothing.
+    assert result.incentive_floor_usd == pytest.approx(16_000.0, abs=0.01)
 
 
 def test_generic_non_labor_bc_spend_never_receives_dave_percentage():

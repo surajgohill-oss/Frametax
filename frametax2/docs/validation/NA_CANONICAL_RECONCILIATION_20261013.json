@@ -4,8 +4,8 @@
   "as_of": "2026-10-13",
   "denominator": {
    "canonical_na_programs": 60,
-   "rate_bearing": 53,
-   "coverage_only": 7,
+   "rate_bearing": 54,
+   "coverage_only": 6,
    "stack_spellings_not_canonical": 4,
    "na_catalog_entries": 82,
    "canonical_identity_layer_total_all_regions": 230
@@ -13,45 +13,44 @@
   "rows": {
    "program_rows": 64,
    "catalog_rows": 82,
-   "proposition_rows": 156,
-   "total": 302
+   "proposition_rows": 160,
+   "total": 306
   },
   "program_class_counts": {
-   "PROJECT_FACT_REQUIRED": 13,
+   "PROJECT_FACT_REQUIRED": 14,
    "OPTIMIZER_CAPABILITY_MISSING": 1,
    "CANONICAL_DATA_MISSING": 15,
    "GENUINE_AUTHORITY_CONFLICT": 4,
    "IMPLEMENTATION_DEFECT": 2,
    "PROVENANCE_INCOMPLETE_EXISTING_RECORD": 1,
    "CANONICAL_AND_CONSUMED": 22,
-   "EXISTS_BUT_DISCONNECTED": 2
+   "EXISTS_BUT_DISCONNECTED": 1
   },
   "program_terminal_counts": {
-   "OPEN_PROJECT_FACT_REQUIRED": 13,
+   "OPEN_PROJECT_FACT_REQUIRED": 14,
    "OPEN_OPTIMIZER_CAPABILITY_MISSING": 1,
    "OPEN_CANONICAL_DATA_MISSING": 15,
    "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN": 6,
    "PRICED_AUTHORITY_DIMENSIONS_OPEN": 21,
    "OPEN_GENUINE_AUTHORITY_CONFLICT": 2,
-   "NOT_PRICED_BY_DESIGN": 1,
-   "OPEN_EXISTS_BUT_DISCONNECTED": 1
+   "NOT_PRICED_BY_DESIGN": 1
   },
   "authority_completeness_counts": {
-   "AUTHORITY_INCOMPLETE": 53
+   "AUTHORITY_INCOMPLETE": 54
   },
   "stack_spelling_class_counts": {
    "CANONICAL_DATA_MISSING": 4
   },
   "catalog_class_counts": {
-   "CANONICAL_DATA_MISSING": 20,
-   "CANONICAL_AND_CONSUMED": 61,
+   "CANONICAL_DATA_MISSING": 19,
+   "CANONICAL_AND_CONSUMED": 62,
    "EXISTS_BUT_DISCONNECTED": 1
   },
   "proposition_class_counts": {
    "IMPLEMENTATION_DEFECT": 18,
-   "PROJECT_FACT_REQUIRED": 44,
+   "PROJECT_FACT_REQUIRED": 47,
    "CANONICAL_DATA_MISSING": 71,
-   "EXISTS_BUT_DISCONNECTED": 13,
+   "EXISTS_BUT_DISCONNECTED": 14,
    "OPTIMIZER_CAPABILITY_MISSING": 1,
    "CANONICAL_AND_CONSUMED": 1,
    "PROVENANCE_INCOMPLETE_EXISTING_RECORD": 2,
@@ -129,7 +128,7 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "allowed=1, conditional=1, spend_reduction=1",
+   "stacking_status": "allowed=2, conditional=1, spend_reduction=1",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
@@ -138,6 +137,32 @@
    "focused_test": "test_ca_bc_dave_component.py, test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_canonical_identity_authority_invariants.py",
    "terminal_disposition": "OPEN_OPTIMIZER_CAPABILITY_MISSING",
    "residual_evidence_needed": "a DAVE dependency model (which BC credit the DAVE claim rides on) and a primary statement or CRA position on DAVE with the CPTC; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
+  },
+  {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "RATE_BEARING",
+   "row_kind": "PROGRAM",
+   "proposition_id": "",
+   "aliases": "proposed_canada_british_columbia_film_incentive_bc_fibc",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "tax_credit",
+   "live_registry_inclusion": "identity, rate-registry, doctrine, requirements, stacking",
+   "authority_disposition": "AUTHORITY_VERIFIED_PRICEABLE / coverage PRICEABLE_VALIDATED",
+   "rate_status": "CONDITIONAL_TIER: floor 0.4, maximum 0.4, min spend None, per-project cap None, annual cap None",
+   "rate_value_basis": "primary-source value",
+   "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap PRESENT; resident/non-resident MISSING; payroll MISSING",
+   "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING",
+   "qualification_status": "PRIMARY_VERIFIED",
+   "stacking_status": "allowed=1, conditional=1, mutually_exclusive=1, spend_reduction=1",
+   "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE 2025-01-01",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
+   "focused_test": "test_na_executable_coverage_matrix.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING; producer statement via POST /projects/{id}/content-gates (program_content_gates); producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
   {
    "canonical_slug": "ca_bc_pstc",
@@ -155,7 +180,7 @@
    "qpe_territorial_status": "QPE PRESENT; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "allowed=2, mutually_exclusive=1, spend_reduction=3",
+   "stacking_status": "allowed=2, mutually_exclusive=2, spend_reduction=3",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE_DATE_NOT_RECORDED",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
@@ -181,7 +206,7 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap PRESENT; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "allowed=1, conditional=1, mutually_exclusive=2, spend_reduction=14",
+   "stacking_status": "allowed=1, conditional=1, mutually_exclusive=2, spend_reduction=15",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE in force (credit rate 25%)",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
@@ -207,7 +232,7 @@
    "qpe_territorial_status": "QPE PARTIAL; territoriality MISSING; min spend MISSING; cap MISSING; resident/non-resident MISSING; payroll MISSING",
    "authority_completeness": "AUTHORITY_INCOMPLETE: unresolved QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING",
    "qualification_status": "PRIMARY_VERIFIED",
-   "stacking_status": "conditional=1, mutually_exclusive=1, spend_reduction=11",
+   "stacking_status": "conditional=2, mutually_exclusive=1, spend_reduction=11",
    "temporal_status": "NO_SUNSET_RECORDED; EFFECTIVE in force (credit rate 16%)",
    "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
@@ -291,7 +316,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "GENUINE_AUTHORITY_CONFLICT: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass); CANONICAL_DATA_MISSING: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -395,7 +420,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view (candidacy blocked: DISPLAY_ONLY_ZERO_GUARANTEED)",
    "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "PROVENANCE_INCOMPLETE_EXISTING_RECORD: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12); CANONICAL_DATA_MISSING: program_requirements.py profile (NA-RECONCILIATION-12)",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -421,7 +446,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_identity_authority_invariants.py, test_si_mx_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_identity_authority_invariants.py, test_na_executable_coverage_matrix.py, test_si_mx_controls.py",
    "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
@@ -447,7 +472,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; primary text on whether the two credits may be claimed together and how each treats the other as assistance; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -577,7 +602,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_GENUINE_AUTHORITY_CONFLICT",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; the Arkansas Code sections and the AEDC rule that fix the add-on combination"
   },
@@ -655,7 +680,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "NO_FOCUSED_TEST_NAMES_THE_SLUG (generic: test_program_pricing_reconciliation)",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -863,7 +888,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
-   "focused_test": "test_canonical_authority_substrate.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canonical_authority_substrate.py, test_na_executable_coverage_matrix.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
@@ -915,7 +940,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING; the Motion Media Tax Credit Program Guidelines PDF and the RSMo section"
   },
@@ -967,7 +992,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING; the Department of Revenue cap schedule, MCA 15-31-1004/1005/1010 and the ARM thresholds"
   },
@@ -993,7 +1018,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
-   "focused_test": "test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_na_executable_coverage_matrix.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
@@ -1019,7 +1044,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "N.J.S.A. 54:10A-5.39 and the NJEDA program rules; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -1097,7 +1122,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "Tax Law 24, 24-D(e) allocation text from nysenate.gov and the ESD Part 172 final regulation; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING; primary text on whether the two credits may be claimed together and how each treats the other as assistance"
   },
@@ -1149,7 +1174,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "capability facts for each state from a production-services source (not an incentive source) and a cost benchmark, then the profile entries; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -1305,7 +1330,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
-   "focused_test": "test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "PRICED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -1461,7 +1486,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "W. Va. Code 11-13X text and the legislative rule; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -1568,32 +1593,6 @@
    "focused_test": "test_full_inventory_optimizer.py, test_fund_economics_model.py, test_generate_scenarios.py, test_knowledge_completion.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "primary rate, base, cap, threshold and timing authority; a RateRule promotes it (a new batch, not a repair)"
-  },
-  {
-   "canonical_slug": "proposed_canada_british_columbia_film_incentive_bc_fibc",
-   "row_layer": "COVERAGE_ONLY",
-   "row_kind": "PROGRAM",
-   "proposition_id": "",
-   "aliases": "",
-   "jurisdiction": "CA",
-   "program_name": "Film Incentive BC (FIBC)",
-   "program_type": "tax_credit",
-   "live_registry_inclusion": "identity, coverage",
-   "authority_disposition": "coverage CANONICAL_DATA_HANDOFF_DEFECT",
-   "rate_status": "no RateRule: not priced (Canonical payload supplied literal economics but no runtime identity binding, and the only same-jurisdiction runtime pro)",
-   "rate_value_basis": "not established",
-   "qpe_territorial_status": "not applicable (not priced)",
-   "authority_completeness": "AUTHORITY_INCOMPLETE",
-   "qualification_status": "NO_PROFILE",
-   "stacking_status": "no named pair rule",
-   "temporal_status": "NOT_APPLICABLE (not priced)",
-   "canonical_owner": "canonical_program_identity + authority_coverage_registry",
-   "served_consumer": "canonical_production_view: visible with its coverage reason; candidacy blocked",
-   "defect_classification": "EXISTS_BUT_DISCONNECTED",
-   "repair_commit_or_file": "",
-   "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "OPEN_EXISTS_BUT_DISCONNECTED",
-   "residual_evidence_needed": "a canonical identity binding (the only same-jurisdiction runtime program is a demonstrably different statutory program)"
   },
   {
    "canonical_slug": "us_itvs_fund",
@@ -1882,7 +1881,7 @@
    "residual_evidence_needed": ""
   },
   {
-   "canonical_slug": "proposed_canada_british_columbia_film_incentive_bc_fibc",
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
    "row_layer": "CATALOG_ENTRY",
    "row_kind": "CATALOG",
    "proposition_id": "LINK",
@@ -1891,7 +1890,7 @@
    "program_name": "Film Incentive BC (FIBC)",
    "program_type": "tax_credit",
    "live_registry_inclusion": "global_inventory catalog, identity",
-   "authority_disposition": "exact normalized program-name match",
+   "authority_disposition": "NA-RECONCILIATION-12: Film Incentive BC is the BC film and television tax credit (ITA (BC) s.80), now rate-bearing",
    "rate_status": "catalog base None max None (DISCOVERY); not an economic source",
    "rate_value_basis": "not established",
    "qpe_territorial_status": "",
@@ -1901,11 +1900,11 @@
    "temporal_status": "",
    "canonical_owner": "global_inventory (discovery catalog; carries no program_slug)",
    "served_consumer": "legacy catalog/discovery path only; the canonical path reads the linked identity",
-   "defect_classification": "CANONICAL_DATA_MISSING",
+   "defect_classification": "CANONICAL_AND_CONSUMED",
    "repair_commit_or_file": "",
    "focused_test": "tests/test_na_canonical_reconciliation.py",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "the linked canonical program carries no defensible rate or award basis"
+   "terminal_disposition": "LINKED_TO_CANONICAL_PROGRAM",
+   "residual_evidence_needed": ""
   },
   {
    "canonical_slug": "ca_federal_pstc",
@@ -4092,6 +4091,136 @@
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
   {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "REPAIRED:program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "'Film Incentive BC' was a coverage-only handoff defect (mis-typed as a direct grant); it is the BC film and television tax credit (ITA (BC) s.80), now rate-bearing with its pairs (mutually exclusive with the BC PSTC by s.83.1, allowed with DAVE, spend_reduction with the CPTC, conditional with the federal PSTC)",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "EXISTS_BUT_DISCONNECTED",
+   "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
+   "focused_test": "test_na_executable_coverage_matrix.py",
+   "terminal_disposition": "REPAIRED",
+   "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "FACT:ca_bc_film_tv_photography_after_2024_confirmed",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "project fact 'ca_bc_film_tv_photography_after_2024_confirmed' (evidenced; confirmed treatment); unstated = Unknown",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "",
+   "focused_test": "test_na_executable_coverage_matrix.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
+  },
+  {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "FACT:ca_bc_film_tv_tax_credit__cultural_test_confirmed",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "project fact 'ca_bc_film_tv_tax_credit__cultural_test_confirmed' (evidenced; confirmed treatment); unstated = Unknown",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "producer-facts: POST /projects/{id}/content-gates (program_content_gates) | absence = Unknown; refused is stored false = not evidenced | fingerprint evidenced_program_facts | UI EXISTS: Inspector content-gates control (frontend/src/shell/Inspector.jsx, api.js)",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "",
+   "focused_test": "test_na_executable_coverage_matrix.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "producer statement via POST /projects/{id}/content-gates (program_content_gates)"
+  },
+  {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "FACT:ca_bc_film_tv_tax_credit__local_entity_or_partner_confirmed",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "project fact 'ca_bc_film_tv_tax_credit__local_entity_or_partner_confirmed' (evidenced; confirmed treatment); unstated = Unknown",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "producer-facts: POST /projects/{id}/content-gates (program_content_gates) | absence = Unknown; refused is stored false = not evidenced | fingerprint evidenced_program_facts | UI EXISTS: Inspector content-gates control (frontend/src/shell/Inspector.jsx, api.js)",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "",
+   "focused_test": "test_na_executable_coverage_matrix.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "producer statement via POST /projects/{id}/content-gates (program_content_gates)"
+  },
+  {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "AUTHORITY-DIMENSIONS",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "the publication contract's material dimensions not yet resolved by a researcher (PARTIAL/MISSING): RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING. The program still prices through the canonical doctrine default; this is a knowledge-completeness gap, not a pricing block",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "",
+   "defect_classification": "CANONICAL_DATA_MISSING",
+   "repair_commit_or_file": "",
+   "focused_test": "test_na_executable_coverage_matrix.py",
+   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
+   "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
+  },
+  {
    "canonical_slug": "ca_bc_pstc",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
@@ -4815,7 +4944,7 @@
    "served_consumer": "",
    "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -4841,7 +4970,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -4867,7 +4996,7 @@
    "served_consumer": "",
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -4893,7 +5022,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -5179,7 +5308,7 @@
    "served_consumer": "",
    "defect_classification": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -5205,7 +5334,7 @@
    "served_consumer": "",
    "defect_classification": "IMPLEMENTATION_DEFECT",
    "repair_commit_or_file": "stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12)",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -5231,7 +5360,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "program_requirements.py profile (NA-RECONCILIATION-12)",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -5257,7 +5386,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_unruled_stack_pairs_controls.py",
+   "focused_test": "test_generic_structural_discovery_final_correction.py, test_jurisdiction_disposition.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -5283,7 +5412,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_identity_authority_invariants.py, test_si_mx_controls.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_canonical_identity_authority_invariants.py, test_na_executable_coverage_matrix.py, test_si_mx_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, MINIMUM_SPEND, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
@@ -5309,7 +5438,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -5335,7 +5464,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -5361,7 +5490,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -5387,7 +5516,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -5413,7 +5542,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -5439,7 +5568,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
   },
@@ -5465,7 +5594,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -5907,7 +6036,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -5933,7 +6062,7 @@
    "served_consumer": "",
    "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_GENUINE_AUTHORITY_CONFLICT",
    "residual_evidence_needed": "the Arkansas Code sections and the AEDC rule that fix the add-on combination"
   },
@@ -5959,7 +6088,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -6219,7 +6348,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "NO_FOCUSED_TEST_NAMES_THE_SLUG (generic: test_program_pricing_reconciliation)",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -6245,7 +6374,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "NO_FOCUSED_TEST_NAMES_THE_SLUG (generic: test_program_pricing_reconciliation)",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -6479,7 +6608,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_canonical_authority_substrate.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canonical_authority_substrate.py, test_na_executable_coverage_matrix.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT"
   },
@@ -6531,7 +6660,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -6557,7 +6686,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "the Motion Media Tax Credit Program Guidelines PDF and the RSMo section"
   },
@@ -6583,7 +6712,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -6635,7 +6764,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -6661,7 +6790,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "the Department of Revenue cap schedule, MCA 15-31-1004/1005/1010 and the ARM thresholds"
   },
@@ -6687,7 +6816,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
@@ -6713,7 +6842,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_canonical_authority_substrate.py, test_canonical_economics_integrity_repair.py, test_na_executable_coverage_matrix.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },
@@ -6739,7 +6868,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -6765,7 +6894,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -6791,7 +6920,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "N.J.S.A. 54:10A-5.39 and the NJEDA program rules"
   },
@@ -6817,7 +6946,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -6895,7 +7024,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -6921,7 +7050,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
   },
@@ -6947,7 +7076,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "primary text on whether the two credits may be claimed together and how each treats the other as assistance"
   },
@@ -6973,7 +7102,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "Tax Law 24, 24-D(e) allocation text from nysenate.gov and the ESD Part 172 final regulation"
   },
@@ -6999,7 +7128,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_canonical_reconciliation.py, test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -7155,7 +7284,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -7181,7 +7310,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "capability facts for each state from a production-services source (not an incentive source) and a cost benchmark, then the profile entries"
   },
@@ -7207,7 +7336,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_synthetic_pipeline_controls.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -7493,7 +7622,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_us_ca_mx_scope_integrity_controls.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_us_ca_mx_scope_integrity_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -7779,7 +7908,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -7805,7 +7934,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -7831,7 +7960,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "W. Va. Code 11-13X text and the legislative rule"
   },
@@ -7857,7 +7986,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_us_rate_record_controls.py, test_production_validation_harness.py",
+   "focused_test": "test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py, test_production_validation_harness.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, CAP, ELIGIBLE_PRODUCTION_TYPE, CULTURAL_OR_CONTENT_TEST, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, APPLICATION_TIMING"
   },
@@ -7912,32 +8041,6 @@
    "focused_test": "",
    "terminal_disposition": "OPEN_STALE_OUTPUT_REQUIRES_AUTHORIZED_REEVALUATION",
    "residual_evidence_needed": "explicit authorization per production, then restart, migrations on the acceptance database and bounded regeneration"
-  },
-  {
-   "canonical_slug": "proposed_canada_british_columbia_film_incentive_bc_fibc",
-   "row_layer": "PROPOSITION",
-   "row_kind": "PROPOSITION",
-   "proposition_id": "RESIDUAL:BC-FIBC-IS-THE-BC-FILM-TV-CREDIT",
-   "aliases": "",
-   "jurisdiction": "",
-   "program_name": "",
-   "program_type": "",
-   "live_registry_inclusion": "",
-   "authority_disposition": "",
-   "rate_status": "",
-   "rate_value_basis": "",
-   "qpe_territorial_status": "",
-   "authority_completeness": "",
-   "qualification_status": "'Film Incentive BC' is Creative BC's name for the BC film and television tax credit (Income Tax Act (BC) Part 5): basic 35%, 40% for photography from 2025-01-01, regional 12.5%, distant 6%, DAVE 16%, scriptwriting 35%; the manifest called it a direct grant, and it is a domestic-content credit that the production services credit replaces for productions that do not meet its requirements",
-   "stacking_status": "",
-   "temporal_status": "",
-   "canonical_owner": "PROJECT_RULES residual inventory (frozen)",
-   "served_consumer": "evidence persisted in the manifest entry; no RateRule yet; no pair rules, so a structure containing it would block; BC DAVE rides on this credit (DAVE-CPTC)",
-   "defect_classification": "CANONICAL_DATA_MISSING",
-   "repair_commit_or_file": "",
-   "focused_test": "",
-   "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "ITA (BC) s.80 and the Film and Television Tax Credit Regulation (labour base, Canadian-content certification), then rate record plus pairs with the PSTC, DAVE and CPTC"
   }
  ]
 }
