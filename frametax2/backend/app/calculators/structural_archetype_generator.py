@@ -288,7 +288,8 @@ def check_all_pairs(components: list["StructuralComponent"]) -> list[PairwiseChe
 def _price_component(component: StructuralComponent, gross_budget_usd: float | None = None,
                      contingency_expected_utilization_pct: float | None = None,
                      worldwide_category_spend_usd: dict[str, float] | None = None,
-                     contingency_allocations: dict | None = None) -> SegmentEconomics:
+                     contingency_allocations: dict | None = None,
+                     undeployed_contingency_usd: float = 0.0) -> SegmentEconomics:
     # Locked Structural Policy point 10 (application/preapproval/annual
     # allocation/first-come are disclosures, not discretionary vetoes):
     # reuses the SAME established, already-accepted producer-controlled
@@ -308,6 +309,7 @@ def _price_component(component: StructuralComponent, gross_budget_usd: float | N
         ),
         amount_facts=component.amount_facts,
         gross_budget_usd=gross_budget_usd,
+        undeployed_contingency_usd=undeployed_contingency_usd,
         contingency_expected_utilization_pct=contingency_expected_utilization_pct,
         worldwide_category_spend_usd=worldwide_category_spend_usd,
         contingency_allocations=contingency_allocations,
@@ -431,7 +433,7 @@ def _generate_structural_candidate_uncached(
     comp_econ: list[ComponentEconomics] = []
     selective_zero_notes: list[str] = []
     for c in components:
-        seg = _price_component_cached(c, _component_cache, gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations)
+        seg = _price_component_cached(c, _component_cache, gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations, planned_cost_reduction_usd)
         if id(c) in _conditional_gates and (seg.executable or _conditional_gates[id(c)].scope == "non_payroll"):
             from dataclasses import replace as _replace
             from app.calculators.allocation_pricing import apply_project_gate, non_payroll_relabelled
@@ -439,7 +441,7 @@ def _generate_structural_candidate_uncached(
             def _payroll_only(c=c):
                 allocs, mapping = non_payroll_relabelled(c.allocations, c.spend_category_by_code)
                 return _price_component_cached(_replace(c, allocations=tuple(allocs), spend_category_by_code=mapping), _component_cache,
-                                               gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations)
+                                               gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations, planned_cost_reduction_usd)
             seg = apply_project_gate(seg, _conditional_gates[id(c)], _payroll_only)
         if not seg.executable:
             if c.component_type in ("selective_upside", "fund_overlay"):
@@ -549,9 +551,10 @@ def _generate_structural_candidate_uncached(
                 if _assist <= 0:
                     continue
                 _stated = float((_ce.component.amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)
-                _adjusted, _cap, _qualified = cptc_net_cost_adjusted(_original, _rate, _basis, gross_budget_usd, _stated, _assist)
+                _cptc_cost = gross_budget_usd - planned_cost_reduction_usd
+                _adjusted, _cap, _qualified = cptc_net_cost_adjusted(_original, _rate, _basis, _cptc_cost, _stated, _assist)
                 _desc = (f"Assistance ${_assist:,.0f} reduces the production cost that sets the CPTC cap (CRA RC4164 T1131 lines 421-430): qualified labour = "
-                         f"min(labour ${_basis:,.0f}, 60% x (cost ${gross_budget_usd:,.0f} - assistance ${_stated + _assist:,.0f}) = ${_cap:,.0f}) = ${_qualified:,.0f}; "
+                         f"min(labour ${_basis:,.0f}, 60% x (cost ${_cptc_cost:,.0f} - assistance ${_stated + _assist:,.0f}) = ${_cap:,.0f}) = ${_qualified:,.0f}; "
                          "labour itself is not reduced.")
                 _partner = sorted(_reducers)[0]
             elif _is_slug(_slug, PSTC_SLUG):
@@ -675,6 +678,7 @@ def _price_component_cached(
     gross_budget_usd: float | None = None, contingency_expected_utilization_pct: float | None = None,
     worldwide_category_spend_usd: dict[str, float] | None = None,
     contingency_allocations: dict | None = None,
+    undeployed_contingency_usd: float = 0.0,
 ) -> SegmentEconomics:
     """Per-component pricing memo (LLS anchor-cardinality repair, 2026-10-01).
     price_segment's result depends only on (jurisdiction, program, the exact
@@ -685,13 +689,13 @@ def _price_component_cached(
     this cache. A hit returns the identical (frozen) SegmentEconomics a fresh
     call would."""
     if cache is None:
-        return _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations)
+        return _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations, undeployed_contingency_usd)
     key = (component.jurisdiction_code, component.program_slug, component.production_type,
-           component.pricing_key, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None,
+           component.pricing_key, gross_budget_usd, undeployed_contingency_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None,
            repr(sorted((k, repr(v)) for k, v in (contingency_allocations or {}).items())))
     hit = cache.get(key)
     if hit is None:
-        hit = _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations)
+        hit = _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations, undeployed_contingency_usd)
         cache[key] = hit
     return hit
 

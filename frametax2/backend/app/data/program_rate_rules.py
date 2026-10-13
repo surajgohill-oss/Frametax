@@ -1921,6 +1921,13 @@ class IncentiveValueCapRule:
 
 
 INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
+    "ca_nl_all_spend_credit": IncentiveValueCapRule(
+        program_slug="ca_nl_all_spend_credit", cap_currency="CAD", cap_native_amount=20_000_000.0,
+        description="Maximum credit per eligible production per taxation year: CAD 20,000,000 (Regulation 31/23 s.2(c)(ii)), applied to the calculated credit at the dated CAD snapshot.",
+        quote="the all-spend film and video production tax credit means the amount that is the lesser of (i) the amount determined by the formula A x (B - C) ... and (ii) $20 million "
+              "(Newfoundland and Labrador Regulation 31/23 s.2(c), in force April 7, 2022; Department of Finance: 'to a maximum tax credit of $20 million annually per project')",
+        source_ref="assembly.nl.ca-rc230031-s2c",
+    ),
     "gr_cash_rebate": IncentiveValueCapRule(
         program_slug="gr_cash_rebate", cap_currency="EUR", cap_native_amount=8_000_000.0,
         description="Ordinary per-work grant cap EUR 8m; EUR 10m only on evidenced strategic-project ministerial approval.",

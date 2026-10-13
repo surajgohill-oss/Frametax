@@ -1174,15 +1174,16 @@ CA_ON_DOCTRINE = register(DoctrineRecord(
                 ),
                 RateCondition(
                     condition_id="ca-on-labour-ratio-gate",
-                    description="Ontario labour must be at least 25% of "
-                                "QPE claimed — this is a labour-vs-QPE split, "
-                                "NOT a QPE-vs-total-budget ratio; this engine "
-                                "has no labour/non-labour QPE split modeled, "
-                                "so it cannot pre-evaluate this condition.",
+                    description="Ontario labour expenditures must be at least 25% of the qualifying production expenditures claimed (Ontario Creates OPSTC Guidelines). The "
+                                "budget carries no Ontario-resident labour split, so a failure cannot be proven from it (and a check on the budget would falsely fail "
+                                "productions whose labour is simply not classified). Authority is resolved; the missing item is a producer fact: absent, the OPSTC prices "
+                                "as a conditional planning figure, is held at USER_FACT_REQUIRED (never Recommended) and its economics are served as CONDITIONAL.",
                     quote="Ontario labour expenditures ... must be at "
                           "least 25% of the qualifying production "
                           "expenditures claimed (ontariocreates.ca)",
-                    kind="unmodeled_spend_split_ratio",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="on_opstc_ontario_labour_25pct_confirmed",
+                    gates_tier_eligibility=False,
                 ),
             ),
         ),
@@ -1410,6 +1411,8 @@ ON_OCASE_DOCTRINE = register(DoctrineRecord(
                                 "prior year); eligible computer animation or special effects activities carried out in Ontario. Not stated for this production, so disclosed, not assumed.",
                     quote="incurs an amount that exceeds $25,000 in Ontario labour expenditures (ontariocreates.ca/tax-incentives/ocase)",
                     kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="on_ocase_claim_conditions_met",
+                    gates_tier_eligibility=False,
                 ),
             ),
         ),
@@ -6081,13 +6084,23 @@ CA_CPTC_DOCTRINE = register(DoctrineRecord(
                 ),
                 RateCondition(
                     condition_id="ca-cptc-content-certification-required",
-                    description="Requires CAVCO Canadian-content "
-                                "certification (points test) -- a project "
-                                "fact not yet modeled generically; never "
-                                "auto-applied.",
-                    quote="Requires CAVCO Canadian-content certification "
-                          "(points-test based) (canada.ca)",
+                    description="Requires a CAVCO Canadian-content certificate (points test; RC4164 Part 3 and the CAVCO application guidelines). The budget cannot establish it, so it "
+                                "is a producer-stated fact: absent, the CPTC is priced as a conditional planning figure, held at USER_FACT_REQUIRED (never Recommended) and "
+                                "its economics are served as CONDITIONAL, not CONFIRMED.",
+                    quote="Requires CAVCO Canadian-content certification (points-test based) (canada.ca)",
                     kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ca_cptc_cavco_certified",
+                    gates_tier_eligibility=False,
+                ),
+                RateCondition(
+                    condition_id="ca-cptc-canadian-controlled-corporation",
+                    description="The applicant must be a qualified corporation: a taxable Canadian corporation that is Canadian-controlled and carries on the production business "
+                                "through a permanent establishment in Canada (RC4164 Part 3). A foreign-controlled production company does not qualify; the budget cannot "
+                                "establish control, so it is a producer-stated fact held at USER_FACT_REQUIRED until stated.",
+                    quote="qualified corporation ... Canadian-controlled ... permanent establishment in Canada (RC4164 Part 3)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ca_cptc_canadian_controlled_applicant",
+                    gates_tier_eligibility=False,
                 ),
             ),
         ),
@@ -6832,13 +6845,19 @@ US_CO_DOCTRINE = register(DoctrineRecord(
               "total amount of the production company's qualified local expenditures if the total of such expenditures equals or exceeds one hundred thousand dollars' "
               "(originating company) / 'one million dollars' (company that does not originate production activities in Colorado); 'at least fifty percent Colorado residents' "
               "workforce; the incentive is limited to the amount appropriated to the office for the fiscal year.",
-    source_ref="content.leg.colorado.gov-2022a_sl_355+colorado.public.law-crs_24-48.5-116(mirror, secondary)",
+    source_ref="content.leg.colorado.gov-crs2024-title-24(official printout)+2022a_sl_355+2023 HB23-1275 signed act",
     provenance=SourceProvenance(
-        issuing_authority="Colorado General Assembly (Colorado Revised Statutes 24-48.5-116, Colorado Session Laws 2022 chapter 355)",
-        source_url="https://content.leg.colorado.gov/sites/default/files/documents/2022A/bills/sl/2022a_sl_355.pdf",
-        citation_detail="C.R.S. 24-48.5-116(1)(a), (1)(b)(I)-(II), (1.5); session law text pp. 2540-2541 (the 'twenty percent' and 'one million dollars' passages)",
-        effective_date="statute text as amended 2022; applicable to incentives on or after July 1, 2012 (C.R.S. mirror: not before 2024-01-01 gap year for the separate tax credit)",
-        verified_date="2026-10-12",
+        issuing_authority="Colorado General Assembly (Colorado Revised Statutes 24-48.5-116 and 24-48.5-114, official 2024 printout; Colorado Session Laws 2022 chapter 355; HB 23-1275, Session Laws 2023 chapter 289)",
+        source_url="https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-24.pdf",
+        citation_detail="C.R.S. 24-48.5-116(1) intro ('on or after July 1, 2012, but before January 1, 2024, and on or after January 1, 2025, any production company employing a workforce for any "
+                         "in-state production activities made up of at least fifty percent Colorado residents'), (1)(a), (1)(b)(I)-(II), (1.5), (2)(a) (apply 'prior to beginning production "
+                         "activities in the state'), (2)(c) (Colorado-licensed CPA review performed in Colorado); 24-48.5-114(7) 'Qualified local expenditure' = 'a payment made by a production "
+                         "company operating in Colorado to a person or business in Colorado in connection with production activities in Colorado', wages counted up to one million dollars per "
+                         "employee or contractor (all Colorado income taxes withheld; excess excluded) and, for income tax years beginning on or after 2024-01-01, up to one million dollars per "
+                         "calendar year per personal service corporation (information return under 39-22-604(21)); session law text pp. 2540-2541 for the 2022 amendment",
+        effective_date="Incentive available on or after July 1, 2012 but before January 1, 2024, and on or after January 1, 2025 (no incentive for production in calendar year 2024); "
+                       "HB 23-1275 effective August 7, 2023 (definition and withholding changes for income tax years beginning on or after January 1, 2024)",
+        verified_date="2026-10-13",
         interpretation_note="A production company relocating to Colorado is treated as one that does not originate production activities in Colorado (the originating test needs twelve "
                             "months of Colorado production activity). The executive-director discretion to exceed 20% is not modeled. Incentives are limited to the amount appropriated "
                             "to the office, so award is not guaranteed (preapproval and contract required before production activities).",
@@ -6850,8 +6869,10 @@ US_CO_DOCTRINE = register(DoctrineRecord(
                                              "state, wages with Colorado income tax withheld, and a Colorado-performed CPA review (C.R.S. 24-48.5-116(2)); the incentive is also limited "
                                              "to the office's appropriation. Not stated for this production, so disclosed, not assumed satisfied.",
                                  quote="employing a workforce for any in-state production activities made up of at least fifty percent Colorado residents "
-                                       "(C.R.S. 24-48.5-116, Session Laws 2022 ch. 355)",
-                                 kind="project_fact_dependent_eligibility"),)),),
+                                       "(C.R.S. 24-48.5-116(1), official 2024 printout)",
+                                 kind="project_fact_dependent_eligibility",
+                                 required_boolean_fact_key="us_co_workforce_and_preapproval_met",
+                                 gates_tier_eligibility=False),)),),
 ))
 register_rate_rules(rate_rules_for(US_CO_DOCTRINE))
 
@@ -7112,6 +7133,22 @@ CA_MB_DOCTRINE = register(DoctrineRecord(
               "45% is the cost-of-salaries credit on eligible Manitoba LABOUR; bonuses +10% (third film in two years), +5% (Manitoba co-producer), "
               "+5% (at least 50% of production days 35 km or more from Winnipeg centre) bring it to 65% of that labour.",
     source_ref="thereactionlab.com+kpmg-manitoba-2026-budget+mbfilmmusic.ca+manitoba.ca-finance",
+    provenance=SourceProvenance(
+        issuing_authority="Manitoba Finance (Government of Manitoba), with Manitoba Film & Music as certifying body; The Income Tax Act (Manitoba) s.7.5",
+        source_url="https://www.gov.mb.ca/finance/business/ccredits.html",
+        citation_detail="Manitoba Finance corporate tax credits page, Film and Video Production Tax Credit, read 2026-10-13: 'The basic rate of the credit has been 45%'; refundable credit 'based on "
+                         "eligible salaries paid to Manitoba residents and qualifying non-resident employees'; companies may elect 'a 30% tax credit based on production costs incurred and paid' "
+                         "(accommodation up to $250 per night per unit); +10% frequent-filming bonus (third qualifying production in two years), +5% Manitoba producer bonus, +5% rural and northern "
+                         "bonus, 'a maximum 65% credit on eligible salaries'; non-resident salary 'cannot exceed 30% of eligible salaries paid to Manitoba residents' (10% if one resident is trained); "
+                         "the applicant must be 'an eligible corporation' certified by Manitoba Film and Music. The page cites no statute or section number; the eligible-corporation test (at least "
+                         "25% of T4 salaries to eligible Manitoba work) is The Income Tax Act (Manitoba) s.7.5(1) per Manitoba Film & Music TC-2 guidelines, Revised June 2024, Section C (read 2026-10-12).",
+        effective_date="in force (45% basic rate; the page states no enactment or amendment date)",
+        verified_date="2026-10-13",
+        interpretation_note="Replaces the secondary-only citation (thereactionlab.com, KPMG budget summary) as the structured authority; those remain locating aids only. The page does not "
+                             "state how the credit interacts with the federal credits: that is read from Manitoba Film & Music TC-2 (compatible with, and not reduced by, the federal credits) and "
+                             "CRA RC4164/RC4385 (provincial credit is assistance), recorded in stacking rules 1.7.0 and 1.8.0. The labour share of the cost-of-production credit that nets the federal "
+                             "PSTC is an apportionment assumption (rate x labour), disclosed with the whole-credit lower bound on every affected result.",
+    ),
     tiers=(DoctrineRateTier(
         tier_id="ca-mb-base-45", rate=0.45, is_band_ceiling=False,
         conditions=(
@@ -8349,6 +8386,13 @@ register_rate_rules(rate_rules_for(US_MS_DOCTRINE))
 # statutes). 41-1517: preapproval and postapproval by the Arizona Commerce Authority with an Arizona CPA audited statement; annual caps USD 75M (2023), 100M (2024), 125M (2025 and later), up
 # to USD 25M for practical locations; the company must be primarily a motion picture producer with a physical business office in Arizona. The earlier catalog band (15% base, 20% ceiling) is the
 # 15% tier plus the 2.5% facility and 2.5% tenant add-ons; the resident-labor add-on applies to labor costs only and is not in the band.
+_AZ_ADDON_CONDITION = RateCondition(
+                                 condition_id="us-az-facility-tenant-addons",
+                                 description="+2.5% for a qualified production facility (or practical location with Arizona post) and +2.5% with a long-term tenant (A.R.S. 43-1165(A)(3)-(4)); "
+                                             "not pre-evaluable without location and facility facts. A separate +2.5% applies to Arizona-resident production labor costs only.",
+                                 quote="An additional two and one-half percent of the motion picture production company's qualified production costs (A.R.S. 43-1165(A)(3), (A)(4))",
+                                 kind="discretionary_band")
+
 US_AZ_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-AZ", program_slug="us_az_motion_picture_production",
     program_name="Arizona Motion Picture Production Program",
@@ -8379,18 +8423,15 @@ US_AZ_DOCTRINE = register(DoctrineRecord(
                                              "pre-production, post-production and editing; credits are issued in order of complete application within the annual cap. Not stated for this "
                                              "production, so disclosed, not assumed satisfied.",
                                  quote="Receive preapproval and postapproval from the Arizona commerce authority pursuant to section 41-1517 (A.R.S. 43-1165(D)(4))",
-                                 kind="project_fact_dependent_eligibility"),)),
+                                 kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="us_az_eligibility_conditions_met",
+                    gates_tier_eligibility=False),)),
            DoctrineRateTier(tier_id="us-az-base-17_5", rate=0.175, is_band_ceiling=False, min_qpe_usd=10_000_000.01),
            DoctrineRateTier(tier_id="us-az-base-20", rate=0.20, is_band_ceiling=False, min_qpe_usd=35_000_000.01),
            DoctrineRateTier(tier_id="us-az-ceiling-20", rate=0.20, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="us-az-facility-tenant-addons",
-                                 description="+2.5% for a qualified production facility (or practical location with Arizona post) and +2.5% with a long-term tenant (A.R.S. 43-1165(A)(3)-(4)); "
-                                             "not pre-evaluable without location and facility facts. A separate +2.5% applies to Arizona-resident production labor costs only.",
-                                 quote="An additional two and one-half percent of the motion picture production company's qualified production costs (A.R.S. 43-1165(A)(3), (A)(4))",
-                                 kind="discretionary_band"),)),
-           DoctrineRateTier(tier_id="us-az-ceiling-22_5", rate=0.225, is_band_ceiling=True, min_qpe_usd=10_000_000.01),
-           DoctrineRateTier(tier_id="us-az-ceiling-25", rate=0.25, is_band_ceiling=True, min_qpe_usd=35_000_000.01),),
+                             conditions=(_AZ_ADDON_CONDITION,)),
+           DoctrineRateTier(tier_id="us-az-ceiling-22_5", rate=0.225, is_band_ceiling=True, min_qpe_usd=10_000_000.01, conditions=(_AZ_ADDON_CONDITION,)),
+           DoctrineRateTier(tier_id="us-az-ceiling-25", rate=0.25, is_band_ceiling=True, min_qpe_usd=35_000_000.01, conditions=(_AZ_ADDON_CONDITION,)),),
 ))
 register_rate_rules(rate_rules_for(US_AZ_DOCTRINE))
 
@@ -8494,7 +8535,7 @@ CA_NL_DOCTRINE = register(DoctrineRecord(
     # from gov.nl.ca on re-fetch. ca_nl_production_fund (the final-19
     # canonical_program_id under research/committee review) is a DUPLICATE_
     # ALIAS of this exact program -- see CANONICAL_RUNTIME_SLUG_BINDINGS.
-    annual_cap_usd=20_000_000.0,  # CAD $20M per-production annually, USD~=CAD par disclosed below
+    annual_cap_usd=None,  # the CAD 20,000,000 per-production limit (Regulation 31/23 s.2(c)(ii)) is the native-currency IncentiveValueCapRule in program_rate_rules.py, converted at the dated snapshot (no CAD-USD par)
     requires_cultural_test=False,
     citation="gov.nl.ca (official, directly fetched): '40% of eligible "
               "production costs, to a maximum tax credit of $20 million "
@@ -8512,8 +8553,14 @@ CA_NL_DOCTRINE = register(DoctrineRecord(
         source_url="https://www.gov.nl.ca/fin/tax-programs-incentives/business/all-spend-film-and-video-production-tax-credit/",
         citation_detail="'40% of eligible production costs, to a maximum "
                          "tax credit of $20 million annually per project'",
-        verified_date="2026-08-17",
-        interpretation_note="Final-19 committee (Claude research + Codex "
+        verified_date="2026-10-13",
+        interpretation_note="Primary regulation read 2026-10-13: Newfoundland and Labrador Regulation 31/23 (All-Spend Film and Video Production Tax Credit Regulations, "
+                             "https://assembly.nl.ca/Legislation/sr/Regulations/rc230031.htm), in force from April 7, 2022 (s.11): s.2(c) credit = lesser of 40% x (eligible production "
+                             "costs - government assistance reasonably in respect of them) and CAD 20,000,000 per production per taxation year; s.2(m) government assistance EXCLUDES a "
+                             "credit under these regulations and a credit under ITA 125.4 or 125.5, so the federal PSTC and CPTC never reduce the NL base; s.4(1) eligible "
+                             "corporation (incorporated in Canada, permanent establishment in the province, primarily film/TV/video production, not tax-exempt, no CRTC "
+                             "broadcasting licence); s.7-8 deduction against tax with the remainder refunded; s.3 not available to productions under the Film and Video Industry "
+                             "Tax Credit Regulations or funded under the Film and Television Equity Investment Program; no minimum spend. Earlier committee note: Final-19 committee (Claude research + Codex "
                              "AGREE + Gemini CODEX_CONFIRMED): priceability "
                              "is PROJECT_FACT_DEPENDENT -- requires an "
                              "eligible NL corporation, Part I pre-production "
@@ -8540,6 +8587,8 @@ CA_NL_DOCTRINE = register(DoctrineRecord(
                   "Corporation prior to the commencement of the production "
                   "(gov.nl.ca)",
             kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key="ca_nl_part1_registered_before_production",
+            gates_tier_eligibility=False,
         ),),
     ),),
 ))

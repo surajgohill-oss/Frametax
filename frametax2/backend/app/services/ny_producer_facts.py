@@ -43,6 +43,13 @@ NY_EVIDENCED_FACTS = {
     "mb_production_company_bonus_eligible": None,
     "mb_t4_payroll_below_25pct_stated": None,
     "ab_fttc_30pct_criteria_met": None,
+    "ca_cptc_cavco_certified": None,
+    "ca_cptc_canadian_controlled_applicant": None,
+    "on_opstc_ontario_labour_25pct_confirmed": None,
+    "on_ocase_claim_conditions_met": None,
+    "ca_nl_part1_registered_before_production": None,
+    "us_co_workforce_and_preapproval_met": None,
+    "us_az_eligibility_conditions_met": None,
     "mb_two_residents_trained_per_nonresident": "mb_one_resident_trained_per_nonresident",
     "mb_one_resident_trained_per_nonresident": "mb_two_residents_trained_per_nonresident",
 }

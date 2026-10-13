@@ -3656,7 +3656,8 @@ register(ProgramRequirementsProfile(
         "monetization": "Use against Pennsylvania state tax liability, or sell/assign/transfer to another entity.",
         "statutory_basis": "Act 84 of 2016, Article XVII-D (Entertainment Production Tax Credit).",
         "sixty_percent_pinpoint": "PA DCED Film Production Tax Credit Guidelines (10/28/2020), p.2, read 2026-10-12: Pennsylvania production expenses must be at least 60% of total production expenses. Recorded verbatim-in-substance; the page citation is the pinpoint for the runtime gate in calculators/project_eligibility_gates.",
-        "compensation_cap": "The same Guidelines cap compensation counted toward qualified Pennsylvania production expense at USD 15,000,000 per person; the cap is recorded here and is NOT modeled at runtime (the budget carries no per-person compensation split) - OPEN, safe treatment: the credit is priced on the allocated spend and the cap is disclosed.",
+        "compensation_cap": "Guidelines (10/28/2020), Component A note, read 2026-10-13 from https://dced.pa.gov/download/film-production-tax-credit-guidelines/?wpdmdl=75431: 'There is a $15 million cap on the aggregate amount of payments eligible for a tax credit for \"above the line\" services provided by principal actors in the production of a Film, whether directly or through a \"loan-out\" company.' It is an AGGREGATE cap over the principal actors, not a per-person limit (an earlier note here said per person; corrected). Runtime: per_payee_limits.AGGREGATE_CATEGORY_CAPS excludes the above-the-line cast account's qualifying amount above USD 15,000,000 (the cast account is the proxy for principal actors, so the exclusion is an upper bound).",
+        "compensation_cap_statute_contradiction": "OPEN interpretation: the statute (Act 84 of 2016, Article XVII-D, 'qualified film production expense', Appendix A to the Guidelines https://dced.pa.gov/download/?wpdmdl=75381) says the term 'shall not include more than $15,000,000 in the aggregate of compensation paid to individuals or payment made to entities representing an individual for services provided in the production of the film' - wider than the Guidelines note (all individuals, not only principal actors). The administering agency's reading (principal actors) is priced; if the statutory reading governed, the cap would also bind other individual compensation. Remaining requirement: a DCED determination or an award letter stating which reading applies.",
     },
 ))
 
@@ -4208,25 +4209,33 @@ register(ProgramRequirementsProfile(
     audit_required=True, cpa_or_approved_auditor_required=True,   # Colorado-performed CPA review
     allocation_type=AllocationType.SUBJECT_TO_APPROPRIATION,
     evidence=EvidenceRecord(
-        source_title="C.R.S. 24-48.5-116 (performance-based incentive for film production), as amended by Colorado Session Laws 2022, chapter 355",
-        source_url="https://content.leg.colorado.gov/sites/default/files/documents/2022A/bills/sl/2022a_sl_355.pdf",
+        source_title="C.R.S. 24-48.5-116 (performance-based incentive for film production) and 24-48.5-114(7) (qualified local expenditure), Colorado Revised Statutes 2024 official printout; Session Laws 2022 ch. 355; HB 23-1275 (Session Laws 2023 ch. 289)",
+        source_url="https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-24.pdf",
         issuing_authority="Colorado General Assembly (enacted statute); administered by the Colorado Office of Film, Television and Media",
-        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-13",
         notes="Session law text (pp. 2540-2541): subsection (1)(a) '...an amount equal to twenty percent of the total amount of the production company's qualified local expenditures if the "
               "total of such expenditures equals or exceeds one hundred thousand dollars' for a company that originates production activities in Colorado; (1)(b)(I) the same 20% 'if the total "
               "of such expenditures equals or exceeds one million dollars' for a company that does not originate; (1)(b)(II) USD 250,000 for a television commercial or video game; (1.5) "
-              "executive-director discretion to exceed 20%. The 50% Colorado-resident workforce, pre-approval before production activities, wage withholding and Colorado CPA review come from "
-              "the current C.R.S. text reproduced at colorado.public.law/statutes/crs_24-48.5-116 (SECONDARY mirror of the official Title 24 PDF; its own header reads 'on or after July 1, 2012, "
-              "but before January 1, 2024, and on or after January 1, 2025'). RETRIEVAL FAILURES recorded in the evidence register: oedit.colorado.gov film pages (HTTP 403 and 404) and "
-              "coloradofilm.org (NOT the state office: an unrelated gambling page).",
+              "executive-director discretion to exceed 20%. Re-read 2026-10-13 in the OFFICIAL Colorado Revised Statutes 2024 printout (content.leg.colorado.gov crs2024-title-24.pdf, page 1589 of 3111): "
+              "24-48.5-116(1) intro: 'on or after July 1, 2012, but before January 1, 2024, and on or after January 1, 2025, any production company employing a workforce for any in-state "
+              "production activities made up of at least fifty percent Colorado residents may claim a performance-based incentive' (so no incentive for production in calendar year 2024; the "
+              "gap is in the official text, not a mirror artifact); (2)(a) apply 'prior to beginning production activities in the state'; (2)(c) CPA review by a Colorado-licensed CPA with the "
+              "services performed in Colorado. 24-48.5-114(7) (as amended by HB 23-1275, signed 2023-06-01, effective 2023-08-07): 'Qualified local expenditure' means 'a payment made by a "
+              "production company operating in Colorado to a person or business in Colorado in connection with production activities in Colorado', includes wages of up to one million dollars per "
+              "employee or contractor (all Colorado income taxes withheld; any excess excluded) and, for income tax years beginning on or after January 1, 2024, payments of up to one million "
+              "dollars per calendar year per personal service corporation for its employee-owners (the production company files an information return under 39-22-604(21); any excess excluded). "
+              "RETRIEVAL FAILURES recorded in the evidence register: oedit.colorado.gov film pages (HTTP 403 and 404) and coloradofilm.org (NOT the state office: an unrelated gambling page); the "
+              "colorado.public.law mirror, used on 2026-10-12, is superseded by the official printout.",
     ),
     additional_facts={
         "rate": "20% of qualified local expenditures (C.R.S. 24-48.5-116(1)); the executive director may authorize more (1.5), not modeled.",
         "thresholds": "USD 100,000 qualified local expenditures for a company that originates production activities in Colorado (twelve months of Colorado production activity); USD 1,000,000 for a company that does not originate; USD 250,000 for a television commercial or video game of a non-originating company.",
-        "workforce": "At least 50% Colorado residents in the in-state workforce (current C.R.S. text, mirror).",
+        "workforce": "At least 50% Colorado residents in the in-state workforce (C.R.S. 24-48.5-116(1), official 2024 printout, read 2026-10-13). Runtime: producer fact 'us_co_workforce_and_preapproval_met' clears the claim-condition (workforce, pre-approval before production activities, CPA review); until stated the program is held at USER_FACT_REQUIRED and its economics are CONDITIONAL.",
+        "qualified_local_expenditure": "C.R.S. 24-48.5-114(7) (HB 23-1275): a payment by a production company operating in Colorado to a person or business in Colorado in connection with production activities in Colorado; wages count up to USD 1,000,000 per employee or contractor (income tax withheld), and payments to a personal service corporation up to USD 1,000,000 per calendar year per corporation (information return). Runtime: per_payee_limits.PAYEE_CAPS['us_co_film_incentive'] excludes the excess for an identified payee with complete compensation; otherwise the account is carried as a planning figure with an UNRESOLVED note.",
+        "availability_window": "Incentive available on or after July 1, 2012 but before January 1, 2024, and on or after January 1, 2025 (official text): a production in calendar year 2024 is not eligible. Not modeled as a date gate because the planning horizon is later than 2025-01-01.",
         "appropriation": "Incentives are limited to the amount appropriated to the office for the fiscal year plus unspent prior appropriations; award is not an entitlement.",
         "tax_credit_exclusion": "Expenditures claimed under the separate income tax credit (C.R.S. 39-22-559, tax years 2024 only per the mirror) cannot also earn the performance-based incentive.",
-        "open_item": "The enacted definition of 'qualified local expenditure' (C.R.S. 24-48.5-114) was not retrieved from an official page; the per-person wage cap in HB 24-1358 text was not confirmed as enacted. Both stay a claim follow-up.",
+        "open_item": "CLOSED 2026-10-13: the enacted definition of 'qualified local expenditure' (C.R.S. 24-48.5-114(7)) and the per-payee USD 1,000,000 wage cap were read in the official statutes. Remaining: the separate income tax credit exclusion (C.R.S. 39-22-559) rests on the secondary mirror and Title 39 was not read.",
     },
 ))
 
@@ -4290,27 +4299,39 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="ca_nl_all_spend_credit", jurisdiction_code="CA-NL",
-    local_entity_required=True,        # an eligible corporation (permanent establishment in the province is NOT stated on the pages read)
+    local_entity_required=True,        # an eligible corporation with a permanent establishment in the province (Regulation 31/23 s.4(1)(b))
     cultural_test_required=False,
     preapproval_mandatory=True,        # Part I application to NLFDC before the production commences
     refundable=True, transferable=False,
     evidence=EvidenceRecord(
-        source_title="All Spend Film and Video Production Tax Credit - Department of Finance, Government of Newfoundland and Labrador",
-        source_url="https://www.gov.nl.ca/fin/tax-programs-incentives/business/all-spend-film-and-video-production-tax-credit/",
+        source_title="Newfoundland and Labrador Regulation 31/23, All-Spend Film and Video Production Tax Credit Regulations (and the Department of Finance programme page)",
+        source_url="https://assembly.nl.ca/Legislation/sr/Regulations/rc230031.htm",
         issuing_authority="Government of Newfoundland and Labrador (Department of Finance), with the Newfoundland and Labrador Film Development Corporation",
-        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-10-12",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, effective_date="2022-04-07", access_date="2026-10-13",
         notes="'available to eligible corporations at the rate of 40% of eligible production costs ... to a maximum tax credit of $20 million annually per project'; a Part I application to NLFDC "
               "'prior to the commencement of the production'; registration is not granted where the production is registered under the Film and Video Industry Tax Credit Regulations or has received "
               "Film and Television Equity Investment Program funding; Part II within 18 months of the end of the taxation year; eligible costs 'may include' eligible salaries, service contracts, "
               "parent-subsidy amounts, tangible property and accommodation. No minimum budget is stated. CONTRADICTION recorded: the CRA provincial page (canada.ca, effective April 7, 2022) still "
               "shows a USD/CAD 10 million maximum and the NLFDC 2022-23 report and Part II form read 10 million, while the Department of Finance page and Budget 2025 state 20 million (CRA 'what's new': "
-              "increase effective February 28, 2025); the Finance page governs. NOT RETRIEVED: the definitions of eligible salaries (residency), assistance and the permanent-establishment test "
-              "(no official page read states them).",
+              "increase effective February 28, 2025); the Finance page governs, and the regulation (s.2(c)(ii), read 2026-10-13) states '$20 million'. RETRIEVED 2026-10-13 from the regulation itself "
+              "(assembly.nl.ca rc230031, in force April 7, 2022 per s.11): s.2(c) credit = lesser of A x (B - C) with A = 40%, B = eligible production costs for a taxation year and C = government "
+              "assistance 'that may reasonably be considered to be in respect of amounts included in B', and $20 million; s.2(i) 'eligible salaries and labour expenditures' = salary or wages "
+              "paid to 'eligible individuals' (s.2(f): individuals resident in the province on the relevant December 31) for work performed in the province, plus payments to non-employee "
+              "eligible individuals and wholly-owned taxable Canadian corporations for work in the province, plus non-resident salary and labour expenditures; s.2(m) 'government "
+              "assistance' means assistance from a government, municipality or other public authority 'other than (i) a tax credit under these regulations, (ii) a tax credit under section "
+              "125.4 or 125.5 of the federal Act'; s.4(1) an eligible corporation is incorporated in Canada or a province, 'shall have a permanent establishment in the province', primarily "
+              "carries on film/TV/video production, is not tax-exempt and holds no CRTC broadcasting licence (nor deals non-arm's length with a licence holder), at registration and throughout "
+              "the production; s.3 not for productions under the Film and Video Industry Tax Credit Regulations or funded by the Film and Television Equity Investment Program; s.7-8 the credit "
+              "is deducted from tax otherwise payable and the remainder applied to amounts owed and then refunded; no minimum spend. 'Permanent establishment' and 'eligible employee' are not "
+              "separately defined in s.2 (the regulation uses 'eligible individual' and the term in s.4(1)(b)).",
     ),
     additional_facts={
         "rate_and_cap": "40% of total eligible production costs net of government assistance (Part II form: TEPC = production costs minus assistance); CAD 20,000,000 per project per year (Finance page); the earlier CAD 10,000,000 figure predates the February 28, 2025 increase.",
         "alternatives": "Not available to a production registered under the Film and Video Industry Tax Credit Regulations or funded by the Film and Television Equity Investment Program.",
-        "open_item": "Eligible-salary residency, assistance definition and any permanent-establishment condition are not stated on the official pages read; the credit is priced on eligible costs as modeled and these remain claim follow-ups.",
+        "assistance_definition": "Regulation 31/23 s.2(m): government assistance excludes a credit under these regulations and a credit under ITA 125.4 or 125.5, so the federal PSTC and CPTC never reduce the NL base. The NL credit is assistance to the federal credits (ITA 125.5(1)(b); RC4164 lines 421-430): PSTC netted by its labour share (rate x labour, bounded by the credit, whole-credit lower bound disclosed), CPTC cap-only. Consumed by canonical_stack_bridge (NL_SLUG in PSTC_ASSISTING_SLUGS and PSTC_APPORTIONED_SLUGS), stacking rules 1.9.0 and migration 0085.",
+        "eligible_salary": "s.2(i) and s.2(f): salary or wages to eligible individuals (resident in the province on December 31) for work performed in the province; non-resident labour is counted as 'non-resident salary and labour expenditures'. The all-spend base is eligible production costs (s.2(h)), of which labour is one part.",
+        "eligible_corporation": "s.4(1): incorporated in Canada or a province, permanent establishment in the province, primarily film/TV/video production, not tax-exempt, no CRTC broadcasting licence. Runtime: producer fact 'ca_nl_part1_registered_before_production' clears the registration condition; the eligible-corporation tests are claim follow-ups carried with it.",
+        "per_production_cap": "CAD 20,000,000 per eligible production per taxation year (s.2(c)(ii)): applied as a native-currency IncentiveValueCapRule converted at the dated CAD snapshot (2026-10-13); the earlier CAD-USD par annual_cap_usd was removed.",
     },
 ))
 

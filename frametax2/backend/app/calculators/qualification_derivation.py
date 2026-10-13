@@ -575,6 +575,11 @@ def derive_qualification_register(
         register = apply_payee_cap(
             register, {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items},
             dict(facts.ny_atl_payee_by_line), dict(facts.payee_type_by_line), _cap_rule)
+    from app.calculators.per_payee_limits import AGGREGATE_CATEGORY_CAPS, apply_aggregate_category_cap
+    _agg_rule = AGGREGATE_CATEGORY_CAPS.get(_canonical(program_slug))
+    if _agg_rule is not None:
+        register = apply_aggregate_category_cap(
+            register, {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items}, _agg_rule)
     if _canonical(program_slug) == "ca_mb_film_video_credit" and not facts.scenario_local_btl:
         from app.calculators.mb_nonresident_limit import apply_mb_nonresident_limit
         register = apply_mb_nonresident_limit(

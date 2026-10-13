@@ -36,6 +36,10 @@ PAYEE_CAPS: dict[str, PayeeCap] = {
     "us_ga_film_credit": PayeeCap(
         500_000.0, frozenset({"employee"}), "$500,000 per person, per production, W-2 salary",
         "Georgia Department of Economic Development, Understanding the Georgia Film Tax Credit (2026-04): no cap for 1099, personal services contract or loan-out payees"),
+    "us_co_film_incentive": PayeeCap(
+        1_000_000.0, None, "USD 1,000,000 per employee or contractor (per personal service corporation per calendar year)",
+        "C.R.S. 24-48.5-114(7)(i) and (j) (official 2024 printout; HB 23-1275, Session Laws 2023 ch. 289, effective 2023-08-07): wages up to one million dollars per employee or contractor, "
+        "payments up to one million dollars per calendar year per personal service corporation; any excess is excluded"),
     "us_il_film_production_services_credit": PayeeCap(
         500_000.0, None, "$500,000 per worker (wages and employer-paid benefits)",
         "Illinois DCEO Film Production Services Tax Credit FAQs 3 and 6: resident and non-resident labour up to $500,000 per worker"),
@@ -93,4 +97,55 @@ def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: d
                                resolving_evidence=e.resolving_evidence or "Identified payee, complete compensation" + (" and payee type (W-2 employee vs loan-out / 1099)" if rule.capped_payee_types else "") + "."))
         else:
             out.append(e)
+    return out
+
+
+# ── Aggregate category cap: Pennsylvania (NA-RECONCILIATION-10) ─────────────────────────────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class AggregateCategoryCap:
+    cap_usd: float
+    categories: frozenset[str]
+    label: str
+    source: str
+
+#: Pennsylvania Film Production Tax Credit Guidelines (DCED, 10/28/2020), Component A note: "There is a $15 million cap on the aggregate amount of payments eligible for a tax credit for
+#: 'above the line' services provided by principal actors in the production of a Film, whether directly or through a 'loan-out' company." The statute (Act 84 of 2016, Article XVII-D,
+#: 'qualified film production expense', Appendix A to the Guidelines) is worded more widely: the term "shall not include more than $15,000,000 in the aggregate of compensation paid to
+#: individuals or payment made to entities representing an individual for services provided in the production of the film". The administering agency's reading (principal actors) is
+#: applied; the wider statutory reading is an OPEN interpretation recorded in the requirements profile. The budget's above-the-line cast account is the proxy for principal actors, so the
+#: excluded part is an upper bound where supporting cast sits in the same account; it is an aggregate over the account, not a per-person limit (nothing needs to identify a payee).
+AGGREGATE_CATEGORY_CAPS: dict[str, AggregateCategoryCap] = {
+    "us_pa_film_production_credit": AggregateCategoryCap(
+        15_000_000.0, frozenset({"atl_cast"}), "$15,000,000 aggregate cap on payments for above-the-line services of principal actors, directly or through loan-out companies",
+        "Pennsylvania DCED Film Production Tax Credit Guidelines (10/28/2020), Component A note; Act 84 of 2016, Article XVII-D, definition of 'qualified film production expense'"),
+}
+
+def apply_aggregate_category_cap(register, category_by_line: dict[str, str], rule: AggregateCategoryCap):
+    """Exclude the part of the QUALIFYING amount in ``rule.categories`` that exceeds the aggregate cap (taken from the last accounts first). Accounts outside the categories, and
+    every non-qualifying entry, are untouched; at or below the cap the register is returned unchanged."""
+    from app.calculators.qualification_model import AuthorityBasis, QualificationConfidence, QualificationState
+    Q = QualificationState.QUALIFIES
+    members = [i for i, e in enumerate(register) if e.state == Q and category_by_line.get(e.line_id) in rule.categories]
+    over = round(sum(register[i].amount_usd for i in members) - rule.cap_usd, 2)
+    if over <= 0:
+        return list(register)
+    cut: dict[int, float] = {}
+    for i in reversed(members):
+        if over <= 0:
+            break
+        take = round(min(register[i].amount_usd, over), 2)
+        cut[i] = take
+        over = round(over - take, 2)
+    out = []
+    for i, e in enumerate(register):
+        c = cut.get(i, 0.0)
+        if not c:
+            out.append(e)
+            continue
+        if e.amount_usd - c > 0:
+            out.append(replace(e, amount_usd=round(e.amount_usd - c, 2), financial_impact_usd=round(e.amount_usd - c, 2)))
+        out.append(replace(e, amount_usd=c, financial_impact_usd=c, state=QualificationState.EXCLUDED, confidence=QualificationConfidence.HIGH,
+                           authority_basis=AuthorityBasis.EXPLICIT_STATUTE, incentive_upside_usd=None, grey_reason=None, resolving_evidence=None,
+                           reason=f"Excluded above the {rule.label} ({rule.source}). The above-the-line cast account is the proxy for principal actors, so this is an upper bound on the excluded amount; "
+                                  "the statute's wider wording (all individuals) is an open interpretation."))
     return out

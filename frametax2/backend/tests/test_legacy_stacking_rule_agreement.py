@@ -58,4 +58,16 @@ def test_the_bc_quebec_and_ocase_federal_rows_agree_with_the_registry_and_state_
         assert text.strip(), "a seeded rule states its basis"
     assert "s.79(1)" in reg[frozenset({"ca_federal_pstc", "ca_bc_pstc"})]["condition_text"]
     assert "note 7" in reg[frozenset({"ca_federal_pstc", "ca_qc_pstc"})]["condition_text"]
-    assert stacking_rules.STACKING_RULES_VERSION == "1.8.0"
+    assert stacking_rules.STACKING_RULES_VERSION == "1.9.0"
+
+
+def test_the_newfoundland_federal_rows_agree_with_the_registry_and_cite_the_regulation():
+    spec = importlib.util.spec_from_file_location("mig0085", _PATH.with_name("0085_nl_federal_stacking_rules.py"))
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    assert (mod.revision, mod.down_revision) == ("0085", "0084")
+    reg = stacking_rules._SLUG_PAIR_RULES
+    assert len(mod.ROWS) == 2 and len({mod._rule_id(r[0]) for r in mod.ROWS}) == 2
+    for _key, a, b, text in mod.ROWS:
+        assert reg[frozenset({a, b})]["rule_type"] == "spend_reduction", (a, b)
+        assert "Regulation 31/23" in text and "Regulation 31/23" in reg[frozenset({a, b})]["condition_text"]
+        assert "s.2(m)" in reg[frozenset({a, b})]["condition_text"]

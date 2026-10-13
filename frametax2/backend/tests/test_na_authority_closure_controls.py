@@ -58,7 +58,7 @@ def test_every_rate_doctrine_closed_this_pass_is_verified_with_a_primary_source_
 def test_every_requirements_profile_registered_this_pass_is_primary_verified_and_dated(slug):
     profile = pr.get_program_requirements(slug)
     assert profile is not None and pr.verification_state(slug) == pr.VerificationState.PRIMARY_VERIFIED
-    assert profile.evidence.source_url.startswith("https://") and profile.evidence.access_date == "2026-10-12" and len(profile.evidence.notes) > 200
+    assert profile.evidence.source_url.startswith("https://") and profile.evidence.access_date in ("2026-10-12", "2026-10-13") and len(profile.evidence.notes) > 200
 
 
 def test_the_evidence_records_name_their_retrieval_failures_and_contradictions():
@@ -97,3 +97,125 @@ def test_the_federal_pstc_never_reduces_the_bc_or_quebec_credit():
         before = res.post_adjustment_component_incentives_usd[slug]
         rate = 0.36 if slug == "ca_bc_pstc" else 0.25
         assert before == pytest.approx(rate * 1_000_000.0), (slug, "the partner keeps its full credit")
+
+
+# ── NA-RECONCILIATION-10: a missing producer fact reaches qualification state and economics certainty, not only warning text ──────────────────────────────────────────────────
+from app.calculators.allocation_pricing import presumed_facts_from_resolution
+from app.services.canonical_evaluation import _QUALIFICATION_ADMITS_RECOMMENDED, _rate_condition_qualification_impact
+
+_PRODUCER_FACT_CASES = [
+    # slug, qpe, amount facts, (evidenced fact ids), the condition they clear
+    ("ca_federal_cptc", 1_000_000.0, {"ca_federal_cptc_qualified_labour_usd": 300_000.0}, ("ca_cptc_cavco_certified", "ca_cptc_canadian_controlled_applicant"),
+     {"ca-cptc-content-certification-required", "ca-cptc-canadian-controlled-corporation"}),
+    ("on_opstc", 2_000_000.0, {}, ("on_opstc_ontario_labour_25pct_confirmed",), {"ca-on-labour-ratio-gate"}),
+    ("ontario_computer_animation_and_special_effects_tax_credit_ocase", 1_000_000.0, {"on_ocase_qualifying_vfx_labour_usd": 100_000.0}, ("on_ocase_claim_conditions_met",),
+     {"on-ocase-claim-conditions"}),
+    ("ca_nl_all_spend_credit", 2_000_000.0, {}, ("ca_nl_part1_registered_before_production",), {"ca-nl-part1-registration-required"}),
+    ("us_co_film_incentive", 2_000_000.0, {}, ("us_co_workforce_and_preapproval_met",), {"us-co-workforce-and-preapproval"}),
+]
+
+
+@pytest.mark.parametrize("slug,qpe,amounts,facts,conditions", _PRODUCER_FACT_CASES)
+def test_a_missing_producer_fact_holds_the_program_at_user_fact_required_and_a_stated_one_clears_it(slug, qpe, amounts, facts, conditions):
+    bare = resolve_program_rate(slug, "feature_film", qpe, amount_facts=amounts)
+    stated = resolve_program_rate(slug, "feature_film", qpe, amount_facts=amounts, evidenced_facts=frozenset(facts))
+    assert bare is not None and stated is not None, "the conditions are non-gating: the planning figure prices either way"
+    assert bare.modeled_rate == stated.modeled_rate and bare.floor_rate == stated.floor_rate
+    state, culprits = _rate_condition_qualification_impact(bare)
+    assert state == "USER_FACT_REQUIRED" and state not in _QUALIFICATION_ADMITS_RECOMMENDED and conditions <= set(culprits)
+    assert conditions <= {p["condition_id"] for p in presumed_facts_from_resolution(bare)}, "feeds claim_base_missing_facts and so economics_certainty"
+    assert _rate_condition_qualification_impact(stated) is None
+    assert not presumed_facts_from_resolution(stated)
+
+
+def test_every_new_producer_fact_is_settable_through_the_existing_producer_fact_path():
+    from app.services.ny_producer_facts import NY_EVIDENCED_FACTS
+    for *_x, facts, _c in _PRODUCER_FACT_CASES:
+        for f in facts:
+            assert f in NY_EVIDENCED_FACTS, f
+
+
+def test_pennsylvania_aggregate_cast_cap_excludes_only_the_excess_above_fifteen_million():
+    from app.calculators.qualification_derivation import BudgetLine, ProductionFacts, derive_qualification_register
+
+    def run(slug, c1, c2):
+        lines = [BudgetLine("2000", "CAST A", c1, spend_category="atl_cast", line_id="c1"), BudgetLine("2100", "CAST B", c2, spend_category="atl_cast", line_id="c2"),
+                 BudgetLine("3000", "CREW", 1_000_000.0, spend_category="btl_crew_labor", line_id="k1")]
+        reg = derive_qualification_register(lines, slug, ProductionFacts("US-PA"), 0.25)
+        q = sum(e.amount_usd for e in reg if getattr(e.state, "value", e.state) == "qualifies" and e.line_id in ("c1", "c2"))
+        x = sum(e.amount_usd for e in reg if getattr(e.state, "value", e.state) == "excluded")
+        crew = sum(e.amount_usd for e in reg if e.line_id == "k1" and getattr(e.state, "value", e.state) == "qualifies")
+        return q, x, crew
+    assert run("us_pa_film_production_credit", 9_000_000.0, 6_000_000.0) == (15_000_000.0, 0.0, 1_000_000.0), "exactly at the cap: unchanged"
+    assert run("us_pa_film_production_credit", 12_000_000.0, 8_000_000.0) == (15_000_000.0, 5_000_000.0, 1_000_000.0), "20,000,000 cast: 5,000,000 excluded, crew untouched"
+    assert run("us_ga_film_credit", 12_000_000.0, 8_000_000.0)[1] == 0.0, "no other program is affected"
+    # 25% x 5,000,000 = 1,250,000 of credit that the cap removes
+    assert round(0.25 * run("us_pa_film_production_credit", 12_000_000.0, 8_000_000.0)[1], 2) == 1_250_000.0
+
+
+def test_the_pennsylvania_cap_record_corrects_the_per_person_misstatement_and_names_the_open_interpretation():
+    facts = pr.get_program_requirements("us_pa_film_production_credit").additional_facts
+    assert "not a per-person limit" in facts["compensation_cap"] and "wpdmdl=75431" in facts["compensation_cap"]
+    assert "OPEN interpretation" in facts["compensation_cap_statute_contradiction"] and "wpdmdl=75381" in facts["compensation_cap_statute_contradiction"]
+
+
+def test_manitoba_now_carries_structured_primary_provenance_and_is_no_longer_an_unresolved_residual():
+    from app.data.authority_coverage_registry import coverage_state
+    assert pa.authority_disposition("ca_mb_film_video_credit") == pa.AUTHORITY_VERIFIED_PRICEABLE
+    assert coverage_state("ca_mb_film_video_credit") != "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+    prov = get_rate_rules("ca_mb_film_video_credit")[0].provenance
+    assert prov.source_url == "https://www.gov.mb.ca/finance/business/ccredits.html" and prov.verified_date == "2026-10-13" and "s.7.5" in prov.citation_detail
+
+
+def test_newfoundland_regulation_31_23_is_the_recorded_authority_and_the_federal_credits_do_not_reduce_the_nl_base():
+    prov = get_rate_rules("ca_nl_all_spend_credit")[0].provenance
+    assert "Regulation 31/23" in prov.interpretation_note and "s.2(m)" in prov.interpretation_note and prov.verified_date == "2026-10-13"
+    from app.calculators.canonical_stack_bridge import NL_SLUG, PSTC_APPORTIONED_SLUGS, PSTC_ASSISTING_SLUGS, _SPEND_REDUCTION_DIRECTION
+    assert NL_SLUG in PSTC_ASSISTING_SLUGS and NL_SLUG in PSTC_APPORTIONED_SLUGS
+    assert _SPEND_REDUCTION_DIRECTION[frozenset({"ca_federal_pstc", NL_SLUG})] == NL_SLUG, "the NL credit is the reducing (assistance) program, never the federal credit"
+    assert _SPEND_REDUCTION_DIRECTION[frozenset({"ca_federal_cptc", NL_SLUG})] == NL_SLUG
+
+
+def test_the_nl_credit_nets_the_federal_pstc_by_its_labour_share_only():
+    res = _pstc_with("ca_nl_all_spend_credit", "CA-NL", 1_000_000.0, pstc_amount=500_000.0, gross=1_500_000.0)
+    assert res.executable is True, res.rejection_reason
+    # PSTC 16% x 500,000 of labour = 80,000. NL 40% x 1,000,000 = 400,000 on all-spend cost;
+    # its labour share = min(400,000; 40% x PSTC labour basis 500,000 = 200,000) = 200,000 -> PSTC reduced by 200,000 x 16% = 32,000 -> 48,000; NL unchanged.
+    assert res.post_adjustment_component_incentives_usd["ca_nl_all_spend_credit"] == pytest.approx(400_000.0)
+    assert res.post_adjustment_component_incentives_usd["ca_federal_pstc"] == pytest.approx(80_000.0 - 0.16 * 200_000.0)
+    assert any("Apportionment assumption" in n and "Newfoundland and Labrador" in n for n in res.disclosed_limitations)
+
+
+def test_california_prospective_planning_is_dated_and_the_historical_letter_is_reference_only():
+    from app.calculators.allocation_pricing import CALIFORNIA_REGIME_NOTE, _PLANNING_ASSUMPTION_NOTES
+    assert _PLANNING_ASSUMPTION_NOTES["ca_film_30"] == (CALIFORNIA_REGIME_NOTE,)
+    assert "January 1, 2026" in CALIFORNIA_REGIME_NOTE and "July 1, 2025" in CALIFORNIA_REGIME_NOTE
+    assert "historical reference" in CALIFORNIA_REGIME_NOTE and "never repriced" in CALIFORNIA_REGIME_NOTE and "none is established" in CALIFORNIA_REGIME_NOTE
+
+
+def test_the_nl_cad_20_million_cap_binds_as_a_native_currency_cap_not_a_par_usd_figure():
+    from tests.test_us_ca_mx_scope_integrity_controls import _price
+    from app.data.program_rate_rules import get_incentive_value_cap
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    assert get_doctrine("ca_nl_all_spend_credit").annual_cap_usd is None, "the old CAD-USD par annual cap is gone"
+    cap = get_incentive_value_cap("ca_nl_all_spend_credit")
+    assert cap.cap_currency == "CAD" and cap.cap_native_amount == 20_000_000.0
+    big = _price("CA-NL", "ca_nl_all_spend_credit", 60_000_000.0)       # 40% x 60,000,000 = 24,000,000 before the cap
+    small = _price("CA-NL", "ca_nl_all_spend_credit", 10_000_000.0)     # 4,000,000: untouched
+    assert small.incentive_floor_usd == pytest.approx(4_000_000.0)
+    assert big.incentive_cap_type == "per_project_native" and big.incentive_floor_usd == pytest.approx(big.incentive_cap_usd)
+    assert big.incentive_floor_usd < 24_000_000.0 and big.incentive_uncapped_usd == pytest.approx(24_000_000.0)
+
+
+def test_colorado_wage_cap_is_one_million_per_identified_payee_and_nothing_else_is_touched():
+    from app.calculators.qualification_derivation import BudgetLine, ProductionFacts, derive_qualification_register
+    lines = [BudgetLine("2000", "LEAD", 1_500_000.0, spend_category="atl_cast", line_id="c1"), BudgetLine("3000", "CREW", 400_000.0, spend_category="btl_crew_labor", line_id="k1")]
+
+    def amounts(payees):
+        reg = derive_qualification_register(lines, "us_co_film_incentive", ProductionFacts("US-CO", ny_atl_payee_by_line=payees), 0.20)
+        state = lambda e: getattr(e.state, "value", e.state)
+        return (sum(e.amount_usd for e in reg if state(e) == "qualifies"), sum(e.amount_usd for e in reg if state(e) == "excluded"))
+    # C.R.S. 24-48.5-114(7)(i): wages up to one million dollars per employee or contractor, any excess excluded - applied only to an identified payee
+    assert amounts({"c1": 1}) == (1_400_000.0, 500_000.0)
+    assert amounts({}) == (1_900_000.0, 0.0), "an unidentified account is carried as a planning figure, never silently capped or uncapped as certain"
+    assert round(0.20 * 500_000.0, 2) == 100_000.0

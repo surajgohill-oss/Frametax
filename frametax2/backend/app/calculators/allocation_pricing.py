@@ -563,7 +563,14 @@ _ALTERNATIVE_ELECTION_PROGRAMS = {
 
 
 #: Planning assumptions disclosed on every priced segment of a program whose eligibility rests on a status the budget cannot establish (never a certification, never a gate).
-_PLANNING_ASSUMPTION_NOTES = {"ca_federal_cptc": (CPTC_PLANNING_NOTE,)}
+#: California is priced on Program 4.0 as a DATED prospective planning scenario; a saved allocation letter issued under the earlier Program 3.0 is historical reference for that production.
+CALIFORNIA_REGIME_NOTE = (
+    "Prospective planning basis, dated: California Program 4.0 (AB 1138; California Film Commission Program 4.0 Guidelines, January 1, 2026) governs applications on or after July 1, 2025, "
+    "and this credit is priced on that regime as a planning scenario. A Credit Allocation Letter dated before July 1, 2025 is Program 3.0 historical reference for the production that "
+    "holds it: it is preserved with its own generation and is never repriced into, and never overrides, the Program 4.0 rules. Which regime governs a production is set by its own "
+    "allocation-letter date; none is established for this scenario."
+)
+_PLANNING_ASSUMPTION_NOTES = {"ca_federal_cptc": (CPTC_PLANNING_NOTE,), "ca_film_30": (CALIFORNIA_REGIME_NOTE,)}
 
 
 def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None,
@@ -656,14 +663,16 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     return round(floor_base + sum(floor_parts.values()), 2), round(potential_base + sum(potential_parts.values()), 2), tuple(conditions)
 
 
-def _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts):
+def _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts, undeployed_contingency_usd: float = 0.0):
     """The amount a percentage QPE cap is measured on. The federal CPTC cap is 60% of the production cost NET OF ASSISTANCE (CRA RC4164, T1131
     lines 421-430), so assistance the producer has stated reduces the base here exactly as the stack engine reduces it (canonical_stack_bridge);
     stack assistance is then deducted once more only for the programs actually stacked."""
     base = gross_budget_usd if cap_rule.cap_base == "total_worldwide_budget" else allocated
     if base is not None and slug == "ca_federal_cptc":
         stated = float((amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)
-        base = max(0.0, base - stated)
+        # RC4164 line 421 is the cost of production by GAAP: a contingency reserve the producer states will NOT be spent is not an expenditure. While the producer has stated
+        # nothing (undeployed_contingency_usd == 0) the budget's contingency stays in the cost, and the credit is a planning figure that presumes it is spent.
+        base = max(0.0, base - stated - (max(0.0, float(undeployed_contingency_usd or 0.0)) if cap_rule.cap_base == "total_worldwide_budget" else 0.0))
     return base
 
 
@@ -673,6 +682,18 @@ def _segment_category_spend(allocations, spend_category_by_code) -> dict[str, fl
         category = a.spend_category or spend_category_by_code.get(a.account_code) or "miscellaneous"
         out[category] = round(out.get(category, 0.0) + a.amount_usd, 2)
     return out
+
+
+def presumed_facts_from_resolution(rr) -> tuple[dict, ...]:
+    """Unresolved NON-gating conditions of a non-band resolved tier: facts the modeled figure presumes without evidence. The ONE derivation shared by a priced segment and by a
+    same-jurisdiction stack (whose per-program legs are priced from the program's own resolution), so a missing producer fact lowers economics certainty in both."""
+    return tuple(
+        {"condition_id": e.condition_id, "description": e.description, "quote": e.quote,
+         "state": e.condition_state, "note": e.note}
+        for e in rr.conditions_evaluated
+        if e.satisfied is not True and not rr.is_band_ceiling
+        and e.condition_state in (CONDITION_STATE_USER_FACT_REQUIRED, CONDITION_STATE_SCRIPT_FACT_REQUIRED)
+    )
 
 
 def price_segment(
@@ -692,6 +713,7 @@ def price_segment(
     home_jurisdiction_code: str | None = None,
     scenario_btl_nonlocal: bool = False,
     worldwide_category_spend_usd: dict[str, float] | None = None,
+    undeployed_contingency_usd: float = 0.0,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -923,7 +945,7 @@ def price_segment(
         _pre_cap_rule = get_qpe_cap(slug)
         _limit = None
         if _pre_cap_rule is not None:
-            _pre_base = _qpe_cap_base(slug, _pre_cap_rule, gross_budget_usd, allocated, amount_facts)
+            _pre_base = _qpe_cap_base(slug, _pre_cap_rule, gross_budget_usd, allocated, amount_facts, undeployed_contingency_usd)
             if _pre_base is not None:
                 _limit = _pre_base * _pre_cap_rule.cap_pct
 
@@ -1045,7 +1067,7 @@ def price_segment(
     qpe_cap_applied = 0.0
     cap_rule = get_qpe_cap(slug)
     if cap_rule is not None:
-        cap_base_amount = _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts)
+        cap_base_amount = _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts, undeployed_contingency_usd)
         if cap_base_amount is not None:
             cap_ceiling = round(cap_base_amount * cap_rule.cap_pct, 2)
             if qpe > cap_ceiling:
@@ -1798,13 +1820,7 @@ def price_segment(
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
     )
 
-    presumed_facts = tuple(
-        {"condition_id": e.condition_id, "description": e.description, "quote": e.quote,
-         "state": e.condition_state, "note": e.note}
-        for e in rr.conditions_evaluated
-        if e.satisfied is not True and not rr.is_band_ceiling
-        and e.condition_state in (CONDITION_STATE_USER_FACT_REQUIRED, CONDITION_STATE_SCRIPT_FACT_REQUIRED)
-    )
+    presumed_facts = presumed_facts_from_resolution(rr)
 
     subset_conditions = ()
     try:
@@ -2222,6 +2238,7 @@ def price_allocated_structure(
             production_type=production_type,
             contingency_allocations=contingency_allocations,
             gross_budget_usd=gross_budget_usd,
+            undeployed_contingency_usd=planned_cost_reduction_usd,
             confirmed_ceiling_programs=confirmed_ceiling_programs,
             contingency_expected_utilization_pct=contingency_expected_utilization_pct,
             evidenced_requirement_facts=evidenced_requirement_facts,

@@ -101,11 +101,11 @@ def test_same_country_pair_with_no_registered_rule_is_unresolved_and_blocks():
     explicitly lists this exact pair as UNRESOLVED, and Locked Structural
     Policy point 8 requires an unresolved-required pair to prevent
     verified pricing."""
-    # The CPTC + Manitoba pair and the federal PSTC with the BC PSTC, the Quebec PSTC and OCASE are now RESOLVED by primary text (stacking rules 1.7.0 and 1.8.0), so the unresolved example
-    # is the federal PSTC with the Newfoundland and Labrador all-spend credit: both Canadian, no primary stacking text read, still unruled.
+    # The CPTC + Manitoba pair and the federal PSTC with the BC PSTC, the Quebec PSTC, OCASE and the Newfoundland and Labrador all-spend credit are now RESOLVED by primary text (stacking rules
+    # 1.7.0 to 1.9.0), so the unresolved example is the federal PSTC with the New Brunswick film tax credit: both Canadian, no primary stacking text read, still unruled.
     checks = check_all_pairs([
         _comp("ca_federal_pstc", "CA", 1_000_000.0),
-        _comp("ca_nl_all_spend_credit", "CA-NL", 500_000.0),
+        _comp("ca_nb_film_tax_credit", "CA-NB", 500_000.0),
     ])
     assert len(checks) == 1
     assert checks[0].blocks is True
