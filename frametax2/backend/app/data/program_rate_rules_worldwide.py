@@ -1405,13 +1405,21 @@ ON_OCASE_DOCTRINE = register(DoctrineRecord(
                     component_basis_spend_categories=("vfx",),
                 ),
                 RateCondition(
-                    condition_id="on-ocase-claim-conditions",
-                    description="Claim-level conditions (Ontario Creates, work started on or after March 26, 2024): a Canadian corporation with a permanent establishment in Ontario "
-                                "that files an Ontario corporate tax return; MORE THAN CAD 25,000 of Ontario labour expenditures on the production (claim year or cumulative with the "
-                                "prior year); eligible computer animation or special effects activities carried out in Ontario. Not stated for this production, so disclosed, not assumed.",
+                    condition_id="on-ocase-permanent-establishment",
+                    description="A Canadian corporation with a permanent establishment in Ontario that files an Ontario corporate tax return (Ontario Creates OCASE page, work started on or after March 26, 2024). "
+                                "Not stated for this production, so disclosed, not assumed; the producer's resolution of the local-entity gate clears it.",
+                    quote="has a permanent establishment in Ontario and files an Ontario corporate tax return (ontariocreates.ca/tax-incentives/ocase)",
+                    kind="project_fact_dependent_eligibility",
+                    required_boolean_fact_key="ontario_computer_animation_and_special_effects_tax_credit_ocase__local_entity_or_partner_confirmed",
+                    gates_tier_eligibility=False,
+                ),
+                RateCondition(
+                    condition_id="on-ocase-labour-over-cad-25000",
+                    description="MORE THAN CAD 25,000 of Ontario labour expenditures on the production (claim year or cumulative with the prior year), for eligible computer animation or special effects "
+                                "activities carried out in Ontario. The segment base is the VFX labour, not all Ontario labour, so a failure cannot be proven from the budget; the producer states it.",
                     quote="incurs an amount that exceeds $25,000 in Ontario labour expenditures (ontariocreates.ca/tax-incentives/ocase)",
                     kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="on_ocase_claim_conditions_met",
+                    required_boolean_fact_key="on_ocase_ontario_labour_over_cad_25000_stated",
                     gates_tier_eligibility=False,
                 ),
             ),
@@ -6089,7 +6097,7 @@ CA_CPTC_DOCTRINE = register(DoctrineRecord(
                                 "its economics are served as CONDITIONAL, not CONFIRMED.",
                     quote="Requires CAVCO Canadian-content certification (points-test based) (canada.ca)",
                     kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="ca_cptc_cavco_certified",
+                    required_boolean_fact_key="ca_federal_cptc__cultural_test_confirmed",
                     gates_tier_eligibility=False,
                 ),
                 RateCondition(
@@ -6099,7 +6107,7 @@ CA_CPTC_DOCTRINE = register(DoctrineRecord(
                                 "establish control, so it is a producer-stated fact held at USER_FACT_REQUIRED until stated.",
                     quote="qualified corporation ... Canadian-controlled ... permanent establishment in Canada (RC4164 Part 3)",
                     kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="ca_cptc_canadian_controlled_applicant",
+                    required_boolean_fact_key="ca_federal_cptc__local_entity_or_partner_confirmed",
                     gates_tier_eligibility=False,
                 ),
             ),
@@ -6864,14 +6872,21 @@ US_CO_DOCTRINE = register(DoctrineRecord(
     ),
     tiers=(DoctrineRateTier(tier_id="us-co-flat-20", rate=0.20, is_band_ceiling=False, min_qpe_usd=1_000_000.0,
                              conditions=(RateCondition(
-                                 condition_id="us-co-workforce-and-preapproval",
-                                 description="Claim-level conditions: at least 50% Colorado residents in the in-state workforce, written conditional approval BEFORE production activities in the "
-                                             "state, wages with Colorado income tax withheld, and a Colorado-performed CPA review (C.R.S. 24-48.5-116(2)); the incentive is also limited "
-                                             "to the office's appropriation. Not stated for this production, so disclosed, not assumed satisfied.",
+                                 condition_id="us-co-preapproval-before-production",
+                                 description="Written conditional approval from the Colorado Office of Film, Television and Media BEFORE production activities in the state (C.R.S. 24-48.5-116(2)(a)). "
+                                             "Not stated for this production, so disclosed, not assumed satisfied; the producer's resolution of the agency pre-approval gate clears it.",
+                                 quote="shall apply to the office ... prior to beginning production activities in the state (C.R.S. 24-48.5-116(2)(a), official 2024 printout)",
+                                 kind="project_fact_dependent_eligibility",
+                                 required_boolean_fact_key="us_co_film_incentive__agency_preapproval_confirmed",
+                                 gates_tier_eligibility=False),
+                              RateCondition(
+                                 condition_id="us-co-workforce-and-cpa-review",
+                                 description="At least 50% Colorado residents in the in-state workforce (C.R.S. 24-48.5-116(1)), wages with Colorado income tax withheld, and a Colorado-performed CPA review "
+                                             "(116(2)(c)); the incentive is also limited to the office's appropriation. Not stated for this production, so disclosed, not assumed satisfied.",
                                  quote="employing a workforce for any in-state production activities made up of at least fifty percent Colorado residents "
                                        "(C.R.S. 24-48.5-116(1), official 2024 printout)",
                                  kind="project_fact_dependent_eligibility",
-                                 required_boolean_fact_key="us_co_workforce_and_preapproval_met",
+                                 required_boolean_fact_key="us_co_workforce_50pct_and_cpa_review_stated",
                                  gates_tier_eligibility=False),)),),
 ))
 register_rate_rules(rate_rules_for(US_CO_DOCTRINE))
@@ -8416,16 +8431,22 @@ US_AZ_DOCTRINE = register(DoctrineRecord(
     ),
     tiers=(DoctrineRateTier(tier_id="us-az-base-15", rate=0.15, is_band_ceiling=False,
                              conditions=(RateCondition(
-                                 condition_id="us-az-eligibility-conditions",
-                                 description="Claim-level conditions (A.R.S. 41-1517): a motion picture production company primarily engaged in producing motion pictures with a physical business "
-                                             "office in Arizona; Arizona production labor positions; preapproval before and postapproval after production with an Arizona CPA audited statement; "
-                                             "the production uses a qualified production facility (10,000 sq ft or more) or films primarily at a practical location in Arizona with Arizona "
-                                             "pre-production, post-production and editing; credits are issued in order of complete application within the annual cap. Not stated for this "
-                                             "production, so disclosed, not assumed satisfied.",
+                                 condition_id="us-az-preapproval-and-postapproval",
+                                 description="Preapproval before and postapproval after production by the Arizona commerce authority, with an Arizona CPA audited statement (A.R.S. 41-1517; 43-1165(D)(4)). "
+                                             "Not stated for this production, so disclosed, not assumed satisfied; the producer's resolution of the agency pre-approval gate clears it.",
                                  quote="Receive preapproval and postapproval from the Arizona commerce authority pursuant to section 41-1517 (A.R.S. 43-1165(D)(4))",
                                  kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="us_az_eligibility_conditions_met",
-                    gates_tier_eligibility=False),)),
+                                 required_boolean_fact_key="us_az_motion_picture_production__agency_preapproval_confirmed",
+                                 gates_tier_eligibility=False),
+                              RateCondition(
+                                 condition_id="us-az-company-and-facility",
+                                 description="A motion picture production company primarily engaged in producing motion pictures with a physical business office in Arizona (A.R.S. 41-1517(O)); Arizona "
+                                             "production labor positions; the production uses a qualified production facility (10,000 sq ft or more) or films primarily at a practical location in Arizona "
+                                             "with Arizona pre-production, post-production and editing. Not stated for this production, so disclosed, not assumed satisfied.",
+                                 quote="a person primarily engaged in producing motion pictures that has a physical business office in this state (A.R.S. 41-1517(O))",
+                                 kind="project_fact_dependent_eligibility",
+                                 required_boolean_fact_key="us_az_motion_picture_production__local_entity_or_partner_confirmed",
+                                 gates_tier_eligibility=False),)),
            DoctrineRateTier(tier_id="us-az-base-17_5", rate=0.175, is_band_ceiling=False, min_qpe_usd=10_000_000.01),
            DoctrineRateTier(tier_id="us-az-base-20", rate=0.20, is_band_ceiling=False, min_qpe_usd=35_000_000.01),
            DoctrineRateTier(tier_id="us-az-ceiling-20", rate=0.20, is_band_ceiling=True,
@@ -8587,7 +8608,7 @@ CA_NL_DOCTRINE = register(DoctrineRecord(
                   "Corporation prior to the commencement of the production "
                   "(gov.nl.ca)",
             kind="project_fact_dependent_eligibility",
-            required_boolean_fact_key="ca_nl_part1_registered_before_production",
+            required_boolean_fact_key="ca_nl_all_spend_credit__agency_preapproval_confirmed",
             gates_tier_eligibility=False,
         ),),
     ),),

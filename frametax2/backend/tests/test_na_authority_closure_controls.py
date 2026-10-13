@@ -104,14 +104,18 @@ from app.calculators.allocation_pricing import presumed_facts_from_resolution
 from app.services.canonical_evaluation import _QUALIFICATION_ADMITS_RECOMMENDED, _rate_condition_qualification_impact
 
 _PRODUCER_FACT_CASES = [
-    # slug, qpe, amount facts, (evidenced fact ids), the condition they clear
-    ("ca_federal_cptc", 1_000_000.0, {"ca_federal_cptc_qualified_labour_usd": 300_000.0}, ("ca_cptc_cavco_certified", "ca_cptc_canadian_controlled_applicant"),
+    # slug, qpe, amount facts, (evidenced fact ids), the conditions they clear. The CPTC certificate/control, the NL Part I registration, the Colorado pre-approval and the OCASE permanent
+    # establishment are the Inspector's CONTENT-GATE keys (one persistence owner: POST /projects/{id}/content-gates); the rest are program-facts keys.
+    ("ca_federal_cptc", 1_000_000.0, {"ca_federal_cptc_qualified_labour_usd": 300_000.0},
+     ("ca_federal_cptc__cultural_test_confirmed", "ca_federal_cptc__local_entity_or_partner_confirmed"),
      {"ca-cptc-content-certification-required", "ca-cptc-canadian-controlled-corporation"}),
     ("on_opstc", 2_000_000.0, {}, ("on_opstc_ontario_labour_25pct_confirmed",), {"ca-on-labour-ratio-gate"}),
-    ("ontario_computer_animation_and_special_effects_tax_credit_ocase", 1_000_000.0, {"on_ocase_qualifying_vfx_labour_usd": 100_000.0}, ("on_ocase_claim_conditions_met",),
-     {"on-ocase-claim-conditions"}),
-    ("ca_nl_all_spend_credit", 2_000_000.0, {}, ("ca_nl_part1_registered_before_production",), {"ca-nl-part1-registration-required"}),
-    ("us_co_film_incentive", 2_000_000.0, {}, ("us_co_workforce_and_preapproval_met",), {"us-co-workforce-and-preapproval"}),
+    ("ontario_computer_animation_and_special_effects_tax_credit_ocase", 1_000_000.0, {"on_ocase_qualifying_vfx_labour_usd": 100_000.0},
+     ("ontario_computer_animation_and_special_effects_tax_credit_ocase__local_entity_or_partner_confirmed", "on_ocase_ontario_labour_over_cad_25000_stated"),
+     {"on-ocase-permanent-establishment", "on-ocase-labour-over-cad-25000"}),
+    ("ca_nl_all_spend_credit", 2_000_000.0, {}, ("ca_nl_all_spend_credit__agency_preapproval_confirmed",), {"ca-nl-part1-registration-required"}),
+    ("us_co_film_incentive", 2_000_000.0, {}, ("us_co_film_incentive__agency_preapproval_confirmed", "us_co_workforce_50pct_and_cpa_review_stated"),
+     {"us-co-preapproval-before-production", "us-co-workforce-and-cpa-review"}),
 ]
 
 
@@ -128,11 +132,42 @@ def test_a_missing_producer_fact_holds_the_program_at_user_fact_required_and_a_s
     assert not presumed_facts_from_resolution(stated)
 
 
-def test_every_new_producer_fact_is_settable_through_the_existing_producer_fact_path():
+def test_every_producer_fact_has_exactly_one_persistence_owner():
+    """A proposition that is a content/approval gate is written ONLY through the content-gate control; every other fact only through program-facts. No key is in both."""
     from app.services.ny_producer_facts import NY_EVIDENCED_FACTS
+    from app.services.program_content_gates import GATE_FACT_PREFIX, gate_control_whitelist
+    gate_keys = {k for k in gate_control_whitelist()}
+    assert not (gate_keys & set(NY_EVIDENCED_FACTS)), "a fact must not have two writers"
     for *_x, facts, _c in _PRODUCER_FACT_CASES:
         for f in facts:
-            assert f in NY_EVIDENCED_FACTS, f
+            assert (f in NY_EVIDENCED_FACTS) != (f in gate_keys), f"{f}: exactly one owner"
+    assert GATE_FACT_PREFIX == "evidenced_program_fact:"
+
+
+def test_no_boolean_fact_referenced_by_a_north_american_rate_rule_lacks_a_producer_writer():
+    from app.data.program_rate_rules import SUBSET_UPLIFT_RULES, get_rate_rules
+    from app.services import na_canonical_reconciliation as na
+    from app.services.ny_producer_facts import NY_EVIDENCED_FACTS
+    from app.services.program_content_gates import gate_control_whitelist
+    writers = set(NY_EVIDENCED_FACTS) | set(gate_control_whitelist())
+    missing: dict[str, set[str]] = {}
+    for slug in na.frozen_universe()["rate_bearing"]:
+        keys = set()
+        for rule in get_rate_rules(slug):
+            for c in rule.conditions:
+                keys |= {k for k in (c.required_boolean_fact_key, c.superseded_by_boolean_fact_key, c.regional_uplift_multiplier_fact_key, *c.blocked_by_boolean_fact_keys) if k}
+        for up in SUBSET_UPLIFT_RULES.get(slug, ()):
+            keys |= {k for k in (up.prerequisite_fact, up.whole_base_fact, up.excluded_fact) if k}
+        for k in keys - writers:
+            missing.setdefault(k, set()).add(slug)
+    assert missing == {}, missing
+
+
+def test_texas_award_numbers_have_a_validated_numeric_writer():
+    from app.services.ny_producer_facts import PROGRAM_AMOUNT_FACTS
+    assert set(PROGRAM_AMOUNT_FACTS) == {"us_tx_miip_awarded_rate_pct", "us_tx_miip_resident_crew_pct", "us_tx_miip_resident_cast_pct"}
+    assert PROGRAM_AMOUNT_FACTS["us_tx_miip_awarded_rate_pct"] == (0.0, 0.31), "a fraction within the 31% ceiling, as the RateRule validates it"
+    assert PROGRAM_AMOUNT_FACTS["us_tx_miip_resident_crew_pct"] == (0.0, 100.0)
 
 
 def test_pennsylvania_aggregate_cast_cap_excludes_only_the_excess_above_fifteen_million():

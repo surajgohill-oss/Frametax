@@ -84,6 +84,11 @@ def _known_slugs() -> set[str]:
     slugs = set(COVERAGE_REGISTRY.keys())
     slugs.update(p.program_slug for p in _jc.ALL_PROFILES.values() if p.program_slug)
     slugs.update(p.program_slug for p in _gi.ALL_PROGRAMS if p.program_slug)
+    # NA-RECONCILIATION-11: every rate-bearing program has a canonical identity. Twelve priced programs (ca_bc_dave, ca_federal_cptc, on_ofttc, OCASE, us_ny_post_production_credit
+    # and seven outside North America) were absent from the three registries above, so they had no addressable identity, no consolidation view and no row in the identity manifest.
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM
+
+    slugs.update(_RULES_BY_PROGRAM.keys())
     return slugs
 
 
@@ -166,6 +171,11 @@ def _jurisdiction_name_type(slug: str) -> tuple[str | None, str | None, str | No
     for p in _gi.ALL_PROGRAMS:
         if p.program_slug == slug:
             return p.jurisdiction_code, p.program_name, p.program_type
+    from app.data.executable_jurisdiction_registry import get_doctrine
+
+    doctrine = get_doctrine(slug)
+    if doctrine is not None:
+        return doctrine.jurisdiction_code, doctrine.program_name, doctrine.incentive_type
     row = COVERAGE_REGISTRY.get(slug)
     program_name = row.program_name if row is not None else None
     if program_name is not None:

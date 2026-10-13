@@ -95,7 +95,7 @@ async def test_a_stated_zero_contingency_utilization_lowers_the_cptc_cost_cap_an
 
 _STACK_LINES = (("2000", "DIRECTOR FEE", "atl_director", "atl", 400_000.0), ("3000", "CREW", "btl_crew_labor", "btl", 1_500_000.0),
                 ("3100", "EQUIPMENT RENTAL", "btl_equipment_rental", "btl", 600_000.0), ("4000", "VFX", "vfx", "post", 300_000.0))
-_CPTC_FACTS = ("ca_cptc_cavco_certified", "ca_cptc_canadian_controlled_applicant")
+_CPTC_FACTS = ("ca_federal_cptc__cultural_test_confirmed", "ca_federal_cptc__local_entity_or_partner_confirmed")
 
 
 async def _cptc_entries(facts):

@@ -43,16 +43,32 @@ NY_EVIDENCED_FACTS = {
     "mb_production_company_bonus_eligible": None,
     "mb_t4_payroll_below_25pct_stated": None,
     "ab_fttc_30pct_criteria_met": None,
-    "ca_cptc_cavco_certified": None,
-    "ca_cptc_canadian_controlled_applicant": None,
+    # NA-RECONCILIATION-11. Propositions that are ALSO content/approval gates (CPTC certificate and control, NL Part I registration, Colorado/Arizona pre-approval, OCASE permanent
+    # establishment) are NOT repeated here: their one persistence owner is the Inspector content-gate control (POST /projects/{id}/content-gates, key <slug>__<kind>_confirmed).
     "on_opstc_ontario_labour_25pct_confirmed": None,
-    "on_ocase_claim_conditions_met": None,
-    "ca_nl_part1_registered_before_production": None,
-    "us_co_workforce_and_preapproval_met": None,
-    "us_az_eligibility_conditions_met": None,
+    "on_ocase_ontario_labour_over_cad_25000_stated": None,
+    "us_co_workforce_50pct_and_cpa_review_stated": None,
+    # facts the canonical rules already read but no producer path could write
+    "al_all_payroll_to_alabama_residents": None,
+    "ca_bc_dave_eligible_activity_confirmed": None,
+    "ca_film_independent_category": None,
+    "us_or_opif_award_confirmed": None,
+    "us_or_opif_fund_amount_current_confirmed": None,
+    "us_or_opif_regional_uplift_confirmed": None,
+    "us_tx_miip_award_confirmed": None,
+    "us_tx_miip_pool_period_valid": None,
     "mb_two_residents_trained_per_nonresident": "mb_one_resident_trained_per_nonresident",
     "mb_one_resident_trained_per_nonresident": "mb_two_residents_trained_per_nonresident",
 }
+
+
+#: Producer-stated NUMERIC program facts a caller may set: key -> (minimum, maximum). Stored as ``amount_fact:<key>``; null clears (Unknown, never 0).
+PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
+    "us_tx_miip_awarded_rate_pct": (0.0, 0.31),   # a FRACTION despite the name: the award letter's rate within [0, the 31% ceiling] (RateRule.awarded_rate_min/max)
+    "us_tx_miip_resident_crew_pct": (0.0, 100.0),
+    "us_tx_miip_resident_cast_pct": (0.0, 100.0),
+}
+AMOUNT_PREFIX = "amount_fact:"
 
 
 def expand_uplift_basis(rows) -> tuple[dict[str, float], frozenset[str]]:
@@ -102,7 +118,8 @@ PRODUCER_ROLES = ("executive", "line", "other")
 
 async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced: dict | None = None,
                                  payees: list[dict] | None = None, uplift_basis: list[dict] | None = None,
-                                 producer_roles: list[dict] | None = None, composer_portions: list[dict] | None = None) -> dict:
+                                 producer_roles: list[dict] | None = None, composer_portions: list[dict] | None = None,
+                                 amounts: dict | None = None) -> dict:
     """Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
     mutually exclusive pair (inside/outside the commuter district, Production Plus 10%/5% tier) REPLACES the stored partner in the same
     transaction, so two contradictory elections can never be stored; stating both in one request is rejected. `payees`:
@@ -113,6 +130,13 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
     from app.data.program_rate_rules import SUBSET_UPLIFT_RULES
     evidenced, payees, uplift_basis = evidenced or {}, payees or [], uplift_basis or []
     producer_roles, composer_portions = producer_roles or [], composer_portions or []
+    amounts = amounts or {}
+    for key, value in amounts.items():
+        if key not in PROGRAM_AMOUNT_FACTS:
+            raise ValueError(f"'{key}' is not a settable numeric program fact")
+        lo, hi = PROGRAM_AMOUNT_FACTS[key]
+        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
+            raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")
     lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions) else {}
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
@@ -163,6 +187,8 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
                 await session.delete(stored)       # the producer changed the answer: the contradictory partner is cleared atomically
                 replaced.append(partner)
         await _upsert(session, project_id, EVIDENCED_PREFIX + fid, "true" if value is True else None, "boolean")
+    for key, value in amounts.items():
+        await _upsert(session, project_id, AMOUNT_PREFIX + key, None if value is None else repr(float(value)), "number")
     for p in payees:
         lid = str(p["line_id"])
         pid = None if p.get("payee_id") is None else str(p["payee_id"]).strip()
@@ -187,6 +213,6 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
                 by_line[str(u["line_id"])] = float(u["amount_usd"])
         await _upsert(session, project_id, UPLIFT_BASIS_FACT_KEY, json.dumps(data, sort_keys=True), "json")
     await session.flush()
-    return {"evidenced": sorted(evidenced), "replaced": replaced, "payee_lines": [str(p["line_id"]) for p in payees],
+    return {"evidenced": sorted(evidenced), "amounts": sorted(amounts), "replaced": replaced, "payee_lines": [str(p["line_id"]) for p in payees],
             "producer_role_lines": [str(r["line_id"]) for r in producer_roles], "composer_lines": [str(c["line_id"]) for c in composer_portions],
             "uplift_lines": [str(u["line_id"]) for u in uplift_basis]}
