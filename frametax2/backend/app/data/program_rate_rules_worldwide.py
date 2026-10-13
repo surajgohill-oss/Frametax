@@ -7062,7 +7062,7 @@ CA_AB_DOCTRINE = register(DoctrineRecord(
         issuing_authority="Government of Alberta (Jobs, Economy and Trade); Film and Television Tax Credit Act and Film and Television Tax Credit Regulation",
         source_url="https://www.alberta.ca/film-television-tax-credit",
         citation_detail="Film and Television Tax Credit (FTTC) — Program Guidelines; Film and Television Tax Credit Act and Regulation (amendments in force 2024-06-07)",
-        verified_date="2026-07-26",
+        verified_date="2026-10-11",
         interpretation_note="Recovered internally: this program already carried "
                              "a PRIMARY-tier EvidenceRecord in program_requirements.py "
                              "(a separate existing canonical provenance store) that had "
