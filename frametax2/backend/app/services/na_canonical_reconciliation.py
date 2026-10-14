@@ -430,10 +430,26 @@ def _fact_info(m, slug: str) -> list[dict]:
                 if k:
                     stored.add(EVIDENCED_PREFIX + k)
     for up in SUBSET_UPLIFT_RULES.get(slug, ()):
-        for k in (up.prerequisite_fact, up.whole_base_fact, up.excluded_fact):
+        for k in (up.prerequisite_fact, up.whole_base_fact, up.excluded_fact, up.stream_i_fact, up.stream_ii_fact, *up.criteria_facts, *[c[5] for c in up.compensation_credits if len(c) > 5 and c[5]]):
             if k:
                 stored.add(EVIDENCED_PREFIX + k)
                 uplift_keys.add(k)
+        # NA-RECONCILIATION-21: the numeric inputs of the statutory-formula kinds (day counts, wages, stated amounts, headcounts) are producer facts too
+        for k in (up.day_numerator_fact, up.day_denominator_fact, up.amount_fact, up.hod_filled_fact, up.hod_resident_fact, up.post_wage_fact, *up.assistance_facts, *up.tier_numerator_facts,
+                  *[f for group in up.tier_numerator_groups for f in group], *[f for c in up.compensation_credits for f in c[:2] if f]):
+            if k:
+                stored.add((AMOUNT_PREFIX if k in PROGRAM_AMOUNT_FACTS else EVIDENCED_PREFIX) + k)
+                uplift_keys.add(k)
+    from app.data.program_rate_rules import SUBSET_BASE_DEDUCTIONS, SUBSET_DEEMED_SPEND, SUBSET_PRODUCER_POSITION_LIMITS, SUBSET_RATE_ON_EXTRA_BASE
+    for fact_key, _src in SUBSET_BASE_DEDUCTIONS.get(slug, ()):
+        stored.add(AMOUNT_PREFIX + fact_key)
+    if slug in SUBSET_DEEMED_SPEND:
+        stored.add(AMOUNT_PREFIX + SUBSET_DEEMED_SPEND[slug][0])
+    if slug in SUBSET_RATE_ON_EXTRA_BASE:
+        stored.add(AMOUNT_PREFIX + SUBSET_RATE_ON_EXTRA_BASE[slug][0])
+    if slug in SUBSET_PRODUCER_POSITION_LIMITS:
+        cfg = SUBSET_PRODUCER_POSITION_LIMITS[slug]
+        stored.update({AMOUNT_PREFIX + cfg["extra_fees_fact"], AMOUNT_PREFIX + cfg["total_fees_fact"], EVIDENCED_PREFIX + cfg["approved_fact"]})
     out = []
     for st in sorted(stored):
         kind = "evidenced" if st.startswith(EVIDENCED_PREFIX) else "amount"
@@ -442,7 +458,7 @@ def _fact_info(m, slug: str) -> list[dict]:
             if key in gate_keys and key not in NY_EVIDENCED_FACTS:
                 writer, ui = "POST /projects/{id}/content-gates (program_content_gates)", "EXISTS: Inspector content-gates control (frontend/src/shell/Inspector.jsx, api.js)"
             elif key in NY_EVIDENCED_FACTS:
-                writer, ui = "POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)", "NONE: no Overview/Inspector control and no api.js client"
+                writer, ui = "POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)", _program_fact_ui(key)
             else:
                 writer, ui = "NO WRITER", "NONE"
             unknown = "absence = Unknown; a false is never stored as evidence (true or null only)" if key in NY_EVIDENCED_FACTS else "absence = Unknown; refused is stored false = not evidenced"
@@ -451,7 +467,7 @@ def _fact_info(m, slug: str) -> list[dict]:
             if key in component_basis:
                 writer, ui = "derived from this segment's own allocation lines (component basis)", "not a producer input"
             elif key in PROGRAM_AMOUNT_FACTS:
-                writer, ui = "POST /projects/{id}/program-facts (amounts, validated 0-100)", "NONE: no Overview/Inspector control and no api.js client"
+                writer, ui = "POST /projects/{id}/program-facts (amounts, validated against the registered bounds)", _program_fact_ui(key)
             else:
                 writer, ui = "NO WRITER", "NONE"
             unknown = "absence = Unknown (never defaulted to 0)"
@@ -459,6 +475,14 @@ def _fact_info(m, slug: str) -> list[dict]:
         out.append({"key": key, "kind": kind, "scope": "uplift (maximum only)" if key in uplift_keys else "confirmed treatment", "stored_as": st, "writer": writer,
                     "unknown_semantics": unknown, "fingerprint": fp, "ui_control": ui})
     return out
+
+
+def _program_fact_ui(key: str) -> str:
+    """The Overview 'Program facts' panel (NA-RECONCILIATION-21) carries every catalogued fact; the older New York / Ontario / Texas / Colorado facts still have no control."""
+    from app.services.producer_fact_catalog import CATALOG
+    if key in CATALOG:
+        return "EXISTS: Overview Program facts panel (frontend/src/components/ProgramFactsPanel.jsx, api.js postProgramFacts; served view production.program_facts)"
+    return "NONE: no Overview/Inspector control and no api.js client"
 
 
 def build_matrix() -> list[dict]:

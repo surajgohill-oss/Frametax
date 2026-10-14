@@ -42,6 +42,7 @@ from app.models.project import Project
 from app.models.project_asset import ProjectAsset
 from app.models.project_fact import ProjectFact
 from app.services.canonical_project_economics import contingency_planning_view
+from app.services.producer_fact_catalog import program_facts_view
 from app.services.production_type_election import production_type_view
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
@@ -2265,6 +2266,8 @@ async def build_production_and_structures(
         ),
         # The producer's stated production type (Project.format) and what it means for eligibility; the one canonical view, edited from the Overview.
         "production_type": production_type_view(project.format),
+        # NA-RECONCILIATION-21: the producer-stated program facts (read-only; Unknown vs Stated; one canonical ProjectFact owner), edited from the Overview.
+        "program_facts": await program_facts_view(session, project.id),
         "production_structure_default": None,
         # Item B (Final non-Globe closeout, 2026-09-04) — see the
         # discretionary_policy_view build immediately above.

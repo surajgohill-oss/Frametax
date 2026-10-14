@@ -269,7 +269,9 @@ def test_a_confirmation_resolves_the_gate_and_a_refusal_hard_blocks_only_mandato
 
 def test_only_served_resolvable_gate_keys_are_whitelisted_and_every_key_fits_the_fact_column():
     w = gate_control_whitelist()
-    assert len(w) == 113 and gate_fact_key(SA, KIND_SCRIPT_CONTENT_CLEARANCE) in w
+    # Restated in NA-RECONCILIATION-21: the count was 113 when pinned; the NA-RECONCILIATION-10 to 20 programs (Ohio, West Virginia, New Jersey, Missouri, Arkansas, Montana, the New York independent credit, the BC domestic
+    # credit with its three gates, Saskatchewan and others) each declare preapproval / content gates in their requirements profiles, which the whitelist derives, so it is 139 at the committed parent (shown failing there).
+    assert len(w) == 139 and gate_fact_key(SA, KIND_SCRIPT_CONTENT_CLEARANCE) in w
     assert "us_tx_miip__arbitrary_confirmed" not in w and "director" not in w
     assert max(len("evidenced_program_fact:" + k) for k in w) <= 100
     assert all(g["resolvable"] for g in w.values())

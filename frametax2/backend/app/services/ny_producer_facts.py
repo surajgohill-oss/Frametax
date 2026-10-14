@@ -159,6 +159,13 @@ PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
 }
 AMOUNT_PREFIX = "amount_fact:"
 
+#: Day, person, position and year counts must be whole numbers (the pricing paths refuse a fraction rather than round it).
+WHOLE_NUMBER_FACT_PREFIXES = ("ca_bc_principal_photography_days_", "ca_ns_principal_photography_days_", "ca_ns_hod_", "ca_ns_principal_performers_", "ca_nb_principal_photography_days_", "ca_nb_days_", "ca_sk_principal_photography_days_", "ca_sk_days_", "us_mt_studio_rental_days", "us_mt_media_expenditure_year", "us_mt_resident_crew_persons", "us_mt_nonresident_crew_persons", "us_mt_talent_persons", "us_mt_student_persons", "us_mt_veteran_tribal_persons")
+
+
+def is_whole_number_fact(key: str) -> bool:
+    return key.startswith(WHOLE_NUMBER_FACT_PREFIXES)
+
 
 def expand_uplift_basis(rows) -> tuple[dict[str, float], frozenset[str]]:
     """Stored subsets -> the logical `uplift_basis:<program>:<uplift>:<line id>` amount keys and the SAME keys as evidenced facts
@@ -224,7 +231,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if key not in PROGRAM_AMOUNT_FACTS:
             raise ValueError(f"'{key}' is not a settable numeric program fact")
         lo, hi = PROGRAM_AMOUNT_FACTS[key]
-        if key.startswith(("ca_bc_principal_photography_days_", "ca_ns_principal_photography_days_", "ca_ns_hod_", "ca_ns_principal_performers_", "ca_nb_principal_photography_days_", "ca_nb_days_", "ca_sk_principal_photography_days_", "ca_sk_days_", "us_mt_studio_rental_days", "us_mt_media_expenditure_year", "us_mt_resident_crew_persons", "us_mt_nonresident_crew_persons", "us_mt_talent_persons", "us_mt_student_persons", "us_mt_veteran_tribal_persons")) and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
+        if is_whole_number_fact(key) and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
             raise ValueError(f"'{key}' must be a whole number of days")
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
             raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")
@@ -268,6 +275,19 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if amount is not None and (isinstance(amount, bool) or not isinstance(amount, (int, float)) or not math.isfinite(amount)
                                    or amount < 0 or amount > lines[str(u["line_id"])] + 0.005):
             raise ValueError(f"uplift amount for line {u['line_id']} must be a finite number within the line's budget amount")
+    if amounts:
+        # cross-field relations on the merged stored + incoming numbers (an unstated side is never assumed); NA-RECONCILIATION-21
+        from app.services.producer_fact_catalog import stored_values, validate_relations
+        _stored_bool, merged = await stored_values(session, project_id)
+        for k, v in amounts.items():
+            if v is None:
+                merged.pop(k, None)
+            else:
+                merged[k] = float(v)
+        try:
+            validate_relations(merged)
+        except ValueError as exc:
+            raise ValueError(str(exc)) from None
     replaced: list[str] = []
     for fid, value in evidenced.items():
         partner = NY_EVIDENCED_FACTS[fid]

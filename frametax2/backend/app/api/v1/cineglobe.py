@@ -941,7 +941,7 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
     """Backend write path for producer-stated program facts (New York post facility location, majority-days/scoring/Production Plus
     prerequisites, identified payees with complete compensation, Ontario/BC zone and first-time-producer facts, evidenced uplift portions). Stored in the existing ProjectFact
     table and covered by the evaluation fingerprint; a later evaluation prices them. Unknown is a cleared (null) fact, never
-    false. The Overview/Inspector controls for these facts are a separate pending UI stage."""
+    false. The Overview panel (ProgramFactsPanel) edits them; the UI then runs the shared single-flight evaluation."""
     from app.services.ny_producer_facts import write_ny_program_facts
     project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
     if project is None:
@@ -953,7 +953,19 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
         await db.rollback()
         raise HTTPException(status_code=422, detail=str(exc))
     await db.commit()
-    return {"applied": applied}
+    # Saving never evaluates (the UI runs the shared single-flight evaluation afterwards); the refreshed read-only view is returned so the form restores from the stored rows, not from local state.
+    from app.services.producer_fact_catalog import program_facts_view
+    return {"applied": applied, "program_facts": await program_facts_view(db, project.id)}
+
+
+@router.get("/projects/{project_id}/program-facts")
+async def get_program_facts(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Read-only: the stored producer-stated program facts (Unknown vs Stated). Never evaluates, never writes."""
+    from app.services.producer_fact_catalog import program_facts_view
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"program_facts": await program_facts_view(db, project.id)}
 
 
 # Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL

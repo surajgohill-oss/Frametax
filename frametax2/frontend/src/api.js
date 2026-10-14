@@ -116,6 +116,12 @@ export const postProjectAssumptions = (projectId, answers) =>
 export const postProductionType = (projectId, format) =>
   request(`/projects/${projectId}/production-type`, { method: "POST", body: JSON.stringify({ format }) });
 
+// Producer-stated program facts (NA-RECONCILIATION-21): the one canonical ProjectFact path (POST /projects/{id}/program-facts). The call stores and returns the refreshed read-only view; it does NOT
+// evaluate (the caller runs the shared single-flight evaluation). `evidenced`: { key: true | null }, `amounts`: { key: number | null }; null clears a fact back to Unknown. A "No" is never sent.
+export const getProgramFacts = (projectId) => request(`/projects/${projectId}/program-facts`);
+export const postProgramFacts = (projectId, { evidenced = {}, amounts = {} } = {}) =>
+  request(`/projects/${projectId}/program-facts`, { method: "POST", body: JSON.stringify({ evidenced, amounts }) });
+
 // Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
 // candidate-jurisdiction inclusion/exclusion election (the SAME real
 // ProjectFact write path as postProjectAssumptions above, a different

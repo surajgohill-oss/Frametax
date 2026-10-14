@@ -11,6 +11,7 @@ import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { isBaselineStructure, rankOrNpcOrder } from "../../lib/productionOptions";
 import ProductionDetails from "../../components/ProductionDetails";
 import ProductionTypeLine from "../../components/ProductionTypeLine";
+import ProgramFactsPanel from "../../components/ProgramFactsPanel";
 import EvaluationStatus from "../../components/EvaluationStatus";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
@@ -172,6 +173,12 @@ export default function Overview() {
           <ProductionTypeLine
             projectId={projectId}
             productionType={production?.production_type}
+            onSaved={() => { refetch(); window.dispatchEvent(new Event("cineglobe:refetch")); }}
+            evaluateOnSave={production?.evaluation_freshness !== "STALE"}
+          />
+          <ProgramFactsPanel
+            projectId={projectId}
+            programFacts={production?.program_facts}
             onSaved={() => { refetch(); window.dispatchEvent(new Event("cineglobe:refetch")); }}
             evaluateOnSave={production?.evaluation_freshness !== "STALE"}
           />
