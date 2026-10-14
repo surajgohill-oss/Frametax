@@ -81,7 +81,11 @@ async def test_the_library_keeps_stale_productions_labelled_and_never_marks_them
     assert cards[ids["never"]].evaluation_freshness == "NONE" and cards[ids["never"]].is_served_production is False
 
 
-async def test_the_company_globe_keeps_stale_productions_without_evaluating_or_writing_anything():
+async def test_the_company_globe_keeps_stale_productions_without_evaluating_or_writing_anything(monkeypatch):
+    # Hermetic (NA-RECONCILIATION-15): the isolated database also holds a pre-existing project whose generation is CURRENT, and the globe rebuilds the derived snapshot cache of a
+    # current project (a cache write, never an evaluation). The write guard rightly refuses that write to a non-synthetic row, so this control looks only at its own synthetic projects.
+    import app.api.v1.projects as _projects
+    monkeypatch.setattr(_projects, "_is_producer_visible", lambda title: bool(title) and title.startswith("SYNTHETIC test project"))
     async with isolated_session() as db:
         ids, org_id = await _setup(db)
         before = (await db.execute(select(func.count()).select_from(EvaluationGenerationSummary))).scalar_one()
