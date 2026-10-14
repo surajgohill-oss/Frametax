@@ -121,16 +121,17 @@ class AggregateCategoryCap:
     label: str
     source: str
 
-#: Pennsylvania Film Production Tax Credit Guidelines (DCED, 10/28/2020), Component A note: "There is a $15 million cap on the aggregate amount of payments eligible for a tax credit for
-#: 'above the line' services provided by principal actors in the production of a Film, whether directly or through a 'loan-out' company." The statute (Act 84 of 2016, Article XVII-D,
-#: 'qualified film production expense', Appendix A to the Guidelines) is worded more widely: the term "shall not include more than $15,000,000 in the aggregate of compensation paid to
-#: individuals or payment made to entities representing an individual for services provided in the production of the film". The administering agency's reading (principal actors) is
-#: applied; the wider statutory reading is an OPEN interpretation recorded in the requirements profile. The budget's above-the-line cast account is the proxy for principal actors, so the
-#: excluded part is an upper bound where supporting cast sits in the same account; it is an aggregate over the account, not a per-person limit (nothing needs to identify a payee).
+#: NA-RECONCILIATION-17 (settled from the primary text, read 2026-10-14). The statute (Act 84 of 2016, Article XVII-D, definition of 'qualified film production expense', Appendix A to the Guidelines,
+#: https://dced.pa.gov/download/?wpdmdl=75381) says the term "shall not include more than $15,000,000 in the aggregate of compensation paid to individuals or payment made to entities representing an
+#: individual for services provided in the production of the film", and the DCED Guidelines (10/28/2020, https://dced.pa.gov/download/film-production-tax-credit-guidelines/?wpdmdl=75431) restate that
+#: definition in the same words ("the aggregate amount of compensation paid to individuals or payment made to entities representing an individual for services provided in the production of the Film capped
+#: at $15,000,000"). Only a separate note under Component A describes the cap as limited to principal actors' above-the-line services; the defining text, in the statute and in the agency's own
+#: definition, covers ALL individuals, so the cap is applied to every personnel category (cast, directors, writers, producers and crew payroll). It is an aggregate over the accounts, not a per-person
+#: limit (nothing needs to identify a payee). The earlier principal-actor (cast-only) reading, which priced more qualifying expense, is retired.
 AGGREGATE_CATEGORY_CAPS: dict[str, AggregateCategoryCap] = {
     "us_pa_film_production_credit": AggregateCategoryCap(
-        15_000_000.0, frozenset({"atl_cast"}), "$15,000,000 aggregate cap on payments for above-the-line services of principal actors, directly or through loan-out companies",
-        "Pennsylvania DCED Film Production Tax Credit Guidelines (10/28/2020), Component A note; Act 84 of 2016, Article XVII-D, definition of 'qualified film production expense'"),
+        15_000_000.0, PERSONNEL_CATEGORIES, "$15,000,000 aggregate cap on compensation paid to individuals (or to entities representing an individual) for services in the production",
+        "Pennsylvania Act 84 of 2016, Article XVII-D, definition of 'qualified film production expense' (Appendix A to the DCED Film Production Tax Credit Guidelines); restated in the Guidelines' own definition (10/28/2020)"),
 }
 
 def apply_aggregate_category_cap(register, category_by_line: dict[str, str], rule: AggregateCategoryCap):
@@ -159,6 +160,5 @@ def apply_aggregate_category_cap(register, category_by_line: dict[str, str], rul
             out.append(replace(e, amount_usd=round(e.amount_usd - c, 2), financial_impact_usd=round(e.amount_usd - c, 2)))
         out.append(replace(e, amount_usd=c, financial_impact_usd=c, state=QualificationState.EXCLUDED, confidence=QualificationConfidence.HIGH,
                            authority_basis=AuthorityBasis.EXPLICIT_STATUTE, incentive_upside_usd=None, grey_reason=None, resolving_evidence=None,
-                           reason=f"Excluded above the {rule.label} ({rule.source}). The above-the-line cast account is the proxy for principal actors, so this is an upper bound on the excluded amount; "
-                                  "the statute's wider wording (all individuals) is an open interpretation."))
+                           reason=f"Excluded above the {rule.label} ({rule.source}). The cap is an aggregate over all personnel compensation in the budget; the excess is taken from the last accounts first."))
     return out

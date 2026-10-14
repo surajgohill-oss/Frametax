@@ -675,6 +675,21 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
             needed += [f for f in (comp.day_numerator_fact, comp.day_denominator_fact) if (amounts or {}).get(f) is None and f not in needed]
         return 0.0, round(rule.rate * qle * ratio_cap, 2), (f"{rule.uplift_id}: statutory shooting-day inputs not all stated ({', '.join(sorted(set(needed))) or 'eligibility'}); "
                                                            f"bounded at the whole-QLE figure ({rule.source_ref})")
+    if rule.kind == "tiered_day_ratio":
+        den = _stated_count(amounts, rule.day_denominator_fact, "total days of principal photography")
+        if den is not None and den <= 0:
+            raise ValueError(f"{rule.day_denominator_fact}: total days of principal photography must be at least 1 when stated")
+        days = [_stated_count(amounts, k, "days of principal photography in the distance band") for k in rule.tier_numerator_facts]
+        if den is not None and sum(d for d in days if d is not None) > den:
+            raise ValueError(f"{rule.day_denominator_fact}: the distant-location days stated exceed the {den} total days of principal photography")
+        if den is not None and all(d is not None for d in days):
+            amount = round(qle * sum(r * d for r, d in zip(rule.tier_rates, days)) / den, 2)
+            # eligibility requires the Location Incentive first: confirmed only once that is stated; the figure is the most it can be meanwhile
+            return (amount if prerequisite_ok else 0.0), amount, (None if prerequisite_ok or amount == 0 else
+                f"{rule.uplift_id}: needs the Location Incentive first ({rule.prerequisite_fact} not stated); bounded at the computed figure ({rule.source_ref})")
+        needed = [k for k, d in zip(rule.tier_numerator_facts, days) if d is None] + ([rule.day_denominator_fact] if den is None else [])
+        return 0.0, round(qle * max(rule.tier_rates), 2), (f"{rule.uplift_id}: distance-band day counts not all stated ({', '.join(needed)}); bounded at {max(rule.tier_rates):.0%} of the "
+                                                         f"eligible-cost base, the guideline's maximum ({rule.source_ref})")
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)
         if se is None:

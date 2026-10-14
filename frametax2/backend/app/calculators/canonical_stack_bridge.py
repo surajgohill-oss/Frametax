@@ -249,7 +249,10 @@ def netting_basis_label(slug: str) -> str:
     """Whether the PSTC labour netting by this provincial credit is VERIFIED (the authority states the labour portion, or the credit is wholly labour) or an ASSUMED ALLOCATION (an all-spend credit whose
     labour share the authorities do not state: rate x PSTC labour basis, with the whole-credit figure as the lower bound). Kept in the adjustment text so a verified reduction is never read as an assumed one."""
     if any(_is_slug(slug, x) for x in PSTC_APPORTIONED_SLUGS):
-        return "ASSUMED ALLOCATION (not stated by the authority)"
+        # NA-RECONCILIATION-17: official evidence exhausted 2026-10-14 and none states a method. ITA 125.5(1) 'qualified Canadian labour expenditure' paragraph (b) deducts assistance "that can reasonably be
+        # considered to be in respect of" the Canadian labour expenditures (an attribution question, no formula); CAVCO PSTC application guidelines s.5.03, CRA RC4385 (Form T1177 guide, line 612) and the CRA
+        # legislative-requirements page give no apportionment of assistance that also relates to non-labour cost. Rate x PSTC labour basis is therefore an ASSUMPTION, never verified treatment.
+        return "ASSUMED ALLOCATION (not stated by the authority; ITA 125.5(1)(b) asks only what assistance can reasonably be considered to be in respect of labour, and no CRA or CAVCO text gives a method)"
     return "VERIFIED NETTING (authority-stated or wholly in respect of labour)"
 
 

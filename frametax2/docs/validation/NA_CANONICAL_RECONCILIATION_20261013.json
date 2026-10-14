@@ -13,8 +13,8 @@
   "rows": {
    "program_rows": 63,
    "catalog_rows": 82,
-   "proposition_rows": 171,
-   "total": 316
+   "proposition_rows": 173,
+   "total": 318
   },
   "program_class_counts": {
    "PROJECT_FACT_REQUIRED": 20,
@@ -45,7 +45,7 @@
   },
   "proposition_class_counts": {
    "IMPLEMENTATION_DEFECT": 18,
-   "PROJECT_FACT_REQUIRED": 56,
+   "PROJECT_FACT_REQUIRED": 58,
    "CANONICAL_DATA_MISSING": 73,
    "EXISTS_BUT_DISCONNECTED": 14,
    "OPTIMIZER_CAPABILITY_MISSING": 1,
@@ -367,7 +367,7 @@
    "repair_commit_or_file": "GENUINE_AUTHORITY_CONFLICT: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass); IMPLEMENTATION_DEFECT: stacking_rules.py 1.10.0, canonical_stack_bridge.py, migration 0086 (NA-RECONCILIATION-12); CANONICAL_DATA_MISSING: program_requirements.py profile, status UNCERTAIN (NA-RECONCILIATION-12)",
    "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
-   "residual_evidence_needed": "a Nova Scotia 2026-27 budget line or CCTH notice stating the Fund's funding authority for 2026-27; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY"
+   "residual_evidence_needed": "a Nova Scotia 2026-27 budget line or CCTH notice stating the Fund's funding authority for 2026-27; per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, CAP, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
   {
    "canonical_slug": "ca_qc_pstc",
@@ -4195,6 +4195,32 @@
    "canonical_slug": "ca_bc_film_tv_tax_credit",
    "row_layer": "PROPOSITION",
    "row_kind": "PROPOSITION",
+   "proposition_id": "FACT:ca_bc_film_tv_photography_before_2025_confirmed",
+   "aliases": "",
+   "jurisdiction": "CA-BC",
+   "program_name": "British Columbia Film and Television Tax Credit (Film Incentive BC)",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "project fact 'ca_bc_film_tv_photography_before_2025_confirmed' (evidenced; confirmed treatment); unstated = Unknown",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "",
+   "focused_test": "test_bc_statutory_formula_controls.py, test_canonical_stack_bridge.py, test_legacy_stacking_rule_agreement.py, test_na_calculation_closure_controls.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
+  },
+  {
+   "canonical_slug": "ca_bc_film_tv_tax_credit",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
    "proposition_id": "FACT:ca_bc_film_tv_tax_credit__cultural_test_confirmed",
    "aliases": "",
    "jurisdiction": "CA-BC",
@@ -5256,6 +5282,32 @@
    "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_unruled_stack_pairs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
+  },
+  {
+   "canonical_slug": "ca_ns_production_incentive_fund",
+   "row_layer": "PROPOSITION",
+   "row_kind": "PROPOSITION",
+   "proposition_id": "FACT:ca_ns_rural_majority_principal_photography_confirmed",
+   "aliases": "",
+   "jurisdiction": "CA-NS",
+   "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+   "program_type": "",
+   "live_registry_inclusion": "",
+   "authority_disposition": "",
+   "rate_status": "",
+   "rate_value_basis": "not established",
+   "qpe_territorial_status": "",
+   "authority_completeness": "",
+   "qualification_status": "project fact 'ca_ns_rural_majority_principal_photography_confirmed' (evidenced; uplift (maximum only)); unstated = Unknown",
+   "stacking_status": "",
+   "temporal_status": "",
+   "canonical_owner": "canonical_program_identity + executable_jurisdiction_registry.DoctrineRecord + authority_coverage_registry + program_requirements + program_spend_rules",
+   "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI NONE: no Overview/Inspector control and no api.js client",
+   "defect_classification": "PROJECT_FACT_REQUIRED",
+   "repair_commit_or_file": "",
+   "focused_test": "test_canada_rate_rules_controls.py, test_na_canonical_reconciliation.py, test_na_synthetic_pipeline_controls.py, test_na_unruled_stack_pairs_controls.py",
+   "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
+   "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
   {
    "canonical_slug": "ca_ns_production_incentive_fund",

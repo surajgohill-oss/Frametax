@@ -3031,6 +3031,10 @@ BC_TRAINING_ASSISTANCE_FACT = "ca_bc_training_assistance_usd"
 BC_SCRIPTWRITING_FACT = "ca_bc_scriptwriting_expenditure_usd"
 BC_SCRIPTWRITING_ASSISTANCE_FACT = "ca_bc_scriptwriting_assistance_usd"
 BC_SCRIPTWRITING_REIMBURSEMENT_FACT = "ca_bc_scriptwriting_parent_reimbursement_usd"
+NS_DAYS_TOTAL_FACT = "ca_ns_principal_photography_days_total"
+NS_DAYS_ZONE_A_FACT = "ca_ns_principal_photography_days_100_to_150km"
+NS_DAYS_ZONE_B_FACT = "ca_ns_principal_photography_days_over_150km"
+NS_RURAL_FACT = "ca_ns_rural_majority_principal_photography_confirmed"
 
 
 @dataclass(frozen=True)
@@ -3075,6 +3079,9 @@ class EligibleSubsetUpliftRule:
     amount_fact: str | None = None                   # scriptwriting SE / training payments (stated amount, USD)
     assistance_facts: tuple[str, ...] = ()           # stated assistance amounts subtracted from `amount_fact` (scriptwriting TA and RE; training assistance); ALL must be stated for a confirmed figure
     net_share: float | None = None                   # training: share of (payments - assistance)
+    #: "tiered_day_ratio" (Nova Scotia distant-location incentive): sum over distance bands of tier_rate x (days in that band / total days), the bands exclusive (a location earns the highest tier it meets).
+    tier_rates: tuple[float, ...] = ()
+    tier_numerator_facts: tuple[str, ...] = ()
 
 
 _NY_LABOR_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
@@ -3183,6 +3190,21 @@ SUBSET_UPLIFT_RULES = {
             prerequisite_fact="ca_bc_scriptwriting_application_confirmed", potential_requires_prerequisite=True,
             source_ref="Income Tax Act (BC) s.80.1(2)-(3): 35% x (SE - (TA + RE)) on the eligible BC scriptwriting expenditure; requires principal photography to begin in the taxation year, the s.80 "
                        "credit and an eligibility certificate"),
+    ),
+    # NA-RECONCILIATION-17: Nova Scotia Film & Television Production Incentive Fund Guidelines (April 1, 2024; cch.novascotia.ca, read 2026-10-14), s.6.1/6.2 'Eligible Incentives', both streams: percentage
+    # points of additional funding on ALL Eligible Nova Scotia Costs. Location Incentive: +2 points when more than 50% of the principal photography is in a rural/non-metropolitan area in Nova Scotia.
+    # Distant Location Incentive: up to 10 points, only for an applicant first eligible for the Location Incentive, tiered by the most direct driving distance from Halifax City Hall: 7% for locations more
+    # than 100 km away and 10% for locations more than 150 km away, EACH prorated on the days of principal photography in the distant location to the total days of principal photography. Reading kept
+    # labelled: the tiers are exclusive bands (days at 100-150 km earn 7%, days over 150 km earn 10%), because the guideline caps the incentive at 'up to 10%', which the cumulative reading (17%) contradicts.
+    "ca_ns_production_incentive_fund": (
+        EligibleSubsetUpliftRule(
+            "location_rural", .02, whole_base_fact=NS_RURAL_FACT,
+            source_ref="NSFPIF Guidelines (April 1, 2024) s.6.1/6.2: Location Incentive, 2 percentage points when more than 50% of the principal photography is in a rural/non-metropolitan area in Nova Scotia"),
+        EligibleSubsetUpliftRule(
+            "distant_location", .10, kind="tiered_day_ratio", tier_rates=(0.07, 0.10), tier_numerator_facts=(NS_DAYS_ZONE_A_FACT, NS_DAYS_ZONE_B_FACT), day_denominator_fact=NS_DAYS_TOTAL_FACT,
+            prerequisite_fact=NS_RURAL_FACT,
+            source_ref="NSFPIF Guidelines (April 1, 2024) s.6.1/6.2: Distant Location Incentive, up to 10 points, 7% (more than 100 km) or 10% (more than 150 km from Halifax City Hall) prorated on distant "
+                       "days to total days of principal photography; the applicant must first be eligible for the Location Incentive"),
     ),
     # Alabama (revenue.alabama.gov/tax-incentives/film-rebate, read 2026-10-12): the rebate is 25% of certain production expenditures incurred in Alabama
     # PLUS 35% of the payroll paid to Alabama residents (a 10-point addition on resident payroll); a small-budget production (total expenditures of at

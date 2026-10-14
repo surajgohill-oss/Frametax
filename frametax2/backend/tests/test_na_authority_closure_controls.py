@@ -174,12 +174,18 @@ def test_texas_award_numbers_have_a_validated_numeric_writer():
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_bc_")} == {
         "ca_bc_principal_photography_days_in_bc", "ca_bc_principal_photography_days_outside_vancouver", "ca_bc_principal_photography_days_distant_location",
         "ca_bc_training_payments_usd", "ca_bc_training_assistance_usd", "ca_bc_scriptwriting_expenditure_usd", "ca_bc_scriptwriting_assistance_usd", "ca_bc_scriptwriting_parent_reimbursement_usd"}
-    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_"))}
+    # NA-RECONCILIATION-17: the Nova Scotia distance-band day counts join the numeric producer facts
+    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_ns_")} == {
+        "ca_ns_principal_photography_days_total", "ca_ns_principal_photography_days_100_to_150km", "ca_ns_principal_photography_days_over_150km"}
+    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_", "ca_ns_"))}
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_awarded_rate_pct"] == (0.0, 0.31), "a fraction within the 31% ceiling, as the RateRule validates it"
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_resident_crew_pct"] == (0.0, 100.0)
 
 
-def test_pennsylvania_aggregate_cast_cap_excludes_only_the_excess_above_fifteen_million():
+def test_pennsylvania_aggregate_cap_binds_all_individual_compensation_above_fifteen_million():
+    """Restated in NA-RECONCILIATION-17. The earlier pin applied the cap to the cast account only (the Guidelines' Component A note: principal actors). The defining text - Act 84 of 2016 Article XVII-D
+    and the Guidelines' own definition of 'qualified film production expense' - caps 'the aggregate amount of compensation paid to individuals or payment made to entities representing an individual for
+    services provided in the production of the film' at $15,000,000, so crew payroll counts too. Hand arithmetic below; the excess is taken from the last accounts first."""
     from app.calculators.qualification_derivation import BudgetLine, ProductionFacts, derive_qualification_register
 
     def run(slug, c1, c2):
@@ -190,17 +196,22 @@ def test_pennsylvania_aggregate_cast_cap_excludes_only_the_excess_above_fifteen_
         x = sum(e.amount_usd for e in reg if getattr(e.state, "value", e.state) == "excluded")
         crew = sum(e.amount_usd for e in reg if e.line_id == "k1" and getattr(e.state, "value", e.state) == "qualifies")
         return q, x, crew
-    assert run("us_pa_film_production_credit", 9_000_000.0, 6_000_000.0) == (15_000_000.0, 0.0, 1_000_000.0), "exactly at the cap: unchanged"
-    assert run("us_pa_film_production_credit", 12_000_000.0, 8_000_000.0) == (15_000_000.0, 5_000_000.0, 1_000_000.0), "20,000,000 cast: 5,000,000 excluded, crew untouched"
+    # 8,000,000 + 6,000,000 cast + 1,000,000 crew = 15,000,000: exactly at the cap, unchanged
+    assert run("us_pa_film_production_credit", 8_000_000.0, 6_000_000.0) == (14_000_000.0, 0.0, 1_000_000.0), "exactly at the cap: unchanged"
+    # 9,000,000 + 6,000,000 + 1,000,000 = 16,000,000: 1,000,000 over, taken from the last account (the crew account)
+    assert run("us_pa_film_production_credit", 9_000_000.0, 6_000_000.0) == (15_000_000.0, 1_000_000.0, 0.0)
+    # 12,000,000 + 8,000,000 + 1,000,000 = 21,000,000: 6,000,000 over -> crew 1,000,000 then 5,000,000 of the second cast account
+    assert run("us_pa_film_production_credit", 12_000_000.0, 8_000_000.0) == (15_000_000.0, 6_000_000.0, 0.0)
     assert run("us_ga_film_credit", 12_000_000.0, 8_000_000.0)[1] == 0.0, "no other program is affected"
-    # 25% x 5,000,000 = 1,250,000 of credit that the cap removes
-    assert round(0.25 * run("us_pa_film_production_credit", 12_000_000.0, 8_000_000.0)[1], 2) == 1_250_000.0
+    # 25% x 6,000,000 = 1,500,000 of credit that the cap removes
+    assert round(0.25 * run("us_pa_film_production_credit", 12_000_000.0, 8_000_000.0)[1], 2) == 1_500_000.0
 
 
-def test_the_pennsylvania_cap_record_corrects_the_per_person_misstatement_and_names_the_open_interpretation():
+def test_the_pennsylvania_cap_record_is_settled_on_the_defining_text_and_keeps_the_agency_note_as_a_gloss():
     facts = pr.get_program_requirements("us_pa_film_production_credit").additional_facts
-    assert "not a per-person limit" in facts["compensation_cap"] and "wpdmdl=75431" in facts["compensation_cap"]
-    assert "OPEN interpretation" in facts["compensation_cap_statute_contradiction"] and "wpdmdl=75381" in facts["compensation_cap_statute_contradiction"]
+    assert "not a per-person limit" in facts["compensation_cap"] and "wpdmdl=75431" in facts["compensation_cap"] and "wpdmdl=75381" in facts["compensation_cap"]
+    assert "SETTLED" in facts["compensation_cap"] and "all individual compensation" in facts["compensation_cap"]
+    assert "NOT applied" in facts["compensation_cap_component_a_note"]
 
 
 def test_manitoba_now_carries_structured_primary_provenance_and_is_no_longer_an_unresolved_residual():

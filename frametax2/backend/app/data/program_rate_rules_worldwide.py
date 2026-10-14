@@ -1181,9 +1181,13 @@ CA_BC_FILM_TV_DOCTRINE = register(DoctrineRecord(
         DoctrineRateTier(tier_id="ca-bc-film-tv-basic-40-conditional", rate=0.40, is_band_ceiling=True,
                          conditions=_bc_film_tv_conditions("ca-bc-film-tv-40c") + (RateCondition(
                              condition_id="ca-bc-film-tv-photography-after-2024-unstated",
-                             description="PLANNING SCENARIO: 40% is shown above the guaranteed 35% until the post-2024 photography fact is evidenced.",
+                             description="PLANNING SCENARIO: 40% is shown above the guaranteed 35% until the principal-photography regime is stated. NA-RECONCILIATION-17: the Act's rate depends on the date "
+                                         "principal photography BEGINS (s.80(8): after December 31, 2024 = 40%; otherwise 35% for productions beginning after December 31, 2007), so a production whose photography began "
+                                         "on or before December 31, 2024 states 'ca_bc_film_tv_photography_before_2025_confirmed' and the 40% scenario is removed; a prospective production states the post-2024 fact. "
+                                         "The two regimes are never mixed in one figure; productions with photography before 2008 earned lower additions (s.80(6)-(7)) and are not modelled.",
                              quote="35%, or 40% for productions starting principal photography on or after January 1, 2025 (gov.bc.ca)",
-                             kind="project_fact_dependent_eligibility", blocked_by_boolean_fact_keys=("ca_bc_film_tv_photography_after_2024_confirmed",)),)),
+                             kind="project_fact_dependent_eligibility",
+                             blocked_by_boolean_fact_keys=("ca_bc_film_tv_photography_after_2024_confirmed", "ca_bc_film_tv_photography_before_2025_confirmed")),)),
     ),
 ))
 register_rate_rules(rate_rules_for(CA_BC_FILM_TV_DOCTRINE))
@@ -7227,7 +7231,9 @@ US_MO_DOCTRINE = register(DoctrineRecord(
         citation_detail="RSMo 135.750 subsections 2(2)-(3), 3(1)-(7), 4, 5, 6, 7, 10",
         effective_date="2023-08-28",
         verified_date="2026-10-13",
-        interpretation_note="The uplift schedule is now read from the statute: four 5-point increases on stated project facts plus 2 points (10% of the 20% base) in a second-, third- or fourth-class county, to 42%. "
+        interpretation_note="The uplift schedule is read from the statute: four 5-point increases on stated project facts plus 2 points in a second-, third- or fourth-class county, to 42%. SETTLED 2026-10-14 "
+                             "(NA-RECONCILIATION-17): subsection 3(6) raises 'the total dollar amount of tax credits authorized pursuant to subdivision (1)' - the 20% base credit alone, not the 3(2)-(5) additions - by ten percent, "
+                             "i.e. 22%; the alternative reading (a 44% maximum) would apply the ten percent to the additions as well and is rejected by the text. "
                              "None of the uplift facts can be read from a topsheet, so 20% is the guaranteed base once the eligibility facts hold and 42% is the planning ceiling. The credit is NOT refundable. Above-the-line compensation counts only up "
                              "to 25% of overall qualifying expenses (applied as a share cap). The credit sunsets December 31, 2029 unless reauthorized.",
     ),
@@ -7325,7 +7331,9 @@ US_MT_DOCTRINE = register(DoctrineRecord(
               "refunded'. 15-31-1005(2)(c)(ii): the submission must show a base investment of USD 350,000 or more (USD 50,000 where 15-31-1004(5) applies). 15-31-1010(1)(b): 'The authorization by the department of commerce to apply "
               "for a credit does not guarantee the credit'; (2)(a): total claims for the media credits 'may not exceed $12 million per calendar year'; (2)(b)(i): the whole USD 12 million is allocated annually to credits approved "
               "before December 31, 2024 until all of them are claimed; only then (ii) 10% first-come, 10% independent film, 40% qualified facility rentals, 40% domiciled companies. Montana Department of Commerce (commerce.mt.gov, read "
-              "2026-10-13): certification applications are paused and 'The first available credit will not become available until 2031'.",
+              "2026-10-13): certification applications are paused and 'The first available credit will not become available until 2031'. Re-read 2026-10-14 (MCA 2025 text, Ch. 598 L. 2025): 15-31-1010(2)(c) any balance not claimed for the prior year is available first-come, first-served by April 1 "
+              "of each following year, in addition to the (2)(b)(i) amount, subject to a 2% fee; (3)(a) a claim disallowed only because the calendar-year limit was reached (production before January 1, 2025) may be used in the "
+              "next calendar year without extending the carry-forward period.",
     source_ref="mca-15-31-1004-1010-primary+commerce.mt.gov-media-tax-credit",
     provenance=SourceProvenance(
         issuing_authority="Montana Legislature (MCA 15-31-1004 to 15-31-1010) / Montana Department of Commerce / Department of Revenue",

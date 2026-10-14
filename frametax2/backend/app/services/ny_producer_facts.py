@@ -37,6 +37,8 @@ NY_EVIDENCED_FACTS = {
     # shooting DAYS (numeric facts below). Two further credits exist only by application: their prerequisite is a stated fact.
     "ca_bc_film_training_program_approved_confirmed": None,
     "ca_bc_scriptwriting_application_confirmed": None,
+    # Nova Scotia Location Incentive (NSFPIF Guidelines s.6): more than 50% of principal photography in a rural / non-metropolitan area of Nova Scotia
+    "ca_ns_rural_majority_principal_photography_confirmed": None,
     "mb_frequent_filming_third_film_in_two_years": None,
     "mb_frequent_filming_principal_owner_declared": None,
     "mb_resident_producer_screen_credit": None,
@@ -46,7 +48,9 @@ NY_EVIDENCED_FACTS = {
     "mb_t4_payroll_below_25pct_stated": None,
     "ab_fttc_30pct_criteria_met": None,
     "wv_ten_resident_hires_confirmed": None,
-    "ca_bc_film_tv_photography_after_2024_confirmed": None,
+    # BC domestic rate regime by the date principal photography BEGINS (ITA (BC) s.80(8)): the two statements are mutually exclusive (a later statement replaces the earlier one).
+    "ca_bc_film_tv_photography_after_2024_confirmed": "ca_bc_film_tv_photography_before_2025_confirmed",
+    "ca_bc_film_tv_photography_before_2025_confirmed": "ca_bc_film_tv_photography_after_2024_confirmed",
     "nj_film_spend_outside_nyc_radius_confirmed": None,
     # NA-RECONCILIATION-13: Missouri RSMo 135.750 eligibility and uplift facts (statute subsections 3(2)-(6) and 4); none can be read from a topsheet
     "mo_apprentice_or_veteran_minimum_confirmed": None,
@@ -88,6 +92,10 @@ PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
     "ca_bc_scriptwriting_expenditure_usd": (0.0, 1e9),
     "ca_bc_scriptwriting_assistance_usd": (0.0, 1e9),
     "ca_bc_scriptwriting_parent_reimbursement_usd": (0.0, 1e9),
+    # Nova Scotia distant-location incentive inputs: whole days of principal photography in total and in each Halifax City Hall distance band
+    "ca_ns_principal_photography_days_total": (1.0, 2000.0),
+    "ca_ns_principal_photography_days_100_to_150km": (0.0, 2000.0),
+    "ca_ns_principal_photography_days_over_150km": (0.0, 2000.0),
 }
 AMOUNT_PREFIX = "amount_fact:"
 
@@ -156,7 +164,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if key not in PROGRAM_AMOUNT_FACTS:
             raise ValueError(f"'{key}' is not a settable numeric program fact")
         lo, hi = PROGRAM_AMOUNT_FACTS[key]
-        if key.startswith("ca_bc_principal_photography_days_") and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
+        if key.startswith(("ca_bc_principal_photography_days_", "ca_ns_principal_photography_days_")) and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
             raise ValueError(f"'{key}' must be a whole number of days")
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
             raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")
