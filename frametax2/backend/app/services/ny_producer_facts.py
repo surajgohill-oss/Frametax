@@ -33,8 +33,10 @@ NY_EVIDENCED_FACTS = {
     # Canada (statutory uplifts on a narrower base; each states a zone or producer fact, or a per-account evidenced portion)
     "on_ofttc_first_time_producer": None,
     "on_ofttc_labour_outside_gta": None,
-    "bc_labour_in_regional_zone": None,
-    "bc_labour_in_distant_location_zone": None,
+    # NA-RECONCILIATION-16: the earlier "labour in the regional / distant zone" booleans priced a dollar proxy and are retired; the British Columbia regional and distant-location credits take
+    # shooting DAYS (numeric facts below). Two further credits exist only by application: their prerequisite is a stated fact.
+    "ca_bc_film_training_program_approved_confirmed": None,
+    "ca_bc_scriptwriting_application_confirmed": None,
     "mb_frequent_filming_third_film_in_two_years": None,
     "mb_frequent_filming_principal_owner_declared": None,
     "mb_resident_producer_screen_credit": None,
@@ -77,6 +79,15 @@ PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
     "us_tx_miip_awarded_rate_pct": (0.0, 0.31),   # a FRACTION despite the name: the award letter's rate within [0, the 31% ceiling] (RateRule.awarded_rate_min/max)
     "us_tx_miip_resident_crew_pct": (0.0, 100.0),
     "us_tx_miip_resident_cast_pct": (0.0, 100.0),
+    # British Columbia statutory-formula inputs (ITA (BC) s.81.1, 81.11, 82, 82.2, 82.21, 80.1): day counts and USD amounts, stated by the producer; null (Unknown) clears.
+    "ca_bc_principal_photography_days_in_bc": (1.0, 2000.0),
+    "ca_bc_principal_photography_days_outside_vancouver": (0.0, 2000.0),
+    "ca_bc_principal_photography_days_distant_location": (0.0, 2000.0),
+    "ca_bc_training_payments_usd": (0.0, 1e9),
+    "ca_bc_training_assistance_usd": (0.0, 1e9),
+    "ca_bc_scriptwriting_expenditure_usd": (0.0, 1e9),
+    "ca_bc_scriptwriting_assistance_usd": (0.0, 1e9),
+    "ca_bc_scriptwriting_parent_reimbursement_usd": (0.0, 1e9),
 }
 AMOUNT_PREFIX = "amount_fact:"
 
@@ -145,6 +156,8 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if key not in PROGRAM_AMOUNT_FACTS:
             raise ValueError(f"'{key}' is not a settable numeric program fact")
         lo, hi = PROGRAM_AMOUNT_FACTS[key]
+        if key.startswith("ca_bc_principal_photography_days_") and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
+            raise ValueError(f"'{key}' must be a whole number of days")
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
             raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")
     lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions) else {}

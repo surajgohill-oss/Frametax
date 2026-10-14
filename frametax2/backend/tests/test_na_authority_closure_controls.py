@@ -168,7 +168,13 @@ def test_no_boolean_fact_referenced_by_a_north_american_rate_rule_lacks_a_produc
 
 def test_texas_award_numbers_have_a_validated_numeric_writer():
     from app.services.ny_producer_facts import PROGRAM_AMOUNT_FACTS
-    assert set(PROGRAM_AMOUNT_FACTS) == {"us_tx_miip_awarded_rate_pct", "us_tx_miip_resident_crew_pct", "us_tx_miip_resident_cast_pct"}
+    # Restated in NA-RECONCILIATION-16: the exact-set pin predates the British Columbia statutory-formula inputs (day counts and USD amounts, ITA (BC) s.80.1, 81.1, 81.11, 82, 82.2, 82.21),
+    # which are numeric producer facts with their own bounds. The Texas set is pinned unchanged; the BC set is pinned beside it.
+    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("us_tx_")} == {"us_tx_miip_awarded_rate_pct", "us_tx_miip_resident_crew_pct", "us_tx_miip_resident_cast_pct"}
+    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_bc_")} == {
+        "ca_bc_principal_photography_days_in_bc", "ca_bc_principal_photography_days_outside_vancouver", "ca_bc_principal_photography_days_distant_location",
+        "ca_bc_training_payments_usd", "ca_bc_training_assistance_usd", "ca_bc_scriptwriting_expenditure_usd", "ca_bc_scriptwriting_assistance_usd", "ca_bc_scriptwriting_parent_reimbursement_usd"}
+    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_"))}
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_awarded_rate_pct"] == (0.0, 0.31), "a fraction within the 31% ceiling, as the RateRule validates it"
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_resident_crew_pct"] == (0.0, 100.0)
 

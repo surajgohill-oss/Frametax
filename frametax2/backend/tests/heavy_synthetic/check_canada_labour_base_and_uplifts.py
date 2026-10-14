@@ -51,6 +51,8 @@ async def test_labour_bases_and_every_uplift_price_when_their_base_is_stated_and
     """Two evaluations of one project: nothing stated, then every producer fact stated at once."""
     async with isolated_session() as db:
         pid = await create_synthetic_project(db, lines=LINES, home_code="CA-ON")
+        await write_ny_program_facts(db, pid, amounts={
+            "ca_bc_principal_photography_days_in_bc": 40, "ca_bc_principal_photography_days_outside_vancouver": 30, "ca_bc_principal_photography_days_distant_location": 10})
         await _evaluate(db, pid)
         ofttc = await _entry(db, pid, "on_ofttc")
         # 35% of the eligible Ontario LABOUR (1.9M), not of all qualifying spend (2.8M, which would be 980,000)
@@ -70,7 +72,7 @@ async def test_labour_bases_and_every_uplift_price_when_their_base_is_stated_and
 
         await write_ny_program_facts(db, pid, evidenced={
             "on_ofttc_labour_outside_gta": True, "on_ofttc_first_time_producer": True,
-            "bc_labour_in_regional_zone": True, "bc_labour_in_distant_location_zone": True,
+            
             "mb_frequent_filming_third_film_in_two_years": True, "mb_frequent_filming_principal_owner_declared": True,
             "mb_resident_producer_screen_credit": True, "mb_rural_permanent_establishment_35km": True, "mb_rural_majority_days_35km": True,
         })
@@ -79,7 +81,8 @@ async def test_labour_bases_and_every_uplift_price_when_their_base_is_stated_and
         # +10 points on all labour, plus +5 points on only the FIRST $240,000 of labour
         assert ofttc["confirmed_incentive_floor_usd"] == pytest.approx(0.45 * LABOUR + 0.05 * 240_000.0) and ofttc["ceiling_requires_confirmation"] is False
         bc = await _entry(db, pid, "ca_bc_pstc")
-        assert bc["confirmed_incentive_floor_usd"] == pytest.approx(0.48 * LABOUR) and bc["ceiling_requires_confirmation"] is False
+        # NA-RECONCILIATION-16: ITA (BC) s.82.2 / s.82.21 -- 6% x AQLE x RD/TD and 6% x AQLE x DLD/TD with RD=30, DLD=10, TD=40: 0.36 + 0.06 x 0.75 + 0.06 x 0.25 = 0.42 of labour
+        assert bc["confirmed_incentive_floor_usd"] == pytest.approx(0.42 * LABOUR) and bc["ceiling_requires_confirmation"] is False
         mb = await _entry(db, pid, "ca_mb_film_video_credit")
         assert mb["confirmed_incentive_floor_usd"] == pytest.approx(0.65 * LABOUR) and mb["ceiling_requires_confirmation"] is False
 

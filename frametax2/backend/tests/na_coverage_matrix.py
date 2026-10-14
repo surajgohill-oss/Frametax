@@ -45,7 +45,9 @@ P2_PROGRAMS = frozenset({"ca_bc_dave", "ontario_computer_animation_and_special_e
 #: recorded and flagged OBSERVED_ONLY). Labour = cast 600,000 + crew 1,400,000 = 2,000,000; "all" = 3,000,000.
 EXPECT: dict[str, tuple[float | None, float | None, str]] = {
     "ca_ab_fttc": (660_000.0, 900_000.0, "22% x all 3,000,000; 30% (ownership criteria) potential"),
-    "ca_bc_film_tv_tax_credit": (630_000.0, 720_000.0, "35% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000); 40% (photography after 2024) potential (ITA (BC) s.80, s.79(1))"),
+    # Restated in NA-RECONCILIATION-16 (the potential gained the statutory shooting-day bounds): QLE = 1,800,000; guaranteed 35% = 630,000; potential 40% (photography after 2024, s.80(8)) + regional 12.5% (s.81.1) +
+    # distant location 6% (s.81.11) at the day ratio's upper bound of 1 = 58.5% x 1,800,000 = 1,053,000. Training and scriptwriting exist only by application and add nothing until their prerequisite is stated.
+    "ca_bc_film_tv_tax_credit": (630_000.0, 1_053_000.0, "35% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000); potential 40% (s.80, s.79(1)) + regional 12.5% (s.81.1) + distant 6% (s.81.11) at ratio 1 on QLE"),
     "ca_bc_pstc": (720_000.0, 960_000.0, "36% x labour 2,000,000; +12% regional/distant potential"),
     "ca_federal_cptc": (450_000.0, 450_000.0, "25% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000)"),
     "ca_federal_pstc": (320_000.0, 320_000.0, "16% x labour 2,000,000"),

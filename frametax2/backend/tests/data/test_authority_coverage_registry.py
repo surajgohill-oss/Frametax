@@ -41,6 +41,18 @@ CANONICAL = (
 # exactly this set as evidence accumulates. Any name appearing here MUST
 # also appear in a CORRECTION block in authority_coverage_registry.py.
 DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
+    # North America (NA-RECONCILIATION-12/13, restated 2026-10-14): nine US records that left UNPRICEABLE_AUTHORITY_INSUFFICIENT because each now carries a statute-level rate record with its
+    # own requirements profile (Oregon OPIF from P0-OR-001; Ohio ORC 122.85; West Virginia 11-13X; New Jersey 54:10A-5.39b; Missouri RSMo 135.750; Arkansas Act 517 of 2023; Montana MCA
+    # 15-31-1004 to 1010; the New York independent credit and post-production credit). Each has a CORRECTION block in authority_coverage_registry.py. The earlier pin predated these promotions.
+    "or_opif",
+    "proposed_united_states_new_jersey_garden_state_film_and_digital_media_jobs_act_film_credit",
+    "proposed_united_states_new_york_film_tax_credit_post_production",
+    "proposed_united_states_new_york_empire_state_independent_film_production_credit",
+    "proposed_united_states_ohio_ohio_motion_picture_tax_credit",
+    "proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive",
+    "proposed_united_states_west_virginia_west_virginia_film_production_tax_credit",
+    "proposed_united_states_montana_media_tax_credit",
+    "proposed_united_states_missouri_motion_media_production_tax_credit",
     # Georgia (Global Priceability Optimizer Restoration)
     "georgia_eiia",
     # Batch 1 (8 programs, 8 alias-spelling duplicates)
@@ -206,6 +218,12 @@ def test_prior_pass_29_records_remain_blocked():
         assert blocks_economic_candidacy(slug), f"prior-pass exclusion regressed: {slug}"
 
 
+#: Restated 2026-10-14 (NA-RECONCILIATION-12, second pass): "QPRDP" is not an official credit name; its spelling resolves to the priced Quebec production services credit ca_qc_pstc (migration 0087
+#: retired the legacy rows), so the "both spellings blocked" rule does not apply to it. Kept apart from DELIBERATELY_PROMOTED_CANONICAL_IDS, which also drives the record-presence check above.
+# The BC FIBC proposal identity is bound to the rate-bearing BC film and television tax credit (registry 1.15.0; ITA (BC) s.80), whose statutory-formula credits are priced from NA-RECONCILIATION-16.
+_SPELLING_NOW_RESOLVES_TO_A_PRICED_PROGRAM = frozenset({"ca_qc_qprdp", "proposed_canada_british_columbia_film_incentive_bc_fibc"})
+
+
 def test_runtime_slug_bindings_block_both_spellings():
     """The canonical corpus names programs under its own ids; where those are a
     different spelling of a live runtime slug, BOTH must be blocked -- this is
@@ -215,7 +233,7 @@ def test_runtime_slug_bindings_block_both_spellings():
     and removed with real primary-source evidence, see that set's docstring."""
     assert len(CANONICAL_RUNTIME_SLUG_BINDINGS) >= 43
     for canonical_id, runtime_slug in CANONICAL_RUNTIME_SLUG_BINDINGS.items():
-        if canonical_id in DELIBERATELY_PROMOTED_CANONICAL_IDS:
+        if canonical_id in DELIBERATELY_PROMOTED_CANONICAL_IDS or canonical_id in _SPELLING_NOW_RESOLVES_TO_A_PRICED_PROGRAM:
             continue
         assert blocks_economic_candidacy(canonical_id)
         assert blocks_economic_candidacy(runtime_slug), (

@@ -974,7 +974,8 @@ CA_BC_DOCTRINE = register(DoctrineRecord(
             ),
         ),
         # The former whole-base 48% "ceiling" tier is REMOVED: the +6% regional and +6% distant-location credits are statutory uplifts on the
-        # labour incurred in those zones, priced through SUBSET_UPLIFT_RULES["ca_bc_pstc"] (zone fact or per-account evidenced labour).
+        # shooting-day credits, priced through SUBSET_UPLIFT_RULES["ca_bc_pstc"] on the statutory formulas 6% x AQLE x RD/TD (s.82.2) and 6% x AQLE x DLD/TD (s.82.21) from stated day counts
+        # (NA-RECONCILIATION-16 replaced the earlier "labour in the zone" dollar proxy).
     ),
 ))
 register_rate_rules(rate_rules_for(CA_BC_DOCTRINE))
@@ -1110,7 +1111,7 @@ register_rate_rules(rate_rules_for(CA_BC_DAVE_DOCTRINE))
 # NA-RECONCILIATION-12 (third pass). The BC DOMESTIC-content credit, read from Part 5 of the Act (bclaws.gov.bc.ca, King's Printer) and the gov.bc.ca film and television tax credit page (2026-10-13).
 # s.80(2)+(4)+(6): 20% + 10% + 5% = 35% of qualified BC labour expenditure; s.80(8): +5% when principal photography begins after December 31, 2024 (= 40%, the page's figure).
 # s.83.1: a corporation may not claim the s.80-82 credits and the production services credits (ss.82.1-82.3) for the same production. Regional (12.5%), distant-location (6%), training and
-# scriptwriting (35%) credits are further statutory credits that are disclosed and not modelled.
+# scriptwriting (35%) credits are modelled as statutory-formula uplifts (NA-RECONCILIATION-16; see SUBSET_UPLIFT_RULES).
 def _bc_film_tv_conditions(prefix: str) -> tuple:
     return (
         RateCondition(
@@ -1157,10 +1158,7 @@ CA_BC_FILM_TV_DOCTRINE = register(DoctrineRecord(
               "begins after December 31, 2024; 'qualified BC labour expenditure' is the lesser of BC labour and 60% x (total production cost - assistance) - LC (s.79(1)); amounts are deemed paid "
               "under s.84 (refundable); s.83.1: a corporation may not claim the s.80-82 credits and the s.82.1-82.3 production services credits for the same production. gov.bc.ca film and "
               "television tax credit page (read 2026-10-13): basic 35%, or 40% for principal photography on or after January 1, 2025; regional 12.5%; distant location 6%; film training 30% of trainee "
-              "payments or 3% of qualifying labour; DAVE 16%; scriptwriting 35%. Modelled: the 35% basic credit (40% once the post-2024 photography fact is stated). Regional, distant-location, training "
-              "and scriptwriting credits are not modelled; their statutory formulas (Income Tax Act (BC), read 2026-10-13) are: regional s.81.1(2) 12.5% x QLE x RD/TD (RD = principal photography days outside the designated Vancouver area, TD = total BC days; "
-              "needs at least 5 such days and more than 50% of BC days outside the area, and eligibility for the s.80 credit), distant-location regional s.81.11 6% x QLE x DLD/TD, film training s.82 the lesser of 3% of QLE and 30% of "
-              "training payments net of assistance, scriptwriting s.80.1 on eligible BC scriptwriting expenditure; each needs shooting-day or payee facts a topsheet lacks. s.85(4): the claim and certificate must be filed within 36 months "
+              "payments or 3% of qualifying labour; DAVE 16%; scriptwriting 35%. Modelled: the 35% basic credit (40% once the post-2024 photography fact is stated) and, from NA-RECONCILIATION-16 (Income Tax Act (BC) read 2026-10-14), the shooting-day, training and scriptwriting credits as statutory-formula uplifts on this credit's own qualified-labour basis (program_rate_rules.SUBSET_UPLIFT_RULES, priced by allocation_pricing._price_statutory_formula): regional s.81.1 12.5% x QLE x RD/TD (needs at least 5 days outside the designated Vancouver area and more than 50% of the BC days), distant-location s.81.11 6% x QLE x DLD/TD (also needs the regional credit and at least one distant day), film training s.82 the lesser of 3% of QLE and 30% of training payments net of assistance (exists only with an approved training program), scriptwriting s.80.1(3) 35% x (SE - (TA + RE)) (exists only by application). Days and amounts are stated producer facts, never proxied from dollars; an unstated input leaves a disclosed bound (regional/distant at ratio 1, training at 3% of QLE) or nothing (scriptwriting without its expenditure). A series (qualifying-episode basis) and an animation production (regional credit ended for photography from 2024-06-01) are not priced from whole-production days. s.85(4): the claim and certificate must be filed within 36 months "
               "after the end of the taxation year (taxation years ending on or after August 17, 2024).",
     source_ref="bc-ita-part-5-s80+gov.bc.ca-film-tv-tax-credit-primary",
     provenance=SourceProvenance(

@@ -164,10 +164,10 @@
    "proof_profile": "P1",
    "kernel_executable": true,
    "kernel_guaranteed_usd": 630000.0,
-   "kernel_potential_usd": 720000.0,
+   "kernel_potential_usd": 1053000.0,
    "expected_guaranteed_usd": 630000.0,
-   "expected_potential_usd": 720000.0,
-   "expectation_basis": "35% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000); 40% (photography after 2024) potential (ITA (BC) s.80, s.79(1))",
+   "expected_potential_usd": 1053000.0,
+   "expectation_basis": "35% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000); potential 40% (s.80, s.79(1)) + regional 12.5% (s.81.1) + distant 6% (s.81.11) at ratio 1 on QLE",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
    "retained_rows": 3,
@@ -178,14 +178,13 @@
    ],
    "standalone_status": "PRICED",
    "served_guaranteed_usd": 630000.0,
-   "served_potential_usd": 720000.0,
+   "served_potential_usd": 1053000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 2,
    "unresolved_conditions": [
-    "ca-bc-film-tv-40c-eligibility-certificate-and-content",
-    "ca-bc-film-tv-40c-eligible-production-corporation",
-    "ca-bc-film-tv-photography-after-2024-unstated"
+    "ca_bc_film_tv_tax_credit:distant_location:statutory_formula",
+    "ca_bc_film_tv_tax_credit:regional:statutory_formula"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",
@@ -225,8 +224,8 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 2,
    "unresolved_conditions": [
-    "ca_bc_pstc:distant_location:qualified_subset",
-    "ca_bc_pstc:regional:qualified_subset"
+    "ca_bc_pstc:distant_location:statutory_formula",
+    "ca_bc_pstc:regional:statutory_formula"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",

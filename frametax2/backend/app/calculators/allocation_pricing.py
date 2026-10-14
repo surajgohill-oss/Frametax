@@ -553,7 +553,9 @@ def _resolve_incentive_dollar_cap(
 
 #: Programs whose resolved rate ceiling is a conditional BASE-rate scenario (NY post: 35% outside the commuter district over a guaranteed 30%),
 #: not a whole-base uplift that the subset rules replace. Their potential keeps the scenario rate; every other subset program keeps the floor rate.
-_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit"})
+#: ca_bc_film_tv_tax_credit (NA-RECONCILIATION-16): its 40% rate for photography after 2024-12-31 (ITA (BC) s.80(8)) is a conditional BASE rate over the guaranteed 35%, kept as the potential
+#: now that the shooting-day credits are subset-priced on top of it.
+_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit", "ca_bc_film_tv_tax_credit"})
 
 #: Programs with an elective alternative credit on a different base: slug -> (alternative rate on total qualifying spend, label).
 _ALTERNATIVE_ELECTION_PROGRAMS = {
@@ -573,8 +575,133 @@ CALIFORNIA_REGIME_NOTE = (
 _PLANNING_ASSUMPTION_NOTES = {"ca_federal_cptc": (CPTC_PLANNING_NOTE,), "ca_film_30": (CALIFORNIA_REGIME_NOTE,)}
 
 
+def _host_qualified_labour_basis(rr, floor_incentive_usd, ceiling_incentive_usd, qpe):
+    """The host credit's own priced basis (QLE / AQLE) for the statutory-formula uplifts: the dollars the host rate was applied to, recovered from the host's own priced figure so the trimmed
+    (60% cost cap) and labour-only basis is used exactly, never re-derived. None when the host has no positive rate to divide by."""
+    if rr.floor_rate and rr.floor_rate > 0 and floor_incentive_usd:
+        return round(floor_incentive_usd / rr.floor_rate, 2)
+    if rr.modeled_rate and rr.modeled_rate > 0 and ceiling_incentive_usd:
+        return round(ceiling_incentive_usd / rr.modeled_rate, 2)
+    return None
+
+
+def _stated_count(amounts, key: str, label: str):
+    """A stated day count: absent -> None (Unknown); present -> a finite, non-negative whole number or ValueError (an invalid statement is refused, never coerced)."""
+    import math
+    value = (amounts or {}).get(key)
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0 or abs(value - round(value)) > 1e-9:
+        raise ValueError(f"{key}: {label} must be a finite non-negative whole number of days, got {value!r}")
+    return int(round(value))
+
+
+def _stated_amount(amounts, key: str):
+    import math
+    value = (amounts or {}).get(key)
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+        raise ValueError(f"{key}: a stated amount must be finite and non-negative, got {value!r}")
+    return float(value)
+
+
+def _day_ratio_eligibility(rule, amounts):
+    """(numerator, denominator, eligible) for a statutory shooting-day rule. Each is None when its input is not stated; `eligible` is True/False only when the numerator and denominator are stated.
+    Integer arithmetic at the boundary: 'at least 5 days' and 'more than 50%' are exact (2 x RD > TD, never a float comparison)."""
+    num = _stated_count(amounts, rule.day_numerator_fact, "days of principal photography in the zone")
+    den = _stated_count(amounts, rule.day_denominator_fact, "total days of principal photography in British Columbia")
+    if den is not None and den <= 0:
+        raise ValueError(f"{rule.day_denominator_fact}: total principal-photography days in British Columbia must be at least 1 when stated")
+    if num is not None and den is not None and num > den:
+        raise ValueError(f"{rule.day_numerator_fact}: {num} zone days cannot exceed the {den} total principal-photography days in British Columbia")
+    if num is None or den is None:
+        return num, den, None
+    ok = True
+    if rule.min_numerator_days is not None and num < rule.min_numerator_days:
+        ok = False
+    if rule.min_share_exclusive is not None:
+        # share > p/q with p/q = min_share_exclusive expressed exactly for the statutory values used (0.5): num / den > 0.5  <=>  2 * num > den
+        from fractions import Fraction
+        share_floor = Fraction(str(rule.min_share_exclusive))
+        if Fraction(num, den) <= share_floor:
+            ok = False
+    return num, den, ok
+
+
+def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, production_type):
+    """(confirmed_usd, potential_usd, unresolved_note | None) for one statutory-formula uplift of a British Columbia host credit.
+
+    The base is the host credit's OWN qualified-labour basis (`qle`: assistance and the 60% cost cap already applied by the host), so the host dependency is inherent: a rule lives under, and is
+    priced only with, its host program. A rule whose statutory eligibility is stated to FAIL contributes 0 to both figures. A rule whose inputs are not all stated contributes 0 to the floor and a
+    disclosed, statutorily-bounded potential (ratio at most 1; scriptwriting and training exist only by application, so without their prerequisite they contribute nothing)."""
+    if qle is None or qle <= 0:
+        return 0.0, 0.0, None
+    if production_type in rule.excluded_production_types:
+        return 0.0, 0.0, f"{rule.uplift_id}: not priced for a {production_type.replace('_', ' ')} production (statute: {rule.source_ref}); the production-start date is not held"
+    prerequisite_ok = rule.prerequisite_fact is None or rule.prerequisite_fact in (facts or frozenset())
+    if rule.potential_requires_prerequisite and not prerequisite_ok:
+        return 0.0, 0.0, None
+    if rule.kind == "day_ratio":
+        num, den, ok = _day_ratio_eligibility(rule, amounts)
+        companion_ok = True
+        bound_num = num
+        if rule.companion_uplift_id:
+            companion = rules_by_id[rule.companion_uplift_id]
+            c_num, c_den, c_ok = _day_ratio_eligibility(companion, amounts)
+            if c_den is not None and den is not None and c_den != den:
+                raise ValueError(f"{rule.day_denominator_fact}: one total-days figure serves both credits")
+            if rule.companion_bounds_numerator and c_num is not None and num is not None and num > c_num:
+                raise ValueError(f"{rule.day_numerator_fact}: distant-location days ({num}) are outside the designated Vancouver area, so they cannot exceed those days ({c_num})")
+            if c_ok is False:
+                return 0.0, 0.0, None                       # the companion credit's statutory eligibility is stated to fail, so this one cannot apply
+            companion_ok = c_ok is True
+            if bound_num is None and rule.companion_bounds_numerator and c_num is not None:
+                bound_num = c_num
+        if ok is False:
+            return 0.0, 0.0, None
+        if rule.series_needs_episode_facts and production_type in ("tv_series", "television_series"):
+            return 0.0, round(qle * rule.rate, 2), (f"{rule.uplift_id}: a series is computed on its qualifying episodes only (episode labour and days), which the budget cannot isolate; "
+                                                   f"bounded by the whole-production figure until stated ({rule.source_ref})")
+        if ok is True and companion_ok and num is not None and den is not None:
+            amount = round(rule.rate * qle * num / den, 2)
+            return amount, amount, None
+        ratio_cap = 1.0
+        if den is not None and bound_num is not None:
+            ratio_cap = bound_num / den
+        needed = [f for f in (rule.day_numerator_fact, rule.day_denominator_fact) if (amounts or {}).get(f) is None]
+        if rule.companion_uplift_id and not companion_ok:
+            comp = rules_by_id[rule.companion_uplift_id]
+            needed += [f for f in (comp.day_numerator_fact, comp.day_denominator_fact) if (amounts or {}).get(f) is None and f not in needed]
+        return 0.0, round(rule.rate * qle * ratio_cap, 2), (f"{rule.uplift_id}: statutory shooting-day inputs not all stated ({', '.join(sorted(set(needed))) or 'eligibility'}); "
+                                                           f"bounded at the whole-QLE figure ({rule.source_ref})")
+    if rule.kind == "scriptwriting":
+        se = _stated_amount(amounts, rule.amount_fact)
+        if se is None:
+            return 0.0, 0.0, f"{rule.uplift_id}: the eligible BC scriptwriting expenditure ({rule.amount_fact}) is not stated; no figure is derived from the budget ({rule.source_ref})"
+        stated = [_stated_amount(amounts, k) for k in rule.assistance_facts]
+        known = sum(v for v in stated if v is not None)
+        potential = round(rule.rate * max(0.0, se - known), 2)
+        if any(v is None for v in stated):
+            missing = [k for k, v in zip(rule.assistance_facts, stated) if v is None]
+            return 0.0, potential, f"{rule.uplift_id}: assistance (TA) and parent reimbursement (RE) must be stated, even as 0, before the figure is confirmed ({', '.join(missing)})"
+        return potential, potential, None
+    if rule.kind == "training":
+        payments = _stated_amount(amounts, rule.amount_fact)
+        cap_amount = rule.rate * qle
+        if payments is None:
+            return 0.0, round(cap_amount, 2), f"{rule.uplift_id}: payments attributable to training ({rule.amount_fact}) are not stated; bounded at {rule.rate:.0%} of QLE ({rule.source_ref})"
+        stated = [_stated_amount(amounts, k) for k in rule.assistance_facts]
+        known = sum(v for v in stated if v is not None)
+        potential = round(min(cap_amount, rule.net_share * max(0.0, payments - known)), 2)
+        if any(v is None for v in stated):
+            return 0.0, potential, f"{rule.uplift_id}: training assistance ({', '.join(rule.assistance_facts)}) must be stated, even as 0, before the figure is confirmed"
+        return potential, potential, None
+    raise ValueError(f"unknown statutory formula kind {rule.kind!r}")
+
+
 def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None,
-                          floor_base_usd=None, potential_base_usd=None):
+                          floor_base_usd=None, potential_base_usd=None, qle_basis_usd=None):
     """Price only evidenced portions; missing portions remain disclosed bounds.
 
     A line's uplift basis is confirmed when its statutory prerequisite fact is evidenced AND either the rule's whole-base fact is
@@ -598,8 +725,20 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
         raise ValueError("Subset uplift requires unique source line identities within a segment")
     floor_parts = {}
     potential_parts = {}
+    formula_floor = 0.0
+    formula_potential = 0.0
     conditions = []
+    rules_by_id = {r.uplift_id: r for r in rules}
     for rule in rules:
+        if rule.kind != "subset":
+            # Statutory-formula kinds (NA-RECONCILIATION-16): priced on the host credit's own basis, outside the per-line subset machinery and its claim-selection check.
+            confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type)
+            formula_floor += confirmed_amt
+            formula_potential += potential_amt
+            if note:
+                conditions.append({"condition_id": f"{slug}:{rule.uplift_id}:statutory_formula", "description": rule.source_ref, "kind": "statutory_formula_input",
+                                   "condition_state": "UNRESOLVED", "satisfied": None, "note": note})
+            continue
         if rule.eligible_production_types and production_type not in rule.eligible_production_types:
             continue
         if rule.excluded_fact and rule.excluded_fact in facts:
@@ -660,7 +799,7 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     # that pass nothing get rate x QPE. The potential keeps a conditional higher base rate (ceiling_rate) when it exceeds the guaranteed one.
     floor_base = floor_base_usd if floor_base_usd is not None else qpe * base_rate
     potential_base = potential_base_usd if potential_base_usd is not None else qpe * max(base_rate, ceiling_rate or 0.0)
-    return round(floor_base + sum(floor_parts.values()), 2), round(potential_base + sum(potential_parts.values()), 2), tuple(conditions)
+    return round(floor_base + sum(floor_parts.values()) + formula_floor, 2), round(potential_base + sum(potential_parts.values()) + formula_potential, 2), tuple(conditions)
 
 
 def _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts, undeployed_contingency_usd: float = 0.0):
@@ -1841,7 +1980,8 @@ def price_segment(
             production_type, amount_facts, evidenced_requirement_facts, gross_budget_usd=gross_budget_usd,
             ceiling_rate=rr.modeled_rate if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else None,
             floor_base_usd=floor_incentive_usd,
-            potential_base_usd=ceiling_incentive_usd if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else floor_incentive_usd)
+            potential_base_usd=ceiling_incentive_usd if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else floor_incentive_usd,
+            qle_basis_usd=_host_qualified_labour_basis(rr, floor_incentive_usd, ceiling_incentive_usd, qpe))
     except ValueError as exc:
         return SegmentEconomics(jurisdiction_code=jurisdiction_code, program_slug=slug,
             claims_incentive=True, allocated_usd=allocated, account_codes=codes,

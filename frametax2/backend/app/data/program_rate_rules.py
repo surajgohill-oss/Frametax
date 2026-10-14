@@ -3022,6 +3022,17 @@ def resolve_program_rate(
     )
 
 
+#: Stated producer amount facts (days are counts; amounts are USD) read by the British Columbia statutory-formula uplift rules.
+BC_DAYS_IN_BC_FACT = "ca_bc_principal_photography_days_in_bc"
+BC_DAYS_OUTSIDE_VANCOUVER_FACT = "ca_bc_principal_photography_days_outside_vancouver"
+BC_DAYS_DISTANT_FACT = "ca_bc_principal_photography_days_distant_location"
+BC_TRAINING_PAYMENTS_FACT = "ca_bc_training_payments_usd"
+BC_TRAINING_ASSISTANCE_FACT = "ca_bc_training_assistance_usd"
+BC_SCRIPTWRITING_FACT = "ca_bc_scriptwriting_expenditure_usd"
+BC_SCRIPTWRITING_ASSISTANCE_FACT = "ca_bc_scriptwriting_assistance_usd"
+BC_SCRIPTWRITING_REIMBURSEMENT_FACT = "ca_bc_scriptwriting_parent_reimbursement_usd"
+
+
 @dataclass(frozen=True)
 class EligibleSubsetUpliftRule:
     uplift_id: str
@@ -3047,6 +3058,23 @@ class EligibleSubsetUpliftRule:
     max_gross_budget_usd: float | None = None
     #: Ceiling on the TOTAL base this uplift can apply to across all lines (e.g. an enhanced rate on only the first $240,000 of labour).
     base_cap_usd: float | None = None
+    #: NA-RECONCILIATION-16. "subset" (default) prices `rate` on evidenced per-line subsets. The statutory-FORMULA kinds price the host credit's own qualified-labour basis (QLE) and take
+    #: their other inputs from stated producer facts only: never proxied from dollars, never defaulted. An unstated input leaves the credit a disclosed, conditional bound.
+    #:   "day_ratio":     rate x QLE x (numerator days / denominator days) -- BC regional (ITA (BC) s.81.1, s.82.2) and distant-location (s.81.11, s.82.21) credits.
+    #:   "scriptwriting": rate x (SE - (TA + RE)) -- BC scriptwriting credit (s.80.1(3)); SE/TA/RE are stated amounts.
+    #:   "training":      the lesser of rate x QLE and net_share x (payments - assistance) -- BC film training credit (s.82(2)).
+    kind: str = "subset"
+    day_numerator_fact: str | None = None            # amount fact: days of principal photography in the rule's zone (outside the designated Vancouver area, or a distant location)
+    day_denominator_fact: str | None = None          # amount fact: total days of principal photography in the province (the statutory TD)
+    min_numerator_days: int | None = None            # statutory minimum count of numerator days (regional: at least 5; distant location: at least 1)
+    min_share_exclusive: float | None = None         # the numerator share must EXCEED this fraction of the denominator (regional: more than 50%); integer arithmetic at the boundary
+    companion_uplift_id: str | None = None           # a day_ratio rule of the same program whose own eligibility this one also requires (distant location requires the regional credit)
+    companion_bounds_numerator: bool = False         # the companion's numerator days contain this rule's days (distant days are outside the designated Vancouver area)
+    series_needs_episode_facts: bool = False         # a series is computed on its qualifying episodes only, which the budget cannot isolate: confirmed 0, bounded by the whole-production figure
+    excluded_production_types: frozenset[str] = frozenset()   # production types the statute excludes for a prospective production (animation regional credits ended for photography from 2024-06-01)
+    amount_fact: str | None = None                   # scriptwriting SE / training payments (stated amount, USD)
+    assistance_facts: tuple[str, ...] = ()           # stated assistance amounts subtracted from `amount_fact` (scriptwriting TA and RE; training assistance); ALL must be stated for a confirmed figure
+    net_share: float | None = None                   # training: share of (payments - assistance)
 
 
 _NY_LABOR_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
@@ -3122,13 +3150,39 @@ SUBSET_UPLIFT_RULES = {
             source_ref="SODEC fact sheet (2024) and Revenu Quebec: additional 16% on qualified computer-animation/VFX LABOUR costs; only 65% of a VFX/animation "
                        "service contract is recognized, so each account needs its evidenced qualifying labour portion"),
     ),
+    # NA-RECONCILIATION-16: the British Columbia shooting-day credits, on the exact statutory bases (Income Tax Act (BC), read 2026-10-14 on bclaws.gov.bc.ca). They replace the earlier
+    # "labour in the regional zone" boolean, which priced a DOLLAR proxy (labour located in the zone) where the Act takes the DAY ratio. Days are stated producer facts and are never derived from dollars.
     "ca_bc_pstc": (
         EligibleSubsetUpliftRule(
-            "regional", .06, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="bc_labour_in_regional_zone",
-            source_ref="gov.bc.ca: Regional production services tax credit (6%) on qualified BC labour in the regional zone"),
+            "regional", .06, kind="day_ratio", day_numerator_fact=BC_DAYS_OUTSIDE_VANCOUVER_FACT, day_denominator_fact=BC_DAYS_IN_BC_FACT,
+            min_numerator_days=5, min_share_exclusive=0.5, series_needs_episode_facts=True, excluded_production_types=frozenset({"animation"}),
+            source_ref="Income Tax Act (BC) s.82.2(1)-(2): 6% x AQLE x RD/TD; requires the s.82.1 credit, principal photography outside the designated Vancouver area for at least 5 days and "
+                       "during more than 50% of the days in British Columbia"),
         EligibleSubsetUpliftRule(
-            "distant_location", .06, eligible_categories=_NY_LABOR_CATEGORIES, whole_base_fact="bc_labour_in_distant_location_zone",
-            source_ref="gov.bc.ca: Distant location production services tax credit (6%) on qualified BC labour in the distant location zone"),
+            "distant_location", .06, kind="day_ratio", day_numerator_fact=BC_DAYS_DISTANT_FACT, day_denominator_fact=BC_DAYS_IN_BC_FACT,
+            min_numerator_days=1, companion_uplift_id="regional", companion_bounds_numerator=True, series_needs_episode_facts=True, excluded_production_types=frozenset({"animation"}),
+            source_ref="Income Tax Act (BC) s.82.21(1)-(2): 6% x AQLE x DLD/TD; requires the s.82.1 and s.82.2 credits and at least one day of principal photography in a distant location"),
+    ),
+    "ca_bc_film_tv_tax_credit": (
+        EligibleSubsetUpliftRule(
+            "regional", .125, kind="day_ratio", day_numerator_fact=BC_DAYS_OUTSIDE_VANCOUVER_FACT, day_denominator_fact=BC_DAYS_IN_BC_FACT,
+            min_numerator_days=5, min_share_exclusive=0.5, series_needs_episode_facts=True, excluded_production_types=frozenset({"animation"}),
+            source_ref="Income Tax Act (BC) s.81.1(1)-(2): 12.5% x QLE x RD/TD; requires the s.80 credit, principal photography outside the designated Vancouver area for at least 5 days and "
+                       "during more than 50% of the days in British Columbia"),
+        EligibleSubsetUpliftRule(
+            "distant_location", .06, kind="day_ratio", day_numerator_fact=BC_DAYS_DISTANT_FACT, day_denominator_fact=BC_DAYS_IN_BC_FACT,
+            min_numerator_days=1, companion_uplift_id="regional", companion_bounds_numerator=True, series_needs_episode_facts=True, excluded_production_types=frozenset({"animation"}),
+            source_ref="Income Tax Act (BC) s.81.11(1)-(2): 6% x QLE x DLD/TD; requires the s.80 and s.81.1 credits and at least one day of principal photography in a distant location"),
+        EligibleSubsetUpliftRule(
+            "film_training", .03, kind="training", amount_fact=BC_TRAINING_PAYMENTS_FACT, assistance_facts=(BC_TRAINING_ASSISTANCE_FACT,), net_share=0.30,
+            prerequisite_fact="ca_bc_film_training_program_approved_confirmed", potential_requires_prerequisite=True,
+            source_ref="Income Tax Act (BC) s.82(1)-(3): the lesser of 3% of QLE and 30% of the amount by which payments attributable to training exceed assistance; requires the s.80 credit, BC-based "
+                       "trainees in an approved training program and an eligibility certificate"),
+        EligibleSubsetUpliftRule(
+            "scriptwriting", .35, kind="scriptwriting", amount_fact=BC_SCRIPTWRITING_FACT, assistance_facts=(BC_SCRIPTWRITING_ASSISTANCE_FACT, BC_SCRIPTWRITING_REIMBURSEMENT_FACT),
+            prerequisite_fact="ca_bc_scriptwriting_application_confirmed", potential_requires_prerequisite=True,
+            source_ref="Income Tax Act (BC) s.80.1(2)-(3): 35% x (SE - (TA + RE)) on the eligible BC scriptwriting expenditure; requires principal photography to begin in the taxation year, the s.80 "
+                       "credit and an eligibility certificate"),
     ),
     # Alabama (revenue.alabama.gov/tax-incentives/film-rebate, read 2026-10-12): the rebate is 25% of certain production expenditures incurred in Alabama
     # PLUS 35% of the payroll paid to Alabama residents (a 10-point addition on resident payroll); a small-budget production (total expenditures of at
