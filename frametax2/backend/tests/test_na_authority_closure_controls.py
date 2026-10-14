@@ -111,7 +111,7 @@ _PRODUCER_FACT_CASES = [
      {"ca-cptc-content-certification-required", "ca-cptc-canadian-controlled-corporation"}),
     ("on_opstc", 2_000_000.0, {}, ("on_opstc_ontario_labour_25pct_confirmed",), {"ca-on-labour-ratio-gate"}),
     ("ontario_computer_animation_and_special_effects_tax_credit_ocase", 1_000_000.0, {"on_ocase_qualifying_vfx_labour_usd": 100_000.0},
-     ("ontario_computer_animation_and_special_effects_tax_credit_ocase__local_entity_or_partner_confirmed", "on_ocase_ontario_labour_over_cad_25000_stated"),
+     ("on_ocase__local_entity_or_partner_confirmed", "on_ocase_ontario_labour_over_cad_25000_stated"),
      {"on-ocase-permanent-establishment", "on-ocase-labour-over-cad-25000"}),
     ("ca_nl_all_spend_credit", 2_000_000.0, {}, ("ca_nl_all_spend_credit__agency_preapproval_confirmed",), {"ca-nl-part1-registration-required"}),
     ("us_co_film_incentive", 2_000_000.0, {}, ("us_co_film_incentive__agency_preapproval_confirmed", "us_co_workforce_50pct_and_cpa_review_stated"),

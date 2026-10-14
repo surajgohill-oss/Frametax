@@ -1510,7 +1510,7 @@ ON_OCASE_DOCTRINE = register(DoctrineRecord(
                                 "Not stated for this production, so disclosed, not assumed; the producer's resolution of the local-entity gate clears it.",
                     quote="has a permanent establishment in Ontario and files an Ontario corporate tax return (ontariocreates.ca/tax-incentives/ocase)",
                     kind="project_fact_dependent_eligibility",
-                    required_boolean_fact_key="ontario_computer_animation_and_special_effects_tax_credit_ocase__local_entity_or_partner_confirmed",
+                    required_boolean_fact_key="on_ocase__local_entity_or_partner_confirmed",     # short alias spelling: the long form exceeded the 100-character fact_key column (program_content_gates._GATE_KEY_SLUG)
                     gates_tier_eligibility=False,
                 ),
                 RateCondition(

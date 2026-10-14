@@ -204,3 +204,15 @@ async def test_a_stated_fact_changes_the_priced_result_it_feeds_and_clearing_ret
         await ce.evaluate_project(db, project_id)
         after = next(e for e in await served_structures(db, pid) if e["program_slugs"] == ["ca_bc_film_tv_tax_credit"] and e["structure_type"] == "single_country")
         assert after["maximum_supported_incentive_usd"] < before["maximum_supported_incentive_usd"], "the historical-regime statement removes the 40% scenario"
+
+
+def test_every_stored_key_fits_the_fact_key_column_and_the_ocase_gate_is_writable():
+    """ProjectFact.fact_key is 100 characters: a longer stored key could never be saved (the OCASE content gate was one, at 121, until its key used a short alias)."""
+    assert max(len(npf.EVIDENCED_PREFIX + k) for k in npf.NY_EVIDENCED_FACTS) <= 100
+    assert max(len(npf.AMOUNT_PREFIX + k) for k in npf.PROGRAM_AMOUNT_FACTS) <= 100
+    from app.services.program_content_gates import gate_control_whitelist, gate_fact_key
+    whitelist = gate_control_whitelist()
+    assert max(len("evidenced_program_fact:" + k) for k in whitelist) <= 100
+    ocase = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    key = gate_fact_key(ocase, "LOCAL_ENTITY_OR_PARTNER")
+    assert key in whitelist and whitelist[key]["program_slug"] == ocase, "the whitelist keeps the real program slug; the key is only a short alias"

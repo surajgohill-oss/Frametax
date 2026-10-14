@@ -77,9 +77,14 @@ def gate_effect(category: str, status: str) -> str:
     return "NONE" if status == "CONFIRMED" else "NEEDS_FACTS"
 
 
+#: A slug whose gate key would not fit the 100-character ProjectFact.fact_key column once the storage prefix is added (NA-RECONCILIATION-21: the OCASE key was 121 characters, so its gate could never be stored)
+#: is spelled with a short stable alias inside the KEY only. The whitelist still carries the real program_slug, so no consumer maps a key back to a program by parsing it.
+_GATE_KEY_SLUG: dict[str, str] = {"ontario_computer_animation_and_special_effects_tax_credit_ocase": "on_ocase"}
+
+
 def gate_fact_key(program_slug: str, kind: str) -> str:
     """The ProjectFact fact_key (without the storage prefix) a producer's confirmation of this gate is stored under."""
-    return f"{program_slug}__{_KEY_KIND.get(kind, kind.lower())}_confirmed"
+    return f"{_GATE_KEY_SLUG.get(program_slug, program_slug)}__{_KEY_KIND.get(kind, kind.lower())}_confirmed"
 
 
 def _evaluated_by_kernel(program_slug: str) -> bool:
