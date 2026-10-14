@@ -664,7 +664,7 @@
    "path": "EXECUTABLE_GUARANTEED",
    "exclusion": "",
    "stack_pairs": [
-    "us_ny_empire_state_independent_film_credit:UNRULED:blocked",
+    "us_ny_empire_state_independent_film_credit:mutually_exclusive:blocked",
     "us_ny_post_production_credit:mutually_exclusive:blocked"
    ]
   },
@@ -1553,8 +1553,8 @@
    "path": "EXECUTABLE_GUARANTEED",
    "exclusion": "",
    "stack_pairs": [
-    "ny_state_film:UNRULED:blocked",
-    "us_ny_post_production_credit:UNRULED:blocked"
+    "ny_state_film:mutually_exclusive:blocked",
+    "us_ny_post_production_credit:mutually_exclusive:blocked"
    ]
   },
   {
@@ -1592,7 +1592,7 @@
    "exclusion": "",
    "stack_pairs": [
     "ny_state_film:mutually_exclusive:blocked",
-    "us_ny_empire_state_independent_film_credit:UNRULED:blocked"
+    "us_ny_empire_state_independent_film_credit:mutually_exclusive:blocked"
    ],
    "p1_executable": false,
    "p1_exclusion": "P1 post spend is 300,000 and the credit's minimum is USD 1,000,000 of post-production costs (Tax Law 31(a)). Proven on P2 (post 1,200,000 + VFX 500,000)."
@@ -2291,7 +2291,7 @@
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
    "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): ca_bc_film_tv_tax_credit + ca_federal_pstc: conditional (No primary text found states the combination of the BC film and television credit (a domestic-content eligible-production credit) with the "
+   "reason": "blocked by 1 pairwise incompatibility(ies): ca_bc_film_tv_tax_credit + ca_federal_pstc: conditional (Federal side VERIFIED (CAVCO PSTC application guidelines, read 2026-10-13): only the CPTC bars the PSTC, and provincial tax credits are ass"
   },
   {
    "row_kind": "PAIR",
@@ -2575,7 +2575,7 @@
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
    "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): ca_federal_pstc + on_ofttc: conditional (No primary text states the OFTTC-with-PSTC combination: the Ontario Creates OFTTC page is silent on the federal PSTC and the PSTC guidelines do not name th"
+   "reason": "blocked by 1 pairwise incompatibility(ies): ca_federal_pstc + on_ofttc: conditional (Federal side VERIFIED (CAVCO PSTC application guidelines, read 2026-10-13): the PSTC 'is not available where a production has received the Canadian Film or"
   },
   {
    "row_kind": "PAIR",
@@ -2620,12 +2620,12 @@
    "program_a": "ny_state_film",
    "program_b": "us_ny_empire_state_independent_film_credit",
    "jurisdictions": "US-NY + US-NY",
-   "rule_type": "UNRULED",
+   "rule_type": "mutually_exclusive",
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
    "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): ny_state_film + us_ny_empire_state_independent_film_credit: UNRESOLVED_NO_AUTHORITY"
+   "reason": "blocked by 1 pairwise incompatibility(ies): ny_state_film + us_ny_empire_state_independent_film_credit: mutually_exclusive (Empire State Development, New York State Independent Film Production Tax Credit Program page: 'A specific film produ"
   },
   {
    "row_kind": "PAIR",
@@ -2692,12 +2692,12 @@
    "program_a": "us_ny_empire_state_independent_film_credit",
    "program_b": "us_ny_post_production_credit",
    "jurisdictions": "US-NY + US-NY",
-   "rule_type": "UNRULED",
+   "rule_type": "mutually_exclusive",
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
    "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): us_ny_empire_state_independent_film_credit + us_ny_post_production_credit: UNRESOLVED_NO_AUTHORITY"
+   "reason": "blocked by 1 pairwise incompatibility(ies): us_ny_empire_state_independent_film_credit + us_ny_post_production_credit: mutually_exclusive (Empire State Development, New York State Independent Film Production Tax Credit Program page: 'A film"
   }
  ],
  "summary": {
@@ -2725,8 +2725,7 @@
    "spend_reduction": 23,
    "allowed": 3,
    "conditional": 3,
-   "mutually_exclusive": 5,
-   "UNRULED": 2,
+   "mutually_exclusive": 7,
    "same_cost_prohibited_distinct_costs_allowed": 1
   },
   "pairs_executable": 25

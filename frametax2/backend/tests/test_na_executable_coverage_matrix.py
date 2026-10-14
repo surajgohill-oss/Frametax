@@ -99,13 +99,14 @@ async def test_every_same_scope_pair_composes_or_is_refused_for_its_registered_r
             assert not p["executable"] and any(x == "ca_sk_creative_saskatchewan_grant" for x in (p["program_a"], p["program_b"])), p
             continue
         assert p["executable"] is _COMPOSES[rt], (p["program_a"], p["program_b"], rt, p["reason"])
-        if rt == "UNRULED":
-            assert "us_ny_empire_state_independent_film_credit" in (p["program_a"], p["program_b"]), "the only unruled pairs are the open New York independent-credit pairs"
         if not p["executable"]:
             assert p["reason"], "a refused pair states why"
-    # no same-scope pair is silently missing: the unruled ones are exactly the two recorded open New York pairs
-    assert sorted((p["program_a"], p["program_b"]) for p in matrix["pairs"] if p["rule_type"] == "UNRULED") == [
-        ("ny_state_film", "us_ny_empire_state_independent_film_credit"), ("us_ny_empire_state_independent_film_credit", "us_ny_post_production_credit")]
+    # no same-scope pair is silently missing: every pair among the priced NA programs now has a registered rule
+    assert not [p for p in matrix["pairs"] if p["rule_type"] == "UNRULED"]
+    by = {(p["program_a"], p["program_b"]): p for p in matrix["pairs"]}
+    # ESD program page: one program per production (regular vs independent) and no independent + post-production credit for the same project
+    for key in (("ny_state_film", "us_ny_empire_state_independent_film_credit"), ("us_ny_empire_state_independent_film_credit", "us_ny_post_production_credit")):
+        assert by[key]["rule_type"] == "mutually_exclusive" and not by[key]["executable"]
 
 
 @pytest.mark.asyncio

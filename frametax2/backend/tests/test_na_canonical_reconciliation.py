@@ -118,12 +118,9 @@ def test_the_committed_artifacts_are_current(matrix):
     assert [(r["canonical_slug"], r["row_layer"], r["proposition_id"]) for r in rows] == [(r["canonical_slug"], r["row_layer"], r["proposition_id"]) for r in matrix]
 
 
-def test_the_formerly_unruled_pairs_are_ruled_and_the_two_without_primary_text_are_conditional_not_priced(matrix):
-    # The only same-scope pairs still unruled are the New York independent credit (Tax Law 24-D) with the section 24 film credit and the post-production credit: neither the 24-D text nor
-    # the section 24 / 31 text read on 2026-10-13 states whether the same film can claim both, so they stay UNRESOLVED_NO_AUTHORITY (blocking), recorded as NY-IND-POOLS-AND-PAIR.
-    left = {frozenset((r["canonical_slug"], r["proposition_id"].split(":", 1)[1])) for r in matrix if r["proposition_id"].startswith("STACK-PAIR:")}
-    ind = "us_ny_empire_state_independent_film_credit"
-    assert left == {frozenset(("ny_state_film", ind)), frozenset(("us_ny_post_production_credit", ind))}
+def test_the_formerly_unruled_pairs_are_ruled_and_the_ones_without_primary_text_are_conditional_not_priced(matrix):
+    # Every same-scope pair among the priced programs is ruled; the New York independent credit pairs became mutually_exclusive from the ESD program page (stacking rules 1.14.0).
+    assert not [r for r in matrix if r["proposition_id"].startswith("STACK-PAIR:")]
     from app.calculators.canonical_stack_bridge import load_named_pair_rule
     formerly = [("ca_ab_fttc", "ca_federal_cptc"), ("ca_ab_fttc", "ca_federal_pstc"), ("ca_bc_dave", "ca_federal_cptc"), ("ca_bc_dave", "ca_federal_pstc"),
                 ("ca_federal_cptc", "ca_nb_film_tax_credit"), ("ca_federal_cptc", "ca_ns_production_incentive_fund"), ("ca_federal_pstc", "ca_nb_film_tax_credit"),

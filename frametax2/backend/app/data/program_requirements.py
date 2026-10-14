@@ -5220,11 +5220,11 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="us_ny_empire_state_independent_film_credit", jurisdiction_code="US-NY",
-    local_entity_required=None, preapproval_mandatory=True, refundable=True, allocation_type=AllocationType.FIRST_COME_FIRST_SERVED,
+    local_entity_required=None, preapproval_mandatory=True, refundable=True, allocation_type=AllocationType.FIRST_COME_FIRST_SERVED, annual_program_cap_usd=100_000_000.0,
     evidence=_ev("N.Y. Tax Law 24-D; NYS Department of Taxation page; ESD Part 172 regulations", "https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm", "New York State Department of Taxation and Finance / Empire State Development", "2025-01-01",
                  "30% of qualified production costs (+10% upstate and scoring adders); refundable (Taxation page, 2025-12-10); qualified film gross budget of at least USD 1 million (USD 250,000 for films shot mostly outside the NYC area); company not publicly traded or 51%+ "
                  "owned by a publicly traded company; initial application to the department before principal photography, first-come, first-served in at least two periods a year; Level one is a budget of at most USD 15 million; a diversity plan is required. "
-                 "Not found: the independent-credit annual pools, the program years, transferability, and any exclusion against the section 24 credit for the same film."),
+                 "ESD program page (2026-10-13): USD 100 million a calendar year (Pool 1 about USD 20 million for qualified costs up to USD 10 million, Pool 2 about USD 80 million), Pool 1 fully allocated and closed; only one of the regular and independent programs per production; not with the post-production credit for the same project. Not found: the program years and transferability."),
 ))
 
 register(ProgramRequirementsProfile(

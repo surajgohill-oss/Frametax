@@ -7282,7 +7282,7 @@ US_NY_IND_DOCTRINE = register(DoctrineRecord(
               "director, performer and composer costs are limited to 40% of all other qualified costs; two qualified films a calendar year; the company must not be publicly traded or 51%+ owned by a publicly traded company; "
               "minimum gross budget USD 1 million (USD 250,000 for films shot mostly outside the NYC area). ESD Part 172 (draft regulations dated 2026-03): applications go to the department before principal photography on a "
               "first-come, first-served basis in at least two periods a year, Level one means a budget of at most USD 15 million, the credit is based on actual costs and never exceeds the initial estimate, a diversity plan is required. "
-              "The aggregate pools and the program's years were not read from the independent-credit text.",
+              "ESD program page (read 2026-10-13): 30% of qualified production costs; USD 100 million a calendar year in two pools (Pool 1 about USD 20 million for productions with qualified costs of USD 10 million or less, Pool 2 about USD 80 million above that); qualified costs excluding labour capped at USD 60 million; 'All available funds have been allocated for Pool 1' (closed to new applications); a production can participate in only one of the regular and independent programs and cannot claim the independent and post-production credits for the same project. The program's years were not found.",
     source_ref="ny-tax-law-24-d+esd-part-172-regulations",
     provenance=SourceProvenance(
         issuing_authority="New York State Department of Taxation and Finance / Empire State Development",

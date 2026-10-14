@@ -77,7 +77,11 @@ async def test_evaluating_a_synthetic_ny_film_no_longer_prices_the_production_pl
     assert both, "the combination must still be enumerated (and rejected), never silently dropped"
     assert all(t.get("candidate_status") != "PRICED" for t in both)
     assert not any(t.get("structural_family") == "same_jurisdiction_distinct_cost_pool_stack" and t.get("candidate_status") == "PRICED" for t in traces)
-    assert any(t.get("candidate_status") == "PRICED" and NY_FILM in (t.get("program_slugs") or []) for t in traces), "the production credit still prices alone"
+    # A New York production credit still prices. Since NA-RECONCILIATION-12 there are two alternatives for one production (the regular credit and the independent credit, mutually exclusive per
+    # the ESD program page); both price at 30% here, so bounded retention keeps whichever dominates (single-program rows carry `program_slug`, combinations `program_slugs`).
+    credits = {NY_FILM, "us_ny_empire_state_independent_film_credit"}
+    assert any(t.get("candidate_status") == "PRICED" and (credits & (set(t.get("program_slugs") or []) | {t.get("program_slug")})) for t in traces), \
+        "a New York production credit still prices"
 
 
 # ── production vs post upstate / ATL eligibility ───────────────────────────────────────────────────────────────────────────
