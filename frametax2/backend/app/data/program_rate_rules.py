@@ -2098,7 +2098,8 @@ INCENTIVE_VALUE_CAP_RULES: dict[str, IncentiveValueCapRule] = {
     ),
     "ca_sk_creative_saskatchewan_grant": IncentiveValueCapRule(
         program_slug="ca_sk_creative_saskatchewan_grant", cap_currency="CAD", cap_native_amount=5_000_000.0,
-        description="Maximum of CAD 5,000,000 per production for both the Saskatchewan Stream (30%) and the Service Production Stream (25%); previously recorded as annual_cap_usd at CAD-USD par.",
+        description="Maximum of CAD 5,000,000 per production for both the Saskatchewan Stream (30%) and the Service Production Stream (25%); previously recorded as annual_cap_usd at CAD-USD par. The Apprenticeship Stream 'is counted towards the total "
+                    "Feature Film & Television Production Grant maximum of $5 million per project'; for FFTV requests above CAD 5 million the guidelines say only 'contact us', which is a discretionary exception that is not priced.",
         quote="equivalent to a maximum of 30% of all eligible Saskatchewan expenditures up to a maximum of $5,000,000 ... 25% ... up to a maximum of $5,000,000 (Creative Saskatchewan Feature Film "
               "and Television Production Grant guidelines, fiscal 2026/27)",
         source_ref="creativesask.ca-fy2026-27-guidelines-primary",
@@ -3106,7 +3107,9 @@ class EligibleSubsetUpliftRule:
     #:   "year_gate":           an agency-stated first expenditure year (`min_year`) for a stated year fact; stated earlier = no credit, unstated = a disclosed timing condition.
     gate_rule_id: str | None = None
     personnel_categories: frozenset[str] = frozenset()
-    compensation_credits: tuple[tuple[str, str, float, float | None, float | None], ...] = ()
+    compensation_credits: tuple[tuple, ...] = ()          # (compensation fact, headcount fact | None, rate, per-person credit cap | None, per-person compensation cap | None, required fact | None)
+    post_wage_fact: str | None = None                      # Montana: stated qualified postproduction wages inside the post-category lines (15-31-1003(17), 15-31-1009)
+    post_categories: frozenset[str] = frozenset()
     bound_rate: float | None = None
     min_year: int | None = None
 
@@ -3294,12 +3297,14 @@ SUBSET_UPLIFT_RULES = {
             "compensation_credits", .20, kind="compensation_credits", bound_rate=0.30,
             personnel_categories=frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"}),
             compensation_credits=(
-                ("us_mt_resident_crew_compensation_usd", "us_mt_resident_crew_persons", 0.25, 150_000.0, None),            # (3)(b)(i): 25%, not above a USD 150,000 credit per person
-                ("us_mt_nonresident_crew_compensation_usd", "us_mt_nonresident_crew_persons", 0.15, 150_000.0, None),     # (3)(b)(ii): 15% where Montana tax is withheld, USD 150,000 per person
-                ("us_mt_talent_compensation_usd", "us_mt_talent_persons", 0.20, None, 7_500_000.0),                       # (3)(b)(iii): 20% of the first USD 7.5 million per actor, director, producer or writer
-                ("us_mt_student_compensation_usd", "us_mt_student_persons", 0.30, 50_000.0, None),                        # (3)(b)(iv): 30% for an enrolled student, USD 50,000 per student
-                ("us_mt_veteran_tribal_compensation_usd", "us_mt_veteran_tribal_persons", 0.30, 150_000.0, None),         # (3)(b)(v): 30% for a resident veteran or enrolled tribal member, USD 150,000 per person
+                ("us_mt_resident_crew_compensation_usd", "us_mt_resident_crew_persons", 0.25, 150_000.0, None, None),            # (3)(b)(i): 25%, not above a USD 150,000 credit per person
+                ("us_mt_nonresident_crew_compensation_usd", "us_mt_nonresident_crew_persons", 0.15, 150_000.0, None, None),     # (3)(b)(ii): 15% where Montana tax is withheld, USD 150,000 per person
+                ("us_mt_talent_compensation_usd", "us_mt_talent_persons", 0.20, None, 7_500_000.0, None),                       # (3)(b)(iii): 20% of the first USD 7.5 million per actor, director, producer or writer
+                ("us_mt_student_compensation_usd", "us_mt_student_persons", 0.30, 50_000.0, None, None),                        # (3)(b)(iv): 30% for an enrolled student, USD 50,000 per student
+                ("us_mt_veteran_tribal_compensation_usd", "us_mt_veteran_tribal_persons", 0.30, 150_000.0, None, None),         # (3)(b)(v): 30% for a resident veteran or enrolled tribal member, USD 150,000 per person
+                ("us_mt_postproduction_wages_usd", None, 0.25, None, None, "us_mt_postproduction_company_approved_confirmed"),   # 15-31-1009(2): 25% of qualified postproduction wages, for an approved postproduction company
             ),
+            post_wage_fact="us_mt_postproduction_wages_usd", post_categories=frozenset({"post_production", "vfx", "sound", "music"}),
             source_ref="MCA 15-31-1007(3)(b)(i)-(v) and 15-31-1003(13)(b)(i): 'production expenditure' does not include compensation, which earns 25% (resident crew), 15% (non-resident crew with Montana tax "
                        "withheld), 20% of the first USD 7.5 million (actors, directors, producers, writers with Montana tax withheld), 30% (students, USD 50,000 each) or 30% (resident veterans and tribal "
                        "members, USD 150,000 each) of compensation; a person counts in one category only (students and veterans exclude the others)"),
@@ -3414,6 +3419,27 @@ SUBSET_BASE_DEDUCTIONS: dict[str, tuple[tuple[str, str], ...]] = {
         ("ca_ns_equity_tax_credit_financing_usd",
          "NSFPIF Guidelines s.3.2(b): the financing/investment received from a corporation registered under the Equity Tax Credit Act (Nova Scotia) that made a specified issue after June 30, 2015 is deducted from Eligible Nova Scotia Costs"),
     ),
+}
+
+#: Producer second-position fee limits (Nova Scotia s.4(c)): without the Administrator's advance approval a producer may claim no more than one Head-of-Department / performer position besides producing, and where
+#: more are approved the total fees eligible for such services are limited to a share of the budget. slug -> config.
+SUBSET_PRODUCER_POSITION_LIMITS: dict[str, dict] = {
+    "ca_ns_production_incentive_fund": {
+        "extra_fees_fact": "ca_ns_producer_extra_position_fees_usd", "approved_fact": "ca_ns_producer_extra_positions_approved_confirmed",
+        "total_fees_fact": "ca_ns_producer_hod_performer_fees_total_usd", "budget_share": 0.20,
+        "source": "NSFPIF Guidelines s.4(c): 'Except when approved by the Administrator in advance, producers may claim no more than one (1) Head of Department/Performer position in addition to being a producer. In these approved "
+                  "instances, total fees eligible ... payable to producers also employed in Head of Department positions will be no greater than 20 per cent of the budget and, in any event, will be within the threshold set by "
+                  "section 3.2, paragraph d)'",
+    },
+}
+
+#: An amount that is not part of the host's main base but earns the same percentage the main grant earned (Saskatchewan Apprenticeship Stream): slug -> (stated amount fact, source).
+SUBSET_RATE_ON_EXTRA_BASE: dict[str, tuple[str, str]] = {
+    "ca_sk_creative_saskatchewan_grant": (
+        "ca_sk_apprenticeship_mentor_salaries_usd",
+        "Creative Saskatchewan FFTV Apprenticeship Stream Guidelines 2026-27: 'Creative Saskatchewan's financial contribution is up to 40% of eligible non-resident salaries ... The contribution percentage is equal to the "
+        "percentage received in the Feature Film & Television Production Grant', for the weeks a non-resident mentor trains a matched Saskatchewan apprentice; no cap on the salaries, counted towards the USD/CAD 5 million "
+        "per-project maximum; above-the-line positions only with ScreenSask and guild approval"),
 }
 
 #: A smaller-budget stream of the same program, selected by the production's total budget in the program's currency (NA-RECONCILIATION-19).

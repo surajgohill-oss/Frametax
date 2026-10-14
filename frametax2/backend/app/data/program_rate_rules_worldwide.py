@@ -921,6 +921,8 @@ _CA_BC_CITATION = (
 CA_BC_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-BC",
     program_slug="ca_bc_pstc",
+    # NA-RECONCILIATION-20: series (each episode an accredited production over its threshold, s.79(1)) and animation productions are accredited productions too; the credit rate is the same.
+    production_types=("feature_film", "tv_series", "animation"),
     program_name="British Columbia Production Services Tax Credit",
     confidence_tier="VERIFIED",
     incentive_type="tax_credit",
@@ -1149,6 +1151,8 @@ def _bc_film_tv_conditions(prefix: str) -> tuple:
 
 CA_BC_FILM_TV_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-BC", program_slug="ca_bc_film_tv_tax_credit",
+    # NA-RECONCILIATION-20: Income Tax Act (BC) s.79(1) 'eligible production' covers a series (each episode suitable for a 30-minute slot) and an animation production; s.80(2)-(8) set the same rates.
+    production_types=("feature_film", "tv_series", "animation"),
     program_name="British Columbia Film and Television Tax Credit (Film Incentive BC)",
     confidence_tier="PARSED", incentive_type="tax_credit",
     is_refundable=True, is_transferable=None, min_spend_usd=None,
@@ -7345,7 +7349,7 @@ US_MT_DOCTRINE = register(DoctrineRecord(
                             "non-refundability. Because the pre-2025 backlog takes the whole annual limit and Commerce has paused certification, the 20% is a ceiling with an unresolved availability condition and no guaranteed floor. "
                             "NA-RECONCILIATION-19: 'production expenditure' excludes compensation (MCA 15-31-1003(13)(b)(i)); compensation earns per-category credits (25% / 15% / 20% of the first USD 7.5 million / 30% / 30%, with USD 150,000 / 150,000 / "
                             "none / 50,000 / 150,000 per-person credit limits) and the additions (10% college payments, 10% studio rental of 20 days or more, 5% underserved area, 5% Montana screen credit) are rules priced from stated amounts; "
-                            "the whole credit is limited to 35% of base investment (15-31-1007(3)(a)). TIMING CORRECTED: Commerce's certification pause has no stated end date, and the Department of Revenue states that the first credit "
+                            "the whole credit is limited to 35% of base investment (15-31-1007(3)(a)). EXPENDITURE-EXCLUSION CONFLICT, read 2026-10-14: 15-31-1003(13)(a)(ix) names editing, film processing, sound mixing, computer graphics, special effects, visual effects and animation SERVICES as production expenditures, while (13)(b)(vi) excludes 'postproduction expenditures' - a term the section never defines (it defines only 'qualified postproduction activity' (16), 'qualified postproduction wage' (17) and the 15-31-1009 credit for an approved postproduction company); the specific named inclusion governs the named services, wages inside those lines are compensation (not a production expenditure, (13)(b)(i)) and are separated by the stated postproduction-wage fact, and the exclusion is therefore not applied to the services (an upper-bound treatment; OPEN interpretation: a Commerce or Revenue statement of what (b)(vi) excludes). POSTPRODUCTION-WAGE CREDIT: 15-31-1009 gives an approved postproduction company 25% of qualified postproduction wages incurred in Montana (limited to its total Montana compensation, non-refundable, 5-year carry-forward, not for expenditures claimed under 1007); it is priced as a compensation category only when 'us_mt_postproduction_company_approved_confirmed' is stated, otherwise the wages are bounded at 30%. TIMING CORRECTED: Commerce's certification pause has no stated end date, and the Department of Revenue states that the first credit "
                             "year for new expenditures is 2031 (2024 productions take the whole USD 12 million limit through 2030 and part of 2031); an expenditure year before 2031 therefore prices no credit.",
     ),
     tiers=(DoctrineRateTier(tier_id="us-mt-base-20-ceiling", rate=0.20, is_band_ceiling=True,
@@ -7665,7 +7669,9 @@ CA_NS_DOCTRINE = register(DoctrineRecord(
               "contradicted the primary base. Modelled: the Stream II 25% base on the segment's qualifying Nova Scotia spend; from NA-RECONCILIATION-17/18 the Location (+2), Distant Location (7%/10% bands prorated on days, up to +10), Stream I (+1), "
               "Shooting Length (+1, more than 30 days), Content (+1.5 performers at 60%, +1.5 three of seven criteria) additions and the Head of Department reduction (0.5 point per position below the stream minimum) are "
               "statutory-formula rules priced from stated producer facts only (program_rate_rules.SUBSET_UPLIFT_RULES); unstated, each is a disclosed bounded potential and the HOD reduction is presumed met. Supplier "
-              "residency is a producer fact the topsheet cannot establish and is disclosed, not priced.",
+              "residency, the Equity Tax Credit Act deduction (s.3.2(b)), the per-individual incentive cap (s.3.2(d)) and the producer second-position limit (s.4(c): without advance approval one Head of Department / performer "
+              "position besides producing; where more are approved the total fees are limited to 20% of the budget) are priced from stated amounts (NA-RECONCILIATION-19/20); the Administrator's approvals and exceptions are "
+              "discretionary decisions and are not priced.",
     source_ref="ccth-nsfpif-guidelines-2024-04-01-primary",
     provenance=SourceProvenance(
         issuing_authority="Province of Nova Scotia, Department of Communities, Culture, Tourism and Heritage",
@@ -7708,7 +7714,7 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
               "Production). Major eligibility: NB spend at least 20% of the total budget, confirmed financing at least 50%, NB copyright ownership at least 33% (not for animation), a New "
               "Brunswick-incorporated applicant with at least 50% New Brunswick-resident shareholders, at least one funding partner confirmed at application; co-productions and service productions are "
               "eligible; Total NB Spend may include up to 15% Eligible Deemed Spend. Company Cap CAD 2,000,000 (28% of the CAD 7 million program budget) per production company including sub-companies; "
-              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. From NA-RECONCILIATION-19 Total NB Spend may include up to 15% eligible deemed spend (stated amount or a bounded potential) and a total budget under CAD 400,000 is priced as the Micro Production stream (up to 30%, capped at CAD 100,000, NB spend at least 25% of the budget; Major needs 20%). From NA-RECONCILIATION-18 the three stackable bonuses are statutory-formula rules (HOD / lead talent +3 on one stated fact; rural / remote +3 or +4 on stated principal-photography days by distance band, 50%+ inclusive; NB Made +3 on at least two of six stated criteria) added to the 25% base under a 35% combined cap, so the ceiling follows the stated facts and never exceeds 35%. The guidelines "
+              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. DEEMED SPEND WORKSHEET (searched 2026-10-14): the guidelines name a 'Deemed Spend Worksheet' (and a Bonus Incentive Worksheet) that sit behind the Arts Culture NB SmartSimple application portal; the public program page links only the guidelines PDF, so the worksheet's internal formula is NOT retained and cannot be modelled - what the guidelines state is modelled (costs planned outside NB, not above-the-line, up to 15% of Eligible NB Spend) and the amount is a stated producer input. From NA-RECONCILIATION-19 Total NB Spend may include up to 15% eligible deemed spend (stated amount or a bounded potential) and a total budget under CAD 400,000 is priced as the Micro Production stream (up to 30%, capped at CAD 100,000, NB spend at least 25% of the budget; Major needs 20%). From NA-RECONCILIATION-18 the three stackable bonuses are statutory-formula rules (HOD / lead talent +3 on one stated fact; rural / remote +3 or +4 on stated principal-photography days by distance band, 50%+ inclusive; NB Made +3 on at least two of six stated criteria) added to the 25% base under a 35% combined cap, so the ceiling follows the stated facts and never exceeds 35%. The guidelines "
               "are silent on federal and other tax credits. SUPERSEDES the 2017-2018 THC guidelines (labour-based 40% / all-spend 25% / 30% incentive, CAD 800,000 feature maximum) for current use.",
     source_ref="nb-thc-lift-production-guidelines-2026-27-primary",
     provenance=SourceProvenance(
@@ -8988,7 +8994,7 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
               "Bonus +5 (the majority of post-production spend incurred in Saskatchewan; it applies to ALL eligible expenses, not only post); Saskatchewan Production Volume Bonus +10 (the applicant, as a producer "
               "significantly involved, has at least two eligible completed FFTV projects and CAD 1.5 million of combined eligible Saskatchewan spend in the current and three prior fiscal years, projects "
               "meeting the activity test). Total funding including bonuses is capped at 40% (Saskatchewan Stream) and 35% (Service Production Stream) of eligible Saskatchewan expenditures; every assessment is subject "
-              "to Creative Saskatchewan's final approval. NA-RECONCILIATION-19: these formulas are armed as statutory-formula rules (SUBSET_UPLIFT_RULES) under a 40% / 35% combined cap; the program is potential-only with a zero guaranteed floor.",
+              "to Creative Saskatchewan's final approval. NA-RECONCILIATION-19: these formulas are armed as statutory-formula rules (SUBSET_UPLIFT_RULES) under a 40% / 35% combined cap; the program is potential-only with a zero guaranteed floor. NA-RECONCILIATION-20: the Apprenticeship Stream (Creative Saskatchewan FFTV Apprenticeship Stream Guidelines 2026-27, read 2026-10-14) pays up to 40% of eligible non-resident salaries during the weeks a matched Saskatchewan apprentice is trained, at the SAME percentage the main grant received, with no cap on the salaries but counted towards the CAD 5 million per-project maximum; it is priced from the stated mentor salaries. The Saskatchewan Stream's requirement that the applicant control 'a share of copyright proportional to Creative Saskatchewan's financial participation' states no numeric share, so it is part of the stated Saskatchewan Stream fact, not a formula.",
     source_ref="creativesask.ca-fy2026-27-guidelines-primary+hellodarwin.com+grantcompass.ca-saskatchewan",
     provenance=SourceProvenance(
         issuing_authority="Creative Saskatchewan (Government of Saskatchewan Crown corporation)",

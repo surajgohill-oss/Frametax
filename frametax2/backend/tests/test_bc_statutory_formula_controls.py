@@ -114,13 +114,22 @@ def test_impossible_or_non_whole_day_statements_are_refused_not_coerced(amounts)
     assert not refused.executable and refused.blockers, amounts
 
 
-def test_a_series_and_an_animation_are_not_priced_from_whole_production_days():
-    # Established behaviour kept: both BC hosts are scoped to feature films today, so a series or animation host segment is not priced at all.
+def test_a_series_and_an_animation_are_priced_on_the_base_but_not_from_whole_production_days():
+    # Restated in NA-RECONCILIATION-20. Income Tax Act (BC) s.79(1) 'eligible production' and 'accredited production' cover series (each episode over its threshold) and animation, and s.80(2)-(8) / s.82.1(2),(5) set
+    # the same rates, so both BC hosts now price series and animation. What the budget cannot supply stays out of the confirmed figure: a series is computed on its qualifying episodes only (s.81.1(1)(c)), and an
+    # animation production's regional credits require photography that began before 2024-06-01 (s.81.1(4)(b)).
     for slug in (DOM, PS):
         for kind in ("tv_series", "animation"):
-            assert not _price(slug, amounts=_days(40, 30, 10), production_type=kind).executable
-    # The formula guard still protects a future series/animation host scope: the statute computes a series on its qualifying episodes only, and an animation regional credit ended for
-    # photography from 2024-06-01 (s.81.1(1)(b), (4)).
+            base = _price(slug, production_type=kind)
+            assert base.executable and base.incentive_floor_usd == pytest.approx(BASE[slug].incentive_floor_usd), (slug, kind)
+            days = _price(slug, amounts=_days(40, 30, 10), production_type=kind)
+            assert days.incentive_floor_usd == pytest.approx(base.incentive_floor_usd), "no day-ratio credit is confirmed for a series or an animation"
+    series = _price(DOM, amounts=_days(40, 30, 10), production_type="tv_series")
+    assert series.incentive_ceiling_usd - series.incentive_floor_usd == pytest.approx(LABOUR * (0.40 - 0.35 + 0.125 + 0.06)), "a series stays bounded by the whole-production figure"
+    animation = _price(DOM, amounts=_days(40, 30, 10), production_type="animation")
+    assert animation.incentive_ceiling_usd - animation.incentive_floor_usd == pytest.approx(LABOUR * 0.05), "an animation has no regional or distant credit for current photography (only the 40% scenario remains)"
+    # documentaries stay out of scope of this record (their own 75% tests are separate)
+    assert not _price(DOM, production_type="creative_documentary").executable
     from app.calculators.allocation_pricing import _price_statutory_formula
     rules = {r.uplift_id: r for r in get_subset_uplift_rules(DOM)}
     amounts = _days(40, 30, 10)

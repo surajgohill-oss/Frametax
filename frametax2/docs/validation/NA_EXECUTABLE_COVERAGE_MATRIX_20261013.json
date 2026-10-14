@@ -597,6 +597,7 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 4,
    "unresolved_conditions": [
+    "ca_sk_creative_saskatchewan_grant:ca_sk_apprenticeship_mentor_salaries_usd",
     "ca_sk_creative_saskatchewan_grant:post_production_bonus:statutory_formula",
     "ca_sk_creative_saskatchewan_grant:production_volume_bonus:statutory_formula",
     "ca_sk_creative_saskatchewan_grant:rural_bonus:statutory_formula",

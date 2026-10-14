@@ -179,7 +179,8 @@ def test_texas_award_numbers_have_a_validated_numeric_writer():
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_ns_")} == {
         "ca_ns_principal_photography_days_total", "ca_ns_principal_photography_days_100_to_150km", "ca_ns_principal_photography_days_over_150km", "ca_ns_principal_photography_days_in_ns",
         "ca_ns_hod_positions_filled", "ca_ns_hod_positions_held_by_ns_residents", "ca_ns_principal_performers_total", "ca_ns_principal_performers_ns_residents",
-        "ca_ns_ineligible_supplier_spend_usd", "ca_ns_equity_tax_credit_financing_usd"}
+        "ca_ns_ineligible_supplier_spend_usd", "ca_ns_equity_tax_credit_financing_usd",
+        "ca_ns_producer_extra_position_fees_usd", "ca_ns_producer_hod_performer_fees_total_usd"}   # NA-RECONCILIATION-20: producer second-position limit inputs (s.4(c))
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_nb_")} == {"ca_nb_principal_photography_days_total", "ca_nb_days_rural_30_to_150km", "ca_nb_days_remote_151km_plus", "ca_nb_eligible_deemed_spend_usd"}
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_federal_cptc_")} == {"ca_federal_cptc_assistance_usd", "ca_federal_cptc_contingent_liabilities_usd"}
     # NA-RECONCILIATION-19: Saskatchewan day counts, Montana categories / additions / expenditure year, New Brunswick deemed spend and the Nova Scotia non-eligible amounts join.

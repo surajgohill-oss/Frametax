@@ -54,6 +54,9 @@ NY_EVIDENCED_FACTS = {
     "ca_sk_service_production_stream_confirmed": "ca_sk_saskatchewan_stream_confirmed",
     "ca_sk_majority_post_spend_in_sk_confirmed": None,
     "ca_sk_volume_threshold_confirmed": None,
+    # Nova Scotia producer second-position approval (s.4(c)); Montana approved postproduction company (15-31-1009)
+    "ca_ns_producer_extra_positions_approved_confirmed": None,
+    "us_mt_postproduction_company_approved_confirmed": None,
     # Montana MEDIA (MCA 15-31-1007(3)(b)(ix))
     "us_mt_screen_credit_furnished_confirmed": None,
     # New Brunswick LIFT 2026/27 stackable bonuses
@@ -143,6 +146,10 @@ PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
     "us_mt_underserved_area_expenditure_usd": (0.0, 1e9), "us_mt_media_expenditure_year": (2025.0, 2100.0),
     # New Brunswick eligible deemed spend (USD, from the Deemed Spend Worksheet) and Nova Scotia amounts that are not eligible costs
     "ca_nb_eligible_deemed_spend_usd": (0.0, 1e9),
+    "us_mt_postproduction_wages_usd": (0.0, 1e9),
+    "ca_ns_producer_extra_position_fees_usd": (0.0, 1e9),
+    "ca_ns_producer_hod_performer_fees_total_usd": (0.0, 1e9),
+    "ca_sk_apprenticeship_mentor_salaries_usd": (0.0, 1e9),
     "ca_ns_ineligible_supplier_spend_usd": (0.0, 1e9),
     "ca_ns_equity_tax_credit_financing_usd": (0.0, 1e9),
     # New Brunswick rural / remote principal photography days (distance from Fredericton, Moncton or Saint John City Hall)

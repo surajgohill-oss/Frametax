@@ -211,8 +211,8 @@ def test_every_new_input_has_a_producer_writer():
     from app.services.ny_producer_facts import NY_EVIDENCED_FACTS, PROGRAM_AMOUNT_FACTS
     for program in (MT, NS, SK):
         for rule in get_subset_uplift_rules(program):
-            booleans = [rule.prerequisite_fact, rule.excluded_fact, rule.whole_base_fact, *rule.criteria_facts]
-            amounts = [rule.day_numerator_fact, rule.day_denominator_fact, rule.amount_fact, *rule.assistance_facts, *[f for c in rule.compensation_credits for f in c[:2]]]
+            booleans = [rule.prerequisite_fact, rule.excluded_fact, rule.whole_base_fact, *rule.criteria_facts, *[c[5] for c in rule.compensation_credits if len(c) > 5]]
+            amounts = [rule.day_numerator_fact, rule.day_denominator_fact, rule.amount_fact, *rule.assistance_facts, *[f for c in rule.compensation_credits for f in c[:2]], rule.post_wage_fact]
             for key in filter(None, booleans):
                 assert key in NY_EVIDENCED_FACTS, f"{program}/{rule.uplift_id}: {key}"
             for key in filter(None, amounts):
@@ -230,3 +230,70 @@ def test_the_bc_domestic_record_states_its_current_scope_and_refuses_to_model_ol
     from app.data.program_rate_rules_worldwide import CA_BC_FILM_TV_DOCTRINE as d
     note = d.provenance.interpretation_note
     assert "CURRENT regime" in note and "after December 31, 2024" in note and "2016-10-01" in note and "NOT modelled" in note and "never mixed" in note
+
+
+# ── NA-RECONCILIATION-20 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+def test_montana_postproduction_wages_are_compensation_priced_at_25_percent_only_for_an_approved_postproduction_company():
+    rows = [("btl_crew_labor", 1_000_000.0), ("btl_set_construction", 500_000.0), ("post_production", 500_000.0)]        # base investment 2,000,000
+    zero_extras = {"us_mt_college_campus_payments_usd": 0.0, "us_mt_studio_rental_expenditure_usd": 0.0, "us_mt_studio_rental_days": 0, "us_mt_underserved_area_expenditure_usd": 0.0}
+    amounts = {**zero_extras, "us_mt_postproduction_wages_usd": 300_000.0}
+    approved = _price(MT, "US-MT", rows, amounts=amounts, facts={"us_mt_postproduction_company_approved_confirmed"})
+    # 20% x 2,000,000 = 400,000; the 1,300,000 of compensation (1,000,000 crew + 300,000 post wages) leaves the base: -260,000; post wages 25% x 300,000 = +75,000 (15-31-1009(2));
+    # the 1,000,000 of crew compensation has no stated category: bounded at 30% = +300,000; screen-credit bound 5% x 2,000,000 = +100,000  -> 615,000 (< the 700,000 aggregate)
+    assert approved.incentive_ceiling_usd == pytest.approx(400_000.0 - 260_000.0 + 75_000.0 + 300_000.0 + 100_000.0)
+    unapproved = _price(MT, "US-MT", rows, amounts=amounts)
+    # without the approved-company statement the wages are compensation of unstated category: bounded at 30% (390,000) -> 400,000 - 260,000 + 390,000 + 100,000 = 630,000
+    assert unapproved.incentive_ceiling_usd == pytest.approx(630_000.0)
+    with pytest.raises(ValueError):
+        rules = {r.uplift_id: r for r in get_subset_uplift_rules(MT)}
+        _price_statutory_formula(MT, rules["compensation_credits"], rules, 2_000_000.0, {"us_mt_postproduction_wages_usd": 600_000.0}, frozenset(), "feature_film",
+                                 qualified_by_category={"btl_crew_labor": 1_000_000.0, "post_production": 500_000.0})
+    refused = _price(MT, "US-MT", rows, amounts={"us_mt_postproduction_wages_usd": 600_000.0})
+    assert not refused.executable and refused.blockers, "stated postproduction wages cannot exceed the post-production spend in the budget"
+
+
+def test_montana_record_resolves_the_expenditure_exclusion_conflict_without_hiding_it():
+    from app.data.program_rate_rules_worldwide import US_MT_DOCTRINE as d
+    note = d.provenance.interpretation_note
+    assert "(13)(a)(ix)" in note and "(13)(b)(vi)" in note and "never defines" in note and "OPEN interpretation" in note and "15-31-1009" in note
+
+
+def test_nova_scotia_producer_second_positions_are_removed_from_the_floor_until_approved_and_limited_to_20_percent_of_the_budget():
+    rows = [("btl_crew_labor", 1_000_000.0)]                                                                              # gross budget 2,000,000 in the helper
+    base = _price(NS, "CA-NS", rows)
+    unapproved = _price(NS, "CA-NS", rows, amounts={"ca_ns_producer_extra_position_fees_usd": 100_000.0})
+    assert unapproved.incentive_floor_usd == pytest.approx(0.25 * 900_000.0), "second and further positions are not eligible without the Administrator's advance approval"
+    assert unapproved.incentive_ceiling_usd == pytest.approx(base.incentive_ceiling_usd), "the potential assumes the approval and the total is within 20% of the budget"
+    approved = _price(NS, "CA-NS", rows, amounts={"ca_ns_producer_extra_position_fees_usd": 100_000.0}, facts={"ca_ns_producer_extra_positions_approved_confirmed"})
+    assert approved.incentive_floor_usd == pytest.approx(0.25 * 1_000_000.0)
+    # total fees to such producers 500,000 against 20% x 2,000,000 = 400,000: 100,000 over is removed from the base (floor once approved, potential always)
+    over = _price(NS, "CA-NS", rows, amounts={"ca_ns_producer_extra_position_fees_usd": 100_000.0, "ca_ns_producer_hod_performer_fees_total_usd": 500_000.0},
+                  facts={"ca_ns_producer_extra_positions_approved_confirmed"})
+    assert over.incentive_floor_usd == pytest.approx(0.25 * 900_000.0)
+    assert over.incentive_ceiling_usd == pytest.approx(base.incentive_ceiling_usd * 0.9)
+    exact = _price(NS, "CA-NS", rows, amounts={"ca_ns_producer_extra_position_fees_usd": 100_000.0, "ca_ns_producer_hod_performer_fees_total_usd": 400_000.0},
+                   facts={"ca_ns_producer_extra_positions_approved_confirmed"})
+    assert exact.incentive_floor_usd == pytest.approx(0.25 * 1_000_000.0), "exactly 20% of the budget is allowed"
+
+
+def test_saskatchewan_apprenticeship_earns_the_main_grants_percentage_on_matched_mentor_salaries():
+    rows = ROWS_SK
+    none = _price(SK, "CA-SK", rows)
+    assert none.incentive_ceiling_usd == pytest.approx(400_000.0) and any(c["condition_id"].endswith("ca_sk_apprenticeship_mentor_salaries_usd") for c in none.ceiling_conditions)
+    stated = _price(SK, "CA-SK", rows, amounts={"ca_sk_apprenticeship_mentor_salaries_usd": 100_000.0})
+    assert stated.incentive_ceiling_usd == pytest.approx(400_000.0 + 0.40 * 100_000.0), "40% total x 100,000 of eligible non-resident salaries"
+    service = _price(SK, "CA-SK", rows, amounts={"ca_sk_apprenticeship_mentor_salaries_usd": 100_000.0}, facts={SVC})
+    assert service.incentive_ceiling_usd == pytest.approx(350_000.0 + 0.35 * 100_000.0)
+    assert stated.incentive_floor_usd == 0.0
+    from app.data.program_rate_rules import get_incentive_value_cap
+    cap = get_incentive_value_cap(SK)
+    assert cap.cap_currency == "CAD" and cap.cap_native_amount == 5_000_000.0 and "Apprenticeship" in cap.description
+    huge = _price(SK, "CA-SK", [("btl_crew_labor", 20_000_000.0)])
+    rate = _cad_per_usd()
+    assert huge.incentive_ceiling_usd == pytest.approx(5_000_000.0 / rate, rel=1e-4), "the CAD 5 million per-project maximum clips the ceiling"
+
+
+def test_new_brunswick_deemed_spend_worksheet_is_not_public_so_the_amount_is_a_stated_input_not_a_formula():
+    from app.data.program_rate_rules import SUBSET_DEEMED_SPEND
+    key, share, source = SUBSET_DEEMED_SPEND[NB]
+    assert key == "ca_nb_eligible_deemed_spend_usd" and share == 0.15 and "Deemed Spend Worksheet" in source

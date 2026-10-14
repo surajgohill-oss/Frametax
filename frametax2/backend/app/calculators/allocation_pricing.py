@@ -818,15 +818,26 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         return amount, amount, None
     if rule.kind == "compensation_credits":
         personnel = sum(v for c, v in (qualified_by_category or {}).items() if c in rule.personnel_categories)
+        post_wages = 0.0
+        if rule.post_wage_fact:
+            stated_post = _stated_amount(amounts, rule.post_wage_fact)
+            if stated_post is not None:
+                post_lines = sum(v for c, v in (qualified_by_category or {}).items() if c in rule.post_categories)
+                if stated_post > post_lines + 0.005:
+                    raise ValueError(f"{rule.post_wage_fact}: stated postproduction wages {stated_post:,.2f} exceed the {post_lines:,.2f} of qualifying post-production spend in the budget")
+                post_wages = stated_post
+        personnel += post_wages                                              # wages inside post lines are compensation too: not a 'production expenditure', so they leave the 20% base
         if personnel <= 0:
             return 0.0, 0.0, None
         replaced = -rule.rate * personnel                                  # compensation is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)): the host's base rate does not apply to it
         stated_credit = stated_comp = 0.0
-        for comp_fact, count_fact, rate, credit_cap, comp_cap in rule.compensation_credits:
+        for comp_fact, count_fact, rate, credit_cap, comp_cap, required_fact in rule.compensation_credits:
+            if required_fact and required_fact not in stated_facts:
+                continue                                                   # e.g. the 1009 postproduction-wage credit exists only for an approved postproduction company
             comp = _stated_amount(amounts, comp_fact)
             if comp is None:
                 continue
-            count = _stated_count(amounts, count_fact, "persons")
+            count = _stated_count(amounts, count_fact, "persons") if count_fact else None
             base = comp if (count is None or comp_cap is None) else min(comp, count * comp_cap)
             credit = rate * base
             if count is not None and credit_cap is not None:
@@ -839,8 +850,8 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         floor_delta = replaced + stated_credit
         potential_delta = replaced + stated_credit + bound
         note = None if (stated_comp >= personnel - 0.005) else (
-            f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no stated category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member); "
-            f"bounded at the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
+            f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no stated category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member, or an approved "
+            f"postproduction company's wages); bounded at the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
         return round(floor_delta, 2), round(potential_delta, 2), note
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)
@@ -1006,23 +1017,40 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             conditions.append({"condition_id": f"{slug}:deemed_spend", "description": deemed[2], "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
                                "note": f"'{deemed[0]}' is not stated; the potential allows up to {deemed[1]:.0%} of eligible spend as deemed spend"})
     # Stated amounts that are not eligible costs (Nova Scotia supplier residency, s.3.2(b)) shrink the base every point applies to; unstated they are presumed absent and disclosed.
-    from app.data.program_rate_rules import SUBSET_BASE_DEDUCTIONS
-    total_deducted = 0.0
+    from app.data.program_rate_rules import SUBSET_BASE_DEDUCTIONS, SUBSET_PRODUCER_POSITION_LIMITS
+    deducted_floor = deducted_potential = 0.0
     for fact_key, source in SUBSET_BASE_DEDUCTIONS.get(slug, ()):
         stated_ded = _stated_amount(amounts, fact_key)
         if stated_ded is None:
             conditions.append({"condition_id": f"{slug}:{fact_key}", "description": source, "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
                                "note": f"'{fact_key}' is not stated; the base is presumed to hold no such amount (disclosed, not priced)"})
         elif qle_basis_usd:
-            total_deducted += stated_ded
-    if total_deducted and qle_basis_usd:
-        if total_deducted > qle_basis_usd + 0.005:
-            raise ValueError(f"the stated non-eligible amounts total {total_deducted:,.2f} and exceed the {qle_basis_usd:,.2f} eligible base")
-        factor = max(0.0, 1.0 - total_deducted / qle_basis_usd)                 # one factor for all deductions, so each amount leaves the base exactly once
-        floor_total *= factor
-        potential_total *= factor
-        scale *= factor
-        scale_potential *= factor
+            deducted_floor += stated_ded
+            deducted_potential += stated_ded
+    position = SUBSET_PRODUCER_POSITION_LIMITS.get(slug)
+    if position is not None and qle_basis_usd:
+        extra_fees = _stated_amount(amounts, position["extra_fees_fact"])
+        total_fees = _stated_amount(amounts, position["total_fees_fact"])
+        approved = position["approved_fact"] in facts
+        if extra_fees is not None and not approved:
+            deducted_floor += extra_fees                  # without advance approval a producer's second and further Head-of-Department / performer positions are not eligible
+            conditions.append({"condition_id": f"{slug}:producer_positions", "description": position["source"], "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
+                               "note": f"{extra_fees:,.2f} of fees for a producer's additional positions are removed from the floor until the Administrator's advance approval is stated; the potential assumes it"})
+        if total_fees is not None and gross_budget_usd:
+            over = max(0.0, total_fees - position["budget_share"] * gross_budget_usd)   # the 20%-of-budget limit comes with an approval: the potential assumes it, the floor applies it once stated
+            deducted_potential += over
+            if approved:
+                deducted_floor += over
+    for deducted, which in ((deducted_floor, "floor"), (deducted_potential, "potential")):
+        if deducted > qle_basis_usd + 0.005 if qle_basis_usd else False:
+            raise ValueError(f"the stated non-eligible amounts total {deducted:,.2f} and exceed the {qle_basis_usd:,.2f} eligible base")
+    if (deducted_floor or deducted_potential) and qle_basis_usd:
+        factor_floor = max(0.0, 1.0 - deducted_floor / qle_basis_usd)         # one factor per figure, so each amount leaves the base exactly once
+        factor_potential = max(0.0, 1.0 - deducted_potential / qle_basis_usd)
+        floor_total *= factor_floor
+        potential_total *= factor_potential
+        scale *= factor_floor
+        scale_potential *= factor_potential
     capped = SUBSET_COMBINED_RATE_CAPS.get(slug)
     if capped is not None and qle_basis_usd:
         cap_rate = capped[0]
@@ -1034,6 +1062,17 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     individual = SUBSET_INDIVIDUAL_INCENTIVE_CAPS.get(slug)
     if individual is not None and qle_basis_usd:
         floor_total, potential_total = _apply_individual_incentive_cap(individual, lines, qualifying, amounts, qle_basis_usd, floor_total, potential_total, fx_context)
+    from app.data.program_rate_rules import SUBSET_RATE_ON_EXTRA_BASE
+    extra = SUBSET_RATE_ON_EXTRA_BASE.get(slug)
+    if extra is not None and qle_basis_usd:
+        extra_base = _stated_amount(amounts, extra[0])
+        if extra_base:
+            # the contribution percentage equals the percentage received on the main grant, applied to an amount that is not part of the main base (Saskatchewan Apprenticeship Stream)
+            floor_total += (floor_total / qle_basis_usd) * extra_base
+            potential_total += (potential_total / qle_basis_usd) * extra_base
+        else:
+            conditions.append({"condition_id": f"{slug}:{extra[0]}", "description": extra[1], "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
+                               "note": f"'{extra[0]}' is not stated; no figure is derived from the budget"})
     stream = SUBSET_ALTERNATE_STREAMS.get(slug)
     if stream is not None and qle_basis_usd and gross_budget_usd:
         budget_native = _fx_native_amount(gross_budget_usd, stream["currency"], fx_context)
