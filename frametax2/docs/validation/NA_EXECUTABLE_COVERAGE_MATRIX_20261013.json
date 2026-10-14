@@ -130,24 +130,26 @@
    "expectation_basis": "16% x VFX labour 500,000 (ITA (BC) s.81.2(2): labour directly attributable to animation / visual effects)",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 4,
-   "aggregate_groups": 48,
-   "aggregated_candidates": 48,
+   "retained_rows": 7,
+   "aggregate_groups": 49,
+   "aggregated_candidates": 49,
    "standalone_structure_types": [],
    "standalone_status": null,
    "served_guaranteed_usd": null,
    "served_potential_usd": null,
    "economics_certainty": null,
    "mfni_status": "UNMODELED_NO_BENCHMARK",
-   "priced_stack_structures": 4,
+   "priced_stack_structures": 7,
    "unresolved_conditions": [],
-   "presumed_facts": [],
+   "presumed_facts": [
+    "{'condition_id': 'ca-bc-dave-host-credit-in-structure', 'description': 'DAVE is claimable only by a corporation eligible for, and applying for, its host credit for the same production: the s.80 film and television credit (s.81.2(1)(a)) or, for the production services DAVE credit, the s.82.1 credit (s.82.3(1)(a)). This is derived from the STRUCTURE (a candidate that contains ca_bc_film_tv_tax_credit or ca_bc_pstc), not stated by the producer: a path that prices DAVE alone leaves it unresolved and serves DAVE as a conditional planning figure.', 'quote': 'eligible for, and has made or is making an application in accordance with section 85 for, a tax credit in relation to the production under section 80 (Income Tax Act (BC) s.81.2(1)(a))', 'state': 'USER_FACT_REQUIRED', 'note': \"'ca_bc_dave__structure_host_credit_present' not yet evidenced \u2014 absence of a record is not confirmation.\"}"
+   ],
    "path": "EXECUTABLE_GUARANTEED",
    "exclusion": "",
    "stack_pairs": [
     "ca_bc_film_tv_tax_credit:allowed:executable",
     "ca_bc_pstc:allowed:executable",
-    "ca_federal_cptc:conditional:blocked",
+    "ca_federal_cptc:spend_reduction:executable",
     "ca_federal_pstc:spend_reduction:executable"
    ],
    "p1_executable": false,
@@ -168,9 +170,9 @@
    "expectation_basis": "35% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000); 40% (photography after 2024) potential (ITA (BC) s.80, s.79(1))",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 2,
-   "aggregate_groups": 6,
-   "aggregated_candidates": 6,
+   "retained_rows": 3,
+   "aggregate_groups": 5,
+   "aggregated_candidates": 5,
    "standalone_structure_types": [
     "full_relocation"
    ],
@@ -179,7 +181,7 @@
    "served_potential_usd": 720000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "UNMODELED_NO_BENCHMARK",
-   "priced_stack_structures": 1,
+   "priced_stack_structures": 2,
    "unresolved_conditions": [
     "ca-bc-film-tv-40c-eligibility-certificate-and-content",
     "ca-bc-film-tv-40c-eligible-production-corporation",
@@ -192,7 +194,7 @@
     "ca_bc_dave:allowed:executable",
     "ca_bc_pstc:mutually_exclusive:blocked",
     "ca_federal_cptc:spend_reduction:executable",
-    "ca_federal_pstc:conditional:blocked"
+    "ca_federal_pstc:spend_reduction:executable"
    ]
   },
   {
@@ -272,7 +274,7 @@
    "exclusion": "",
    "stack_pairs": [
     "ca_ab_fttc:spend_reduction:executable",
-    "ca_bc_dave:conditional:blocked",
+    "ca_bc_dave:spend_reduction:executable",
     "ca_bc_film_tv_tax_credit:spend_reduction:executable",
     "ca_bc_pstc:mutually_exclusive:blocked",
     "ca_federal_pstc:mutually_exclusive:blocked",
@@ -302,9 +304,9 @@
    "expectation_basis": "16% x labour 2,000,000",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 9,
-   "aggregate_groups": 17,
-   "aggregated_candidates": 17,
+   "retained_rows": 11,
+   "aggregate_groups": 15,
+   "aggregated_candidates": 15,
    "standalone_structure_types": [
     "full_relocation"
    ],
@@ -313,7 +315,7 @@
    "served_potential_usd": 320000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "MODELED",
-   "priced_stack_structures": 8,
+   "priced_stack_structures": 10,
    "unresolved_conditions": [],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",
@@ -321,7 +323,7 @@
    "stack_pairs": [
     "ca_ab_fttc:spend_reduction:executable",
     "ca_bc_dave:spend_reduction:executable",
-    "ca_bc_film_tv_tax_credit:conditional:blocked",
+    "ca_bc_film_tv_tax_credit:spend_reduction:executable",
     "ca_bc_pstc:spend_reduction:executable",
     "ca_federal_cptc:mutually_exclusive:blocked",
     "ca_mb_film_video_credit:spend_reduction:executable",
@@ -330,7 +332,7 @@
     "ca_ns_production_incentive_fund:spend_reduction:executable",
     "ca_qc_pstc:spend_reduction:executable",
     "ca_sk_creative_saskatchewan_grant:spend_reduction:blocked",
-    "on_ofttc:conditional:blocked",
+    "on_ofttc:spend_reduction:executable",
     "on_opstc:spend_reduction:executable",
     "ontario_computer_animation_and_special_effects_tax_credit_ocase:spend_reduction:executable"
    ]
@@ -683,9 +685,9 @@
    "expectation_basis": "35% x labour 2,000,000; +10% regional potential",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 3,
-   "aggregate_groups": 7,
-   "aggregated_candidates": 7,
+   "retained_rows": 4,
+   "aggregate_groups": 6,
+   "aggregated_candidates": 6,
    "standalone_structure_types": [
     "full_relocation"
    ],
@@ -694,7 +696,7 @@
    "served_potential_usd": 900000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "UNMODELED_NO_BENCHMARK",
-   "priced_stack_structures": 2,
+   "priced_stack_structures": 3,
    "unresolved_conditions": [
     "on_ofttc:regional_bonus:qualified_subset"
    ],
@@ -703,7 +705,7 @@
    "exclusion": "",
    "stack_pairs": [
     "ca_federal_cptc:spend_reduction:executable",
-    "ca_federal_pstc:conditional:blocked",
+    "ca_federal_pstc:spend_reduction:executable",
     "on_opstc:mutually_exclusive:blocked",
     "ontario_computer_animation_and_special_effects_tax_credit_ocase:spend_reduction:executable"
    ]
@@ -763,16 +765,16 @@
    "expectation_basis": "18% x VFX labour 500,000",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 7,
-   "aggregate_groups": 44,
-   "aggregated_candidates": 44,
+   "retained_rows": 8,
+   "aggregate_groups": 43,
+   "aggregated_candidates": 43,
    "standalone_structure_types": [],
    "standalone_status": null,
    "served_guaranteed_usd": null,
    "served_potential_usd": null,
    "economics_certainty": null,
    "mfni_status": "UNMODELED_NO_BENCHMARK",
-   "priced_stack_structures": 7,
+   "priced_stack_structures": 8,
    "unresolved_conditions": [],
    "presumed_facts": [
     "{'condition_id': 'on-ocase-labour-over-cad-25000', 'description': 'MORE THAN CAD 25,000 of Ontario labour expenditures on the production (claim year or cumulative with the prior year), for eligible computer animation or special effects activities carried out in Ontario. The segment base is the VFX labour, not all Ontario labour, so a failure cannot be proven from the budget; the producer states it.', 'quote': 'incurs an amount that exceeds $25,000 in Ontario labour expenditures (ontariocreates.ca/tax-incentives/ocase)', 'state': 'USER_FACT_REQUIRED', 'note': \"'on_ocase_ontario_labour_over_cad_25000_stated' not yet evidenced \u2014 absence of a record is not confirmation.\"}",
@@ -1302,7 +1304,11 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 2,
    "unresolved_conditions": [
-    "us-mo-stackable-uplifts"
+    "us-mo-county-class-two-three-four",
+    "us-mo-filmed-50pct-in-missouri",
+    "us-mo-rural-or-blighted-15pct",
+    "us-mo-script-markets-missouri",
+    "us-mo-three-departments-resident-hires"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",
@@ -1357,9 +1363,9 @@
    "expectation_basis": "certification paused: guaranteed 0; 20% x all 3,000,000 potential",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 3,
-   "aggregate_groups": 0,
-   "aggregated_candidates": 0,
+   "retained_rows": 2,
+   "aggregate_groups": 1,
+   "aggregated_candidates": 1,
    "standalone_structure_types": [
     "full_relocation"
    ],
@@ -1368,7 +1374,7 @@
    "served_potential_usd": 600000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "UNMODELED_NO_BENCHMARK",
-   "priced_stack_structures": 2,
+   "priced_stack_structures": 1,
    "unresolved_conditions": [
     "us-mt-certification-paused-and-allocation"
    ],
@@ -1886,9 +1892,9 @@
    "expectation_basis": "no award stated: guaranteed 0; 31% x all 3,000,000 potential",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 77,
-   "aggregate_groups": 28,
-   "aggregated_candidates": 28,
+   "retained_rows": 76,
+   "aggregate_groups": 29,
+   "aggregated_candidates": 29,
    "standalone_structure_types": [
     "single_country"
    ],
@@ -1897,7 +1903,7 @@
    "served_potential_usd": 930000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "NOT_APPLICABLE_BASELINE",
-   "priced_stack_structures": 76,
+   "priced_stack_structures": 75,
    "unresolved_conditions": [
     "us-tx-award-allocation-required",
     "us-tx-ceiling-31-awarded-rate",
@@ -2069,6 +2075,25 @@
   },
   {
    "row_kind": "PROGRAM",
+   "canonical_slug": "ca_bell_fund",
+   "layer": "COVERAGE_ONLY",
+   "jurisdiction": "",
+   "discovery": "NOT_EXAMINED (no RateRule)",
+   "proof_profile": "",
+   "kernel_executable": false,
+   "kernel_guaranteed_usd": null,
+   "kernel_potential_usd": null,
+   "expected_guaranteed_usd": null,
+   "expected_potential_usd": null,
+   "expectation_basis": "",
+   "expectation_strength": "N/A",
+   "served_state": "ABSENT",
+   "path": "NOT_EXECUTABLE_WITH_REASON",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): the Bell Fund Production Program is a Selective stream (and a Major Production Funder stream) for Canadian series in eligible genres; amounts are not stated on the program page.",
+   "stack_pairs": []
+  },
+  {
+   "row_kind": "PROGRAM",
    "canonical_slug": "ca_cmf",
    "layer": "COVERAGE_ONLY",
    "jurisdiction": "",
@@ -2083,7 +2108,26 @@
    "expectation_strength": "N/A",
    "served_state": "ABSENT",
    "path": "NOT_EXECUTABLE_WITH_REASON",
-   "exclusion": "COVERAGE_ONLY: Canada Media Fund is a broadcaster-envelope performance fund with no statutory rate; no RateRule.",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): the CMF Convergent Stream pays through Broadcaster and Distributor Envelopes allocated by past performance (cmf-fmc.ca envelope administration); a producer reaches it only through a broadcaster or distributor commitment, and no producer-level rate exists, so nothing is priced.",
+   "stack_pairs": []
+  },
+  {
+   "row_kind": "PROGRAM",
+   "canonical_slug": "ca_telefilm_dev",
+   "layer": "COVERAGE_ONLY",
+   "jurisdiction": "",
+   "discovery": "NOT_EXAMINED (no RateRule)",
+   "proof_profile": "",
+   "kernel_executable": false,
+   "kernel_guaranteed_usd": null,
+   "kernel_potential_usd": null,
+   "expected_guaranteed_usd": null,
+   "expected_potential_usd": null,
+   "expectation_basis": "",
+   "expectation_strength": "N/A",
+   "served_state": "ABSENT",
+   "path": "NOT_EXECUTABLE_WITH_REASON",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): Telefilm Canada Production Program Guidelines (applicable October 31, 2025) s.4.1 cap financing at the lesser of 49% of eligible Canadian costs or CAD 500,000 (budgets under 1.5 million), one third (1.5-3.5 million), the lesser of 49% or CAD 3.5 million (French) / 4 million (other) from 3.5 million, and s.8 states compliance does not guarantee funding.",
    "stack_pairs": []
   },
   {
@@ -2102,7 +2146,7 @@
    "expectation_strength": "N/A",
    "served_state": "ABSENT",
    "path": "NOT_EXECUTABLE_WITH_REASON",
-   "exclusion": "COVERAGE_ONLY: EFICINE is a fund with no established rate or base; the 30% federal incentive is the canonical Mexico program (mx_federal_film_incentive_2026).",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): LISR art. 189 (not art. 226) is an INVESTOR credit allocated by an interinstitutional committee within MXN 650 million a year (two periods), MXN 20 million per contributor and project, 10% of the prior-year income tax; the producer's benefit is financing. The 30% federal incentive is the canonical Mexico program (mx_federal_film_incentive_2026).",
    "stack_pairs": []
   },
   {
@@ -2121,7 +2165,7 @@
    "expectation_strength": "N/A",
    "served_state": "ABSENT",
    "path": "NOT_EXECUTABLE_WITH_REASON",
-   "exclusion": "COVERAGE_ONLY: Northern Ontario Heritage Fund production fund; selective fund, no statutory rate; no RateRule.",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): competitive intake; a conditional contribution of up to 50% of eligible Northern Ontario costs capped CAD 500,000 (budget under 5 million), 1,000,000 (5-10 million) and 2,000,000 (10 million and over); the Board decides and funding is limited, so no guaranteed value.",
    "stack_pairs": []
   },
   {
@@ -2140,7 +2184,7 @@
    "expectation_strength": "N/A",
    "served_state": "ABSENT",
    "path": "NOT_EXECUTABLE_WITH_REASON",
-   "exclusion": "COVERAGE_ONLY: ITVS is a selective documentary fund with no statutory rate; no RateRule.",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): ITVS Open Call is a co-production agreement (up to USD 400,000 for features, USD 50,000 for shorts), 'not a grant'; no current ITVS 'International Documentary Fund' page was found.",
    "stack_pairs": []
   },
   {
@@ -2159,7 +2203,7 @@
    "expectation_strength": "N/A",
    "served_state": "ABSENT",
    "path": "NOT_EXECUTABLE_WITH_REASON",
-   "exclusion": "COVERAGE_ONLY: Sundance documentary fund is a selective grant with no statutory rate; no RateRule.",
+   "exclusion": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): annual open call, about 20-30 of 1,300 proposals funded, grants of USD 25,000-40,000 (development) and USD 50,000-100,000 (production and post), non-recoupable.",
    "stack_pairs": []
   }
  ],
@@ -2170,6 +2214,7 @@
    "program_b": "ca_federal_cptc",
    "jurisdictions": "CA-AB + CA",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 940000.0,
    "conditional_usd": 0.0,
@@ -2182,6 +2227,7 @@
    "program_b": "ca_federal_pstc",
    "jurisdictions": "CA-AB + CA",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 689600.0,
    "conditional_usd": 0.0,
@@ -2201,6 +2247,7 @@
    "program_b": "ca_bc_film_tv_tax_credit",
    "jurisdictions": "CA-BC + CA-BC",
    "rule_type": "allowed",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1020000.0,
    "conditional_usd": 0.0,
@@ -2213,6 +2260,7 @@
    "program_b": "ca_bc_pstc",
    "jurisdictions": "CA-BC + CA-BC",
    "rule_type": "allowed",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1040000.0,
    "conditional_usd": 0.0,
@@ -2224,12 +2272,13 @@
    "program_a": "ca_bc_dave",
    "program_b": "ca_federal_cptc",
    "jurisdictions": "CA-BC + CA",
-   "rule_type": "conditional",
-   "executable": false,
-   "guaranteed_usd": 0.0,
+   "rule_type": "spend_reduction",
+   "host_added": true,
+   "executable": true,
+   "guaranteed_usd": 890000.0,
    "conditional_usd": 0.0,
    "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): ca_bc_dave + ca_federal_cptc: conditional (BC DAVE is claimable only alongside a BC credit it is tied to (Income Tax Act (BC) s.82.3(1)(a): the production services credit; s.81.2: the film and tel"
+   "reason": ""
   },
   {
    "row_kind": "PAIR",
@@ -2237,14 +2286,15 @@
    "program_b": "ca_federal_pstc",
    "jurisdictions": "CA-BC + CA",
    "rule_type": "spend_reduction",
+   "host_added": true,
    "executable": true,
-   "guaranteed_usd": 588800.0,
+   "guaranteed_usd": 647600.0,
    "conditional_usd": 0.0,
    "netting_adjustments": [
     {
      "reducer": "ca_bc_dave",
      "reduced": "ca_federal_pstc",
-     "usd": -51200.0,
+     "usd": -62400.0,
      "basis": "ca_bc_dave"
     }
    ],
@@ -2256,6 +2306,7 @@
    "program_b": "ca_bc_pstc",
    "jurisdictions": "CA-BC + CA-BC",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2268,6 +2319,7 @@
    "program_b": "ca_federal_cptc",
    "jurisdictions": "CA-BC + CA",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1195000.0,
    "conditional_usd": 0.0,
@@ -2286,12 +2338,20 @@
    "program_a": "ca_bc_film_tv_tax_credit",
    "program_b": "ca_federal_pstc",
    "jurisdictions": "CA-BC + CA",
-   "rule_type": "conditional",
-   "executable": false,
-   "guaranteed_usd": 0.0,
+   "rule_type": "spend_reduction",
+   "host_added": false,
+   "executable": true,
+   "guaranteed_usd": 908000.0,
    "conditional_usd": 0.0,
-   "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): ca_bc_film_tv_tax_credit + ca_federal_pstc: conditional (Federal side VERIFIED (CAVCO PSTC application guidelines, read 2026-10-13): only the CPTC bars the PSTC, and provincial tax credits are ass"
+   "netting_adjustments": [
+    {
+     "reducer": "ca_bc_film_tv_tax_credit",
+     "reduced": "ca_federal_pstc",
+     "usd": -112000.0,
+     "basis": "ca_bc_film_tv_tax_credit"
+    }
+   ],
+   "reason": ""
   },
   {
    "row_kind": "PAIR",
@@ -2299,6 +2359,7 @@
    "program_b": "ca_federal_cptc",
    "jurisdictions": "CA-BC + CA",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2311,6 +2372,7 @@
    "program_b": "ca_federal_pstc",
    "jurisdictions": "CA-BC + CA",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 924800.0,
    "conditional_usd": 0.0,
@@ -2330,6 +2392,7 @@
    "program_b": "ca_federal_pstc",
    "jurisdictions": "CA + CA",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2342,6 +2405,7 @@
    "program_b": "ca_mb_film_video_credit",
    "jurisdictions": "CA + CA-MB",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1365000.0,
    "conditional_usd": 0.0,
@@ -2361,6 +2425,7 @@
    "program_b": "ca_nb_film_tax_credit",
    "jurisdictions": "CA + CA-NB",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 500000.0,
    "conditional_usd": 700000.0,
@@ -2373,6 +2438,7 @@
    "program_b": "ca_nl_all_spend_credit",
    "jurisdictions": "CA + CA-NL",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1280000.0,
    "conditional_usd": 0.0,
@@ -2392,6 +2458,7 @@
    "program_b": "ca_ns_production_incentive_fund",
    "jurisdictions": "CA + CA-NS",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1000000.0,
    "conditional_usd": 0.0,
@@ -2404,6 +2471,7 @@
    "program_b": "ca_qc_pstc",
    "jurisdictions": "CA + CA-QC",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1000000.0,
    "conditional_usd": 0.0,
@@ -2416,6 +2484,7 @@
    "program_b": "ca_sk_creative_saskatchewan_grant",
    "jurisdictions": "CA + CA-SK",
    "rule_type": "allowed",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2428,6 +2497,7 @@
    "program_b": "on_ofttc",
    "jurisdictions": "CA + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1195000.0,
    "conditional_usd": 0.0,
@@ -2447,6 +2517,7 @@
    "program_b": "on_opstc",
    "jurisdictions": "CA + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 930000.0,
    "conditional_usd": 0.0,
@@ -2459,6 +2530,7 @@
    "program_b": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
    "jurisdictions": "CA + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 860000.0,
    "conditional_usd": 0.0,
@@ -2471,6 +2543,7 @@
    "program_b": "ca_mb_film_video_credit",
    "jurisdictions": "CA + CA-MB",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1076000.0,
    "conditional_usd": 0.0,
@@ -2490,6 +2563,7 @@
    "program_b": "ca_nb_film_tax_credit",
    "jurisdictions": "CA + CA-NB",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 320000.0,
    "conditional_usd": 700000.0,
@@ -2502,6 +2576,7 @@
    "program_b": "ca_nl_all_spend_credit",
    "jurisdictions": "CA + CA-NL",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 992000.0,
    "conditional_usd": 0.0,
@@ -2521,6 +2596,7 @@
    "program_b": "ca_ns_production_incentive_fund",
    "jurisdictions": "CA + CA-NS",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 740000.0,
    "conditional_usd": 0.0,
@@ -2540,6 +2616,7 @@
    "program_b": "ca_qc_pstc",
    "jurisdictions": "CA + CA-QC",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 740000.0,
    "conditional_usd": 0.0,
@@ -2559,6 +2636,7 @@
    "program_b": "ca_sk_creative_saskatchewan_grant",
    "jurisdictions": "CA + CA-SK",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2570,12 +2648,20 @@
    "program_a": "ca_federal_pstc",
    "program_b": "on_ofttc",
    "jurisdictions": "CA + CA-ON",
-   "rule_type": "conditional",
-   "executable": false,
-   "guaranteed_usd": 0.0,
+   "rule_type": "spend_reduction",
+   "host_added": false,
+   "executable": true,
+   "guaranteed_usd": 908000.0,
    "conditional_usd": 0.0,
-   "netting_adjustments": [],
-   "reason": "blocked by 1 pairwise incompatibility(ies): ca_federal_pstc + on_ofttc: conditional (Federal side VERIFIED (CAVCO PSTC application guidelines, read 2026-10-13): the PSTC 'is not available where a production has received the Canadian Film or"
+   "netting_adjustments": [
+    {
+     "reducer": "on_ofttc",
+     "reduced": "ca_federal_pstc",
+     "usd": -112000.0,
+     "basis": "on_ofttc"
+    }
+   ],
+   "reason": ""
   },
   {
    "row_kind": "PAIR",
@@ -2583,6 +2669,7 @@
    "program_b": "on_opstc",
    "jurisdictions": "CA + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 681200.0,
    "conditional_usd": 0.0,
@@ -2602,6 +2689,7 @@
    "program_b": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
    "jurisdictions": "CA + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 622400.0,
    "conditional_usd": 0.0,
@@ -2621,6 +2709,7 @@
    "program_b": "us_ny_empire_state_independent_film_credit",
    "jurisdictions": "US-NY + US-NY",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2633,6 +2722,7 @@
    "program_b": "us_ny_post_production_credit",
    "jurisdictions": "US-NY + US-NY",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2645,6 +2735,7 @@
    "program_b": "on_opstc",
    "jurisdictions": "CA-ON + CA-ON",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2657,6 +2748,7 @@
    "program_b": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
    "jurisdictions": "CA-ON + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 1060000.0,
    "conditional_usd": 0.0,
@@ -2669,6 +2761,7 @@
    "program_b": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
    "jurisdictions": "CA-ON + CA-ON",
    "rule_type": "spend_reduction",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 790000.0,
    "conditional_usd": 0.0,
@@ -2681,6 +2774,7 @@
    "program_b": "us_co_film_income_tax_credit",
    "jurisdictions": "US-CO + US-CO",
    "rule_type": "same_cost_prohibited_distinct_costs_allowed",
+   "host_added": false,
    "executable": true,
    "guaranteed_usd": 400000.0,
    "conditional_usd": 440000.0,
@@ -2693,6 +2787,7 @@
    "program_b": "us_ny_post_production_credit",
    "jurisdictions": "US-NY + US-NY",
    "rule_type": "mutually_exclusive",
+   "host_added": false,
    "executable": false,
    "guaranteed_usd": 0.0,
    "conditional_usd": 0.0,
@@ -2701,33 +2796,32 @@
   }
  ],
  "summary": {
-  "programs": 60,
+  "programs": 62,
   "rate_bearing": 54,
-  "coverage_only": 6,
+  "coverage_only": 8,
   "paths": {
    "EXECUTABLE_GUARANTEED": 44,
    "EXECUTABLE_POTENTIAL_ONLY": 9,
-   "NOT_EXECUTABLE_WITH_REASON": 7
+   "NOT_EXECUTABLE_WITH_REASON": 9
   },
   "served_state": {
    "RETAINED": 52,
    "AGGREGATED": 2,
-   "ABSENT": 6
+   "ABSENT": 8
   },
   "expectation_strength": {
    "PINNED": 51,
    "NONE": 1,
    "OBSERVED_ONLY": 2,
-   "N/A": 6
+   "N/A": 8
   },
   "pairs": 37,
   "pair_rule_types": {
-   "spend_reduction": 23,
+   "spend_reduction": 26,
    "allowed": 3,
-   "conditional": 3,
    "mutually_exclusive": 7,
    "same_cost_prohibited_distinct_costs_allowed": 1
   },
-  "pairs_executable": 25
+  "pairs_executable": 28
  }
 }

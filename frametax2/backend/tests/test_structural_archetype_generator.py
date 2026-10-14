@@ -375,9 +375,15 @@ def test_ho009_nz_principal_plus_bc_dave_plus_ny_post():
         _comp("us_ny_post_production_credit", "US-NY", 1_500_000.0, component_type="post",
               line_id="HO009-NY"),
     ]
+    # RESTATED (NA-RECONCILIATION-13): DAVE is claimable only alongside its host credit (ITA (BC) s.81.2(1)(a)), so DAVE without a BC host component is not a lawful structure.
     res = generate_structural_candidate(components, gross_budget_usd=6_800_000.0)
+    assert res.executable is False and "claimable only alongside its host credit" in res.rejection_reason
+    # With the s.80 host on separate BC labour (200,000) the same three countries compose: DAVE 16% x 300,000 = 48,000.
+    hosted = components + [_comp("ca_bc_film_tv_tax_credit", "CA-BC", 200_000.0, line_id="HO009-BCH", spend_category="btl_crew_labor")]
+    res = generate_structural_candidate(hosted, gross_budget_usd=7_000_000.0)
     assert res.executable is True, res.rejection_reason
-    assert res.total_allocated_usd == pytest.approx(6_800_000.0)
+    assert res.total_allocated_usd == pytest.approx(7_000_000.0)
+    assert res.raw_component_incentives_usd["ca_bc_dave"] == pytest.approx(48_000.0)
 
 
 def test_ho010_formulaic_plus_conditional_fund():

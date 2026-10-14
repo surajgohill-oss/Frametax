@@ -5167,55 +5167,70 @@ def _ev(title, url, authority, eff, notes, status=RecordStatus.CURRENT):
 
 register(ProgramRequirementsProfile(
     program_slug="us_oh_motion_picture_tax_credit", jurisdiction_code="US-OH",
-    min_local_spend_usd=300_000.01, preapproval_mandatory=True, refundable=True, annual_program_cap_usd=50_000_000.0,
+    min_local_spend_usd=300_000.01, preapproval_mandatory=True, refundable=True, transferable=False, annual_program_cap_usd=50_000_000.0,
     evidence=_ev("Ohio Revised Code 122.85", "https://codes.ohio.gov/ohio-revised-code/section-122.85", "Ohio General Assembly / Ohio Department of Development", "2025-09-30",
                  "30% of eligible Ohio expenditures above USD 300,000; refundable; (B)(12) funding of at least 50% of the budget; (C)(4) USD 50 million of credits a fiscal year (USD 5 million reserved for Broadway); rolling review with priority for television series "
-                 "and miniseries; the director may certify and may rescind if production does not begin within ninety days; certificates issue after completion. Not stated: transferability, sunset, per-project cap."),
-    additional_facts={"approval": "Director certification and approval are required before the credit issues (ORC 122.85(B)-(C)); disclosed as allocation risk.", "base": "Eligible expenditures are goods or services purchased and consumed in Ohio, cast and crew wages included (A)(4)."},
+                 "and miniseries; the director may certify and may rescind if production does not begin within ninety days; certificates issue after completion. The section (read in full 2026-10-13) provides no transfer or assignment of the credit and states "
+                 "no sunset or per-project cap: a confirmed authoritative silence, so the credit is refundable, not transferable and open-ended."),
+    additional_facts={"approval": "Director certification and approval are required before the credit issues (ORC 122.85(B)-(C)); disclosed as allocation risk.", "base": "Eligible expenditures are goods or services purchased and consumed in Ohio, cast and crew wages included (A)(4).",
+                      "silence": "ORC 122.85 states no transfer, assignment, sunset or repeal date and no per-project cap (read in full 2026-10-13)."},
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_wv_film_production_tax_credit", jurisdiction_code="US-WV",
-    min_local_spend_usd=50_000.0, transferable=True, preapproval_mandatory=True,
-    evidence=_ev("West Virginia Department of Economic Development, film incentives page", "https://westvirginia.gov/filmincentives/", "West Virginia Department of Economic Development", None,
-                 "27% base plus 4% with 10 or more West Virginia residents hired full-time; USD 50,000 minimum in a calendar year; no per-project, talent or fiscal-year credit cap; transferable; principal photography must begin within 120 days of approval and "
-                 "filming before approval risks rejection. Not stated: refundability, sunset, statute (the page is a summary)."),
-    additional_facts={"statute_gap": "W. Va. Code 11-13X and the legislative rule were not read."},
+    min_local_spend_usd=50_000.0, transferable=True, refundable=False, preapproval_mandatory=True, audit_required=True, cpa_or_approved_auditor_required=True, sunset_date="2027-12-31",
+    evidence=_ev("W. Va. Code 11-13X (Film Industry Investment Act) and the West Virginia Department of Economic Development page", "https://code.wvlegislature.gov/11-13X/", "West Virginia Legislature / West Virginia Department of Economic Development", "2022-07-01",
+                 "27% base (11-13X-5(a)) plus 4% when the eligible company employs 10 or more West Virginia residents as full-time employees or apprentices (5(b)); NONREFUNDABLE (4(a)); applied against corporation net income then personal income tax (7); unused credit carries forward to "
+                 "the second taxable year after the expenditures, no carryback, and may be sold or transferred with approval (8); USD 50,000 cumulative in a calendar year (3); application to the Office of Economic Development before the claim, an independent CPA expense verification report "
+                 "(6); expenditures after December 31, 2027 earn no credit (13(d)); no credit cap per project, person or year; principal photography within 120 days of approval and filming before approval risks rejection (department page)."),
+    additional_facts={"extra_allowance_documentation": "Name, home address and telephone number of every individual claimed for the 4% (11-13X-6(b)(3)).",
+                      "carry_forward": "Expires with the second taxable year after the year of the expenditures; a transfer does not extend it (11-13X-8(b), (d))."},
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_nj_garden_state_film_credit", jurisdiction_code="US-NJ",
-    transferable=True, sunset_date="2039-07-01",
-    evidence=_ev("New Jersey Division of Taxation, Garden State Film and Digital Media Jobs Act", "https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml", "New Jersey Division of Taxation / NJEDA", "2018-07-01",
-                 "35% of qualified film production expenses, 30% within the 30-mile radius of Eighth Avenue and Central Park West; at least 60% of expenses through New Jersey-authorized sellers or over USD 1 million of qualified expenses; diversity plan bonus up to 4%; "
-                 "transferable for no less than 75% of face value; seven-year carry-forward; tax years ending before July 1, 2039 (P.L. 2024, c.33). Not stated: a film cap, refundability, whether NJEDA approval is discretionary."),
-    additional_facts={"min_expense_gate": "At least 60% of production expenses (excluding post-production) through New Jersey-authorized sellers, or qualified expenses over USD 1 million per production."},
+    transferable=True, refundable=False, preapproval_mandatory=True, audit_required=True, cpa_or_approved_auditor_required=True, allocation_type=AllocationType.FIRST_COME_FIRST_SERVED,
+    annual_program_cap_usd=100_000_000.0, per_person_cap_usd=750_000.0, sunset_date="2049-07-01",
+    evidence=_ev("N.J.S.A. 54:10A-5.39b and 54A:4-12b (combined statute text, New Jersey Economic Development Authority) and the Division of Taxation page", "https://www.njeda.gov/wp-content/uploads/2025/12/Combined-Statutes-N.J.S.A.-54-10A-5.39b-CBT-N.J.S.A.-54A_4-12b-GIT-1.pdf", "New Jersey Economic Development Authority / New Jersey Division of Taxation", "2018-07-01",
+                 "35% of qualified film production expenses (40% for a studio partner), 30% within the 30-mile radius of Eighth Avenue and Central Park West; approval on application; at least 60% of expenses through New Jersey-authorized vendors or over USD 1 million of qualified expenses; principal photography within 180 days "
+                 "of the application; independent CPA verification report; taxable years before July 1, 2049; seven-year carry-forward, no refund; transfer certificate sold for at least 75% of face value; USD 100 million a fiscal year for taxpayers other than studio partners, allocated in order of application; "
+                 "payments above USD 750,000 to one highly compensated individual are excluded; marketing and advertising are excluded; no credit for costs counted in another credit or incentive for the same period; diversity-plan credit 2% / 4% for years before July 1, 2034 (L. 2018, c. 56 s.4)."),
+    additional_facts={"min_expense_gate": "At least 60% of production expenses (excluding post-production) through New Jersey-authorized vendors, or qualified expenses over USD 1 million per production.",
+                      "same_cost_bar": "N.J.S.A. 54:10A-5.39b c.: no credit for any cost included in another tax credit, exemption or business-assistance incentive for a coinciding period.",
+                      "per_individual_exclusion": "Payments above USD 750,000 to one highly compensated individual (writer, director, producer or performer other than a background actor) are not qualified; the topsheet has no payee data, so the exclusion is disclosed, not applied."},
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_mo_motion_media_production_tax_credit", jurisdiction_code="US-MO",
-    min_local_spend_usd=50_000.0, preapproval_mandatory=True, audit_required=True, cpa_or_approved_auditor_required=True, transferable=True, annual_program_cap_usd=16_000_000.0,
-    evidence=_ev("Missouri Film Office and Department of Economic Development, Motion Media Production Tax Credit", "https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program", "Missouri Department of Economic Development", None,
-                 "20% base credit, several increases to a maximum of 42%; minimum spend USD 50,000 (30 minutes or less) or USD 100,000 (longer); USD 16 million a year (USD 8 million film, USD 8 million episodic); transferable; above-the-line wages up to 25% of qualified spend; "
-                 "2 to 8 registered apprentices or Missouri-resident veterans by qualifying expense; preliminary application before principal photography; final application within 90 days with a Missouri-licensed CPA report. Not stated: refundability, sunset, the RSMo section."),
-    additional_facts={"annual_pool": "Annual pool of USD 16 million, split USD 8 million film and USD 8 million episodic; the allocation type is not stated on the official pages."},
+    min_local_spend_usd=50_000.0, preapproval_mandatory=True, audit_required=True, cpa_or_approved_auditor_required=True, transferable=True, refundable=False, annual_program_cap_usd=16_000_000.0, sunset_date="2029-12-31",
+    evidence=_ev("RSMo 135.750 (Missouri Motion Media Production Tax Credit) and the Missouri Film Office and Department of Economic Development pages", "https://revisor.mo.gov/main/OneSection.aspx?section=135.750", "Missouri General Assembly / Missouri Department of Economic Development", "2023-08-28",
+                 "20% of qualifying expenses plus four 5-point increases (50% filmed in Missouri; 15% in a rural or blighted area; three departments hiring a Missouri resident; script marketing Missouri with five photographs) and 10% of the base (2 points) in a second-, third- or fourth-class county, to 42%; "
+                 "qualifying expenses are Missouri spend, above-the-line compensation limited to 25% of overall qualifying expenses; USD 50,000 (30 minutes or less) or USD 100,000 (longer); at least 2/3/6/8 Missouri registered apprentices or veterans by qualifying expenses (under USD 5 million / 5-10 / 10-15 / 15+); preliminary application "
+                 "and a Missouri-licensed CPA report; USD 8 million a year for film production and USD 8 million for series; five-period carry-forward; transferable; a credit against chapter 143 tax (not refundable); sunset December 31, 2029 unless reauthorized (termination September 1, 2030)."),
+    additional_facts={"annual_pool": "USD 8 million a year for film production and USD 8 million a year for series production (subsection 6); the statute does not state how the pool is rationed.",
+                      "uplifts": "Subsection 3: +5 each for (2) 50% filmed in Missouri, (3) 15% of Missouri filming in a rural or blighted area, (4) three departments hiring a Missouri resident ready to advance, (5) script marketing Missouri with five cleared photographs; (6) the 20% base is increased by 10% (to 22%) in a county of the second, third or fourth class; maximum 42%.",
+                      "above_the_line_limit": "Compensation of producers, principal cast at SAG Schedule F and above, the screenwriter and the director counts only up to 25% of overall qualifying expenses (subsection 2(3)(b)); applied as a share cap with the cast account as a proxy."},
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_ar_digital_motion_picture_incentive", jurisdiction_code="US-AR",
     min_local_spend_usd=200_000.0, preapproval_mandatory=True, expenditure_before_approval_qualifies=False, per_person_cap_usd=500_000.0, allocation_type=AllocationType.DISCRETIONARY, sunset_date="2031-06-30",
-    evidence=_ev("Arkansas Economic Development Commission, film production incentives", "https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives", "Arkansas Economic Development Commission", None,
-                 "25% base on goods, services and nonresident labour, add-ons of 10% and 5%, total stated as 30%; USD 200,000 within six months for one feature production (USD 50,000 for a postproduction project); wages limited to the first USD 500,000 per employee; incentive approval must "
-                 "precede any Arkansas expense; the Executive Director has sole discretion; sunset June 30, 2031; production rebate certificate within 180 days of the last expense; cash payments to vendors may not exceed 40% of verifiable costs. Not stated: refundability, transferability, the statute."),
+    evidence=_ev("Arkansas Code 15-4-2005 and 15-4-2006 as amended by Act 517 of 2023, and the Arkansas Economic Development Commission film incentives page", "https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives", "Arkansas General Assembly / Arkansas Economic Development Commission", "2023-08-01",
+                 "25% base on qualified production costs; add-ons of 10% (below-the-line Arkansas full-time resident or veteran payroll; veteran-owned small business spend), 5% (Tier 3 or 4 county payroll or spend) and 5% (multi-project production such as a series), the total claimed on any expenditure capped at 30% (15-4-2005(f)); "
+                 "the Director 'may offer' the incentive; USD 200,000 within six months for one feature (USD 50,000 for a postproduction project); wages limited to the first USD 500,000 per employee; incentive approval must precede any Arkansas expense; the Executive Director has sole discretion; "
+                 "sunset June 30, 2031 (page); production rebate certificate within 180 days of the last expense; cash payments to vendors may not exceed 40% of verifiable costs. Not stated in the statute sections read: refundability, transferability of the credit form."),
+    additional_facts={"addon_arithmetic": "RESOLVED 2026-10-13: 25 + 10 + 5 + 5 = 45 points of possible add-ons, limited to 30% of each expenditure by 15-4-2005(f); the AEDC page omitted the multi-project 5%."},
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_mt_media_act_tax_credit", jurisdiction_code="US-MT",
-    preapproval_mandatory=True, refundable=False, transferable=True,
-    evidence=_ev("Montana Department of Commerce MEDIA Tax Credit page and MCA 15-31-1007", "https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit", "Montana Department of Commerce / Department of Revenue", "2019-07-01",
-                 "Certification with Commerce is required before principal photography (USD 500 fee) and is currently paused; the first available credit is 2031; the credit is 20% of Montana production expenditures plus add-ons, limited to 35% of base investment, transferable, "
-                 "carried forward five years, not refundable. Not stated: calendar-year caps (Department of Revenue), minimum base investment (ARM 8.119.304-305), sunset."),
-    additional_facts={"availability": "Certification applications paused; 'The first available credit will not become available until 2031.'"},
+    min_local_spend_usd=350_000.0, preapproval_mandatory=True, refundable=False, transferable=True, annual_program_cap_usd=12_000_000.0, sunset_date="2045-12-31",
+    evidence=_ev("Montana Code Annotated 15-31-1004 to 15-31-1010 and the Montana Department of Commerce MEDIA Tax Credit page", "https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit", "Montana Legislature / Montana Department of Commerce / Department of Revenue", "2019-07-01",
+                 "Certification with Commerce is required before principal photography (USD 500 fee below USD 350,000 of base investment, USD 1,000 from USD 350,000) and is currently paused; the first available credit is 2031; the credit is 20% of Montana production expenditures plus compensation-based add-ons, limited to 35% of base investment "
+                 "(15-31-1007(3)); through the tax year ending December 31, 2045; base investment of at least USD 350,000 (USD 50,000 where 15-31-1004(5) applies); total claims of USD 12 million per calendar year, first allocated to credits approved before December 31, 2024 (15-31-1010(2)); "
+                 "unused credit carried forward 5 years or transferred; not refundable; authorization to apply does not guarantee the credit."),
+    additional_facts={"availability": "Certification applications paused; 'The first available credit will not become available until 2031.' The statute allocates the whole USD 12 million annual limit to credits approved before December 31, 2024 until they are claimed.",
+                      "addons": "Compensation-based add-ons (25% resident crew, 15% non-resident, 20% of the first USD 7.5 million for each actor, director, producer or writer, 30% students and resident veterans or tribal members, 10% college payments and facility rentals) need payee data and are not priced."},
 ))
 
 register(ProgramRequirementsProfile(

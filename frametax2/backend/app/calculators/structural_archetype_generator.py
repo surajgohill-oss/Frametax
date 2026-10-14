@@ -395,6 +395,31 @@ def _generate_structural_candidate_uncached(
             incremental_benefit_vs_anchor_usd=None, materiality_recommended=None,
         )
 
+    # 2b. Structure-derived facts (NA-RECONCILIATION-13): a program claimable only alongside a host credit (BC DAVE: Income Tax Act (BC) s.81.2(1)(a), s.82.3(1)(a)) is priced with the host
+    # fact derived from THIS structure's components; in a structure without the host the condition stays unresolved and the component is served as a conditional planning figure.
+    from app.optimization.structural_prerequisites import host_present, prerequisite_for, structure_derived_facts
+    _structure_slugs = [c.program_slug for c in components]
+    for c in components:
+        _pre = prerequisite_for(c.program_slug)
+        if _pre is not None and not host_present(c.program_slug, _structure_slugs):
+            return StructuralCandidateResult(
+                structure_id=structure_id, component_types=component_types,
+                program_slugs=program_slugs, jurisdiction_codes=jurisdiction_codes,
+                executable=False,
+                rejection_reason=(f"{c.jurisdiction_code}/{c.program_slug} is claimable only alongside its host credit ({' or '.join(_pre.host_slugs)}) in the same structure, "
+                                  f"and this structure holds none ({_pre.authority})"),
+                blocking_pairs=(), component_economics=(),
+                total_allocated_usd=round(sum(x.allocated_usd for x in components), 2),
+                total_guaranteed_incentive_usd=0.0, total_conditional_incentive_usd=0.0,
+                gross_budget_usd=gross_budget_usd, npc_usd=None, anchor_npc_usd=anchor_npc_usd,
+                incremental_benefit_vs_anchor_usd=None, materiality_recommended=None,
+            )
+    components = [
+        (_fast_replace(c, evidenced_requirement_facts=c.evidenced_requirement_facts | structure_derived_facts(c.program_slug, _structure_slugs))
+         if prerequisite_for(c.program_slug) is not None else c)
+        for c in components
+    ]
+
     # 3. Price every component independently via the EXISTING kernel.
     #
     # A component explicitly labeled "selective_upside" or "fund_overlay"
@@ -693,7 +718,7 @@ def _price_component_cached(
     if cache is None:
         return _price_component(component, gross_budget_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd, contingency_allocations, undeployed_contingency_usd)
     key = (component.jurisdiction_code, component.program_slug, component.production_type,
-           component.pricing_key, gross_budget_usd, undeployed_contingency_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None,
+           component.pricing_key, component.evidenced_requirement_facts, gross_budget_usd, undeployed_contingency_usd, contingency_expected_utilization_pct, worldwide_category_spend_usd is not None,
            repr(sorted((k, repr(v)) for k, v in (contingency_allocations or {}).items())))
     hit = cache.get(key)
     if hit is None:

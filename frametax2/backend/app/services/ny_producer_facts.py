@@ -46,6 +46,13 @@ NY_EVIDENCED_FACTS = {
     "wv_ten_resident_hires_confirmed": None,
     "ca_bc_film_tv_photography_after_2024_confirmed": None,
     "nj_film_spend_outside_nyc_radius_confirmed": None,
+    # NA-RECONCILIATION-13: Missouri RSMo 135.750 eligibility and uplift facts (statute subsections 3(2)-(6) and 4); none can be read from a topsheet
+    "mo_apprentice_or_veteran_minimum_confirmed": None,
+    "mo_filmed_50pct_in_missouri_confirmed": None,
+    "mo_rural_or_blighted_15pct_confirmed": None,
+    "mo_three_departments_missouri_hires_confirmed": None,
+    "mo_script_markets_missouri_confirmed": None,
+    "mo_second_third_fourth_class_county_confirmed": None,
     # NA-RECONCILIATION-11. Propositions that are ALSO content/approval gates (CPTC certificate and control, NL Part I registration, Colorado/Arizona pre-approval, OCASE permanent
     # establishment) are NOT repeated here: their one persistence owner is the Inspector content-gate control (POST /projects/{id}/content-gates, key <slug>__<kind>_confirmed).
     "on_opstc_ontario_labour_25pct_confirmed": None,

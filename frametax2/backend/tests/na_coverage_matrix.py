@@ -108,11 +108,17 @@ EXCLUSIONS: dict[str, str] = {
                                           "pricing kernel and is served as a program disposition (DISCRETIONARY_AWARD_ZERO_GUARANTEED, stated rates 25% to 30%, the award as the open proposition); its pairs with the federal "
                                           "credits are ruled (spend_reduction when awarded).",
     "bc_interactive_digital_media_tax_credit_idmtc": "COVERAGE_ONLY: no RateRule (rate, base and cap not established); an interactive-media credit with no film-production base.",
-    "ca_cmf": "COVERAGE_ONLY: Canada Media Fund is a broadcaster-envelope performance fund with no statutory rate; no RateRule.",
-    "mx_eficine_incentive": "COVERAGE_ONLY: EFICINE is a fund with no established rate or base; the 30% federal incentive is the canonical Mexico program (mx_federal_film_incentive_2026).",
-    "nohfc_production_fund": "COVERAGE_ONLY: Northern Ontario Heritage Fund production fund; selective fund, no statutory rate; no RateRule.",
-    "us_itvs_fund": "COVERAGE_ONLY: ITVS is a selective documentary fund with no statutory rate; no RateRule.",
-    "us_sundance_doc": "COVERAGE_ONLY: Sundance documentary fund is a selective grant with no statutory rate; no RateRule.",
+    "ca_cmf": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): the CMF Convergent Stream pays through Broadcaster and Distributor Envelopes allocated by past performance (cmf-fmc.ca envelope administration); a producer reaches it "
+              "only through a broadcaster or distributor commitment, and no producer-level rate exists, so nothing is priced.",
+    "mx_eficine_incentive": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): LISR art. 189 (not art. 226) is an INVESTOR credit allocated by an interinstitutional committee within MXN 650 million a year (two periods), MXN 20 million per "
+                            "contributor and project, 10% of the prior-year income tax; the producer's benefit is financing. The 30% federal incentive is the canonical Mexico program (mx_federal_film_incentive_2026).",
+    "nohfc_production_fund": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): competitive intake; a conditional contribution of up to 50% of eligible Northern Ontario costs capped CAD 500,000 (budget under 5 million), 1,000,000 "
+                             "(5-10 million) and 2,000,000 (10 million and over); the Board decides and funding is limited, so no guaranteed value.",
+    "us_itvs_fund": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): ITVS Open Call is a co-production agreement (up to USD 400,000 for features, USD 50,000 for shorts), 'not a grant'; no current ITVS 'International Documentary Fund' page was found.",
+    "us_sundance_doc": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): annual open call, about 20-30 of 1,300 proposals funded, grants of USD 25,000-40,000 (development) and USD 50,000-100,000 (production and post), non-recoupable.",
+    "ca_telefilm_dev": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): Telefilm Canada Production Program Guidelines (applicable October 31, 2025) s.4.1 cap financing at the lesser of 49% of eligible Canadian costs or CAD 500,000 (budgets under "
+                       "1.5 million), one third (1.5-3.5 million), the lesser of 49% or CAD 3.5 million (French) / 4 million (other) from 3.5 million, and s.8 states compliance does not guarantee funding.",
+    "ca_bell_fund": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): the Bell Fund Production Program is a Selective stream (and a Major Production Funder stream) for Canadian series in eligible genres; amounts are not stated on the program page.",
 }
 #: per-profile exclusions: program has no executable path on THAT budget but is proven on the other
 PROFILE_EXCLUSIONS: dict[tuple[str, str], str] = {
@@ -201,6 +207,21 @@ def _pair_components(a: str, b: str):
     return comps
 
 
+#: BC DAVE is claimable only alongside its host credit (ITA (BC) s.81.2(1)(a), s.82.3(1)(a)); a pair that names DAVE and no host gets the BC domestic credit on 200,000 of separate BC labour so the pair is a lawful structure.
+_DAVE_HOSTS = ("ca_bc_film_tv_tax_credit", "ca_bc_pstc")
+
+
+def _dave_host_needed(a: str, b: str) -> bool:
+    return "ca_bc_dave" in (a, b) and not ({a, b} & set(_DAVE_HOSTS))
+
+
+def _pair_structure(a: str, b: str):
+    comps = _pair_components(a, b)
+    if _dave_host_needed(a, b):
+        comps.append(_scomp("principal_production", "CA-BC", "ca_bc_film_tv_tax_credit", [_salloc("9", 200_000.0, "principal_production", "CA-BC", "PH", "btl_crew_labor")]))
+    return comps
+
+
 def pair_rows(rate_bearing: list[str]) -> list[dict]:
     out = []
     jur = {s: _jurisdiction(s) for s in rate_bearing}
@@ -209,11 +230,11 @@ def pair_rows(rate_bearing: list[str]) -> list[dict]:
             continue
         rule = load_named_pair_rule(a, b)
         rt = rule["rule_type"] if rule else "UNRULED"
-        res = generate_structural_candidate(_pair_components(a, b), gross_budget_usd=4_000_000.0)
+        res = generate_structural_candidate(_pair_structure(a, b), gross_budget_usd=4_200_000.0 if _dave_host_needed(a, b) else 4_000_000.0)
         adj = [x for x in res.stacking_adjustments if x.adjustment_usd]
         out.append({
             "row_kind": "PAIR", "program_a": a, "program_b": b, "jurisdictions": f"{jur[a]} + {jur[b]}", "rule_type": rt,
-            "executable": bool(res.executable), "guaranteed_usd": _r2(res.total_guaranteed_incentive_usd), "conditional_usd": _r2(res.total_conditional_incentive_usd),
+            "host_added": _dave_host_needed(a, b), "executable": bool(res.executable), "guaranteed_usd": _r2(res.total_guaranteed_incentive_usd), "conditional_usd": _r2(res.total_conditional_incentive_usd),
             "netting_adjustments": [{"reducer": x.program_a_id, "reduced": x.program_b_id, "usd": _r2(x.adjustment_usd), "basis": x.description.split(":", 1)[0]} for x in adj],
             "reason": (res.rejection_reason or "")[:240],
         })

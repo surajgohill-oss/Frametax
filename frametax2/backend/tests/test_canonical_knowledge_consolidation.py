@@ -97,7 +97,13 @@ def test_recovered_program_cannot_silently_become_recommended():
 
     assert resolve_program_rate("ca_bc_dave", production_type="feature_film", qpe_usd=2_000_000) is None
     r = resolve_program_rate("ca_bc_dave", production_type="feature_film", qpe_usd=2_000_000, **_BC_DAVE_FACTS)
-    assert _rate_condition_qualification_impact(r) is None
+    # NA-RECONCILIATION-13: DAVE is claimable only with its host credit (ITA (BC) s.81.2(1)(a), s.82.3(1)(a)). Priced alone it stays held at USER_FACT_REQUIRED on exactly that condition;
+    # in a structure that holds the host the structure-derived fact resolves it and the impact is None.
+    assert _rate_condition_qualification_impact(r) == ("USER_FACT_REQUIRED", ("ca-bc-dave-host-credit-in-structure",))
+    hosted = resolve_program_rate("ca_bc_dave", production_type="feature_film", qpe_usd=2_000_000,
+                                  evidenced_facts=frozenset({"ca_bc_dave_eligible_activity_confirmed", "ca_bc_dave__structure_host_credit_present"}),
+                                  amount_facts={"ca_bc_dave_qualified_labour_usd": 500_000.0})
+    assert _rate_condition_qualification_impact(hosted) is None
 
 
 def test_au_pdv_offset_cannot_become_recommended_superseded_by_b1_fail_closed():

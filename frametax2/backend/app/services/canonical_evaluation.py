@@ -72,6 +72,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.contingency_deployment_facts import fingerprint_part as _contingency_fingerprint_part
 from app.calculators.allocation_pricing import _segment_category_spend, presumed_facts_from_resolution, price_allocated_structure, price_segment, rank_allocated_structures
+from app.optimization.structural_prerequisites import structure_derived_facts
 from app.calculators.canonical_stack_bridge import (
     cptc_stack_fields,
     StackCandidate,
@@ -1906,6 +1907,7 @@ _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS: frozenset[str] = frozenset({
 
 def _price_candidate(
     inputs: ProjectEconomicInputs, jurisdiction_code: str, program_slug: str,
+    cohort_slugs=None,
 ):
     """The established two-pass pattern, generalized: build a rate-
     independent register to classify QPE, resolve the program's real
@@ -1962,6 +1964,9 @@ def _price_candidate(
     # normal administrative_allocation_risk/conditional trace, never
     # silently treated as a verified fact.
     _preflight_evidenced_facts = inputs.evidenced_program_facts | _PRODUCER_CONTROLLED_ASSUMPTION_FACT_KEYS
+    # NA-RECONCILIATION-13: a program claimable only alongside a host credit (BC DAVE) has the host fact derived from the structure it is priced in, never stated by the producer.
+    # A path that passes no cohort leaves the condition unresolved, so the dependent program is served as a conditional planning figure.
+    _preflight_evidenced_facts = _preflight_evidenced_facts | structure_derived_facts(program_slug, cohort_slugs)
     rr = resolve_program_rate(
         program_slug, production_type=inputs.production_type, qpe_usd=qpe,
         evidenced_facts=_preflight_evidenced_facts, amount_facts=_preflight_amount_facts,
@@ -2355,7 +2360,7 @@ def _build_conditional_bilateral_scenario(
         if priced_slug not in _RULES_BY_PROGRAM:
             data_gaps.append(slug)
             continue
-        pricing, register, rr = _price_candidate(participant_inputs, code, priced_slug)
+        pricing, register, rr = _price_candidate(participant_inputs, code, priced_slug, cohort_slugs=result.unlocked_slugs)
         if pricing is None or rr is None:
             data_gaps.append(slug)
             continue
@@ -2634,7 +2639,7 @@ def _best_priced_treaty_side_candidate(
     best_incentive = None
     best_candidate = None
     for slug in treaty_unlocks:
-        pricing, register, rr = _price_candidate(inputs, code, slug)
+        pricing, register, rr = _price_candidate(inputs, code, slug, cohort_slugs=treaty_unlocks)
         if pricing is None or rr is None:
             continue
         incentive = pricing.selected_incentive_usd or 0.0
@@ -2698,7 +2703,7 @@ def _all_priced_treaty_side_candidates(
         if slug in existing_by_slug:
             results.append(existing_by_slug[slug])
             continue
-        pricing, register, rr = _price_candidate(inputs, code, slug)
+        pricing, register, rr = _price_candidate(inputs, code, slug, cohort_slugs=treaty_unlocks)
         if pricing is None or rr is None:
             continue
         incentive = pricing.selected_incentive_usd or 0.0
@@ -5247,6 +5252,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # fetched once, near the top of this function (see CBA-008 note there
     # — they're also part of the cache fingerprint now) and reused here.
 
+    _cohort_slugs_by_code: dict[str, set[str]] = {}
+    for _c, _s, _cls in candidates:
+        _cohort_slugs_by_code.setdefault(_c, set()).add(_s)
     for code, program_slug, classification in candidates:
         jurisdiction = jurisdiction_by_code.get(code)
         disambiguate = candidates_per_code.get(code, 1) > 1
@@ -5336,7 +5344,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             await session.flush()  # bulk-writer chunk boundary (no-op until a chunk is full)
             continue
 
-        pricing, register, rate_resolution = _price_candidate(inputs, code, program_slug)
+        pricing, register, rate_resolution = _price_candidate(inputs, code, program_slug, cohort_slugs=_cohort_slugs_by_code.get(code))
         # ITEM 5. Computed BEFORE the unpriceable branch below. It used to be
         # derived only after it, so every authority/rule-blocked candidate
         # persisted a trace with NO is_baseline -- a BLOCKED BASELINE became

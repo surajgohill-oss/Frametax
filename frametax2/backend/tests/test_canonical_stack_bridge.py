@@ -230,16 +230,22 @@ def test_n_way_group_stack_order_invariant_under_permutation():
 
 def test_conditional_rule_type_fails_closed_never_publishes():
     """Codex optimizer-correctness classification, point 1: a pair with a KNOWN but UNRESOLVED (conditional) rule must never be published as a priced combined structure -- the legal fact is
-    known, but automatic economic resolution is not. ca_federal_cptc + ca_bc_dave is a 'conditional' entry in _SLUG_PAIR_RULES (stacking rules 1.10.0: DAVE rides on a BC credit the planner
-    does not model and no primary text states the combination). (This control used the unofficial ca_qc_qprdp spelling until 1.11.0 retired it.)"""
-    rule = load_named_pair_rule("ca_federal_cptc", "ca_bc_dave")
+    known, but automatic economic resolution is not. RESTATED (NA-RECONCILIATION-13): the CPTC + BC DAVE pair that served as this control is now ruled spend_reduction from primary text, so the control
+    uses a pair that is still conditional: AU Location Offset + Screen Queensland (support reduces the Location Offset QAPE basis only for foreign productions with significant Queensland spend)."""
+    rule = load_named_pair_rule("au_location_offset", "au_qld_screen")
     assert rule is not None
     assert rule["rule_type"] == "conditional"
 
-    a = StackCandidate("ca_federal_cptc", "CA-BC", 250_000.0, 0.25, 1_000_000.0, "tax_credit")
-    b = StackCandidate("ca_bc_dave", "CA-BC", 100_000.0, 0.10, 1_000_000.0, "tax_credit")
+    a = StackCandidate("au_location_offset", "AU", 250_000.0, 0.16, 1_000_000.0, "tax_credit")
+    b = StackCandidate("au_qld_screen", "AU-QLD", 100_000.0, 0.10, 1_000_000.0, "tax_credit")
     assert price_program_group_stack([a, b]) is None
     assert price_program_pair_stack(a, b) is None
+
+
+def test_the_three_formerly_conditional_na_pairs_are_ruled_spend_reduction_and_price_as_stacked():
+    for pair in (("ca_federal_cptc", "ca_bc_dave"), ("on_ofttc", "ca_federal_pstc"), ("ca_bc_film_tv_tax_credit", "ca_federal_pstc")):
+        rule = load_named_pair_rule(*pair)
+        assert rule is not None and rule["rule_type"] == "spend_reduction", pair
 
 
 def test_the_unofficial_qprdp_label_resolves_to_the_quebec_services_credit_rule():

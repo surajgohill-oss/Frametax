@@ -57,7 +57,7 @@ async def test_the_matrix_artifact_is_current_or_rewritten_on_request(matrix):
 @pytest.mark.asyncio
 async def test_every_program_has_an_executable_path_or_an_exact_exclusion(matrix):
     rate_bearing = [r for r in matrix["programs"] if r["layer"] == "RATE_BEARING"]
-    assert len(rate_bearing) == 54 and len(matrix["programs"]) == 60
+    assert len(rate_bearing) == 54 and len(matrix["programs"]) == 62
     for r in matrix["programs"]:
         slug = r["canonical_slug"]
         if r["layer"] == "COVERAGE_ONLY":
@@ -135,4 +135,7 @@ async def test_the_bc_domestic_credit_is_executable_exclusive_with_the_services_
     cptc = by[("ca_bc_film_tv_tax_credit", "ca_federal_cptc")]
     # BC 35% x 2,000,000 = 700,000; CPTC cap 60% x (4,000,000 - 700,000) = 1,980,000 < labour 2,000,000 -> 25% x 1,980,000 = 495,000; total 1,195,000
     assert cptc["rule_type"] == "spend_reduction" and cptc["executable"] and cptc["guaranteed_usd"] == pytest.approx(1_195_000.0)
-    assert not by[("ca_bc_film_tv_tax_credit", "ca_federal_pstc")]["executable"] and by[("ca_bc_film_tv_tax_credit", "ca_federal_pstc")]["rule_type"] == "conditional"
+    # NA-RECONCILIATION-13: ruled spend_reduction from primary text. BC 35% x 2,000,000 = 700,000; PSTC 16% x 2,000,000 = 320,000; the BC credit is labour-only, so the whole 700,000 is assistance:
+    # PSTC 320,000 - 700,000 x 16% = 208,000; total 908,000.
+    pstc = by[("ca_bc_film_tv_tax_credit", "ca_federal_pstc")]
+    assert pstc["rule_type"] == "spend_reduction" and pstc["executable"] and pstc["guaranteed_usd"] == pytest.approx(908_000.0)

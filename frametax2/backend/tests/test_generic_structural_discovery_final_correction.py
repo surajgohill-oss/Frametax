@@ -232,8 +232,11 @@ async def test_same_jurisdiction_group_stack_never_silently_drops_a_none_result(
         )
     ).scalars().all()
     rows = [(r[0], r[1], r[2]) for r in detailed] + [(g.candidate_status, g.reason_class, (g.representative or {}).get("trace", {}).get("reason")) for g in grouped]
-    assert grouped and all(g.candidate_count >= 1 and (g.representative or {}).get("trace", {}).get("reason") for g in grouped), (
-        "the on_ofttc+on_opstc rejection must be an exactly-counted aggregate group with a reconstructable representative"
+    # RESTATED (NA-RECONCILIATION-13): the wider Ontario groups used to be rejected as UNRESOLVED_NO_AUTHORITY (the OFTTC + federal PSTC pair was unruled) and so were exactly-counted aggregate
+    # groups. That pair is now ruled from primary text, so every Ontario group holding both credits is rejected by the registered mutual-exclusion rule and persisted as a detailed row. Whatever
+    # form the persistence takes, an aggregate group (when one exists) must be exactly counted with a reconstructable representative, and a row must exist in one form or the other.
+    assert all(g.candidate_count >= 1 and (g.representative or {}).get("trace", {}).get("reason") for g in grouped), (
+        "an on_ofttc+on_opstc aggregate group must be exactly counted with a reconstructable representative"
     )
     assert rows, (
         "no persisted row at all for the on_ofttc+on_opstc same-jurisdiction combination -- "

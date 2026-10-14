@@ -1762,6 +1762,19 @@ QPE_SHARE_CAP_RULES: dict[str, tuple[QpeShareCapRule, ...]] = {
             source_ref="KYA-607434-2026-01-14-Annex-B3-ii",
         ),
     ),
+    "us_mo_motion_media_production_tax_credit": (
+        QpeShareCapRule(
+            program_slug="us_mo_motion_media_production_tax_credit", group_id="above_the_line_individuals",
+            categories=frozenset({"atl_writer", "atl_director", "atl_producer"}), cap_pct=0.25,
+            proxy_categories=frozenset({"atl_cast"}), unresolved_fact_id="mo-principal-cast-membership",
+            unresolved_note=("RSMo 135.750 subsection 2(1) names as above-the-line individuals any producer, the screenwriter, the director and principal cast 'at a Screen Actors Guild Schedule F and above payment rate'. "
+                             "The cast account also holds cast below Schedule F, which are ordinary qualifying wages, and the topsheet does not split them, so the whole cast account is placed inside the group as a "
+                             "proxy (lower QPE envelope) until the Schedule F split is evidenced."),
+            description="Compensation and wages paid to above-the-line individuals count toward Missouri qualifying expenses only up to 25% of the overall qualifying expenses.",
+            quote="compensation and wages paid to all above-the-line individuals shall be limited to twenty-five percent of the overall qualifying expenses (RSMo 135.750 subsection 2(3)(b))",
+            source_ref="rsmo-135.750-subsection-2-3-b",
+        ),
+    ),
 }
 
 

@@ -31,6 +31,9 @@ from __future__ import annotations
 PROGRAM_SLUG_ALIASES: dict[str, str] = {
     "mt_mfc_cash_rebate": "mt_mfc_rebate",
     "gr_ekome_rebate": "gr_cash_rebate",
+    # NA-RECONCILIATION-13: "ca_cmpa_foreign" (a "CMPA Foreign certificate" for service productions) names no certificate: the Canadian Media Producers Association issues none. The federal service-production credit is the
+    # PSTC (ITA 125.5; accredited production certificate issued by the Minister of Canadian Heritage, CAVCO), the graph edges describe it as the service-only alternative to the CPTC.
+    "ca_cmpa_foreign": "ca_federal_pstc",
     # ── Global Data Application ────────────────────────────────────────────
     # The completed canonical corpus (GLOBAL_REMEDIATION_EXECUTABLE_DATA.json)
     # identifies programs by its OWN canonical_id, which for most records is a

@@ -395,10 +395,14 @@ def test_kc_stacking_hvc_film_london_conditional():
     assert rule["rule_type"] == "conditional"
 
 
-def test_kc_stacking_cmpa_foreign_ontario_ofttc_allowed():
-    rule = _stacking_rule("ca_cmpa_foreign", "on_ofttc")
-    assert rule is not None
-    assert rule["rule_type"] == "allowed"
+def test_kc_stacking_cmpa_foreign_is_retired_and_resolves_to_the_federal_pstc_pair():
+    # NA-RECONCILIATION-13: the "CMPA Foreign certificate" is not an instrument (the Canadian Media Producers Association issues none); the old "allowed because the OFTTC needs no Canadian content
+    # certification" rule is contradicted by O. Reg. 37/09 s.27.1 para 7 (at least six Canadian-content points). The name resolves to the federal PSTC, and the OFTTC + PSTC pair is a spend_reduction.
+    from app.data.program_slug_aliases import canonical_slug
+    assert canonical_slug("ca_cmpa_foreign") == "ca_federal_pstc"
+    assert _stacking_rule("ca_cmpa_foreign", "on_ofttc") is None and _stacking_rule("ca_cmpa_foreign", "ca_bc_pstc") is None        # the spelling carries no rule of its own
+    rule = _stacking_rule(canonical_slug("ca_cmpa_foreign"), "on_ofttc")
+    assert rule is not None and rule["rule_type"] == "spend_reduction"
 
 
 # ---------------------------------------------------------------------------

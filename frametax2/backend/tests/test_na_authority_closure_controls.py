@@ -149,7 +149,10 @@ def test_no_boolean_fact_referenced_by_a_north_american_rate_rule_lacks_a_produc
     from app.services import na_canonical_reconciliation as na
     from app.services.ny_producer_facts import NY_EVIDENCED_FACTS
     from app.services.program_content_gates import gate_control_whitelist
-    writers = set(NY_EVIDENCED_FACTS) | set(gate_control_whitelist())
+    from app.optimization.structural_prerequisites import STRUCTURAL_PREREQUISITES
+    # structure-derived facts (a host credit present in the structure) are calculation rules, not producer facts: no producer writer exists or may exist for them
+    structure_derived = {p.fact_key for p in STRUCTURAL_PREREQUISITES.values()}
+    writers = set(NY_EVIDENCED_FACTS) | set(gate_control_whitelist()) | structure_derived
     missing: dict[str, set[str]] = {}
     for slug in na.frozen_universe()["rate_bearing"]:
         keys = set()

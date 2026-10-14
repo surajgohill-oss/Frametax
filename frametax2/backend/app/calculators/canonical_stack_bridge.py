@@ -99,6 +99,9 @@ _SPEND_REDUCTION_DIRECTION: dict[frozenset, str] = {
     frozenset({"ca_federal_cptc", "ca_ab_fttc"}): "ca_ab_fttc",
     frozenset({"ca_federal_pstc", "ca_ab_fttc"}): "ca_ab_fttc",
     frozenset({"ca_federal_pstc", "ca_bc_dave"}): "ca_bc_dave",
+    frozenset({"ca_bc_dave", "ca_federal_cptc"}): "ca_bc_dave",
+    frozenset({"ca_federal_pstc", "on_ofttc"}): "on_ofttc",
+    frozenset({"ca_bc_film_tv_tax_credit", "ca_federal_pstc"}): "ca_bc_film_tv_tax_credit",
     frozenset({"ca_federal_cptc", "ca_nb_film_tax_credit"}): "ca_nb_film_tax_credit",
     frozenset({"ca_federal_pstc", "ca_nb_film_tax_credit"}): "ca_nb_film_tax_credit",
     frozenset({"ca_federal_cptc", "ca_ns_production_incentive_fund"}): "ca_ns_production_incentive_fund",
@@ -223,7 +226,10 @@ SK_SLUG = "ca_sk_creative_saskatchewan_grant"
 #: with the accredited production is considered assistance"; Ontario Creates OPSTC Guidelines s.3.02: "Only the labour portion of the OPSTC constitutes assistance." The reverse never
 #: applies: the federal PSTC is not assistance to the Ontario OPSTC (Guidelines s.3.02), the Manitoba credit (TC-2 guidelines), the BC credit (Income Tax Act (BC) s.79(1) "assistance"
 #: excludes amounts deemed paid under ITA 125.4(3) or 125.5(3)) or the Quebec credit (Revenu Québec CO-1029.8.36.SP, note 7).
-PSTC_ASSISTING_SLUGS = ("on_opstc", MB_SLUG, BC_PSTC_SLUG, QC_PSTC_SLUG, NL_SLUG, OCASE_SLUG, AB_SLUG, DAVE_SLUG, NB_SLUG, NS_SLUG, SK_SLUG)
+#: NA-RECONCILIATION-13: the Ontario OFTTC and the BC film and television credit are computed on labour only, so they are wholly assistance in respect of Canadian labour (verified netting).
+OFTTC_SLUG = "on_ofttc"
+BC_FILM_TV_SLUG = "ca_bc_film_tv_tax_credit"
+PSTC_ASSISTING_SLUGS = ("on_opstc", MB_SLUG, BC_PSTC_SLUG, QC_PSTC_SLUG, NL_SLUG, OCASE_SLUG, AB_SLUG, DAVE_SLUG, NB_SLUG, NS_SLUG, SK_SLUG, OFTTC_SLUG, BC_FILM_TV_SLUG)
 #: The credits computed on ALL eligible cost (labour included) whose labour share is APPORTIONED by rate x labour: Ontario's is stated by its own guidelines (s.3.02); Manitoba's cost-of-production
 #: credit and Quebec's all-spend credit are not, so the apportionment is a disclosed assumption, with the whole-credit figure disclosed as the lower bound.
 PSTC_APPORTIONED_SLUGS = (MB_SLUG, QC_PSTC_SLUG, NL_SLUG, AB_SLUG, NB_SLUG, NS_SLUG, SK_SLUG)

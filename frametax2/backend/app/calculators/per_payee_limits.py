@@ -30,6 +30,7 @@ class PayeeCap:
     capped_payee_types: frozenset[str] | None     # None: every identified individual; otherwise only these stated payee types
     label: str
     source: str
+    categories: frozenset[str] | None = None      # None: every personnel category; otherwise only these (New Jersey: writers, directors, producers and performers, not crew)
 
 
 PAYEE_CAPS: dict[str, PayeeCap] = {
@@ -40,6 +41,17 @@ PAYEE_CAPS: dict[str, PayeeCap] = {
         1_000_000.0, None, "USD 1,000,000 per employee or contractor (per personal service corporation per calendar year)",
         "C.R.S. 24-48.5-114(7)(i) and (j) (official 2024 printout; HB 23-1275, Session Laws 2023 ch. 289, effective 2023-08-07): wages up to one million dollars per employee or contractor, "
         "payments up to one million dollars per calendar year per personal service corporation; any excess is excluded"),
+    # NA-RECONCILIATION-13: N.J.S.A. 54:10A-5.39b, definition of "qualified film production expenses": the term does not include "payment in excess of $750,000 to a highly compensated individual for wages or
+    # salaries or other compensation for writers, directors, including music directors, producers, and performers, other than background actors with no scripted lines" (the studio-partner exceptions do not apply to
+    # a taxpayer that is not a New Jersey studio partner). Crew are not in the group. Applied to identified payees only.
+    "us_nj_garden_state_film_credit": PayeeCap(
+        750_000.0, None, "USD 750,000 per highly compensated individual (writers, directors, producers and performers other than background actors)",
+        "N.J.S.A. 54:10A-5.39b / 54A:4-12b, definition of 'qualified film production expenses' (combined statute text, New Jersey Economic Development Authority, read 2026-10-13)",
+        frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast"})),
+    # Arkansas Economic Development Commission film incentives page (read 2026-10-13): wages are limited to the first USD 500,000 per employee (an employee is a W-2 payee; contractors and loan-outs are not wages).
+    "us_ar_digital_motion_picture_incentive": PayeeCap(
+        500_000.0, frozenset({"employee"}), "USD 500,000 of wages per employee",
+        "Arkansas Economic Development Commission, film production incentives page: wages limited to the first $500,000 per employee"),
     "us_il_film_production_services_credit": PayeeCap(
         500_000.0, None, "$500,000 per worker (wages and employer-paid benefits)",
         "Illinois DCEO Film Production Services Tax Credit FAQs 3 and 6: resident and non-resident labour up to $500,000 per worker"),
@@ -62,7 +74,8 @@ def _decided(line_id, payee_by_line, payee_type_by_line, rule) -> bool:
 def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: dict[str, int], payee_type_by_line: dict[str, int], rule: PayeeCap):
     from app.calculators.qualification_model import AuthorityBasis, QualificationConfidence, QualificationState
     Q = QualificationState.QUALIFIES
-    members = [i for i, e in enumerate(register) if e.state == Q and category_by_line.get(e.line_id) in PERSONNEL_CATEGORIES]
+    _cats = rule.categories or PERSONNEL_CATEGORIES
+    members = [i for i, e in enumerate(register) if e.state == Q and category_by_line.get(e.line_id) in _cats]
     cut: dict[int, float] = {}
     by_payee: dict[int, list[int]] = {}
     for i in members:

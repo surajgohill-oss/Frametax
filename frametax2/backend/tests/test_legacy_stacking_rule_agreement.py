@@ -80,9 +80,23 @@ def test_the_na_unruled_pair_rows_agree_with_the_registry():
     assert tuple(int(x) for x in stacking_rules.STACKING_RULES_VERSION.split(".")) >= (1, 10, 0)      # 1.10.0 added these rows; later versions only add rules
     assert len(mod.ROWS) == 10 and len({mod._rule_id(r[0]) for r in mod.ROWS}) == 10
     for _key, a, b, rule_type, text in mod.ROWS:
-        assert reg[frozenset({a, b})]["rule_type"] == rule_type, (a, b)
         assert text.strip()
+        if _key in ("dave+cptc", "ofttc+pstc"):
+            continue                                  # seeded as `conditional` by 0086, ruled `spend_reduction` by 0089 from primary text (checked below)
+        assert reg[frozenset({a, b})]["rule_type"] == rule_type, (a, b)
     assert {r[3] for r in mod.ROWS if r[0] in ("dave+cptc", "ofttc+pstc")} == {"conditional"}
+
+
+def test_the_na_conditional_pairs_are_ruled_by_0089_and_the_registry_agrees():
+    spec = importlib.util.spec_from_file_location("mig0089", _PATH.with_name("0089_na_conditional_pairs_ruled_and_cmpa_retired.py"))
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    assert (mod.revision, mod.down_revision) == ("0089", "0088")
+    reg = stacking_rules._SLUG_PAIR_RULES
+    assert reg[frozenset({"ca_bc_dave", "ca_federal_cptc"})]["rule_type"] == mod._RULED["dave+cptc"][0] == "spend_reduction"
+    assert reg[frozenset({"on_ofttc", "ca_federal_pstc"})]["rule_type"] == mod._RULED["ofttc+pstc"][0] == "spend_reduction"
+    assert reg[frozenset({"ca_bc_film_tv_tax_credit", "ca_federal_pstc"})]["rule_type"] == mod._INSERT[2] == "spend_reduction"
+    assert not [k for k in reg if "ca_cmpa_foreign" in k]
+    assert {v[0] for v in mod._OLD.values()} == {"conditional"}
 
 
 def test_the_qprdp_spelling_is_retired_in_the_registry_and_the_legacy_rows_are_deleted_by_0087():
