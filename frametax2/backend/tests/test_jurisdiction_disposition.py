@@ -133,14 +133,16 @@ def test_texas_serves_every_required_proposition_and_the_stored_value_search_use
     assert len(d2["stored_facts_found"]) == 2
 
 
-def test_saskatchewan_is_a_discretionary_award_not_provenance_and_not_statutory_conditions_unmet():
+def test_a_display_only_discretionary_award_is_not_provenance_and_not_statutory_conditions_unmet():
+    # Restated in NA-RECONCILIATION-19: Saskatchewan left the display-only ruling (it is now visible zero-guaranteed potential), so this enrichment control uses another program that remains display-only under
+    # _B1_DISCRETIONARY_RULING - the Singapore Made-with-Singapore rebate (stated 30% floor / 40% ceiling, USD 7.4 million program cap).
     row = enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", SK["reason"]),
-                                         "ca_sk_creative_saskatchewan_grant", {})
+                                         "sg_made_with_singapore_rebate", {})
     d = row["blocker_detail"]
     assert d["kind"] == "DISCRETIONARY_AWARD_NOT_CONFIRMED" and d["canonical_disposition"] == "DISPLAY_ONLY_ZERO_GUARANTEED"
     assert row["disposition"] == NEEDS_FACTS and row["blocked_cause"] == "MISSING_PROJECT_FACT_OR_CONFIRMATION"
     assert "discretionary" in row["missing_facts_reason"] and "statutory conditions are unmet" not in row["missing_facts_reason"]
-    assert d["stated_rates"]["stated_ceiling_rate"] == 0.30 and d["stated_rates"]["program_cap_usd"] == 5_000_000.0
+    assert d["stated_rates"]["stated_ceiling_rate"] == 0.40 and d["stated_rates"]["program_cap_usd"] == 7_400_000.0
     assert "NOT what blocks" in d["provenance_axis"]
     assert row["engine_reason"] == SK["reason"], "the engine sentence is preserved verbatim"
 
@@ -173,7 +175,7 @@ def test_totals_count_not_applicable_and_reconciliation_classes_from_the_enriche
     from app.services.jurisdiction_disposition import blocked_totals
     rows = [
         enrich_row_with_program_detail(_row("UNPRICEABLE_AUTHORITY_INSUFFICIENT", "PRICING_BLOCKED", TX["reason"]), "us_tx_miip", {}, "feature_film"),
-        enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", SK["reason"]), "ca_sk_creative_saskatchewan_grant", {}, "feature_film"),
+        enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", SK["reason"]), "sg_made_with_singapore_rebate", {}, "feature_film"),
         enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "x"), "cz_film_incentive_animation", {}, "feature_film"),
         enrich_row_with_program_detail(_row("FEASIBILITY_REVIEW_REQUIRED", "SUPERSEDED", "x"), "ae_dxb_dpip", {}, "feature_film"),
     ]

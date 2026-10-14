@@ -3098,6 +3098,17 @@ class EligibleSubsetUpliftRule:
     hod_resident_fact: str | None = None
     stream_i_fact: str | None = None
     stream_ii_fact: str | None = None
+    #: NA-RECONCILIATION-19 kinds:
+    #:   "rate_on_amount":      `rate` x a stated amount (capped at the host basis); with `day_numerator_fact` + `min_numerator_days` the stated day count must reach the minimum (studio rental of 20 days or more).
+    #:   "share_gate":          prices nothing itself; its stated share test (>= `min_share`, or > when `share_exclusive`) gates every rule that names it in `gate_rule_id` (Saskatchewan 51% activity test).
+    #:   "compensation_credits": Montana MCA 15-31-1007(3)(b)(i)-(v): the host's base rate does not apply to compensation ('production expenditure' excludes it, 15-31-1003(13)(b)(i)), so the
+    #:                          personnel basis is replaced by per-category credits; `compensation_credits` = ((compensation fact, headcount fact, rate, per-person credit cap USD, per-person compensation cap USD), ...).
+    #:   "year_gate":           an agency-stated first expenditure year (`min_year`) for a stated year fact; stated earlier = no credit, unstated = a disclosed timing condition.
+    gate_rule_id: str | None = None
+    personnel_categories: frozenset[str] = frozenset()
+    compensation_credits: tuple[tuple[str, str, float, float | None, float | None], ...] = ()
+    bound_rate: float | None = None
+    min_year: int | None = None
 
 
 _NY_LABOR_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
@@ -3276,6 +3287,62 @@ SUBSET_UPLIFT_RULES = {
         EligibleSubsetUpliftRule("county_class_two_three_four", .02, kind="points_on_base", prerequisite_fact="mo_second_third_fourth_class_county_confirmed",
                                  source_ref="RSMo 135.750 subsection 3(6): the credit authorized under subdivision (1) (the 20% base) is increased by ten percent for a project in a second-, third- or fourth-class county = 2 points"),
     ),
+    # Montana MEDIA credit, MCA 15-31-1007(3) and 15-31-1003 (archive.legmt.gov, MCA 2025, read 2026-10-14). 'Production expenditure' EXCLUDES compensation (15-31-1003(13)(b)(i)), so the 20% base applies to
+    # non-compensation Montana spend only; compensation earns its own per-category credits, and every addition is limited to a 35% aggregate of base investment (SUBSET_COMBINED_RATE_CAPS).
+    "us_mt_media_act_tax_credit": (
+        EligibleSubsetUpliftRule(
+            "compensation_credits", .20, kind="compensation_credits", bound_rate=0.30,
+            personnel_categories=frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"}),
+            compensation_credits=(
+                ("us_mt_resident_crew_compensation_usd", "us_mt_resident_crew_persons", 0.25, 150_000.0, None),            # (3)(b)(i): 25%, not above a USD 150,000 credit per person
+                ("us_mt_nonresident_crew_compensation_usd", "us_mt_nonresident_crew_persons", 0.15, 150_000.0, None),     # (3)(b)(ii): 15% where Montana tax is withheld, USD 150,000 per person
+                ("us_mt_talent_compensation_usd", "us_mt_talent_persons", 0.20, None, 7_500_000.0),                       # (3)(b)(iii): 20% of the first USD 7.5 million per actor, director, producer or writer
+                ("us_mt_student_compensation_usd", "us_mt_student_persons", 0.30, 50_000.0, None),                        # (3)(b)(iv): 30% for an enrolled student, USD 50,000 per student
+                ("us_mt_veteran_tribal_compensation_usd", "us_mt_veteran_tribal_persons", 0.30, 150_000.0, None),         # (3)(b)(v): 30% for a resident veteran or enrolled tribal member, USD 150,000 per person
+            ),
+            source_ref="MCA 15-31-1007(3)(b)(i)-(v) and 15-31-1003(13)(b)(i): 'production expenditure' does not include compensation, which earns 25% (resident crew), 15% (non-resident crew with Montana tax "
+                       "withheld), 20% of the first USD 7.5 million (actors, directors, producers, writers with Montana tax withheld), 30% (students, USD 50,000 each) or 30% (resident veterans and tribal "
+                       "members, USD 150,000 each) of compensation; a person counts in one category only (students and veterans exclude the others)"),
+        EligibleSubsetUpliftRule(
+            "college_payments", .10, kind="rate_on_amount", amount_fact="us_mt_college_campus_payments_usd",
+            source_ref="MCA 15-31-1007(3)(b)(vi): an additional 10% of payments to a Montana college or university for stage rentals, equipment rentals or location fees for filming on campus"),
+        EligibleSubsetUpliftRule(
+            "studio_rental", .10, kind="rate_on_amount", amount_fact="us_mt_studio_rental_expenditure_usd", day_numerator_fact="us_mt_studio_rental_days", min_numerator_days=20,
+            source_ref="MCA 15-31-1007(3)(b)(vii): an additional 10% of all in-studio facility and equipment rental expenditures incurred in Montana for a production that rents a studio for 20 days or more"),
+        EligibleSubsetUpliftRule(
+            "underserved_area", .05, kind="rate_on_amount", amount_fact="us_mt_underserved_area_expenditure_usd",
+            source_ref="MCA 15-31-1007(3)(b)(viii): an additional 5% for production expenditures made in an underserved area (a county where 14% or more of people are in poverty, 15-31-1003)"),
+        EligibleSubsetUpliftRule(
+            "montana_screen_credit", .05, kind="points_on_base", prerequisite_fact="us_mt_screen_credit_furnished_confirmed",
+            source_ref="MCA 15-31-1007(3)(b)(ix): an additional 5% of the base investment when the state-certified production includes a Montana screen credit furnished by the state (15-31-1004(7))"),
+        EligibleSubsetUpliftRule(
+            "first_credit_year", .0, kind="year_gate", day_numerator_fact="us_mt_media_expenditure_year", min_year=2031,
+            source_ref="Montana Department of Revenue MEDIA credit page (read 2026-10-14): all of the USD 12 million annual limit goes to approved 2024 productions through 2030 and part of 2031, so 'companies will be "
+                       "eligible to start applying for credit for expenses incurred and compensation paid in 2031'; 'no credit will be approved' for productions that filmed or were approved after December 31, 2024 "
+                       "(an agency position implementing MCA 15-31-1010(2)(b), distinct from Commerce's certification pause, which states no end date)"),
+    ),
+    # Saskatchewan Feature Film & Television Production Grant Guidelines (approved April 1, 2026; Bonuses added July 20, 2026; creativesask.ca, read 2026-10-14). Zero guaranteed floor: a discretionary grant.
+    "ca_sk_creative_saskatchewan_grant": (
+        EligibleSubsetUpliftRule(
+            "activity_test", .0, kind="share_gate", day_numerator_fact="ca_sk_principal_photography_days_in_sk", day_denominator_fact="ca_sk_principal_photography_days_total", min_share=0.51,
+            source_ref="Creative Saskatchewan FFTV Guidelines, Bonuses, General Bonus Eligibility: live action or scripted projects need at least 51% of principal photography days completed in Saskatchewan (documentary: "
+                       "51% of days or of post-production spend; animation: 51% of principal animation days - stated through the same day counts)"),
+        EligibleSubsetUpliftRule(
+            "saskatchewan_stream", .05, kind="points_on_base", prerequisite_fact="ca_sk_saskatchewan_stream_confirmed", excluded_fact="ca_sk_service_production_stream_confirmed",
+            source_ref="Creative Saskatchewan FFTV Guidelines: Saskatchewan Stream 30% of eligible Saskatchewan expenditures against the Service Production Stream 25% (applicant incorporated in Saskatchewan with its head office there "
+                       "and substantial ownership control by Saskatchewan residents; copyright share proportional to funding)"),
+        EligibleSubsetUpliftRule(
+            "rural_bonus", .05, kind="share_points", day_numerator_fact="ca_sk_days_50km_outside_regina_saskatoon", day_denominator_fact="ca_sk_principal_photography_days_total", min_share=0.5, share_exclusive=True,
+            gate_rule_id="activity_test",
+            source_ref="Creative Saskatchewan FFTV Guidelines, Rural Bonus +5%: the majority (more than half) of principal photography days occur at least 50 km outside Regina or Saskatoon, measured from the centre-most point"),
+        EligibleSubsetUpliftRule(
+            "post_production_bonus", .05, kind="points_on_base", prerequisite_fact="ca_sk_majority_post_spend_in_sk_confirmed", gate_rule_id="activity_test",
+            source_ref="Creative Saskatchewan FFTV Guidelines, Saskatchewan Post Production Bonus +5%: the majority of the post-production spend is incurred in Saskatchewan; it applies to ALL eligible expenses, not only post"),
+        EligibleSubsetUpliftRule(
+            "production_volume_bonus", .10, kind="points_on_base", prerequisite_fact="ca_sk_volume_threshold_confirmed", gate_rule_id="activity_test",
+            source_ref="Creative Saskatchewan FFTV Guidelines, Saskatchewan Production Volume Bonus +10%: a producer significantly involved in at least two eligible completed FFTV projects with combined eligible "
+                       "Saskatchewan spend of at least CAD 1.5 million in the current and three prior fiscal years, the projects meeting the activity test"),
+    ),
     # Arkansas Ark. Code 15-4-2005 (Act 517 of 2023): the add-ons (+10 below-the-line Arkansas resident / veteran payroll and veteran-owned small business spend, +5 Tier 3/4 county, +5 multi-project) are
     # capped at 30% of the expenditure in total, so on any expenditure they can add at most 5 points to the 25% base; per-line evidenced portions refine the bound (uplift_basis).
     "us_ar_digital_motion_picture_incentive": (
@@ -3312,6 +3379,51 @@ SUBSET_COMBINED_RATE_CAPS: dict[str, tuple[float, str]] = {
     "ca_nb_film_tax_credit": (0.35, "LIFT 2026/2027 Guidelines, Stream 2: a Base Grant of up to 25% plus Stackable Bonuses 'to a combined total of 35% of Total NB Spend'"),
     "us_ar_digital_motion_picture_incentive": (0.30, "Ark. Code 15-4-2005(f): 'The maximum total tax incentives that shall be claimed for an expenditure under this section is thirty percent (30%) of the expenditure'"),
     "us_mo_motion_media_production_tax_credit": (0.42, "RSMo 135.750 subsection 3: 20% + four 5-point increases + 10% of the 20% base credit for a second-, third- or fourth-class county = 42%"),
+    "us_mt_media_act_tax_credit": (0.35, "MCA 15-31-1007(3)(a): the credit 'may not in the aggregate exceed 35% of the production company's base investment in the tax year' (base investment = production expenditures and compensation incurred in Montana, 15-31-1003)"),
+    "ca_sk_creative_saskatchewan_grant": (0.40, "Creative Saskatchewan FFTV Guidelines (approved April 1, 2026), Bonuses: total funding including bonuses is capped at 40% (Saskatchewan Stream) and 35% (Service Production Stream) of eligible Saskatchewan expenditures; the 35% Service cap applies once that stream is stated"),
+}
+#: A combined ceiling that is lower once a stream / scenario fact is stated: slug -> (stated fact, lower ceiling).
+SUBSET_COMBINED_RATE_CAP_OVERRIDES: dict[str, tuple[str, float]] = {
+    "ca_sk_creative_saskatchewan_grant": ("ca_sk_service_production_stream_confirmed", 0.35),
+}
+
+
+#: Per-individual incentive ceilings stated by a program in its native currency (NA-RECONCILIATION-19): the incentive attributable to one individual's compensation may not exceed the cap, so an identified
+#: payee's compensation above cap / rate is not eligible. (slug -> (cap amount, currency, categories, source)).
+SUBSET_INDIVIDUAL_INCENTIVE_CAPS: dict[str, tuple[float, str, frozenset[str], str]] = {
+    "ca_ns_production_incentive_fund": (
+        150_000.0, "CAD", frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"}),
+        "NSFPIF Guidelines (April 1, 2024) s.3.2(d): no individual may directly or indirectly receive pay budgeted or paid from the Fund greater than $150,000 per project; the cap is the incentive that results when "
+        "the eligible incentive percentage is applied to fee payments to an individual (a 25% company: CAD 600,000 of eligible compensation)"),
+}
+
+#: Eligible deemed spend added to the host's base (NA-RECONCILIATION-19): slug -> (stated amount fact, maximum share of eligible in-province spend, source).
+SUBSET_DEEMED_SPEND: dict[str, tuple[str, float, str]] = {
+    "ca_nb_film_tax_credit": (
+        "ca_nb_eligible_deemed_spend_usd", 0.15,
+        "LIFT 2026/2027 Guidelines: Total NB Spend 'may include up to 15% Eligible Deemed Spend' (costs planned outside New Brunswick, not above-the-line, from the Deemed Spend Worksheet; 'EDS can represent up to "
+        "15% of Eligible NB Spend'); read as 15% of the in-province eligible spend, the larger of the two possible readings, so it only ever bounds the potential"),
+}
+
+#: Stated amounts removed from the host's base before any point applies (Nova Scotia): slug -> ((stated amount fact, source), ...).
+SUBSET_BASE_DEDUCTIONS: dict[str, tuple[tuple[str, str], ...]] = {
+    "ca_ns_production_incentive_fund": (
+        ("ca_ns_ineligible_supplier_spend_usd",
+         "NSFPIF Guidelines s.4(a), (e): Eligible Nova Scotia Costs are goods or services purchased from a Nova Scotia-based supplier with a permanent physical establishment in Nova Scotia and supplied, receipted, consumed "
+         "or performed there; fees subcontracted by Nova Scotia companies to out-of-province individuals and organizations, in-kind contributions and capital items are not eligible (s.4(d), (e))"),
+        ("ca_ns_equity_tax_credit_financing_usd",
+         "NSFPIF Guidelines s.3.2(b): the financing/investment received from a corporation registered under the Equity Tax Credit Act (Nova Scotia) that made a specified issue after June 30, 2015 is deducted from Eligible Nova Scotia Costs"),
+    ),
+}
+
+#: A smaller-budget stream of the same program, selected by the production's total budget in the program's currency (NA-RECONCILIATION-19).
+SUBSET_ALTERNATE_STREAMS: dict[str, dict] = {
+    "ca_nb_film_tax_credit": {
+        "currency": "CAD", "budget_below_native": 400_000.0, "rate": 0.30, "grant_cap_native": 100_000.0, "min_spend_share": 0.25,
+        "source": "LIFT 2026/2027 Guidelines, Stream 1 Micro Production: a grant of up to 30% of Total NB Spend to a maximum of CAD 100,000 for Total Budgets under CAD 400,000; NB Spend at least 25% of the total "
+                  "budget; no stackable bonuses (Stream 2 Major Production covers budgets over CAD 400,000: base up to 25% plus bonuses, NB Spend at least 20%)",
+        "major_min_spend_share": 0.20,
+    },
 }
 
 

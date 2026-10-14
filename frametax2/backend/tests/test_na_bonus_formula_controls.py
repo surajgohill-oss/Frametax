@@ -111,7 +111,7 @@ def nb(**kw):
 def test_new_brunswick_is_potential_only_at_the_35_percent_combined_ceiling_until_facts_are_stated():
     base = nb()
     assert base.executable and base.incentive_floor_usd == 0.0
-    assert base.incentive_ceiling_usd == pytest.approx(35 * PT)                                  # 25 + 3 + 4 + 3, within the 35% cap
+    assert base.incentive_ceiling_usd == pytest.approx(35 * PT * 1.15)                           # 25 + 3 + 4 + 3 = 35% of Total NB Spend, which may include up to 15% deemed spend (NA-RECONCILIATION-19)
 
 
 @pytest.mark.parametrize("rural,remote,total,points", [
@@ -124,14 +124,14 @@ def test_new_brunswick_is_potential_only_at_the_35_percent_combined_ceiling_unti
 def test_new_brunswick_rural_remote_bonus_uses_the_highest_band_holding_half_the_days(rural, remote, total, points):
     stated = nb(amounts={TOT: total, RUR: rural, REM: remote})
     # HOD (+3) and NB Made (+3) stay unknown bounds; the rural/remote bonus is settled by the stated days
-    assert stated.incentive_ceiling_usd == pytest.approx((25 + 3 + points + 3) * PT)
+    assert stated.incentive_ceiling_usd == pytest.approx((25 + 3 + points + 3) * PT * 1.15)
 
 
 def test_new_brunswick_made_needs_two_stated_criteria_and_stated_facts_cannot_lower_a_bound_they_do_not_contradict():
     one = nb(facts={MADE[0]})
-    assert one.incentive_ceiling_usd == pytest.approx(35 * PT)
+    assert one.incentive_ceiling_usd == pytest.approx(35 * PT * 1.15)
     two = nb(facts={MADE[0], MADE[1], HODB}, amounts={TOT: 20, RUR: 0, REM: 10})
-    assert two.incentive_ceiling_usd == pytest.approx(35 * PT) and two.incentive_floor_usd == 0.0
+    assert two.incentive_ceiling_usd == pytest.approx(35 * PT * 1.15) and two.incentive_floor_usd == 0.0
 
 
 # ── Missouri: each stated fact adds its points to the 20% base ───────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ def test_arkansas_addons_are_at_most_five_points_over_the_base_and_per_line_port
 
 def test_the_combined_caps_are_the_programs_own_statements():
     from app.data.program_rate_rules import SUBSET_COMBINED_RATE_CAPS
-    assert {k: v[0] for k, v in SUBSET_COMBINED_RATE_CAPS.items()} == {NB: 0.35, AR: 0.30, MO: 0.42}
+    assert {k: v[0] for k, v in SUBSET_COMBINED_RATE_CAPS.items()} == {NB: 0.35, AR: 0.30, MO: 0.42, "us_mt_media_act_tax_credit": 0.35, "ca_sk_creative_saskatchewan_grant": 0.40}
 
 
 def test_every_new_formula_input_has_a_producer_writer():

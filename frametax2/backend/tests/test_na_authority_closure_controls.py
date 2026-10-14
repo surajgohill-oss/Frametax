@@ -178,10 +178,12 @@ def test_texas_award_numbers_have_a_validated_numeric_writer():
     # NA-RECONCILIATION-18 restatement: the Nova Scotia set grows by the shooting-length, Head-of-Department and performer counts; New Brunswick day counts and the CPTC cost-base amounts join.
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_ns_")} == {
         "ca_ns_principal_photography_days_total", "ca_ns_principal_photography_days_100_to_150km", "ca_ns_principal_photography_days_over_150km", "ca_ns_principal_photography_days_in_ns",
-        "ca_ns_hod_positions_filled", "ca_ns_hod_positions_held_by_ns_residents", "ca_ns_principal_performers_total", "ca_ns_principal_performers_ns_residents"}
-    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_nb_")} == {"ca_nb_principal_photography_days_total", "ca_nb_days_rural_30_to_150km", "ca_nb_days_remote_151km_plus"}
+        "ca_ns_hod_positions_filled", "ca_ns_hod_positions_held_by_ns_residents", "ca_ns_principal_performers_total", "ca_ns_principal_performers_ns_residents",
+        "ca_ns_ineligible_supplier_spend_usd", "ca_ns_equity_tax_credit_financing_usd"}
+    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_nb_")} == {"ca_nb_principal_photography_days_total", "ca_nb_days_rural_30_to_150km", "ca_nb_days_remote_151km_plus", "ca_nb_eligible_deemed_spend_usd"}
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_federal_cptc_")} == {"ca_federal_cptc_assistance_usd", "ca_federal_cptc_contingent_liabilities_usd"}
-    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_", "ca_ns_", "ca_nb_", "ca_federal_cptc_"))}
+    # NA-RECONCILIATION-19: Saskatchewan day counts, Montana categories / additions / expenditure year, New Brunswick deemed spend and the Nova Scotia non-eligible amounts join.
+    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_", "ca_ns_", "ca_nb_", "ca_federal_cptc_", "ca_sk_", "us_mt_"))}
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_awarded_rate_pct"] == (0.0, 0.31), "a fraction within the 31% ceiling, as the RateRule validates it"
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_resident_crew_pct"] == (0.0, 100.0)
 

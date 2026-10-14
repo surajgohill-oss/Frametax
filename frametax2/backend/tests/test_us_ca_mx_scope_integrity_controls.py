@@ -56,32 +56,37 @@ def test_new_brunswick_is_a_discretionary_lift_grant_with_ceilings_and_a_company
     # consider "overall demand and available funds"; Company Cap of $2M. Every tier is therefore a ceiling with an unresolved discretion condition and no guaranteed floor. (Supersedes the
     # 2017-2018 THC guidelines this control once pinned: 25% / 30% and an 800,000 feature maximum.)
     doc = get_doctrine("ca_nb_film_tax_credit")
-    assert {round(t.rate, 2) for t in doc.tiers} == {0.25, 0.35}
+    # Restated in NA-RECONCILIATION-18: the second 35% ceiling tier was replaced by the stackable-bonus rules under a 35% combined cap (SUBSET_COMBINED_RATE_CAPS); the base tier is the 25% Base Grant.
+    assert {round(t.rate, 2) for t in doc.tiers} == {0.25}
     assert all(t.is_band_ceiling and any(c.kind == "discretionary_band" for c in t.conditions) for t in doc.tiers)
     seg = _price("CA-NB", "ca_nb_film_tax_credit", 2_000_000.0)
     # Served as POTENTIAL ONLY (NA-RECONCILIATION-12): zero guaranteed, the ceiling shown as the maximum, the award condition still unresolved.
     assert seg.executable and seg.is_band_ceiling and seg.ceiling_requires_confirmation, "a discretionary maximum is conditional potential, never guaranteed"
-    assert seg.incentive_floor_usd == 0.0 and seg.incentive_ceiling_usd == pytest.approx(0.35 * 2_000_000.0)       # 35% combined LIFT ceiling x 2,000,000
+    # NA-RECONCILIATION-19: Total NB Spend may include up to 15% eligible deemed spend, so the unstated-fact maximum is 35% x 2,000,000 x 1.15 = 805,000 (it was 700,000 before deemed spend was modelled).
+    assert seg.incentive_floor_usd == 0.0 and seg.incentive_ceiling_usd == pytest.approx(0.35 * 2_000_000.0 * 1.15)
     assert "no guaranteed floor" in " ".join(seg.notes) or "ZERO" in " ".join(seg.notes)
     from app.data.program_rate_rules import get_incentive_value_cap
     cap = get_incentive_value_cap("ca_nb_film_tax_credit")
     assert cap.cap_currency == "CAD" and cap.cap_native_amount == 2_000_000.0
 
 
-def test_saskatchewan_provenance_changes_the_knowledge_axis_only_and_the_grant_stays_display_only_zero_guaranteed():
-    # Existing discretionary-program policy (_B1_DISCRETIONARY_RULING): the 2026/27 Creative Saskatchewan grant is assessed and selective. Structured provenance is the knowledge axis; the economic axis is unchanged.
+def test_saskatchewan_provenance_changes_the_knowledge_axis_only_and_the_grant_is_visible_zero_guaranteed_potential():
+    # Restated in NA-RECONCILIATION-19. The exact restriction that was lifted: _B1_DISCRETIONARY_RULING['ca_sk_production_grant'] = DISPLAY_ONLY_ZERO_GUARANTEED, enforced through economic_block_for_program(), kept an
+    # assessed, selective grant out of the pricing kernel. The entry is removed, so the grant is priced like New Brunswick and Arkansas: potential only, a ZERO guaranteed floor, the 25% Service Production Stream base
+    # plus stated-fact additions to the 40% / 35% totals. Provenance is still the knowledge axis only; the project's discretionary policy still governs inclusion.
     from app.data import authority_coverage_registry as acr
     from app.data import program_authority_provenance as pa
-    assert acr._B1_DISCRETIONARY_RULING["ca_sk_production_grant"] == "DISPLAY_ONLY_ZERO_GUARANTEED"
-    assert acr.economic_block_for_program("ca_sk_creative_saskatchewan_grant") is not None, "the economic block must survive the provenance change"
+    assert "ca_sk_production_grant" not in acr._B1_DISCRETIONARY_RULING
+    assert acr.economic_block_for_program("ca_sk_creative_saskatchewan_grant") is None
     from app.services.canonical_evaluation import _discretionary_policy_resolve, _is_discretionary_program
     for slug in ("ca_sk_creative_saskatchewan_grant", "ca_nb_film_tax_credit", "us_ar_digital_motion_picture_incentive"):
         assert _is_discretionary_program(slug), f"{slug} is gated by the existing discretionary-program policy"
-    assert _discretionary_policy_resolve("ca_sk_creative_saskatchewan_grant", {}) == "include"                      # default unchanged: no economics change
+    assert _discretionary_policy_resolve("ca_sk_creative_saskatchewan_grant", {}) == "include"
     assert _discretionary_policy_resolve("ca_sk_creative_saskatchewan_grant", {"discretionary_policy_default": "exclude"}) == "exclude"   # the project policy governs, not the provenance
     assert pa.authority_disposition("ca_sk_creative_saskatchewan_grant") == pa.AUTHORITY_VERIFIED_PRICEABLE
     seg = _price("CA-SK", "ca_sk_creative_saskatchewan_grant", 2_000_000.0)
-    assert seg.incentive_floor_usd in (None, 0, 0.0) and not seg.executable
+    assert seg.executable and seg.incentive_floor_usd == 0.0 and seg.ceiling_requires_confirmation
+    assert seg.incentive_ceiling_usd == pytest.approx(0.40 * 2_000_000.0), "25% base + Saskatchewan Stream and bonuses, clipped at the 40% total"
 
 
 def test_no_scoped_tier_is_a_band_ceiling_whose_only_conditions_are_already_satisfied_type_gates():

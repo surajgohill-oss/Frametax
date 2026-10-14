@@ -557,7 +557,7 @@ def _resolve_incentive_dollar_cap(
 #: now that the shooting-day credits are subset-priced on top of it.
 #: ca_nb_film_tax_credit and us_ar_digital_motion_picture_incentive (NA-RECONCILIATION-18): discretionary ceiling-only grants whose 'up to' base is the resolved ceiling; their stackable
 #: bonuses / add-ons are subset-priced on top of it under SUBSET_COMBINED_RATE_CAPS, so the potential starts from the ceiling base, never the (zero) floor.
-_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit", "ca_bc_film_tv_tax_credit", "ca_nb_film_tax_credit", "us_ar_digital_motion_picture_incentive"})
+_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit", "ca_bc_film_tv_tax_credit", "ca_nb_film_tax_credit", "us_ar_digital_motion_picture_incentive", "us_mt_media_act_tax_credit", "ca_sk_creative_saskatchewan_grant"})
 
 #: Programs with an elective alternative credit on a different base: slug -> (alternative rate on total qualifying spend, label).
 _ALTERNATIVE_ELECTION_PROGRAMS = {
@@ -631,7 +631,48 @@ def _day_ratio_eligibility(rule, amounts):
     return num, den, ok
 
 
-def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, production_type):
+def _share_gate_state(rule, amounts):
+    """True / False / None for a stated share test (>= min_share, or > when share_exclusive); None while an input is unstated."""
+    from fractions import Fraction
+    num = _stated_count(amounts, rule.day_numerator_fact, "numerator count")
+    den = _stated_count(amounts, rule.day_denominator_fact, "denominator count")
+    if den is not None and den <= 0:
+        raise ValueError(f"{rule.day_denominator_fact}: must be at least 1 when stated")
+    if num is not None and den is not None and num > den:
+        raise ValueError(f"{rule.day_numerator_fact}: {num} cannot exceed the {den} stated in {rule.day_denominator_fact}")
+    if num is None or den is None:
+        return None
+    share, floor_share = Fraction(num, den), Fraction(str(rule.min_share))
+    return share > floor_share if rule.share_exclusive else share >= floor_share
+
+
+def _apply_individual_incentive_cap(individual, lines, qualifying, amounts, qle, floor_total, potential_total, fx_context):
+    """Reduce a program's incentive by the part of each IDENTIFIED individual's incentive above the program's per-individual cap (Nova Scotia s.3.2(d)): the individual's incentive is the incentive rate x the
+    individual's qualifying compensation, so the reduction is max(0, rate x compensation - cap). Compensation is grouped by the payee ordinal of lines whose payee is identified with complete compensation
+    (ny_atl_payee:<line_id> facts); an unidentified line is never grouped and never capped (an unresolved fact, not a refusal)."""
+    from app.calculators import apply_fx_rates
+    from app.calculators.production_normalization import build_fx_context
+    cap_native, currency, categories, _source = individual
+    conv, res = apply_fx_rates.convert_to_usd_ctx(cap_native, currency, fx_context if fx_context is not None else build_fx_context())
+    if conv is None:
+        return floor_total, potential_total
+    cap_usd = conv.target_amount
+    by_payee: dict[int, float] = {}
+    for line in lines:
+        ordinal = (amounts or {}).get(f"ny_atl_payee:{line.line_id}")
+        if ordinal is None or (line.spend_category or "") not in categories:
+            continue
+        by_payee[int(ordinal)] = by_payee.get(int(ordinal), 0.0) + qualifying.get(line.line_id, 0.0)
+    if not by_payee or qle <= 0:
+        return floor_total, potential_total
+
+    def reduced(total):
+        rate = total / qle
+        return total - sum(max(0.0, rate * comp - cap_usd) for comp in by_payee.values())
+    return reduced(floor_total), reduced(potential_total)
+
+
+def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, production_type, qualified_by_category=None):
     """(confirmed_usd, potential_usd, unresolved_note | None) for one statutory-formula uplift of a British Columbia host credit.
 
     The base is the host credit's OWN qualified-labour basis (`qle`: assistance and the 60% cost cap already applied by the host), so the host dependency is inherent: a rule lives under, and is
@@ -765,6 +806,42 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         else:
             both = (max(short_i, short_ii), min(short_i, short_ii))                 # floor takes the worse stream, potential the better
         return -round(rule.rate * both[0] * qle, 2), -round(rule.rate * both[1] * qle, 2), None
+    if rule.kind == "rate_on_amount":
+        if rule.day_numerator_fact:
+            days = _stated_count(amounts, rule.day_numerator_fact, "days")
+            if days is not None and days < rule.min_numerator_days:
+                return 0.0, 0.0, None
+        stated = _stated_amount(amounts, rule.amount_fact)
+        if stated is None or (rule.day_numerator_fact and _stated_count(amounts, rule.day_numerator_fact, "days") is None):
+            return 0.0, round(rule.rate * qle, 2), bound_note(f"'{rule.amount_fact}'" + (f" and '{rule.day_numerator_fact}'" if rule.day_numerator_fact else "") + f" are not stated; bounded at {rule.rate:.1%} of the eligible base")
+        amount = round(rule.rate * min(stated, qle), 2)
+        return amount, amount, None
+    if rule.kind == "compensation_credits":
+        personnel = sum(v for c, v in (qualified_by_category or {}).items() if c in rule.personnel_categories)
+        if personnel <= 0:
+            return 0.0, 0.0, None
+        replaced = -rule.rate * personnel                                  # compensation is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)): the host's base rate does not apply to it
+        stated_credit = stated_comp = 0.0
+        for comp_fact, count_fact, rate, credit_cap, comp_cap in rule.compensation_credits:
+            comp = _stated_amount(amounts, comp_fact)
+            if comp is None:
+                continue
+            count = _stated_count(amounts, count_fact, "persons")
+            base = comp if (count is None or comp_cap is None) else min(comp, count * comp_cap)
+            credit = rate * base
+            if count is not None and credit_cap is not None:
+                credit = min(credit, count * credit_cap)
+            stated_credit += credit
+            stated_comp += comp
+        if stated_comp > personnel + 0.005:
+            raise ValueError(f"the stated compensation {stated_comp:,.2f} exceeds the {personnel:,.2f} of qualifying personnel spend in the budget")
+        bound = rule.bound_rate * max(0.0, personnel - stated_comp)         # compensation whose person status is not stated: the highest category rate is the upper bound
+        floor_delta = replaced + stated_credit
+        potential_delta = replaced + stated_credit + bound
+        note = None if (stated_comp >= personnel - 0.005) else (
+            f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no stated category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member); "
+            f"bounded at the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
+        return round(floor_delta, 2), round(potential_delta, 2), note
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)
         if se is None:
@@ -791,7 +868,7 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
 
 
 def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type, amount_facts, evidenced_facts, gross_budget_usd=None, ceiling_rate=None,
-                          floor_base_usd=None, potential_base_usd=None, qle_basis_usd=None):
+                          floor_base_usd=None, potential_base_usd=None, qle_basis_usd=None, fx_context=None):
     """Price only evidenced portions; missing portions remain disclosed bounds.
 
     A line's uplift basis is confirmed when its statutory prerequisite fact is evidenced AND either the rule's whole-base fact is
@@ -817,12 +894,34 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     potential_parts = {}
     formula_floor = 0.0
     formula_potential = 0.0
+    year_gate_failed = None
     conditions = []
     rules_by_id = {r.uplift_id: r for r in rules}
+    qualified_by_category: dict[str, float] = {}
+    for line in lines:
+        qualified_by_category[line.spend_category or "miscellaneous"] = qualified_by_category.get(line.spend_category or "miscellaneous", 0.0) + qualifying.get(line.line_id, 0.0)
     for rule in rules:
+        if rule.kind == "share_gate":
+            continue                                             # a gate prices nothing itself; the rules that name it read its state
+        if rule.kind == "year_gate":
+            year = _stated_count(amounts, rule.day_numerator_fact, "expenditure year")
+            if year is None:
+                conditions.append({"condition_id": f"{slug}:{rule.uplift_id}:timing", "description": rule.source_ref, "kind": "statutory_formula_input", "condition_state": "UNRESOLVED",
+                                   "satisfied": None, "note": f"the expenditure year ('{rule.day_numerator_fact}') is not stated; the agency's first credit year is {rule.min_year}"})
+            elif year < rule.min_year:
+                year_gate_failed = f"{rule.uplift_id}: expenditures in {year} are before the first credit year {rule.min_year} ({rule.source_ref})"
+            continue
         if rule.kind != "subset":
             # Statutory-formula kinds (NA-RECONCILIATION-16): priced on the host credit's own basis, outside the per-line subset machinery and its claim-selection check.
-            confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type)
+            confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type, qualified_by_category=qualified_by_category)
+            if rule.gate_rule_id:
+                gate = _share_gate_state(rules_by_id[rule.gate_rule_id], amounts)
+                if gate is False:
+                    confirmed_amt = potential_amt = 0.0
+                    note = None
+                elif gate is None:
+                    confirmed_amt = 0.0
+                    note = (note + "; " if note else f"{rule.uplift_id}: ") + f"the {rule.gate_rule_id.replace('_', ' ')} is not stated ({rules_by_id[rule.gate_rule_id].source_ref})"
             formula_floor += confirmed_amt
             formula_potential += potential_amt
             if note:
@@ -891,11 +990,72 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     potential_base = potential_base_usd if potential_base_usd is not None else qpe * max(base_rate, ceiling_rate or 0.0)
     floor_total = floor_base + sum(floor_parts.values()) + formula_floor
     potential_total = potential_base + sum(potential_parts.values()) + formula_potential
-    from app.data.program_rate_rules import SUBSET_COMBINED_RATE_CAPS
+    from app.data.program_rate_rules import (SUBSET_ALTERNATE_STREAMS, SUBSET_COMBINED_RATE_CAP_OVERRIDES, SUBSET_COMBINED_RATE_CAPS, SUBSET_DEEMED_SPEND,
+                                             SUBSET_INDIVIDUAL_INCENTIVE_CAPS)
+    # Eligible deemed spend enlarges the base every point applies to (New Brunswick): scale the whole result; the combined ceiling is a share of that enlarged base.
+    scale = 1.0
+    scale_potential = 1.0
+    deemed = SUBSET_DEEMED_SPEND.get(slug)
+    if deemed is not None and qle_basis_usd:
+        stated_deemed = _stated_amount(amounts, deemed[0])
+        scale_potential = 1.0 + (deemed[1] if stated_deemed is None else min(stated_deemed, deemed[1] * qle_basis_usd) / qle_basis_usd)
+        scale = 1.0 + (0.0 if stated_deemed is None else min(stated_deemed, deemed[1] * qle_basis_usd) / qle_basis_usd)
+        floor_total *= scale
+        potential_total *= scale_potential
+        if stated_deemed is None:
+            conditions.append({"condition_id": f"{slug}:deemed_spend", "description": deemed[2], "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
+                               "note": f"'{deemed[0]}' is not stated; the potential allows up to {deemed[1]:.0%} of eligible spend as deemed spend"})
+    # Stated amounts that are not eligible costs (Nova Scotia supplier residency, s.3.2(b)) shrink the base every point applies to; unstated they are presumed absent and disclosed.
+    from app.data.program_rate_rules import SUBSET_BASE_DEDUCTIONS
+    total_deducted = 0.0
+    for fact_key, source in SUBSET_BASE_DEDUCTIONS.get(slug, ()):
+        stated_ded = _stated_amount(amounts, fact_key)
+        if stated_ded is None:
+            conditions.append({"condition_id": f"{slug}:{fact_key}", "description": source, "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
+                               "note": f"'{fact_key}' is not stated; the base is presumed to hold no such amount (disclosed, not priced)"})
+        elif qle_basis_usd:
+            total_deducted += stated_ded
+    if total_deducted and qle_basis_usd:
+        if total_deducted > qle_basis_usd + 0.005:
+            raise ValueError(f"the stated non-eligible amounts total {total_deducted:,.2f} and exceed the {qle_basis_usd:,.2f} eligible base")
+        factor = max(0.0, 1.0 - total_deducted / qle_basis_usd)                 # one factor for all deductions, so each amount leaves the base exactly once
+        floor_total *= factor
+        potential_total *= factor
+        scale *= factor
+        scale_potential *= factor
     capped = SUBSET_COMBINED_RATE_CAPS.get(slug)
     if capped is not None and qle_basis_usd:
-        limit = capped[0] * qle_basis_usd                                       # the program's stated combined ceiling on base plus additions
-        floor_total, potential_total = min(floor_total, limit), min(potential_total, limit)
+        cap_rate = capped[0]
+        override = SUBSET_COMBINED_RATE_CAP_OVERRIDES.get(slug)
+        if override is not None and override[0] in facts:
+            cap_rate = override[1]
+        limit_floor, limit_potential = cap_rate * qle_basis_usd * scale, cap_rate * qle_basis_usd * scale_potential
+        floor_total, potential_total = min(floor_total, limit_floor), min(potential_total, limit_potential)
+    individual = SUBSET_INDIVIDUAL_INCENTIVE_CAPS.get(slug)
+    if individual is not None and qle_basis_usd:
+        floor_total, potential_total = _apply_individual_incentive_cap(individual, lines, qualifying, amounts, qle_basis_usd, floor_total, potential_total, fx_context)
+    stream = SUBSET_ALTERNATE_STREAMS.get(slug)
+    if stream is not None and qle_basis_usd and gross_budget_usd:
+        budget_native = _fx_native_amount(gross_budget_usd, stream["currency"], fx_context)
+        if budget_native is not None and budget_native[0] < stream["budget_below_native"]:
+            from app.calculators import apply_fx_rates
+            from app.calculators.production_normalization import build_fx_context
+            conv, res = apply_fx_rates.convert_to_usd_ctx(stream["grant_cap_native"], stream["currency"], fx_context if fx_context is not None else build_fx_context())
+            micro = stream["rate"] * qle_basis_usd
+            if conv is not None:
+                micro = min(micro, conv.target_amount)
+            if qle_basis_usd < stream["min_spend_share"] * gross_budget_usd:
+                micro = 0.0
+            conditions.append({"condition_id": f"{slug}:micro_stream", "description": stream["source"], "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
+                               "note": f"total budget {budget_native[0]:,.0f} {stream['currency']} is under {stream['budget_below_native']:,.0f}: priced as the Micro Production stream (30%, capped), not the Major stream"})
+            floor_total, potential_total = min(floor_total, micro), micro
+        elif stream.get("major_min_spend_share") and qle_basis_usd < stream["major_min_spend_share"] * gross_budget_usd:
+            potential_total = floor_total = 0.0
+            conditions.append({"condition_id": f"{slug}:major_spend_share", "description": stream["source"], "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None,
+                               "note": f"eligible spend is under {stream['major_min_spend_share']:.0%} of the total budget (Major Production eligibility): no grant is priced"})
+    if year_gate_failed:
+        floor_total = potential_total = 0.0
+        conditions.append({"condition_id": f"{slug}:timing", "description": year_gate_failed, "kind": "statutory_formula_input", "condition_state": "UNRESOLVED", "satisfied": None, "note": year_gate_failed})
     return round(floor_total, 2), round(potential_total, 2), tuple(conditions)
 
 
@@ -2079,7 +2239,7 @@ def price_segment(
             ceiling_rate=rr.modeled_rate if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else None,
             floor_base_usd=floor_incentive_usd,
             potential_base_usd=ceiling_incentive_usd if slug in _CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS else floor_incentive_usd,
-            qle_basis_usd=_host_qualified_labour_basis(rr, floor_incentive_usd, ceiling_incentive_usd, qpe))
+            qle_basis_usd=_host_qualified_labour_basis(rr, floor_incentive_usd, ceiling_incentive_usd, qpe), fx_context=fx_context)
     except ValueError as exc:
         return SegmentEconomics(jurisdiction_code=jurisdiction_code, program_slug=slug,
             claims_incentive=True, allocated_usd=allocated, account_codes=codes,

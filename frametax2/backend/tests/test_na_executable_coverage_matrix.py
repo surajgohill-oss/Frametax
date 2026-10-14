@@ -120,10 +120,13 @@ async def test_the_six_new_states_are_discovered_priced_and_served_with_mfni_unm
 
 
 @pytest.mark.asyncio
-async def test_the_display_only_discretionary_grant_is_served_as_a_zero_guaranteed_disposition_naming_its_stated_rates(matrix):
+async def test_the_saskatchewan_grant_is_visible_zero_guaranteed_potential_not_a_display_only_disposition(matrix):
+    """Restated in NA-RECONCILIATION-19. The earlier pin served Saskatchewan as a display-only disposition under the B1 ruling (_B1_DISCRETIONARY_RULING['ca_sk_production_grant']), which kept an assessed,
+    selective grant out of the pricing kernel and contradicted the policy that floorless discretionary ceilings are served as visible, zero-guaranteed POTENTIAL (as New Brunswick and Arkansas are). The ruling
+    entry is removed; the rate rules carry no floor tier, so nothing is guaranteed."""
     r = next(x for x in matrix["programs"] if x["canonical_slug"] == "ca_sk_creative_saskatchewan_grant")
-    assert r["path"] == "NOT_EXECUTABLE_WITH_REASON" and r["disposition_class"] == "DISCRETIONARY_AWARD_ZERO_GUARANTEED"
-    assert "zero" in r["disposition_headline"] and "25% to 30%" in r["disposition_headline"]
+    assert r["path"] == "EXECUTABLE_POTENTIAL_ONLY" and r["kernel_executable"]
+    assert r["kernel_guaranteed_usd"] == 0.0 and r["kernel_potential_usd"] == pytest.approx(0.40 * 3_000_000.0)
 
 
 @pytest.mark.asyncio

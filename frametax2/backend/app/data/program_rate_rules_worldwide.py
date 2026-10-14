@@ -1167,7 +1167,11 @@ CA_BC_FILM_TV_DOCTRINE = register(DoctrineRecord(
         citation_detail="Income Tax Act (BC) s.80(2), (4), (6), (8); s.79(1) 'qualified BC labour expenditure'; s.83.1",
         effective_date="2025-01-01",
         verified_date="2026-10-13",
-        interpretation_note="Statute text and the official page agree (35%; 40% from 2025-01-01). The 35% is guaranteed once the certificate and corporation facts are stated; the 40% needs the "
+        interpretation_note="SCOPE (NA-RECONCILIATION-19): this record prices the CURRENT regime - Income Tax Act (BC) s.80(2)+(4)+(6) = 35% and, for principal photography that BEGINS after December 31, 2024, s.80(8) = 40%. "
+                             "A production whose photography began from 2016-10-01 through 2024-12-31 is the 35% historical regime (Creative BC: 'principal photography start date after September 30, 2016 and before January 1, 2025, "
+                             "the Basic FIBC rate is 35%'), selected by stating 'ca_bc_film_tv_photography_before_2025_confirmed'; the statute read here is the current consolidation and carries no earlier dates, so rates for "
+                             "photography before 2016-10-01 (and the lower pre-2008 additions of s.80(6)-(7)) are NOT modelled and must not be read from this record. The two statements are mutually exclusive and never mixed in one figure. "
+                             "Statute text and the official page agree (35%; 40% from 2025-01-01). The 35% is guaranteed once the certificate and corporation facts are stated; the 40% needs the "
                              "post-2024 photography fact. The cap uses the total worldwide budget as the cost base (an approximation net of assistance, as for the CPTC).",
     ),
     tiers=(
@@ -7339,12 +7343,16 @@ US_MT_DOCTRINE = register(DoctrineRecord(
         verified_date="2026-10-13",
         interpretation_note="The statute fixes the cap (USD 12 million a calendar year, all of it first allocated to credits approved before December 31, 2024), the base investment threshold (USD 350,000), the sunset (tax year 2045) and "
                             "non-refundability. Because the pre-2025 backlog takes the whole annual limit and Commerce has paused certification, the 20% is a ceiling with an unresolved availability condition and no guaranteed floor. "
-                            "The compensation-based add-ons need payee data the topsheet lacks, so they are disclosed, not priced.",
+                            "NA-RECONCILIATION-19: 'production expenditure' excludes compensation (MCA 15-31-1003(13)(b)(i)); compensation earns per-category credits (25% / 15% / 20% of the first USD 7.5 million / 30% / 30%, with USD 150,000 / 150,000 / "
+                            "none / 50,000 / 150,000 per-person credit limits) and the additions (10% college payments, 10% studio rental of 20 days or more, 5% underserved area, 5% Montana screen credit) are rules priced from stated amounts; "
+                            "the whole credit is limited to 35% of base investment (15-31-1007(3)(a)). TIMING CORRECTED: Commerce's certification pause has no stated end date, and the Department of Revenue states that the first credit "
+                            "year for new expenditures is 2031 (2024 productions take the whole USD 12 million limit through 2030 and part of 2031); an expenditure year before 2031 therefore prices no credit.",
     ),
     tiers=(DoctrineRateTier(tier_id="us-mt-base-20-ceiling", rate=0.20, is_band_ceiling=True,
                              conditions=(RateCondition(
                                  condition_id="us-mt-certification-paused-and-allocation",
-                                 description="Commerce has paused certification applications and the first available credit is not available until 2031; the USD 12 million calendar-year limit is first allocated to credits approved before December 31, 2024 (MCA 15-31-1010(2)(b)(i)), "
+                                 description="CORRECTED 2026-10-14 (NA-RECONCILIATION-19): two separate statements, not one. (1) Commerce has paused acceptance of certification applications (no end date is stated). (2) The Department of Revenue says the first credit "
+                                             "year for new expenditures is 2031: the USD 12 million calendar-year limit is allocated to approved 2024 productions through 2030 and part of 2031 (MCA 15-31-1010(2)(b)(i)), and productions that filmed or were approved after December 31, 2024 get no credit before then; "
                                              "and authorization to apply does not guarantee the credit (15-31-1010(1)(b)).",
                                  quote="Commerce has paused the acceptance of certification applications ... The first available credit will not become available until 2031 (commerce.mt.gov); $12 million is allocated annually for credits approved prior to December 31, 2024 (MCA 15-31-1010(2)(b)(i))",
                                  kind="discretionary_band"),)),),
@@ -7700,7 +7708,7 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
               "Production). Major eligibility: NB spend at least 20% of the total budget, confirmed financing at least 50%, NB copyright ownership at least 33% (not for animation), a New "
               "Brunswick-incorporated applicant with at least 50% New Brunswick-resident shareholders, at least one funding partner confirmed at application; co-productions and service productions are "
               "eligible; Total NB Spend may include up to 15% Eligible Deemed Spend. Company Cap CAD 2,000,000 (28% of the CAD 7 million program budget) per production company including sub-companies; "
-              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. From NA-RECONCILIATION-18 the three stackable bonuses are statutory-formula rules (HOD / lead talent +3 on one stated fact; rural / remote +3 or +4 on stated principal-photography days by distance band, 50%+ inclusive; NB Made +3 on at least two of six stated criteria) added to the 25% base under a 35% combined cap, so the ceiling follows the stated facts and never exceeds 35%. The guidelines "
+              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. From NA-RECONCILIATION-19 Total NB Spend may include up to 15% eligible deemed spend (stated amount or a bounded potential) and a total budget under CAD 400,000 is priced as the Micro Production stream (up to 30%, capped at CAD 100,000, NB spend at least 25% of the budget; Major needs 20%). From NA-RECONCILIATION-18 the three stackable bonuses are statutory-formula rules (HOD / lead talent +3 on one stated fact; rural / remote +3 or +4 on stated principal-photography days by distance band, 50%+ inclusive; NB Made +3 on at least two of six stated criteria) added to the 25% base under a 35% combined cap, so the ceiling follows the stated facts and never exceeds 35%. The guidelines "
               "are silent on federal and other tax credits. SUPERSEDES the 2017-2018 THC guidelines (labour-based 40% / all-spend 25% / 30% incentive, CAD 800,000 feature maximum) for current use.",
     source_ref="nb-thc-lift-production-guidelines-2026-27-primary",
     provenance=SourceProvenance(
@@ -8973,14 +8981,14 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
               "Film, TV and Video guidelines, effective April 1, 2026, creativesask.ca): both streams are 'eligible applicants may apply for' "
               "30% / 25% of all eligible Saskatchewan expenditures up to $5,000,000, 'Funding will be in the form of a grant', assessed by Creative "
               "Saskatchewan, with bonuses to a maximum of 40% (Saskatchewan Stream) and 35% (Service Production Stream). A discretionary, assessed "
-              "grant: it stays display-only (authority_coverage_registry B1 ruling) and is never a guaranteed credit. BONUS STRUCTURE RECOVERED 2026-10-14 (NA-RECONCILIATION-18; Feature Film & Television "
+              "grant: it is never a guaranteed credit (served as zero-guaranteed potential). BONUS STRUCTURE RECOVERED 2026-10-14 (NA-RECONCILIATION-18; Feature Film & Television "
               "Production Grant Guidelines approved April 1, 2026, 'Bonuses' section added July 20, 2026, creativesask.ca): eligibility for every bonus requires a Saskatchewan activity test - live action or "
               "scripted: at least 51% of principal photography days in Saskatchewan; documentary: 51% of principal photography days or 51% of post-production spend; animation: 51% of principal animation "
               "production days. Rural Bonus +5 points (the majority of principal photography days at least 50 km outside Regina or Saskatoon, measured from the centre-most point); Saskatchewan Post Production "
               "Bonus +5 (the majority of post-production spend incurred in Saskatchewan; it applies to ALL eligible expenses, not only post); Saskatchewan Production Volume Bonus +10 (the applicant, as a producer "
               "significantly involved, has at least two eligible completed FFTV projects and CAD 1.5 million of combined eligible Saskatchewan spend in the current and three prior fiscal years, projects "
               "meeting the activity test). Total funding including bonuses is capped at 40% (Saskatchewan Stream) and 35% (Service Production Stream) of eligible Saskatchewan expenditures; every assessment is subject "
-              "to Creative Saskatchewan's final approval. Not priced: the settled B1 ruling keeps the program display-only, so these formulas are recorded here, not armed in the pricing kernel.",
+              "to Creative Saskatchewan's final approval. NA-RECONCILIATION-19: these formulas are armed as statutory-formula rules (SUBSET_UPLIFT_RULES) under a 40% / 35% combined cap; the program is potential-only with a zero guaranteed floor.",
     source_ref="creativesask.ca-fy2026-27-guidelines-primary+hellodarwin.com+grantcompass.ca-saskatchewan",
     provenance=SourceProvenance(
         issuing_authority="Creative Saskatchewan (Government of Saskatchewan Crown corporation)",
@@ -8989,25 +8997,18 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
         effective_date="2026-04-01",
         verified_date="2026-10-13",
         interpretation_note="Discretionary, assessed grant: the 25% / 30% rates are what an applicant may apply for, bonuses to 35% / 40% are not modeled, and the guidelines do not reduce the grant by the "
-                             "federal credits. Provenance is the knowledge axis only; the economic axis stays DISPLAY_ONLY_ZERO_GUARANTEED (authority_coverage_registry _B1_DISCRETIONARY_RULING).",
+                             "federal credits. Provenance is the knowledge axis only. NA-RECONCILIATION-19: the program left the B1 display-only ruling and is served as visible, zero-guaranteed potential like New Brunswick and Arkansas.",
     ),
-    tiers=(DoctrineRateTier(tier_id="ca-sk-service-production-25", rate=0.25, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="ca-sk-saskatchewan-stream-30", rate=0.30, is_band_ceiling=True,
+    # NA-RECONCILIATION-19: a discretionary, assessed grant ('eligible applicants may apply for'; assessed by Creative Saskatchewan; subject to its final approval) is a CEILING with NO guaranteed floor, like New
+    # Brunswick and Arkansas. The Service Production Stream 25% is the base ceiling; the Saskatchewan Stream (+5), the activity test, the three bonuses and the 35% / 40% totals are statutory-formula rules
+    # (program_rate_rules.SUBSET_UPLIFT_RULES / SUBSET_COMBINED_RATE_CAPS). It is served as visible zero-guaranteed potential, never as guaranteed economics.
+    tiers=(DoctrineRateTier(tier_id="ca-sk-service-production-25-ceiling", rate=0.25, is_band_ceiling=True,
                              conditions=(RateCondition(
-                                 condition_id="ca-sk-two-stream-structure",
-                                 description="Two separate streams: "
-                                             "Service Production (25%, "
-                                             "modeled as base -- likely "
-                                             "applicable to foreign "
-                                             "productions) and "
-                                             "Saskatchewan Stream (30%, "
-                                             "modeled as ceiling -- likely "
-                                             "requires local ownership/"
-                                             "content not confirmed this "
-                                             "pass)",
-                                 quote="Saskatchewan Stream... 30%... "
-                                       "Service Production Stream offers "
-                                       "25% (hellodarwin.com)",
+                                 condition_id="ca-sk-assessed-grant-discretion",
+                                 description="The grant is assessed by Creative Saskatchewan ('eligible applicants may apply for ... of all eligible Saskatchewan expenditures'; every assessment is subject to its final review and "
+                                             "approval); funding is available while it lasts. No guaranteed amount exists, so every rate is a ceiling.",
+                                 quote="Service Production Stream: eligible applicants may apply for 25% of all eligible Saskatchewan expenditures; all bonus eligibility assessments, calculations, and approvals "
+                                       "are subject to Creative Saskatchewan's final review and approval (Creative Saskatchewan FFTV Guidelines 2026-27)",
                                  kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(CA_SK_DOCTRINE))

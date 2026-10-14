@@ -49,6 +49,13 @@ NY_EVIDENCED_FACTS = {
     "ca_ns_content_ns_spend_75pct_confirmed": None,
     "ca_ns_content_ns_writer_confirmed": None,
     "ca_ns_content_ns_director_confirmed": None,
+    # Saskatchewan FFTV (2026-27) streams and bonuses
+    "ca_sk_saskatchewan_stream_confirmed": "ca_sk_service_production_stream_confirmed",
+    "ca_sk_service_production_stream_confirmed": "ca_sk_saskatchewan_stream_confirmed",
+    "ca_sk_majority_post_spend_in_sk_confirmed": None,
+    "ca_sk_volume_threshold_confirmed": None,
+    # Montana MEDIA (MCA 15-31-1007(3)(b)(ix))
+    "us_mt_screen_credit_furnished_confirmed": None,
     # New Brunswick LIFT 2026/27 stackable bonuses
     "ca_nb_bonus_hod_lead_talent_30pct_confirmed": None,
     "ca_nb_made_spend_50pct_confirmed": None,
@@ -122,6 +129,22 @@ PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
     "ca_ns_hod_positions_held_by_ns_residents": (0.0, 16.0),
     "ca_ns_principal_performers_total": (1.0, 5000.0),
     "ca_ns_principal_performers_ns_residents": (0.0, 5000.0),
+    # Saskatchewan activity test and rural bonus day counts
+    "ca_sk_principal_photography_days_total": (1.0, 2000.0),
+    "ca_sk_principal_photography_days_in_sk": (0.0, 2000.0),
+    "ca_sk_days_50km_outside_regina_saskatoon": (0.0, 2000.0),
+    # Montana MEDIA compensation categories (USD and persons), additions and the first expenditure year (MCA 15-31-1007(3)(b), Department of Revenue timing)
+    "us_mt_resident_crew_compensation_usd": (0.0, 1e9), "us_mt_resident_crew_persons": (0.0, 5000.0),
+    "us_mt_nonresident_crew_compensation_usd": (0.0, 1e9), "us_mt_nonresident_crew_persons": (0.0, 5000.0),
+    "us_mt_talent_compensation_usd": (0.0, 1e10), "us_mt_talent_persons": (0.0, 5000.0),
+    "us_mt_student_compensation_usd": (0.0, 1e9), "us_mt_student_persons": (0.0, 5000.0),
+    "us_mt_veteran_tribal_compensation_usd": (0.0, 1e9), "us_mt_veteran_tribal_persons": (0.0, 5000.0),
+    "us_mt_college_campus_payments_usd": (0.0, 1e9), "us_mt_studio_rental_expenditure_usd": (0.0, 1e9), "us_mt_studio_rental_days": (0.0, 2000.0),
+    "us_mt_underserved_area_expenditure_usd": (0.0, 1e9), "us_mt_media_expenditure_year": (2025.0, 2100.0),
+    # New Brunswick eligible deemed spend (USD, from the Deemed Spend Worksheet) and Nova Scotia amounts that are not eligible costs
+    "ca_nb_eligible_deemed_spend_usd": (0.0, 1e9),
+    "ca_ns_ineligible_supplier_spend_usd": (0.0, 1e9),
+    "ca_ns_equity_tax_credit_financing_usd": (0.0, 1e9),
     # New Brunswick rural / remote principal photography days (distance from Fredericton, Moncton or Saint John City Hall)
     "ca_nb_principal_photography_days_total": (1.0, 2000.0),
     "ca_nb_days_rural_30_to_150km": (0.0, 2000.0),
@@ -194,7 +217,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if key not in PROGRAM_AMOUNT_FACTS:
             raise ValueError(f"'{key}' is not a settable numeric program fact")
         lo, hi = PROGRAM_AMOUNT_FACTS[key]
-        if key.startswith(("ca_bc_principal_photography_days_", "ca_ns_principal_photography_days_", "ca_ns_hod_", "ca_ns_principal_performers_", "ca_nb_principal_photography_days_", "ca_nb_days_")) and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
+        if key.startswith(("ca_bc_principal_photography_days_", "ca_ns_principal_photography_days_", "ca_ns_hod_", "ca_ns_principal_performers_", "ca_nb_principal_photography_days_", "ca_nb_days_", "ca_sk_principal_photography_days_", "ca_sk_days_", "us_mt_studio_rental_days", "us_mt_media_expenditure_year", "us_mt_resident_crew_persons", "us_mt_nonresident_crew_persons", "us_mt_talent_persons", "us_mt_student_persons", "us_mt_veteran_tribal_persons")) and value is not None and not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and abs(value - round(value)) > 1e-9:
             raise ValueError(f"'{key}' must be a whole number of days")
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
             raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")

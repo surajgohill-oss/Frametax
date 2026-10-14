@@ -252,6 +252,8 @@ PROGRAM_DOCTRINE: dict[str, QualificationDoctrine] = {
     # direct-spend inclusion → OPEN_DEFAULT_INCLUDE. Nonresident-BTL limits
     # are disclosed rate-side conditions, not category exclusions.
     "us_nm_film_credit": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+    # Montana MEDIA credit (NA-RECONCILIATION-19): MCA 15-31-1003(13)(a) lists production expenditures illustratively ("including") and ends with a catch-all, so silence = inclusion; the exclusions are named in (13)(b).
+    "us_mt_media_act_tax_credit": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
 
     # Belgium Tax Shelter: hub.info / scopeinvest.be (production-consultancy
     # secondary sources, corroborating each other): "All production-related
@@ -698,6 +700,13 @@ _GA_LEGAL_EXCLUSION_NOTE = (
     "combined account is conservatively EXCLUDED rather than silently "
     "included. Source: dor.georgia.gov Film Tax Credit list of expenditures."
 )
+# Montana: MCA 15-31-1003(13)(b) says 'production expenditure' does not include (ii) footage shot outside the state, (iii) marketing, (iv) story rights, (v) distribution, or (vi) postproduction expenditures.
+# Only story rights map to a category in this vocabulary (atl_rights); the others are territorial or have no category here and stay disclosed. Compensation is handled by the compensation-credit rule.
+US_MT_RULES: tuple[SpendRule, ...] = (
+    SpendRule(program_slug="us_mt_media_act_tax_credit", spend_category="atl_rights", qualifies=False, territorial_only=False, confidence_tier="PARSED",
+              notes="MCA 15-31-1003(13)(b)(iv): 'production expenditure' does not include story rights.", source_ref="mca-15-31-1003-13-b"),
+)
+
 US_GA_RULES: tuple[SpendRule, ...] = (
     SpendRule(program_slug="us_ga_film_credit", spend_category="legal_accounting",
               qualifies=False, territorial_only=True, confidence_tier="PARSED",
@@ -920,7 +929,7 @@ CONTINGENCY_PREREQUISITE_RULES: dict[str, ContingencyPrerequisiteRule] = {
 
 
 _ALL_RULES: dict[str, dict[str, SpendRule]] = {}
-for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES, *CA_FILM_RULES, *GR_CASH_REBATE_RULES):
+for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_MT_RULES, *US_NY_RULES, *US_NY_POST_RULES, *ES_RULES, *DE_DFFF_RULES, *CA_FILM_RULES, *GR_CASH_REBATE_RULES):
     _ALL_RULES.setdefault(_rule.program_slug, {})[_rule.spend_category] = _rule
 
 

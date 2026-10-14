@@ -130,16 +130,20 @@ def test_new_brunswick_potential_rides_beside_the_federal_credit_and_nets_nothin
     # CPTC 25% x min(600,000, 60% x 1,200,000) = 150,000) and nothing is netted until an award is stated.
     res = _pair(fed, 600_000.0, "CA-NB", NB, 600_000.0, 1_200_000.0)
     assert res.executable is True, res.rejection_reason
-    assert res.total_guaranteed_incentive_usd == pytest.approx(guaranteed) and res.total_conditional_incentive_usd == pytest.approx(0.35 * 600_000.0)
+    # NA-RECONCILIATION-19: the 35% ceiling is on Total NB Spend, which may include up to 15% eligible deemed spend: 35% x 600,000 x 1.15 = 241,500.
+    assert res.total_guaranteed_incentive_usd == pytest.approx(guaranteed) and res.total_conditional_incentive_usd == pytest.approx(0.35 * 600_000.0 * 1.15)
     assert not [a for a in res.stacking_adjustments if a.adjustment_usd]
 
 
-@pytest.mark.parametrize("fed", [PSTC, CPTC])
-def test_saskatchewan_is_display_only_so_it_never_prices_and_is_never_unruled(fed):
-    # The existing discretionary ruling (B1 DISPLAY_ONLY_ZERO_GUARANTEED) keeps the grant out of the pricing kernel; its pair is ruled, so the reason is the ruling, not a missing rule.
+@pytest.mark.parametrize("fed,guaranteed", [(PSTC, 96_000.0), (CPTC, 150_000.0)])
+def test_saskatchewan_potential_rides_beside_the_federal_credit_with_zero_guaranteed_and_nets_nothing(fed, guaranteed):
+    # Restated in NA-RECONCILIATION-19 (Saskatchewan left the B1 display-only ruling). The grant is discretionary: guaranteed ZERO; the potential is the 25% base plus the stated-fact additions clipped at the
+    # 40% total = 40% x 600,000 = 240,000; the federal credit keeps its own value and nothing is netted until an award is stated. Its pair with the federal credits was already ruled.
     res = _pair(fed, 600_000.0, "CA-SK", SK, 600_000.0, 1_200_000.0)
     assert "no named" not in (res.rejection_reason or "").lower() and "UNRESOLVED_NO_AUTHORITY" not in (res.rejection_reason or "")
-    assert res.executable is False and SK in (res.rejection_reason or "")
+    assert res.executable is True, res.rejection_reason
+    assert res.total_guaranteed_incentive_usd == pytest.approx(guaranteed) and res.total_conditional_incentive_usd == pytest.approx(0.40 * 600_000.0)
+    assert not [a for a in res.stacking_adjustments if a.adjustment_usd]
 
 
 def test_nova_scotia_all_cost_base_is_apportioned_to_labour_as_an_assumption_and_the_whole_credit_lower_bound_is_disclosed():

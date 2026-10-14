@@ -963,8 +963,10 @@ async def test_ho010_creative_saskatchewan_node_identity_is_reconciled_but_full_
     # discretionary award (never priceable), which is WHY the full 3-
     # program control can never be canonically executed as one structure.
     from app.data.authority_coverage_registry import economic_block_for_program
+    # Restated in NA-RECONCILIATION-19: Saskatchewan left the display-only B1 ruling (a discretionary ceiling is visible zero-guaranteed POTENTIAL, like New Brunswick and Arkansas), so the economic block is
+    # gone; it is still never a guaranteed credit (no floor tier), which the combination check below keeps verifying.
     block = economic_block_for_program("ca_sk_creative_saskatchewan_grant")
-    assert block is not None and block.classification == "DISPLAY_ONLY_ZERO_GUARANTEED", block
+    assert block is None, block
 
     # Never fabricated: no structure may claim all three required
     # programs together as a single combined disposition.

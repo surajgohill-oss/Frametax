@@ -53,7 +53,10 @@ EXPECT: dict[str, tuple[float | None, float | None, str]] = {
     "ca_federal_pstc": (320_000.0, 320_000.0, "16% x labour 2,000,000"),
     "ca_film_30": (840_000.0, None, "35% x 2,400,000 (above-the-line cast excluded); uplift potential not pinned"),
     "ca_mb_film_video_credit": (900_000.0, 1_300_000.0, "45% x labour 2,000,000; 65% with the three bonuses"),
-    "ca_nb_film_tax_credit": (0.0, 1_050_000.0, "discretionary LIFT grant: guaranteed 0; 35% x all 3,000,000 potential"),
+    # Restated in NA-RECONCILIATION-19: the potential now allows the statutory eligible deemed spend (up to 15% of eligible NB spend added to the base, LIFT 2026/2027 Guidelines): 35% x (3,000,000 x 1.15) = 1,207,500.
+    "ca_nb_film_tax_credit": (0.0, 1_207_500.0, "discretionary LIFT grant: guaranteed 0; 35% x 3,000,000 x 1.15 (up to 15% deemed spend) potential"),
+    # Saskatchewan (NA-RECONCILIATION-19): out of the B1 display-only ruling; potential-only, bounded at the 40% combined cap (Saskatchewan Stream) = 40% x 3,000,000.
+    "ca_sk_creative_saskatchewan_grant": (0.0, 1_200_000.0, "discretionary FFTV grant: guaranteed 0; 25% base + Saskatchewan Stream 5 + bonuses 5/5/10, capped at 40% x 3,000,000"),
     "ca_nl_all_spend_credit": (1_200_000.0, 1_200_000.0, "40% x all 3,000,000"),
     # Restated in NA-RECONCILIATION-17 (the potential gained the Nova Scotia bounds): guaranteed 25% x 3,000,000 = 750,000; potential adds the Location Incentive 2 points and the Distant Location
     # maximum of 10 points on the same 3,000,000 (NSFPIF Guidelines s.6.2) = 37% x 3,000,000 = 1,110,000.
@@ -80,7 +83,9 @@ EXPECT: dict[str, tuple[float | None, float | None, str]] = {
     "us_mn_film_production_credit": (750_000.0, 750_000.0, "25% x all 3,000,000"),
     "us_mo_motion_media_production_tax_credit": (600_000.0, 1_260_000.0, "20% x all 3,000,000; 42% maximum potential"),
     "us_ms_advantage_film_program": (750_000.0, 750_000.0, "25% x all 3,000,000"),
-    "us_mt_media_act_tax_credit": (0.0, 600_000.0, "certification paused: guaranteed 0; 20% x all 3,000,000 potential"),
+    # Restated in NA-RECONCILIATION-19: compensation is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)) and earns its own category credits, and every addition is limited to 35% of base investment (15-31-1007(3)(a)):
+    # unknown inputs are bounded by that ceiling = 35% x 3,000,000 = 1,050,000 (20% base on 1,000,000 + up to 30% on 2,000,000 compensation + additions, clipped).
+    "us_mt_media_act_tax_credit": (0.0, 1_050_000.0, "certification paused, no credit before 2031 expenditures: guaranteed 0; 35% x 3,000,000 combined ceiling potential"),
     "us_nc_film_entertainment_grant": (0.0, 750_000.0, "discretionary ceiling: guaranteed 0; 25% x all 3,000,000 potential"),
     "us_nj_garden_state_film_credit": (900_000.0, 1_050_000.0, "30% x all 3,000,000; 35% outside the radius potential"),
     "us_nm_film_credit": (750_000.0, 1_200_000.0, "25% x all 3,000,000; 40% potential"),
@@ -109,9 +114,6 @@ EXPECT_P2: dict[str, tuple[float | None, float | None, str]] = {
 
 #: exact reasons a program has no executable path on the proof budget (everything else must execute)
 EXCLUSIONS: dict[str, str] = {
-    "ca_sk_creative_saskatchewan_grant": "DISPLAY_ONLY_ZERO_GUARANTEED by the existing discretionary ruling (authority_coverage_registry _B1_DISCRETIONARY_RULING): an assessed, selective grant stays out of the "
-                                          "pricing kernel and is served as a program disposition (DISCRETIONARY_AWARD_ZERO_GUARANTEED, stated rates 25% to 30%, the award as the open proposition); its pairs with the federal "
-                                          "credits are ruled (spend_reduction when awarded).",
     "bc_interactive_digital_media_tax_credit_idmtc": "COVERAGE_ONLY: no RateRule (rate, base and cap not established); an interactive-media credit with no film-production base.",
     "ca_cmf": "NON_GUARANTEED_SELECTIVE (NA-RECONCILIATION-13): the CMF Convergent Stream pays through Broadcaster and Distributor Envelopes allocated by past performance (cmf-fmc.ca envelope administration); a producer reaches it "
               "only through a broadcaster or distributor commitment, and no producer-level rate exists, so nothing is priced.",

@@ -252,9 +252,9 @@
    "expectation_basis": "25% x min(labour 2,000,000; 60% x cost 3,000,000 = 1,800,000)",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 11,
-   "aggregate_groups": 17,
-   "aggregated_candidates": 17,
+   "retained_rows": 12,
+   "aggregate_groups": 18,
+   "aggregated_candidates": 18,
    "standalone_structure_types": [
     "full_relocation"
    ],
@@ -263,7 +263,7 @@
    "served_potential_usd": 450000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "MODELED",
-   "priced_stack_structures": 10,
+   "priced_stack_structures": 11,
    "unresolved_conditions": [],
    "presumed_facts": [
     "{'condition_id': 'ca-cptc-canadian-controlled-corporation', 'description': 'The applicant must be a qualified corporation: a taxable Canadian corporation that is Canadian-controlled and carries on the production business through a permanent establishment in Canada (RC4164 Part 3). A foreign-controlled production company does not qualify; the budget cannot establish control, so it is a producer-stated fact held at USER_FACT_REQUIRED until stated.', 'quote': 'qualified corporation ... Canadian-controlled ... permanent establishment in Canada (RC4164 Part 3)', 'state': 'USER_FACT_REQUIRED', 'note': \"'ca_federal_cptc__local_entity_or_partner_confirmed' not yet evidenced \u2014 absence of a record is not confirmation.\"}",
@@ -282,7 +282,7 @@
     "ca_nl_all_spend_credit:spend_reduction:executable",
     "ca_ns_production_incentive_fund:spend_reduction:executable",
     "ca_qc_pstc:spend_reduction:executable",
-    "ca_sk_creative_saskatchewan_grant:allowed:blocked",
+    "ca_sk_creative_saskatchewan_grant:allowed:executable",
     "on_ofttc:spend_reduction:executable",
     "on_opstc:spend_reduction:executable",
     "ontario_computer_animation_and_special_effects_tax_credit_ocase:spend_reduction:executable"
@@ -303,9 +303,9 @@
    "expectation_basis": "16% x labour 2,000,000",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 11,
-   "aggregate_groups": 15,
-   "aggregated_candidates": 15,
+   "retained_rows": 12,
+   "aggregate_groups": 16,
+   "aggregated_candidates": 16,
    "standalone_structure_types": [
     "full_relocation"
    ],
@@ -314,7 +314,7 @@
    "served_potential_usd": 320000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "MODELED",
-   "priced_stack_structures": 10,
+   "priced_stack_structures": 11,
    "unresolved_conditions": [],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",
@@ -330,7 +330,7 @@
     "ca_nl_all_spend_credit:spend_reduction:executable",
     "ca_ns_production_incentive_fund:spend_reduction:executable",
     "ca_qc_pstc:spend_reduction:executable",
-    "ca_sk_creative_saskatchewan_grant:spend_reduction:blocked",
+    "ca_sk_creative_saskatchewan_grant:spend_reduction:executable",
     "on_ofttc:spend_reduction:executable",
     "on_opstc:spend_reduction:executable",
     "ontario_computer_animation_and_special_effects_tax_credit_ocase:spend_reduction:executable"
@@ -421,10 +421,10 @@
    "proof_profile": "P1",
    "kernel_executable": true,
    "kernel_guaranteed_usd": 0.0,
-   "kernel_potential_usd": 1050000.0,
+   "kernel_potential_usd": 1207500.0,
    "expected_guaranteed_usd": 0.0,
-   "expected_potential_usd": 1050000.0,
-   "expectation_basis": "discretionary LIFT grant: guaranteed 0; 35% x all 3,000,000 potential",
+   "expected_potential_usd": 1207500.0,
+   "expectation_basis": "discretionary LIFT grant: guaranteed 0; 35% x 3,000,000 x 1.15 (up to 15% deemed spend) potential",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
    "retained_rows": 4,
@@ -440,7 +440,8 @@
    "unresolved_conditions": [
     "ca_nb_film_tax_credit:bonus_heads_of_department_lead_talent:statutory_formula",
     "ca_nb_film_tax_credit:bonus_nb_made:statutory_formula",
-    "ca_nb_film_tax_credit:bonus_rural_remote:statutory_formula"
+    "ca_nb_film_tax_credit:bonus_rural_remote:statutory_formula",
+    "ca_nb_film_tax_credit:deemed_spend"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_POTENTIAL_ONLY",
@@ -516,6 +517,8 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 4,
    "unresolved_conditions": [
+    "ca_ns_production_incentive_fund:ca_ns_equity_tax_credit_financing_usd",
+    "ca_ns_production_incentive_fund:ca_ns_ineligible_supplier_spend_usd",
     "ca_ns_production_incentive_fund:content_performers:statutory_formula",
     "ca_ns_production_incentive_fund:content_three_of_seven:statutory_formula",
     "ca_ns_production_incentive_fund:distant_location:statutory_formula",
@@ -573,35 +576,38 @@
    "canonical_slug": "ca_sk_creative_saskatchewan_grant",
    "layer": "RATE_BEARING",
    "jurisdiction": "CA-SK",
-   "discovery": "capability_only; capability_data=True",
+   "discovery": "incentive_ready; capability_data=True",
    "proof_profile": "P1",
-   "kernel_executable": false,
-   "kernel_guaranteed_usd": null,
-   "kernel_potential_usd": null,
-   "expected_guaranteed_usd": null,
-   "expected_potential_usd": null,
-   "expectation_basis": "",
-   "expectation_strength": "NONE",
-   "served_state": "AGGREGATED",
-   "retained_rows": 0,
-   "aggregate_groups": 1,
-   "aggregated_candidates": 1,
+   "kernel_executable": true,
+   "kernel_guaranteed_usd": 0.0,
+   "kernel_potential_usd": 1200000.0,
+   "expected_guaranteed_usd": 0.0,
+   "expected_potential_usd": 1200000.0,
+   "expectation_basis": "discretionary FFTV grant: guaranteed 0; 25% base + Saskatchewan Stream 5 + bonuses 5/5/10, capped at 40% x 3,000,000",
+   "expectation_strength": "PINNED",
+   "served_state": "RETAINED",
+   "retained_rows": 4,
+   "aggregate_groups": 2,
+   "aggregated_candidates": 2,
    "standalone_structure_types": [],
    "standalone_status": null,
    "served_guaranteed_usd": null,
    "served_potential_usd": null,
    "economics_certainty": null,
-   "mfni_status": null,
-   "priced_stack_structures": 0,
-   "unresolved_conditions": [],
+   "mfni_status": "UNMODELED_NO_BENCHMARK",
+   "priced_stack_structures": 4,
+   "unresolved_conditions": [
+    "ca_sk_creative_saskatchewan_grant:post_production_bonus:statutory_formula",
+    "ca_sk_creative_saskatchewan_grant:production_volume_bonus:statutory_formula",
+    "ca_sk_creative_saskatchewan_grant:rural_bonus:statutory_formula",
+    "ca_sk_creative_saskatchewan_grant:saskatchewan_stream:statutory_formula"
+   ],
    "presumed_facts": [],
-   "path": "NOT_EXECUTABLE_WITH_REASON",
-   "exclusion": "DISPLAY_ONLY_ZERO_GUARANTEED by the existing discretionary ruling (authority_coverage_registry _B1_DISCRETIONARY_RULING): an assessed, selective grant stays out of the pricing kernel and is served as a program disposition (DISCRETIONARY_AWARD_ZERO_GUARANTEED, stated rates 25% to 30%, the award as the open proposition); its pairs with the federal credits are ruled (spend_reduction when awarded).",
-   "disposition_class": "DISCRETIONARY_AWARD_ZERO_GUARANTEED",
-   "disposition_headline": "Creative Saskatchewan Film and TV Production Grant is a discretionary / selective award: whether this production receives an award (and at what rate) is not established, so its guaranteed incentive is zero by the canonical ruling (DISPLAY_ONLY_ZERO_GUARANTEED). Stated rates: 25% to 30%.",
+   "path": "EXECUTABLE_POTENTIAL_ONLY",
+   "exclusion": "",
    "stack_pairs": [
-    "ca_federal_cptc:allowed:blocked",
-    "ca_federal_pstc:spend_reduction:blocked"
+    "ca_federal_cptc:allowed:executable",
+    "ca_federal_pstc:spend_reduction:executable"
    ]
   },
   {
@@ -1366,10 +1372,10 @@
    "proof_profile": "P1",
    "kernel_executable": true,
    "kernel_guaranteed_usd": 0.0,
-   "kernel_potential_usd": 600000.0,
+   "kernel_potential_usd": 1050000.0,
    "expected_guaranteed_usd": 0.0,
-   "expected_potential_usd": 600000.0,
-   "expectation_basis": "certification paused: guaranteed 0; 20% x all 3,000,000 potential",
+   "expected_potential_usd": 1050000.0,
+   "expectation_basis": "certification paused, no credit before 2031 expenditures: guaranteed 0; 35% x 3,000,000 combined ceiling potential",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
    "retained_rows": 2,
@@ -1380,12 +1386,17 @@
    ],
    "standalone_status": "PRICED",
    "served_guaranteed_usd": 0.0,
-   "served_potential_usd": 600000.0,
+   "served_potential_usd": 1050000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 1,
    "unresolved_conditions": [
-    "us-mt-certification-paused-and-allocation"
+    "us_mt_media_act_tax_credit:college_payments:statutory_formula",
+    "us_mt_media_act_tax_credit:compensation_credits:statutory_formula",
+    "us_mt_media_act_tax_credit:first_credit_year:timing",
+    "us_mt_media_act_tax_credit:montana_screen_credit:statutory_formula",
+    "us_mt_media_act_tax_credit:studio_rental:statutory_formula",
+    "us_mt_media_act_tax_credit:underserved_area:statutory_formula"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_POTENTIAL_ONLY",
@@ -1901,7 +1912,7 @@
    "expectation_basis": "no award stated: guaranteed 0; 31% x all 3,000,000 potential",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
-   "retained_rows": 76,
+   "retained_rows": 77,
    "aggregate_groups": 29,
    "aggregated_candidates": 29,
    "standalone_structure_types": [
@@ -1912,7 +1923,7 @@
    "served_potential_usd": 930000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "NOT_APPLICABLE_BASELINE",
-   "priced_stack_structures": 75,
+   "priced_stack_structures": 76,
    "unresolved_conditions": [
     "us-tx-award-allocation-required",
     "us-tx-ceiling-31-awarded-rate",
@@ -2437,7 +2448,7 @@
    "host_added": false,
    "executable": true,
    "guaranteed_usd": 500000.0,
-   "conditional_usd": 700000.0,
+   "conditional_usd": 805000.0,
    "netting_adjustments": [],
    "reason": ""
   },
@@ -2494,11 +2505,11 @@
    "jurisdictions": "CA + CA-SK",
    "rule_type": "allowed",
    "host_added": false,
-   "executable": false,
-   "guaranteed_usd": 0.0,
-   "conditional_usd": 0.0,
+   "executable": true,
+   "guaranteed_usd": 500000.0,
+   "conditional_usd": 800000.0,
    "netting_adjustments": [],
-   "reason": "CA-SK/ca_sk_creative_saskatchewan_grant did not clear its own real threshold: CA-SK/ca_sk_creative_saskatchewan_grant: statutory rate did not resolve for this production type / segment QPE ($2,000,000) \u2014 minimum-spend or eligibility conditi"
+   "reason": ""
   },
   {
    "row_kind": "PAIR",
@@ -2575,7 +2586,7 @@
    "host_added": false,
    "executable": true,
    "guaranteed_usd": 320000.0,
-   "conditional_usd": 700000.0,
+   "conditional_usd": 805000.0,
    "netting_adjustments": [],
    "reason": ""
   },
@@ -2646,11 +2657,11 @@
    "jurisdictions": "CA + CA-SK",
    "rule_type": "spend_reduction",
    "host_added": false,
-   "executable": false,
-   "guaranteed_usd": 0.0,
-   "conditional_usd": 0.0,
+   "executable": true,
+   "guaranteed_usd": 320000.0,
+   "conditional_usd": 800000.0,
    "netting_adjustments": [],
-   "reason": "CA-SK/ca_sk_creative_saskatchewan_grant did not clear its own real threshold: CA-SK/ca_sk_creative_saskatchewan_grant: statutory rate did not resolve for this production type / segment QPE ($2,000,000) \u2014 minimum-spend or eligibility conditi"
+   "reason": ""
   },
   {
    "row_kind": "PAIR",
@@ -2810,17 +2821,16 @@
   "coverage_only": 8,
   "paths": {
    "EXECUTABLE_GUARANTEED": 44,
-   "EXECUTABLE_POTENTIAL_ONLY": 9,
-   "NOT_EXECUTABLE_WITH_REASON": 9
+   "EXECUTABLE_POTENTIAL_ONLY": 10,
+   "NOT_EXECUTABLE_WITH_REASON": 8
   },
   "served_state": {
-   "RETAINED": 52,
-   "AGGREGATED": 2,
+   "RETAINED": 53,
+   "AGGREGATED": 1,
    "ABSENT": 8
   },
   "expectation_strength": {
-   "PINNED": 51,
-   "NONE": 1,
+   "PINNED": 52,
    "OBSERVED_ONLY": 2,
    "N/A": 8
   },
@@ -2831,6 +2841,6 @@
    "mutually_exclusive": 7,
    "same_cost_prohibited_distinct_costs_allowed": 1
   },
-  "pairs_executable": 28
+  "pairs_executable": 30
  }
 }

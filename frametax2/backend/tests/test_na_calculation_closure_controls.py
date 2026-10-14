@@ -119,7 +119,9 @@ def test_montana_record_carries_the_statute_cap_threshold_and_sunset():
     assert d.annual_cap_usd == 12_000_000.0 and prof.annual_program_cap_usd == 12_000_000.0 and prof.min_local_spend_usd == 350_000.0
     assert prof.sunset_date == "2045-12-31" and prof.refundable is False and prof.transferable is True
     seg = _segment("US-MT", MT, (("btl_crew_labor", 1_000_000.0),))
-    assert seg.incentive_floor_usd == 0.0 and seg.incentive_ceiling_usd == pytest.approx(200_000.0)         # still no guaranteed credit while certification is paused
+    # Restated in NA-RECONCILIATION-19. 1,000,000 of crew labour is COMPENSATION, which is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)); it earns the category credits (up to 30% each) plus the
+    # additions, every credit limited to 35% of base investment (15-31-1007(3)(a)): unknown inputs bound the potential at 35% x 1,000,000 = 350,000. Still no guaranteed credit while certification is paused.
+    assert seg.incentive_floor_usd == 0.0 and seg.incentive_ceiling_usd == pytest.approx(350_000.0)
 
 
 # ── Ohio: authoritative silence on transfer and sunset ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
