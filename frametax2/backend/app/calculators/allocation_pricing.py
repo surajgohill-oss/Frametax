@@ -555,7 +555,9 @@ def _resolve_incentive_dollar_cap(
 #: not a whole-base uplift that the subset rules replace. Their potential keeps the scenario rate; every other subset program keeps the floor rate.
 #: ca_bc_film_tv_tax_credit (NA-RECONCILIATION-16): its 40% rate for photography after 2024-12-31 (ITA (BC) s.80(8)) is a conditional BASE rate over the guaranteed 35%, kept as the potential
 #: now that the shooting-day credits are subset-priced on top of it.
-_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit", "ca_bc_film_tv_tax_credit"})
+#: ca_nb_film_tax_credit and us_ar_digital_motion_picture_incentive (NA-RECONCILIATION-18): discretionary ceiling-only grants whose 'up to' base is the resolved ceiling; their stackable
+#: bonuses / add-ons are subset-priced on top of it under SUBSET_COMBINED_RATE_CAPS, so the potential starts from the ceiling base, never the (zero) floor.
+_CONDITIONAL_BASE_RATE_SCENARIO_PROGRAMS = frozenset({"us_ny_post_production_credit", "ca_bc_film_tv_tax_credit", "ca_nb_film_tax_credit", "us_ar_digital_motion_picture_incentive"})
 
 #: Programs with an elective alternative credit on a different base: slug -> (alternative rate on total qualifying spend, label).
 _ALTERNATIVE_ELECTION_PROGRAMS = {
@@ -690,6 +692,79 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         needed = [k for k, d in zip(rule.tier_numerator_facts, days) if d is None] + ([rule.day_denominator_fact] if den is None else [])
         return 0.0, round(qle * max(rule.tier_rates), 2), (f"{rule.uplift_id}: distance-band day counts not all stated ({', '.join(needed)}); bounded at {max(rule.tier_rates):.0%} of the "
                                                          f"eligible-cost base, the guideline's maximum ({rule.source_ref})")
+    stated_facts = facts or frozenset()
+    bound_note = lambda why: (f"{rule.uplift_id}: {why} ({rule.source_ref})")          # noqa: E731
+    if rule.kind == "points_on_base":
+        if rule.excluded_fact and rule.excluded_fact in stated_facts:
+            return 0.0, 0.0, None
+        if rule.prerequisite_fact in stated_facts:
+            amount = round(rule.rate * qle, 2)
+            return amount, amount, None
+        return 0.0, round(rule.rate * qle, 2), bound_note(f"'{rule.prerequisite_fact}' is not stated; bounded at {rule.rate:.1%} of the eligible base")
+    if rule.kind == "day_threshold":
+        days = _stated_count(amounts, rule.day_numerator_fact, "days of principal photography")
+        if days is None:
+            return 0.0, round(rule.rate * qle, 2), bound_note(f"'{rule.day_numerator_fact}' is not stated; bounded at {rule.rate:.1%} of the eligible base")
+        amount = round(rule.rate * qle, 2) if days >= rule.min_numerator_days else 0.0
+        return amount, amount, None
+    if rule.kind == "share_points":
+        from fractions import Fraction
+        num = _stated_count(amounts, rule.day_numerator_fact, "numerator count")
+        den = _stated_count(amounts, rule.day_denominator_fact, "denominator count")
+        if den is not None and den <= 0:
+            raise ValueError(f"{rule.day_denominator_fact}: must be at least 1 when stated")
+        if num is not None and den is not None and num > den:
+            raise ValueError(f"{rule.day_numerator_fact}: {num} cannot exceed the {den} stated in {rule.day_denominator_fact}")
+        if num is None or den is None:
+            return 0.0, round(rule.rate * qle, 2), bound_note(f"'{rule.day_numerator_fact}' and '{rule.day_denominator_fact}' are not both stated; bounded at {rule.rate:.1%}")
+        share, floor_share = Fraction(num, den), Fraction(str(rule.min_share))
+        met = share > floor_share if rule.share_exclusive else share >= floor_share
+        amount = round(rule.rate * qle, 2) if met else 0.0
+        return amount, amount, None
+    if rule.kind == "tiered_share_points":
+        from fractions import Fraction
+        den = _stated_count(amounts, rule.day_denominator_fact, "total days")
+        if den is not None and den <= 0:
+            raise ValueError(f"{rule.day_denominator_fact}: must be at least 1 when stated")
+        groups = []
+        for group in rule.tier_numerator_groups:
+            vals = [_stated_count(amounts, k, "days in the distance band") for k in group]
+            groups.append(None if any(v is None for v in vals) else sum(vals))
+        if den is not None and any(g is not None and g > den for g in groups):
+            raise ValueError(f"{rule.day_denominator_fact}: the band days stated exceed the {den} total days")
+        if den is None or any(g is None for g in groups):
+            return 0.0, round(max(rule.tier_rates) * qle, 2), bound_note(f"distance-band days are not all stated; bounded at the highest tier {max(rule.tier_rates):.1%}")
+        floor_share = Fraction(str(rule.min_share))
+        for rate, got in zip(rule.tier_rates, groups):                          # highest tier first
+            if Fraction(got, den) >= floor_share:
+                amount = round(rate * qle, 2)
+                return amount, amount, None
+        return 0.0, 0.0, None
+    if rule.kind == "count_threshold":
+        stated = sum(1 for k in rule.criteria_facts if k in stated_facts)
+        if stated >= rule.min_count:
+            amount = round(rule.rate * qle, 2)
+            return amount, amount, None
+        return 0.0, round(rule.rate * qle, 2), bound_note(f"{stated} of the {len(rule.criteria_facts)} criteria are stated true and {rule.min_count} are needed (a criterion not met is never stored, so the rest stay unknown)")
+    if rule.kind == "hod_shortfall":
+        filled = _stated_count(amounts, rule.hod_filled_fact, "Head of Department positions filled")
+        resident = _stated_count(amounts, rule.hod_resident_fact, "Head of Department positions held by residents")
+        if filled is not None and filled > 16:
+            raise ValueError(f"{rule.hod_filled_fact}: the Fund recognises 16 Head of Department positions, {filled} stated")
+        if filled is not None and resident is not None and resident > filled:
+            raise ValueError(f"{rule.hod_resident_fact}: {resident} resident positions cannot exceed the {filled} positions filled")
+        if filled is None or resident is None:
+            return 0.0, 0.0, bound_note("Head of Department counts are not stated; the base is presumed to meet the stream minimum (disclosed, not priced)")
+        ceil_half = (filled + 1) // 2                                              # 'rounded to the highest whole number'
+        min_i, min_ii = ceil_half, (4 if filled >= 9 else ceil_half)
+        short_i, short_ii = max(0, min_i - resident), max(0, min_ii - resident)
+        if rule.stream_i_fact in stated_facts:
+            both = (short_i, short_i)
+        elif rule.stream_ii_fact in stated_facts:
+            both = (short_ii, short_ii)
+        else:
+            both = (max(short_i, short_ii), min(short_i, short_ii))                 # floor takes the worse stream, potential the better
+        return -round(rule.rate * both[0] * qle, 2), -round(rule.rate * both[1] * qle, 2), None
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)
         if se is None:
@@ -814,7 +889,14 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
     # that pass nothing get rate x QPE. The potential keeps a conditional higher base rate (ceiling_rate) when it exceeds the guaranteed one.
     floor_base = floor_base_usd if floor_base_usd is not None else qpe * base_rate
     potential_base = potential_base_usd if potential_base_usd is not None else qpe * max(base_rate, ceiling_rate or 0.0)
-    return round(floor_base + sum(floor_parts.values()) + formula_floor, 2), round(potential_base + sum(potential_parts.values()) + formula_potential, 2), tuple(conditions)
+    floor_total = floor_base + sum(floor_parts.values()) + formula_floor
+    potential_total = potential_base + sum(potential_parts.values()) + formula_potential
+    from app.data.program_rate_rules import SUBSET_COMBINED_RATE_CAPS
+    capped = SUBSET_COMBINED_RATE_CAPS.get(slug)
+    if capped is not None and qle_basis_usd:
+        limit = capped[0] * qle_basis_usd                                       # the program's stated combined ceiling on base plus additions
+        floor_total, potential_total = min(floor_total, limit), min(potential_total, limit)
+    return round(floor_total, 2), round(potential_total, 2), tuple(conditions)
 
 
 def _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts, undeployed_contingency_usd: float = 0.0):
@@ -823,7 +905,8 @@ def _qpe_cap_base(slug, cap_rule, gross_budget_usd, allocated, amount_facts, und
     stack assistance is then deducted once more only for the programs actually stacked."""
     base = gross_budget_usd if cap_rule.cap_base == "total_worldwide_budget" else allocated
     if base is not None and slug == "ca_federal_cptc":
-        stated = float((amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)
+        from app.calculators.canonical_stack_bridge import cptc_stated_cost_deductions_usd
+        stated = cptc_stated_cost_deductions_usd(amount_facts)
         # RC4164 line 421 is the cost of production by GAAP: a contingency reserve the producer states will NOT be spent is not an expenditure. While the producer has stated
         # nothing (undeployed_contingency_usd == 0) the budget's contingency stays in the cost, and the credit is a planning figure that presumes it is spent.
         base = max(0.0, base - stated - (max(0.0, float(undeployed_contingency_usd or 0.0)) if cap_rule.cap_base == "total_worldwide_budget" else 0.0))

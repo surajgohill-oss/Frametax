@@ -560,7 +560,7 @@ def _generate_structural_candidate_uncached(
         # never by the generic whole-credit heuristic: CPTC assistance sets the 60% production-cost cap; only the labour portion of the OPSTC is
         # assistance to the federal PSTC.
         from app.calculators.canonical_stack_bridge import (
-            CPTC_SLUG, PSTC_APPORTIONED_SLUGS, PSTC_ASSISTING_SLUGS, PSTC_SLUG, _is_slug, apportionment_note, cptc_net_cost_adjusted, netting_basis_label, pstc_netted_by_provincial)
+            CPTC_SLUG, PSTC_APPORTIONED_SLUGS, PSTC_ASSISTING_SLUGS, PSTC_SLUG, _is_slug, apportionment_note, cptc_net_cost_adjusted, cptc_stated_cost_deductions_usd, netting_basis_label, pstc_netted_by_provincial)
         _by_slug = {ce.component.program_slug: ce for ce in guaranteed_econ}
         _netted: list[StackingAdjustment] = []
         for _slug, _ce in _by_slug.items():
@@ -575,7 +575,7 @@ def _generate_structural_candidate_uncached(
                 _assist = round(sum(raw_component_incentives_usd.get(x, 0.0) for x in _reducers), 2)
                 if _assist <= 0:
                     continue
-                _stated = float((_ce.component.amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)
+                _stated = cptc_stated_cost_deductions_usd(_ce.component.amount_facts)
                 _cptc_cost = gross_budget_usd - planned_cost_reduction_usd
                 _adjusted, _cap, _qualified = cptc_net_cost_adjusted(_original, _rate, _basis, _cptc_cost, _stated, _assist)
                 _desc = (f"Assistance ${_assist:,.0f} reduces the production cost that sets the CPTC cap (CRA RC4164 T1131 lines 421-430): qualified labour = "

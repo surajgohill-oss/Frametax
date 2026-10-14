@@ -194,6 +194,15 @@ OPSTC_SLUG = "on_opstc"
 CPTC_COST_CAP_PCT = 0.60     # Form T1131 Part 5: Amount B = 60% of (production cost - assistance)
 
 
+def cptc_stated_cost_deductions_usd(amount_facts: dict | None) -> float:
+    """Producer-stated amounts that reduce the production cost that sets the federal CPTC's 60% limit (CRA RC4164 / T1131 lines 421-430): assistance received or expected (line 423) and deferred amounts that are
+    contingent liabilities, which line 421 excludes from the cost of production ("deferred amounts that are contingent liabilities (dependent on a future event)", read 2026-10-14; a deferral that becomes an
+    enforceable liability is included again). Whether a given reserve (for example a guild residual or deposit reserve) is a contingent liability or an enforceable one is a fact about its contract, so it is
+    only ever applied when the producer states the amount."""
+    facts = amount_facts or {}
+    return float(facts.get("ca_federal_cptc_assistance_usd", 0.0) or 0.0) + float(facts.get("ca_federal_cptc_contingent_liabilities_usd", 0.0) or 0.0)
+
+
 def cptc_stack_fields(program_slug: str, rate_resolution, production_cost_usd: float | None, amount_facts: dict | None = None) -> dict:
     """StackCandidate keyword arguments for the federal CPTC (empty for every other program)."""
     if program_slug == PSTC_SLUG and rate_resolution is not None and getattr(rate_resolution, "qpe_basis_used", None) is not None:
@@ -204,7 +213,7 @@ def cptc_stack_fields(program_slug: str, rate_resolution, production_cost_usd: f
     if basis is None:
         return {}
     return {"rate_basis_usd": float(basis), "production_cost_usd": float(production_cost_usd),
-            "stated_assistance_usd": float((amount_facts or {}).get("ca_federal_cptc_assistance_usd", 0.0) or 0.0)}
+            "stated_assistance_usd": cptc_stated_cost_deductions_usd(amount_facts)}
 
 
 def _is_slug(slug: str, canonical: str) -> bool:

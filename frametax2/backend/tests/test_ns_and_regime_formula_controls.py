@@ -35,7 +35,9 @@ NS0 = _ns()
 def test_nova_scotia_base_is_unchanged_and_the_unknown_bonuses_are_a_bounded_potential():
     assert NS0.executable and NS0.incentive_floor_usd == pytest.approx(0.25 * BASE)                                   # Stream II base, s.6.2
     # potential: +2 points Location Incentive (whole base) and the guideline's 10-point maximum for the distant incentive
-    assert NS0.incentive_ceiling_usd == pytest.approx((0.25 + 0.02 + 0.10) * BASE)
+    # Restated in NA-RECONCILIATION-18: the potential also carries the other stated-fact additions (Stream I +1, Shooting Length +1, performers +1.5, three-of-seven +1.5 = 5 points)
+    OTHER = 0.05
+    assert NS0.incentive_ceiling_usd == pytest.approx((0.25 + 0.02 + 0.10 + OTHER) * BASE)
     ids = {c["condition_id"] for c in NS0.ceiling_conditions}
     assert f"{NS}:distant_location:statutory_formula" in ids and f"{NS}:location_rural:qualified_subset" in ids
 
@@ -51,21 +53,22 @@ def test_distant_location_incentive_prorates_each_distance_band_on_total_days(a_
     amounts = {T: total, A: a_days, B: b_days}
     stated = _ns(amounts=amounts, facts={RURAL})
     assert stated.incentive_floor_usd == pytest.approx((0.25 + 0.02 + points) * BASE)
-    assert stated.incentive_ceiling_usd == pytest.approx(stated.incentive_floor_usd) and not stated.ceiling_requires_confirmation
+    # the distant-location bound is settled; the other (unrelated) additions still carry their 5 points of bounded potential
+    assert stated.incentive_ceiling_usd == pytest.approx(stated.incentive_floor_usd + 0.05 * BASE)
 
 
 def test_distant_location_needs_the_location_incentive_first():
     amounts = {T: 20, A: 4, B: 6}
     no_rural = _ns(amounts=amounts)
     assert no_rural.incentive_floor_usd == pytest.approx(0.25 * BASE), "the Location Incentive is not stated: neither bonus is confirmed"
-    assert no_rural.incentive_ceiling_usd == pytest.approx((0.25 + 0.02 + 0.044) * BASE)
+    assert no_rural.incentive_ceiling_usd == pytest.approx((0.25 + 0.02 + 0.044 + 0.05) * BASE)
     assert f"{NS}:distant_location:statutory_formula" in {c["condition_id"] for c in no_rural.ceiling_conditions}
 
 
 def test_partial_band_days_stay_bounded_at_the_guideline_maximum_and_impossible_days_are_refused():
     partial = _ns(amounts={T: 20, A: 4}, facts={RURAL})
     assert partial.incentive_floor_usd == pytest.approx((0.25 + 0.02) * BASE)
-    assert partial.incentive_ceiling_usd == pytest.approx((0.25 + 0.02 + 0.10) * BASE)
+    assert partial.incentive_ceiling_usd == pytest.approx((0.25 + 0.02 + 0.10 + 0.05) * BASE)
     for bad in ({T: 20, A: 15, B: 6}, {T: 0}, {T: 20, A: -1, B: 0}, {T: 20, A: 2.5, B: 0}):
         refused = _ns(amounts=bad, facts={RURAL})
         assert not refused.executable and refused.blockers, bad
@@ -75,7 +78,8 @@ def test_nova_scotia_inputs_have_producer_writers_and_the_rules_are_exclusive_ba
     from app.data.program_rate_rules import get_subset_uplift_rules
     from app.services.ny_producer_facts import NY_EVIDENCED_FACTS, PROGRAM_AMOUNT_FACTS
     rules = {r.uplift_id: r for r in get_subset_uplift_rules(NS)}
-    assert set(rules) == {"location_rural", "distant_location"}
+    # Restated in NA-RECONCILIATION-18: the exact-set pin predates the remaining Nova Scotia rules (Stream I, Shooting Length, Content, Head-of-Department), pinned in test_na_bonus_formula_controls.
+    assert {"location_rural", "distant_location"} <= set(rules)
     dist = rules["distant_location"]
     assert dist.tier_rates == (0.07, 0.10) and max(dist.tier_rates) == pytest.approx(rules["distant_location"].rate), "never above the guideline's 10-point maximum"
     for key in (dist.day_denominator_fact, *dist.tier_numerator_facts):

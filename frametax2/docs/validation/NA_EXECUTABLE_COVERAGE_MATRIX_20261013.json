@@ -438,7 +438,9 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 4,
    "unresolved_conditions": [
-    "ca-nb-thc-discretion-bonuses"
+    "ca_nb_film_tax_credit:bonus_heads_of_department_lead_talent:statutory_formula",
+    "ca_nb_film_tax_credit:bonus_nb_made:statutory_formula",
+    "ca_nb_film_tax_credit:bonus_rural_remote:statutory_formula"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_POTENTIAL_ONLY",
@@ -495,10 +497,10 @@
    "proof_profile": "P1",
    "kernel_executable": true,
    "kernel_guaranteed_usd": 750000.0,
-   "kernel_potential_usd": 1110000.0,
+   "kernel_potential_usd": 1260000.0,
    "expected_guaranteed_usd": 750000.0,
-   "expected_potential_usd": 1110000.0,
-   "expectation_basis": "25% x all 3,000,000 (Stream II); potential +2 Location +10 Distant Location points on the same base",
+   "expected_potential_usd": 1260000.0,
+   "expectation_basis": "25% x all 3,000,000 (Stream II); potential 42% = +2 Location, +10 Distant Location, +1 Stream I, +1 Shooting Length, +1.5 +1.5 Content",
    "expectation_strength": "PINNED",
    "served_state": "RETAINED",
    "retained_rows": 5,
@@ -509,13 +511,18 @@
    ],
    "standalone_status": "PRICED",
    "served_guaranteed_usd": 750000.0,
-   "served_potential_usd": 1110000.0,
+   "served_potential_usd": 1260000.0,
    "economics_certainty": "CONDITIONAL",
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 4,
    "unresolved_conditions": [
+    "ca_ns_production_incentive_fund:content_performers:statutory_formula",
+    "ca_ns_production_incentive_fund:content_three_of_seven:statutory_formula",
     "ca_ns_production_incentive_fund:distant_location:statutory_formula",
-    "ca_ns_production_incentive_fund:location_rural:qualified_subset"
+    "ca_ns_production_incentive_fund:head_of_department_shortfall:statutory_formula",
+    "ca_ns_production_incentive_fund:location_rural:qualified_subset",
+    "ca_ns_production_incentive_fund:shooting_length:statutory_formula",
+    "ca_ns_production_incentive_fund:stream_i_base:statutory_formula"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",
@@ -856,7 +863,7 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 2,
    "unresolved_conditions": [
-    "us-ar-addons-total-30"
+    "us_ar_digital_motion_picture_incentive:addons_to_the_30pct_cap:qualified_subset"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_POTENTIAL_ONLY",
@@ -1306,11 +1313,11 @@
    "mfni_status": "UNMODELED_NO_BENCHMARK",
    "priced_stack_structures": 2,
    "unresolved_conditions": [
-    "us-mo-county-class-two-three-four",
-    "us-mo-filmed-50pct-in-missouri",
-    "us-mo-rural-or-blighted-15pct",
-    "us-mo-script-markets-missouri",
-    "us-mo-three-departments-resident-hires"
+    "us_mo_motion_media_production_tax_credit:county_class_two_three_four:statutory_formula",
+    "us_mo_motion_media_production_tax_credit:filmed_50pct_in_missouri:statutory_formula",
+    "us_mo_motion_media_production_tax_credit:rural_or_blighted_15pct:statutory_formula",
+    "us_mo_motion_media_production_tax_credit:script_markets_missouri:statutory_formula",
+    "us_mo_motion_media_production_tax_credit:three_departments_resident_hires:statutory_formula"
    ],
    "presumed_facts": [],
    "path": "EXECUTABLE_GUARANTEED",

@@ -57,7 +57,8 @@ EXPECT: dict[str, tuple[float | None, float | None, str]] = {
     "ca_nl_all_spend_credit": (1_200_000.0, 1_200_000.0, "40% x all 3,000,000"),
     # Restated in NA-RECONCILIATION-17 (the potential gained the Nova Scotia bounds): guaranteed 25% x 3,000,000 = 750,000; potential adds the Location Incentive 2 points and the Distant Location
     # maximum of 10 points on the same 3,000,000 (NSFPIF Guidelines s.6.2) = 37% x 3,000,000 = 1,110,000.
-    "ca_ns_production_incentive_fund": (750_000.0, 1_110_000.0, "25% x all 3,000,000 (Stream II); potential +2 Location +10 Distant Location points on the same base"),
+    # Restated again in NA-RECONCILIATION-18: potential 25 + Location 2 + Distant 10 + Stream I 1 + Shooting Length 1 + performers 1.5 + three-of-seven 1.5 = 42% x 3,000,000 = 1,260,000.
+    "ca_ns_production_incentive_fund": (750_000.0, 1_260_000.0, "25% x all 3,000,000 (Stream II); potential 42% = +2 Location, +10 Distant Location, +1 Stream I, +1 Shooting Length, +1.5 +1.5 Content"),
     "ca_qc_pstc": (750_000.0, 750_000.0, "25% x all 3,000,000"),
     "mx_federal_film_incentive_2026": (0.0, 900_000.0, "committee-set percentage: guaranteed 0; 30% x all 3,000,000 potential (cap not binding)"),
     "ny_state_film": (900_000.0, 1_200_000.0, "30% x all 3,000,000; 40% with the 10% upstate adder potential"),

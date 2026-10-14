@@ -175,9 +175,13 @@ def test_texas_award_numbers_have_a_validated_numeric_writer():
         "ca_bc_principal_photography_days_in_bc", "ca_bc_principal_photography_days_outside_vancouver", "ca_bc_principal_photography_days_distant_location",
         "ca_bc_training_payments_usd", "ca_bc_training_assistance_usd", "ca_bc_scriptwriting_expenditure_usd", "ca_bc_scriptwriting_assistance_usd", "ca_bc_scriptwriting_parent_reimbursement_usd"}
     # NA-RECONCILIATION-17: the Nova Scotia distance-band day counts join the numeric producer facts
+    # NA-RECONCILIATION-18 restatement: the Nova Scotia set grows by the shooting-length, Head-of-Department and performer counts; New Brunswick day counts and the CPTC cost-base amounts join.
     assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_ns_")} == {
-        "ca_ns_principal_photography_days_total", "ca_ns_principal_photography_days_100_to_150km", "ca_ns_principal_photography_days_over_150km"}
-    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_", "ca_ns_"))}
+        "ca_ns_principal_photography_days_total", "ca_ns_principal_photography_days_100_to_150km", "ca_ns_principal_photography_days_over_150km", "ca_ns_principal_photography_days_in_ns",
+        "ca_ns_hod_positions_filled", "ca_ns_hod_positions_held_by_ns_residents", "ca_ns_principal_performers_total", "ca_ns_principal_performers_ns_residents"}
+    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_nb_")} == {"ca_nb_principal_photography_days_total", "ca_nb_days_rural_30_to_150km", "ca_nb_days_remote_151km_plus"}
+    assert {k for k in PROGRAM_AMOUNT_FACTS if k.startswith("ca_federal_cptc_")} == {"ca_federal_cptc_assistance_usd", "ca_federal_cptc_contingent_liabilities_usd"}
+    assert set(PROGRAM_AMOUNT_FACTS) == {k for k in PROGRAM_AMOUNT_FACTS if k.startswith(("us_tx_", "ca_bc_", "ca_ns_", "ca_nb_", "ca_federal_cptc_"))}
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_awarded_rate_pct"] == (0.0, 0.31), "a fraction within the 31% ceiling, as the RateRule validates it"
     assert PROGRAM_AMOUNT_FACTS["us_tx_miip_resident_crew_pct"] == (0.0, 100.0)
 

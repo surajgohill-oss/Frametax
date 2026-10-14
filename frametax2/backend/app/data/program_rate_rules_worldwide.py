@@ -7307,13 +7307,9 @@ US_AR_DOCTRINE = register(DoctrineRecord(
                                              "selection and amounts, and approval must precede any Arkansas expense; minimum spend USD 200,000 (feature) within six months.",
                                  quote="The Director of the Arkansas Economic Development Commission may offer to a production company ... a tax incentive of twenty-five percent (25%) (Ark. Code 15-4-2005(a)(1))",
                                  kind="discretionary_band"),)),
-           DoctrineRateTier(tier_id="us-ar-total-30-ceiling", rate=0.30, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="us-ar-addons-total-30",
-                                 description="Add-ons: +10% for below-the-line payroll of Arkansas full-time residents or veterans and spend with veteran-owned small businesses (15-4-2005(c)); +5% for Tier 3 or Tier 4 county payroll or spend (d)(1); "
-                                             "+5% for a multi-project production such as a series (d)(2); the total claimed on any expenditure is capped at 30% (f). Their facts are not pre-evaluable from a topsheet.",
-                                 quote="The maximum total tax incentives that shall be claimed for an expenditure under this section is thirty percent (30%) of the expenditure (Ark. Code 15-4-2005(f))",
-                                 kind="discretionary_band"),)),),
+           ),
+   # NA-RECONCILIATION-18: the 30% total is no longer a second ceiling tier; the add-ons are one statutory rule (at most 5 points above the 25% base on any expenditure that qualifies for an add-on,
+   # because Ark. Code 15-4-2005(f) caps the total claimed on an expenditure at 30%) under SUBSET_COMBINED_RATE_CAPS.
 ))
 register_rate_rules(rate_rules_for(US_AR_DOCTRINE))
 
@@ -7658,8 +7654,10 @@ CA_NS_DOCTRINE = register(DoctrineRecord(
               "guidelines contain no federal-credit reduction clause. Currency: the guidelines say the Fund was renewed for annual funding until the 2025-2026 fiscal year, yet the official "
               "page still publishes this edition and takes applications on 2026-10-13; no 2026-27 renewal statement or newer edition was found (re-read 2026-10-14: the cch.novascotia.ca page, footer 'Updated: Oct 2026', states 'Changes to the program are effective as of 1 April 2024', publishes the same 26%/25% base rates, and mentions no fiscal year, sunset or closing date), so the program is treated as current on the official page with the "
               "fiscal-year wording recorded as an unreconciled qualifier. SUPERSEDES the earlier single-secondary-source reading (thereactionlab.com: 25% of Nova Scotia LABOUR), which "
-              "contradicted the primary base. Modelled: the Stream II 25% base on the segment's qualifying Nova Scotia spend; Stream I 26% (ownership), the Head of Department reduction, the bonuses and "
-              "supplier residency are producer facts or amounts the topsheet cannot establish and are disclosed, not priced.",
+              "contradicted the primary base. Modelled: the Stream II 25% base on the segment's qualifying Nova Scotia spend; from NA-RECONCILIATION-17/18 the Location (+2), Distant Location (7%/10% bands prorated on days, up to +10), Stream I (+1), "
+              "Shooting Length (+1, more than 30 days), Content (+1.5 performers at 60%, +1.5 three of seven criteria) additions and the Head of Department reduction (0.5 point per position below the stream minimum) are "
+              "statutory-formula rules priced from stated producer facts only (program_rate_rules.SUBSET_UPLIFT_RULES); unstated, each is a disclosed bounded potential and the HOD reduction is presumed met. Supplier "
+              "residency is a producer fact the topsheet cannot establish and is disclosed, not priced.",
     source_ref="ccth-nsfpif-guidelines-2024-04-01-primary",
     provenance=SourceProvenance(
         issuing_authority="Province of Nova Scotia, Department of Communities, Culture, Tourism and Heritage",
@@ -7702,7 +7700,7 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
               "Production). Major eligibility: NB spend at least 20% of the total budget, confirmed financing at least 50%, NB copyright ownership at least 33% (not for animation), a New "
               "Brunswick-incorporated applicant with at least 50% New Brunswick-resident shareholders, at least one funding partner confirmed at application; co-productions and service productions are "
               "eligible; Total NB Spend may include up to 15% Eligible Deemed Spend. Company Cap CAD 2,000,000 (28% of the CAD 7 million program budget) per production company including sub-companies; "
-              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. The guidelines "
+              "'Grant recommendations will also consider overall demand and available funds' and a prioritisation rubric ranks applications, so every rate is a ceiling with no guaranteed floor. From NA-RECONCILIATION-18 the three stackable bonuses are statutory-formula rules (HOD / lead talent +3 on one stated fact; rural / remote +3 or +4 on stated principal-photography days by distance band, 50%+ inclusive; NB Made +3 on at least two of six stated criteria) added to the 25% base under a 35% combined cap, so the ceiling follows the stated facts and never exceeds 35%. The guidelines "
               "are silent on federal and other tax credits. SUPERSEDES the 2017-2018 THC guidelines (labour-based 40% / all-spend 25% / 30% incentive, CAD 800,000 feature maximum) for current use.",
     source_ref="nb-thc-lift-production-guidelines-2026-27-primary",
     provenance=SourceProvenance(
@@ -7723,13 +7721,9 @@ CA_NB_DOCTRINE = register(DoctrineRecord(
                                  quote="a Base Grant of up to 25% of the project's Total NB Spend ... Grant recommendations will also consider overall demand and available funds "
                                        "(LIFT Film & TV Production Incentive 2026/2027 Guidelines)",
                                  kind="discretionary_band"),)),
-           DoctrineRateTier(tier_id="ca-nb-all-spend-35-with-bonuses-ceiling", rate=0.35, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="ca-nb-thc-discretion-bonuses",
-                                 description="Base Grant plus Stackable Bonuses to a combined 35% of Total NB Spend (+3% Heads of Department and Lead Talent, +3% or 4% rural or remote photography, +3% NB Made); "
-                                             "each bonus needs a stated commitment to its threshold and the award stays discretionary and budget-limited.",
-                                 quote="Stackable Bonuses to a combined total of 35% of Total NB Spend per production (LIFT Film & TV Production Incentive 2026/2027 Guidelines)",
-                                 kind="discretionary_band"),)),),
+           ),
+   # NA-RECONCILIATION-18: the 35% combined ceiling is no longer a second tier; the three stackable bonuses are statutory-formula rules
+   # (program_rate_rules.SUBSET_UPLIFT_RULES["ca_nb_film_tax_credit"]) added to the 25% base grant under SUBSET_COMBINED_RATE_CAPS (35%).
 ))
 register_rate_rules(rate_rules_for(CA_NB_DOCTRINE))
 
@@ -8979,7 +8973,14 @@ CA_SK_DOCTRINE = register(DoctrineRecord(
               "Film, TV and Video guidelines, effective April 1, 2026, creativesask.ca): both streams are 'eligible applicants may apply for' "
               "30% / 25% of all eligible Saskatchewan expenditures up to $5,000,000, 'Funding will be in the form of a grant', assessed by Creative "
               "Saskatchewan, with bonuses to a maximum of 40% (Saskatchewan Stream) and 35% (Service Production Stream). A discretionary, assessed "
-              "grant: it stays display-only (authority_coverage_registry B1 ruling) and is never a guaranteed credit.",
+              "grant: it stays display-only (authority_coverage_registry B1 ruling) and is never a guaranteed credit. BONUS STRUCTURE RECOVERED 2026-10-14 (NA-RECONCILIATION-18; Feature Film & Television "
+              "Production Grant Guidelines approved April 1, 2026, 'Bonuses' section added July 20, 2026, creativesask.ca): eligibility for every bonus requires a Saskatchewan activity test - live action or "
+              "scripted: at least 51% of principal photography days in Saskatchewan; documentary: 51% of principal photography days or 51% of post-production spend; animation: 51% of principal animation "
+              "production days. Rural Bonus +5 points (the majority of principal photography days at least 50 km outside Regina or Saskatoon, measured from the centre-most point); Saskatchewan Post Production "
+              "Bonus +5 (the majority of post-production spend incurred in Saskatchewan; it applies to ALL eligible expenses, not only post); Saskatchewan Production Volume Bonus +10 (the applicant, as a producer "
+              "significantly involved, has at least two eligible completed FFTV projects and CAD 1.5 million of combined eligible Saskatchewan spend in the current and three prior fiscal years, projects "
+              "meeting the activity test). Total funding including bonuses is capped at 40% (Saskatchewan Stream) and 35% (Service Production Stream) of eligible Saskatchewan expenditures; every assessment is subject "
+              "to Creative Saskatchewan's final approval. Not priced: the settled B1 ruling keeps the program display-only, so these formulas are recorded here, not armed in the pricing kernel.",
     source_ref="creativesask.ca-fy2026-27-guidelines-primary+hellodarwin.com+grantcompass.ca-saskatchewan",
     provenance=SourceProvenance(
         issuing_authority="Creative Saskatchewan (Government of Saskatchewan Crown corporation)",

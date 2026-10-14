@@ -3082,6 +3082,22 @@ class EligibleSubsetUpliftRule:
     #: "tiered_day_ratio" (Nova Scotia distant-location incentive): sum over distance bands of tier_rate x (days in that band / total days), the bands exclusive (a location earns the highest tier it meets).
     tier_rates: tuple[float, ...] = ()
     tier_numerator_facts: tuple[str, ...] = ()
+    #: NA-RECONCILIATION-18 formula kinds (all on the host credit's own basis, stated facts only):
+    #:   "points_on_base":   `rate` points once `prerequisite_fact` is stated; `excluded_fact` stated = 0 (a mutually exclusive partner); unstated = a bounded potential.
+    #:   "share_points":     `rate` points when day_numerator_fact / day_denominator_fact meets `min_share` (inclusive unless `share_exclusive`); stated and short = 0; unstated = bounded potential.
+    #:   "tiered_share_points": the highest tier whose cumulative numerator group (tier_numerator_groups, summed) meets `min_share` of the denominator; tier_rates are the points (highest first).
+    #:   "count_threshold":  `rate` points when at least `min_count` of `criteria_facts` are stated true (a false is never stored, so fewer = a bounded potential, never 0).
+    #:   "day_threshold":    `rate` points when the stated day count in day_numerator_fact is at least `min_numerator_days` (stated and short = 0).
+    #:   "hod_shortfall":    Nova Scotia Head-of-Department reduction: `rate` points off per position below the stream minimum (see _price_statutory_formula).
+    criteria_facts: tuple[str, ...] = ()
+    min_count: int | None = None
+    min_share: float | None = None
+    share_exclusive: bool = False
+    tier_numerator_groups: tuple[tuple[str, ...], ...] = ()
+    hod_filled_fact: str | None = None
+    hod_resident_fact: str | None = None
+    stream_i_fact: str | None = None
+    stream_ii_fact: str | None = None
 
 
 _NY_LABOR_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor"})
@@ -3205,6 +3221,68 @@ SUBSET_UPLIFT_RULES = {
             prerequisite_fact=NS_RURAL_FACT,
             source_ref="NSFPIF Guidelines (April 1, 2024) s.6.1/6.2: Distant Location Incentive, up to 10 points, 7% (more than 100 km) or 10% (more than 150 km from Halifax City Hall) prorated on distant "
                        "days to total days of principal photography; the applicant must first be eligible for the Location Incentive"),
+        # NA-RECONCILIATION-18: the remaining Nova Scotia additions and the Head-of-Department reduction (same guideline, s.5, 6, 7), all on ALL Eligible Nova Scotia Costs.
+        EligibleSubsetUpliftRule(
+            "stream_i_base", .01, kind="points_on_base", prerequisite_fact="ca_ns_stream_i_ownership_control_confirmed", excluded_fact="ca_ns_stream_ii_confirmed",
+            source_ref="NSFPIF Guidelines s.6.1/6.2: Stream I base 26% (Nova Scotian ownership and control of production, 50% or more of each of corporate ownership and control, rights, financial and creative "
+                       "control and profit participation, s.2(g)) against Stream II 25%; the Stream II base is the guaranteed floor and Stream I is the +1 point"),
+        EligibleSubsetUpliftRule(
+            "shooting_length", .01, kind="day_threshold", day_numerator_fact="ca_ns_principal_photography_days_in_ns", min_numerator_days=31,
+            source_ref="NSFPIF Guidelines s.6.1/6.2: Shooting Length Incentive, 1 percentage point for shoots of MORE THAN 30 days of principal photography in Nova Scotia (31 days or more)"),
+        EligibleSubsetUpliftRule(
+            "content_performers", .015, kind="share_points", day_numerator_fact="ca_ns_principal_performers_ns_residents", day_denominator_fact="ca_ns_principal_performers_total", min_share=0.6,
+            source_ref="NSFPIF Guidelines s.7(a): +1.5 points when no less than 60 per cent of all Principal Performers, actors, stunt performers and stunt actors are Nova Scotia Residents (background performers excluded)"),
+        EligibleSubsetUpliftRule(
+            "content_three_of_seven", .015, kind="count_threshold", min_count=3,
+            criteria_facts=("ca_ns_content_majority_copyright_ns_ownership_confirmed", "ca_ns_content_two_new_trainees_confirmed", "ca_ns_content_post_75pct_in_ns_confirmed",
+                            "ca_ns_content_ns_resident_producer_confirmed", "ca_ns_content_ns_spend_75pct_confirmed", "ca_ns_content_ns_writer_confirmed", "ca_ns_content_ns_director_confirmed"),
+            source_ref="NSFPIF Guidelines s.7(b): a further +1.5 points for productions meeting at least three of the seven Nova Scotia-content requirements (majority copyright with Nova Scotian ownership and "
+                       "control; two trainees with no prior paid experience; 75% of post-production in Nova Scotia; Nova Scotia resident producer of two years; Nova Scotia spend 75% of total cost and over CAD 25,000; "
+                       "principal writer a Nova Scotia resident; principal director a Nova Scotia resident)"),
+        EligibleSubsetUpliftRule(
+            "head_of_department_shortfall", .005, kind="hod_shortfall", hod_filled_fact="ca_ns_hod_positions_filled", hod_resident_fact="ca_ns_hod_positions_held_by_ns_residents",
+            stream_i_fact="ca_ns_stream_i_ownership_control_confirmed", stream_ii_fact="ca_ns_stream_ii_confirmed",
+            source_ref="NSFPIF Guidelines s.6.1/6.2: the base is reduced by 0.5 (read as percentage points) for each Head of Department position below the stream minimum - Stream I: 50% of filled positions rounded "
+                       "up; Stream II: half of the filled positions rounded up where eight or fewer are filled, four where nine or more are filled; the Fund recognises sixteen positions (s.5(a))"),
+    ),
+    # NA-RECONCILIATION-18: New Brunswick LIFT 2026/2027 Stream 2 stackable bonuses (gnb.ca lift-program-guidelines.pdf, read 2026-10-14) on Total NB Spend, to a combined 35%.
+    "ca_nb_film_tax_credit": (
+        EligibleSubsetUpliftRule(
+            "bonus_heads_of_department_lead_talent", .03, kind="points_on_base", prerequisite_fact="ca_nb_bonus_hod_lead_talent_30pct_confirmed",
+            source_ref="LIFT 2026/2027 Guidelines, Stackable Bonuses: +3% when 30%+ of Head of Department positions or Lead Talent are New Brunswick residents (no deemed); read as one stated fact because the "
+                       "wording does not say whether the two groups are tested together or separately"),
+        EligibleSubsetUpliftRule(
+            "bonus_rural_remote", .04, kind="tiered_share_points", tier_rates=(0.04, 0.03), day_denominator_fact="ca_nb_principal_photography_days_total",
+            tier_numerator_groups=(("ca_nb_days_remote_151km_plus",), ("ca_nb_days_rural_30_to_150km", "ca_nb_days_remote_151km_plus")), min_share=0.5,
+            source_ref="LIFT 2026/2027 Guidelines, Stackable Bonuses: +3% (30-150 km) or +4% (151 km+ from Fredericton, Moncton or Saint John City Hall) when 50%+ of principal photography is in rural NB "
+                       "communities; read as the highest band that alone holds 50%+ of the days (4%), else rural and remote together (3%)"),
+        EligibleSubsetUpliftRule(
+            "bonus_nb_made", .03, kind="count_threshold", min_count=2,
+            criteria_facts=("ca_nb_made_spend_50pct_confirmed", "ca_nb_made_copyright_50pct_confirmed", "ca_nb_made_writer_nb_resident_confirmed", "ca_nb_made_director_nb_resident_confirmed",
+                            "ca_nb_made_post_20pct_in_nb_confirmed", "ca_nb_made_photography_days_25pct_in_nb_confirmed"),
+            source_ref="LIFT 2026/2027 Guidelines, Stackable Bonuses: +3% 'NB Made' when at least two of six content thresholds are met (NB spend 50% of cost; NB copyright 50%; principal writer an NB resident; "
+                       "principal director an NB resident; 20% of post-production in NB; 25% of principal-photography days in NB)"),
+    ),
+    # Missouri RSMo 135.750 subsection 3 (revisor.mo.gov, read 2026-10-14): the 20% base is guaranteed; each stated project fact adds its statutory points. 3(6) is 10% of the 20% base = 2 points.
+    "us_mo_motion_media_production_tax_credit": (
+        EligibleSubsetUpliftRule("filmed_50pct_in_missouri", .05, kind="points_on_base", prerequisite_fact="mo_filmed_50pct_in_missouri_confirmed",
+                                 source_ref="RSMo 135.750 subsection 3(2): +5 points when at least fifty percent of the project is filmed in Missouri"),
+        EligibleSubsetUpliftRule("rural_or_blighted_15pct", .05, kind="points_on_base", prerequisite_fact="mo_rural_or_blighted_15pct_confirmed",
+                                 source_ref="RSMo 135.750 subsection 3(3): +5 points when at least fifteen percent of the Missouri filming takes place in a rural or blighted area"),
+        EligibleSubsetUpliftRule("three_departments_resident_hires", .05, kind="points_on_base", prerequisite_fact="mo_three_departments_missouri_hires_confirmed",
+                                 source_ref="RSMo 135.750 subsection 3(4): +5 points when at least three departments hire a Missouri resident ready to advance or learn a new skillset"),
+        EligibleSubsetUpliftRule("script_markets_missouri", .05, kind="points_on_base", prerequisite_fact="mo_script_markets_missouri_confirmed",
+                                 source_ref="RSMo 135.750 subsection 3(5): +5 points when the script positively markets a Missouri city, region, the state or a tourist attraction (five cleared photographs)"),
+        EligibleSubsetUpliftRule("county_class_two_three_four", .02, kind="points_on_base", prerequisite_fact="mo_second_third_fourth_class_county_confirmed",
+                                 source_ref="RSMo 135.750 subsection 3(6): the credit authorized under subdivision (1) (the 20% base) is increased by ten percent for a project in a second-, third- or fourth-class county = 2 points"),
+    ),
+    # Arkansas Ark. Code 15-4-2005 (Act 517 of 2023): the add-ons (+10 below-the-line Arkansas resident / veteran payroll and veteran-owned small business spend, +5 Tier 3/4 county, +5 multi-project) are
+    # capped at 30% of the expenditure in total, so on any expenditure they can add at most 5 points to the 25% base; per-line evidenced portions refine the bound (uplift_basis).
+    "us_ar_digital_motion_picture_incentive": (
+        EligibleSubsetUpliftRule(
+            "addons_to_the_30pct_cap", .05,
+            source_ref="Ark. Code 15-4-2005(c), (d), (f): add-ons of 10 / 5 / 5 points are limited so that the total claimed on any expenditure does not exceed 30%, i.e. at most 5 points above the 25% base on an "
+                       "expenditure that qualifies for any add-on"),
     ),
     # Alabama (revenue.alabama.gov/tax-incentives/film-rebate, read 2026-10-12): the rebate is 25% of certain production expenditures incurred in Alabama
     # PLUS 35% of the payroll paid to Alabama residents (a 10-point addition on resident payroll); a small-budget production (total expenditures of at
@@ -3226,6 +3304,14 @@ SUBSET_UPLIFT_RULES = {
         EligibleSubsetUpliftRule("qualified_facility", .05, exclusive_group="tv_or_facility", source_ref="TRD FYI-370 July 2025 p4: expenses incurred IN qualified facility, not purchases merely brought there"),
         EligibleSubsetUpliftRule("qualified_tv", .05, exclusive_group="tv_or_facility", eligible_production_types=frozenset({"tv_series", "television_series", "tv_pilot", "television_pilot"}), source_ref="TRD FYI-370 July 2025 p4: qualifying pilot or ordered six-episode series; $50k NM per episode; cannot stack facility 5%"),
     ),
+}
+
+
+#: Combined-rate ceilings stated by a program for base plus stackable additions (NA-RECONCILIATION-18). Applied to the host credit's own basis after every addition.
+SUBSET_COMBINED_RATE_CAPS: dict[str, tuple[float, str]] = {
+    "ca_nb_film_tax_credit": (0.35, "LIFT 2026/2027 Guidelines, Stream 2: a Base Grant of up to 25% plus Stackable Bonuses 'to a combined total of 35% of Total NB Spend'"),
+    "us_ar_digital_motion_picture_incentive": (0.30, "Ark. Code 15-4-2005(f): 'The maximum total tax incentives that shall be claimed for an expenditure under this section is thirty percent (30%) of the expenditure'"),
+    "us_mo_motion_media_production_tax_credit": (0.42, "RSMo 135.750 subsection 3: 20% + four 5-point increases + 10% of the 20% base credit for a second-, third- or fourth-class county = 42%"),
 }
 
 
