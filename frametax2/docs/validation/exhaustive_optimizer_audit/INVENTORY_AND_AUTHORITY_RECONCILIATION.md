@@ -92,8 +92,7 @@ To preserve rigorous audit provenance, findings must be strictly attributed to t
        - **Quebec Stack Dollars:** QPSTC = $0.25 \times \text{open\_base\_usd}$; Federal PSTC = $0.16 \times \text{net\_labour}$.
        - **Manitoba Stack Dollars:** Manitoba = $0.30 \times \text{open\_base\_usd}$; Federal PSTC = $0.16 \times \text{net\_labour}$.
    - **Assumed Planning Scenario:** Proportional allocation to labour (net labour = 75% for QC; 70% for MB) is modeled strictly as an assumed planning scenario, not a proven upper bound.
-   - **Conservative Lower-Incentive / Higher-NPC Bound:** Deducting the whole provincial credit dollars directly from Canadian labour constitutes a conservative lower-incentive / higher-NPC bound (Codex `c52e2cd7`).
-   - **Engine Status:** `ca_federal_pstc + ca_qc_pstc` is unruled in `_SLUG_PAIR_RULES` and blocked by absence in `canonical_stack_bridge.py`. The exact statutory allocation rule remains **OPEN**.
+   - **Engine Status:** In current remediation checkout (`23c9dae5`), `ca_federal_pstc + ca_qc_pstc` is actively ruled as `spend_reduction` (rules 1.8.0, migration 0084), pricing the assumed labour allocation ($25\% \times \text{labour}$) and disclosing the whole-credit lower bound. The definitive statutory allocation formula under *ITA* § 125.5(1)(b) remains **OPEN**.
 2. **External Sovereign & Sub-National Statutory Inventories (OPEN):**
    - Exact mathematical 1:1 conservation between the engine's internal structures (164 Canonical Identities, 81 RateRules, 347 GI entries, 13 ROW pairs) is fully delivered.
    - However, independent statutory verification against complete external legislative compendia for all 190+ sovereign and sub-national jurisdictions worldwide remains **OPEN**.
