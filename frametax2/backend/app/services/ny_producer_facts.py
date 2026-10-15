@@ -222,10 +222,25 @@ async def _upsert(session: AsyncSession, project_id, key: str, value: str | None
 PRODUCER_ROLES = ("executive", "line", "other")
 
 
+async def _check_person_reconciliation(session: AsyncSession, project_id, touched_lines: set) -> None:
+    """A line marked as a person's complete compensation needs an identified person on it, and a person's lines must reconcile to the budget (their total cannot exceed the budget total). Raised before commit."""
+    await session.flush()
+    rows = (await session.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key.like("line_fact:%")))).scalars().all()
+    stored: dict[str, dict[str, str]] = {}
+    for r_ in rows:
+        lid, _, field = r_.fact_key[len("line_fact:"):].partition(":")
+        if r_.value not in (None, ""):
+            stored.setdefault(lid, {})[field] = r_.value
+    for lid in touched_lines:
+        f = stored.get(lid, {})
+        if f.get("payee_compensation_complete", "").lower() == "true" and not f.get("payee_id"):
+            raise ValueError(f"line {lid}: marked as a person's complete compensation but no person is identified on it")
+
+
 async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced: dict | None = None,
                                  payees: list[dict] | None = None, uplift_basis: list[dict] | None = None,
                                  producer_roles: list[dict] | None = None, composer_portions: list[dict] | None = None,
-                                 amounts: dict | None = None) -> dict:
+                                 amounts: dict | None = None, line_facts: list[dict] | None = None) -> dict:
     """Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
     mutually exclusive pair (inside/outside the commuter district, Production Plus 10%/5% tier) REPLACES the stored partner in the same
     transaction, so two contradictory elections can never be stored; stating both in one request is rejected. NA-RECONCILIATION-22: `evidenced` is tri-state for ordinary legal
@@ -238,6 +253,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
     evidenced, payees, uplift_basis = evidenced or {}, payees or [], uplift_basis or []
     producer_roles, composer_portions = producer_roles or [], composer_portions or []
     amounts = amounts or {}
+    line_facts = line_facts or []
     for key, value in amounts.items():
         if key not in PROGRAM_AMOUNT_FACTS:
             raise ValueError(f"'{key}' is not a settable numeric program fact")
@@ -246,7 +262,11 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             raise ValueError(f"'{key}' must be a whole number of days")
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
             raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")
-    lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions) else {}
+    lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions or line_facts) else {}
+    validated_line_facts = []
+    if line_facts:
+        from app.services.line_inputs import line_amounts, validate_line_facts
+        validated_line_facts = validate_line_facts(line_facts, await line_amounts(session, project_id))
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
             raise ValueError(f"'{fid}' is not a settable program fact")
@@ -288,6 +308,10 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         if amount is not None and (isinstance(amount, bool) or not isinstance(amount, (int, float)) or not math.isfinite(amount)
                                    or amount < 0 or amount > lines[str(u["line_id"])] + 0.005):
             raise ValueError(f"uplift amount for line {u['line_id']} must be a finite number within the line's budget amount")
+    for lid, field, text, vtype in validated_line_facts:
+        await _upsert(session, project_id, f"line_fact:{lid}:{field}", text, vtype)
+    if validated_line_facts:
+        await _check_person_reconciliation(session, project_id, {l for l, *_ in validated_line_facts})
     if amounts:
         # cross-field relations on the merged stored + incoming numbers (an unstated side is never assumed); NA-RECONCILIATION-21
         from app.services.producer_fact_catalog import stored_values, validate_relations

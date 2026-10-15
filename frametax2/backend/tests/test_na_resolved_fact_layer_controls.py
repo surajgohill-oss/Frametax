@@ -167,7 +167,7 @@ def test_montana_derives_resident_crew_compensation_from_the_budget_and_prices_t
     assert stated.incentive_floor_usd == pytest.approx(250_000.0), "ten stated persons: 25% x 1,000,000, each well below the 150,000 credit cap (a producer statement outranks the derivation)"
     capped = _mt("btl_resident_labor", amounts={"us_mt_resident_crew_compensation_usd": 3_000_000.0 / 3, "us_mt_resident_crew_persons": 1})
     assert capped.incentive_floor_usd == pytest.approx(150_000.0), "one person: the 150,000 per-person cap binds exactly"
-    assert any("person count not stated" in str(c.get("note", "")) for c in derived.ceiling_conditions), "the missing person-level evidence is disclosed"
+    assert any("person count not established" in str(c.get("note", "")) for c in derived.ceiling_conditions), "the missing person-level evidence is disclosed"
     vfx = _mt("vfx")
     assert vfx.incentive_floor_usd == pytest.approx(200_000.0), "non-compensation Montana spend earns the 20% base"
 

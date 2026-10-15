@@ -116,11 +116,12 @@ export const postProjectAssumptions = (projectId, answers) =>
 export const postProductionType = (projectId, format) =>
   request(`/projects/${projectId}/production-type`, { method: "POST", body: JSON.stringify({ format }) });
 
-// Producer-stated program facts (NA-RECONCILIATION-21): the one canonical ProjectFact path (POST /projects/{id}/program-facts). The call stores and returns the refreshed read-only view; it does NOT
-// evaluate (the caller runs the shared single-flight evaluation). `evidenced`: { key: true | null }, `amounts`: { key: number | null }; null clears a fact back to Unknown. A "No" is never sent.
+// Producer-stated program facts and budget-line inputs: the one canonical ProjectFact path (POST /projects/{id}/program-facts). The call stores and returns the refreshed read-only view; it does NOT
+// evaluate (the caller runs the shared single-flight evaluation). `evidenced`: { key: true | false | null } (an election never takes false), `amounts`: { key: number | null }; null clears a fact back to Unknown.
+// `line_facts`: [{ line_id, field, value }] (null clears), `uplift_basis`: [{ program, uplift, line_id, amount_usd }] (the qualifying portion of a line; null clears).
 export const getProgramFacts = (projectId) => request(`/projects/${projectId}/program-facts`);
-export const postProgramFacts = (projectId, { evidenced = {}, amounts = {} } = {}) =>
-  request(`/projects/${projectId}/program-facts`, { method: "POST", body: JSON.stringify({ evidenced, amounts }) });
+export const postProgramFacts = (projectId, { evidenced = {}, amounts = {}, line_facts = [], uplift_basis = [] } = {}) =>
+  request(`/projects/${projectId}/program-facts`, { method: "POST", body: JSON.stringify({ evidenced, amounts, line_facts, uplift_basis }) });
 
 // Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
 // candidate-jurisdiction inclusion/exclusion election (the SAME real
@@ -311,3 +312,8 @@ export const commitIngestionCandidate = (candidateId) =>
   verb("POST", `${INGESTION_BASE}/candidates/${candidateId}/commit`);
 export const ignoreIngestionCandidate = (candidateId) =>
   verb("POST", `${INGESTION_BASE}/candidates/${candidateId}/ignore`);
+
+// Explicit production locations and budget-line inputs (NA-RECONCILIATION-24). Reads never evaluate; saves never evaluate (the panel runs the shared single-flight evaluation afterwards).
+export const getShootLocations = (projectId) => request(`/projects/${projectId}/shoot-locations`);
+export const postShootLocations = (projectId, locations) => request(`/projects/${projectId}/shoot-locations`, { method: "POST", body: JSON.stringify({ locations }) });
+export const getLineInputs = (projectId, programs = []) => request(`/projects/${projectId}/line-inputs?programs=${encodeURIComponent((programs ?? []).join(","))}`);

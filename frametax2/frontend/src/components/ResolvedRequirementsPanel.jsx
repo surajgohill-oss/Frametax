@@ -3,16 +3,18 @@ import { postProgramFacts } from "../api";
 import { runEvaluation, useEvaluationRun } from "../lib/evaluationRun";
 import {
   SECTION_ORDER, SECTION_TITLE, booleanOptions, changedFacts, chooseBoolean, draftFrom, factStatusText, hasMissouri, isDirty, isReadOnly, ladderLines, provenanceLabel,
-  relevantLocationNeeds, relevantScenarioRules, sectionsFor, structureUpside, validateDraft,
+  relevantLocationNeeds, relevantScenarioRules, sectionsFor, structureLadder, structureUpside, validateDraft,
 } from "../lib/resolvedRequirements";
 import EvaluationStatus, { RetainedSaveNote } from "./EvaluationStatus";
+import LineInputsSection from "./LineInputsSection";
+import ShootLocationsSection from "./ShootLocationsSection";
 
 // Resolved requirements (NA-RECONCILIATION-22, scoped to the selected structure in NA-RECONCILIATION-23). One value and one provenance per fact, resolved by a fixed precedence in the backend (verified evidence, then a producer statement, then a scenario
 // assumption, then Unknown). A fact the engine derives (from the schedule, the budget or the selected scenario) is shown read-only with where it came from; a control appears only for a genuine producer
 // decision or for evidence the system does not hold. Yes / No / Unknown are three different answers: Unknown keeps the conditional potential, No applies the rule's failed treatment. Saving stores only the
 // changed facts, then runs the shared single-flight evaluation exactly once (the control locks while a run is active); on a project whose results are retained from an earlier engine the facts are saved
 // and no evaluation starts silently. Nothing here is defaulted: labels, groups, bounds, provenance, requirements and the Missouri ladder all come from the served view.
-export default function ResolvedRequirementsPanel({ projectId, programFacts, structure, onSaved, evaluateOnSave = true }) {
+export default function ResolvedRequirementsPanel({ projectId, programFacts, shootLocations, structure, onSaved, evaluateOnSave = true }) {
   const [view, setView] = useState(programFacts);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -107,7 +109,7 @@ export default function ResolvedRequirementsPanel({ projectId, programFacts, str
         <div className="pd-row rr-ladder" data-ladder="missouri">
           <div className="pd-ident">
             <span className="pd-role">Missouri rate</span>
-            {ladderLines(view.missouri).map((l) => (
+            {ladderLines(structureLadder(view, structure)).map((l) => (
               <span key={l.id} className={`pd-name rr-state rr-state-${String(l.state).toLowerCase()}`} data-ladder-step={l.id} data-ladder-state={l.state}>
                 {l.text}{l.state === "TRUE" || l.state === "TOTAL" ? "" : ` · ${l.state === "FALSE" ? "No" : "Unknown"}`}
               </span>
@@ -122,6 +124,8 @@ export default function ResolvedRequirementsPanel({ projectId, programFacts, str
           </div>
         </div>
       )}
+      <ShootLocationsSection projectId={projectId} view={shootLocations} structure={structure} onSaved={onSaved} evaluateOnSave={evaluateOnSave} />
+      <LineInputsSection projectId={projectId} structure={structure} refreshKey={programFacts} onSaved={onSaved} evaluateOnSave={evaluateOnSave} />
       {SECTION_ORDER.map((k) => {
         const list = sections[k];
         if (!list.length && !(k === "upside" && upside.length)) return null;

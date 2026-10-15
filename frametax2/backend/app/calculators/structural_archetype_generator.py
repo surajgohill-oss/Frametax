@@ -426,11 +426,14 @@ def _generate_structural_candidate_uncached(
     _sc_rows = [(a.jurisdiction_code, a.amount_usd, a.component, x.component_type) for x in components for a in x.allocations]
     _sc_principal = next((x.jurisdiction_code for x in components if x.component_type == "principal_production"), None)
     _sc_components = []
+    _fact_records: dict[int, tuple] = {}
     for c in components:
         _sf = scenario_derived_facts(c.program_slug, c.jurisdiction_code, _sc_rows, _sc_principal, c.evidenced_requirement_facts, c.amount_facts)
+        _stated_ev, _stated_am = c.evidenced_requirement_facts, c.amount_facts
         if _sf.derived:
             _ev, _am = apply_scenario_facts(c.evidenced_requirement_facts, c.amount_facts, _sf)
             c = _fast_replace(c, evidenced_requirement_facts=_ev, amount_facts=_am)
+        _fact_records[id(c)] = (c.program_slug, c.jurisdiction_code, c.component_type, _stated_ev, _stated_am, _sf)
         _sc_components.append(c)
     components = _sc_components
 
@@ -473,6 +476,8 @@ def _generate_structural_candidate_uncached(
     selective_zero_notes: list[str] = []
     for c in components:
         seg = _price_component_cached(c, _component_cache, gross_budget_usd, contingency_expected_utilization_pct, _worldwide, contingency_allocations, planned_cost_reduction_usd)
+        if _fact_records.get(id(c)):
+            seg = _fast_replace(seg, resolved_inputs=_fact_records[id(c)])
         if id(c) in _conditional_gates and (seg.executable or _conditional_gates[id(c)].scope == "non_payroll"):
             from dataclasses import replace as _replace
             from app.calculators.allocation_pricing import apply_project_gate, non_payroll_relabelled

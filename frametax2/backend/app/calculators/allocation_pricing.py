@@ -163,6 +163,9 @@ class SegmentEconomics:
     # Unresolved NON-gating conditions of the winning (non-band) tier: facts the modeled figure presumes without evidence
     # (e.g. Greece: the Greek-incurrence schedule, the application date/regime). Disclosure only -- never changes the rate.
     presumed_facts: tuple[dict, ...] = ()
+    #: the inputs of the resolved-fact record (value, provenance, scope, effect) this segment's pricing actually used (NA-RECONCILIATION-24): kept as a cheap tuple on the hot path and expanded to records only
+    #: when a candidate is retained (resolved_facts.segment_resolved_facts)
+    resolved_inputs: tuple = ()
     contingency_allowance_applied_usd: float = 0.0
     qpe_dollar_limit_usd: float | None = None
     qpe_dollar_limit_basis: str | None = None
@@ -680,7 +683,33 @@ def _apply_individual_incentive_cap(individual, lines, qualifying, amounts, qle,
     return reduced(floor_total), reduced(potential_total)
 
 
-def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, production_type, qualified_by_category=None):
+_MT_TALENT = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast"})
+
+
+def _mt_line_category(spend_category: str, amounts, line_id: str) -> tuple[str, str | None]:
+    """The Montana compensation category of one personnel line, or why it is unknown (MCA 15-31-1007(3)(b)). Line facts (mt_status_code / mt_tax_withheld / mt_residency) are producer-stated; the budget's own
+    category (resident labour) is derived evidence and is never overwritten by a weaker statement. Returns (category | UNKNOWN | UNKNOWN_TALENT | UNKNOWN_NONRESIDENT | INELIGIBLE, note)."""
+    a = amounts or {}
+    status = a.get(f"mt_status_code:{line_id}")
+    if status == 1.0:
+        return "student", None
+    if status == 2.0:
+        return "veteran_tribal", None
+    withheld = a.get(f"mt_tax_withheld:{line_id}")
+    residency = a.get(f"mt_residency_code:{line_id}")
+    if spend_category in _MT_TALENT:
+        return ("talent", None) if withheld == 1.0 else (("INELIGIBLE", None) if withheld == 0.0 else ("UNKNOWN_TALENT", None))
+    if spend_category == "btl_resident_labor":
+        return "resident_crew", (f"line {line_id}: a stated non-resident status is ignored; the budget classifies it as resident labour" if residency == 2.0 else None)
+    nonres = spend_category == "btl_nonresident_labor" or residency == 2.0
+    if nonres:
+        return ("nonresident_crew", None) if withheld == 1.0 else (("INELIGIBLE", None) if withheld == 0.0 else ("UNKNOWN_NONRESIDENT", None))
+    if residency == 1.0:
+        return "resident_crew", None
+    return "UNKNOWN", None
+
+
+def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, production_type, qualified_by_category=None, line_detail=None):
     """(confirmed_usd, potential_usd, unresolved_note | None) for one statutory-formula uplift of a British Columbia host credit.
 
     The base is the host credit's OWN qualified-labour basis (`qle`: assistance and the 60% cost cap already applied by the host), so the host dependency is inherent: a rule lives under, and is
@@ -840,56 +869,137 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         if personnel <= 0:
             return 0.0, 0.0, None
         replaced = -rule.rate * personnel                                  # compensation is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)): the host's base rate does not apply to it
-        # NA-RECONCILIATION-23: a compensation category that is KNOWN (producer-stated or derived from the normalized budget) is priced at its OWN statutory rate. Only the person-level cap is uncertain, and
-        # it is expressed as a range: the lower bound is one person (credit not above the per-person credit cap, or the rate on the first comp_cap of compensation), the upper bound is the rate on all of the
-        # compensation (many persons). A stated person count is the identified-persons case and prices exactly. The highest category rate is used ONLY for compensation whose category is unknown.
-        floor_credit = potential_credit = stated_comp = derived_comp = 0.0
-        derived_notes = []
+        # NA-RECONCILIATION-23/24: a compensation category that is KNOWN (line-level evidence, a producer-stated total, or the normalized budget category) is priced at its OWN statutory rate. Only the person-level cap is
+        # uncertain. Identified persons (a payee with complete compensation on each line, ny_atl_payee:<line>) make the cap exact; otherwise it is a range: the lower bound is one person (credit not above the per-person
+        # credit cap, or the rate on the first comp_cap of compensation), the upper bound is the rate on all of the compensation (many persons). The highest category rate is used ONLY for compensation whose category is
+        # unknown. A line is classified once; a line-level classification outranks a producer-stated aggregate for the same category (never counted twice).
         entries = {e[0]: e for e in rule.compensation_credits}
-        known = []                                                           # (comp_fact, comp, count|None, derived)
-        for comp_fact, count_fact, rate, credit_cap, comp_cap, required_fact in rule.compensation_credits:
-            if required_fact and required_fact not in stated_facts:
-                continue                                                   # e.g. the 1009 postproduction-wage credit exists only for an approved postproduction company
-            comp = _stated_amount(amounts, comp_fact)
+        cat_fact = {"resident_crew": "us_mt_resident_crew_compensation_usd", "nonresident_crew": "us_mt_nonresident_crew_compensation_usd", "talent": "us_mt_talent_compensation_usd",
+                    "student": "us_mt_student_compensation_usd", "veteran_tribal": "us_mt_veteran_tribal_compensation_usd"}
+        by_cat: dict[str, list] = {}                                            # category -> [(line_id, amount, payee ordinal | None)]
+        unknown_bucket: dict[str, float] = {"UNKNOWN": 0.0, "UNKNOWN_TALENT": 0.0, "UNKNOWN_NONRESIDENT": 0.0}
+        unknown_rows: dict[str, list] = {"UNKNOWN_TALENT": [], "UNKNOWN_NONRESIDENT": []}
+        ineligible = 0.0
+        notes: list[str] = []
+        for lid, spend_cat, amt in (line_detail or ()):
+            if spend_cat not in rule.personnel_categories or amt <= 0:
+                continue
+            cat, why = _mt_line_category(spend_cat, amounts, lid)
+            if why:
+                notes.append(why)
+            if cat == "INELIGIBLE":
+                ineligible += amt
+            elif cat in unknown_bucket:
+                unknown_bucket[cat] += amt
+                if cat in unknown_rows:
+                    ordinal = (amounts or {}).get(f"ny_atl_payee:{lid}")
+                    unknown_rows[cat].append((lid, amt, None if ordinal is None else int(ordinal)))
+            else:
+                ordinal = (amounts or {}).get(f"ny_atl_payee:{lid}")
+                by_cat.setdefault(cat, []).append((lid, amt, None if ordinal is None else int(ordinal)))
+        floor_credit = potential_credit = known_total = 0.0
+        cap_notes: list[str] = []
+
+        def category_credit(cat, rows, confirmed=True):
+            nonlocal floor_credit, potential_credit
+            _cf, _nf, rate, credit_cap, comp_cap, _req = entries[cat_fact[cat]]
+            total = sum(a for _, a, _ in rows)
+            ident: dict[int, float] = {}
+            rest = 0.0
+            for _, a, o in rows:
+                if o is None:
+                    rest += a
+                else:
+                    ident[o] = ident.get(o, 0.0) + a
+
+            def person(c):
+                v = rate * (c if comp_cap is None else min(c, comp_cap))
+                return v if credit_cap is None else min(v, credit_cap)
+            exact = sum(person(c) for c in ident.values())
+            one_person = person(total)
+            stated_count = _stated_count(amounts, _nf, "persons") if _nf else None
+            if not ident and stated_count is not None:                              # a stated person count for the category (identified persons, no per-line payee): exact on the classified total
+                base = total if comp_cap is None else min(total, stated_count * comp_cap)
+                credit = rate * base if credit_cap is None else min(rate * base, stated_count * credit_cap)
+                floor_credit += credit if confirmed else 0.0
+                potential_credit += credit
+                stated_agg = _stated_amount(amounts, cat_fact[cat])
+                if stated_agg is not None and abs(stated_agg - total) > 0.005:
+                    notes.append(f"{cat_fact[cat]}: the stated total {stated_agg:,.2f} differs from the {total:,.2f} the lines classify; the lines are used")
+                return total
+            if rest <= 0.005 and ident:
+                floor_credit += exact if confirmed else 0.0
+                potential_credit += exact
+            else:
+                floor_credit += max(exact, one_person) if confirmed else 0.0
+                potential_credit += exact + rate * rest
+                cap_notes.append(f"{cat_fact[cat]} ({total:,.2f} at {rate:.0%}; {len(ident)} identified person(s), {rest:,.2f} on lines with no identified payee)")
+            return total
+
+        stated_only = []
+        for cat, fact in cat_fact.items():
+            if cat in by_cat:
+                known_total += category_credit(cat, by_cat[cat])
+                continue
+            required = entries[fact][5]
+            if required and required not in stated_facts:
+                continue
+            comp = _stated_amount(amounts, fact)
             if comp is not None:
-                known.append((comp_fact, comp, _stated_count(amounts, count_fact, "persons") if count_fact else None, False))
-        for d_fact, d_category in rule.derived_compensation:
-            if any(k[0] == d_fact for k in known):
-                continue                                                   # a producer-stated amount (and its persons) is the stronger tier
-            d_amount = (qualified_by_category or {}).get(d_category, 0.0)
-            if d_amount > 0 and d_fact in entries:
-                known.append((d_fact, d_amount, None, True))
-        for comp_fact, comp, count, derived in known:
-            _cf, _nf, rate, credit_cap, comp_cap, _req = entries[comp_fact]
-            if count is not None:                                          # identified persons: exact
+                stated_only.append((cat, fact, comp))
+        for cat, fact, comp in stated_only:                                     # producer-stated aggregate for a category no line was classified into
+            _cf, count_fact, rate, credit_cap, comp_cap, _req = entries[fact]
+            count = _stated_count(amounts, count_fact, "persons") if count_fact else None
+            if count is not None:
                 base = comp if comp_cap is None else min(comp, count * comp_cap)
-                credit = rate * base
-                if credit_cap is not None:
-                    credit = min(credit, count * credit_cap)
+                credit = rate * base if credit_cap is None else min(rate * base, count * credit_cap)
                 floor_credit += credit
                 potential_credit += credit
-            else:                                                          # person count unknown: a range, at the KNOWN category rate
-                one_person = rate * (comp if comp_cap is None else min(comp, comp_cap))
-                if credit_cap is not None:
-                    one_person = min(one_person, credit_cap)
-                floor_credit += one_person
+            else:
+                one = rate * (comp if comp_cap is None else min(comp, comp_cap))
+                floor_credit += one if credit_cap is None else min(one, credit_cap)
                 potential_credit += rate * comp
-                derived_notes.append(f"{comp_fact} ({comp:,.2f} at {rate:.0%})")
-            stated_comp += comp
-            if derived:
-                derived_comp += comp
-        if stated_comp > personnel + 0.005:
-            raise ValueError(f"the stated compensation {stated_comp:,.2f} exceeds the {personnel:,.2f} of qualifying personnel spend in the budget")
-        bound = rule.bound_rate * max(0.0, personnel - stated_comp)         # compensation whose CATEGORY is not known: the highest category rate is the upper bound
+                cap_notes.append(f"{fact} ({comp:,.2f} at {rate:.0%})")
+            known_total += comp
+        remaining = sum(c for _, _, c in stated_only)                            # a producer-stated category total is a statement about part of the compensation no line classified
+        for bucket in ("UNKNOWN", "UNKNOWN_TALENT", "UNKNOWN_NONRESIDENT"):
+            take = min(remaining, unknown_bucket[bucket])
+            unknown_bucket[bucket] -= take
+            remaining -= take
+        # the post-production wage credit (approved company only) and any stated aggregate keep their own entries
+        for comp_fact, count_fact, rate, credit_cap, comp_cap, required_fact in rule.compensation_credits:
+            if comp_fact in cat_fact.values() or (required_fact and required_fact not in stated_facts):
+                continue
+            comp = _stated_amount(amounts, comp_fact)
+            if comp is not None:
+                floor_credit += rate * comp
+                potential_credit += rate * comp
+                known_total += comp
+        known_total += ineligible
+        if known_total + sum(unknown_bucket.values()) > personnel + 0.005:
+            raise ValueError(f"the stated compensation {known_total + sum(unknown_bucket.values()):,.2f} exceeds the {personnel:,.2f} of qualifying personnel spend in the budget")
+        before = potential_credit
+        if unknown_rows["UNKNOWN_TALENT"]:                                      # category fixed by the line, withholding not stated: nothing confirmed, the category's own potential (with any identified person's cap)
+            category_credit("talent", unknown_rows["UNKNOWN_TALENT"], confirmed=False)
+        if unknown_rows["UNKNOWN_NONRESIDENT"]:
+            category_credit("nonresident_crew", unknown_rows["UNKNOWN_NONRESIDENT"], confirmed=False)
+        unknown_category_potential, potential_credit = potential_credit - before, before
+        bound = unknown_category_potential + rule.bound_rate * max(0.0, personnel - known_total - unknown_bucket["UNKNOWN_TALENT"] - unknown_bucket["UNKNOWN_NONRESIDENT"])
         floor_delta = replaced + floor_credit
         potential_delta = replaced + potential_credit + bound
-        note = None if (stated_comp >= personnel - 0.005) else (
-            f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no known category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member, or an approved "
-            f"postproduction company's wages); bounded at the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
-        if derived_notes:
-            cap_note = (f"{rule.uplift_id}: person count not stated for {'; '.join(derived_notes)}; the known category rate applies and only the per-person cap is a range - the confirmed figure is the lower bound for one "
-                        f"person and the potential is the rate on all of the compensation ({rule.source_ref})")
+        unresolved_comp = max(0.0, personnel - known_total)
+        note = None if unresolved_comp <= 0.005 else (
+            f"{rule.uplift_id}: compensation of {unresolved_comp:,.2f} has no known category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member, or an approved "
+            f"postproduction company's wages); bounded at the category's own rate where the line fixes it, else the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
+        if cap_notes:
+            cap_note = (f"{rule.uplift_id}: person count not established for {'; '.join(cap_notes)}; the known category rate applies and only the per-person cap is a range - the confirmed figure is the lower bound "
+                        f"for one person and the potential is the rate on all of the compensation ({rule.source_ref})")
             note = cap_note if note is None else note + "; " + cap_note
+        for n in notes:
+            note = f"{rule.uplift_id}: {n}" if note is None else note + "; " + n
+        if ineligible > 0:
+            inel = f"{rule.uplift_id}: {ineligible:,.2f} of compensation earns no credit (Montana tax is stated as not withheld)"
+            note = inel if note is None else note + "; " + inel
         return round(floor_delta, 2), round(potential_delta, 2), note
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)
@@ -962,7 +1072,8 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             continue
         if rule.kind != "subset":
             # Statutory-formula kinds (NA-RECONCILIATION-16): priced on the host credit's own basis, outside the per-line subset machinery and its claim-selection check.
-            confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type, qualified_by_category=qualified_by_category)
+            confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type, qualified_by_category=qualified_by_category,
+                                                                              line_detail=[(ln.line_id, ln.spend_category or "miscellaneous", qualifying.get(ln.line_id, 0.0)) for ln in lines])
             if rule.gate_rule_id:
                 gate = _share_gate_state(rules_by_id[rule.gate_rule_id], amounts, facts)
                 if gate is False:
@@ -2741,7 +2852,10 @@ def price_allocated_structure(
         _sf = scenario_derived_facts(_kw["program_slug"], jur, _gate_rows, spec.primary_jurisdiction, evidenced_requirement_facts, amount_facts)
         if _sf.derived:
             _kw["evidenced_requirement_facts"], _kw["amount_facts"] = apply_scenario_facts(evidenced_requirement_facts, amount_facts, _sf)
+        _records_kw = (_kw["program_slug"], jur, "allocation", evidenced_requirement_facts, amount_facts, _sf)
         seg = price_segment(**_kw)
+        from dataclasses import replace as _dc_replace
+        seg = _dc_replace(seg, resolved_inputs=_records_kw)
         # Project-level eligibility (California 75% of budget OR 75% of principal-photography days; Pennsylvania 60% share; Massachusetts 75% for the
         # non-payroll credit) cannot be decided by one segment alone; a failed gate removes the governed credit and keeps the candidate visible with an
         # affirmative rejection, an undetermined one is a conditional planning scenario.

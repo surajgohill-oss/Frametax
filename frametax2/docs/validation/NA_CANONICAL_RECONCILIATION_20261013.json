@@ -469,7 +469,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING; producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -599,7 +599,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass); GENUINE_AUTHORITY_CONFLICT: stacking_rules.py 1.15.0, structural_prerequisites.py, canonical_stack_bridge.py, program_rate_rules_worldwide.py, program_requirements.py, program_rate_rules.py, per_payee_limits.py, authority_coverage_registry.py 1.16.0, migration 0089 (NA-RECONCILIATION-13)",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "PRICED_REPAIRED_AUTHORITY_DIMENSIONS_OPEN",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -989,7 +989,7 @@
    "served_consumer": "canonical_evaluation -> allocation_pricing.price_segment -> canonical_production_view",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "EXISTS_BUT_DISCONNECTED: program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass); CANONICAL_DATA_MISSING: stacking_rules.py 1.15.0, structural_prerequisites.py, canonical_stack_bridge.py, program_rate_rules_worldwide.py, program_requirements.py, program_rate_rules.py, per_payee_limits.py, authority_coverage_registry.py 1.16.0, migration 0089 (NA-RECONCILIATION-13)",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING; producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds); producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts); the Department of Revenue's posted remaining-backlog and available-credit amount for the production year"
   },
@@ -7073,7 +7073,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -7099,7 +7099,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -7125,7 +7125,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -7151,7 +7151,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -7177,7 +7177,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -7203,7 +7203,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_stack_and_gate_repairs_controls.py",
+   "focused_test": "test_b4_authority_exhaustion_gate.py, test_generic_structural_discovery_final_correction.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: RATE_OR_AWARD_BASIS, QPE_DEFINITION, TERRITORIALITY, MINIMUM_SPEND, ELIGIBLE_PRODUCTION_TYPE, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -7645,7 +7645,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -7671,7 +7671,7 @@
    "served_consumer": "",
    "defect_classification": "GENUINE_AUTHORITY_CONFLICT",
    "repair_commit_or_file": "stacking_rules.py 1.15.0, structural_prerequisites.py, canonical_stack_bridge.py, program_rate_rules_worldwide.py, program_requirements.py, program_rate_rules.py, per_payee_limits.py, authority_coverage_registry.py 1.16.0, migration 0089 (NA-RECONCILIATION-13)",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -7697,7 +7697,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_us_rate_record_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: QPE_DEFINITION, TERRITORIALITY, CAP, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, MONETIZATION, REFUNDABILITY, TRANSFERABILITY, APPLICATION_TIMING"
   },
@@ -8555,7 +8555,7 @@
    "served_consumer": "",
    "defect_classification": "EXISTS_BUT_DISCONNECTED",
    "repair_commit_or_file": "program_rate_rules_worldwide.py, program_rate_rules.py, authority_coverage_registry.py 1.13.0-1.14.0, program_requirements.py (NA-RECONCILIATION-12, second pass)",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -8581,7 +8581,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "stacking_rules.py 1.15.0, structural_prerequisites.py, canonical_stack_bridge.py, program_rate_rules_worldwide.py, program_requirements.py, program_rate_rules.py, per_payee_limits.py, authority_coverage_registry.py 1.16.0, migration 0089 (NA-RECONCILIATION-13)",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "REPAIRED",
    "residual_evidence_needed": "repaired; see repair column"
   },
@@ -8607,7 +8607,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8633,7 +8633,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8659,7 +8659,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8685,7 +8685,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8711,7 +8711,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8737,7 +8737,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8763,7 +8763,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8789,7 +8789,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8815,7 +8815,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8841,7 +8841,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8867,7 +8867,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8893,7 +8893,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8919,7 +8919,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8945,7 +8945,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8971,7 +8971,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -8997,7 +8997,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (amounts, validated against the registered bounds) | absence = Unknown (never defaulted to 0) | fingerprint amount_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (amounts, validated against the registered bounds)"
   },
@@ -9023,7 +9023,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -9049,7 +9049,7 @@
    "served_consumer": "producer-facts: POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts) | absence = Unknown; a false is never stored as evidence (true or null only) | fingerprint evidenced_program_facts | UI EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)",
    "defect_classification": "PROJECT_FACT_REQUIRED",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_PROJECT_FACT_REQUIRED",
    "residual_evidence_needed": "producer statement via POST /projects/{id}/program-facts (ny_producer_facts.write_ny_program_facts)"
   },
@@ -9075,7 +9075,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "the Department of Revenue's posted remaining-backlog and available-credit amount for the production year"
   },
@@ -9101,7 +9101,7 @@
    "served_consumer": "",
    "defect_classification": "CANONICAL_DATA_MISSING",
    "repair_commit_or_file": "",
-   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_locality_bc_montana_controls.py",
+   "focused_test": "test_na_bonus_formula_controls.py, test_na_calculation_closure_controls.py, test_na_executable_coverage_matrix.py, test_na_line_inputs_controls.py",
    "terminal_disposition": "OPEN_CANONICAL_DATA_MISSING",
    "residual_evidence_needed": "per dimension: a primary-source value, a confirmed non-applicability, or a confirmed authoritative silence: TERRITORIALITY, UPLIFT_RULES, RESIDENT_NONRESIDENT_TREATMENT, PAYROLL_TREATMENT, APPLICATION_TIMING"
   },

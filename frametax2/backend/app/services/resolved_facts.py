@@ -220,3 +220,55 @@ async def resolved_requirements_view(session: AsyncSession, project_id) -> dict:
         "note": ("Resolved requirements. Verified evidence outranks a producer statement, which outranks a scenario assumption. A derived or assumed fact is shown read-only; only a genuine producer decision or "
                  "evidence the system cannot hold is asked for. Unknown keeps the conditional potential; No applies the rule's failed treatment."),
     }
+
+
+_EFFECTS_CACHE: dict | None = None
+
+
+def structure_fact_records(program_slug: str | None, jurisdiction_code: str, component: str, stated_evidence, stated_amounts, scenario) -> tuple[dict, ...]:
+    """The resolved facts one priced component actually used (NA-RECONCILIATION-24), recorded with the generation: the scenario / schedule / locality derivations (`scenario`: calculators.scenario_facts.ScenarioFacts),
+    the producer-stated facts and numbers relevant to the program, and the catalogued facts that stayed Unknown with their pricing effect. Pure; the same facts the pricing used, not a recomputation of any price."""
+    global _EFFECTS_CACHE
+    from app.data.program_slug_aliases import canonical_slug
+    from app.services.producer_fact_catalog import CATALOG
+    if not program_slug:
+        return ()
+    slug = canonical_slug(program_slug) or program_slug
+    if _EFFECTS_CACHE is None:
+        _EFFECTS_CACHE = _effects()
+    programs_of = fact_programs()
+    scope = {"program": slug, "jurisdiction": jurisdiction_code, "component": component}
+    derived_keys = {d.key for d in (scenario.derived if scenario is not None else ())}
+    stated = frozenset(stated_evidence or ())
+    amounts = dict(stated_amounts or {})
+    out: list[dict] = []
+
+    def effect_of(key):
+        mine = [e for e in _EFFECTS_CACHE.get(key, []) if e["program"] == slug]
+        return ("; ".join(e["text"] for e in mine) or None), max((e["points"] for e in mine if e.get("points")), default=None)
+
+    for d in (scenario.derived if scenario is not None else ()):
+        txt, pts = effect_of(d.key)
+        state = ("TRUE" if d.value else "FALSE") if isinstance(d.value, bool) else "VALUE"
+        out.append({"fact_key": d.key, "state": state, "value": d.value, "provenance": d.provenance, "basis": d.basis, "source": "derived for this structure", "scope": scope, "effect": txt, "effect_points": pts})
+    for key in sorted(CATALOG):
+        if slug not in programs_of.get(key, frozenset()) or key in derived_keys:
+            continue
+        txt, pts = effect_of(key)
+        if key in stated:
+            out.append({"fact_key": key, "state": "TRUE", "value": True, "provenance": PROVENANCE_PRODUCER_STATED, "basis": "stated Yes by the producer", "source": "ProjectFact", "scope": scope, "effect": txt, "effect_points": pts})
+        elif "not:" + key in stated:
+            out.append({"fact_key": key, "state": "FALSE", "value": False, "provenance": PROVENANCE_PRODUCER_STATED, "basis": "stated No by the producer: the rule's failed treatment applies", "source": "ProjectFact", "scope": scope,
+                        "effect": txt, "effect_points": pts})
+        elif key in amounts:
+            out.append({"fact_key": key, "state": "VALUE", "value": amounts[key], "provenance": PROVENANCE_PRODUCER_STATED, "basis": "stated number", "source": "ProjectFact", "scope": scope, "effect": txt, "effect_points": pts})
+        elif txt:
+            out.append({"fact_key": key, "state": "UNKNOWN", "value": None, "provenance": PROVENANCE_UNKNOWN, "basis": "not established: the conditional potential is preserved", "source": None, "scope": scope, "effect": txt,
+                        "effect_points": pts})
+    return tuple(out)
+
+
+def segment_resolved_facts(segment) -> list[dict]:
+    """The persisted resolved-fact records of one priced segment (expanded from its inputs only for a retained candidate); [] for a segment that no pricing path attached facts to."""
+    inputs = getattr(segment, "resolved_inputs", ()) or ()
+    return list(structure_fact_records(*inputs)) if inputs else []

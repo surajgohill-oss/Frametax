@@ -72,13 +72,21 @@ def payee_amount_facts(fact_rows, line_ids: set[str]) -> dict[str, float]:
     """Derived NY amount facts from stated line facts: `ny_atl_payee:<line_id>` -> payee ordinal, only for lines whose rows
     `payee_id` and `payee_compensation_complete` (= true) both exist (equal ordinals are the same individual);
     `ny_composer_portion:<line_id>` -> the stated composer compensation inside a music account; `ny_producer_role:<line_id>` -> role code."""
-    raw = _line_fact_rows(fact_rows, line_ids, ("payee_id", "payee_compensation_complete", "composer_compensation_usd", "producer_role", "payee_type"))
+    raw = _line_fact_rows(fact_rows, line_ids, ("payee_id", "payee_compensation_complete", "composer_compensation_usd", "producer_role", "payee_type", "mt_status", "mt_tax_withheld", "mt_residency"))
     ids = {lid: f["payee_id"] for lid, f in raw.items()
            if f.get("payee_id") and f.get("payee_compensation_complete", "").lower() in ("true", "1", "yes")}
     ordinal = {name: float(i + 1) for i, name in enumerate(sorted(set(ids.values())))}
     out = {FACT_PAYEE_PREFIX + lid: ordinal[name] for lid, name in ids.items()}
     from app.calculators.per_payee_limits import payee_type_amount_facts
     out.update(payee_type_amount_facts(raw))
+    # Montana person-level categories (MCA 15-31-1007(3)(b)): student / veteran-or-tribal status, Montana tax withheld, residency - stated per line, never inferred
+    for lid, f in raw.items():
+        if f.get("mt_status") in ("none", "student", "veteran_tribal"):
+            out["mt_status_code:" + lid] = {"none": 0.0, "student": 1.0, "veteran_tribal": 2.0}[f["mt_status"]]
+        if f.get("mt_tax_withheld", "").lower() in ("true", "false"):
+            out["mt_tax_withheld:" + lid] = 1.0 if f["mt_tax_withheld"].lower() == "true" else 0.0
+        if f.get("mt_residency") in ("resident", "nonresident"):
+            out["mt_residency_code:" + lid] = 1.0 if f["mt_residency"] == "resident" else 2.0
     for lid, f in raw.items():
         try:
             c = float(f["composer_compensation_usd"]) if f.get("composer_compensation_usd") else None

@@ -38,6 +38,23 @@ def entries_from_rows(rows) -> list[loc.LocationEntry]:
     return []
 
 
+async def shoot_total_days(session: AsyncSession, project_id) -> float | None:
+    """The retained schedule's total principal-photography days, else the smallest producer-stated program total; None when neither exists (nothing to conserve against)."""
+    from app.services.resolved_facts import SCHEDULE_TOTAL_FACT_KEYS, schedule_total_days
+    days = await schedule_total_days(session, project_id)
+    if days is not None:
+        return float(days)
+    stated = []
+    for key in SCHEDULE_TOTAL_FACT_KEYS:
+        row = (await session.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key == "amount_fact:" + key))).scalar_one_or_none()
+        try:
+            if row is not None and row.value not in (None, ""):
+                stated.append(float(row.value))
+        except ValueError:
+            continue
+    return min(stated) if stated else None
+
+
 async def write_shoot_locations(session: AsyncSession, project_id, locations: list[dict]) -> dict:
     """Replace the project's explicit locations (an empty list clears them). ValueError with the reason on any invalid entry; nothing is written then."""
     if len(locations) > MAX_LOCATIONS:
@@ -46,6 +63,7 @@ async def write_shoot_locations(session: AsyncSession, project_id, locations: li
     ids = [e.id for e in entries]
     if len(set(ids)) != len(ids):
         raise ValueError("location ids must be unique")
+    loc.check_entries(entries, await shoot_total_days(session, project_id))
     payload = [{"id": e.id, "label": e.label, "jurisdiction_code": e.jurisdiction_code, "role": e.role, "city": e.city, "county": e.county, "days": e.days,
                 "attributes": dict(e.attributes), "evidence": {k: dict(v) for k, v in e.evidence.items()}} for e in sorted(entries, key=lambda x: x.id)]
     value = json.dumps(payload, sort_keys=True) if payload else None
@@ -61,6 +79,29 @@ async def write_shoot_locations(session: AsyncSession, project_id, locations: li
     return {"locations": len(entries)}
 
 
+def _pricing_effects(entries: list) -> list[dict]:
+    """What each locality classification does to the price, read from the canonical uplift rules (never retyped): per predicate, the programs it feeds, the uplift text and the aggregate state over the
+    effective locations (MET = every location qualifies, NOT_MET = none does, PARTIAL, UNKNOWN)."""
+    import app.data.program_rate_rules as r
+    from app.calculators.scenario_facts import PREDICATE_PROGRAMS
+    resolved = [loc.resolve(e) for e in loc.effective_entries(entries)]
+    out = []
+    for p in loc.PREDICATES:
+        mine = [x for x in resolved if x.entry.jurisdiction_code == p.jurisdiction]
+        states = [x.states.get(p.key) for x in mine]
+        agg = "UNKNOWN" if not mine else ("MET" if all(v is True for v in states) else "NOT_MET" if all(v is False for v in states)
+                                          else "PARTIAL" if any(v is True for v in states) else "UNKNOWN")
+        effects = []
+        for slug in PREDICATE_PROGRAMS.get(p.key, ()):
+            for u in r.SUBSET_UPLIFT_RULES.get(slug, ()):
+                feeds = (p.fact_key and u.prerequisite_fact == p.fact_key) or (p.day_fact and p.day_fact in (u.day_numerator_fact, *u.tier_numerator_facts, *[f for g in u.tier_numerator_groups for f in g]))
+                if feeds:
+                    effects.append({"program": slug, "uplift": u.uplift_id, "rate": u.rate, "text": (f"+{u.rate * 100:g} points on the base rate" if u.kind == "points_on_base"
+                                                                                                          else f"{u.uplift_id.replace('_', ' ')} ({u.rate * 100:g}%), computed from the exact days at these locations")})
+        out.append({"predicate": p.key, "jurisdiction": p.jurisdiction, "label": p.label, "state": agg, "locations": len(mine), "effects": effects})
+    return out
+
+
 async def locations_view(session: AsyncSession, project_id) -> dict:
     """Read-only: the locations with their resolved classifications, provenance and exactly what is still unresolved; never evaluates."""
     from app.models.project_location_requirement import ProjectLocationRequirement
@@ -70,8 +111,13 @@ async def locations_view(session: AsyncSession, project_id) -> dict:
         ProjectLocationRequirement.project_id == project_id, ProjectLocationRequirement.production_location.is_not(None)))).scalars().all()
     return {
         "locations": loc.describe(entries),
+        "superseded_schedule_locations": sorted(e.id for e in entries if e not in loc.effective_entries(entries)),
+        "total_days": await shoot_total_days(session, project_id),
+        "used_days": sum(e.days or 0 for e in loc.effective_entries(entries)),
+        "pricing_effects": [x for x in _pricing_effects(entries) if x["effects"] and x["locations"]],
+        "reference_points": {k: {"label": v["label"], "status": v["status"], "required_source": v["required_source"]} for k, v in loc.REFERENCE_POINTS.items()},
         "unresolved_text_locations": sorted({t for t in text if t and t.strip()}),
-        "datasets": [{k: v for k, v in loc.MO_COUNTY_DATASET.items()}],
+        "datasets": [dict(loc.MO_COUNTY_DATASET), dict(loc.MO_OFFICIAL_MANUAL), {k: v for k, v in loc.BC_REGULATION.items()}, {k: v for k, v in loc.BC_METRO_VANCOUVER.items() if k != "members"}],
         "open_classifications": dict(loc.OPEN_CLASSIFICATIONS),
         "note": ("Locality is established only from explicit locations. A free-text production location is not parsed into a place. A classification the repository holds no dataset for stays Unknown unless the "
                  "producer asserts it per location with its source; the exact source still required is named."),

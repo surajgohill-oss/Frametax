@@ -950,6 +950,8 @@ def _empty_structure_entry(
         # relationship_types combinations on its own.
         "classification": _structure_classification(trace, structure_type, is_priced),
         "candidate_status": trace.get("candidate_status"),
+        # NA-RECONCILIATION-24: the resolved facts the priced components actually used (value, provenance, scope, pricing effect), persisted with the generation and served exactly as retained
+        "resolved_facts": [r for part in (trace.get("segments") or trace.get("component_allocations") or []) for r in (part.get("resolved_facts") or [])],
         # Codex Defect 4 — the actual terminal cause (never flattened to a
         # single generic reason) and the program identity, both already
         # persisted verbatim by canonical_evaluation.py; None for priced

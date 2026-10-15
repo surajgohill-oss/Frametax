@@ -62,3 +62,7 @@ Result: **5 corrected** (stale expectations caused by accepted rule changes) and
 | tests/test_staged_eligibility_and_nationality.py::test_unknown_nationality_does_not_eliminate_jurisdictions_or_base_incentives | KeyError: 'base_jurisdiction_code' | anchor id(s) ab10b319 | authorized run against a database holding the anchors (CINEGLOBE_AUTHORIZED_REAL_PROJECT_TESTS), or register in `real_production_registry.py` |
 
 OPEN count: 42. The synthetic replacements for this coverage live in `test_na_synthetic_pipeline_controls.py` and the new `test_na_*` controls; registering these tests in the real-production registry would deselect them with a reported count, which needs the owner's decision and is not done silently.
+
+## Re-verified after NA-RECONCILIATION-24 (2026-10-15)
+
+The wide affected group (1,039 tests) was re-run after this pass: the failing set is exactly the 42 tests above (names identical), still unregistered, not deselected, not weakened and not run against any anchor.

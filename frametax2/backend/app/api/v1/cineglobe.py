@@ -934,6 +934,7 @@ class NyProgramFacts(BaseModel):
     producer_roles: list[dict[str, Any]] = []
     composer_portions: list[dict[str, Any]] = []
     amounts: dict[str, Any] = {}
+    line_facts: list[dict[str, Any]] = []
 
 
 @router.post("/projects/{project_id}/program-facts")
@@ -949,7 +950,8 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
         raise HTTPException(status_code=404, detail="Project not found")
     try:
         applied = await write_ny_program_facts(db, project.id, evidenced=body.evidenced, payees=body.payees, uplift_basis=body.uplift_basis,
-                                              producer_roles=body.producer_roles, composer_portions=body.composer_portions, amounts=body.amounts)
+                                              producer_roles=body.producer_roles, composer_portions=body.composer_portions, amounts=body.amounts,
+                                              line_facts=body.line_facts)
     except ValueError as exc:
         await db.rollback()
         raise HTTPException(status_code=422, detail=str(exc))
@@ -978,6 +980,18 @@ async def post_shoot_locations(project_id: str, body: ShootLocationsBody, db: As
         raise HTTPException(status_code=422, detail=str(exc))
     await db.commit()
     return {"applied": applied, "shoot_locations": await locations_view(db, project.id)}
+
+
+@router.get("/projects/{project_id}/line-inputs")
+async def get_line_inputs(project_id: str, programs: str = "", db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Read-only budget-line picker for the selected programs: only the lines and fields a rule of those programs reads, with stored values, the budget's own classification and each person's reconciled lines.
+    Never evaluates, never writes (the writer is POST /projects/{id}/program-facts `line_facts`, `uplift_basis`)."""
+    from app.services.line_inputs import line_inputs_view
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    slugs = [x for x in programs.split(",") if x]
+    return {"line_inputs": await line_inputs_view(db, project.id, slugs)}
 
 
 @router.get("/projects/{project_id}/shoot-locations")

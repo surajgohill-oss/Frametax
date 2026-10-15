@@ -106,7 +106,7 @@ export const factStatusText = (f) => {
 export function ladderLines(ladder) {
   if (!ladder) return [];
   const lines = [{ id: "base", text: `Base ${ladder.base_pct}%`, state: "TRUE" }];
-  for (const s of ladder.steps) lines.push({ id: s.id, text: `+${s.points} points`, state: s.state, key: s.fact_key });
+  for (const s of ladder.steps) lines.push({ id: s.id, text: `+${s.points} points: ${String(s.id).replace(/_/g, " ")}`, state: s.state, key: s.fact_key });
   lines.push({ id: "total", text: `Confirmed ${ladder.confirmed_pct}% · up to ${ladder.potential_pct}% · maximum ${ladder.max_pct}%`, state: "TOTAL" });
   return lines;
 }
@@ -131,13 +131,37 @@ export const SECTION_TITLE = {
   satisfied: "Already satisfied",
 };
 
+const DERIVED_PROVENANCE = new Set(["SCENARIO_ASSUMED", "SCHEDULE_DERIVED", "LOCALITY_RESOLVED", "VERIFIED"]);
+
+// The facts the generation actually used for this structure (persisted `resolved_facts`) are the same values pricing read, so they override the project-level view: a fact the structure derived is read-only with its
+// provenance; an Unknown keeps its effect. A persisted record the catalog does not list (a derived day count, a share-gate token) is added as a read-only row.
+function overlay(f, rec) {
+  if (!rec) return f;
+  const derived = DERIVED_PROVENANCE.has(rec.provenance);
+  const category = rec.state === "TRUE" || rec.state === "VALUE" ? "SATISFIED" : rec.state === "FALSE" ? "FAILED" : f.category;
+  return {
+    ...f, state: rec.state, value: rec.value, provenance: rec.provenance, basis: rec.basis, persisted: true, category, editable: derived ? false : f.editable,
+    effects: rec.effect ? [rec.effect] : f.effects, effect_points: rec.effect_points ?? f.effect_points,
+  };
+}
+
 export function relevantFacts(view, structure) {
   const programs = new Set(structurePrograms(structure));
   const out = [];
   if (!programs.size) return out;
+  const records = new Map((structure?.resolved_facts ?? []).map((r) => [r.fact_key, r]));
+  const seen = new Set();
   for (const g of view?.groups ?? []) for (const f of g.facts) {
     const fp = f.programs?.length ? f.programs : g.programs ?? [];
-    if (fp.some((p) => programs.has(p))) out.push({ ...f, group: g.title, groupId: g.id });
+    if (fp.some((p) => programs.has(p))) { out.push({ ...overlay(f, records.get(f.key)), group: g.title, groupId: g.id }); seen.add(f.key); }
+  }
+  for (const [key, rec] of records) {
+    if (seen.has(key) || rec.state === "UNKNOWN") continue;
+    out.push({
+      key, label: key.replace(/^scenario_share_met:/, "51% activity test: ").replace(/_/g, " "), kind: typeof rec.value === "number" ? "number" : "boolean", state: rec.state, value: rec.value, provenance: rec.provenance,
+      basis: rec.basis, editable: false, category: rec.state === "FALSE" ? "FAILED" : "SATISFIED", programs: [rec.scope?.program], effects: rec.effect ? [rec.effect] : [], persisted: true,
+      group: "Established for this structure", groupId: "persisted", failure_effect: "the related uplift or tier is not earned", derivation_class: "SCENARIO_PLACEMENT",
+    });
   }
   return out;
 }
@@ -169,4 +193,19 @@ export function relevantLocationNeeds(view, structure) {
     if (f.state === "UNKNOWN" && ["LOCALITY", "SCENARIO_PLACEMENT"].includes(f.derivation_class) && f.requirement && /location/i.test(f.requirement)) needs.push({ key: f.key, requirement: f.requirement });
   }
   return programs.size ? needs : [];
+}
+
+// The Missouri ladder for the SELECTED structure: each step's state is the one the generation actually used (persisted facts), not the project-level statement.
+export function structureLadder(view, structure) {
+  const l = view?.missouri;
+  if (!l) return null;
+  const facts = new Map(relevantFacts(view, structure).map((f) => [f.key, f]));
+  let confirmed = l.base_pct;
+  let potential = l.base_pct;
+  const steps = l.steps.map((s) => {
+    const st = facts.get(s.fact_key)?.state ?? s.state;
+    if (st === "TRUE") { confirmed += s.points; potential += s.points; } else if (st !== "FALSE") potential += s.points;
+    return { ...s, state: st };
+  });
+  return { ...l, steps, confirmed_pct: Math.min(confirmed, l.max_pct), potential_pct: Math.min(potential, l.max_pct) };
 }

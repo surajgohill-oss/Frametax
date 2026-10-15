@@ -79,7 +79,7 @@ test("the Missouri ladder reads base, increases and total; 15% is never rendered
   const lines = ladderLines({ base_pct: 20, max_pct: 42, confirmed_pct: 25, potential_pct: 37, steps: [
     { id: "filmed_50pct_in_missouri", fact_key: "k1", points: 5, state: "TRUE" }, { id: "rural_or_blighted_15pct", fact_key: "k2", points: 5, state: "FALSE" },
     { id: "script", fact_key: "k3", points: 5, state: "UNKNOWN" }, { id: "county", fact_key: "k4", points: 2, state: "UNKNOWN" }] });
-  assert.deepEqual(lines.map((l) => l.text), ["Base 20%", "+5 points", "+5 points", "+5 points", "+2 points", "Confirmed 25% · up to 37% · maximum 42%"]);
+  assert.deepEqual(lines.map((l) => l.text), ["Base 20%", "+5 points: filmed 50pct in missouri", "+5 points: rural or blighted 15pct", "+5 points: script", "+2 points: county", "Confirmed 25% · up to 37% · maximum 42%"]);
   assert.ok(!lines.some((l) => /15 points/.test(l.text)));
   assert.deepEqual(ladderLines(null), []);
 });
@@ -87,7 +87,7 @@ test("the Missouri ladder reads base, increases and total; 15% is never rendered
 test("the API client reads and posts the facts on the one program-facts route and does not evaluate", () => {
   const api = strip(read("api.js"));
   assert.match(api, /export const getProgramFacts = \(projectId\) => request\(`\/projects\/\$\{projectId\}\/program-facts`\);/);
-  assert.match(api, /export const postProgramFacts = \(projectId, \{ evidenced = \{\}, amounts = \{\} \} = \{\}\) =>\s*request\(`\/projects\/\$\{projectId\}\/program-facts`, \{ method: "POST", body: JSON\.stringify\(\{ evidenced, amounts \}\) \}\);/);
+  assert.match(api, /export const postProgramFacts = \(projectId, \{ evidenced = \{\}, amounts = \{\}, line_facts = \[\], uplift_basis = \[\] \} = \{\}\) =>\s*request\(`\/projects\/\$\{projectId\}\/program-facts`, \{ method: "POST", body: JSON\.stringify\(\{ evidenced, amounts, line_facts, uplift_basis \}\) \}\);/);
 });
 
 test("the panel saves then runs the shared single-flight evaluation once; retained results start none; the control locks while running", () => {
@@ -123,7 +123,7 @@ test("provenance has distinct styling for verified, producer-stated, scenario-as
 test("the Overview mounts it in the Production facts column with the retained-results guard and the same refetch as the other producer inputs", () => {
   const src = strip(read("screens/production/Overview.jsx"));
   assert.match(src, /import ResolvedRequirementsPanel from "\.\.\/\.\.\/components\/ResolvedRequirementsPanel";/);
-  assert.match(src, /<ResolvedRequirementsPanel\s+projectId=\{projectId\}\s+programFacts=\{production\?\.program_facts\}\s+structure=\{structure\}\s+onSaved=\{\(\) => \{ refetch\(\); window\.dispatchEvent\(new Event\("cineglobe:refetch"\)\); \}\}\s+evaluateOnSave=\{production\?\.evaluation_freshness !== "STALE"\}\s*\/>/);
+  assert.match(src, /<ResolvedRequirementsPanel\s+projectId=\{projectId\}\s+programFacts=\{production\?\.program_facts\}\s+shootLocations=\{production\?\.shoot_locations\}\s+structure=\{structure\}\s+onSaved=\{\(\) => \{ refetch\(\); window\.dispatchEvent\(new Event\("cineglobe:refetch"\)\); \}\}\s+evaluateOnSave=\{production\?\.evaluation_freshness !== "STALE"\}\s*\/>/);
   assert.doesNotMatch(src, /ProgramFactsPanel/, "the 73-question manual panel is gone");
 });
 

@@ -195,7 +195,7 @@ def test_missouri_county_class_and_the_second_third_fourth_class_uplift(county, 
     assert r.resolution["county_class"]["method"] == "DATASET_LOOKUP" and r.resolution["county_class"]["version"] == "2025-05"
 
 
-@pytest.mark.parametrize("county", [None, "", "Atlantis", "Cole"])
+@pytest.mark.parametrize("county", [None, "", "Atlantis", "Newton", "Franklin"])   # Cole left this list in NA-RECONCILIATION-24: the Official Manual resolves it
 def test_an_unknown_or_unlisted_county_stays_unknown_and_names_what_is_missing(county):
     r = loc.resolve(loc.LocationEntry("a", "x", "US-MO", county=county))
     assert r.states["mo_county_qualifying"] is None and "county_class" in r.unresolved

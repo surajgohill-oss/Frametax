@@ -2196,3 +2196,7 @@
 .rr-readonly { opacity: 0.85; font-variant-numeric: tabular-nums; }
 .rr-state-false { text-decoration: line-through; opacity: 0.7; }
 .rr-state-total { font-weight: 600; }
+
+/* Locations and budget lines (NA-RECONCILIATION-24): each field's label sits above its control. */
+.rr-location label.pd-name, .rr-line label.pd-name { display: flex; flex-direction: column; gap: 2px; align-items: stretch; }
+.rr-location .pd-select, .rr-line .pd-select { width: 100%; max-width: 360px; }

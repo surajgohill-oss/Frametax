@@ -73,6 +73,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.contingency_deployment_facts import fingerprint_part as _contingency_fingerprint_part
 from app.calculators.allocation_pricing import _segment_category_spend, presumed_facts_from_resolution, price_allocated_structure, price_segment, rank_allocated_structures
 from app.optimization.structural_prerequisites import structure_derived_facts
+from app.services.resolved_facts import segment_resolved_facts
 from app.calculators.canonical_stack_bridge import (
     cptc_stack_fields,
     StackCandidate,
@@ -4012,6 +4013,7 @@ def _segment_dicts(pricing) -> list[dict]:
             "incentive_ceiling_usd": s.incentive_ceiling_usd,
             "ceiling_requires_confirmation": s.ceiling_requires_confirmation,
             "ceiling_conditions": list(getattr(s, "ceiling_conditions", ()) or ()),
+            "resolved_facts": segment_resolved_facts(s),
             "authority_provenance_unresolved": getattr(s, "authority_provenance_unresolved", False),
             "qpe_cap_applied_usd": s.qpe_cap_applied_usd,
             "blockers": list(s.blockers),
@@ -7592,6 +7594,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                                     "incentive_ceiling_usd": ce.segment.incentive_ceiling_usd,
                                     "ceiling_requires_confirmation": ce.segment.ceiling_requires_confirmation,
                                     "ceiling_conditions": list(getattr(ce.segment, "ceiling_conditions", ()) or ()),
+                                    "resolved_facts": segment_resolved_facts(ce.segment),
                                     "presumed_facts": list(getattr(ce.segment, "presumed_facts", ()) or ()),
                                     "line_ids": sorted(ce.component.line_ids),
                                 }
