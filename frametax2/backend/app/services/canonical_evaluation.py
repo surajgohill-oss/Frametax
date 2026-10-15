@@ -71,7 +71,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.contingency_deployment_facts import fingerprint_part as _contingency_fingerprint_part
-from app.calculators.allocation_pricing import _segment_category_spend, presumed_facts_from_resolution, price_allocated_structure, price_segment, rank_allocated_structures
+from app.calculators.allocation_pricing import _segment_category_spend, presumed_facts_from_resolution, price_allocated_structure, price_segment, rank_allocated_structures, scenario_priced_segment
 from app.optimization.structural_prerequisites import structure_derived_facts
 from app.services.resolved_facts import segment_resolved_facts
 from app.calculators.canonical_stack_bridge import (
@@ -5235,6 +5235,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # depends on removing it).
     _qual_state_by_code_program: dict[tuple[str, str], str | None] = {}
     _qual_state_by_program: dict[str, str | None] = {}
+    _resolved_facts_by_program: dict[str, list[dict]] = {}    # the persisted resolved facts of each program's own pricing, carried onto the same-jurisdiction stacks that reuse it (NA-RECONCILIATION-25)
     _presumed_facts_by_program: dict[str, list[dict]] = {}   # unresolved non-gating producer facts per program, for same-jurisdiction stack legs
     # Codex final four-row remediation (P0-SEL-ALT-001): the FULL merged
     # role_qualification dict (missing_facts/curable_requirements/
@@ -5611,6 +5612,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
         ), 2)
         doctrine_record = _get_doctrine(program_slug)
+        _resolved_facts_by_program[program_slug] = [r for _seg in (getattr(pricing, "segments", None) or ()) for r in segment_resolved_facts(_seg)]
         priced_by_code.setdefault(code, []).append(StackCandidate(
             program_slug=program_slug,
             jurisdiction_code=code,
@@ -6024,8 +6026,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
             contingency_allocations=inputs.contingency_allocations or None,
         )
-        seg_closed = price_segment(code, closed_slug, pool_closed, **common_kwargs)
-        seg_remainder = price_segment(code, remainder_slug, pool_remainder, **common_kwargs)
+        # NA-RECONCILIATION-25: the same scenario-derived facts as every other path (the structure places all principal photography in `code`), through the one helper.
+        _pool_rows = [(asg.jurisdiction_code, asg.amount_usd, asg.component, "") for asg in allocation.assignments]
+        seg_closed = scenario_priced_segment({"jurisdiction_code": code, "program_slug": closed_slug, "allocations": pool_closed, **common_kwargs}, _pool_rows, code, component="cost_pool_closed")
+        seg_remainder = scenario_priced_segment({"jurisdiction_code": code, "program_slug": remainder_slug, "allocations": pool_remainder, **common_kwargs}, _pool_rows, code, component="cost_pool_remainder")
 
         if not seg_closed.executable:
             return None, "COST_POOL_MEMBER_UNPRICEABLE", (
@@ -6139,6 +6143,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                             "cost_pool_closed_categories": _cp_payload["closed_categories"],
                             "cost_pool_closed_line_ids": _cp_payload["pool_closed_line_ids"],
                             "cost_pool_remainder_line_ids": _cp_payload["pool_remainder_line_ids"],
+                            "resolved_facts": segment_resolved_facts(_cp_payload["seg_closed"]) + segment_resolved_facts(_cp_payload["seg_remainder"]),
                             "cost_pool_closed_qpe_usd": _cp_payload["seg_closed"].qpe_usd,
                             "cost_pool_remainder_qpe_usd": _cp_payload["seg_remainder"].qpe_usd,
                             "cost_pool_closed_incentive_usd": _cp_payload["seg_closed"].incentive_floor_usd,
@@ -6463,6 +6468,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     }
                     for slug in stack_result.program_slugs
                 ],
+                "resolved_facts": [r for slug in stack_result.program_slugs for r in _resolved_facts_by_program.get(slug, ())],
                 # Codex global optimizer audit, P1-TRACE-001 (rejected on
                 # first pass -- "max(per_program_qpe) is a lower bound,
                 # not exact unique allocated spend" -- remediated here):

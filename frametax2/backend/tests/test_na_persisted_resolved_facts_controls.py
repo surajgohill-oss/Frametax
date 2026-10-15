@@ -70,3 +70,26 @@ async def test_a_producer_edit_stales_the_generation_and_opening_the_stale_resul
         assert (await ce.evaluate_project(db, project_id))["status"] == "EVALUATION_COMPLETE" and await generations() == n + 1
         after = await _mo_structure(db, pid)
         assert {r["fact_key"]: r for r in after["resolved_facts"]}["mo_second_third_fourth_class_county_confirmed"]["state"] == "TRUE"
+
+
+@pytest.mark.asyncio
+async def test_a_same_jurisdiction_stack_persists_the_same_resolved_facts_as_its_standalone_member():
+    """NA-RECONCILIATION-25: the BC production services credit priced alone and inside the BC + federal PSTC stack resolves and records identical facts (the stack reuses the member's pricing and carries its records)."""
+    from app.models.production_requirement import ProductionAssumption
+    async with isolated_session() as db:
+        pid = await create_synthetic_project(db, home_code="CA-BC", lines=LINES)
+        project_id = uuid.UUID(pid)
+        db.add(ProductionAssumption(id=uuid.uuid4(), project_id=project_id, assumption_key="intended_shoot_days", value="20", value_type="number", evidence_state="ACTUAL"))
+        await db.flush()
+        assert (await ce.evaluate_project(db, project_id))["status"] == "EVALUATION_COMPLETE"
+        structures = await served_structures(db, pid)
+        alone = next(e for e in structures if e["program_slugs"] == ["ca_bc_pstc"] and e["structure_type"] in ("single_country", "full_relocation"))
+        stack = next((e for e in structures if sorted(e["program_slugs"]) == ["ca_bc_pstc", "ca_federal_pstc"]), None)
+        assert stack is not None, "the isolated fixture surfaces the BC + federal PSTC same-jurisdiction stack"
+
+        def mine(entry):
+            return {r["fact_key"]: (r["state"], r["provenance"], r["value"]) for r in entry["resolved_facts"] if r["scope"]["program"] == "ca_bc_pstc"}
+
+        assert mine(alone), "the standalone structure persists its resolved facts"
+        assert mine(alone) == mine(stack), "the stack carries exactly the facts its member's pricing used"
+        assert mine(alone)["ca_bc_principal_photography_days_in_bc"] == ("VALUE", "SCENARIO_ASSUMED", 20.0), "schedule-derived BC days for a full BC placement"

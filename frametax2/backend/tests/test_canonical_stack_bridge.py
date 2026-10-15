@@ -257,7 +257,7 @@ def test_the_unofficial_qprdp_label_resolves_to_the_quebec_services_credit_rule(
 
 
 def test_the_manitoba_credit_is_compatible_with_both_federal_credits_and_is_assistance_to_them():
-    # Manitoba Film & Music TC-2 guidelines (June 2024): compatible with the CPTC and the PSTC; the federal credits are not assistance to the Manitoba credit.
+    # Manitoba Film & Music TC-2 guidelines (June 2024): compatible with the CPTC and the PSTC (administrative guidance; ITA (Manitoba) s.7.5(1) excludes only the Manitoba credit itself, so no statutory exclusion of the federal credits is claimed).
     # PSTC 96,000 on labour 600,000; Manitoba labour credit 270,000 (45% x 600,000): conservative reduction min(270,000; 600,000) x 16% = 43,200 -> 52,800.
     pstc = StackCandidate("ca_federal_pstc", "CA-MB", 96_000.0, 0.16, 600_000.0, "tax_credit", rate_basis_usd=600_000.0)
     mb = StackCandidate("ca_mb_film_video_credit", "CA-MB", 270_000.0, 0.45, 600_000.0, "tax_credit")

@@ -120,8 +120,9 @@ export const postProductionType = (projectId, format) =>
 // evaluate (the caller runs the shared single-flight evaluation). `evidenced`: { key: true | false | null } (an election never takes false), `amounts`: { key: number | null }; null clears a fact back to Unknown.
 // `line_facts`: [{ line_id, field, value }] (null clears), `uplift_basis`: [{ program, uplift, line_id, amount_usd }] (the qualifying portion of a line; null clears).
 export const getProgramFacts = (projectId) => request(`/projects/${projectId}/program-facts`);
-export const postProgramFacts = (projectId, { evidenced = {}, amounts = {}, line_facts = [], uplift_basis = [] } = {}) =>
-  request(`/projects/${projectId}/program-facts`, { method: "POST", body: JSON.stringify({ evidenced, amounts, line_facts, uplift_basis }) });
+// `line_allocations`: [{ line_id, allocations: [{ payee_id, amount_usd, ...person facts, evidence }] | null }] (several people on one line; null is Reset).
+export const postProgramFacts = (projectId, { evidenced = {}, amounts = {}, line_facts = [], uplift_basis = [], line_allocations = [] } = {}) =>
+  request(`/projects/${projectId}/program-facts`, { method: "POST", body: JSON.stringify({ evidenced, amounts, line_facts, uplift_basis, line_allocations }) });
 
 // Batched producer-control closeout (2026-09-03) — generic PROJECT-LEVEL
 // candidate-jurisdiction inclusion/exclusion election (the SAME real

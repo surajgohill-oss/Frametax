@@ -182,6 +182,8 @@ class ProductionFacts:
     ny_atl_producer_role_by_line: tuple = ()
     #: (line_id, payee type code) for payees whose type is stated (employee, loan-out, ...): GA's per-person cap applies to W-2 payees only.
     payee_type_by_line: tuple = ()
+    #: (line_id, ((payee ordinal, USD, payee type code | None), ...)): several identified people on one line (NA-RECONCILIATION-25); a per-person cap applies to each person's total across lines.
+    payee_allocations_by_line: tuple = ()
 
     def work_outside(self, account_code: str, category: str) -> bool:
         if self.scenario_local_btl and category in BTL_LABOR_CATEGORIES:
@@ -571,10 +573,10 @@ def derive_qualification_register(
         )
     from app.calculators.per_payee_limits import PAYEE_CAPS, apply_payee_cap
     _cap_rule = PAYEE_CAPS.get(_canonical(program_slug))
-    if _cap_rule is not None and (facts.ny_atl_payee_by_line or any(a.amount_usd > _cap_rule.cap_usd for a in register)):
+    if _cap_rule is not None and (facts.ny_atl_payee_by_line or facts.payee_allocations_by_line or any(a.amount_usd > _cap_rule.cap_usd for a in register)):
         register = apply_payee_cap(
             register, {l.line_id: (l.spend_category or classify_line_item(l.description).spend_category.value) for l in line_items},
-            dict(facts.ny_atl_payee_by_line), dict(facts.payee_type_by_line), _cap_rule)
+            dict(facts.ny_atl_payee_by_line), dict(facts.payee_type_by_line), _cap_rule, allocations_by_line={lid: allocs for lid, allocs in facts.payee_allocations_by_line})
     from app.calculators.per_payee_limits import AGGREGATE_CATEGORY_CAPS, apply_aggregate_category_cap
     _agg_rule = AGGREGATE_CATEGORY_CAPS.get(_canonical(program_slug))
     if _agg_rule is not None:

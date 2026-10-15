@@ -87,7 +87,7 @@ test("the Missouri ladder reads base, increases and total; 15% is never rendered
 test("the API client reads and posts the facts on the one program-facts route and does not evaluate", () => {
   const api = strip(read("api.js"));
   assert.match(api, /export const getProgramFacts = \(projectId\) => request\(`\/projects\/\$\{projectId\}\/program-facts`\);/);
-  assert.match(api, /export const postProgramFacts = \(projectId, \{ evidenced = \{\}, amounts = \{\}, line_facts = \[\], uplift_basis = \[\] \} = \{\}\) =>\s*request\(`\/projects\/\$\{projectId\}\/program-facts`, \{ method: "POST", body: JSON\.stringify\(\{ evidenced, amounts, line_facts, uplift_basis \}\) \}\);/);
+  assert.match(api, /export const postProgramFacts = \(projectId, \{ evidenced = \{\}, amounts = \{\}, line_facts = \[\], uplift_basis = \[\], line_allocations = \[\] \} = \{\}\) =>\s*request\(`\/projects\/\$\{projectId\}\/program-facts`, \{ method: "POST", body: JSON\.stringify\(\{ evidenced, amounts, line_facts, uplift_basis, line_allocations \}\) \}\);/);
 });
 
 test("the panel saves then runs the shared single-flight evaluation once; retained results start none; the control locks while running", () => {

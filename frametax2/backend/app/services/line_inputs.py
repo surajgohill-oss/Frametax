@@ -159,6 +159,8 @@ async def line_inputs_view(session: AsyncSession, project_id, program_slugs=None
             stored.setdefault(lid, {})[field] = r_.value
     portions_row = next((r_ for r_ in (await session.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key == "uplift_basis_subsets"))).scalars().all()), None)
     import json
+    from app.calculators import line_allocations as la
+    stored_allocations = la.parse_rows(rows, set(lines))
     portions = json.loads(portions_row.value) if portions_row is not None and portions_row.value else {}
     out_lines, persons = [], {}
     for lid, info in lines.items():
@@ -174,13 +176,24 @@ async def line_inputs_view(session: AsyncSession, project_id, program_slugs=None
                                                                               else float(values[s.name]) if s.kind == "number" else values[s.name])),
                              "state": "UNKNOWN" if values.get(s.name) is None else "STATED"} for s in fields],
                  "portions": [{**u, "amount_usd": ((portions.get(u["program"]) or {}).get(u["uplift"]) or {}).get(lid)} for u in ups]}
-        out_lines.append(entry)
         pid, done = values.get("payee_id"), values.get("payee_compensation_complete", "").lower() == "true"
-        if pid:
-            p = persons.setdefault(pid, {"payee": pid, "lines": [], "total_usd": 0.0, "complete": True})
+        # the people on the line (only a line a person can be paid from: a rule of the selected programs reads its payee): stored allocations, else the legacy single-person row read as ONE allocation of the whole line when
+        # marked complete (unchanged meaning); the rest of the line is explicit and Unknown
+        people, legacy = None, False
+        if any(f.name == "payee_id" for f in fields):
+            people = stored_allocations.get(lid)
+            if people is None and pid:
+                people = [{"payee_id": pid, "amount_usd": info["amount"] if done else None, **{n: values[n] for n in la.PERSON_FIELDS if n in values and n not in ("producer_role",)}}]
+                legacy = True
+            assigned = sum(a["amount_usd"] or 0.0 for a in (people or []))
+            person_fields = [{"name": n, "label": field_specs()[n].label, "kind": field_specs()[n].kind, "choices": list(field_specs()[n].choices)} for n in la.PERSON_FIELDS if n in {f.name for f in fields}]
+            entry["allocations"] = {"people": people or [], "assigned_usd": round(assigned, 2), "unallocated_usd": round(max(info["amount"] - assigned, 0.0), 2), "legacy_single_person": legacy,
+                                    "unallocated_state": "UNKNOWN" if info["amount"] - assigned > 0.005 else "NONE", "person_fields": person_fields}
+        out_lines.append(entry)
+        for a in (people or []):
+            p = persons.setdefault(a["payee_id"], {"payee": a["payee_id"], "lines": [], "total_usd": 0.0, "complete": True})
             p["lines"].append(lid)
-            p["total_usd"] = round(p["total_usd"] + info["amount"], 2)
-            p["complete"] = p["complete"] and done
+            p["total_usd"] = round(p["total_usd"] + (a["amount_usd"] or 0.0), 2)
+            p["complete"] = p["complete"] and (not legacy or done) and a["amount_usd"] is not None
     return {"lines": out_lines, "persons": sorted(persons.values(), key=lambda x: x["payee"]),
-            "note": ("Only lines and fields that a rule of the selected programs reads are offered. Unknown is not No. A person's compensation is the sum of the lines assigned to them, and a line is assigned to "
-                     "at most one person; exact per-person caps apply only when every line of a category has an identified person with complete compensation, otherwise a lawful range is priced and disclosed.")}
+            "note": ("Only lines and fields that a rule of the selected programs reads are offered. Unknown is not No. A person's compensation is the sum of the amounts allocated to them across lines; a line may carry several people whose amounts sum to at most the line, and the remainder is Unknown (never assigned to anyone); a person counts once; exact per-person caps apply only when every line of a category has an identified person with complete compensation, otherwise a lawful range is priced and disclosed.")}

@@ -240,8 +240,10 @@ async def _check_person_reconciliation(session: AsyncSession, project_id, touche
 async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced: dict | None = None,
                                  payees: list[dict] | None = None, uplift_basis: list[dict] | None = None,
                                  producer_roles: list[dict] | None = None, composer_portions: list[dict] | None = None,
-                                 amounts: dict | None = None, line_facts: list[dict] | None = None) -> dict:
-    """Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
+                                 amounts: dict | None = None, line_facts: list[dict] | None = None,
+                                 line_allocations: list[dict] | None = None) -> dict:
+    """NA-RECONCILIATION-25 `line_allocations`: [{line_id, allocations: [{payee_id, amount_usd, <person facts>, evidence}] | null}] - several identified people on one budget line, stored as the JSON row
+    `line_fact:<line>:allocations`; null or [] is Reset (the row and the line's legacy single-person identity rows are removed, restoring Unknown). Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
     mutually exclusive pair (inside/outside the commuter district, Production Plus 10%/5% tier) REPLACES the stored partner in the same
     transaction, so two contradictory elections can never be stored; stating both in one request is rejected. NA-RECONCILIATION-22: `evidenced` is tri-state for ordinary legal
     predicates ({fact id: true | false | null}: Yes, a stated No - a REFUTED fact that applies the rule's actual failed treatment - or Unknown); an election accepts only its chosen alternative. `payees`:
@@ -254,6 +256,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
     producer_roles, composer_portions = producer_roles or [], composer_portions or []
     amounts = amounts or {}
     line_facts = line_facts or []
+    line_allocations = line_allocations or []
     for key, value in amounts.items():
         if key not in PROGRAM_AMOUNT_FACTS:
             raise ValueError(f"'{key}' is not a settable numeric program fact")
@@ -262,11 +265,32 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             raise ValueError(f"'{key}' must be a whole number of days")
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < lo or value > hi):
             raise ValueError(f"'{key}' must be a finite number between {lo:g} and {hi:g}, or null (Unknown)")
-    lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions or line_facts) else {}
+    lines = await _project_line_amounts(session, project_id) if (payees or uplift_basis or producer_roles or composer_portions or line_facts or line_allocations) else {}
     validated_line_facts = []
     if line_facts:
         from app.services.line_inputs import line_amounts, validate_line_facts
         validated_line_facts = validate_line_facts(line_facts, await line_amounts(session, project_id))
+    validated_allocations: dict[str, list[dict] | None] = {}
+    if line_allocations:
+        from app.calculators import line_allocations as la
+        from app.services.line_inputs import field_specs
+        specs = field_specs()
+        for row in line_allocations:
+            lid = str(row.get("line_id"))
+            if lid not in lines:
+                raise ValueError(f"allocation line {lid!r} is not a line of this project's budget")
+            if lid in validated_allocations:
+                raise ValueError(f"line {lid}: allocations are given twice")
+            incoming = row.get("allocations")
+            validated_allocations[lid] = la.validate(lid, lines[lid], incoming, specs) if incoming else None
+        stored_rows = (await session.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key.like("line_fact:%:allocations")))).scalars().all()
+        merged = la.parse_rows(stored_rows, set(lines))
+        for lid, value in validated_allocations.items():
+            if value is None:
+                merged.pop(lid, None)
+            else:
+                merged[lid] = value
+        la.check_across_lines(merged)
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
             raise ValueError(f"'{fid}' is not a settable program fact")
@@ -345,6 +369,10 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
                       "true" if (pid and p.get("compensation_complete") is True) else None, "boolean")
         if "payee_type" in p:
             await _upsert(session, project_id, f"line_fact:{lid}:payee_type", p["payee_type"] if pid else None, "string")
+    for lid, value in validated_allocations.items():
+        await _upsert(session, project_id, f"line_fact:{lid}:allocations", None if value is None else json.dumps(value, sort_keys=True), "json")
+        for legacy in ("payee_id", "payee_compensation_complete", "payee_type", "mt_status", "mt_tax_withheld", "mt_residency"):
+            await _upsert(session, project_id, f"line_fact:{lid}:{legacy}", None, "string")     # the allocations (or Reset's Unknown) replace the line's single-person identity rows
     for r in producer_roles:
         await _upsert(session, project_id, f"line_fact:{str(r['line_id'])}:producer_role", r.get("role"), "string")
     for c in composer_portions:
@@ -363,4 +391,4 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
     await session.flush()
     return {"evidenced": sorted(evidenced), "amounts": sorted(amounts), "replaced": replaced, "payee_lines": [str(p["line_id"]) for p in payees],
             "producer_role_lines": [str(r["line_id"]) for r in producer_roles], "composer_lines": [str(c["line_id"]) for c in composer_portions],
-            "uplift_lines": [str(u["line_id"]) for u in uplift_basis]}
+            "uplift_lines": [str(u["line_id"]) for u in uplift_basis], "allocation_lines": sorted(validated_allocations)}

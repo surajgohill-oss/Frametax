@@ -169,7 +169,7 @@ test("the locations section saves once through the shared flow, offers only the 
 
 test("the line section reads the picker (never evaluating), saves only what changed through the one writer, and is part of the panel", () => {
   const src = strip(read("components/LineInputsSection.jsx"));
-  assert.match(src, /await postProgramFacts\(projectId, \{ line_facts, uplift_basis \}\);/);
+  assert.match(src, /await postProgramFacts\(projectId, \{ line_facts, uplift_basis, line_allocations \}\);/);
   assert.equal((src.match(/runEvaluation\(projectId\)/g) || []).length, 1);
   assert.match(src, /getLineInputs\(projectId, programKey\.split\(","\)\)/);
   assert.doesNotMatch(src, /useEffect\([^)]*postProgramFacts|useEffect\([^)]*runEvaluation/s);

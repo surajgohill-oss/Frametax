@@ -63,41 +63,55 @@ def payee_type_amount_facts(raw_by_line: dict[str, dict[str, str]]) -> dict[str,
             for lid, f in raw_by_line.items() if f.get("payee_type") in PAYEE_TYPE_CODES}
 
 
-def _decided(line_id, payee_by_line, payee_type_by_line, rule) -> bool:
+def _decided(line_id, payee_by_line, payee_type_by_line, rule, allocations_by_line=None) -> bool:
     """True when the cap question is settled for this account: an identified payee and, where the rule depends on payee type, a stated type
-    (a stated uncapped type -- a loan-out -- settles it as 'no cap')."""
+    (a stated uncapped type -- a loan-out -- settles it as 'no cap'). A line shared by several identified people is settled only when they cover the whole line (NA-RECONCILIATION-25)."""
+    allocs = (allocations_by_line or {}).get(line_id)
+    if allocs:
+        return all(rule.capped_payee_types is None or _PAYEE_TYPE_NAMES.get(t) is not None for _o, _u, t in allocs)
     if line_id not in payee_by_line:
         return False
     return rule.capped_payee_types is None or _PAYEE_TYPE_NAMES.get(payee_type_by_line.get(line_id)) is not None
 
 
-def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: dict[str, int], payee_type_by_line: dict[str, int], rule: PayeeCap):
+def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: dict[str, int], payee_type_by_line: dict[str, int], rule: PayeeCap, allocations_by_line: dict | None = None):
+    """Exclude each IDENTIFIED person's compensation above the per-person cap. A person's total is the sum of their share of every line they hold: a line with several identified people (allocations_by_line:
+    line -> ((ordinal, USD, type code), ...)) gives each person the fraction USD / the line's allocated total of the qualifying entry; the part of the line assigned to nobody is never capped (Unknown, not refused)."""
     from app.calculators.qualification_model import AuthorityBasis, QualificationConfidence, QualificationState
     Q = QualificationState.QUALIFIES
+    allocations_by_line = allocations_by_line or {}
     _cats = rule.categories or PERSONNEL_CATEGORIES
     members = [i for i, e in enumerate(register) if e.state == Q and category_by_line.get(e.line_id) in _cats]
     cut: dict[int, float] = {}
-    by_payee: dict[int, list[int]] = {}
+    by_payee: dict[int, list[tuple[int, float]]] = {}                      # ordinal -> [(register index, fraction of the entry that is this person's)]
     for i in members:
         lid = register[i].line_id
+        allocs = allocations_by_line.get(lid)
+        if allocs:
+            line_total = sum(u for _o, u, _t in allocs) or 1.0
+            for ordinal, usd, tcode in allocs:
+                if rule.capped_payee_types is not None and _PAYEE_TYPE_NAMES.get(tcode) not in rule.capped_payee_types:
+                    continue
+                by_payee.setdefault(ordinal, []).append((i, usd / max(line_total, usd)))
+            continue
         pid = payee_by_line.get(lid)
         if pid is None:
             continue
         if rule.capped_payee_types is not None and _PAYEE_TYPE_NAMES.get(payee_type_by_line.get(lid)) not in rule.capped_payee_types:
             continue
-        by_payee.setdefault(pid, []).append(i)
-    for idxs in by_payee.values():
-        over = round(sum(register[i].amount_usd for i in idxs) - rule.cap_usd, 2)
-        for i in idxs:
+        by_payee.setdefault(pid, []).append((i, 1.0))
+    for items in by_payee.values():
+        over = round(sum(register[i].amount_usd * f for i, f in items) - rule.cap_usd, 2)
+        for i, f in items:
             if over <= 0:
                 break
-            take = round(min(over, register[i].amount_usd), 2)
-            cut[i] = take
+            take = round(min(over, register[i].amount_usd * f), 2)
+            cut[i] = round(cut.get(i, 0.0) + take, 2)
             over = round(over - take, 2)
     out = []
     for i, e in enumerate(register):
         c = cut.get(i, 0.0)
-        untested = i in members and not c and e.amount_usd > rule.cap_usd and not _decided(e.line_id, payee_by_line, payee_type_by_line, rule)
+        untested = i in members and not c and e.amount_usd > rule.cap_usd and not _decided(e.line_id, payee_by_line, payee_type_by_line, rule, allocations_by_line)
         if c:
             if e.amount_usd - c > 0:
                 out.append(replace(e, amount_usd=round(e.amount_usd - c, 2), financial_impact_usd=round(e.amount_usd - c, 2)))
@@ -111,6 +125,7 @@ def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: d
         else:
             out.append(e)
     return out
+
 
 
 # ── Aggregate category cap: Pennsylvania (NA-RECONCILIATION-10) ─────────────────────────────────────────────────────────────────────────────────────────────────────

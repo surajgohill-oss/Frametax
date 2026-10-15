@@ -935,6 +935,7 @@ class NyProgramFacts(BaseModel):
     composer_portions: list[dict[str, Any]] = []
     amounts: dict[str, Any] = {}
     line_facts: list[dict[str, Any]] = []
+    line_allocations: list[dict[str, Any]] = []
 
 
 @router.post("/projects/{project_id}/program-facts")
@@ -951,7 +952,7 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
     try:
         applied = await write_ny_program_facts(db, project.id, evidenced=body.evidenced, payees=body.payees, uplift_basis=body.uplift_basis,
                                               producer_roles=body.producer_roles, composer_portions=body.composer_portions, amounts=body.amounts,
-                                              line_facts=body.line_facts)
+                                              line_facts=body.line_facts, line_allocations=body.line_allocations)
     except ValueError as exc:
         await db.rollback()
         raise HTTPException(status_code=422, detail=str(exc))

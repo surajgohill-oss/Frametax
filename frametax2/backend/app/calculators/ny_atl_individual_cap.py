@@ -68,15 +68,24 @@ def _line_fact_rows(fact_rows, line_ids: set[str], fields: tuple[str, ...]) -> d
     return raw
 
 
-def payee_amount_facts(fact_rows, line_ids: set[str]) -> dict[str, float]:
+def payee_amount_facts(fact_rows, line_ids: set[str], line_amounts: dict[str, float] | None = None) -> dict[str, float]:
     """Derived NY amount facts from stated line facts: `ny_atl_payee:<line_id>` -> payee ordinal, only for lines whose rows
     `payee_id` and `payee_compensation_complete` (= true) both exist (equal ordinals are the same individual);
-    `ny_composer_portion:<line_id>` -> the stated composer compensation inside a music account; `ny_producer_role:<line_id>` -> role code."""
+    `ny_composer_portion:<line_id>` -> the stated composer compensation inside a music account; `ny_producer_role:<line_id>` -> role code.
+    NA-RECONCILIATION-25: a line with several identified people (`line_fact:<line>:allocations`) is read by `line_allocations`; its people share the global ordinals below, so a person on several lines is one person.
+    A line with allocations supersedes its legacy single-person rows."""
+    from app.calculators import line_allocations as la
     raw = _line_fact_rows(fact_rows, line_ids, ("payee_id", "payee_compensation_complete", "composer_compensation_usd", "producer_role", "payee_type", "mt_status", "mt_tax_withheld", "mt_residency"))
+    allocations = la.parse_rows(fact_rows, line_ids)
     ids = {lid: f["payee_id"] for lid, f in raw.items()
-           if f.get("payee_id") and f.get("payee_compensation_complete", "").lower() in ("true", "1", "yes")}
-    ordinal = {name: float(i + 1) for i, name in enumerate(sorted(set(ids.values())))}
+           if lid not in allocations and f.get("payee_id") and f.get("payee_compensation_complete", "").lower() in ("true", "1", "yes")}
+    ordinal = la.person_ordinals(set(ids.values()) | {a["payee_id"] for al in allocations.values() for a in al})
     out = {FACT_PAYEE_PREFIX + lid: ordinal[name] for lid, name in ids.items()}
+    out.update(la.amount_facts(allocations, ordinal, line_amounts))
+    for lid, al in allocations.items():                                  # a person holding the whole line keeps the single-person producer role fact
+        if len(al) == 1 and line_amounts and al[0]["amount_usd"] + 0.005 >= line_amounts.get(lid, float("inf")) and al[0].get("producer_role") in _ROLE_CODES:
+            out[FACT_PRODUCER_ROLE_PREFIX + lid] = float(_ROLE_CODES[al[0]["producer_role"]])
+    raw = {lid: f for lid, f in raw.items() if lid not in allocations}
     from app.calculators.per_payee_limits import payee_type_amount_facts
     out.update(payee_type_amount_facts(raw))
     # Montana person-level categories (MCA 15-31-1007(3)(b)): student / veteran-or-tribal status, Montana tax withheld, residency - stated per line, never inferred
@@ -106,7 +115,10 @@ def limits_facts_from_amount_facts(amount_facts) -> dict:
         return tuple(sorted((k[len(prefix):], cast(v)) for k, v in amounts.items() if k.startswith(prefix)))
     return {"ny_atl_limits_apply": bool(amounts.get(FACT_PERIOD_APPLIES)), "ny_atl_payee_by_line": pairs(FACT_PAYEE_PREFIX, int),
             "ny_atl_composer_by_line": pairs(FACT_COMPOSER_PREFIX, float), "ny_atl_producer_role_by_line": pairs(FACT_PRODUCER_ROLE_PREFIX, int),
-            "payee_type_by_line": pairs("payee_type_code:", int)}
+            "payee_type_by_line": pairs("payee_type_code:", int),
+            "payee_allocations_by_line": tuple(sorted(
+                (lid, tuple((x["ordinal"], x["usd"], x["type_code"]) for x in allocs))
+                for lid in {k[len("alloc_n:"):] for k in amounts if k.startswith("alloc_n:")} if (allocs := __import__("app.calculators.line_allocations", fromlist=["x"]).allocations_of(amounts, lid))))}
 
 
 def composer_portion_from_subaccounts(children, line_amount: float) -> float | None:

@@ -669,9 +669,18 @@ def _apply_individual_incentive_cap(individual, lines, qualifying, amounts, qle,
         return floor_total, potential_total
     cap_usd = conv.target_amount
     by_payee: dict[int, float] = {}
+    from app.calculators.line_allocations import allocations_of
     for line in lines:
+        if (line.spend_category or "") not in categories:
+            continue
+        allocs = allocations_of(amounts or {}, line.line_id)
+        if allocs:                                                    # several identified people on one line: each person's share of the qualifying amount, summed per person across lines
+            share = qualifying.get(line.line_id, 0.0) / float(line.amount_usd) if getattr(line, "amount_usd", 0) else 0.0
+            for x in allocs:
+                by_payee[x["ordinal"]] = by_payee.get(x["ordinal"], 0.0) + x["usd"] * share
+            continue
         ordinal = (amounts or {}).get(f"ny_atl_payee:{line.line_id}")
-        if ordinal is None or (line.spend_category or "") not in categories:
+        if ordinal is None:
             continue
         by_payee[int(ordinal)] = by_payee.get(int(ordinal), 0.0) + qualifying.get(line.line_id, 0.0)
     if not by_payee or qle <= 0:
@@ -881,8 +890,41 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         unknown_rows: dict[str, list] = {"UNKNOWN_TALENT": [], "UNKNOWN_NONRESIDENT": []}
         ineligible = 0.0
         notes: list[str] = []
-        for lid, spend_cat, amt in (line_detail or ()):
+        for lid, spend_cat, amt, line_total in (line_detail or ()):
             if spend_cat not in rule.personnel_categories or amt <= 0:
+                continue
+            from app.calculators.line_allocations import allocations_of
+            allocs = allocations_of(amounts or {}, lid)
+            if allocs:
+                # several identified people on one line (NA-RECONCILIATION-25): each person's share of the qualifying amount is classified by THEIR OWN facts; the part of the line assigned to nobody stays unclassified.
+                share = amt / line_total if line_total else 0.0
+                assigned = 0.0
+                for x in allocs:
+                    person_amt = x["usd"] * share
+                    assigned += x["usd"]
+                    if person_amt <= 0:
+                        continue
+                    facts_k = {f"mt_status_code:{lid}": x["mt_status"], f"mt_tax_withheld:{lid}": x["withheld"], f"mt_residency_code:{lid}": x["residency"]}
+                    cat, why = _mt_line_category(spend_cat, {k: v for k, v in facts_k.items() if v is not None}, lid)
+                    if why:
+                        notes.append(why)
+                    if cat == "INELIGIBLE":
+                        ineligible += person_amt
+                    elif cat in unknown_bucket:
+                        unknown_bucket[cat] += person_amt
+                        if cat in unknown_rows:
+                            unknown_rows[cat].append((lid, person_amt, x["ordinal"]))
+                    else:
+                        by_cat.setdefault(cat, []).append((lid, person_amt, x["ordinal"]))
+                remainder = max(0.0, line_total - assigned) * share
+                if remainder > 0.005:
+                    cat, _ = _mt_line_category(spend_cat, {}, lid)
+                    if cat in unknown_bucket:
+                        unknown_bucket[cat] += remainder
+                        if cat in unknown_rows:
+                            unknown_rows[cat].append((lid, remainder, None))
+                    else:
+                        by_cat.setdefault(cat, []).append((lid, remainder, None))
                 continue
             cat, why = _mt_line_category(spend_cat, amounts, lid)
             if why:
@@ -1073,7 +1115,7 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
         if rule.kind != "subset":
             # Statutory-formula kinds (NA-RECONCILIATION-16): priced on the host credit's own basis, outside the per-line subset machinery and its claim-selection check.
             confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type, qualified_by_category=qualified_by_category,
-                                                                              line_detail=[(ln.line_id, ln.spend_category or "miscellaneous", qualifying.get(ln.line_id, 0.0)) for ln in lines])
+                                                                              line_detail=[(ln.line_id, ln.spend_category or "miscellaneous", qualifying.get(ln.line_id, 0.0), float(getattr(ln, "amount_usd", 0.0) or 0.0)) for ln in lines])
             if rule.gate_rule_id:
                 gate = _share_gate_state(rules_by_id[rule.gate_rule_id], amounts, facts)
                 if gate is False:
@@ -2724,6 +2766,21 @@ def apply_project_gate(seg: SegmentEconomics, gate, payroll_only) -> SegmentEcon
     return conditional_project_gate_segment(seg, gate)
 
 
+def scenario_priced_segment(price_kwargs: dict, rows, primary_jurisdiction: str | None, *, component: str = "allocation"):
+    """price_segment with the structure's resolved facts applied: the ONE place a pricing path turns (structure rows, stated facts) into scenario / schedule / locality facts, prices the segment with them
+    (established facts are never overwritten) and records the inputs of the persisted resolved-fact record (`resolved_inputs`). Every path that prices a segment inside a modeled structure calls this (the
+    allocated-structure pricer and the cost-pool-aware same-jurisdiction stack); the generator applies the same `scenario_derived_facts` / `apply_scenario_facts` to its components. NA-RECONCILIATION-25."""
+    from dataclasses import replace as _replace
+    from app.calculators.scenario_facts import apply_scenario_facts, scenario_derived_facts
+    kw = dict(price_kwargs)
+    evidenced, amounts = kw.get("evidenced_requirement_facts"), kw.get("amount_facts")
+    sf = scenario_derived_facts(kw.get("program_slug"), kw["jurisdiction_code"], rows, primary_jurisdiction, evidenced, amounts)
+    if sf.derived:
+        kw["evidenced_requirement_facts"], kw["amount_facts"] = apply_scenario_facts(evidenced, amounts, sf)
+    seg = price_segment(**kw)
+    return _replace(seg, resolved_inputs=(kw.get("program_slug"), kw["jurisdiction_code"], component, evidenced, amounts, sf))
+
+
 def price_allocated_structure(
     spec: StructureSpec,
     allocation: AllocationResult,
@@ -2847,15 +2904,8 @@ def price_allocated_structure(
             scenario_btl_nonlocal=scenario_btl_nonlocal,
             worldwide_category_spend_usd=_worldwide_by_category,
         )
-        # Scenario-derived facts (NA-RECONCILIATION-22): this structure's own placement of principal photography; established facts are never overwritten.
-        from app.calculators.scenario_facts import apply_scenario_facts, scenario_derived_facts
-        _sf = scenario_derived_facts(_kw["program_slug"], jur, _gate_rows, spec.primary_jurisdiction, evidenced_requirement_facts, amount_facts)
-        if _sf.derived:
-            _kw["evidenced_requirement_facts"], _kw["amount_facts"] = apply_scenario_facts(evidenced_requirement_facts, amount_facts, _sf)
-        _records_kw = (_kw["program_slug"], jur, "allocation", evidenced_requirement_facts, amount_facts, _sf)
-        seg = price_segment(**_kw)
-        from dataclasses import replace as _dc_replace
-        seg = _dc_replace(seg, resolved_inputs=_records_kw)
+        # Scenario-derived facts (NA-RECONCILIATION-22/25): this structure's own placement of principal photography; established facts are never overwritten (ONE helper for every pricing path).
+        seg = scenario_priced_segment(_kw, _gate_rows, spec.primary_jurisdiction, component="allocation")
         # Project-level eligibility (California 75% of budget OR 75% of principal-photography days; Pennsylvania 60% share; Massachusetts 75% for the
         # non-payroll credit) cannot be decided by one segment alone; a failed gate removes the governed credit and keeps the candidate visible with an
         # affirmative rejection, an undetermined one is a conditional planning scenario.

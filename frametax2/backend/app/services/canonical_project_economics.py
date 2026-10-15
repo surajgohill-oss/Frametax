@@ -809,7 +809,7 @@ async def build_project_economic_inputs(
         _base_amount_facts.setdefault(_k, _v)
     if _ny_atl.period_applies(target_shoot_year=project.target_shoot_year, lifecycle=getattr(project.lifecycle, "value", project.lifecycle)):
         _base_amount_facts.setdefault(_ny_atl.FACT_PERIOD_APPLIES, 1.0)
-    for _k, _v in _ny_atl.payee_amount_facts(fact_rows, {str(l.line_id) for l in lines}).items():
+    for _k, _v in _ny_atl.payee_amount_facts(fact_rows, {str(l.line_id) for l in lines}, {str(l.line_id): float(l.amount_usd or 0.0) for l in lines}).items():
         _base_amount_facts.setdefault(_k, _v)
 
     from app.models.production_requirement import ProductionRequirement

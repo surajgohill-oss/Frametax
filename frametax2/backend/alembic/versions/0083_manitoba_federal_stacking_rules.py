@@ -1,8 +1,8 @@
 """0083 - seed the Manitoba film credit stacking rules with the federal CPTC and PSTC (code registry stacking_rules 1.7.0).
 
 Manitoba Film & Music TC-2 Cost of Production Tax Credit Guidelines (Revised June 2024): the Manitoba credit "is compatible with the Canadian Film or Video Production
-Tax Credit (CPTC) and the Film or Video Production Services Tax Credit (PSTC)", and Manitoba's own "government assistance" excludes any film and video production tax
-credit under the Manitoba or federal Act. The Manitoba credit is assistance to the federal credits: it lowers the production cost behind the CPTC 60% cap (CRA RC4164)
+Tax Credit (CPTC) and the Film or Video Production Services Tax Credit (PSTC)" (administrative guidance; Income Tax Act (Manitoba) s.7.5(1) excludes only the Manitoba credit itself
+from its definition - an earlier version of this note claimed a statutory exclusion of the federal credits, withdrawn in NA-RECONCILIATION-25). The Manitoba credit is assistance to the federal credits: it lowers the production cost behind the CPTC 60% cap (CRA RC4164)
 and, to the extent it relates to labour, the PSTC qualified Canadian labour expenditure (ITA 125.5(1)); the whole credit is the conservative reduction until the labour
 share is stated. Rows are inserted only when both programs exist in incentive_programs. Applying this migration is a database change left to an authorized upgrade.
 
