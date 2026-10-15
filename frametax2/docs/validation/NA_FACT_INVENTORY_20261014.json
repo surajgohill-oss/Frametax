@@ -1,5 +1,5 @@
 {
- "count": 275,
+ "count": 280,
  "facts": [
   {
    "consumers": [
@@ -344,6 +344,75 @@
   },
   {
    "consumers": [
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-35:ca-bc-film-tv-35-bc-cost-75pct",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40-conditional:ca-bc-film-tv-40c-bc-cost-75pct",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40:ca-bc-film-tv-40-bc-cost-75pct"
+   ],
+   "current_status": "DERIVED_FROM_SCENARIO_ALLOCATION (met at or above 75% in BC, not met below; no allocation, no derivation)",
+   "derivable_from": "normalized budget allocation categories (labour / non-labour / ATL / BTL / post / compensation); a category a line cannot evidence stays Unknown",
+   "derivation_class": "BUDGET_ALLOCATION",
+   "fact_key": "ca_bc_film_tv_bc_cost_75pct_confirmed",
+   "genuine_producer_decision": false,
+   "kind": "boolean",
+   "legal_economic_effect": [
+    "tier requires the fact"
+   ],
+   "missing_control_or_path": "",
+   "pricing_when_unknown": "guaranteed 0, bounded potential shown with the exact requirement",
+   "restorable": true,
+   "storage_owner": "ProjectFact evidenced_program_fact:<key> (USER_OVERRIDE)",
+   "true_false_unknown_behaviour": "VERIFIED_TRUE / VERIFIED_FALSE (rule's failed treatment, no conditional upside) / UNKNOWN (conditional potential preserved)",
+   "writable": true,
+   "writer": "POST /projects/{id}/program-facts (write_ny_program_facts)"
+  },
+  {
+   "consumers": [
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-35:ca-bc-film-tv-35-bc-canadian-content",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40-conditional:ca-bc-film-tv-40c-bc-canadian-content",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40:ca-bc-film-tv-40-bc-canadian-content"
+   ],
+   "current_status": "GENUINE_PRODUCER_DECISION",
+   "derivable_from": "not derivable from retained records: ownership, residency, application or content predicate the producer or a document must establish",
+   "derivation_class": "PRODUCER_ASSERTION",
+   "fact_key": "ca_bc_film_tv_canadian_content_6_points_confirmed",
+   "genuine_producer_decision": true,
+   "kind": "boolean",
+   "legal_economic_effect": [
+    "tier requires the fact"
+   ],
+   "missing_control_or_path": "",
+   "pricing_when_unknown": "guaranteed 0, bounded potential shown with the exact requirement",
+   "restorable": true,
+   "storage_owner": "ProjectFact evidenced_program_fact:<key> (USER_OVERRIDE)",
+   "true_false_unknown_behaviour": "VERIFIED_TRUE / VERIFIED_FALSE (rule's failed treatment, no conditional upside) / UNKNOWN (conditional potential preserved)",
+   "writable": true,
+   "writer": "POST /projects/{id}/program-facts (write_ny_program_facts)"
+  },
+  {
+   "consumers": [
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-35:ca-bc-film-tv-35-bc-distribution-agreement",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40-conditional:ca-bc-film-tv-40c-bc-distribution-agreement",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40:ca-bc-film-tv-40-bc-distribution-agreement"
+   ],
+   "current_status": "GENUINE_PRODUCER_DECISION",
+   "derivable_from": "not derivable from retained records: ownership, residency, application or content predicate the producer or a document must establish",
+   "derivation_class": "PRODUCER_ASSERTION",
+   "fact_key": "ca_bc_film_tv_distribution_agreement_confirmed",
+   "genuine_producer_decision": true,
+   "kind": "boolean",
+   "legal_economic_effect": [
+    "tier requires the fact"
+   ],
+   "missing_control_or_path": "",
+   "pricing_when_unknown": "guaranteed 0, bounded potential shown with the exact requirement",
+   "restorable": true,
+   "storage_owner": "ProjectFact evidenced_program_fact:<key> (USER_OVERRIDE)",
+   "true_false_unknown_behaviour": "VERIFIED_TRUE / VERIFIED_FALSE (rule's failed treatment, no conditional upside) / UNKNOWN (conditional potential preserved)",
+   "writable": true,
+   "writer": "POST /projects/{id}/program-facts (write_ny_program_facts)"
+  },
+  {
+   "consumers": [
     "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40-conditional:ca-bc-film-tv-photography-after-2024-unstated",
     "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40:ca-bc-film-tv-photography-after-2024-stated"
    ],
@@ -385,6 +454,54 @@
    "restorable": true,
    "storage_owner": "ProjectFact evidenced_program_fact:<key> (USER_OVERRIDE)",
    "true_false_unknown_behaviour": "TRUE = the elected alternative; FALSE is not stored (state the chosen alternative instead); UNKNOWN = unelected, conditional potential",
+   "writable": true,
+   "writer": "POST /projects/{id}/program-facts (write_ny_program_facts)"
+  },
+  {
+   "consumers": [
+    "ca_bc_film_tv_tax_credit",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-35:ca-bc-film-tv-35-bc-days-75pct",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40-conditional:ca-bc-film-tv-40c-bc-days-75pct",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40:ca-bc-film-tv-40-bc-days-75pct"
+   ],
+   "current_status": "DERIVED_FOR_FULL_OR_NO_PLACEMENT; a split shoot is stated by the producer or stays Unknown",
+   "derivable_from": "selected structure's placement of principal photography (all / none in the jurisdiction); a split stays Unknown",
+   "derivation_class": "SCENARIO_PLACEMENT",
+   "fact_key": "ca_bc_film_tv_photography_days_75pct_in_bc_confirmed",
+   "genuine_producer_decision": false,
+   "kind": "boolean",
+   "legal_economic_effect": [
+    "75% filming test",
+    "tier requires the fact"
+   ],
+   "missing_control_or_path": "",
+   "pricing_when_unknown": "guaranteed 0, bounded potential shown with the exact requirement",
+   "restorable": true,
+   "storage_owner": "ProjectFact evidenced_program_fact:<key> (USER_OVERRIDE)",
+   "true_false_unknown_behaviour": "TRUE = scenario/schedule establishes it; FALSE = scenario fails it (rule's failed treatment); UNKNOWN = split or no placement modeled",
+   "writable": true,
+   "writer": "POST /projects/{id}/program-facts (write_ny_program_facts)"
+  },
+  {
+   "consumers": [
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-35:ca-bc-film-tv-35-bc-post-75pct",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40-conditional:ca-bc-film-tv-40c-bc-post-75pct",
+    "ca_bc_film_tv_tax_credit:ca-bc-film-tv-basic-40:ca-bc-film-tv-40-bc-post-75pct"
+   ],
+   "current_status": "DERIVED_FROM_SCENARIO_ALLOCATION (met at or above 75% in BC, not met below; no allocation, no derivation)",
+   "derivable_from": "normalized budget allocation categories (labour / non-labour / ATL / BTL / post / compensation); a category a line cannot evidence stays Unknown",
+   "derivation_class": "BUDGET_ALLOCATION",
+   "fact_key": "ca_bc_film_tv_post_75pct_in_bc_confirmed",
+   "genuine_producer_decision": false,
+   "kind": "boolean",
+   "legal_economic_effect": [
+    "tier requires the fact"
+   ],
+   "missing_control_or_path": "",
+   "pricing_when_unknown": "guaranteed 0, bounded potential shown with the exact requirement",
+   "restorable": true,
+   "storage_owner": "ProjectFact evidenced_program_fact:<key> (USER_OVERRIDE)",
+   "true_false_unknown_behaviour": "VERIFIED_TRUE / VERIFIED_FALSE (rule's failed treatment, no conditional upside) / UNKNOWN (conditional potential preserved)",
    "writable": true,
    "writer": "POST /projects/{id}/program-facts (write_ny_program_facts)"
   },
@@ -487,7 +604,7 @@
     "ca_bc_film_tv_tax_credit:distant_location",
     "ca_bc_pstc:distant_location"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - BC zone boundary",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_bc_principal_photography_days_distant_location",
@@ -533,7 +650,7 @@
     "ca_bc_film_tv_tax_credit:regional",
     "ca_bc_pstc:regional"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - BC zone boundary",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_bc_principal_photography_days_outside_vancouver",
@@ -991,7 +1108,7 @@
    "consumers": [
     "ca_nb_film_tax_credit:bonus_rural_remote"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - NB city hall coordinates",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_nb_days_remote_151km_plus",
@@ -1012,7 +1129,7 @@
    "consumers": [
     "ca_nb_film_tax_credit:bonus_rural_remote"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - NB city hall coordinates",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_nb_days_rural_30_to_150km",
@@ -1527,7 +1644,7 @@
    "consumers": [
     "ca_ns_production_incentive_fund:distant_location"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - Halifax City Hall coordinates",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_ns_principal_photography_days_100_to_150km",
@@ -1569,7 +1686,7 @@
    "consumers": [
     "ca_ns_production_incentive_fund:distant_location"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - Halifax City Hall coordinates",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_ns_principal_photography_days_over_150km",
@@ -1705,7 +1822,7 @@
     "ca_ns_production_incentive_fund:distant_location",
     "ca_ns_production_incentive_fund:location_rural"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_ns_rural_majority_principal_photography_confirmed",
@@ -1876,7 +1993,7 @@
    "consumers": [
     "ca_sk_creative_saskatchewan_grant:rural_bonus"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - Regina/Saskatoon reference points",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ca_sk_days_50km_outside_regina_saskatoon",
@@ -3091,7 +3208,7 @@
    "consumers": [
     "ca_mb_film_video_credit:rural_northern"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "mb_rural_majority_days_35km",
@@ -3112,7 +3229,7 @@
    "consumers": [
     "ca_mb_film_video_credit:rural_northern"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "mb_rural_permanent_establishment_35km",
@@ -3216,7 +3333,7 @@
     "us_mo_motion_media_production_tax_credit:rural_or_blighted_15pct",
     "us_mo_motion_media_production_tax_credit:us-mo-ceiling-42:us-mo-rural-or-blighted-15pct"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - rural/blighted determination",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "mo_rural_or_blighted_15pct_confirmed",
@@ -3262,7 +3379,7 @@
     "us_mo_motion_media_production_tax_credit:county_class_two_three_four",
     "us_mo_motion_media_production_tax_credit:us-mo-ceiling-42:us-mo-county-class-two-three-four"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "DERIVED_FROM_EXPLICIT_LOCATION_AND_DATASET (Missouri county class, 2025-05 list; Unknown when the county is absent)",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "mo_second_third_fourth_class_county_confirmed",
@@ -3622,7 +3739,7 @@
   },
   {
    "consumers": [],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ny_all_costs_in_listed_counties",
@@ -3660,7 +3777,7 @@
   },
   {
    "consumers": [],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "ny_majority_principal_photography_days_in_listed_counties",
@@ -5178,7 +5295,7 @@
    "consumers": [
     "us_mt_media_act_tax_credit:underserved_area"
    ],
-   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner",
+   "current_status": "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it",
    "derivable_from": "selected locality or geospatial owner - NONE RETAINED, so producer-stated or Unknown",
    "derivation_class": "LOCALITY",
    "fact_key": "us_mt_underserved_area_expenditure_usd",
@@ -5368,9 +5485,9 @@
     "us_or_opif:us-or-other-ceiling-25:us-or-award-contract-fund-confirmed",
     "us_or_opif:us-or-payroll-ceiling-20:us-or-award-contract-fund-confirmed"
    ],
-   "current_status": "GENUINE_PRODUCER_DECISION",
-   "derivable_from": "not derivable from retained records: ownership, residency, application or content predicate the producer or a document must establish",
-   "derivation_class": "PRODUCER_ASSERTION",
+   "current_status": "GENUINE_EXTERNAL_APPROVAL",
+   "derivable_from": "not derivable: only the granting agency can establish it",
+   "derivation_class": "AGENCY_APPROVAL",
    "fact_key": "us_or_opif_award_confirmed",
    "genuine_producer_decision": true,
    "kind": "boolean",
@@ -5538,9 +5655,9 @@
    "consumers": [
     "us_tx_miip:us-tx-ceiling-31:us-tx-award-allocation-required"
    ],
-   "current_status": "GENUINE_PRODUCER_DECISION",
-   "derivable_from": "not derivable from retained records: ownership, residency, application or content predicate the producer or a document must establish",
-   "derivation_class": "PRODUCER_ASSERTION",
+   "current_status": "GENUINE_EXTERNAL_APPROVAL",
+   "derivable_from": "not derivable: only the granting agency can establish it",
+   "derivation_class": "AGENCY_APPROVAL",
    "fact_key": "us_tx_miip_award_confirmed",
    "genuine_producer_decision": true,
    "kind": "boolean",

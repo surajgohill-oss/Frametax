@@ -23,13 +23,13 @@ from dataclasses import dataclass
 # (class, regex on the fact key). First match wins.
 _CLASSES: tuple[tuple[str, str], ...] = (
     ("STRUCTURE", r"structure_host_credit_present"),
-    ("SCENARIO_PLACEMENT", r"^mo_filmed_50pct_in_missouri_confirmed$|^scenario_share_met:|principal_photography_days_in_(bc|ns|sk)$"),
+    ("SCENARIO_PLACEMENT", r"^mo_filmed_50pct_in_missouri_confirmed$|^scenario_share_met:|principal_photography_days_in_(bc|ns|sk)$|photography_days_75pct_in_bc_confirmed$"),
     ("SCHEDULE_DAYS", r"principal_photography_days_total$|^schedule_principal_photography_days_total$"),
     ("LOCALITY", r"rural|blighted|distant_location|outside_vancouver|50km_outside|remote_151|rural_30_to_150|100_to_150km|over_150km|second_third_fourth_class_county|underserved_area|"
                  r"listed_counties|commuter|zone|eligible_county|out_of_zone|distressed|opportunity_zone"),
     ("PAYEE", r"_persons$|payee|producer_role|composer_compensation|ny_atl_payee|individual_cap|per_person"),
-    ("BUDGET_ALLOCATION", r"_qualified_labour_usd$|^us_or_(payroll|other)_qpe_usd$|^us_mt_(resident_crew|nonresident_crew|talent|student|veteran_tribal)_compensation_usd$|^us_mt_postproduction_wages_usd$"),
-    ("AGENCY_APPROVAL", r"approv|certif|allocation|preapproval|awarded|office_confirmed|commission_confirmed"),
+    ("BUDGET_ALLOCATION", r"_qualified_labour_usd$|bc_cost_75pct_confirmed$|post_75pct_in_bc_confirmed$|^us_or_(payroll|other)_qpe_usd$|^us_mt_(resident_crew|nonresident_crew|talent|student|veteran_tribal)_compensation_usd$|^us_mt_postproduction_wages_usd$"),
+    ("AGENCY_APPROVAL", r"approv|certif|allocation|preapproval|award|office_confirmed|commission_confirmed"),
     ("PRODUCER_ELECTION", r"stream_confirmed|photography_(after|before)_20|election|elect"),
 )
 
@@ -69,6 +69,8 @@ class FactRow:
 
 def _status(key: str, cls: str) -> str:
     """What the engine does with the fact TODAY (the class says who could establish it; this says whether the system now does)."""
+    if re.search(r"bc_cost_75pct_confirmed$|post_75pct_in_bc_confirmed$", key):
+        return "DERIVED_FROM_SCENARIO_ALLOCATION (met at or above 75% in BC, not met below; no allocation, no derivation)"
     if cls == "STRUCTURE":
         return "DERIVED_AUTOMATICALLY"
     if cls == "SCENARIO_PLACEMENT":
@@ -82,7 +84,15 @@ def _status(key: str, cls: str) -> str:
             return "DERIVED_AUTOMATICALLY"
         return "BUDGET_AMOUNT_NEEDS_A_PRODUCER_FACT (withholding, student, veteran or approved-company status is not in the budget); producer states it"
     if cls == "LOCALITY":
-        return "BLOCKED_BY_UNAVAILABLE_EVIDENCE: no retained locality or geospatial owner"
+        from app.calculators import locality as loc
+        for p in loc.PREDICATES:
+            if key in (p.fact_key, p.day_fact):
+                if p.key == "mo_county_qualifying":
+                    return "DERIVED_FROM_EXPLICIT_LOCATION_AND_DATASET (Missouri county class, 2025-05 list; Unknown when the county is absent)"
+                return "DERIVED_FROM_EXPLICIT_LOCATION_ATTRIBUTES (producer-asserted or measured, with source); classification dataset OPEN - " + {
+                    "mo_rural_or_blighted": "rural/blighted determination", "bc_outside_vancouver": "BC zone boundary", "bc_distant": "BC zone boundary", "ns_zone_a": "Halifax City Hall coordinates",
+                    "ns_zone_b": "Halifax City Hall coordinates", "nb_rural": "NB city hall coordinates", "nb_remote": "NB city hall coordinates", "sk_rural50": "Regina/Saskatoon reference points"}[p.key]
+        return "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs an explicit filming location with this classification; no dataset or locality owner supplies it"
     if cls == "PAYEE":
         return "BLOCKED_BY_UNAVAILABLE_EVIDENCE: needs identified payee records; otherwise a lawful upper bound with a missing-evidence flag"
     if cls == "AGENCY_APPROVAL":

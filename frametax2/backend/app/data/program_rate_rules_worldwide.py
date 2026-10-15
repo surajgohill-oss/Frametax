@@ -1129,7 +1129,7 @@ def _bc_film_tv_conditions(prefix: str) -> tuple:
         ),
         RateCondition(
             condition_id=f"{prefix}-eligibility-certificate-and-content",
-            description="Needs an eligibility certificate under s.86 for an eligible production (s.80(1)(j)): a Canadian-individual producer, more than 50% of the copyright owned by an eligible production "
+            description="Needs an eligibility certificate under s.86 for an eligible production (s.80(1)(j)); the five s.79(1) content requirements (75% BC cost, 75% BC postproduction, 75% BC days, six Canadian-content points, a written broadcaster / distributor agreement) are SEPARATE requirements below. A Canadian-individual producer, more than 50% of the copyright owned by an eligible production "
                         "corporation, initial licensing controlled by it, no non-Canadian distribution in Canada within 24 months (s.80(1)(d)-(g)). The budget cannot establish it, so it is a "
                         "producer-stated fact held at USER_FACT_REQUIRED: absent, the credit is a conditional planning figure, never Recommended and served CONDITIONAL.",
             quote="eligible production ... eligibility certificate issued under section 86 (Income Tax Act (BC) s.80(1))",
@@ -1144,6 +1144,46 @@ def _bc_film_tv_conditions(prefix: str) -> tuple:
             quote="eligible production corporation (Income Tax Act (BC) s.79(1), s.80(1)(c.1))",
             kind="project_fact_dependent_eligibility",
             required_boolean_fact_key="ca_bc_film_tv_tax_credit__local_entity_or_partner_confirmed",
+            gates_tier_eligibility=False,
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-bc-cost-75pct",
+            description="At least 75% of the cost of the production is payable to BC-based individuals or corporations for goods and services in British Columbia (s.79(1) 'eligible production' (f)(i)(B)).",
+            quote='at least 75% of the cost ... payable to individuals resident in British Columbia or corporations with a permanent establishment in British Columbia for goods and services provided in British Columbia (Income Tax Act (BC) s.79(1))',
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key='ca_bc_film_tv_bc_cost_75pct_confirmed',
+            gates_tier_eligibility=False,
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-bc-post-75pct",
+            description="At least 75% of the cost of postproduction work is for work carried out in British Columbia (s.79(1) 'eligible production' (f)(i)(C)).",
+            quote='at least 75% of the cost of postproduction work carried out in British Columbia (Income Tax Act (BC) s.79(1))',
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key='ca_bc_film_tv_post_75pct_in_bc_confirmed',
+            gates_tier_eligibility=False,
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-bc-days-75pct",
+            description="Principal photography takes place in British Columbia on at least 75% of the principal photography days (s.79(1) 'eligible production' (f)(i)).",
+            quote='principal photography ... in British Columbia on at least 75% of the days (Income Tax Act (BC) s.79(1))',
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key='ca_bc_film_tv_photography_days_75pct_in_bc_confirmed',
+            gates_tier_eligibility=False,
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-bc-canadian-content",
+            description="The production earns at least six Canadian-content points (s.79(1) 'eligible production' (d)). Never assumed.",
+            quote='at least six Canadian-content points (Income Tax Act (BC) s.79(1))',
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key='ca_bc_film_tv_canadian_content_6_points_confirmed',
+            gates_tier_eligibility=False,
+        ),
+        RateCondition(
+            condition_id=f"{prefix}-bc-distribution-agreement",
+            description="A written agreement with a broadcaster or distributor exists (s.79(1) 'eligible production'). Never assumed.",
+            quote='written agreement with a broadcaster or distributor (Income Tax Act (BC) s.79(1))',
+            kind="project_fact_dependent_eligibility",
+            required_boolean_fact_key='ca_bc_film_tv_distribution_agreement_confirmed',
             gates_tier_eligibility=False,
         ),
     )

@@ -782,6 +782,12 @@ async def build_project_economic_inputs(
     for _k, _v in to_amount_facts(_cdn_labour_result).items():
         _base_amount_facts.setdefault(_k, _v)
 
+    # NA-RECONCILIATION-23: explicit production locations reduce to numeric locality facts (days at qualifying / non-qualifying / unclassified locations per jurisdiction); stated numbers always win.
+    from app.calculators.locality import locality_amount_facts
+    from app.services.shoot_locations import entries_from_rows
+    for _k, _v in locality_amount_facts(entries_from_rows(fact_rows)).items():
+        _base_amount_facts.setdefault(_k, _v)
+
     # NA-RECONCILIATION-22: the retained schedule's total principal-photography days (ProductionAssumption 'intended_shoot_days'); a producer-stated count of the same name always wins.
     from app.services.resolved_facts import SCHEDULE_TOTAL_FACT_KEYS, schedule_total_days_with_tier
     _sched_days, _sched_tier = await schedule_total_days_with_tier(session, project_id)

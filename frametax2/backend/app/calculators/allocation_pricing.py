@@ -840,49 +840,56 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
         if personnel <= 0:
             return 0.0, 0.0, None
         replaced = -rule.rate * personnel                                  # compensation is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)): the host's base rate does not apply to it
-        stated_credit = stated_comp = 0.0
+        # NA-RECONCILIATION-23: a compensation category that is KNOWN (producer-stated or derived from the normalized budget) is priced at its OWN statutory rate. Only the person-level cap is uncertain, and
+        # it is expressed as a range: the lower bound is one person (credit not above the per-person credit cap, or the rate on the first comp_cap of compensation), the upper bound is the rate on all of the
+        # compensation (many persons). A stated person count is the identified-persons case and prices exactly. The highest category rate is used ONLY for compensation whose category is unknown.
+        floor_credit = potential_credit = stated_comp = derived_comp = 0.0
+        derived_notes = []
+        entries = {e[0]: e for e in rule.compensation_credits}
+        known = []                                                           # (comp_fact, comp, count|None, derived)
         for comp_fact, count_fact, rate, credit_cap, comp_cap, required_fact in rule.compensation_credits:
             if required_fact and required_fact not in stated_facts:
                 continue                                                   # e.g. the 1009 postproduction-wage credit exists only for an approved postproduction company
             comp = _stated_amount(amounts, comp_fact)
-            if comp is None:
-                continue
-            count = _stated_count(amounts, count_fact, "persons") if count_fact else None
-            base = comp if (count is None or comp_cap is None) else min(comp, count * comp_cap)
-            credit = rate * base
-            if count is not None and credit_cap is not None:
-                credit = min(credit, count * credit_cap)
-            stated_credit += credit
-            stated_comp += comp
-        if stated_comp > personnel + 0.005:
-            raise ValueError(f"the stated compensation {stated_comp:,.2f} exceeds the {personnel:,.2f} of qualifying personnel spend in the budget")
-        # Budget-derived compensation (NA-RECONCILIATION-22): the normalized allocation already evidences the resident-crew category, so the producer is not asked for it. With no person count the per-person cap
-        # cannot be tested: the confirmed figure is the lawful lower bound (at least one person, so the credit is at least min(rate x compensation, the per-person credit cap)); the highest category rate stays
-        # the potential, and the missing person-level evidence is disclosed.
-        derived_floor = derived_comp = 0.0
+            if comp is not None:
+                known.append((comp_fact, comp, _stated_count(amounts, count_fact, "persons") if count_fact else None, False))
         for d_fact, d_category in rule.derived_compensation:
-            if _stated_amount(amounts, d_fact) is not None:
+            if any(k[0] == d_fact for k in known):
                 continue                                                   # a producer-stated amount (and its persons) is the stronger tier
             d_amount = (qualified_by_category or {}).get(d_category, 0.0)
-            if d_amount <= 0:
-                continue
-            entry = next((e for e in rule.compensation_credits if e[0] == d_fact), None)
-            if entry is None:
-                continue
-            _cf, _nf, d_rate, d_credit_cap, _cc, _req = entry
-            d_credit = d_rate * d_amount
-            derived_floor += min(d_credit, d_credit_cap) if d_credit_cap is not None else d_credit
-            derived_comp += d_amount
-        bound = rule.bound_rate * max(0.0, personnel - stated_comp)         # compensation whose person status is not stated: the highest category rate is the upper bound
-        floor_delta = replaced + stated_credit + derived_floor
-        potential_delta = replaced + stated_credit + bound
+            if d_amount > 0 and d_fact in entries:
+                known.append((d_fact, d_amount, None, True))
+        for comp_fact, comp, count, derived in known:
+            _cf, _nf, rate, credit_cap, comp_cap, _req = entries[comp_fact]
+            if count is not None:                                          # identified persons: exact
+                base = comp if comp_cap is None else min(comp, count * comp_cap)
+                credit = rate * base
+                if credit_cap is not None:
+                    credit = min(credit, count * credit_cap)
+                floor_credit += credit
+                potential_credit += credit
+            else:                                                          # person count unknown: a range, at the KNOWN category rate
+                one_person = rate * (comp if comp_cap is None else min(comp, comp_cap))
+                if credit_cap is not None:
+                    one_person = min(one_person, credit_cap)
+                floor_credit += one_person
+                potential_credit += rate * comp
+                derived_notes.append(f"{comp_fact} ({comp:,.2f} at {rate:.0%})")
+            stated_comp += comp
+            if derived:
+                derived_comp += comp
+        if stated_comp > personnel + 0.005:
+            raise ValueError(f"the stated compensation {stated_comp:,.2f} exceeds the {personnel:,.2f} of qualifying personnel spend in the budget")
+        bound = rule.bound_rate * max(0.0, personnel - stated_comp)         # compensation whose CATEGORY is not known: the highest category rate is the upper bound
+        floor_delta = replaced + floor_credit
+        potential_delta = replaced + potential_credit + bound
         note = None if (stated_comp >= personnel - 0.005) else (
-            f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no stated category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member, or an approved "
+            f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no known category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member, or an approved "
             f"postproduction company's wages); bounded at the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
-        if derived_comp > 0:
-            derived_note = (f"{rule.uplift_id}: {derived_comp:,.2f} of resident-crew compensation is derived from the normalized budget; no person count is stated, so the per-person credit cap cannot be tested - the "
-                            f"confirmed figure is the lower bound for one person and the potential is the highest category rate ({rule.source_ref})")
-            note = derived_note if note is None else note + "; " + derived_note
+        if derived_notes:
+            cap_note = (f"{rule.uplift_id}: person count not stated for {'; '.join(derived_notes)}; the known category rate applies and only the per-person cap is a range - the confirmed figure is the lower bound for one "
+                        f"person and the potential is the rate on all of the compensation ({rule.source_ref})")
+            note = cap_note if note is None else note + "; " + cap_note
         return round(floor_delta, 2), round(potential_delta, 2), note
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)

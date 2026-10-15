@@ -79,6 +79,12 @@ NY_EVIDENCED_FACTS = {
     # BC domestic rate regime by the date principal photography BEGINS (ITA (BC) s.80(8)): the two statements are mutually exclusive (a later statement replaces the earlier one).
     "ca_bc_film_tv_photography_after_2024_confirmed": "ca_bc_film_tv_photography_before_2025_confirmed",
     "ca_bc_film_tv_photography_before_2025_confirmed": "ca_bc_film_tv_photography_after_2024_confirmed",
+    # BC 'eligible production' content requirements, each its own resolved requirement (Income Tax Act (BC) s.79(1)); the scenario derives the first three where the allocation establishes them
+    "ca_bc_film_tv_bc_cost_75pct_confirmed": None,
+    "ca_bc_film_tv_post_75pct_in_bc_confirmed": None,
+    "ca_bc_film_tv_photography_days_75pct_in_bc_confirmed": None,
+    "ca_bc_film_tv_canadian_content_6_points_confirmed": None,
+    "ca_bc_film_tv_distribution_agreement_confirmed": None,
     "nj_film_spend_outside_nyc_radius_confirmed": None,
     # NA-RECONCILIATION-13: Missouri RSMo 135.750 eligibility and uplift facts (statute subsections 3(2)-(6) and 4); none can be read from a topsheet
     "mo_apprentice_or_veteran_minimum_confirmed": None,

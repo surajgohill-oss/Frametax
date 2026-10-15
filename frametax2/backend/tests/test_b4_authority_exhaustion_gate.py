@@ -211,7 +211,8 @@ _B1_REMOVED_BY_RECONCILIATION = (
 
 
 def test_all_remaining_b1_canonical_ids_are_blocked():
-    assert len(_B1_DISCRETIONARY_RULING) == 10
+    # Restated in NA-RECONCILIATION-23 (stale expectation): Saskatchewan left the ruling in NA-RECONCILIATION-19 (it prices through the statutory-formula mechanism), leaving 9 entries.
+    assert len(_B1_DISCRETIONARY_RULING) == 9
     assert not set(_B1_DISCRETIONARY_RULING) & set(_B1_REMOVED_BY_RECONCILIATION)
     for slug, expected_classification in _B1_DISCRETIONARY_RULING.items():
         block = economic_block_for_program(slug)

@@ -99,7 +99,7 @@ def test_two_hop_blocked_alias_with_live_intermediate_refuses(isolated_registrie
 def test_three_hop_blocked_alias_chain_refuses(isolated_registries):
     a, b, c, target = (
         "__b4t_three_hop_a__", "__b4t_three_hop_b__", "__b4t_three_hop_c__",
-        "za_dtic_foreign_film",  # B1 FAIL_CLOSED
+        "th_boi_incentive",  # B1 FAIL_CLOSED (restated in NA-RECONCILIATION-23: za_dtic_foreign_film left the ruling)
     )
     PROGRAM_SLUG_ALIASES[a] = b
     PROGRAM_SLUG_ALIASES[b] = c
@@ -133,7 +133,7 @@ def test_blocked_intermediate_with_clean_terminal_still_refuses(isolated_registr
         assert classify_rate_resolution_failure(outer, "feature_film", 5_000_000) == RATE_FAILURE_AUTHORITY_EXHAUSTED
         # Sanity: the clean terminal target is unaffected when addressed directly.
         assert economic_block_for_program(clean_target) is None
-        assert resolve_program_rate(clean_target, "feature_film", 5_000_000) is not None
+        assert resolve_program_rate(clean_target, "feature_film", 5_000_000, amount_facts={"ca_federal_cptc_qualified_labour_usd": 5_000_000.0}) is not None   # restated in NA-RECONCILIATION-23: the CPTC rate needs its qualified-labour amount fact
     finally:
         del PROGRAM_SLUG_ALIASES[blocked_middle]
 
@@ -259,7 +259,8 @@ def test_serialized_reconstruction_of_multi_hop_aliased_candidate_stays_blocked(
 # completely unaffected by the transitive-traversal rewrite. ────────────
 
 def test_unrelated_verified_program_still_prices_after_transitive_rewrite():
-    r = resolve_program_rate("ca_federal_cptc", production_type="feature_film", qpe_usd=5_000_000)
+    # restated in NA-RECONCILIATION-23: the CPTC rate is gated on its qualified-labour amount fact (a derived fact), so the control states it
+    r = resolve_program_rate("ca_federal_cptc", production_type="feature_film", qpe_usd=5_000_000, amount_facts={"ca_federal_cptc_qualified_labour_usd": 5_000_000.0})
     assert r is not None
     assert r.modeled_rate == 0.25
     assert economic_block_for_program("ca_federal_cptc") is None

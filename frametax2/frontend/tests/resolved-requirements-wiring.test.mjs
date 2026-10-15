@@ -6,7 +6,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
-  booleanOptions, changedFacts, chooseBoolean, draftFrom, factStatusText, isDirty, isReadOnly, ladderLines, provenanceLabel, stillNeeded, validateDraft, validateFact,
+  SECTION_ORDER, booleanOptions, changedFacts, chooseBoolean, draftFrom, factStatusText, hasMissouri, isDirty, isReadOnly, ladderLines, provenanceLabel, relevantFacts, relevantLocationNeeds,
+  relevantScenarioRules, sectionsFor, stillNeeded, structurePrograms, structureUpside, validateDraft, validateFact,
 } from "../src/lib/resolvedRequirements.js";
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
@@ -94,24 +95,24 @@ test("the panel saves then runs the shared single-flight evaluation once; retain
   assert.match(src, /const saved = await postProgramFacts\(projectId, \{ evidenced, amounts \}\);/);
   assert.match(src, /if \(evaluateOnSave\) await runEvaluation\(projectId\);\s*else setSavedNotEvaluated\(true\);/);
   assert.equal((src.match(/runEvaluation\(projectId\)/g) || []).length, 1, "exactly one evaluation call site");
-  assert.match(src, /if \(savingGroup \|\| run\.running\) return;/);
-  assert.match(src, /const locked = savingGroup !== null \|\| run\.running;/);
+  assert.match(src, /if \(saving \|\| run\.running\) return;/);
+  assert.match(src, /const locked = saving \|\| run\.running;/);
   assert.match(src, /\{savedNotEvaluated && <RetainedSaveNote \/>\}/);
   assert.match(src, /<EvaluationStatus projectId=\{projectId\} onCompleted=\{onSaved\} compact \/>/);
 });
 
 test("labels, groups, bounds, provenance and requirements come from the served view; derived facts are read-only; no fact key is named in the component", () => {
   const src = strip(read("components/ResolvedRequirementsPanel.jsx"));
-  assert.match(src, /view\.groups\.map\(\(group\) =>/);
+  assert.match(src, /const sections = sectionsFor\(view, structure\);/);
   assert.match(src, /data-provenance=\{f\.provenance\}/);
   assert.match(src, /data-read-only=\{isReadOnly\(f\) \? "true" : "false"\}/);
-  assert.match(src, /isReadOnly\(f\) \? \(\s*<span className="pd-col-label rr-readonly"/, "a derived or assumed fact renders as text, not as a control");
+  assert.match(src, /control = \(f\) => \(isReadOnly\(f\) \? \(\s*<span className="pd-col-label rr-readonly"/, "a derived or assumed fact renders as text, not as a control");
   assert.match(src, /<option value="">Unknown<\/option>/);
   assert.match(src, /booleanOptions\(f\)\.includes\("no"\) && <option value="no">No<\/option>/, "No is offered for predicates only, never for an election");
-  assert.match(src, /Needed: \{f\.requirement \?\? f\.label\}/);
-  assert.match(src, /view\.missouri && \(/);
+  assert.match(src, /"Needed"\}: \{f\.requirement \?\? f\.label\}/);
+  assert.match(src, /hasMissouri\(structure\) && view\.missouri && \(/, "the Missouri ladder appears only for a structure that holds the Missouri credit");
   assert.doesNotMatch(src, /ca_bc_|ca_ns_|ca_nb_|ca_sk_|us_mt_|us_mo_|mo_|ca_federal_/, "no fact key is named in the component");
-  assert.match(src, /setView\(programFacts\); setDrafts\(\{\}\);/, "a refetch / cold reload restores the stored values");
+  assert.match(src, /setView\(programFacts\); setDraft\(null\);/, "a refetch / cold reload restores the stored values");
 });
 
 test("provenance has distinct styling for verified, producer-stated, scenario-assumed and unknown facts", () => {
@@ -122,12 +123,70 @@ test("provenance has distinct styling for verified, producer-stated, scenario-as
 test("the Overview mounts it in the Production facts column with the retained-results guard and the same refetch as the other producer inputs", () => {
   const src = strip(read("screens/production/Overview.jsx"));
   assert.match(src, /import ResolvedRequirementsPanel from "\.\.\/\.\.\/components\/ResolvedRequirementsPanel";/);
-  assert.match(src, /<ResolvedRequirementsPanel\s+projectId=\{projectId\}\s+programFacts=\{production\?\.program_facts\}\s+onSaved=\{\(\) => \{ refetch\(\); window\.dispatchEvent\(new Event\("cineglobe:refetch"\)\); \}\}\s+evaluateOnSave=\{production\?\.evaluation_freshness !== "STALE"\}\s*\/>/);
+  assert.match(src, /<ResolvedRequirementsPanel\s+projectId=\{projectId\}\s+programFacts=\{production\?\.program_facts\}\s+structure=\{structure\}\s+onSaved=\{\(\) => \{ refetch\(\); window\.dispatchEvent\(new Event\("cineglobe:refetch"\)\); \}\}\s+evaluateOnSave=\{production\?\.evaluation_freshness !== "STALE"\}\s*\/>/);
   assert.doesNotMatch(src, /ProgramFactsPanel/, "the 73-question manual panel is gone");
 });
 
 test("opening a project never writes or evaluates program facts: the panel only reads the served view", () => {
   const src = strip(read("components/ResolvedRequirementsPanel.jsx"));
   assert.doesNotMatch(src, /useEffect\([^)]*postProgramFacts|useEffect\([^)]*runEvaluation/s);
-  assert.match(src, /useEffect\(\(\) => \{ setView\(programFacts\); setDrafts\(\{\}\); \}, \[programFacts\]\);/);
+  assert.match(src, /useEffect\(\(\) => \{ setView\(programFacts\); setDraft\(null\); \}, \[programFacts\]\);/);
+});
+
+// ── NA-RECONCILIATION-23: only what is relevant to the selected structure, in five sections ─────────────────────────────────────────────────────────
+
+const f = (key, category, programs, extra = {}) => ({ key, label: key, kind: "boolean", state: category === "SATISFIED" ? "TRUE" : category === "FAILED" ? "FALSE" : "UNKNOWN", provenance: category === "SATISFIED" ? "SCENARIO_ASSUMED" : "UNKNOWN",
+  editable: category !== "SATISFIED", category, programs, derivation_class: "PRODUCER_ASSERTION", ...extra });
+const view = { groups: [
+  { id: "mo", title: "Missouri", programs: ["us_mo"], facts: [f("mo_a", "SATISFIED", ["us_mo"]), f("mo_b", "CONDITIONAL_UPSIDE", ["us_mo"]), f("mo_c", "FAILED", ["us_mo"], { failure_effect: "the +5 points are not earned" })] },
+  { id: "bc", title: "British Columbia", programs: ["ca_bc"], facts: [f("bc_a", "PRODUCER_INPUT", ["ca_bc"]), f("bc_b", "EXTERNAL_APPROVAL", ["ca_bc"])] },
+  { id: "ny", title: "New York", programs: ["ny"], facts: [f("ny_a", "PRODUCER_INPUT", ["ny"])] },
+], scenario_rules: [{ program: "us_mo", fact_key: "mo_a" }, { program: "ca_bc", fact_key: "bc_x" }] };
+
+test("the programs of the selected structure come from its slugs, claimed programs, components and segments", () => {
+  assert.deepEqual(structurePrograms({ program_slugs: ["a"], claimed_program_ids: ["b"], component_allocations: [{ program_slug: "c" }], segments: [{ program_slug: "d" }, {}] }).sort(), ["a", "b", "c", "d"]);
+  assert.deepEqual(structurePrograms(null), []);
+});
+
+test("only facts of the selected structure's programs are shown: a Missouri structure never sees British Columbia or New York facts", () => {
+  const mo = { program_slugs: ["us_mo"] };
+  assert.deepEqual(relevantFacts(view, mo).map((x) => x.key), ["mo_a", "mo_b", "mo_c"]);
+  assert.deepEqual(relevantFacts(view, { program_slugs: ["ca_bc"] }).map((x) => x.key), ["bc_a", "bc_b"]);
+  assert.deepEqual(relevantFacts(view, { program_slugs: ["us_mo", "ca_bc"] }).length, 5);
+  assert.deepEqual(relevantFacts(view, null), [], "no selected structure: nothing is asked");
+  assert.deepEqual(relevantScenarioRules(view, mo).map((r) => r.fact_key), ["mo_a"]);
+  assert.equal(hasMissouri({ program_slugs: ["us_mo_motion_media_production_tax_credit"] }), true);
+  assert.equal(hasMissouri({ program_slugs: ["ca_bc"] }), false);
+});
+
+test("each relevant fact lands in exactly one of the five sections", () => {
+  const sections = sectionsFor(view, { program_slugs: ["us_mo", "ca_bc"] });
+  assert.deepEqual(Object.fromEntries(SECTION_ORDER.map((k) => [k, sections[k].map((x) => x.key)])), {
+    input: ["bc_a"], approval: ["bc_b"], upside: ["mo_b"], failed: ["mo_c"], satisfied: ["mo_a"] });
+  const all = SECTION_ORDER.flatMap((k) => sections[k]);
+  assert.equal(new Set(all.map((x) => x.key)).size, all.length);
+  assert.equal(isReadOnly(sections.satisfied[0]), true, "a derived / assumed fact is read-only");
+});
+
+test("the conditional upside shows the exact dollars the selected structure's missing facts unlock", () => {
+  const up = structureUpside({ ceiling_missing_facts: [{ fact_id: "x", description: "Filming 50%", unlocks_incentive_usd: 50000, program_slug: "us_mo" }, { fact_id: "y", unlocks_incentive_usd: 0 }] });
+  assert.deepEqual(up.map((u) => [u.id, u.usd]), [["x", 50000]]);
+});
+
+test("a missing location is named exactly and only for relevant locality facts", () => {
+  const v = { groups: [{ id: "g", title: "G", programs: ["us_mo"], facts: [f("county", "PRODUCER_INPUT", ["us_mo"], { derivation_class: "LOCALITY", requirement: "Add each US-MO filming location with its county" }),
+    f("other", "PRODUCER_INPUT", ["us_mo"], { derivation_class: "PRODUCER_ASSERTION", requirement: "Ownership" })] }] };
+  assert.deepEqual(relevantLocationNeeds(v, { program_slugs: ["us_mo"] }).map((n) => n.key), ["county"]);
+  assert.deepEqual(relevantLocationNeeds(v, null), []);
+});
+
+test("the panel renders the five sections, the exact upside, the failure effect and the location need; satisfied is collapsed; it does not list every fact", () => {
+  const src = strip(read("components/ResolvedRequirementsPanel.jsx"));
+  assert.match(src, /open=\{k !== "satisfied"\}/, "Already satisfied is collapsed by default");
+  assert.match(src, /SECTION_ORDER\.map\(\(k\) =>/);
+  assert.match(src, /data-structure-upside=\{u\.id\}/);
+  assert.match(src, /Not met: \{f\.failure_effect\}/);
+  assert.match(src, /data-location-needs="true"/);
+  assert.match(src, /Select a structure/);
+  assert.doesNotMatch(src, /view\.groups\.map/, "the panel never maps the whole catalog");
 });

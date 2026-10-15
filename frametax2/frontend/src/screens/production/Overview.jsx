@@ -179,6 +179,7 @@ export default function Overview() {
           <ResolvedRequirementsPanel
             projectId={projectId}
             programFacts={production?.program_facts}
+            structure={structure}
             onSaved={() => { refetch(); window.dispatchEvent(new Event("cineglobe:refetch")); }}
             evaluateOnSave={production?.evaluation_freshness !== "STALE"}
           />

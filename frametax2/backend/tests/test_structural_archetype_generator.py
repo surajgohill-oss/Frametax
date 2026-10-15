@@ -379,7 +379,13 @@ def test_ho009_nz_principal_plus_bc_dave_plus_ny_post():
     res = generate_structural_candidate(components, gross_budget_usd=6_800_000.0)
     assert res.executable is False and "claimable only alongside its host credit" in res.rejection_reason
     # With the s.80 host on separate BC labour (200,000) the same three countries compose: DAVE 16% x 300,000 = 48,000.
-    hosted = components + [_comp("ca_bc_film_tv_tax_credit", "CA-BC", 200_000.0, line_id="HO009-BCH", spend_category="btl_crew_labor")]
+    # RESTATED (NA-RECONCILIATION-23): the domestic s.80 credit needs an 'eligible production' (s.79(1)): at least 75% of the cost payable in BC, 75% of postproduction in BC and 75% of the photography days in BC.
+    # BC holds 500,000 of 7,000,000 here (about 7%) and the principal photography is in New Zealand, so the domestic host fails in THIS scenario; the production services credit (s.82.1, also a DAVE host under
+    # s.82.3(1)(a)) has no such test and is the lawful host for a foreign shoot.
+    domestic = components + [_comp("ca_bc_film_tv_tax_credit", "CA-BC", 200_000.0, line_id="HO009-BCH", spend_category="btl_crew_labor")]
+    failed = generate_structural_candidate(domestic, gross_budget_usd=7_000_000.0)
+    assert failed.executable is False and "ca_bc_film_tv_tax_credit" in failed.rejection_reason
+    hosted = components + [_comp("ca_bc_pstc", "CA-BC", 200_000.0, line_id="HO009-BCH", spend_category="btl_crew_labor")]
     res = generate_structural_candidate(hosted, gross_budget_usd=7_000_000.0)
     assert res.executable is True, res.rejection_reason
     assert res.total_allocated_usd == pytest.approx(7_000_000.0)

@@ -959,6 +959,37 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
     return {"applied": applied, "program_facts": await program_facts_view(db, project.id)}
 
 
+class ShootLocationsBody(BaseModel):
+    locations: list[dict[str, Any]] = []
+
+
+@router.post("/projects/{project_id}/shoot-locations")
+async def post_shoot_locations(project_id: str, body: ShootLocationsBody, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Replace the project's explicit production locations (retained schedule locations and scenario-selected locations). Stored in the one ProjectFact table and covered by the evaluation fingerprint through the
+    numeric locality facts; saving never evaluates (the UI runs the shared single-flight evaluation afterwards). Locality is never inferred from the jurisdiction alone."""
+    from app.services.shoot_locations import locations_view, write_shoot_locations
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        applied = await write_shoot_locations(db, project.id, body.locations)
+    except ValueError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc))
+    await db.commit()
+    return {"applied": applied, "shoot_locations": await locations_view(db, project.id)}
+
+
+@router.get("/projects/{project_id}/shoot-locations")
+async def get_shoot_locations(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Read-only: the explicit production locations, their resolved classifications with provenance and what is still unresolved. Never evaluates, never writes."""
+    from app.services.shoot_locations import locations_view
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"shoot_locations": await locations_view(db, project.id)}
+
+
 @router.get("/projects/{project_id}/program-facts")
 async def get_program_facts(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """Read-only: the resolved requirements (value + provenance per fact: Yes / No / Unknown, derived, scenario-assumed). Never evaluates, never writes."""

@@ -20,6 +20,11 @@ GROUPS: tuple = (
     ("ca_bc_film_tv", "British Columbia film and television credit", ("ca_bc_film_tv_tax_credit", "ca_bc_pstc"), "Income Tax Act (BC) Part 5 (s.80-82.4)", [
         ("ca_bc_film_tv_photography_after_2024_confirmed", "Principal photography begins after 31 Dec 2024", "40% regime (s.80(8)); excludes the opposite statement"),
         ("ca_bc_film_tv_photography_before_2025_confirmed", "Principal photography began on or before 31 Dec 2024", "35% regime; removes the 40% scenario"),
+        ("ca_bc_film_tv_bc_cost_75pct_confirmed", "At least 75% of the cost is payable to BC-based people and companies for goods and services in BC", "Eligible production requirement (s.79(1)); a scenario that allocates 75% or more of the budget to BC establishes it"),
+        ("ca_bc_film_tv_post_75pct_in_bc_confirmed", "At least 75% of postproduction work cost is for work carried out in BC", "Eligible production requirement (s.79(1)); established when the allocation puts 75% or more of postproduction in BC"),
+        ("ca_bc_film_tv_photography_days_75pct_in_bc_confirmed", "Principal photography is in BC on at least 75% of the days", "Eligible production requirement (s.79(1)); a full BC relocation establishes it"),
+        ("ca_bc_film_tv_canadian_content_6_points_confirmed", "The production earns at least six Canadian-content points", "Eligible production requirement (s.79(1)); never assumed"),
+        ("ca_bc_film_tv_distribution_agreement_confirmed", "A written broadcaster or distributor agreement exists", "Eligible production requirement (s.79(1)); never assumed"),
         ("ca_bc_principal_photography_days_in_bc", "Principal photography days in British Columbia (TD)", "Whole days; the denominator of the regional and distant-location credits"),
         ("ca_bc_principal_photography_days_outside_vancouver", "Days outside the designated Vancouver area (RD)", "Regional credit needs at least 5 days and more than 50% of TD"),
         ("ca_bc_principal_photography_days_distant_location", "Days in a distant location (DLD)", "Distant-location credit needs at least 1 day and the regional credit"),

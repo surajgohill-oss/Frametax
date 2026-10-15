@@ -21,7 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.scenario_facts import (
-    DAY_RULES, PROVENANCE_PRODUCER_STATED, PROVENANCE_SCENARIO_ASSUMED, PROVENANCE_SCHEDULE_DERIVED, PROVENANCE_UNKNOWN, PROVENANCE_VERIFIED, SHARE_RULES, SCHEDULE_TOTAL_DAYS_FACT,
+    DAY_RULES, PROVENANCE_LOCALITY_RESOLVED, PROVENANCE_PRODUCER_STATED, PROVENANCE_SCENARIO_ASSUMED, PROVENANCE_SCHEDULE_DERIVED, PROVENANCE_UNKNOWN, PROVENANCE_VERIFIED, SHARE_RULES, SCHEDULE_TOTAL_DAYS_FACT,
 )
 
 #: Schedule rows with these evidence states are retained evidence (tier 1); USER_CONFIRMED is a producer-level statement (tier 2).
@@ -61,21 +61,62 @@ def resolve_boolean(*, verified: bool | None = None, stated: bool | None = None,
     return "UNKNOWN", PROVENANCE_UNKNOWN, None
 
 
-def _effects() -> dict[str, list[str]]:
-    """fact key -> the pricing effects the rate rules attach to it (uplift points, tier gates), read from the canonical registries."""
+def _effects() -> dict[str, list[dict]]:
+    """fact key -> the pricing effects the rate rules attach to it, read from the canonical registries: {program, text, points (uplift points as a fraction of the eligible base) | None}."""
     import app.data.program_rate_rules as r
-    out: dict[str, list[str]] = {}
+    out: dict[str, list[dict]] = {}
     for slug, uplifts in r.SUBSET_UPLIFT_RULES.items():
         for u in uplifts:
             if u.kind == "points_on_base" and u.prerequisite_fact:
-                pts = u.rate * 100
-                out.setdefault(u.prerequisite_fact, []).append(f"+{pts:g} points on the base rate ({slug})")
+                out.setdefault(u.prerequisite_fact, []).append({"program": slug, "points": u.rate, "text": f"+{u.rate * 100:g} points on the base rate"})
             elif u.prerequisite_fact:
-                out.setdefault(u.prerequisite_fact, []).append(f"{u.uplift_id.replace('_', ' ')} uplift prerequisite ({slug})")
+                out.setdefault(u.prerequisite_fact, []).append({"program": slug, "points": None, "text": f"{u.uplift_id.replace('_', ' ')} uplift prerequisite"})
             for k in (u.whole_base_fact, *(u.criteria_facts or ())):
                 if k:
-                    out.setdefault(k, []).append(f"{u.uplift_id.replace('_', ' ')} uplift ({slug})")
+                    out.setdefault(k, []).append({"program": slug, "points": None, "text": f"{u.uplift_id.replace('_', ' ')} uplift"})
+    for slug, rules in r._RULES_BY_PROGRAM.items():
+        for rule in rules:
+            for c in rule.conditions or ():
+                k = c.required_boolean_fact_key
+                if k and c.kind == "project_fact_dependent_uplift":
+                    out.setdefault(k, [])                                   # an uplift tier, not the credit itself: its failure removes the uplift only
+                elif k:
+                    out.setdefault(k, [])
+                    if not any(e["program"] == slug and e.get("requirement") for e in out[k]):
+                        out[k].append({"program": slug, "points": None, "requirement": True, "text": "required for the credit"})
     return out
+
+
+_PROGRAMS_CACHE: dict[str, frozenset] | None = None
+
+
+def fact_programs() -> dict[str, frozenset]:
+    """fact key -> the canonical program slugs that consume it (rate conditions, uplift rules, content gates, project gates), from the generated inventory."""
+    global _PROGRAMS_CACHE
+    if _PROGRAMS_CACHE is None:
+        from app.data.program_slug_aliases import canonical_slug
+        from app.services.na_fact_inventory import _fact_rows
+        out: dict[str, set] = {}
+        for key, f in _fact_rows().items():
+            for c in f.consumers:
+                head = c.split(":")[0].split(" ")[0]
+                if head:
+                    out.setdefault(key, set()).add(canonical_slug(head) or head)
+        _PROGRAMS_CACHE = {k: frozenset(v) for k, v in out.items()}
+    return _PROGRAMS_CACHE
+
+
+def locality_requirement(key: str) -> str | None:
+    """The exact missing-location requirement for a locality-derived fact, with the source still required where the repository holds no dataset."""
+    from app.calculators import locality as loc
+    for p in loc.PREDICATES:
+        if key in (p.fact_key, p.day_fact):
+            group = {"mo_county_qualifying": None, "mo_rural_or_blighted": "mo_rural_or_blighted", "bc_outside_vancouver": "bc_zone", "bc_distant": "bc_zone", "ns_zone_a": "ns_distance",
+                     "ns_zone_b": "ns_distance", "nb_rural": "nb_distance", "nb_remote": "nb_distance", "sk_rural50": "sk_distance"}[p.key]
+            if group is None:
+                return f"Add each {p.jurisdiction} filming location with its county (the county class is looked up from the {loc.MO_COUNTY_DATASET['version']} Missouri list)"
+            return f"Add each {p.jurisdiction} filming location with its shooting days and classification ({p.label}). Source still required: {loc.OPEN_CLASSIFICATIONS[group]}"
+    return None
 
 
 def missouri_ladder(states: dict[str, str]) -> dict:
@@ -108,6 +149,7 @@ async def resolved_requirements_view(session: AsyncSession, project_id) -> dict:
     booleans, numbers = await stored_values(session, project_id)
     sched_days, sched_tier = await schedule_total_days_with_tier(session, project_id)
     effects = _effects()
+    programs_of = fact_programs()
     groups = []
     states: dict[str, str] = {}
     for gid, title, programs, authority, facts in GROUPS:
@@ -115,7 +157,7 @@ async def resolved_requirements_view(session: AsyncSession, project_id) -> dict:
         for key, label, hint in facts:
             partner = npf.NY_EVIDENCED_FACTS.get(key)
             cls = classify(key, is_election_fact=bool(partner))
-            row = {"key": key, "label": label, "help": hint, "derivation_class": cls, "effects": effects.get(key, [])}
+            row = {"key": key, "label": label, "help": hint, "derivation_class": cls}
             if key in npf.PROGRAM_AMOUNT_FACTS:
                 lo, hi = npf.PROGRAM_AMOUNT_FACTS[key]
                 stated = numbers.get(key)
@@ -146,8 +188,18 @@ async def resolved_requirements_view(session: AsyncSession, project_id) -> dict:
                 if key in {sr.fact_key for sr in SHARE_RULES if not sr.is_share_gate}:
                     row["scenario_rule"] = "A scenario that places all of the principal photography in the jurisdiction establishes this; a split scenario leaves it to the producer."
                 states[key] = state
+            eff = effects.get(key, [])
+            progs = programs_of.get(key) or frozenset(programs)
+            pts = max((e["points"] for e in eff if e.get("points")), default=None)
+            row["programs"] = sorted(progs)
+            row["effects"] = [f"{e['text']} ({e['program']})" for e in eff]
+            row["effect_points"] = pts
+            row["failure_effect"] = ("the credit is not available" if any(e.get("requirement") for e in eff)
+                                     else (f"the +{pts * 100:g} points are not earned" if pts else "the related uplift or tier is not earned"))
             if row["state"] == "UNKNOWN":
-                row["requirement"] = label
+                row["requirement"] = (locality_requirement(key) if cls in ("LOCALITY", "SCENARIO_PLACEMENT", "PAYEE") else None) or label
+            row["category"] = ("SATISFIED" if row["state"] in ("TRUE", "VALUE") else "FAILED" if row["state"] == "FALSE"
+                               else "EXTERNAL_APPROVAL" if cls == "AGENCY_APPROVAL" else "CONDITIONAL_UPSIDE" if pts else "PRODUCER_INPUT")
             rows.append(row)
         groups.append({"id": gid, "title": title, "programs": list(programs), "authority": authority, "facts": rows,
                        "stated_count": sum(1 for r in rows if r["state"] not in ("UNKNOWN",) and r["provenance"] == PROVENANCE_PRODUCER_STATED),
@@ -164,7 +216,7 @@ async def resolved_requirements_view(session: AsyncSession, project_id) -> dict:
                              for dr in DAY_RULES for slug in dr.program_slugs for k in dr.in_facts],
         "missouri": missouri_ladder(states),
         "provenance_legend": {PROVENANCE_VERIFIED: "retained document or database evidence", PROVENANCE_PRODUCER_STATED: "stated by the producer",
-                              PROVENANCE_SCENARIO_ASSUMED: "assumed by the selected optimizer scenario", PROVENANCE_SCHEDULE_DERIVED: "derived from the retained schedule", PROVENANCE_UNKNOWN: "not established"},
+                              PROVENANCE_SCENARIO_ASSUMED: "assumed by the selected optimizer scenario", PROVENANCE_SCHEDULE_DERIVED: "derived from the retained schedule", PROVENANCE_LOCALITY_RESOLVED: "resolved from an explicit filming location", PROVENANCE_UNKNOWN: "not established"},
         "note": ("Resolved requirements. Verified evidence outranks a producer statement, which outranks a scenario assumption. A derived or assumed fact is shown read-only; only a genuine producer decision or "
                  "evidence the system cannot hold is asked for. Unknown keeps the conditional potential; No applies the rule's failed treatment."),
     }

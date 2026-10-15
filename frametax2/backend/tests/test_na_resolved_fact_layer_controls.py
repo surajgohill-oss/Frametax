@@ -161,12 +161,13 @@ def test_montana_derives_resident_crew_compensation_from_the_budget_and_prices_t
     derived = _mt("btl_resident_labor")
     # 1,000,000 of resident crew: compensation leaves the 20% base (-200,000); with no person count the credit is at least one person's min(25% x 1,000,000, 150,000) = 150,000
     assert plain.incentive_floor_usd == pytest.approx(0.0) and derived.incentive_floor_usd == pytest.approx(150_000.0)
-    assert derived.incentive_ceiling_usd == pytest.approx(300_000.0), "the highest category rate (30% student / veteran / tribal) stays the potential: 20% x 0 base + 30% x 1,000,000"
+    # restated in NA-RECONCILIATION-23: a KNOWN category is priced at its own 25% rate; only the per-person cap is a range, so the potential is 25% x 1,000,000, never the 30% maximum
+    assert derived.incentive_ceiling_usd == pytest.approx(250_000.0)
     stated = _mt("btl_resident_labor", amounts={"us_mt_resident_crew_compensation_usd": BASE, "us_mt_resident_crew_persons": 10})
     assert stated.incentive_floor_usd == pytest.approx(250_000.0), "ten stated persons: 25% x 1,000,000, each well below the 150,000 credit cap (a producer statement outranks the derivation)"
     capped = _mt("btl_resident_labor", amounts={"us_mt_resident_crew_compensation_usd": 3_000_000.0 / 3, "us_mt_resident_crew_persons": 1})
     assert capped.incentive_floor_usd == pytest.approx(150_000.0), "one person: the 150,000 per-person cap binds exactly"
-    assert any("per-person credit cap cannot be tested" in str(c.get("note", "")) for c in derived.ceiling_conditions), "the missing person-level evidence is disclosed"
+    assert any("person count not stated" in str(c.get("note", "")) for c in derived.ceiling_conditions), "the missing person-level evidence is disclosed"
     vfx = _mt("vfx")
     assert vfx.incentive_floor_usd == pytest.approx(200_000.0), "non-compensation Montana spend earns the 20% base"
 
@@ -254,8 +255,10 @@ async def test_the_retained_schedule_is_the_total_days_owner_and_verified_eviden
 
 
 def test_two_principal_production_components_in_different_jurisdictions_are_a_split_not_a_none():
-    rows = [("CA", 600_000.0, "principal_production", "principal_production"), ("CA-SK", 600_000.0, "principal_production", "principal_production")]
-    assert principal_photography_placement(rows, "CA-SK", "CA")[0] == "SPLIT"
+    rows = [("CA-MB", 600_000.0, "principal_production", "principal_production"), ("CA-SK", 600_000.0, "principal_production", "principal_production")]
+    assert principal_photography_placement(rows, "CA-SK", "CA-MB")[0] == "SPLIT"
+    federal = [("CA", 600_000.0, "principal_production", "principal_production"), ("CA-SK", 600_000.0, "principal_production", "principal_production")]
+    assert principal_photography_placement(federal, "CA-SK", "CA")[0] == "UNKNOWN", "a federal-layer (parent-coded) row does not locate the shoot: neither placed nor displaced"
     sf = scenario_derived_facts(SK, "CA-SK", rows, "CA")
     assert not sf.true_facts and not sf.refuted_facts, "a modeled split leaves the 51% activity test Unknown: its bonuses stay conditional potential"
 

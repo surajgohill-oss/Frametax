@@ -110,3 +110,63 @@ export function ladderLines(ladder) {
   lines.push({ id: "total", text: `Confirmed ${ladder.confirmed_pct}% · up to ${ladder.potential_pct}% · maximum ${ladder.max_pct}%`, state: "TOTAL" });
   return lines;
 }
+
+// ── relevance (NA-RECONCILIATION-23): only what could change the selected structure's eligibility or value ─────────────────────────────────────────
+
+export function structurePrograms(structure) {
+  if (!structure) return [];
+  const slugs = new Set([...(structure.program_slugs ?? []), ...(structure.claimed_program_ids ?? [])]);
+  for (const c of structure.component_allocations ?? []) if (c.program_slug) slugs.add(c.program_slug);
+  for (const s of structure.segments ?? []) if (s.program_slug) slugs.add(s.program_slug);
+  return [...slugs];
+}
+
+const SECTION_OF = { SATISFIED: "satisfied", FAILED: "failed", EXTERNAL_APPROVAL: "approval", CONDITIONAL_UPSIDE: "upside", PRODUCER_INPUT: "input" };
+export const SECTION_ORDER = ["input", "approval", "upside", "failed", "satisfied"];
+export const SECTION_TITLE = {
+  input: "Producer input needed",
+  approval: "External approval required",
+  upside: "Conditional upside",
+  failed: "Failed requirements",
+  satisfied: "Already satisfied",
+};
+
+export function relevantFacts(view, structure) {
+  const programs = new Set(structurePrograms(structure));
+  const out = [];
+  if (!programs.size) return out;
+  for (const g of view?.groups ?? []) for (const f of g.facts) {
+    const fp = f.programs?.length ? f.programs : g.programs ?? [];
+    if (fp.some((p) => programs.has(p))) out.push({ ...f, group: g.title, groupId: g.id });
+  }
+  return out;
+}
+
+// Five sections; a fact appears in exactly one. Derived / verified / assumed facts are "satisfied" (collapsed); a stated No is "failed" with its pricing effect.
+export function sectionsFor(view, structure) {
+  const sections = { input: [], approval: [], upside: [], failed: [], satisfied: [] };
+  for (const f of relevantFacts(view, structure)) sections[SECTION_OF[f.category] ?? "input"].push(f);
+  return sections;
+}
+
+export function structureUpside(structure) {
+  return (structure?.ceiling_missing_facts ?? []).filter((m) => Number(m.unlocks_incentive_usd) > 0).map((m) => ({
+    id: m.fact_id, description: m.description, usd: Number(m.unlocks_incentive_usd), program: m.program_slug, note: m.note ?? null,
+  }));
+}
+
+export const hasMissouri = (structure) => structurePrograms(structure).includes("us_mo_motion_media_production_tax_credit");
+
+export function relevantScenarioRules(view, structure) {
+  const programs = new Set(structurePrograms(structure));
+  return (view?.scenario_rules ?? []).filter((r) => programs.has(r.program));
+}
+
+export function relevantLocationNeeds(view, structure) {
+  const programs = new Set(structurePrograms(structure));
+  const needs = [];
+  for (const f of relevantFacts(view, structure)) {
+    if (f.state === "UNKNOWN" && ["LOCALITY", "SCENARIO_PLACEMENT"].includes(f.derivation_class) && f.requirement && /location/i.test(f.requirement)) needs.push({ key: f.key, requirement: f.requirement });
+  }
+  return programs.size ? needs : [];
+}

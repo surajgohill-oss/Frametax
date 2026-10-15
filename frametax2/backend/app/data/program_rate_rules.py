@@ -2265,6 +2265,8 @@ def _amount_and_boolean_conditions_met(
     amounts = amount_facts or {}
     evidenced = evidenced_facts or frozenset()
     for cond in rule.conditions:
+        if cond.required_boolean_fact_key is not None and ("not:" + cond.required_boolean_fact_key) in evidenced:
+            return False  # NA-RECONCILIATION-23: a requirement stated (or scenario-resolved) as NOT met removes the tier even where an unstated one is only a disclosure
         if not cond.gates_tier_eligibility:
             continue  # disclosure-only for eligibility purposes; see RateCondition docstring
         if cond.amount_fact_key is not None:
