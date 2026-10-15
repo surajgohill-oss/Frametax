@@ -631,8 +631,10 @@ def _day_ratio_eligibility(rule, amounts):
     return num, den, ok
 
 
-def _share_gate_state(rule, amounts):
-    """True / False / None for a stated share test (>= min_share, or > when share_exclusive); None while an input is unstated."""
+def _share_gate_state(rule, amounts, facts=None):
+    """True / False / None for a stated share test (>= min_share, or > when share_exclusive); None while an input is unstated.
+    A scenario that places all (or none) of the principal photography in the jurisdiction decides the test only while the day counts are not both stated
+    (NA-RECONCILIATION-22: stated numbers are the stronger tier and win)."""
     from fractions import Fraction
     num = _stated_count(amounts, rule.day_numerator_fact, "numerator count")
     den = _stated_count(amounts, rule.day_denominator_fact, "denominator count")
@@ -641,6 +643,12 @@ def _share_gate_state(rule, amounts):
     if num is not None and den is not None and num > den:
         raise ValueError(f"{rule.day_numerator_fact}: {num} cannot exceed the {den} stated in {rule.day_denominator_fact}")
     if num is None or den is None:
+        from app.calculators.scenario_facts import SCENARIO_SHARE_PREFIX, refuted
+        token = SCENARIO_SHARE_PREFIX + rule.day_numerator_fact
+        if facts and token in facts:
+            return True
+        if facts and refuted(token) in facts:
+            return False
         return None
     share, floor_share = Fraction(num, den), Fraction(str(rule.min_share))
     return share > floor_share if rule.share_exclusive else share >= floor_share
@@ -738,6 +746,8 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
     if rule.kind == "points_on_base":
         if rule.excluded_fact and rule.excluded_fact in stated_facts:
             return 0.0, 0.0, None
+        if "not:" + rule.prerequisite_fact in stated_facts:
+            return 0.0, 0.0, None                              # refuted (verified, producer-stated or scenario-failed): the points do not apply and are not conditional upside
         if rule.prerequisite_fact in stated_facts:
             amount = round(rule.rate * qle, 2)
             return amount, amount, None
@@ -846,12 +856,33 @@ def _price_statutory_formula(slug, rule, rules_by_id, qle, amounts, facts, produ
             stated_comp += comp
         if stated_comp > personnel + 0.005:
             raise ValueError(f"the stated compensation {stated_comp:,.2f} exceeds the {personnel:,.2f} of qualifying personnel spend in the budget")
+        # Budget-derived compensation (NA-RECONCILIATION-22): the normalized allocation already evidences the resident-crew category, so the producer is not asked for it. With no person count the per-person cap
+        # cannot be tested: the confirmed figure is the lawful lower bound (at least one person, so the credit is at least min(rate x compensation, the per-person credit cap)); the highest category rate stays
+        # the potential, and the missing person-level evidence is disclosed.
+        derived_floor = derived_comp = 0.0
+        for d_fact, d_category in rule.derived_compensation:
+            if _stated_amount(amounts, d_fact) is not None:
+                continue                                                   # a producer-stated amount (and its persons) is the stronger tier
+            d_amount = (qualified_by_category or {}).get(d_category, 0.0)
+            if d_amount <= 0:
+                continue
+            entry = next((e for e in rule.compensation_credits if e[0] == d_fact), None)
+            if entry is None:
+                continue
+            _cf, _nf, d_rate, d_credit_cap, _cc, _req = entry
+            d_credit = d_rate * d_amount
+            derived_floor += min(d_credit, d_credit_cap) if d_credit_cap is not None else d_credit
+            derived_comp += d_amount
         bound = rule.bound_rate * max(0.0, personnel - stated_comp)         # compensation whose person status is not stated: the highest category rate is the upper bound
-        floor_delta = replaced + stated_credit
+        floor_delta = replaced + stated_credit + derived_floor
         potential_delta = replaced + stated_credit + bound
         note = None if (stated_comp >= personnel - 0.005) else (
             f"{rule.uplift_id}: compensation of {personnel - stated_comp:,.2f} has no stated category (resident crew, non-resident with Montana withholding, talent, student, veteran or tribal member, or an approved "
             f"postproduction company's wages); bounded at the highest category rate {rule.bound_rate:.0%} ({rule.source_ref})")
+        if derived_comp > 0:
+            derived_note = (f"{rule.uplift_id}: {derived_comp:,.2f} of resident-crew compensation is derived from the normalized budget; no person count is stated, so the per-person credit cap cannot be tested - the "
+                            f"confirmed figure is the lower bound for one person and the potential is the highest category rate ({rule.source_ref})")
+            note = derived_note if note is None else note + "; " + derived_note
         return round(floor_delta, 2), round(potential_delta, 2), note
     if rule.kind == "scriptwriting":
         se = _stated_amount(amounts, rule.amount_fact)
@@ -926,7 +957,7 @@ def _price_subset_uplifts(slug, lines, register, qpe, base_rate, production_type
             # Statutory-formula kinds (NA-RECONCILIATION-16): priced on the host credit's own basis, outside the per-line subset machinery and its claim-selection check.
             confirmed_amt, potential_amt, note = _price_statutory_formula(slug, rule, rules_by_id, qle_basis_usd, amounts, facts, production_type, qualified_by_category=qualified_by_category)
             if rule.gate_rule_id:
-                gate = _share_gate_state(rules_by_id[rule.gate_rule_id], amounts)
+                gate = _share_gate_state(rules_by_id[rule.gate_rule_id], amounts, facts)
                 if gate is False:
                     confirmed_amt = potential_amt = 0.0
                     note = None
@@ -2698,6 +2729,11 @@ def price_allocated_structure(
             scenario_btl_nonlocal=scenario_btl_nonlocal,
             worldwide_category_spend_usd=_worldwide_by_category,
         )
+        # Scenario-derived facts (NA-RECONCILIATION-22): this structure's own placement of principal photography; established facts are never overwritten.
+        from app.calculators.scenario_facts import apply_scenario_facts, scenario_derived_facts
+        _sf = scenario_derived_facts(_kw["program_slug"], jur, _gate_rows, spec.primary_jurisdiction, evidenced_requirement_facts, amount_facts)
+        if _sf.derived:
+            _kw["evidenced_requirement_facts"], _kw["amount_facts"] = apply_scenario_facts(evidenced_requirement_facts, amount_facts, _sf)
         seg = price_segment(**_kw)
         # Project-level eligibility (California 75% of budget OR 75% of principal-photography days; Pennsylvania 60% share; Massachusetts 75% for the
         # non-payroll credit) cannot be decided by one segment alone; a failed gate removes the governed credit and keeps the candidate visible with an

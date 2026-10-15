@@ -156,6 +156,10 @@ PROGRAM_AMOUNT_FACTS: dict[str, tuple[float, float]] = {
     "ca_nb_principal_photography_days_total": (1.0, 2000.0),
     "ca_nb_days_rural_30_to_150km": (0.0, 2000.0),
     "ca_nb_days_remote_151km_plus": (0.0, 2000.0),
+    # Project-level eligibility gates (project_eligibility_gates): the producer-stated share of principal-photography days wholly in the jurisdiction, for a split shoot the scenario cannot decide
+    "ca_principal_photography_days_in_california_pct": (0.0, 100.0),
+    "ma_filming_days_in_massachusetts_pct": (0.0, 100.0),
+    "ri_principal_photography_days_in_rhode_island_pct": (0.0, 100.0),
 }
 AMOUNT_PREFIX = "amount_fact:"
 
@@ -218,7 +222,8 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
                                  amounts: dict | None = None) -> dict:
     """Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
     mutually exclusive pair (inside/outside the commuter district, Production Plus 10%/5% tier) REPLACES the stored partner in the same
-    transaction, so two contradictory elections can never be stored; stating both in one request is rejected. `payees`:
+    transaction, so two contradictory elections can never be stored; stating both in one request is rejected. NA-RECONCILIATION-22: `evidenced` is tri-state for ordinary legal
+    predicates ({fact id: true | false | null}: Yes, a stated No - a REFUTED fact that applies the rule's actual failed treatment - or Unknown); an election accepts only its chosen alternative. `payees`:
     [{line_id, payee_id, compensation_complete}] (payee_id null clears). `producer_roles`: [{line_id, role: executive|line|other|null}].
     `composer_portions`: [{line_id, amount_usd}] -- the part of a music account that is composer compensation (null clears).
     `uplift_basis`: [{program, uplift, line_id, amount_usd}] (amount_usd null clears). Raises ValueError with the reason on any invalid
@@ -239,9 +244,11 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
             raise ValueError(f"'{fid}' is not a settable program fact")
-        if value not in (True, None):
-            raise ValueError(f"'{fid}' accepts true (stated) or null (Unknown); a false is never stored as evidence")
         partner = NY_EVIDENCED_FACTS[fid]
+        if value not in (True, False, None):
+            raise ValueError(f"'{fid}' accepts true (Yes), false (No) or null (Unknown)")
+        if value is False and partner:
+            raise ValueError(f"'{fid}' is an election between mutually exclusive alternatives: state the alternative that applies ('{partner}') instead of a No")
         if value is True and partner and evidenced.get(partner) is True:
             raise ValueError(f"'{fid}' and '{partner}' cannot both be stated")
     for p in payees:
@@ -297,7 +304,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             if stored is not None:
                 await session.delete(stored)       # the producer changed the answer: the contradictory partner is cleared atomically
                 replaced.append(partner)
-        await _upsert(session, project_id, EVIDENCED_PREFIX + fid, "true" if value is True else None, "boolean")
+        await _upsert(session, project_id, EVIDENCED_PREFIX + fid, "true" if value is True else ("false" if value is False else None), "boolean")
     for key, value in amounts.items():
         await _upsert(session, project_id, AMOUNT_PREFIX + key, None if value is None else repr(float(value)), "number")
     for p in payees:

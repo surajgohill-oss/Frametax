@@ -105,6 +105,73 @@ GROUPS: tuple = (
     ]),
 )
 
+# NA-RECONCILIATION-22: facts that the producer-fact writer has always accepted but that no catalog group labelled, so the Overview never offered them (New York, Ontario, Manitoba, Alberta, Missouri, West Virginia,
+# New Jersey, Colorado, Alabama, BC DAVE, California independent productions, Oregon, Texas and the project-level gate percentages).
+GROUPS = GROUPS + (
+    ("us_ny", "New York", ("ny_state_film", "us_ny_post_production_credit"), "Tax Law 24 and Public Authorities Law 1262", [
+        ("ny_post_facility_outside_mctd", "The post-production facility is OUTSIDE the Metropolitan Commuter Transportation District", "35% post-production credit; an election with the inside statement"),
+        ("ny_post_facility_inside_mctd", "The post-production facility is INSIDE the Metropolitan Commuter Transportation District", "10% rate; an election with the outside statement"),
+        ("ny_all_costs_in_listed_counties", "All production costs are in the listed upstate counties", "+10% of compensation; the whole base is inside the uplift"),
+        ("ny_majority_principal_photography_days_in_listed_counties", "The majority of principal-photography days are in the listed counties", "Other qualified costs in the listed counties earn +10% only with this"),
+        ("ny_scoring_five_musicians_in_state", "Scoring includes payment to at least five New York musicians", "+10% of in-state scoring costs"),
+        ("ny_production_plus_10pct_tier", "Production Plus 10% tier (initial applications total at least USD 50 million)", "An election with the 5% tier"),
+        ("ny_production_plus_5pct_tier", "Production Plus 5% tier (initial applications total at least USD 20 million)", "An election with the 10% tier"),
+    ]),
+    ("ca_on", "Ontario", ("on_ofttc", "on_opstc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"), "Ontario Creates OFTTC, OPSTC and OCASE guidelines", [
+        ("on_ofttc_first_time_producer", "The producer is a first-time producer", "40% on the first CAD 240,000 of qualifying labour"),
+        ("on_ofttc_labour_outside_gta", "The production is shot outside the Greater Toronto Area", "10% bonus on Ontario labour expenditures"),
+        ("on_opstc_ontario_labour_25pct_confirmed", "Ontario labour is at least 25% of the qualifying production expenditures claimed", "A condition of the OPSTC"),
+        ("on_ocase_ontario_labour_over_cad_25000_stated", "More than CAD 25,000 of Ontario labour is spent on eligible animation or special effects", "OCASE threshold"),
+    ]),
+    ("ca_mb", "Manitoba", ("ca_mb_film_video_credit",), "Manitoba Film & Music TC1 guidelines", [
+        ("mb_frequent_filming_third_film_in_two_years", "This is the third film shot in Manitoba within two years", "+10% Frequent Filming Bonus"),
+        ("mb_frequent_filming_principal_owner_declared", "The principal owner of the production company is declared", "Required for the Frequent Filming Bonus"),
+        ("mb_resident_producer_screen_credit", "A Manitoba resident is Producer, Co-Producer or Executive Producer with a screen credit", "+5%"),
+        ("mb_rural_permanent_establishment_35km", "The applicant has a permanent establishment at least 35 km from Winnipeg", "Rural bonus (needs the days test too)"),
+        ("mb_rural_majority_days_35km", "At least 50% of Manitoba shooting days are at least 35 km from Winnipeg", "Rural bonus (needs the establishment too)"),
+        ("mb_production_company_bonus_eligible", "The production company bonus applies", "Production company bonus"),
+        ("mb_t4_payroll_below_25pct_stated", "T4 payroll is below 25% of the Manitoba labour claimed", "Payroll treatment"),
+        ("mb_two_residents_trained_per_nonresident", "Two Manitoba residents are trained per non-resident", "Training condition; an election with the one-per-non-resident statement"),
+        ("mb_one_resident_trained_per_nonresident", "One Manitoba resident is trained per non-resident", "Training condition; an election with the two-per statement"),
+    ]),
+    ("ca_ab", "Alberta", ("ca_ab_fttc",), "Alberta Film and Television Tax Credit", [
+        ("ab_fttc_30pct_criteria_met", "All of the 30% rate criteria are met (50% Alberta ownership, Alberta producer, Alberta copyright and more)", "The 30% rate needs ALL of them"),
+    ]),
+    ("us_mo", "Missouri", ("us_mo_motion_media_production_tax_credit",), "RSMo 135.750 subsection 3", [
+        ("mo_apprentice_or_veteran_minimum_confirmed", "The project employs the statutory minimum of Missouri apprentices or resident veterans", "Eligibility condition"),
+        ("mo_filmed_50pct_in_missouri_confirmed", "At least 50% of the project is filmed in Missouri", "+5 points; a full-relocation scenario establishes it"),
+        ("mo_rural_or_blighted_15pct_confirmed", "At least 15% of the Missouri filming is in a rural or blighted area", "+5 points; 15% is the threshold, not 15 points"),
+        ("mo_three_departments_missouri_hires_confirmed", "At least three departments hire a Missouri resident ready to advance or learn a new skillset", "+5 points"),
+        ("mo_script_markets_missouri_confirmed", "The script positively markets a Missouri place (five cleared photographs)", "+5 points"),
+        ("mo_second_third_fourth_class_county_confirmed", "The project is in a second-, third- or fourth-class county", "+2 points (10% of the 20% base)"),
+    ]),
+    ("us_wv_nj_co_al", "West Virginia, New Jersey, Colorado, Alabama", ("us_wv_film_production_tax_credit", "us_nj_garden_state_film_credit", "us_co_film_incentive", "us_al_film_incentive"), "State film incentive statutes and agency guidance", [
+        ("wv_ten_resident_hires_confirmed", "The company employs 10 or more West Virginia residents as full-time employees", "Additional 4%"),
+        ("nj_film_spend_outside_nyc_radius_confirmed", "Spend is outside the 30-mile radius of the New York City reference point", "35% rate"),
+        ("us_co_workforce_50pct_and_cpa_review_stated", "At least 50% Colorado resident workforce with a Colorado-performed CPA review", "Colorado incentive condition"),
+        ("al_all_payroll_to_alabama_residents", "All payroll is paid to Alabama residents", "35% of payroll"),
+    ]),
+    ("ca_film", "California and BC DAVE", ("ca_film_30", "ca_bc_dave"), "California Program 4.0 Guidelines; Income Tax Act (BC) s.81.2", [
+        ("ca_film_independent_category", "The production is in the independent category", "Changes the VFX uplift treatment"),
+        ("ca_bc_dave_eligible_activity_confirmed", "The activity is genuine digital animation, visual effects or post-production performed in BC", "DAVE eligibility"),
+    ]),
+    ("us_or_tx", "Oregon and Texas awards", ("us_or_opif", "us_tx_miip"), "Oregon OPIF and Texas SB22 Moving Image Industry Incentive", [
+        ("us_or_opif_award_confirmed", "An Oregon OPIF award contract exists", "Agency award"),
+        ("us_or_opif_fund_amount_current_confirmed", "The OPIF annual fund figure is confirmed current", "Fund ceiling"),
+        ("us_or_opif_regional_uplift_confirmed", "Shooting is outside the Portland metropolitan zone", "x1.10 multiplier"),
+        ("us_tx_miip_award_confirmed", "A Texas grant award exists", "Agency award"),
+        ("us_tx_miip_pool_period_valid", "The award falls within a valid biennial appropriation period", "Pool period"),
+        ("us_tx_miip_awarded_rate_pct", "Awarded rate (a fraction, for example 0.25)", "Within the 31% ceiling"),
+        ("us_tx_miip_resident_crew_pct", "Percent of paid crew who are Texas residents (0-100)", "At least 35%"),
+        ("us_tx_miip_resident_cast_pct", "Percent of paid cast who are Texas residents (0-100)", "At least 35%"),
+    ]),
+    ("project_gates", "Project-level eligibility gates", ("ca_film_30", "us_ma_film_tax_credit", "us_ri_film_credit"), "California Program 4.0 II.A.1; Massachusetts DOR; R.I. Gen. Laws 44-31.2", [
+        ("ca_principal_photography_days_in_california_pct", "Share of principal-photography days wholly in California (0-100)", "75% days branch; needed only for a split shoot"),
+        ("ma_filming_days_in_massachusetts_pct", "Share of filming days in Massachusetts (0-100)", "75% days branch; needed only for a split shoot"),
+        ("ri_principal_photography_days_in_rhode_island_pct", "Share of principal-photography days in Rhode Island (0-100)", "51% primary-location test; needed only for a split shoot"),
+    ]),
+)
+
 #: Cross-field relations (a <= b): checked when both sides are stated, on the merged stored + incoming values. (a, b, reason)
 RELATIONS: tuple = (
     ("ca_bc_principal_photography_days_outside_vancouver", "ca_bc_principal_photography_days_in_bc", "days outside the designated Vancouver area cannot exceed the principal photography days in British Columbia"),
@@ -157,6 +224,8 @@ async def stored_values(session: AsyncSession, project_id) -> tuple[dict[str, bo
             name = key[len(npf.EVIDENCED_PREFIX):]
             if name in CATALOG and (row.value or "").strip().lower() in ("true", "1", "yes"):
                 booleans[name] = True
+            elif name in CATALOG and (row.value or "").strip().lower() in ("false", "0", "no"):
+                booleans[name] = False                  # a stated No is a refuted fact (NA-RECONCILIATION-22), distinct from absence
         elif key.startswith(npf.AMOUNT_PREFIX):
             name = key[len(npf.AMOUNT_PREFIX):]
             if name in CATALOG and row.value not in (None, ""):
@@ -170,27 +239,6 @@ async def stored_values(session: AsyncSession, project_id) -> tuple[dict[str, bo
 
 
 async def program_facts_view(session: AsyncSession, project_id) -> dict:
-    """The served view of the producer-stated program facts (read-only; never evaluates). Per fact: kind, STATED / UNKNOWN, the stated number, bounds, exclusive partner and provenance."""
-    booleans, numbers = await stored_values(session, project_id)
-    groups = []
-    for gid, title, programs, authority, facts in GROUPS:
-        rows = []
-        for key, label, hint in facts:
-            if key in npf.PROGRAM_AMOUNT_FACTS:
-                lo, hi = npf.PROGRAM_AMOUNT_FACTS[key]
-                value = numbers.get(key)
-                rows.append({"key": key, "kind": "number", "label": label, "help": hint, "state": "STATED" if value is not None else "UNKNOWN", "value": value, "min": lo, "max": hi,
-                             "whole": npf.is_whole_number_fact(key),
-                             "unit": "USD" if key.endswith("_usd") else None, "source": "PRODUCER_STATED"})
-            else:
-                partner = npf.NY_EVIDENCED_FACTS.get(key)
-                rows.append({"key": key, "kind": "boolean", "label": label, "help": hint, "state": "STATED" if booleans.get(key) else "UNKNOWN", "value": True if booleans.get(key) else None,
-                             "exclusive_with": partner if isinstance(partner, str) else None, "source": "PRODUCER_STATED"})
-        groups.append({"id": gid, "title": title, "programs": list(programs), "authority": authority, "facts": rows,
-                       "stated_count": sum(1 for r in rows if r["state"] == "STATED")})
-    return {
-        "groups": groups,
-        "stated_count": sum(g["stated_count"] for g in groups),
-        "note": ("Producer-stated inputs, kept separate from the evidence read from the budget and documents. Leaving a field blank means Unknown, never zero or No; a yes/no statement can only be made as Yes "
-                 "(a No is never stored). Nothing is assumed for an unstated day count, wage, approval or eligibility gate: the affected credit stays a bounded potential until it is stated."),
-    }
+    """The served view of the program facts (read-only; never evaluates): the resolved-requirements view (resolved_facts), one value + provenance per fact."""
+    from app.services.resolved_facts import resolved_requirements_view
+    return await resolved_requirements_view(session, project_id)

@@ -81,6 +81,8 @@ EXPECT: dict[str, tuple[float | None, float | None, str]] = {
     "us_ma_film_tax_credit": (750_000.0, 750_000.0, "25% x all 3,000,000"),
     "us_md_film_production_activity_credit": (0.0, 900_000.0, "discretionary ceiling: guaranteed 0; 30% x all 3,000,000 potential"),
     "us_mn_film_production_credit": (750_000.0, 750_000.0, "25% x all 3,000,000"),
+    # NA-RECONCILIATION-22: this pin is the KERNEL figure with no scenario (nothing about the shoot stated: 20% guaranteed). The served full-relocation structure prices 750,000 because the scenario places
+    # 100% of principal photography in Missouri, so the 50% filming test is scenario-assumed met (25% x 3,000,000); the matrix's PRICED columns record that.
     "us_mo_motion_media_production_tax_credit": (600_000.0, 1_260_000.0, "20% x all 3,000,000; 42% maximum potential"),
     "us_ms_advantage_film_program": (750_000.0, 750_000.0, "25% x all 3,000,000"),
     # Restated in NA-RECONCILIATION-19: compensation is not a 'production expenditure' (MCA 15-31-1003(13)(b)(i)) and earns its own category credits, and every addition is limited to 35% of base investment (15-31-1007(3)(a)):

@@ -940,8 +940,9 @@ class NyProgramFacts(BaseModel):
 async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """Backend write path for producer-stated program facts (New York post facility location, majority-days/scoring/Production Plus
     prerequisites, identified payees with complete compensation, Ontario/BC zone and first-time-producer facts, evidenced uplift portions). Stored in the existing ProjectFact
-    table and covered by the evaluation fingerprint; a later evaluation prices them. Unknown is a cleared (null) fact, never
-    false. The Overview panel (ProgramFactsPanel) edits them; the UI then runs the shared single-flight evaluation."""
+    table and covered by the evaluation fingerprint; a later evaluation prices them. Unknown is a cleared (null) fact; a stated
+    No (false) for an ordinary legal predicate is a REFUTED fact that applies the rule's failed treatment (an election between alternatives refuses a No). The Overview resolved-requirements panel
+    (ResolvedRequirementsPanel) edits them; the UI then runs the shared single-flight evaluation."""
     from app.services.ny_producer_facts import write_ny_program_facts
     project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
     if project is None:
@@ -960,7 +961,7 @@ async def post_ny_program_facts(project_id: str, body: NyProgramFacts, db: Async
 
 @router.get("/projects/{project_id}/program-facts")
 async def get_program_facts(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
-    """Read-only: the stored producer-stated program facts (Unknown vs Stated). Never evaluates, never writes."""
+    """Read-only: the resolved requirements (value + provenance per fact: Yes / No / Unknown, derived, scenario-assumed). Never evaluates, never writes."""
     from app.services.producer_fact_catalog import program_facts_view
     project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
     if project is None:

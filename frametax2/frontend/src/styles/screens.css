@@ -2184,3 +2184,15 @@
 .wsx-lh.multi .wsx-lh-id .wsx-fit { display: block; overflow: clip; height: 64px; align-self: auto; }
 .wsx-rack:has(.wsx-lh.multi) .wsx-lh { height: 78px; min-height: 78px; }
 .wsx-rack:has(.wsx-lh.multi) .wsx-lane.anchor .wsx-lh { height: 76px; min-height: 76px; }
+
+/* Resolved requirements (NA-RECONCILIATION-22) — provenance is visually distinct: verified evidence, producer statements, scenario assumptions and Unknown never share a treatment. */
+.rr-fact { border-left: 3px solid transparent; }
+.rr-prov-verified, .rr-prov-schedule_derived { border-left-color: var(--green, #5aa97d); }
+.rr-prov-producer_stated { border-left-color: var(--accent, #6b8fd6); }
+.rr-prov-scenario_assumed { border-left-color: var(--violet, #9b82c9); border-left-style: dashed; }
+.rr-prov-unknown { border-left-color: var(--amber, #c99a4d); }
+.rr-needed { color: var(--amber, #c99a4d); }
+.rr-conflict { color: var(--red, #c4635a); }
+.rr-readonly { opacity: 0.85; font-variant-numeric: tabular-nums; }
+.rr-state-false { text-decoration: line-through; opacity: 0.7; }
+.rr-state-total { font-weight: 600; }

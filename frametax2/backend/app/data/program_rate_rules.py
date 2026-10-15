@@ -2916,6 +2916,13 @@ def resolve_program_rate(
                 cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=satisfied, note=note, condition_state=state,
             ))
+        elif cond.required_boolean_fact_key is not None and ("not:" + cond.required_boolean_fact_key) in (evidenced_facts or frozenset()):
+            # NA-RECONCILIATION-22: a stated No (verified, producer-stated or scenario-failed) is a FAILED predicate, distinct from an unstated one
+            evaluations.append(ConditionEvaluation(
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind, satisfied=False,
+                note=f"'{cond.required_boolean_fact_key}' is stated as not met; the rule's failed treatment applies.",
+                condition_state=CONDITION_STATE_EXECUTABLE,
+            ))
         elif cond.required_boolean_fact_key is not None:
             evidenced = cond.required_boolean_fact_key in (evidenced_facts or frozenset())
             evaluations.append(ConditionEvaluation(
@@ -3110,6 +3117,9 @@ class EligibleSubsetUpliftRule:
     compensation_credits: tuple[tuple, ...] = ()          # (compensation fact, headcount fact | None, rate, per-person credit cap | None, per-person compensation cap | None, required fact | None)
     post_wage_fact: str | None = None                      # Montana: stated qualified postproduction wages inside the post-category lines (15-31-1003(17), 15-31-1009)
     post_categories: frozenset[str] = frozenset()
+    #: (compensation fact, normalized budget category): a compensation category the budget allocation itself evidences (Montana resident crew = the segment's resident-labour spend). A producer-stated amount for the
+    #: same fact always wins; the derived amount carries NO person count, so its per-person cap is not testable and it is priced at the lawful lower bound (one person) with the upper bound kept as potential.
+    derived_compensation: tuple = ()
     bound_rate: float | None = None
     min_year: int | None = None
 
@@ -3305,6 +3315,7 @@ SUBSET_UPLIFT_RULES = {
                 ("us_mt_postproduction_wages_usd", None, 0.25, None, None, "us_mt_postproduction_company_approved_confirmed"),   # 15-31-1009(2): 25% of qualified postproduction wages, for an approved postproduction company
             ),
             post_wage_fact="us_mt_postproduction_wages_usd", post_categories=frozenset({"post_production", "vfx", "sound", "music"}),
+            derived_compensation=(("us_mt_resident_crew_compensation_usd", "btl_resident_labor"),),
             source_ref="MCA 15-31-1007(3)(b)(i)-(v) and 15-31-1003(13)(b)(i): 'production expenditure' does not include compensation, which earns 25% (resident crew), 15% (non-resident crew with Montana tax "
                        "withheld), 20% of the first USD 7.5 million (actors, directors, producers, writers with Montana tax withheld), 30% (students, USD 50,000 each) or 30% (resident veterans and tribal "
                        "members, USD 150,000 each) of compensation; a person counts in one category only (students and veterans exclude the others)"),

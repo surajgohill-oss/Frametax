@@ -420,6 +420,20 @@ def _generate_structural_candidate_uncached(
         for c in components
     ]
 
+    # 2c. Scenario-derived facts (NA-RECONCILIATION-22): what THIS structure's placement of principal photography already establishes (Missouri 50% filming, Saskatchewan 51% activity test,
+    # day counts from the retained schedule). Established facts (stated, refuted, numbers) are never overwritten; the producer is never asked to re-enter them.
+    from app.calculators.scenario_facts import apply_scenario_facts, scenario_derived_facts
+    _sc_rows = [(a.jurisdiction_code, a.amount_usd, a.component, x.component_type) for x in components for a in x.allocations]
+    _sc_principal = next((x.jurisdiction_code for x in components if x.component_type == "principal_production"), None)
+    _sc_components = []
+    for c in components:
+        _sf = scenario_derived_facts(c.program_slug, c.jurisdiction_code, _sc_rows, _sc_principal, c.evidenced_requirement_facts, c.amount_facts)
+        if _sf.derived:
+            _ev, _am = apply_scenario_facts(c.evidenced_requirement_facts, c.amount_facts, _sf)
+            c = _fast_replace(c, evidenced_requirement_facts=_ev, amount_facts=_am)
+        _sc_components.append(c)
+    components = _sc_components
+
     # 3. Price every component independently via the EXISTING kernel.
     #
     # A component explicitly labeled "selective_upside" or "fund_overlay"

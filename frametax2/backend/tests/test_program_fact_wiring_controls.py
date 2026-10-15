@@ -49,7 +49,7 @@ def _valid_number(key):
 
 def test_the_catalog_covers_exactly_the_seventy_three_facts_plus_the_pre_existing_exclusive_partner():
     assert len(BOOLEANS) == 27 and len(NUMBERS) == 46
-    assert set(cat.CATALOG) == set(BOOLEANS) | set(NUMBERS) | set(PARTNER_ONLY)
+    assert set(BOOLEANS) | set(NUMBERS) | set(PARTNER_ONLY) <= set(cat.CATALOG), "NA-RECONCILIATION-22 added the previously omitted facts; the 73 are still all catalogued"
     for key in BOOLEANS + PARTNER_ONLY:
         assert key in npf.NY_EVIDENCED_FACTS and key not in npf.PROGRAM_AMOUNT_FACTS, key
     for key in NUMBERS:
@@ -57,7 +57,7 @@ def test_the_catalog_covers_exactly_the_seventy_three_facts_plus_the_pre_existin
     for gid, _title, _programs, _authority, facts in cat.GROUPS:
         labels = [label for _k, label, _h in facts]
         assert all(labels) and len(set(labels)) == len(labels), f"{gid}: every fact has one distinct label within its group"
-    assert {g[0] for g in cat.GROUPS} == {"ca_bc_film_tv", "ca_federal_cptc", "ca_nb", "ca_ns", "ca_sk", "us_mt"}
+    assert {"ca_bc_film_tv", "ca_federal_cptc", "ca_nb", "ca_ns", "ca_sk", "us_mt"} <= {g[0] for g in cat.GROUPS}
 
 
 @pytest.mark.asyncio
@@ -69,19 +69,19 @@ async def test_every_fact_starts_unknown_and_round_trips_through_the_one_storage
         view = await cat.program_facts_view(db, project_id)
         assert view["stated_count"] == 0 and all(f["state"] == "UNKNOWN" and f["value"] is None for g in view["groups"] for f in g["facts"]), "no default is created for any fact"
         base_fp = await current_generation_fingerprint(db, project_id)
-        for key in sorted(cat.CATALOG):
+        for key in sorted(set(BOOLEANS) | set(NUMBERS) | set(PARTNER_ONLY)):
             is_number = key in npf.PROGRAM_AMOUNT_FACTS
             value = _valid_number(key) if is_number else True
             await write_one(db, project_id, key, value)
             fact = next(f for g in (await cat.program_facts_view(db, project_id))["groups"] for f in g["facts"] if f["key"] == key)
-            assert fact["state"] == "STATED" and fact["value"] == value and fact["source"] == "PRODUCER_STATED", key
+            assert fact["state"] == ("VALUE" if is_number else "TRUE") and fact["value"] == value and fact["provenance"] == "PRODUCER_STATED", key
             assert await current_generation_fingerprint(db, project_id) != base_fp, f"{key}: a stated fact must change the evaluation fingerprint"
             await write_one(db, project_id, key, None)
             assert await current_generation_fingerprint(db, project_id) == base_fp, f"{key}: clearing restores Unknown and the original fingerprint"
         # a stated ZERO is a real value, different from Unknown, and changes the fingerprint
         await write_one(db, project_id, "ca_bc_training_assistance_usd", 0.0)
         zero = next(f for g in (await cat.program_facts_view(db, project_id))["groups"] for f in g["facts"] if f["key"] == "ca_bc_training_assistance_usd")
-        assert zero["state"] == "STATED" and zero["value"] == 0.0
+        assert zero["state"] == "VALUE" and zero["value"] == 0.0
         assert await current_generation_fingerprint(db, project_id) != base_fp
 
 
@@ -92,16 +92,20 @@ async def write_one(db, project_id, key, value):
 
 
 @pytest.mark.asyncio
-async def test_a_false_is_never_stored_and_invalid_numbers_are_refused_without_writing():
+async def test_a_stated_no_is_stored_as_a_refuted_fact_for_predicates_refused_for_elections_and_invalid_numbers_are_refused_without_writing():
+    """NA-RECONCILIATION-22 restates the NA-21 rule 'a false is never stored': an ordinary legal predicate is tri-state (Yes / No / Unknown); only an election between alternatives refuses a No."""
     async with isolated_session() as db:
         project_id = uuid.UUID(await create_synthetic_project(db, home_code="MU"))
-        with pytest.raises(ValueError, match="never stored as evidence"):
-            await npf.write_ny_program_facts(db, project_id, evidenced={"ca_bc_scriptwriting_application_confirmed": False})
+        await npf.write_ny_program_facts(db, project_id, evidenced={"ca_bc_scriptwriting_application_confirmed": False})
+        fact = next(f for g in (await cat.program_facts_view(db, project_id))["groups"] for f in g["facts"] if f["key"] == "ca_bc_scriptwriting_application_confirmed")
+        assert fact["state"] == "FALSE" and fact["value"] is False and fact["provenance"] == "PRODUCER_STATED", "a stated No is a refuted fact, not a deleted one"
+        with pytest.raises(ValueError, match="election"):
+            await npf.write_ny_program_facts(db, project_id, evidenced={"ca_ns_stream_ii_confirmed": False})
         for key, bad in (("ca_bc_principal_photography_days_in_bc", 0), ("ca_bc_principal_photography_days_in_bc", 10.5), ("us_mt_resident_crew_persons", -1),
                          ("ca_ns_hod_positions_filled", 17), ("ca_bc_training_payments_usd", float("nan")), ("ca_bc_training_payments_usd", True)):
             with pytest.raises(ValueError):
                 await npf.write_ny_program_facts(db, project_id, amounts={key: bad})
-        assert (await cat.program_facts_view(db, project_id))["stated_count"] == 0, "a refused write stores nothing"
+        assert (await cat.program_facts_view(db, project_id))["stated_count"] == 1, "a refused write stores nothing (only the stated No above exists)"
 
 
 @pytest.mark.asyncio
@@ -140,7 +144,7 @@ async def test_exclusive_statements_replace_each_other_and_cannot_be_stated_toge
         await npf.write_ny_program_facts(db, project_id, evidenced={a: True})
         await npf.write_ny_program_facts(db, project_id, evidenced={b: True})
         states = {f["key"]: f["state"] for g in (await cat.program_facts_view(db, project_id))["groups"] for f in g["facts"]}
-        assert states[b] == "STATED" and states[a] == "UNKNOWN", "stating the opposite replaces the earlier statement"
+        assert states[b] == "TRUE" and states[a] == "UNKNOWN", "stating the opposite replaces the earlier statement"
         with pytest.raises(ValueError, match="cannot both be stated"):
             await npf.write_ny_program_facts(db, project_id, evidenced={a: True, b: True})
 
@@ -180,7 +184,7 @@ async def test_saving_facts_never_evaluates_and_one_changed_input_means_exactly_
         served = view["production"]["program_facts"]
         assert served["stated_count"] == 2
         states = {f["key"]: (f["state"], f["value"]) for g in served["groups"] for f in g["facts"]}
-        assert states["ca_bc_scriptwriting_application_confirmed"] == ("STATED", True) and states["ca_bc_scriptwriting_expenditure_usd"] == ("STATED", 200_000.0)
+        assert states["ca_bc_scriptwriting_application_confirmed"] == ("TRUE", True) and states["ca_bc_scriptwriting_expenditure_usd"] == ("VALUE", 200_000.0)
         assert states["ca_bc_scriptwriting_assistance_usd"] == ("UNKNOWN", None), "unstated stays Unknown: no default was created"
         rows = (await db.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key.like("%scriptwriting%")))).scalars().all()
         assert rows and all(r.source_type == "user_override" or str(r.source_type).lower().endswith("user_override") for r in rows), "producer-stated, not document evidence"

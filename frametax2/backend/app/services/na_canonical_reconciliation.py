@@ -478,10 +478,10 @@ def _fact_info(m, slug: str) -> list[dict]:
 
 
 def _program_fact_ui(key: str) -> str:
-    """The Overview 'Program facts' panel (NA-RECONCILIATION-21) carries every catalogued fact; the older New York / Ontario / Texas / Colorado facts still have no control."""
+    """The Overview 'Resolved requirements' panel (NA-RECONCILIATION-22) carries every catalogued fact, including the New York / Ontario / Manitoba / Alberta / Missouri / Texas / Colorado facts that NA-21 left without a control."""
     from app.services.producer_fact_catalog import CATALOG
     if key in CATALOG:
-        return "EXISTS: Overview Program facts panel (frontend/src/components/ProgramFactsPanel.jsx, api.js postProgramFacts; served view production.program_facts)"
+        return "EXISTS: Overview Resolved requirements panel (frontend/src/components/ResolvedRequirementsPanel.jsx, api.js postProgramFacts; served view production.program_facts)"
     return "NONE: no Overview/Inspector control and no api.js client"
 
 

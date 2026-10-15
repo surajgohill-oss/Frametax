@@ -348,8 +348,8 @@ def _evidenced_program_facts(rows: list[ProjectFact]) -> frozenset[str]:
     """Codex final runtime remediation — every fact_id whose ProjectFact
     row is `f"{FACT_EVIDENCED_PROGRAM_FACT_PREFIX}{fact_id}"` with a
     truthy value (e.g. "true"). A row with a falsy value ("false", "0",
-    empty) does NOT evidence the fact — absence and an explicit false are
-    both "not evidenced", never conflated with true."""
+    "no") is a REFUTED fact (token "not:<id>"); an empty value or an absent
+    row is Unknown. Absence, False and True are three different states."""
     out: set[str] = set()
     for row in rows:
         if not row.fact_key.startswith(FACT_EVIDENCED_PROGRAM_FACT_PREFIX):
@@ -357,6 +357,9 @@ def _evidenced_program_facts(rows: list[ProjectFact]) -> frozenset[str]:
         value = (row.value or "").strip().lower()
         if value in ("true", "1", "yes"):
             out.add(row.fact_key[len(FACT_EVIDENCED_PROGRAM_FACT_PREFIX):])
+        elif value in ("false", "0", "no"):
+            # NA-RECONCILIATION-22: a stated False is a refuted fact, carried as 'not:<key>' so the rule's actual failed treatment applies (never conflated with absence = Unknown)
+            out.add("not:" + row.fact_key[len(FACT_EVIDENCED_PROGRAM_FACT_PREFIX):])
     return frozenset(out)
 
 
@@ -778,6 +781,16 @@ async def build_project_economic_inputs(
     )
     for _k, _v in to_amount_facts(_cdn_labour_result).items():
         _base_amount_facts.setdefault(_k, _v)
+
+    # NA-RECONCILIATION-22: the retained schedule's total principal-photography days (ProductionAssumption 'intended_shoot_days'); a producer-stated count of the same name always wins.
+    from app.services.resolved_facts import SCHEDULE_TOTAL_FACT_KEYS, schedule_total_days_with_tier
+    _sched_days, _sched_tier = await schedule_total_days_with_tier(session, project_id)
+    if _sched_days is not None:
+        from app.calculators.scenario_facts import SCHEDULE_TOTAL_DAYS_FACT
+        _base_amount_facts[SCHEDULE_TOTAL_DAYS_FACT] = float(_sched_days)
+        if _sched_tier == "VERIFIED":
+            for _k in SCHEDULE_TOTAL_FACT_KEYS:          # verified retained evidence outranks a producer statement of the same total
+                _base_amount_facts[_k] = float(_sched_days)
 
     # NY above-the-line limits (ESD guidelines effective April 1, 2023; Tax Law 24(a)(5)): derived numeric facts only, so the
     # saved evaluation fingerprint and every segment pricer see exactly the same inputs. Never an estimate: the period flag is
