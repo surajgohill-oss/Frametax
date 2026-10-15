@@ -60,6 +60,11 @@ In strict accordance with project rules, **100% verification is NOT claimed**. T
 1. **Federal PSTC Provincial Pair Rules (OPEN — Expressed in Dollars on Separate Bases; Conservative Lower-Incentive Bound):**
    - **BC PSTC**: Statutory netting resolved under *BC ITA* s. 79(1) (federal credit excluded as assistance provincially) and *ITA* § 125.5(1)(b) (100% of BC labour credit reduces federal labour).
    - **Quebec & Manitoba Stacks**: Expressed as separate dollar streams on distinct spend vs. labour bases (misleading combined percentages withdrawn). Proportional labour netting is modeled as an assumed provisional baseline. Deducting whole-credit provincial dollars directly from Canadian labour constitutes a conservative lower-incentive / higher-NPC bound (Codex c52e2cd7). The exact statutory allocation for all-spend provincial credits against federal labour remains **OPEN**.
-2. **Comprehensive NA / ROW External Inventories:** Independent inventories outside engine snapshot keys remain open.
-3. **Foreign Country Specific Sub-Caps:** Primary statutory texts for Cyprus 30% ATL, Morocco 90% QPE, Greece Annex B.3, Hungary 50% payroll, and Italy 30% EU ATL remain unretrieved independently.
-4. **Producer Incurred Facts:** Talent deal memos, Canadian T4 residency ledgers, CAVCO certificates, and contingency allocation schedules remain claim-level follow-ups.
+2. **NA-22 / NA-23 Independent Calculation & Fact Audit (`NA_23_INDEPENDENT_CALCULATION_AND_FACT_AUDIT.md`):**
+   - **Verified at Commit `3455dc95`**: Resolved-fact precedence (`VERIFIED > PRODUCER_STATED > SCENARIO_ASSUMED > UNKNOWN`), planning vs. claim evidence separation (missing documents do not suppress planning economics), BC 75% spend/post/day gateways, Montana 20% non-comp spend base with crew/talent caps, Missouri 20%-42% ladder, and 275-fact inventory completeness are VERIFIED.
+   - **Montana Postproduction Conflict**: The tension between *MCA* 15-31-1003(13)(a)(ix) (services included) and (13)(b)(vi) (post expenditures excluded) is separated under `us_mt_postproduction_wages_usd` and explicitly declared an **OPEN interpretation**.
+   - **Inherited Controls Reconciliation**: Of 47 inherited test failures, 5 are corrected and 42 remain **OPEN (FIXTURE)** due to the absence of the four real anchor projects in the pytest database, backed by verified passing synthetic controls.
+3. **Comprehensive NA / ROW External Inventories:** Independent inventories outside engine snapshot keys remain open.
+4. **Foreign Country Specific Sub-Caps:** Primary statutory texts for Cyprus 30% ATL, Morocco 90% QPE, Greece Annex B.3, Hungary 50% payroll, and Italy 30% EU ATL remain unretrieved independently.
+5. **Producer Incurred Facts:** Talent deal memos, Canadian T4 residency ledgers, CAVCO certificates, and contingency allocation schedules remain claim-level follow-ups.
+
