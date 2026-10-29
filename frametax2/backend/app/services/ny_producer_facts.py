@@ -276,6 +276,9 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
         from app.services.line_inputs import field_specs
         specs = field_specs()
         for row in line_allocations:
+            if not isinstance(row, dict) or set(row) - {"line_id", "allocations"}:
+                extra = sorted(str(k) for k in set(row) - {"line_id", "allocations"}) if isinstance(row, dict) else []
+                raise ValueError(f"line_allocations entries take only line_id and allocations{'; unsupported: ' + str(extra) if extra else ''}")
             lid = str(row.get("line_id"))
             if lid not in lines:
                 raise ValueError(f"allocation line {lid!r} is not a line of this project's budget")

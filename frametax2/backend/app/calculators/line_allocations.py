@@ -42,6 +42,25 @@ def parse_rows(fact_rows, line_ids: set[str]) -> dict[str, list[dict]]:
     return out
 
 
+ALLOCATION_KEYS = frozenset({"payee_id", "amount_usd", "evidence", *PERSON_FIELDS})
+
+
+def _reject_unsupported_keys(line_id: str, raw, specs: dict) -> None:
+    """A key no pricing path reads from an allocation is refused by name, never accepted and dropped. The line-level Canadian labour facts (status, service location, ...) are named as such: they are read per budget LINE,
+    so a line mixing residents and non-residents is entered as separate budget lines in the source budget; per-person Canadian eligibility is not implemented."""
+    if not isinstance(raw, dict):
+        raise ValueError(f"line {line_id}: each person must be an object with payee_id and amount_usd")
+    unknown = sorted(str(k) for k in raw if k not in ALLOCATION_KEYS)
+    if not unknown:
+        return
+    per_line = [k for k in unknown if k in specs]
+    detail = f"unsupported allocation field(s) {unknown}: nothing is stored for them"
+    if per_line:
+        detail += (f"; {per_line} is read per budget LINE, not per person (Canadian labour eligibility is not computed per person), so enter "
+                   f"residents and non-residents as separate budget lines in the source budget (the app has no line-split editor) and state the fact on each line")
+    raise ValueError(f"line {line_id}: {detail}")
+
+
 def validate(line_id: str, line_amount: float, allocations: list[dict], specs: dict) -> list[dict]:
     """The stored form of one line's allocations; ValueError with the reason on any invalid entry. `specs` = line_inputs.field_specs()."""
     from app.services.line_inputs import validate_line_fact
@@ -49,6 +68,7 @@ def validate(line_id: str, line_amount: float, allocations: list[dict], specs: d
         raise ValueError(f"line {line_id}: at most 50 people on one line")
     seen, total, out = set(), 0.0, []
     for raw in allocations:
+        _reject_unsupported_keys(line_id, raw, specs)
         pid = str(raw.get("payee_id") or "").strip()
         if not pid or len(pid) > 120:
             raise ValueError(f"line {line_id}: each person needs a name or id of at most 120 characters")

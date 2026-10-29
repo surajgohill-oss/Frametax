@@ -2650,11 +2650,18 @@ async def build_production_and_structures(
     _page_offset = max(0, int(candidate_offset))
     _entry_by_id = {e["structure_id"]: e for e in structure_entries}
     _ranking_by_id = {r["structure_id"]: r for r in ranking}
+    # The producer's own pick (Project.leading_structure_id, kept by economic identity and re-pointed by reconcile_selection
+    # above) is pinned as well: a pick whose ordinary rank is beyond the first page must still be served, or every surface
+    # would silently show a different structure. Pinned only when it is a served candidate of THIS generation (an identity
+    # that no longer exists is disclosed through leading_selection.unavailable, never replaced here), after the existing
+    # pins so their order is unchanged, and de-duplicated with them.
+    _producer_pick = str(project.leading_structure_id) if project.leading_structure_id else None
     _pinned = [
         i for i in dict.fromkeys([
             canonical_selected_structure_id,
             _leading_conditional_id,
             next((e["structure_id"] for e in structure_entries if e["is_baseline"]), None),
+            _producer_pick if _producer_pick in _entry_by_id and _producer_pick in _ranking_by_id else None,
         ]) if i
     ]
     _pinned_set = set(_pinned)
