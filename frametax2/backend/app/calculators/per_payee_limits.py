@@ -63,11 +63,13 @@ def payee_type_amount_facts(raw_by_line: dict[str, dict[str, str]]) -> dict[str,
             for lid, f in raw_by_line.items() if f.get("payee_type") in PAYEE_TYPE_CODES}
 
 
-def _decided(line_id, payee_by_line, payee_type_by_line, rule, allocations_by_line=None) -> bool:
+def _decided(line_id, payee_by_line, payee_type_by_line, rule, allocations_by_line=None, line_amount=None) -> bool:
     """True when the cap question is settled for this account: an identified payee and, where the rule depends on payee type, a stated type
     (a stated uncapped type -- a loan-out -- settles it as 'no cap'). A line shared by several identified people is settled only when they cover the whole line (NA-RECONCILIATION-25)."""
     allocs = (allocations_by_line or {}).get(line_id)
     if allocs:
+        if line_amount is not None and sum(u for _o, u, _t in allocs) + 0.005 < line_amount:
+            return False                                                   # part of the line belongs to nobody identified: the cap cannot be settled for that part
         return all(rule.capped_payee_types is None or _PAYEE_TYPE_NAMES.get(t) is not None for _o, _u, t in allocs)
     if line_id not in payee_by_line:
         return False
@@ -75,24 +77,28 @@ def _decided(line_id, payee_by_line, payee_type_by_line, rule, allocations_by_li
 
 
 def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: dict[str, int], payee_type_by_line: dict[str, int], rule: PayeeCap, allocations_by_line: dict | None = None):
-    """Exclude each IDENTIFIED person's compensation above the per-person cap. A person's total is the sum of their share of every line they hold: a line with several identified people (allocations_by_line:
-    line -> ((ordinal, USD, type code), ...)) gives each person the fraction USD / the line's allocated total of the qualifying entry; the part of the line assigned to nobody is never capped (Unknown, not refused)."""
+    """Exclude each IDENTIFIED person's compensation above the per-person cap. A person's total is the sum of their share of every line they hold: a line with identified people (allocations_by_line:
+    line -> ((ordinal, USD, type code), ...)) gives each person the fraction USD / the LINE AMOUNT of the qualifying entry (conservation: allocated + unallocated remainder = the line); the remainder assigned to nobody
+    is never capped as though it were that person's (Unknown, disclosed, not refused). A line allocated in full divides exactly as before."""
     from app.calculators.qualification_model import AuthorityBasis, QualificationConfidence, QualificationState
     Q = QualificationState.QUALIFIES
     allocations_by_line = allocations_by_line or {}
     _cats = rule.categories or PERSONNEL_CATEGORIES
     members = [i for i, e in enumerate(register) if e.state == Q and category_by_line.get(e.line_id) in _cats]
+    line_amount: dict[str, float] = {}                                      # the budget line = every register entry of it, whatever its state (splits conserve the line)
+    for e in register:
+        line_amount[e.line_id] = round(line_amount.get(e.line_id, 0.0) + e.amount_usd, 2)
     cut: dict[int, float] = {}
     by_payee: dict[int, list[tuple[int, float]]] = {}                      # ordinal -> [(register index, fraction of the entry that is this person's)]
     for i in members:
         lid = register[i].line_id
         allocs = allocations_by_line.get(lid)
         if allocs:
-            line_total = sum(u for _o, u, _t in allocs) or 1.0
+            line_total = max(line_amount.get(lid, 0.0), sum(u for _o, u, _t in allocs), 0.01)
             for ordinal, usd, tcode in allocs:
                 if rule.capped_payee_types is not None and _PAYEE_TYPE_NAMES.get(tcode) not in rule.capped_payee_types:
                     continue
-                by_payee.setdefault(ordinal, []).append((i, usd / max(line_total, usd)))
+                by_payee.setdefault(ordinal, []).append((i, usd / line_total))
             continue
         pid = payee_by_line.get(lid)
         if pid is None:
@@ -111,10 +117,13 @@ def apply_payee_cap(register, category_by_line: dict[str, str], payee_by_line: d
     out = []
     for i, e in enumerate(register):
         c = cut.get(i, 0.0)
-        untested = i in members and not c and e.amount_usd > rule.cap_usd and not _decided(e.line_id, payee_by_line, payee_type_by_line, rule, allocations_by_line)
+        untested = i in members and not c and e.amount_usd > rule.cap_usd and not _decided(e.line_id, payee_by_line, payee_type_by_line, rule, allocations_by_line, line_amount.get(e.line_id))
         if c:
             if e.amount_usd - c > 0:
-                out.append(replace(e, amount_usd=round(e.amount_usd - c, 2), financial_impact_usd=round(e.amount_usd - c, 2)))
+                _alloc = allocations_by_line.get(e.line_id)
+                _partial = bool(_alloc) and sum(u for _o, u, _t in _alloc) + 0.005 < line_amount.get(e.line_id, 0.0)
+                out.append(replace(e, amount_usd=round(e.amount_usd - c, 2), financial_impact_usd=round(e.amount_usd - c, 2),
+                                   **({"reason": e.reason + f" UNRESOLVED: part of this line is not allocated to an identified person, so the {rule.label} is tested only on the allocated people's shares; the remainder is carried as a planning figure, not a certified claim."} if _partial else {})))
             out.append(replace(e, amount_usd=c, financial_impact_usd=c, state=QualificationState.EXCLUDED, confidence=QualificationConfidence.HIGH,
                                authority_basis=AuthorityBasis.EXPLICIT_STATUTE, incentive_upside_usd=None, grey_reason=None, resolving_evidence=None,
                                reason=f"Excluded above the {rule.label} for an identified payee whose compensation is evidenced complete ({rule.source})."))

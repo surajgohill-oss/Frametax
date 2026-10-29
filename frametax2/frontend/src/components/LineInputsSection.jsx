@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getLineInputs, postProgramFacts } from "../api";
 import { runEvaluation, useEvaluationRun } from "../lib/evaluationRun";
-import { EVIDENCE_CONFIDENCES, EVIDENCE_METHODS, allocatedTotal, allocationDraftFromView, changedAllocations, changedLineInputs, draftFromView, emptyPerson, fieldKey, isAllocationDirty, isLineDirty, personSummary, portionKey, unallocated, validateAllocationDrafts, validateLineDrafts } from "../lib/lineInputs";
+import { EVIDENCE_CONFIDENCES, EVIDENCE_METHODS, allocatedTotal, allocationDraftFromView, changedAllocations, changedLineInputs, draftFromView, emptyPerson, fieldKey, isAllocationDirty, isLineDirty, isPercentField, percentNote, personSummary, portionKey, unallocated, validateAllocationDrafts, validateLineDrafts } from "../lib/lineInputs";
 import { structurePrograms } from "../lib/resolvedRequirements";
 import { RetainedSaveNote } from "./EvaluationStatus";
 
@@ -11,7 +11,8 @@ import { RetainedSaveNote } from "./EvaluationStatus";
 // line; a person's total is the sum of the lines assigned to them. Save stores only what changed through the ONE canonical writer (ProjectFact line facts / uplift basis) and runs the shared single-flight
 // evaluation once; Cancel restores the persisted state; clearing a field resets it to Unknown.
 // once a line has people, its per-line single-person identity fields are replaced by the people editor below them (a line-level classification with no person stays editable) (one canonical owner: `line_fact:<line>:allocations`)
-const SUPERSEDED = new Set(["payee_id", "payee_compensation_complete", "payee_type", "mt_status", "mt_tax_withheld", "mt_residency"]);
+// `payee_type` is the line's own classification (the Canadian labour basis reads it per line); only the person identity and Montana person facts are replaced by the people editor.
+const SUPERSEDED = new Set(["payee_id", "payee_compensation_complete", "mt_status", "mt_tax_withheld", "mt_residency"]);
 export default function LineInputsSection({ projectId, structure, refreshKey, onSaved, evaluateOnSave = true }) {
   const programs = structurePrograms(structure);
   const programKey = programs.slice().sort().join(",");
@@ -68,6 +69,7 @@ export default function LineInputsSection({ projectId, structure, refreshKey, on
     const set = (v) => setDraft((d) => ({ ...d, [k]: v }));
     if (f.kind === "enum") return <select className="pd-select" aria-label={f.label} value={value} disabled={locked} onChange={(e) => set(e.target.value)}><option value="">Unknown</option>{f.choices.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}</select>;
     if (f.kind === "boolean") return <select className="pd-select" aria-label={f.label} value={value} disabled={locked} onChange={(e) => set(e.target.value)}><option value="">Unknown</option><option value="yes">Yes</option><option value="no">No</option></select>;
+    if (isPercentField(f)) return <input className={`pd-select ${value ? "" : "pd-missing"}`} aria-label={f.label} placeholder={f.assumed_pct != null ? `Assumed ${f.assumed_pct}%` : "Unknown"} inputMode="decimal" value={value} disabled={locked} onChange={(e) => set(e.target.value)} />;
     return <input className={`pd-select ${value ? "" : "pd-missing"}`} aria-label={f.label} placeholder="Unknown" inputMode={f.kind === "number" ? "decimal" : "text"} value={value} disabled={locked} onChange={(e) => set(e.target.value)} />;
   };
 
@@ -124,9 +126,23 @@ export default function LineInputsSection({ projectId, structure, refreshKey, on
               <label key={f.name} className={`pd-name rr-fact rr-prov-${f.state === "STATED" ? "producer_stated" : "unknown"}`} data-line-field={fieldKey(l.line_id, f.name)} data-field-state={f.state}>
                 <span className="text-tertiary">{f.label} · {f.consumer}</span>
                 {control(l, f)}
+                {isPercentField(f) && (() => {
+                  const note = percentNote(l, f, draft[fieldKey(l.line_id, f.name)] ?? "");
+                  return (
+                    <span className="text-tertiary" data-percent-note={fieldKey(l.line_id, f.name)} data-percent-state={note.kind} data-percent-amount={note.amount_usd ?? ""}>
+                      {note.text}
+                      {!(draft[fieldKey(l.line_id, f.name)] ?? "").trim() ? null : <button type="button" className="ghost-action" disabled={locked} data-reset-percent={fieldKey(l.line_id, f.name)}
+                        onClick={(e) => { e.preventDefault(); setDraft((d) => ({ ...d, [fieldKey(l.line_id, f.name)]: "" })); }}>Reset to scenario default</button>}
+                    </span>
+                  );
+                })()}
                 {errors[fieldKey(l.line_id, f.name)] && <span className="eval-status eval-status-error eval-status-compact" role="alert" data-line-error={fieldKey(l.line_id, f.name)}>{errors[fieldKey(l.line_id, f.name)]}</span>}
               </label>
             ))}
+            {view.canadian_labour?.lines?.[l.line_id] && (() => {
+              const d = view.canadian_labour.lines[l.line_id];
+              return <span className="pd-name text-tertiary" data-labour-basis={l.line_id}>Federal PSTC labour basis: {d.stated_eligible_usd.toLocaleString()} USD from stated facts{d.planning_eligible_usd != null && d.planning_eligible_usd !== d.stated_eligible_usd ? ` · ${d.planning_eligible_usd.toLocaleString()} USD planning estimate with the ASSUMED default (not priced, not verified)` : ""}{d.share_basis === "STATED" && d.eligible_share_pct != null ? ` · ${d.eligible_share_pct}% of the line` : ""}</span>;
+            })()}
             {l.allocations && allocationEditor(l)}
             {(l.portions ?? []).map((p) => {
               const k = portionKey(l.line_id, p.program, p.uplift);

@@ -29,7 +29,7 @@ migration to BudgetLineItem itself.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 LINE_FACT_PREFIX = "line_fact:"
 
@@ -56,6 +56,16 @@ FIELD_ASSISTANCE_USD = "assistance_usd"
 # credits, forgivable loans, etc.) attributable to this line reduces the
 # labour expenditure otherwise eligible for CPTC/PSTC purposes.
 FIELD_RELATED_PARTY = "related_party"        # "true" | "false"
+# Percentage-of-line eligibility (0-100). Three SEPARATE facts, because [PSTC-GUIDE] requires BOTH that the individual be resident in Canada when paid AND that the
+# services be personally rendered in Canada, and those are different dollars of one line: a percentage of one condition is never the percentage of the other.
+FIELD_RESIDENT_SHARE_PCT = "canadian_resident_share_pct"             # share of the line paid to individuals resident in Canada
+FIELD_IN_CANADA_SHARE_PCT = "service_in_canada_share_pct"            # share of the line for services performed in Canada
+FIELD_INTERSECTION_SHARE_PCT = "resident_and_in_canada_share_pct"    # share that satisfies BOTH (the qualifying intersection)
+SHARE_FIELDS = (FIELD_RESIDENT_SHARE_PCT, FIELD_IN_CANADA_SHARE_PCT, FIELD_INTERSECTION_SHARE_PCT)
+#: Lines on which a planning default of 100% (ASSUMED, never stored, never evidence) may stand in for an unstated residency / location share: below-the-line crew and resident labour,
+#: the same scenario rule as app.services.scenario_local_labour (BTL labour assigned to a Canadian leg is modeled as locally hired). A line the budget itself classes as
+#: non-resident labour, and every above-the-line role, stays separately evidenced.
+ASSUMABLE_CATEGORIES = frozenset({"btl_crew_labor", "btl_resident_labor"})
 
 _ELIGIBLE_LABOUR_SPEND_CATEGORIES = frozenset({
     "atl_director", "atl_writer", "atl_producer", "atl_cast",
@@ -113,12 +123,16 @@ class LineLabourFacts:
     psc_profit_element_eligible: bool | None = None
     assistance_usd: float | None = None
     related_party: bool | None = None
+    resident_share_pct: float | None = None
+    in_canada_share_pct: float | None = None
+    intersection_share_pct: float | None = None
 
     def has_any_fact(self) -> bool:
         return any((
             self.role, self.canadian_status, self.service_location, self.payee_type,
             self.payment_status, self.look_through_wages_usd is not None,
-            self.assistance_usd is not None,
+            self.assistance_usd is not None, self.resident_share_pct is not None,
+            self.in_canada_share_pct is not None, self.intersection_share_pct is not None,
         ))
 
 
@@ -129,6 +143,13 @@ class LineLabourDisposition:
     eligible_usd: float
     excluded_usd: float
     reason: str
+    #: "STATED" (every residency/location input is a producer statement), "ASSUMED" (a planning default of 100% stood in for at least one), or "" (no share question on this program).
+    share_basis: str = ""
+    #: the share of the line that reached the eligible basis (0-100) when the program asked a residency/location question
+    eligible_share_pct: float | None = None
+    #: PSTC only: the eligible amount if the ASSUMED planning default is applied to every unstated condition. `eligible_usd` is the STATED-evidence figure and is the only one that is priced.
+    planning_eligible_usd: float | None = None
+    planning_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -145,6 +166,9 @@ class CanadianLabourBasisResult:
     line_dispositions: list[LineLabourDisposition]
     missing_fact_line_ids: list[str]                # eligible-category lines with NO line-facts at all
     net_production_cost_usd: float
+    assumed_line_ids: list[str] = field(default_factory=list)   # PSTC lines on which the ASSUMED planning default differs from the stated-evidence figure
+    #: PSTC planning figure: stated evidence plus the ASSUMED 100% default on assumable lines. A planning estimate shown to the producer; it is NEVER priced and never becomes verified entitlement.
+    planning_eligible_labour_usd: dict[str, float] = field(default_factory=dict)
 
 
 def _parse_line_facts(line_id: str, raw: dict[str, str]) -> LineLabourFacts:
@@ -177,7 +201,29 @@ def _parse_line_facts(line_id: str, raw: dict[str, str]) -> LineLabourFacts:
         psc_profit_element_eligible=_b(FIELD_PSC_PROFIT_ELEMENT_ELIGIBLE),
         assistance_usd=_amt(FIELD_ASSISTANCE_USD),
         related_party=_b(FIELD_RELATED_PARTY),
+        resident_share_pct=_amt(FIELD_RESIDENT_SHARE_PCT),
+        in_canada_share_pct=_amt(FIELD_IN_CANADA_SHARE_PCT),
+        intersection_share_pct=_amt(FIELD_INTERSECTION_SHARE_PCT),
     )
+
+
+def check_share_consistency(line_id: str, raw: dict[str, str]) -> None:
+    """ValueError when the stored + incoming share facts of one line contradict each other. The qualifying intersection can never exceed either condition and can never be smaller than the guaranteed overlap
+    (r + s - 100): a producer who states impossible numbers is told, not silently corrected. Nothing is derived or multiplied here."""
+    def num(k):
+        try:
+            v = raw.get(k)
+            return None if v in (None, "") else float(v)
+        except (TypeError, ValueError):
+            return None
+    r, s_, i = num(FIELD_RESIDENT_SHARE_PCT), num(FIELD_IN_CANADA_SHARE_PCT), num(FIELD_INTERSECTION_SHARE_PCT)
+    if i is None:
+        return
+    for name, v in ((FIELD_RESIDENT_SHARE_PCT, r), (FIELD_IN_CANADA_SHARE_PCT, s_)):
+        if v is not None and i > v + 1e-9:
+            raise ValueError(f"line {line_id}: {FIELD_INTERSECTION_SHARE_PCT} ({i:g}%) cannot exceed {name} ({v:g}%): the dollars that satisfy both conditions are part of the dollars that satisfy each")
+    if r is not None and s_ is not None and i + 1e-9 < r + s_ - 100.0:
+        raise ValueError(f"line {line_id}: {FIELD_INTERSECTION_SHARE_PCT} ({i:g}%) is below the guaranteed overlap of {FIELD_RESIDENT_SHARE_PCT} ({r:g}%) and {FIELD_IN_CANADA_SHARE_PCT} ({s_:g}%), which is {r + s_ - 100:g}%")
 
 
 def collect_line_facts(fact_rows: list, line_ids: set[str]) -> dict[str, LineLabourFacts]:
@@ -204,7 +250,72 @@ def collect_line_facts(fact_rows: list, line_ids: set[str]) -> dict[str, LineLab
     }
 
 
-def _line_eligible_amount(amount_usd: float, facts: LineLabourFacts, *, program_slug: str) -> tuple[float, str]:
+@dataclass(frozen=True)
+class ShareResolution:
+    """The PSTC residency AND location test for one line, as a share of the line (0-100). `assumed` marks a result that rests on the planning default; `note` explains every step."""
+    eligible_pct: float
+    assumed: bool
+    note: str
+    conflict: bool = False
+
+
+def _stated_resident_pct(facts: LineLabourFacts) -> float | None:
+    if facts.resident_share_pct is not None:
+        return facts.resident_share_pct
+    if facts.canadian_status in ("resident_citizen", "resident_pr"):
+        return 100.0
+    if facts.canadian_status == "nonresident":
+        return 0.0
+    return None
+
+
+def _stated_in_canada_pct(facts: LineLabourFacts) -> float | None:
+    if facts.in_canada_share_pct is not None:
+        return facts.in_canada_share_pct
+    if facts.service_location == "in_canada":
+        return 100.0
+    if facts.service_location == "outside_canada":
+        return 0.0
+    return None
+
+
+def resolve_pstc_share(facts: LineLabourFacts, *, assume_default: bool) -> ShareResolution:
+    """[PSTC-GUIDE] needs the SAME dollars to be paid to a Canadian resident AND for services rendered in Canada. Producer statements always outrank the planning default.
+    * an explicit intersection share is used as stated (it cannot exceed either stated share);
+    * otherwise both shares must be known (stated, or assumed 100% where `assume_default`); the intersection is then exact only when one share is 0% or 100% (the other share IS the
+      intersection); with two partial shares the intersection is NOT invented: the guaranteed overlap max(0, r + s - 100) is the planning floor and the possible range is disclosed.
+    The shares are never multiplied and never reduced to their minimum without that basis."""
+    r_stated, s_stated = _stated_resident_pct(facts), _stated_in_canada_pct(facts)
+    # a producer statement that contradicts another producer statement of the same condition is a conflict, not a choice
+    if facts.resident_share_pct is not None and facts.canadian_status == "nonresident" and facts.resident_share_pct > 0:
+        return ShareResolution(0.0, False, f"conflict: canadian_status=nonresident but canadian_resident_share_pct={facts.resident_share_pct:g}; nothing is eligible until one is corrected.", True)
+    if facts.resident_share_pct is not None and facts.canadian_status in ("resident_citizen", "resident_pr") and facts.resident_share_pct < 100:
+        return ShareResolution(0.0, False, f"conflict: canadian_status={facts.canadian_status} but canadian_resident_share_pct={facts.resident_share_pct:g}; nothing is eligible until one is corrected.", True)
+    if facts.in_canada_share_pct is not None and facts.service_location == "outside_canada" and facts.in_canada_share_pct > 0:
+        return ShareResolution(0.0, False, f"conflict: service_location=outside_canada but service_in_canada_share_pct={facts.in_canada_share_pct:g}; nothing is eligible until one is corrected.", True)
+    if facts.in_canada_share_pct is not None and facts.service_location == "in_canada" and facts.in_canada_share_pct < 100:
+        return ShareResolution(0.0, False, f"conflict: service_location=in_canada but service_in_canada_share_pct={facts.in_canada_share_pct:g}; nothing is eligible until one is corrected.", True)
+    r = r_stated if r_stated is not None else (100.0 if assume_default else None)
+    s = s_stated if s_stated is not None else (100.0 if assume_default else None)
+    assumed = (r_stated is None and r is not None) or (s_stated is None and s is not None)
+    tag = " ASSUMED planning default (not verified): the unstated condition is taken as 100% for this below-the-line labour; set the fact to replace it." if assumed else ""
+    i = facts.intersection_share_pct
+    if i is not None:
+        hi = min(x for x in (r, s) if x is not None) if (r is not None or s is not None) else 100.0
+        if i > hi + 1e-9:
+            return ShareResolution(0.0, assumed, f"conflict: resident_and_in_canada_share_pct={i:g} exceeds a stated condition share (at most {hi:g}); nothing is eligible until corrected.", True)
+        return ShareResolution(i, assumed, f"{i:g}% of the line is stated as both resident in Canada and performed in Canada.{tag}")
+    if r is None or s is None:
+        miss = "residency" if r is None else "service location"
+        return ShareResolution(0.0, False, f"excluded per [PSTC-GUIDE]: the {miss} of this line is not stated (a percentage, or a status/location), and the intersection of residency and service location is not stated; Unknown is never taken as Yes.")
+    lo, hi = max(0.0, r + s - 100.0), min(r, s)
+    if hi - lo < 1e-9:
+        return ShareResolution(lo, assumed, f"{r:g}% resident and {s:g}% performed in Canada: the qualifying intersection is exactly {lo:g}% (one condition covers the whole line or none of it).{tag}")
+    return ShareResolution(lo, assumed, (f"{r:g}% resident and {s:g}% performed in Canada, intersection NOT stated: planning floor {lo:g}% (the guaranteed overlap); the qualifying share could be anywhere from {lo:g}% to {hi:g}%. "
+                                         f"State resident_and_in_canada_share_pct to settle it.{tag}"))
+
+
+def _line_eligible_amount(amount_usd: float, facts: LineLabourFacts, *, program_slug: str, assume_default: bool = False) -> tuple[float, str]:
     """Returns (eligible_usd, reason). eligible_usd is always in
     [0, amount_usd]. reason explains any reduction/exclusion for full
     reconstruction -- never a silent zero."""
@@ -222,7 +333,13 @@ def _line_eligible_amount(amount_usd: float, facts: LineLabourFacts, *, program_
             "remuneration are excluded until they become a real, enforceable liability."
         )
 
-    if program_slug == "ca_federal_pstc":
+    share_pct, share_basis, share_note = 100.0, "", ""
+    if program_slug == "ca_federal_pstc" and (facts.resident_share_pct is not None or facts.in_canada_share_pct is not None or facts.intersection_share_pct is not None or assume_default):
+        res = resolve_pstc_share(facts, assume_default=assume_default)
+        share_pct, share_basis, share_note = res.eligible_pct, ("ASSUMED" if res.assumed else "STATED"), res.note
+        if res.eligible_pct <= 0.0:
+            return 0.0, share_note
+    elif program_slug == "ca_federal_pstc":
         # [PSTC-GUIDE]: eligibility requires the individual be "resident
         # in Canada at the time the amount is paid" AND the services be
         # "personally rendered...in Canada" -- BOTH must be affirmatively
@@ -245,16 +362,20 @@ def _line_eligible_amount(amount_usd: float, facts: LineLabourFacts, *, program_
                 f"service_location=in_canada (got {facts.service_location!r})."
             )
 
-    base = amount_usd
+    # Only the share of the line that meets the residency AND location test is the relevant basis; the gross budget line and every other component are untouched. The share scales the
+    # line (and the look-through wage figure, which is the payee's wages for the whole line) once; assistance is then deducted once, below.
+    factor = share_pct / 100.0
+    scaled = amount_usd if share_pct >= 100.0 else round(amount_usd * share_pct / 100.0, 2)
+    base = scaled
     if facts.payee_type in _LOOK_THROUGH_PAYEE_TYPES:
         if facts.payee_type == "personal_service_corp" and facts.psc_profit_element_eligible:
-            base = amount_usd  # [T1131] line 606: >50%-personal-services PSC may include a profit element for the owner's own services.
+            base = scaled  # [T1131] line 606: >50%-personal-services PSC may include a profit element for the owner's own services.
             reason_lt = (
                 "full amount allowed per [T1131] line 606: evidenced "
                 "psc_profit_element_eligible=true (>50%-personal-services corporation, owner's own services)."
             )
         elif facts.look_through_wages_usd is not None:
-            base = min(amount_usd, facts.look_through_wages_usd)
+            base = min(scaled, facts.look_through_wages_usd if share_pct >= 100.0 else round(facts.look_through_wages_usd * share_pct / 100.0, 2))
             reason_lt = (
                 f"look-through cap applied per [T1131] lines 603/605/606/607: only the "
                 f"payee's own employees' wages (${facts.look_through_wages_usd:,.2f}) count, "
@@ -269,7 +390,9 @@ def _line_eligible_amount(amount_usd: float, facts: LineLabourFacts, *, program_
     else:
         reason_lt = "full amount eligible (employee/individual, no look-through cap applies)."
 
-    eligible = max(0.0, min(base, amount_usd))
+    eligible = max(0.0, min(base, scaled))
+    if share_basis:
+        reason_lt = f"{share_note} {share_pct:g}% of the line (${scaled:,.2f} of ${amount_usd:,.2f}) is the relevant basis. " + reason_lt
     if facts.assistance_usd and program_slug != "ca_federal_cptc":
         eligible = max(0.0, eligible - facts.assistance_usd)
         reason_lt += f" Reduced by ${facts.assistance_usd:,.2f} line-level assistance."
@@ -286,6 +409,7 @@ def derive_canadian_labour_basis(
     fact_rows: list,
     gross_budget_usd: float,
     project_level_assistance_usd: float = 0.0,
+    assumable_line_ids: frozenset[str] = frozenset(),
 ) -> CanadianLabourBasisResult:
     """The canonical CPTC/PSTC labour-basis derivation. Never returns a
     guessed aggregate scalar -- every figure is summed from real,
@@ -302,16 +426,25 @@ def derive_canadian_labour_basis(
     evidenced_eligible = {"ca_federal_cptc": 0.0, "ca_federal_pstc": 0.0}
     dispositions: list[LineLabourDisposition] = []
     missing_fact_line_ids: list[str] = []
+    assumed_lines: list[str] = []
+    planning_eligible = {"ca_federal_cptc": 0.0, "ca_federal_pstc": 0.0}
 
     for line in eligible_lines:
         for program_slug in ("ca_federal_cptc", "ca_federal_pstc"):
             raw_atl[program_slug] = round(raw_atl[program_slug] + line.amount_usd, 2)
 
         facts = facts_by_line.get(line.line_id)
-        if facts is None or not facts.has_any_fact():
+        assume = line.line_id in assumable_line_ids and (line.spend_category or "") in ASSUMABLE_CATEGORIES
+        has_facts = facts is not None and facts.has_any_fact()
+        if not has_facts:
             if line.line_id not in missing_fact_line_ids:
                 missing_fact_line_ids.append(line.line_id)
-            for program_slug in ("ca_federal_cptc", "ca_federal_pstc"):
+            facts = facts or LineLabourFacts(line_id=line.line_id)
+        for program_slug in ("ca_federal_cptc", "ca_federal_pstc"):
+            plan_usd, plan_reason = None, ""
+            if program_slug == "ca_federal_pstc" and assume:
+                plan_usd, plan_reason = _line_eligible_amount(line.amount_usd, facts, program_slug=program_slug, assume_default=True)
+            if not has_facts:
                 dispositions.append(LineLabourDisposition(
                     line_id=line.line_id, program_slug=program_slug, eligible_usd=0.0,
                     excluded_usd=line.amount_usd,
@@ -322,16 +455,29 @@ def derive_canadian_labour_basis(
                         "spend_category alone. Required: ProjectFact rows keyed "
                         f"'line_fact:{line.line_id}:<field>'."
                     ),
+                    planning_eligible_usd=plan_usd, planning_reason=plan_reason,
                 ))
-            continue
-
-        for program_slug in ("ca_federal_cptc", "ca_federal_pstc"):
+                if program_slug == "ca_federal_pstc":
+                    planning_eligible[program_slug] = round(planning_eligible[program_slug] + (plan_usd or 0.0), 2)
+                if plan_usd is not None and plan_usd > 0 and line.line_id not in assumed_lines:
+                    assumed_lines.append(line.line_id)
+                continue
             potentially_eligible[program_slug] = round(potentially_eligible[program_slug] + line.amount_usd, 2)
             eligible_usd, reason = _line_eligible_amount(line.amount_usd, facts, program_slug=program_slug)
+            share_basis, share_pct = "", None
+            if program_slug == "ca_federal_pstc" and (facts.resident_share_pct is not None or facts.in_canada_share_pct is not None or facts.intersection_share_pct is not None):
+                res = resolve_pstc_share(facts, assume_default=False)
+                share_basis, share_pct = "STATED", res.eligible_pct
+            if plan_usd is not None and abs(plan_usd - eligible_usd) > 0.004 and line.line_id not in assumed_lines:
+                assumed_lines.append(line.line_id)
             evidenced_eligible[program_slug] = round(evidenced_eligible[program_slug] + eligible_usd, 2)
+            if program_slug == "ca_federal_pstc":
+                planning_eligible[program_slug] = round(planning_eligible[program_slug] + (plan_usd if plan_usd is not None else eligible_usd), 2)
             dispositions.append(LineLabourDisposition(
                 line_id=line.line_id, program_slug=program_slug, eligible_usd=eligible_usd,
                 excluded_usd=round(line.amount_usd - eligible_usd, 2), reason=reason,
+                share_basis=share_basis, eligible_share_pct=share_pct,
+                planning_eligible_usd=plan_usd, planning_reason=plan_reason,
             ))
 
     line_assistance = round(sum(
@@ -364,6 +510,8 @@ def derive_canadian_labour_basis(
         line_dispositions=dispositions,
         missing_fact_line_ids=missing_fact_line_ids,
         net_production_cost_usd=net_production_cost,
+        assumed_line_ids=assumed_lines,
+        planning_eligible_labour_usd=planning_eligible,
     )
 
 

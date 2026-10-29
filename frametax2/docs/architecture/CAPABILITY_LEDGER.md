@@ -5262,3 +5262,10 @@ Canonical repository first: the ledger and records already held the Montana stat
 **OPEN.** Locality sources above; Canadian per-person labour facts; the 42 + 178 anchor-dependent controls; independent verification; rollout (digest modules changed again: a restart stales every production while opening stays read-only; no restart, regeneration or acceptance-database access happened).
 
 **Next action in ledger order.** Authorize the protected acceptance run per the proposed manifest (step 0 preflight first), obtain the OPEN locality sources from the issuing offices, then independent verification and the rollout decision.
+
+
+## NA ALLOCATION CALCULATION CLOSEOUT (2026-10-29; base `93571b55`)
+
+**Built.** Percentage-of-line federal PSTC eligibility as three separate line facts (resident share, in-Canada share, explicit qualifying intersection; [PSTC-GUIDE] needs both conditions on the same dollars). Hand check: a $100,000 line with 60% resident and 100% in Canada is a $60,000 basis (gross unchanged); 70% resident and 60% in Canada with no intersection stated prices the guaranteed overlap, 100,000 x 30% = $30,000, not 42,000 (product) or 60,000 (minimum), and discloses the 30%-60% range. Assumed 100% planning default for unstated below-the-line crew shares: derived on load, labelled ASSUMED, never stored, not priced. Partial-allocation per-payee conservation: a person's cap share is allocated USD / line amount (Georgia W-2 cap $500,000, line $1,000,000: allocated $700,000 excludes $200,000 and leaves $800,000; allocated $300,000 excludes nothing). `payee_type` is no longer deleted by an allocation save or reset.
+
+**Open.** The 41 locked-corpus controls (blocked: anchors absent, no current-generation data); pricing the assumed tier (digest-module authorization); per-person Canadian eligibility. Report: `docs/validation/NA_ALLOCATION_CALCULATION_CLOSEOUT_CLAUDE.md`.

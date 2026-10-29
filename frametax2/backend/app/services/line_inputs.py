@@ -25,6 +25,8 @@ PERSONNEL = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast",
 CANADIAN_PROGRAMS = ("ca_federal_cptc", "ca_federal_pstc", "ca_bc_pstc", "ca_bc_film_tv_tax_credit", "ca_bc_dave", "ca_mb_film_video_credit")
 CANADIAN_PAYEE_TYPES = ("employee", "individual_contractor", "loan_out_corp", "personal_service_corp", "partnership", "non_taxable_canadian_corp", "foreign_corp")
 MT = "us_mt_media_act_tax_credit"
+NEVER_ASSUMED = frozenset({"resident_and_in_canada_share_pct"})   # the qualifying intersection is derived from the two condition shares (or stated), never itself defaulted
+ASSUMABLE = frozenset({"btl_crew_labor", "btl_resident_labor"})   # = canadian_labour_basis.ASSUMABLE_CATEGORIES: lines on which a planning default of 100% stands in for an unstated share
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,8 @@ class FieldSpec:
     consumer: str = ""
     help: str = ""
     max_line_amount: bool = False   # a USD amount that cannot exceed the line
+    max_value: float | None = None  # an upper bound on a plain number (a percentage of the line is at most 100)
+    unit: str = ""                  # "percent_of_line": the stored number is a share of THIS line, shown with its calculated amount
 
 
 def _payee_programs() -> tuple:
@@ -64,6 +68,15 @@ def field_specs() -> dict[str, FieldSpec]:
         FieldSpec("role", "Role", "enum", choices=("director", "writer", "producer", "cast", "other"), programs=ca, categories=lab, consumer="Canadian labour basis"),
         FieldSpec("canadian_status", "Canadian status", "enum", choices=("resident_citizen", "resident_pr", "nonresident"), programs=ca, categories=lab, consumer="Canadian labour basis"),
         FieldSpec("service_location", "Where the service was performed", "enum", choices=("in_canada", "outside_canada"), programs=ca, categories=lab, consumer="Canadian labour basis"),
+        FieldSpec("canadian_resident_share_pct", "Eligible share of this line: paid to Canadian-resident individuals", "number", programs=("ca_federal_pstc",), categories=lab, max_value=100.0, unit="percent_of_line",
+                  consumer="Federal PSTC labour basis (individual resident in Canada when paid)",
+                  help="0-100% of this line. Leave blank for Unknown (below-the-line crew lines are planned at an ASSUMED 100% until you state a share). 0 is a real zero."),
+        FieldSpec("service_in_canada_share_pct", "Eligible share of this line: services performed in Canada", "number", programs=("ca_federal_pstc",), categories=lab, max_value=100.0, unit="percent_of_line",
+                  consumer="Federal PSTC labour basis (services personally rendered in Canada)",
+                  help="0-100% of this line. A different condition from residency: the two shares are not the same dollars and are never multiplied."),
+        FieldSpec("resident_and_in_canada_share_pct", "Share of this line that is BOTH Canadian-resident AND performed in Canada", "number", programs=("ca_federal_pstc",), categories=lab, max_value=100.0, unit="percent_of_line",
+                  consumer="Federal PSTC labour basis (the qualifying intersection)",
+                  help="State this when the two shares above are partial: PSTC needs both conditions on the same dollars. Without it the guaranteed overlap is the planning floor."),
         FieldSpec("payment_status", "Payment status", "enum", choices=("paid", "payable", "deferred", "contingent"), programs=ca, categories=lab, consumer="Canadian labour basis (deferred and contingent amounts do not count)"),
         FieldSpec("look_through_wages_usd", "Look-through wages (USD)", "number", programs=ca, categories=lab, consumer="Canadian labour basis (T1131 lines 603-607)", max_line_amount=True),
         FieldSpec("psc_profit_element_eligible", "Personal service corporation profit element is eligible", "boolean", programs=ca, categories=lab, consumer="Canadian labour basis (T1131 line 606)"),
@@ -118,6 +131,8 @@ def validate_line_fact(spec: FieldSpec, value, line_amount: float, line_id: str)
     if spec.kind == "number":
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
             raise ValueError(f"line {line_id}: {spec.name} must be a finite number of at least 0, or null (Unknown); 0 is a real zero")
+        if spec.max_value is not None and value > spec.max_value:
+            raise ValueError(f"line {line_id}: {spec.name} must be between 0 and {spec.max_value:g} (a share of the line), or null (Unknown)")
         if spec.max_line_amount and value > line_amount + 0.005:
             raise ValueError(f"line {line_id}: {spec.name} {value:,.2f} exceeds the line amount {line_amount:,.2f}")
         return repr(float(value))
@@ -162,6 +177,8 @@ async def line_inputs_view(session: AsyncSession, project_id, program_slugs=None
     from app.calculators import line_allocations as la
     stored_allocations = la.parse_rows(rows, set(lines))
     portions = json.loads(portions_row.value) if portions_row is not None and portions_row.value else {}
+    nonlocal_override = any(r_.fact_key == "scenario_btl_nonlocal" and str(r_.value).strip().lower() in ("true", "1", "yes") for r_ in (await session.execute(
+        select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key == "scenario_btl_nonlocal"))).scalars().all())
     out_lines, persons = [], {}
     for lid, info in lines.items():
         fields = applicable_fields(program_slugs, info["category"])
@@ -171,10 +188,12 @@ async def line_inputs_view(session: AsyncSession, project_id, program_slugs=None
         values = stored.get(lid, {})
         entry = {"line_id": lid, "description": info["description"], "category": info["category"], "amount_usd": info["amount"],
                  "derived": {"category": info["category"], "note": "the budget's own classification; a stated fact never overwrites it"},
-                 "fields": [{"name": s.name, "label": s.label, "kind": s.kind, "choices": list(s.choices), "consumer": s.consumer, "help": s.help, "max_usd": info["amount"] if s.max_line_amount else None,
+                 "fields": [{"name": s.name, "label": s.label, "kind": s.kind, "choices": list(s.choices), "consumer": s.consumer, "help": s.help, "max_usd": info["amount"] if s.max_line_amount else None, "max_value": s.max_value, "unit": s.unit,
+                             "amount_usd": (None if values.get(s.name) is None else round(info["amount"] * float(values[s.name]) / 100.0, 2)) if s.unit == "percent_of_line" else None,
+                             "assumed_pct": (100.0 if (s.unit == "percent_of_line" and values.get(s.name) is None and info["category"] in ASSUMABLE and not nonlocal_override and s.name not in NEVER_ASSUMED) else None) if s.unit == "percent_of_line" else None,
                              "value": (None if values.get(s.name) is None else (values[s.name].lower() == "true" if s.kind == "boolean" and values[s.name].lower() in ("true", "false")
                                                                               else float(values[s.name]) if s.kind == "number" else values[s.name])),
-                             "state": "UNKNOWN" if values.get(s.name) is None else "STATED"} for s in fields],
+                             "state": ("STATED" if values.get(s.name) is not None else ("ASSUMED" if (s.unit == "percent_of_line" and info["category"] in ASSUMABLE and not nonlocal_override and s.name not in NEVER_ASSUMED) else "UNKNOWN"))} for s in fields],
                  "portions": [{**u, "amount_usd": ((portions.get(u["program"]) or {}).get(u["uplift"]) or {}).get(lid)} for u in ups]}
         pid, done = values.get("payee_id"), values.get("payee_compensation_complete", "").lower() == "true"
         # the people on the line (only a line a person can be paid from: a rule of the selected programs reads its payee): stored allocations, else the legacy single-person row read as ONE allocation of the whole line when
@@ -195,5 +214,21 @@ async def line_inputs_view(session: AsyncSession, project_id, program_slugs=None
             p["lines"].append(lid)
             p["total_usd"] = round(p["total_usd"] + (a["amount_usd"] or 0.0), 2)
             p["complete"] = p["complete"] and (not legacy or done) and a["amount_usd"] is not None
-    return {"lines": out_lines, "persons": sorted(persons.values(), key=lambda x: x["payee"]),
+    labour = None
+    if "ca_federal_pstc" in set(program_slugs or ()):
+        from types import SimpleNamespace
+        from app.calculators.canadian_labour_basis import derive_canadian_labour_basis
+        bl = [SimpleNamespace(line_id=i, amount_usd=v["amount"], spend_category=v["category"], is_memo=False) for i, v in lines.items()]
+        res = derive_canadian_labour_basis(bl, rows, sum(v["amount"] for v in lines.values()),
+                                           assumable_line_ids=frozenset() if nonlocal_override else frozenset(i for i, v in lines.items() if v["category"] in ASSUMABLE))
+        labour = {"program": "ca_federal_pstc",
+                  "stated_eligible_usd": res.evidenced_eligible_labour_usd["ca_federal_pstc"],
+                  "planning_eligible_usd": res.planning_eligible_labour_usd["ca_federal_pstc"],
+                  "assumed_line_ids": list(res.assumed_line_ids),
+                  "lines": {d.line_id: {"stated_eligible_usd": d.eligible_usd, "planning_eligible_usd": d.planning_eligible_usd, "share_basis": d.share_basis or None,
+                                        "eligible_share_pct": d.eligible_share_pct, "reason": d.reason, "planning_reason": d.planning_reason or None}
+                            for d in res.line_dispositions if d.program_slug == "ca_federal_pstc"},
+                  "note": ("STATED is the only figure that is priced. PLANNING adds an ASSUMED 100% for an unstated residency or location share on below-the-line crew lines (the scenario rule that such labour is locally hired); "
+                           "it is a planning estimate, never stored, never verified entitlement, and it does not enter a guaranteed floor.")}
+    return {"lines": out_lines, "persons": sorted(persons.values(), key=lambda x: x["payee"]), "canadian_labour": labour,
             "note": ("Only lines and fields that a rule of the selected programs reads are offered. Unknown is not No. A person's compensation is the sum of the amounts allocated to them across lines; a line may carry several people whose amounts sum to at most the line, and the remainder is Unknown (never assigned to anyone); a person counts once; exact per-person caps apply only when every line of a category has an identified person with complete compensation, otherwise a lawful range is priced and disclosed.")}

@@ -57,7 +57,8 @@ def _reject_unsupported_keys(line_id: str, raw, specs: dict) -> None:
     detail = f"unsupported allocation field(s) {unknown}: nothing is stored for them"
     if per_line:
         detail += (f"; {per_line} is read per budget LINE, not per person (Canadian labour eligibility is not computed per person), so enter "
-                   f"residents and non-residents as separate budget lines in the source budget (the app has no line-split editor) and state the fact on each line")
+                   f"residents and non-residents as separate budget lines in the source budget (the app has no line-split editor) and state the fact on each line, or state the share of the line that is Canadian-resident / performed in Canada as a percentage of the line "
+                   f"(canadian_resident_share_pct, service_in_canada_share_pct, resident_and_in_canada_share_pct: line facts, never a person's eligibility)")
     raise ValueError(f"line {line_id}: {detail}")
 
 

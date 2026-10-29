@@ -243,7 +243,7 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
                                  amounts: dict | None = None, line_facts: list[dict] | None = None,
                                  line_allocations: list[dict] | None = None) -> dict:
     """NA-RECONCILIATION-25 `line_allocations`: [{line_id, allocations: [{payee_id, amount_usd, <person facts>, evidence}] | null}] - several identified people on one budget line, stored as the JSON row
-    `line_fact:<line>:allocations`; null or [] is Reset (the row and the line's legacy single-person identity rows are removed, restoring Unknown). Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
+    `line_fact:<line>:allocations`; null or [] is Reset (the row and the line's legacy single-person identity rows (payee, completeness, Montana person facts) are removed, restoring Unknown; the line's `payee_type` classification is never touched). Validate and persist producer-stated facts. `evidenced`: {fact id: true|null} (null clears -> Unknown). Stating one fact of a
     mutually exclusive pair (inside/outside the commuter district, Production Plus 10%/5% tier) REPLACES the stored partner in the same
     transaction, so two contradictory elections can never be stored; stating both in one request is rejected. NA-RECONCILIATION-22: `evidenced` is tri-state for ordinary legal
     predicates ({fact id: true | false | null}: Yes, a stated No - a REFUTED fact that applies the rule's actual failed treatment - or Unknown); an election accepts only its chosen alternative. `payees`:
@@ -294,6 +294,24 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             else:
                 merged[lid] = value
         la.check_across_lines(merged)
+    if validated_line_facts:
+        from app.calculators.canadian_labour_basis import SHARE_FIELDS, check_share_consistency
+        touched = {lid for lid, field, *_ in validated_line_facts if field in SHARE_FIELDS}
+        if touched:
+            stored_share = (await session.execute(select(ProjectFact).where(ProjectFact.project_id == project_id, ProjectFact.fact_key.like("line_fact:%")))).scalars().all()
+            merged_share: dict[str, dict[str, str]] = {}
+            for row_ in stored_share:
+                lid_, _, field_ = row_.fact_key[len("line_fact:"):].partition(":")
+                if lid_ in touched and field_ in SHARE_FIELDS and row_.value not in (None, ""):
+                    merged_share.setdefault(lid_, {})[field_] = row_.value
+            for lid, field, text, _t in validated_line_facts:
+                if field in SHARE_FIELDS:
+                    if text is None:
+                        merged_share.setdefault(lid, {}).pop(field, None)
+                    else:
+                        merged_share.setdefault(lid, {})[field] = text
+            for lid_ in touched:
+                check_share_consistency(lid_, merged_share.get(lid_, {}))
     for fid, value in evidenced.items():
         if fid not in NY_EVIDENCED_FACTS:
             raise ValueError(f"'{fid}' is not a settable program fact")
@@ -374,8 +392,9 @@ async def write_ny_program_facts(session: AsyncSession, project_id, *, evidenced
             await _upsert(session, project_id, f"line_fact:{lid}:payee_type", p["payee_type"] if pid else None, "string")
     for lid, value in validated_allocations.items():
         await _upsert(session, project_id, f"line_fact:{lid}:allocations", None if value is None else json.dumps(value, sort_keys=True), "json")
-        for legacy in ("payee_id", "payee_compensation_complete", "payee_type", "mt_status", "mt_tax_withheld", "mt_residency"):
-            await _upsert(session, project_id, f"line_fact:{lid}:{legacy}", None, "string")     # the allocations (or Reset's Unknown) replace the line's single-person identity rows
+        for legacy in ("payee_id", "payee_compensation_complete", "mt_status", "mt_tax_withheld", "mt_residency"):
+            await _upsert(session, project_id, f"line_fact:{lid}:{legacy}", None, "string")     # the allocations (or Reset's Unknown) replace the line's single-person identity rows;
+            # `payee_type` is NOT one of them: it is the line's own classification (the Canadian labour basis reads it per line) and only an explicit producer edit of that fact changes it
     for r in producer_roles:
         await _upsert(session, project_id, f"line_fact:{str(r['line_id'])}:producer_role", r.get("role"), "string")
     for c in composer_portions:

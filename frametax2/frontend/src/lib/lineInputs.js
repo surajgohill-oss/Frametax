@@ -34,6 +34,7 @@ export function validateLineDrafts(view, draft) {
       const n = number(text);
       if (n.error) errors[fieldKey(l.line_id, f.name)] = n.error;
       else if (f.max_usd !== null && f.max_usd !== undefined && n.value > f.max_usd + 0.005) errors[fieldKey(l.line_id, f.name)] = `Cannot exceed the line amount ${f.max_usd.toLocaleString()}`;
+      else if (f.max_value !== null && f.max_value !== undefined && n.value > f.max_value) errors[fieldKey(l.line_id, f.name)] = `Enter a share between 0 and ${f.max_value}%`;
     }
     for (const p of l.portions ?? []) {
       const k = portionKey(l.line_id, p.program, p.uplift);
@@ -169,3 +170,26 @@ export function changedAllocations(view, ad) {
 }
 
 export const isAllocationDirty = (view, ad) => changedAllocations(view, ad).length > 0;
+
+// ── percentage-of-line eligibility ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A field with unit "percent_of_line" is a share (0-100) of THIS budget line. Blank is Unknown; where the served field carries an `assumed_pct` the planning view assumes that share (state "ASSUMED"),
+// which is never stored and never verified. 0 is a real, stated zero. The calculated amount is the line amount x the share; a stated share changes only that relevant basis, never the gross line.
+export const isPercentField = (f) => f?.unit === "percent_of_line";
+
+export function percentAmount(line, text) {
+  if (blank(text)) return null;
+  const n = number(text);
+  if (n.error || n.value > 100) return null;
+  return Math.round(line.amount_usd * n.value) / 100;
+}
+
+// what the producer sees beside a percentage control: the calculated amount of a stated share, or the labelled planning assumption, or Unknown
+export function percentNote(line, f, text) {
+  const stated = percentAmount(line, text);
+  if (stated !== null) return { kind: "STATED", text: `${String(text).trim()}% of this line = ${stated.toLocaleString()} USD (stated)`, amount_usd: stated };
+  if (blank(text) && f.assumed_pct !== null && f.assumed_pct !== undefined) {
+    const planned = Math.round(line.amount_usd * f.assumed_pct) / 100;
+    return { kind: "ASSUMED", text: `ASSUMED ${f.assumed_pct}% for planning = ${planned.toLocaleString()} USD · not verified; enter a share to replace it`, amount_usd: planned };
+  }
+  return { kind: "UNKNOWN", text: "Unknown · nothing is assumed", amount_usd: null };
+}
