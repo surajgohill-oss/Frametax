@@ -29,6 +29,9 @@ import uuid
 
 HARD_TIMEOUT_SECONDS = 720
 ACCEPTANCE_DB = "frametax2_claude_optimizer_acceptance_20260919"
+#: The isolated copy of the four anchor productions made for FOUR_PROJECT_ALLOCATION_RUNTIME_CLOSEOUT (never the shared live database).
+CLOSEOUT_DB = "frametax2_four_closeout_20261029"
+ALLOWED_DATABASES = (ACCEPTANCE_DB, CLOSEOUT_DB)
 
 
 class RegenerationTimeout(RuntimeError):
@@ -37,8 +40,8 @@ class RegenerationTimeout(RuntimeError):
 
 def assert_acceptance_database(url: str | None = None) -> str:
     url = url or os.environ.get("DATABASE_URL", "")
-    if not url.endswith(ACCEPTANCE_DB):
-        raise RuntimeError(f"refusing to regenerate outside the acceptance database ({ACCEPTANCE_DB}); DATABASE_URL={url!r}")
+    if not url.endswith(ALLOWED_DATABASES):
+        raise RuntimeError(f"refusing to regenerate outside the isolated databases {ALLOWED_DATABASES}; DATABASE_URL={url!r}")
     return url
 
 

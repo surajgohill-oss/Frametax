@@ -164,16 +164,47 @@ def test_psc_profit_element_eligible_full_amount():
     assert r.evidenced_eligible_labour_usd["ca_federal_cptc"] == 400_000.0
 
 
-# 9. Assistance reduction.
-def test_assistance_reduces_eligible_labour():
-    lines = [_Line("L1", 500_000.0, "atl_director")]
-    facts = [
-        _lf("L1", FIELD_CANADIAN_STATUS, "resident_citizen"),
-        _lf("L1", FIELD_PAYMENT_STATUS, "paid"),
-        _lf("L1", FIELD_ASSISTANCE_USD, 50_000.0),
-    ]
-    r = derive_canadian_labour_basis(lines, facts, gross_budget_usd=3_000_000.0)
-    assert r.evidenced_eligible_labour_usd["ca_federal_cptc"] == 450_000.0
+# 9. Assistance reduction -- the CURRENT controlling contract (engine 1.119.0, CRA RC4164 / T1131 guide lines 421-430, 618):
+#    * CPTC: assistance reduces the PRODUCTION COST that sets the 60% cap (line 421 -> 430); the labour expenditure line itself is NOT reduced (line 618).
+#    * PSTC: the stated assistance on a line is deducted from that line's eligible labour.
+#    The earlier expectation (CPTC labour reduced by the assistance) was superseded by RC4164; the protection is that assistance still reduces what is CLAIMED, by the right route.
+#    Every figure below is hand-computed here, not read back from the module.
+def _assisted(amount, gross, assistance, *, with_location=False):
+    lines = [_Line("L1", amount, "atl_director")]
+    facts = [_lf("L1", FIELD_CANADIAN_STATUS, "resident_citizen"), _lf("L1", FIELD_PAYMENT_STATUS, "paid")]
+    if with_location:
+        facts.append(_lf("L1", FIELD_SERVICE_LOCATION, "in_canada"))
+    if assistance:
+        facts.append(_lf("L1", FIELD_ASSISTANCE_USD, assistance))
+    return derive_canadian_labour_basis(lines, facts, gross_budget_usd=gross)
+
+
+def test_cptc_assistance_does_not_reduce_the_labour_line():
+    """500,000 labour, gross 3,000,000, assistance 50,000: the labour line stays 500,000 (T1131 line 618); production cost 2,950,000 -> cap 60% = 1,770,000 -> claim min(500,000; 1,770,000) = 500,000."""
+    r = _assisted(500_000.0, 3_000_000.0, 50_000.0)
+    assert r.evidenced_eligible_labour_usd["ca_federal_cptc"] == 500_000.0
+    assert r.net_production_cost_usd == 2_950_000.0
+    assert r.statutory_cap_usd["ca_federal_cptc"] == 1_770_000.0
+    assert r.qualified_labour_usd["ca_federal_cptc"] == 500_000.0
+
+
+def test_cptc_assistance_still_reduces_the_claim_through_the_sixty_percent_cap():
+    """Where the cap binds, assistance lowers the CPTC claim by 60% of the assistance: labour 500,000, gross 800,000.
+    No assistance: cap = 0.60 x 800,000 = 480,000 -> claim 480,000. Assistance 50,000: production cost 750,000 -> cap 450,000 -> claim 450,000 (a 30,000 = 60% x 50,000 reduction)."""
+    without = _assisted(500_000.0, 800_000.0, 0.0)
+    with_assistance = _assisted(500_000.0, 800_000.0, 50_000.0)
+    assert without.statutory_cap_usd["ca_federal_cptc"] == 480_000.0 and without.qualified_labour_usd["ca_federal_cptc"] == 480_000.0
+    assert with_assistance.net_production_cost_usd == 750_000.0
+    assert with_assistance.statutory_cap_usd["ca_federal_cptc"] == 450_000.0 and with_assistance.qualified_labour_usd["ca_federal_cptc"] == 450_000.0
+    assert without.qualified_labour_usd["ca_federal_cptc"] - with_assistance.qualified_labour_usd["ca_federal_cptc"] == 30_000.0
+
+
+def test_pstc_assistance_reduces_the_line_labour_directly():
+    """PSTC keeps the per-line reduction: 500,000 resident, performed in Canada, assistance 50,000 -> 450,000 eligible; the production cost (the CPTC cap base) is reduced by the same 50,000."""
+    r = _assisted(500_000.0, 3_000_000.0, 50_000.0, with_location=True)
+    assert r.evidenced_eligible_labour_usd["ca_federal_pstc"] == 450_000.0
+    assert r.qualified_labour_usd["ca_federal_pstc"] == 450_000.0
+    assert r.net_production_cost_usd == 2_950_000.0
 
 
 # 10. CPTC 60% cap: hand-calculated -- $2,000,000 evidenced eligible labour

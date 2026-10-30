@@ -236,7 +236,10 @@ async def test_assumed_to_zero_to_partial_to_reset_with_provenance_and_pricing_i
         assert view["canadian_labour"]["stated_eligible_usd"] == 0.0 and view["canadian_labour"]["planning_eligible_usd"] == 1_000_000.0
         assert not [k for k in await _rows(db, pid) if "share_pct" in k], "an assumed share is never persisted as a fact"
         economics = (await build_project_economic_inputs(db, uuid.UUID(pid), read_only=True)).inputs
-        assert key not in (economics.amount_facts or {}), "an assumption never reaches the priced inputs"
+        stated_key, assumed_key = "ca_federal_pstc_stated_labour_usd", "ca_federal_pstc_assumed_labour_usd"
+        assert stated_key not in (economics.amount_facts or {}), "nothing is stated or evidenced: the stated part is absent, never an invented figure"
+        assert economics.amount_facts[assumed_key] == 1_000_000.0 and economics.amount_facts[key] == 1_000_000.0, "the planning default is consumed as a separate, labelled assumed amount (hand: crew line 1,000,000 x 100%)"
+        assert all(not k.startswith("pstc_plan_frac:") or v in (0.0, 1.0) for k, v in economics.amount_facts.items()), "ATL and unclassified lines contribute 0, the crew line 1"
         gross = economics.gross_budget_usd
 
         # 2. explicit 0%: a stated real zero, not an unknown
@@ -244,6 +247,8 @@ async def test_assumed_to_zero_to_partial_to_reset_with_provenance_and_pricing_i
         crew, view = await _line(db, pid, "btl_resident_labor")
         assert _field(crew, "canadian_resident_share_pct")["state"] == "STATED" and _field(crew, "canadian_resident_share_pct")["value"] == 0.0
         assert _field(crew, "canadian_resident_share_pct")["amount_usd"] == 0.0 and view["canadian_labour"]["planning_eligible_usd"] == 0.0
+        economics = (await build_project_economic_inputs(db, uuid.UUID(pid), read_only=True)).inputs
+        assert key not in (economics.amount_facts or {}) and "ca_federal_pstc_assumed_labour_usd" not in economics.amount_facts, "a stated 0% overrides the default: nothing is priced, nothing assumed"
 
         # 3. explicit partial share: 40% resident + 100% in Canada, both stated -> $400,000 is priced; the gross is unchanged
         await npf.write_ny_program_facts(db, uuid.UUID(pid), line_facts=[{"line_id": lid, "field": "canadian_resident_share_pct", "value": 40.0},
@@ -255,6 +260,7 @@ async def test_assumed_to_zero_to_partial_to_reset_with_provenance_and_pricing_i
         assert disposition["share_basis"] == "STATED" and disposition["eligible_share_pct"] == 40.0
         economics = (await build_project_economic_inputs(db, uuid.UUID(pid), read_only=True)).inputs
         assert economics.amount_facts[key] == 400_000.0 and economics.gross_budget_usd == gross, "qualification input reduced to the eligible basis; the gross is not"
+        assert "ca_federal_pstc_assumed_labour_usd" not in economics.amount_facts and economics.amount_facts["ca_federal_pstc_stated_labour_usd"] == 400_000.0, "fully stated: no assumption layered on it"
 
         # 4. reset: both rows removed, back to ASSUMED planning, nothing priced
         await npf.write_ny_program_facts(db, uuid.UUID(pid), line_facts=[{"line_id": lid, "field": "canadian_resident_share_pct", "value": None},
@@ -262,7 +268,7 @@ async def test_assumed_to_zero_to_partial_to_reset_with_provenance_and_pricing_i
         crew, view = await _line(db, pid, "btl_resident_labor")
         assert _field(crew, "canadian_resident_share_pct")["state"] == "ASSUMED" and view["canadian_labour"]["planning_eligible_usd"] == 1_000_000.0
         economics = (await build_project_economic_inputs(db, uuid.UUID(pid), read_only=True)).inputs
-        assert key not in (economics.amount_facts or {})
+        assert economics.amount_facts[key] == 1_000_000.0 == economics.amount_facts["ca_federal_pstc_assumed_labour_usd"] and "ca_federal_pstc_stated_labour_usd" not in economics.amount_facts
         assert not [v for k, v in (await _rows(db, pid)).items() if "share_pct" in k and v not in (None, "")]
 
 

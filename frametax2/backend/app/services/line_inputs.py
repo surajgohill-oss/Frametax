@@ -221,14 +221,24 @@ async def line_inputs_view(session: AsyncSession, project_id, program_slugs=None
         bl = [SimpleNamespace(line_id=i, amount_usd=v["amount"], spend_category=v["category"], is_memo=False) for i, v in lines.items()]
         res = derive_canadian_labour_basis(bl, rows, sum(v["amount"] for v in lines.values()),
                                            assumable_line_ids=frozenset() if nonlocal_override else frozenset(i for i, v in lines.items() if v["category"] in ASSUMABLE))
+        from app.calculators.canadian_labour_basis import BASIS_ASSUMED_FOR_PLANNING, BASIS_EVIDENCED, BASIS_PRODUCER_STATED
+        stated_usd = res.evidenced_eligible_labour_usd["ca_federal_pstc"]
+        planning_usd = res.planning_eligible_labour_usd["ca_federal_pstc"]
+        line_rows = [r for r in rows if (getattr(r, "fact_key", "") or "").startswith("line_fact:")]
+        stated_tier = BASIS_EVIDENCED if line_rows and all(str(getattr(getattr(r, "source_type", None), "value", getattr(r, "source_type", ""))) != "user_override" for r in line_rows) else BASIS_PRODUCER_STATED
+        status = BASIS_ASSUMED_FOR_PLANNING if planning_usd > stated_usd + 0.004 else (stated_tier if stated_usd > 0 else None)
         labour = {"program": "ca_federal_pstc",
-                  "stated_eligible_usd": res.evidenced_eligible_labour_usd["ca_federal_pstc"],
-                  "planning_eligible_usd": res.planning_eligible_labour_usd["ca_federal_pstc"],
+                  "basis_status": status,
+                  "priced_basis_usd": planning_usd if planning_usd > 0 else None,
+                  "stated_eligible_usd": stated_usd,
+                  "assumed_eligible_usd": round(max(0.0, planning_usd - stated_usd), 2),
+                  "planning_eligible_usd": planning_usd,
                   "assumed_line_ids": list(res.assumed_line_ids),
                   "lines": {d.line_id: {"stated_eligible_usd": d.eligible_usd, "planning_eligible_usd": d.planning_eligible_usd, "share_basis": d.share_basis or None,
                                         "eligible_share_pct": d.eligible_share_pct, "reason": d.reason, "planning_reason": d.planning_reason or None}
                             for d in res.line_dispositions if d.program_slug == "ca_federal_pstc"},
-                  "note": ("STATED is the only figure that is priced. PLANNING adds an ASSUMED 100% for an unstated residency or location share on below-the-line crew lines (the scenario rule that such labour is locally hired); "
-                           "it is a planning estimate, never stored, never verified entitlement, and it does not enter a guaranteed floor.")}
+                  "note": ("The priced PSTC basis is STATED / EVIDENCED labour plus an ASSUMED_FOR_PLANNING 100% for an unstated residency or service-location share on below-the-line crew lines "
+                           "(the scenario rule that such labour is locally hired). The assumed part is a labelled modeled estimate carried as a presumed fact on every priced PSTC figure: it is never stored, "
+                           "never a verified residency fact, never a confirmed credit or guaranteed entitlement. Above-the-line roles and lines budget-classified as non-resident are never assumed.")}
     return {"lines": out_lines, "persons": sorted(persons.values(), key=lambda x: x["payee"]), "canadian_labour": labour,
             "note": ("Only lines and fields that a rule of the selected programs reads are offered. Unknown is not No. A person's compensation is the sum of the amounts allocated to them across lines; a line may carry several people whose amounts sum to at most the line, and the remainder is Unknown (never assigned to anyone); a person counts once; exact per-person caps apply only when every line of a category has an identified person with complete compensation, otherwise a lawful range is priced and disclosed.")}

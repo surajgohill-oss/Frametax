@@ -220,16 +220,28 @@ async def test_line_status_facts_resolve_the_pstc_canadian_labour_evidence_and_u
         crew = next(k for k, v in lines.items() if v["category"] == "btl_resident_labor")
         cast = next(k for k, v in lines.items() if v["category"] == "atl_writer")
 
-        async def qualified():
-            res = await build_project_economic_inputs(db, project_id, read_only=True)
-            return (res.inputs.amount_facts or {}).get(key)
+        stated_key, assumed_key = "ca_federal_pstc_stated_labour_usd", "ca_federal_pstc_assumed_labour_usd"
 
-        assert await qualified() is None, "no line fact: nothing is confirmed (a missing fact fails closed)"
+        async def qualified():
+            """The STATED / evidenced figure (what the producer or a document established)."""
+            res = await build_project_economic_inputs(db, project_id, read_only=True)
+            return (res.inputs.amount_facts or {}).get(stated_key)
+
+        async def modeled():
+            """(effective priced basis, assumed part): the stated figure plus the labelled planning default."""
+            res = await build_project_economic_inputs(db, project_id, read_only=True)
+            facts = res.inputs.amount_facts or {}
+            return facts.get(key), facts.get(assumed_key)
+
+        assert await qualified() is None, "no line fact: nothing is STATED or evidenced (a missing fact fails closed as evidence)"
+        assert await modeled() == (pytest.approx(500_000.0), pytest.approx(500_000.0)), "the planning default models the unstated crew line, labelled assumed; the ATL writer line is never defaulted"
         await npf.write_ny_program_facts(db, project_id, line_facts=[
             {"line_id": crew, "field": "canadian_status", "value": "resident_citizen"}, {"line_id": crew, "field": "service_location", "value": "in_canada"},
             {"line_id": cast, "field": "canadian_status", "value": "nonresident"}, {"line_id": cast, "field": "service_location", "value": "in_canada"}])
         assert await qualified() == pytest.approx(500_000.0), "the resident crew line counts in full; the stated non-resident writer line is excluded"
         await npf.write_ny_program_facts(db, project_id, line_facts=[{"line_id": crew, "field": "payment_status", "value": "deferred"}])
         assert await qualified() in (None, 0.0), "a deferred amount is not a labour expenditure"
+        assert (await modeled())[0] in (None, 0.0), "a stated contrary fact (deferred payment) outranks the planning default"
         await npf.write_ny_program_facts(db, project_id, line_facts=[{"line_id": crew, "field": "payment_status", "value": None}, {"line_id": crew, "field": "service_location", "value": None}])
-        assert await qualified() in (None, 0.0), "service location back to Unknown (not outside Canada): PSTC fails closed until it is evidenced again"
+        assert await qualified() in (None, 0.0), "service location back to Unknown (not outside Canada): the STATED / evidenced figure fails closed until it is evidenced again"
+        assert await modeled() == (pytest.approx(500_000.0), pytest.approx(500_000.0)), "...while the planning model carries the unstated location as a labelled assumption, never as stated"

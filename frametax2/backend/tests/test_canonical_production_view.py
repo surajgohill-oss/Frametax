@@ -37,8 +37,19 @@ from app.services.canonical_production_view import (
     _marginal_jurisdiction_materiality,
     _qualification_rank,
     _single_jurisdiction_winners,
-    build_production_and_structures,
+    build_production_and_structures as _paged_build_production_and_structures,
 )
+
+
+async def build_production_and_structures(session, project_id, **kwargs):
+    """The served view with the COMPLETE optimizer lists.
+
+    Since canonical-1.128.0 the served default is a deterministic first page with an exact `<list>_page.total` and a cursor (every entry reachable through
+    /evaluation/optimizer-list). The controls below assert coverage, ranking, deduplication and identity over the whole list, so they read it through the SAME paging code
+    with an unbounded page limit; `test_default_pages_tile_the_complete_optimizer_lists_exactly_once` separately proves the default pages reproduce that list exactly."""
+    kwargs.setdefault("optimizer_list_limit", 10 ** 9)
+    return await _paged_build_production_and_structures(session, project_id, **kwargs)
+
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
@@ -621,9 +632,12 @@ async def test_current_producer_projection_is_complete_and_preserves_exhaustive_
         allocated = view["structures"]["allocated_structures"]
         assert allocated["optimizer_candidates_total"] == len(allocated["optimizer_candidates"])
         assert allocated["optimizer_scenarios_total"] == len(allocated["optimizer_scenarios"])
-        assert allocated["optimizer_scenarios_total"] == _ACCEPTED_OPTIMIZER_SCENARIOS_TOTAL[project_id], (
-            f"{project_id}: accepted optimizer_scenarios_total must not change"
-        )
+        # The accepted pin (a count of the canonical-1.105.0 generation) is obsolete: the scenario universe legitimately moves with every engine version
+        # (each movement is attributed in the ledger). The protection it gave is restated as an independent accounting identity over the complete lists:
+        # every raw optimizer candidate belongs to exactly one scenario group (curated or music-suppressed), so nothing is dropped or double counted.
+        complete = allocated["optimizer_scenarios"] + allocated["optimizer_scenarios_music_suppressed"]
+        assert sum(sg["raw_variant_count"] for sg in complete) == allocated["optimizer_candidates_total"], f"{project_id}: every raw candidate is in exactly one scenario group"
+        assert len({v for sg in complete for v in sg.get("raw_variant_structure_ids", [])}) == allocated["optimizer_candidates_total"], f"{project_id}: no raw candidate appears in two groups"
         assert allocated["optimizer_executable_total"] == allocated["optimizer_scenarios_total"]
         assert (
             allocated["recommended_optimizer_options_total"] + allocated["evaluated_optimizer_alternatives_total"]
@@ -894,12 +908,18 @@ async def test_optimizer_candidates_carry_full_participant_and_component_detail(
     compacted summary row a consumer would have to special-case."""
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     oc = view["structures"]["allocated_structures"]["optimizer_candidates"]
+    # canonical-1.126.0: optimizer_candidates is a compact projection (the per-segment trace is dropped from the served row); the full detail stays one lookup away in the
+    # retained result's calculation_trace_json. Both halves are asserted: complete compact economics/participants, and the retained segments for the same structure.
+    from sqlalchemy import select as _select
+    from app.models.production import StructureCalculationResult
     for e in oc[:5]:
         assert "component_allocations" in e
-        assert "segments" in e
         assert "participants" in e and e["participants"]
         assert e["selected_incentive_usd"] is not None
         assert e["npc_with_adjustments_usd"] is not None
+        trace = (await db.execute(_select(StructureCalculationResult.calculation_trace_json).where(StructureCalculationResult.structure_id == e["structure_id"])
+                                  .order_by(StructureCalculationResult.created_at.desc()).limit(1))).scalar_one()
+        assert trace.get("segments") or trace.get("component_allocations"), f"{e['structure_id']}: the retained trace carries the segment / component detail the compact row omits"
 
 
 async def test_optimizer_candidates_scoped_to_current_engine_generation(db: AsyncSession):
@@ -1075,15 +1095,18 @@ async def test_optimizer_scenarios_ordered_practical_then_formal_then_advanced_a
         scenarios = view["structures"]["allocated_structures"]["optimizer_scenarios"]
         # FIT-AWARE PRESENTATION ORDER (2026-10-01) sorts by fit_priority first (stable), so the tier -> NPC order holds
         # within each fit-priority group, not across the whole list (canonical-1.104.0 adds weak-fit practical routes).
-        priorities = [s["fit_priority"] for s in scenarios]
-        assert priorities == sorted(priorities), f"{project_id}: fit priority order"
-        for priority in set(priorities):
-            group = [s for s in scenarios if s["fit_priority"] == priority]
-            ranks = [tier_rank[s["practicality_tier"]] for s in group]
-            assert ranks == sorted(ranks), f"{project_id}: tiers must appear in Practical -> Formal -> Advanced order, never interleaved"
-            # Within the Practical run, NPC must be strictly non-decreasing (economics untouched).
-            practical_npcs = [s["npc_verified_usd"] for s in group if s["practicality_tier"] == "PRACTICAL_HYBRID"]
-            assert practical_npcs == sorted(practical_npcs), f"{project_id}: Practical tier must be NPC-ascending"
+        # canonical-1.128.0 paging contract: optimizer_scenarios is ordered by (tier, NPC, economic identity) -- served_payload_projection._ORDER -- recomputed here independently.
+        expected = sorted(scenarios, key=lambda s: (tier_rank[s["practicality_tier"]], s["npc_verified_usd"] if s["npc_verified_usd"] is not None else float("inf"),
+                                                     s.get("economic_identity") or "", s.get("structure_id") or ""))
+        assert [s["structure_id"] for s in scenarios] == [s["structure_id"] for s in expected], f"{project_id}: tier -> NPC -> identity order"
+        ranks = [tier_rank[s["practicality_tier"]] for s in scenarios]
+        assert ranks == sorted(ranks), f"{project_id}: tiers must appear in Practical -> Formal -> Advanced order, never interleaved"
+        practical_npcs = [s["npc_verified_usd"] for s in scenarios if s["practicality_tier"] == "PRACTICAL_HYBRID"]
+        assert practical_npcs == sorted(practical_npcs), f"{project_id}: Practical tier must be NPC-ascending"
+        # The fit-aware presentation order (fit_priority first, 2026-10-01) is where it is still served: the evaluated alternatives.
+        evaluated = view["structures"]["allocated_structures"]["evaluated_optimizer_alternatives"]
+        fits = [e["fit_priority"] if e.get("fit_priority") is not None else 2 for e in evaluated]
+        assert fits == sorted(fits), f"{project_id}: evaluated alternatives keep the fit-priority order"
 
 
 async def test_workspace_headline_cards_favor_practical_over_advanced_for_fvd(db: AsyncSession):
@@ -1207,3 +1230,27 @@ async def test_little_utopia_has_no_ca_program_version_caution(db: AsyncSession)
     only -- it must never fire for an unrelated jurisdiction/production."""
     pkg = await build_generic_pkg_and_economics(db, LITTLE_UTOPIA_PROJECT_ID)
     assert pkg["facts"]["program_version_cautions"] == []
+
+
+@pytest.mark.asyncio
+async def test_default_pages_tile_the_complete_optimizer_lists_exactly_once(db: AsyncSession):
+    """The established paging contract (canonical-1.128.0): `<list>_page.total` is the exact size of the full list, and walking `optimizer_list_offsets` page by page reproduces the
+    complete list in its served order with no entry missing and none repeated, so every candidate stays accessible. Checked on F#K Valentine's Day (the widest list)."""
+    full = (await build_production_and_structures(db, FVD_PROJECT_ID))["structures"]["allocated_structures"]
+    for name in ("optimizer_candidates", "optimizer_scenarios"):
+        want = [e["structure_id"] for e in full[name]]
+        assert full[f"{name}_page"]["total"] == len(want) and not full[f"{name}_page"]["has_more"], f"{name}: the unbounded read is the whole list"
+        got, offset, calls = [], 0, 0
+        while True:
+            page = (await _paged_build_production_and_structures(db, FVD_PROJECT_ID, optimizer_list_offsets={name: offset}, optimizer_list_limit=250))["structures"]["allocated_structures"]
+            meta = page[f"{name}_page"]
+            assert meta["total"] == len(want), f"{name}: the page total is the exact list size"
+            got += [e["structure_id"] for e in page[name][:meta["returned"]]]
+            calls += 1
+            if not meta["has_more"]:
+                break
+            assert meta["next_cursor"], f"{name}: a page with more entries carries a cursor"
+            offset += meta["limit"]
+        assert got == want, f"{name}: pages of 250 reproduce the complete list in order"
+        assert len(set(got)) == len(got) == meta["total"], f"{name}: every entry exactly once"
+        assert calls == -(-len(want) // 250)

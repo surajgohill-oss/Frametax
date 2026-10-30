@@ -141,7 +141,9 @@ export default function LineInputsSection({ projectId, structure, refreshKey, on
             ))}
             {view.canadian_labour?.lines?.[l.line_id] && (() => {
               const d = view.canadian_labour.lines[l.line_id];
-              return <span className="pd-name text-tertiary" data-labour-basis={l.line_id}>Federal PSTC labour basis: {d.stated_eligible_usd.toLocaleString()} USD from stated facts{d.planning_eligible_usd != null && d.planning_eligible_usd !== d.stated_eligible_usd ? ` · ${d.planning_eligible_usd.toLocaleString()} USD planning estimate with the ASSUMED default (not priced, not verified)` : ""}{d.share_basis === "STATED" && d.eligible_share_pct != null ? ` · ${d.eligible_share_pct}% of the line` : ""}</span>;
+              const assumed = d.planning_eligible_usd != null && d.planning_eligible_usd > d.stated_eligible_usd;
+              const tier = view.canadian_labour.basis_status === "EVIDENCED" ? "EVIDENCED" : "PRODUCER_STATED";
+              return <span className="pd-name text-tertiary" data-labour-basis={l.line_id} data-labour-basis-status={assumed ? "ASSUMED_FOR_PLANNING" : (d.stated_eligible_usd > 0 ? tier : "NONE")}>Federal PSTC labour basis: {d.stated_eligible_usd.toLocaleString()} USD {tier === "EVIDENCED" ? "evidenced" : "stated by the producer"}{assumed ? ` · ${(d.planning_eligible_usd - d.stated_eligible_usd).toLocaleString()} USD ASSUMED FOR PLANNING (priced as a modeled estimate, carried as a presumed fact; not verified)` : ""}{d.share_basis === "STATED" && d.eligible_share_pct != null ? ` · ${d.eligible_share_pct}% of the line` : ""}</span>;
             })()}
             {l.allocations && allocationEditor(l)}
             {(l.portions ?? []).map((p) => {

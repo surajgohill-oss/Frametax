@@ -774,12 +774,24 @@ async def build_project_economic_inputs(
     # by spend_category alone -- the confirmed defect this pass fixes.
     # An explicit caller-supplied amount_fact (e.g. a project-level
     # override) always wins; this only FILLS IN keys not already present.
-    from app.calculators.canadian_labour_basis import derive_canadian_labour_basis, to_amount_facts
+    from app.calculators.canadian_labour_basis import ASSUMABLE_CATEGORIES, derive_canadian_labour_basis, to_planning_amount_facts
     _base_amount_facts = _amount_facts(fact_rows)
+    # The agreed PLANNING default: unstated below-the-line crew lines are modeled as 100% resident-paid Canadian-service labour (never ATL roles, never budget-classified non-resident labour;
+    # the project's scenario_btl_nonlocal election removes it). It enters the priced basis as a separate, labelled assumed amount (ca_federal_pstc_assumed_labour_usd) next to the stated
+    # one (ca_federal_pstc_stated_labour_usd) and is disclosed on every priced PSTC figure; it is never persisted as a fact.
+    _scenario_nonlocal = any(
+        f.fact_key == FACT_SCENARIO_BTL_NONLOCAL and str(f.value).strip().lower() in ("true", "1", "yes") for f in fact_rows
+    )
     _cdn_labour_result = derive_canadian_labour_basis(
         lines=lines, fact_rows=fact_rows, gross_budget_usd=float(doc.total_budget_raw),
+        assumable_line_ids=frozenset() if _scenario_nonlocal else frozenset(
+            l.line_id for l in lines if not l.is_memo and (l.spend_category or "") in ASSUMABLE_CATEGORIES
+        ),
     )
-    for _k, _v in to_amount_facts(_cdn_labour_result).items():
+    _explicit_pstc_basis = "ca_federal_pstc_qualified_labour_usd" in _base_amount_facts   # a project-level override states the basis outright: no assumption is layered on it
+    for _k, _v in to_planning_amount_facts(_cdn_labour_result).items():
+        if _explicit_pstc_basis and (_k.startswith(("pstc_plan_frac:", "pstc_stated_frac:")) or _k == "ca_federal_pstc_assumed_labour_usd"):
+            continue
         _base_amount_facts.setdefault(_k, _v)
 
     # NA-RECONCILIATION-23: explicit production locations reduce to numeric locality facts (days at qualifying / non-qualifying / unclassified locations per jurisdiction); stated numbers always win.

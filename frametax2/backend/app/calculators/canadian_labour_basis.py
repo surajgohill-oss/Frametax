@@ -515,6 +515,73 @@ def derive_canadian_labour_basis(
     )
 
 
+PSTC_SLUG = "ca_federal_pstc"
+PSTC_QUALIFIED_KEY = "ca_federal_pstc_qualified_labour_usd"
+PSTC_STATED_KEY = "ca_federal_pstc_stated_labour_usd"
+PSTC_ASSUMED_KEY = "ca_federal_pstc_assumed_labour_usd"
+PSTC_MODEL_KEY = "ca_federal_pstc_labour_model_applied"   # 1.0 whenever the line-level labour model ran: a PSTC basis of zero then means UNPRICED, never "fall back to the raw category sum"
+LINE_PLAN_FRAC_PREFIX = "pstc_plan_frac:"          # per line: eligible fraction INCLUDING the planning default (stated lines at their stated amount)
+LINE_STATED_FRAC_PREFIX = "pstc_stated_frac:"      # per line: eligible fraction from stated / evidenced facts only
+BASIS_ASSUMED_FOR_PLANNING, BASIS_PRODUCER_STATED, BASIS_EVIDENCED = "ASSUMED_FOR_PLANNING", "PRODUCER_STATED", "EVIDENCED"
+
+
+def to_planning_amount_facts(result: CanadianLabourBasisResult) -> dict[str, float]:
+    """The facts the PRICING path reads. `to_amount_facts` (stated / evidenced only) is unchanged; this adds the labelled planning default.
+
+    * `ca_federal_pstc_qualified_labour_usd` is the EFFECTIVE modeled basis = stated + assumed (the key the rate rule reads, so direct, stack and hybrid paths share one figure);
+    * `ca_federal_pstc_stated_labour_usd` is the stated / evidenced part alone; `ca_federal_pstc_assumed_labour_usd` is the planning increment (only when > 0);
+    * per-line fractions (`pstc_plan_frac:` / `pstc_stated_frac:`) let a routed segment take only ITS OWN lines, never the whole project's figure; `ca_federal_pstc_labour_model_applied`
+      marks that the line-level model ran, so a basis of zero (nothing stated, nothing assumable, or an explicit 0%) leaves PSTC unpriced instead of re-deriving the raw labour-category sum."""
+    out = dict(to_amount_facts(result))
+    stated = out.get(PSTC_QUALIFIED_KEY) or 0.0
+    planning = float(result.planning_eligible_labour_usd.get(PSTC_SLUG) or 0.0)
+    assumed = round(max(0.0, planning - stated), 2)
+    if stated > 0:
+        out[PSTC_STATED_KEY] = stated
+    out[PSTC_MODEL_KEY] = 1.0
+    if assumed > 0.0:
+        out[PSTC_QUALIFIED_KEY] = round(stated + assumed, 2)
+        out[PSTC_ASSUMED_KEY] = assumed
+    for d in result.line_dispositions:
+        amount = (d.eligible_usd or 0.0) + (d.excluded_usd or 0.0)
+        if d.program_slug != PSTC_SLUG or amount <= 0:
+            continue
+        plan_usd = d.planning_eligible_usd if d.planning_eligible_usd is not None else d.eligible_usd
+        out[LINE_PLAN_FRAC_PREFIX + d.line_id] = round(min(1.0, max(0.0, plan_usd / amount)), 8)
+        out[LINE_STATED_FRAC_PREFIX + d.line_id] = round(min(1.0, max(0.0, d.eligible_usd / amount)), 8)
+    return out
+
+
+def basis_status(amount_facts: dict | None, stated_tier: str = BASIS_PRODUCER_STATED) -> str | None:
+    """The served disclosure state of the PSTC labour basis: ASSUMED_FOR_PLANNING when any of it rests on the planning default, else PRODUCER_STATED / EVIDENCED
+    (the tier of the stated facts), else None when no basis exists."""
+    facts = amount_facts or {}
+    if (facts.get(PSTC_ASSUMED_KEY) or 0.0) > 0:
+        return BASIS_ASSUMED_FOR_PLANNING
+    return stated_tier if (facts.get(PSTC_QUALIFIED_KEY) or 0.0) > 0 else None
+
+
+def planning_presumption(amount_facts: dict | None, *, segment_assumed_usd: float | None = None, segment_stated_usd: float | None = None) -> dict | None:
+    """The `presumed_facts` entry a priced PSTC figure carries while any of its basis is an assumption. It never changes a number: it keeps the leg from being served
+    as confirmed economics (incentive_potential holds economics_certainty at CONDITIONAL) and names exactly what is assumed."""
+    facts = amount_facts or {}
+    assumed = segment_assumed_usd if segment_assumed_usd is not None else facts.get(PSTC_ASSUMED_KEY)
+    if not assumed or assumed <= 0:
+        return None
+    stated = segment_stated_usd if segment_stated_usd is not None else (facts.get(PSTC_STATED_KEY) or 0.0)
+    return {
+        "condition_id": "ca-pstc-labour-share-assumed", "state": "USER_FACT_REQUIRED", "basis_status": BASIS_ASSUMED_FOR_PLANNING,
+        "description": "Share of below-the-line crew labour that is paid to Canadian-resident individuals for services rendered in Canada",
+        "quote": "PSTC: remuneration paid to a Canadian-resident individual for services personally rendered in Canada (the same dollars meet both tests).",
+        "note": (f"ASSUMED FOR PLANNING, not verified: ${assumed:,.2f} of the priced labour basis assumes 100% of unstated below-the-line crew lines is resident-paid Canadian-service labour "
+                 f"(stated or evidenced part: ${stated:,.2f}). State the eligible share on each line to replace it. Above-the-line roles and lines budget-classified as non-resident are never assumed. "
+                 "It stands in for an UNKNOWN share (Unknown is not a stated election and is never recorded as one) and is derived from the budget's own category classification, "
+                 "which is historical source data: it models how a Canadian production would hire, and does not determine eligibility for the prospective production. "
+                 "This is a modeled estimate, not a residency fact, a confirmed credit or a guaranteed entitlement."),
+        "assumed_usd": round(assumed, 2), "stated_usd": round(stated, 2),
+    }
+
+
 def to_amount_facts(result: CanadianLabourBasisResult) -> dict[str, float]:
     """Only emits a key when a real, evidenced, non-zero qualified amount
     exists -- never a fabricated 0.0 standing in for 'no evidence', which

@@ -1311,6 +1311,15 @@ def _segment_category_spend(allocations, spend_category_by_code) -> dict[str, fl
     return out
 
 
+def _pstc_planning_presumption(slug: str, assumed_usd: float | None, stated_usd: float | None) -> tuple[dict, ...]:
+    """The segment's own ASSUMED_FOR_PLANNING disclosure (none when its PSTC basis is fully stated, or the program is not PSTC)."""
+    if slug != "ca_federal_pstc" or not assumed_usd:
+        return ()
+    from app.calculators.canadian_labour_basis import planning_presumption
+    entry = planning_presumption({}, segment_assumed_usd=assumed_usd, segment_stated_usd=stated_usd or 0.0)
+    return (entry,) if entry else ()
+
+
 def presumed_facts_from_resolution(rr) -> tuple[dict, ...]:
     """Unresolved NON-gating conditions of a non-band resolved tier: facts the modeled figure presumes without evidence. The ONE derivation shared by a priced segment and by a
     same-jurisdiction stack (whose per-program legs are priced from the program's own resolution), so a missing producer fact lowers economics certainty in both."""
@@ -1739,6 +1748,13 @@ def price_segment(
     # all -- the real derived figure is used instead.
     _caller_amount_facts = dict(amount_facts or {})
     _derived_amount_facts = dict(_caller_amount_facts)
+    from app.calculators.canadian_labour_basis import LINE_PLAN_FRAC_PREFIX, LINE_STATED_FRAC_PREFIX, PSTC_MODEL_KEY
+    _pstc_model_applied = slug == "ca_federal_pstc" and PSTC_MODEL_KEY in _caller_amount_facts
+    _pstc_plan_frac = ({k[len(LINE_PLAN_FRAC_PREFIX):]: v for k, v in _caller_amount_facts.items() if k.startswith(LINE_PLAN_FRAC_PREFIX)}
+                       if _pstc_model_applied else {})
+    _pstc_stated_frac = {k[len(LINE_STATED_FRAC_PREFIX):]: v for k, v in _caller_amount_facts.items() if k.startswith(LINE_STATED_FRAC_PREFIX)} if _pstc_model_applied else {}
+    _pstc_segment_stated_usd: float | None = None
+    _pstc_segment_assumed_usd: float | None = None
     for _rule in get_rate_rules(slug):
         for _cond in _rule.conditions:
             if not _cond.amount_fact_key:
@@ -1822,6 +1838,12 @@ def price_segment(
                 from app.data.program_rate_rules import oregon_per_payee_capped_total
                 _per_line_amounts = [_qualifies_cb.get(a.line_id, 0.0) for a in _cb_lines]
                 _derived_subtotal = oregon_per_payee_capped_total(_per_line_amounts)
+            elif _cond.amount_fact_key == "ca_federal_pstc_qualified_labour_usd" and _pstc_model_applied:
+                # The planning default is in play: this segment takes ONLY its own lines at each line's eligible fraction (stated lines at their stated share, unstated
+                # below-the-line crew lines at the labelled assumed 100%), so a routed segment never inherits the whole project's figure. One derivation for every path.
+                _derived_subtotal = round(sum(a.amount_usd * _pstc_plan_frac.get(a.line_id or "", 0.0) for a in _cb_lines), 2)
+                _pstc_segment_stated_usd = round(sum(a.amount_usd * _pstc_stated_frac.get(a.line_id or "", 0.0) for a in _cb_lines), 2)
+                _pstc_segment_assumed_usd = round(max(0.0, _derived_subtotal - _pstc_segment_stated_usd), 2)
             elif _cond.amount_fact_key in (
                 "ca_federal_cptc_qualified_labour_usd", "ca_federal_pstc_qualified_labour_usd",
             ) and _cond.amount_fact_key in _caller_amount_facts:
@@ -1867,7 +1889,7 @@ def price_segment(
                     _derived_subtotal_fx_unresolved = True
             if _derived_subtotal_fx_unresolved:
                 continue
-            if _cond.amount_fact_key in _caller_amount_facts:
+            if _cond.amount_fact_key in _caller_amount_facts and not (_pstc_model_applied and _cond.amount_fact_key == "ca_federal_pstc_qualified_labour_usd"):
                 _caller_val = _caller_amount_facts[_cond.amount_fact_key]
                 if (not isinstance(_caller_val, (int, float)) or isinstance(_caller_val, bool)
                         or not math.isfinite(_caller_val)
@@ -2615,7 +2637,7 @@ def price_segment(
         qpe_dollar_cap_applied_usd=qpe_dollar_cap_applied,
         qpe_share_cap_applied_usd=qpe_share_cap_applied,
         qpe_share_cap_groups=tuple(qpe_share_cap_groups),
-        presumed_facts=presumed_facts + tuple(membership_presumptions),
+        presumed_facts=presumed_facts + tuple(membership_presumptions) + _pstc_planning_presumption(slug, _pstc_segment_assumed_usd, _pstc_segment_stated_usd),
         contingency_allowance_applied_usd=contingency_allowance_applied,
         qpe_dollar_limit_usd=qpe_dollar_limit,
         qpe_dollar_limit_basis=qpe_dollar_basis,

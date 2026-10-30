@@ -416,6 +416,25 @@ def _probe_segment_amount(slug: str, amount_usd: float):
 
 # ── CLUSTER 7 — dollar caps must constrain the served incentive ──────────
 
+def _a_priceable_program_without_a_declared_dollar_cap():
+    """A program that INDEPENDENTLY declares no dollar cap: no per-project cap and no annual cap in the requirements registry and no incentive-value cap rule, found by
+    scanning the registries (never by asking the resolver under test), and that prices an ordinary 11,000,000 segment. Greece was the former choice; it gained a
+    per-project cap in a later engine version, so a fixed slug here would be a stale oracle."""
+    from app.data.program_rate_rules import INCENTIVE_VALUE_CAP_RULES
+    from app.data.program_requirements import _REGISTRY as _REQUIREMENTS
+    for slug in sorted(_REQUIREMENTS):
+        profile = _REQUIREMENTS[slug]
+        if profile.per_project_cap_usd is not None or profile.annual_program_cap_usd is not None or slug in INCENTIVE_VALUE_CAP_RULES:
+            continue
+        try:
+            seg = _probe_segment_amount(slug, 11_000_000.0)
+        except Exception:
+            continue
+        if seg.executable and seg.incentive_floor_usd:
+            return slug
+    raise AssertionError("no priceable program without a declared dollar cap was found")
+
+
 def test_dollar_cap_resolver_prefers_the_smallest_applicable_cap():
     """per_project_cap_usd and annual_cap_usd already existed as canonical
     fields. The binding cap is the smallest applicable one, and its type and
@@ -428,7 +447,7 @@ def test_dollar_cap_resolver_prefers_the_smallest_applicable_cap():
     assert "per_project_cap_usd" in basis
 
     # A program with no declared dollar cap must report absence, not zero.
-    cap, kind, basis, _fx_err, _unresolved = _resolve_incentive_dollar_cap("gr_cash_rebate")
+    cap, kind, basis, _fx_err, _unresolved = _resolve_incentive_dollar_cap(_a_priceable_program_without_a_declared_dollar_cap())
     assert cap is None and kind is None and basis is None
 
 
@@ -468,7 +487,7 @@ def test_a_non_binding_dollar_cap_does_not_clip():
 
 
 def test_a_program_without_a_dollar_cap_is_unaffected():
-    seg = _probe_segment_amount("gr_cash_rebate", 11_000_000.0)
+    seg = _probe_segment_amount(_a_priceable_program_without_a_declared_dollar_cap(), 11_000_000.0)
     assert seg.executable is True
     assert seg.incentive_cap_usd is None
     assert seg.incentive_cap_applied_usd == 0.0

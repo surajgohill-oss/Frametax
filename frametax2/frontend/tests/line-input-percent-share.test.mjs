@@ -70,6 +70,10 @@ test("the editor renders the percent control, calculated amount, assumed label, 
   assert.match(src, /data-reset-percent=/);
   assert.match(src, /Reset to scenario default/);
   assert.match(src, /data-labour-basis=/);
+  assert.match(src, /data-labour-basis-status=/);
+  assert.match(src, /ASSUMED FOR PLANNING/);
+  assert.match(src, /PRODUCER_STATED/);
+  assert.match(src, /EVIDENCED/);
   const superseded = src.match(/const SUPERSEDED = new Set\(\[([^\]]*)\]/)[1];
   assert.ok(!superseded.includes("payee_type"), "payee_type is the line's own classification and stays visible and editable");
 });

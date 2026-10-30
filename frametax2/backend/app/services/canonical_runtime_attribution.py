@@ -64,6 +64,18 @@ _SEMANTIC_PRICING_MODULES = (
     "app.calculators.canonical_requirements_gate_bridge",
     "app.calculators.canonical_stack_bridge",
     "app.data.program_rate_rules",
+    # ALLOCATION / PLANNING-DEFAULT CLOSEOUT (engine 1.131.0). These decide HOW the hashed amount facts are produced and consumed: the per-payee caps, the
+    # percentage-of-line and planning-default Canadian labour basis, the allocation / payee-fact parsers, and the inputs builder with its resolved scenario facts.
+    # The facts they emit (amount_facts) were already in the fingerprint; their ARITHMETIC was not, so the same stored allocations / shares produced different
+    # economics under changed code while the retained rows were still served as current. Over-invalidation is safe; under-invalidation served old cap arithmetic.
+    "app.calculators.per_payee_limits",
+    "app.calculators.canadian_labour_basis",
+    "app.calculators.line_allocations",
+    "app.calculators.ny_atl_individual_cap",
+    "app.calculators.scenario_facts",
+    "app.calculators.locality",
+    "app.services.resolved_facts",
+    "app.services.canonical_project_economics",
 )
 
 #: Callables returning the live canonical rule DATA. Hashing their repr binds

@@ -52,6 +52,24 @@ FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 
 
+_ALL_STRUCTURES: dict[str, list] = {}
+
+
+async def _all_structures(session, project_id):
+    """Every served structure, paged through `candidates_page` (the first page is bounded to 100 detailed candidates; treaty opportunities and other families are
+    reached on later pages). Cached per project: one walk per project per session."""
+    if project_id not in _ALL_STRUCTURES:
+        entries, offset = [], 0
+        while True:
+            allocated = (await build_production_and_structures(session, project_id, candidate_offset=offset))["structures"]["allocated_structures"]
+            entries += allocated["structures"]
+            if not allocated["candidates_page"]["has_more"]:
+                break
+            offset += allocated["candidates_page"]["limit"]
+        _ALL_STRUCTURES[project_id] = entries
+    return _ALL_STRUCTURES[project_id]
+
+
 @pytest.fixture
 async def db():
     async with AsyncSession(engine, expire_on_commit=False) as session:
@@ -93,7 +111,7 @@ async def test_bilateral_treaty_with_home_as_a_party_includes_home_in_participan
     checked_any = False
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
         view = await build_production_and_structures(db, project_id)
-        structures = view["structures"]["allocated_structures"]["structures"]
+        structures = await _all_structures(db, project_id)
         home = view["production"]["jurisdiction_code"]
         home_bilateral = [
             s for s in structures
@@ -110,7 +128,7 @@ async def test_bilateral_treaty_with_home_as_a_party_includes_home_in_participan
 
 async def test_bilateral_treaty_between_two_other_candidates_excludes_home(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    structures = view["structures"]["allocated_structures"]["structures"]
+    structures = await _all_structures(db, FVD_PROJECT_ID)
     home = view["production"]["jurisdiction_code"]
     third_party_bilateral = [
         s for s in structures
@@ -131,7 +149,7 @@ async def test_bilateral_treaty_between_two_other_candidates_excludes_home(db: A
 
 async def test_multilateral_treaty_opportunity_includes_home_as_a_genuine_member(db: AsyncSession):
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    structures = view["structures"]["allocated_structures"]["structures"]
+    structures = await _all_structures(db, FVD_PROJECT_ID)
     home = view["production"]["jurisdiction_code"]
     multilateral = [
         s for s in structures
@@ -233,21 +251,15 @@ async def test_little_utopia_named_regression_structure_excludes_non_claiming_us
     8172eb82-c2cc-4816-a331-beffddab5199 must serve participants=['MU',
     'CA-MB'], never including the non-claiming stated-location 'US'
     segment (previously ['MU', 'CA-MB', 'US'])."""
-    view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
-    structures = view["structures"]["allocated_structures"]["structures"]
-    target = next(
-        (s for s in structures if s["structure_id"] == "8172eb82-c2cc-4816-a331-beffddab5199"), None,
-    )
-    if target is None:
-        pytest.skip("named regression structure not present in the current persisted fingerprint")
-    assert sorted(target["participants"]) == ["CA-MB", "MU"], (
-        f"expected exactly ['CA-MB', 'MU'] (US excluded as a non-claiming stated-location "
-        f"segment), got {target['participants']}"
-    )
-    # The non-claiming US segment must still be visible in the detailed
-    # trace/allocation — only excluded from the canonical PARTICIPANT
-    # list, never deleted from the data.
-    us_segment = next((seg for seg in target.get("segments") or [] if seg.get("jurisdiction_code") == "US"), None)
+    # The pinned structure id is a row of ONE past generation (ids are re-created by every evaluation), so a current generation never contains it. The invariant it protected is
+    # checked on every current structure instead: a non-claiming stated-location segment stays visible in the trace and is never a participant.
+    structures = await _all_structures(db, LITTLE_UTOPIA_PROJECT_ID)
+    with_non_claiming_us = [s for s in structures if any(seg.get("jurisdiction_code") == "US" and seg.get("claims_incentive") is False for seg in (s.get("segments") or []))]
+    if not with_non_claiming_us:
+        pytest.skip("no current Little Utopia structure carries a non-claiming US segment")
+    for target in with_non_claiming_us:
+        assert "US" not in target["participants"], f"{target['structure_id']}: a non-claiming US segment must not be a participant (got {target['participants']})"
+    us_segment = next((seg for seg in with_non_claiming_us[0].get("segments") or [] if seg.get("jurisdiction_code") == "US"), None)
     assert us_segment is not None, "the real US segment must remain visible in the detailed trace"
     assert us_segment.get("claims_incentive") is False
 
@@ -257,8 +269,7 @@ async def test_single_country_and_treaty_participants_unaffected_by_p0_2_fix(db:
     only — single_country and treaty_coproduction participant
     construction must be byte-identical to before."""
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
-        view = await build_production_and_structures(db, project_id)
-        structures = view["structures"]["allocated_structures"]["structures"]
+        structures = await _all_structures(db, project_id)
         single = next((s for s in structures if s["structure_type"] == "single_country"), None)
         assert single is not None
         assert single["participants"] == [single["primary_jurisdiction"]]
