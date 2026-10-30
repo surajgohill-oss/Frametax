@@ -113,10 +113,12 @@ async def test_bilateral_treaty_with_home_as_a_party_includes_home_in_participan
         view = await build_production_and_structures(db, project_id)
         structures = await _all_structures(db, project_id)
         home = view["production"]["jurisdiction_code"]
+        # Treaty labels carry the country NAME, so a "<code> + " label prefix never matched and this control always skipped. A home-party bilateral is identified by its participants.
         home_bilateral = [
             s for s in structures
             if s["structure_type"] == "treaty_coproduction"
-            and s["label"].startswith(f"{home} + ")
+            and " + " in s["label"] and home in s["participants"]
+            and "Eurimages" not in s["label"] and "European Convention" not in s["label"]
         ]
         for s in home_bilateral:
             checked_any = True

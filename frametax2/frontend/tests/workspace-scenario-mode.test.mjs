@@ -26,6 +26,7 @@ import {
   OPTIMIZER_FAMILIES,
   admissibleForMode,
   optimizerProjection,
+  pinSelectedLeading,
   resolveRequestedWorkspaceMode,
   selectSixSlots,
   workspaceUrlForMode,
@@ -527,4 +528,33 @@ test("optimizerProjection: non-dominated evaluated alternatives sort before domi
   const allocated = allocatedOf([dominated, notDominated], [], [dominated, notDominated], [dominated, notDominated]);
   const { evaluated } = optimizerProjection(allocated);
   assert.deepEqual(evaluated.map((s) => s.structure_id), ["not-dominated", "dominated"]);
+});
+
+
+// ── Producer-selected leading structure: reachable on the rack across paging ─────────────────────────────────
+test("pinSelectedLeading: a selected structure that is in neither the ranked pool nor the dropdown takes the first leading slot, shifts the rest down, and is never duplicated", () => {
+  const anchor = structure({ structure_id: "anchor", primary_jurisdiction: "GR", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const winners = ["CA-NL", "CA-MB", "CA-QC", "CA-NS", "CA-AB", "CA-BC", "CA-SK"].map((jur, i) => structure({ structure_id: `w-${jur}`, primary_jurisdiction: jur, npc_with_adjustments_usd: 10 + i }));
+  const selected = structure({ structure_id: "selected-on-stack", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 99 });
+  const allocated = { ...allocatedOf([anchor, ...winners], [anchor, ...winners]), structures: [anchor, ...winners, selected] };
+  const base = selectSixSlots(allocated, MODE_NORMAL, null);
+  assert.ok(!base.slots.some((s) => s.structure_id === "selected-on-stack"), "precondition: the ranked rack does not show the selected structure");
+  assert.ok(![...base.dropdownOptions].some((s) => s.structure_id === "selected-on-stack"), "precondition: nor does the dropdown");
+  const pinned = pinSelectedLeading(base, allocated, "selected-on-stack");
+  assert.equal(pinned.slots.length, 6, "the rack stays six cards");
+  assert.equal(pinned.slots[0].structure_id, "anchor");
+  assert.equal(pinned.slots[1].structure_id, "selected-on-stack", "the selection is the first leading card");
+  assert.deepEqual(pinned.slots.slice(2, 5).map((s) => s.structure_id), base.leading.slice(0, 3).map((s) => s.structure_id), "the ranked leaders follow in order");
+  assert.ok(pinned.dropdownOptions.some((s) => s.structure_id === base.leading[3].structure_id), "the displaced fourth leader stays selectable in the dropdown");
+  const ids = [...pinned.slots, ...pinned.dropdownOptions].map((s) => s.structure_id);
+  assert.equal(new Set(ids).size, ids.length, "no structure appears twice across the rack and the dropdown");
+});
+
+test("pinSelectedLeading: no-ops when the selection is already on the rack, absent from the served page, unpriced, the anchor, or null", () => {
+  const anchor = structure({ structure_id: "anchor", primary_jurisdiction: "GR", is_baseline: true, npc_with_adjustments_usd: 1 });
+  const winners = ["CA-NL", "CA-MB", "CA-QC", "CA-NS", "CA-AB", "CA-BC"].map((jur, i) => structure({ structure_id: `w-${jur}`, primary_jurisdiction: jur, npc_with_adjustments_usd: 10 + i }));
+  const unpriced = structure({ structure_id: "unpriced", primary_jurisdiction: "CA-ON", npc_with_adjustments_usd: 5, is_fully_priced: false });
+  const allocated = { ...allocatedOf([anchor, ...winners], [anchor, ...winners]), structures: [anchor, ...winners, unpriced] };
+  const base = selectSixSlots(allocated, MODE_NORMAL, null);
+  for (const id of ["w-CA-NL", "not-on-page", "unpriced", "anchor", null]) assert.equal(pinSelectedLeading(base, allocated, id), base, `selection ${id} changes nothing`);
 });

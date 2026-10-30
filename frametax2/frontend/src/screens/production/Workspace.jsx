@@ -16,7 +16,7 @@ import { bestPricedCandidate } from "../../lib/bestPricedCandidate";
 import { readIncentivePotential } from "../../lib/incentivePotential";
 import EconomicWell from "../../components/EconomicWell";
 import { isBaselineStructure, qpeOf, classifyRouteTies } from "../../lib/productionOptions";
-import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
+import { MODE_NORMAL, MODE_OPTIMIZER, optimizerProjection, pinSelectedLeading, resolveRequestedWorkspaceMode, selectSixSlots } from "../../lib/workspaceScenarioMode";
 import FXStrip from "../../components/FXStrip";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
@@ -552,10 +552,10 @@ export default function Workspace() {
   const { cols, dropdownOptions: overflow, dropdownEvaluatedAlternatives, dropdownOpportunities, tiedStructureIds } = useMemo(
     () => {
       const { slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps, tiedStructureIds: ties } =
-        selectSixSlots(allocated, workspaceMode, slot6Override);
+        pinSelectedLeading(selectSixSlots(allocated, workspaceMode, slot6Override), allocated, leadingStructureId);
       return { cols: slots, dropdownOptions, dropdownEvaluatedAlternatives: evalAlts, dropdownOpportunities: opps, tiedStructureIds: ties || {} };
     },
-    [allocated, workspaceMode, slot6Override],
+    [allocated, workspaceMode, slot6Override, leadingStructureId],
   );
 
   // GW-OI-005: the Evaluated Alternatives dropdown group is where hundreds

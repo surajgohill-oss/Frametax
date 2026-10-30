@@ -239,6 +239,31 @@ export function admissibleForMode(allocated, mode) {
   return [...recommended, ...evaluated];
 }
 
+// PRODUCER-SELECTED LEADING STRUCTURE (accessibility across paging). The six-slot rack and its "Other scenarios" selector are built from the ranked
+// pools (best-per-jurisdiction / recommended + evaluated), so a structure the producer chose with "Set as leading" can be in NEITHER: e.g. the selected
+// Ontario CPTC + OFTTC stack when Ontario's ranked winner is a different stack. The served page always carries the selected structure (the backend pins it),
+// so the selection is pinned here: it takes the first leading slot (the rest shift down; the displaced fourth leading entry stays selectable in the dropdown)
+// and is removed from every dropdown list so it never appears twice. A selection that is already on the rack, is not on the served page, or is not an
+// executable priced structure changes nothing.
+export function pinSelectedLeading(result, allocated, selectedId) {
+  if (!result || !selectedId) return result;
+  if ((result.slots || []).some((s) => s.structure_id === selectedId)) return result;
+  const selected = allocated?.structures?.find((s) => s.structure_id === selectedId);
+  if (!selected || selected.is_fully_priced === false || selected.is_baseline) return result;
+  const notSelected = (s) => s.structure_id !== selectedId;
+  const leading = [selected, ...(result.leading || []).slice(0, 3)];
+  const displaced = (result.leading || []).slice(3);
+  const slot6 = result.slot6 && notSelected(result.slot6) ? result.slot6 : null;
+  return {
+    ...result,
+    leading,
+    slot6,
+    slots: [result.anchor, ...leading, slot6].filter(Boolean),
+    dropdownOptions: [...displaced, ...(result.dropdownOptions || [])].filter(notSelected),
+    dropdownEvaluatedAlternatives: (result.dropdownEvaluatedAlternatives || []).filter(notSelected),
+  };
+}
+
 // Six-slot Workspace composition for the active mode.
 //   slot 1 — Current Location: the production's real baseline/anchor
 //     structure. NEVER filtered by mode ("Current Location never changes
