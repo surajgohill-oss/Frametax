@@ -150,3 +150,30 @@ Three further timeouts, all recorded and none a pass: the editor-triggered `POST
 4. OPEN: the Workspace card fix is verified on one project (F#K Valentine's Day, the producer-selected case); the other three have no producer selection and were not re-driven.
 5. OPEN, historical reconciliation: the base of each source budget estimate, the regime in force at each budget date (LU, FVD, BH), every application / prequalification letter except LLS's, and the LLS Program 3.0 qualified-expenditure schedule are not in retained evidence; the budget dates of FVD (ambiguous) and BH (none) are NOT_ESTABLISHED.
 6. Independent protected-preview verification is still required; UI status IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION, not complete. Per-person Canadian eligibility remains unsupported; the PSTC assistance allocation stays assumed.
+
+
+## Follow-up 2 (2026-10-30): FP-ARC-02 fixed and verified; FVD bridge to the cent
+
+### A. Producer-input Save now uses the controlled evaluation workflow
+Cause (confirmed): `POST /evaluation/begin` called `evaluate_project` inline on the API's event loop with no deadline. Fix, reusing the existing workflow (no parallel evaluator, ceiling stays 720 s): the HTTP route starts the one existing evaluation through `bounded_regeneration.regenerate_project` in a worker process (`services/evaluation_worker.py`), single-flight per project (`services/evaluation_jobs.py`; a PostgreSQL advisory lock refuses a duplicate from another API process and is released with the connection), with the parent terminating then killing at the deadline (PostgreSQL rolls the transaction back, so no partial generation exists and saved inputs and prior generations are untouched). `GET /projects/{id}/evaluation/status` reports idle / running / completed / blocked / timed_out / failed with start, deadline and elapsed time; the frontend run store polls it and shows the server's own message with Retry. `CINEGLOBE_EVALUATION_DEADLINE_SECONDS` only lowers the deadline. Neither module is fingerprint-hashed (no generation was staled).
+
+Tests: 15 new backend tests (`test_evaluation_jobs_deadline.py`: single-flight join, parent deadline kill and retry, worker timeout outcome, crash, external SIGKILL not mislabelled, blocked inputs, duplicate refusal, cancel cleanup, per-project independence, non-blocking status, ceiling never raised, lock key, lock released) plus the existing route/guard tests (22 pass) and `test_served_contract_bounded.py` (8 pass; the direct-call inline path). Six tests in `test_bounded_evaluation_response.py` fail in this environment because they call `evaluate_project` on a real production id that is not in `frametax2_pytest` (they do not touch the route; not re-run at the previous commit). Frontend: 6 new tests, 527 of 527.
+
+Rendered, isolated copies only (DB `frametax2_four_closeout_20261029`; the live database untouched):
+| Step | Project | Result |
+|---|---|---|
+| Two POSTs while idle-current | Lips Like Sugar | one worker, second response `joined: true`; status answered in 10-30 ms; run was an `EVALUATION_REUSED` (3.6 s) |
+| UI Save, 25 s deadline | Lips Like Sugar | UI "Recalculating..."; status 21 ms while running; `timed_out` at 27.7 s; UI banner with the server message and Retry; rows 6,824 and fingerprint unchanged; stored share 40; no worker process; no advisory lock |
+| UI Save, 8 s deadline | Bath House | `timed_out` at 10.3 s, same banner; rows 3,796 unchanged; share 55 stored |
+| Worker SIGKILLed mid-run | Bath House | first version wrongly said "720 s limit" (defect in my code, fixed, test added, one documented causal correction); fixed version: `failed`, "rolled back" message; rows unchanged; no lock |
+| Retry (UI), default deadline | Bath House | `completed` in 18.1 s, `EVALUATION_COMPLETE`, new generation (5,131 rows) |
+| Cold navigation | Bath House | freshness CURRENT, no stale or failed banner, share input 55, "55% of this line = 16,062.2 USD (stated)" |
+Both copies were then restored (share facts removed, original leading pointers; Lips Like Sugar's current fingerprint equals its newest generation, Bath House's equals its pre-test generation `afa8e16f...`, which is retained).
+
+Residuals: run state is per API process (cross-process duplicates are refused by the lock, tested at the worker level only); a full 720 s expiry was not waited out (lowered deadlines run the same code; the ceiling is pinned by test); a successful Lips Like Sugar Save (about 700 s) was not run. Procedure notes: the first backend start lacked the CORS origin (no evaluation ran); timeouts at 25 s and 8 s were deliberate; there were no incidental timeouts.
+
+### B. FVD variance, reconciled to the cent
+Same economic identity `8bff71e6...` (Ontario CPTC + OFTTC), stored unrounded component incentives: 1.106.0 CPTC 178,468.925 + OFTTC 1,295,433.300 = 1,473,902.225 (stored total 1,473,902.23, half-cent rounded up); 1.131.0 CPTC 502,327.250 + OFTTC 703,258.150 = 1,205,585.400. Bridge: CPTC +323,858.325 (the OFTTC no longer reduces the labour base: RC4164, engine 1.119.0) + OFTTC -592,175.150 (35% on labour 2,009,309, not on QPE 3,701,238: engine 1.115.0) = -268,316.825 exactly. The reported -268,316.83 is the same figure after the 1.106.0 total was stored rounded (+0.005); NPC 3,312,101.60 - 3,043,784.77 = 268,316.83. Nothing in this bridge changed at 1.130.0 or 1.131.0.
+
+### C. Still OPEN (unchanged, kept separate from prospective planning)
+Missing historical dates and documents (base of each source estimate, regime at each budget date for LU / FVD / BH, every application or prequalification letter except LLS's, the LLS Program 3.0 qualified-expenditure schedule), the blocked broader-corpus node, the skipped real home-bilateral node, the Workspace pin verified on FVD only, and independent protected-preview verification (UI status IMPLEMENTATION_READY_FOR_INDEPENDENT_VERIFICATION). No blanket acceptance is claimed.

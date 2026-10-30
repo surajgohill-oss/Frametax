@@ -86,6 +86,15 @@ async def test_a_crashing_child_is_failed_with_a_retry_message_and_a_retry_succe
 
 
 @pytest.mark.asyncio
+async def test_a_worker_killed_from_outside_before_the_deadline_is_failed_not_timed_out():
+    pid = uuid.uuid4()
+    jobs = jobs_with("import os,signal;os.kill(os.getpid(), signal.SIGKILL)", deadline_s=60)
+    jobs.start(pid)
+    done = await jobs.wait(pid)
+    assert done["status"] == ej.FAILED and "limit" not in done["message"] and done["elapsed_seconds"] < 10
+
+
+@pytest.mark.asyncio
 async def test_blocked_inputs_are_reported_as_blocked_with_the_first_blocker():
     pid = uuid.uuid4()
     jobs = jobs_with('import json;print(json.dumps({"outcome":"COMPLETED","status":"BLOCKED_INCOMPLETE_INPUTS","blockers":["Budget has no lines"]}))')

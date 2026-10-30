@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import sys
 import time
@@ -19,6 +20,7 @@ from pathlib import Path
 
 from app.services.bounded_regeneration import HARD_TIMEOUT_SECONDS
 
+log = logging.getLogger(__name__)
 KILL_GRACE_S = 20.0
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
@@ -120,10 +122,11 @@ class EvaluationJobs:
             return self._finish(job, COMPLETED, None)
         if outcome == "ALREADY_RUNNING":
             return self._finish(job, FAILED, "Another evaluation of this project is already running; wait for it to finish.")
-        if outcome == "TIMED_OUT" or (code is not None and code < 0 and not outcome):
+        if outcome == "TIMED_OUT":
             return self._finish(job, TIMED_OUT, TIMEOUT_MESSAGE.format(limit=int(job.deadline_s)))
         if not outcome and time.time() - job.started_at >= job.deadline_s:  # the faulthandler backstop ends the process with no result line
             return self._finish(job, TIMED_OUT, TIMEOUT_MESSAGE.format(limit=int(job.deadline_s)))
+        log.warning("evaluation worker for %s ended with code %s and no usable result; stderr tail: %s", job.project_id, code, err.strip()[-600:])
         self._finish(job, FAILED, "The evaluation failed and was rolled back. Your inputs are saved and the previous results are kept. Retry, or contact support if it repeats.")
 
     @staticmethod
