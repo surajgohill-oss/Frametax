@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { beginEvaluation } from "../api";
+import { beginEvaluation, getEvaluationStatus } from "../api";
+import { awaitEvaluation } from "./evaluationJob";
 import { createEvaluationRunStore, RUN_RUNNING } from "./evaluationRunStore";
 
 // The one evaluation-run store shared by every producer-input save (contingency, deployments, financing, jurisdiction preferences, Project Record).
-export const evaluationRuns = createEvaluationRunStore(beginEvaluation);
+export const evaluationRuns = createEvaluationRunStore((projectId) => awaitEvaluation(beginEvaluation, getEvaluationStatus, projectId));
 export const runEvaluation = (projectId) => evaluationRuns.run(projectId);
 
 // Snapshot objects are replaced on every change, so the reference is stable between changes.

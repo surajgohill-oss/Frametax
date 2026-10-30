@@ -289,6 +289,8 @@ export const setMasterArtwork = (projectId, assetId) =>
 // after a refresh.
 export const beginEvaluation = (projectId) =>
   verb("POST", `${PROJECTS_BASE}/${projectId}/evaluation/begin`);
+// The server-side run of that evaluation (deadline, single-flight): idle | running | completed | blocked | timed_out | failed.
+export const getEvaluationStatus = (projectId) => verb("GET", `${PROJECTS_BASE}/${projectId}/evaluation/status`);
 
 // The producer's contingency deployment plan (GET/POST /cineglobe/projects/{id}/contingency-deployments): NOT_STATED until stated; a null plan clears it. Neither call evaluates.
 export const getContingencyDeployments = (projectId) => request(`/projects/${projectId}/contingency-deployments`);

@@ -28,7 +28,10 @@ export function createEvaluationRunStore(begin) {
       try {
         const result = await begin(projectId);
         const blocked = result && Array.isArray(result.blockers) && result.blockers.length > 0;
-        set(projectId, blocked
+        const jobFailed = result && (result.jobStatus === "timed_out" || result.jobStatus === "failed");
+        set(projectId, jobFailed
+          ? { status: RUN_FAILED, message: result.message || "The evaluation failed.", finishedAt: Date.now() }
+          : blocked
           ? { status: RUN_FAILED, message: result.blockers[0] || "Evaluation is blocked on incomplete inputs.", finishedAt: Date.now() }
           : { status: RUN_COMPLETED, message: null, finishedAt: Date.now() });
       } catch (err) {

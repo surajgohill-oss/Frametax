@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +15,7 @@ from app.services.canonical_production_view import (
     decode_candidate_cursor,
 )
 from app.services.evaluation_contract import apply_evaluation_contract
+from app.services.evaluation_jobs import EvaluationJobs, get_evaluation_jobs
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     UNPRICEABLE_PAGE_DEFAULT_LIMIT,
@@ -34,15 +36,35 @@ router = APIRouter(prefix="/projects", tags=["evaluation"])
 
 
 @router.post("/{project_id}/evaluation/begin")
-async def begin_project_evaluation(project_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> dict:
-    """Bounded by construction: the unpriced ("rejection") universe is summarized
+async def begin_project_evaluation(
+    project_id: uuid.UUID, db: AsyncSession = Depends(get_db),
+    jobs: Annotated[EvaluationJobs | None, Depends(get_evaluation_jobs)] = None,
+) -> dict:
+    """The explicit recalculation action (producer-input Save). Over HTTP it starts the ONE existing evaluation under the bounded workflow's
+    hard deadline in its own process and returns the job status at once (``status`` running; a second request while one runs joins it, never
+    duplicates it); poll GET /projects/{id}/evaluation/status, then read the served views. Saved inputs and prior generations are never
+    touched by a timed-out or failed run. Called directly with a session and no ``jobs`` (in-transaction callers and tests) it evaluates
+    inline and returns the bounded served contract.
+
+    Bounded by construction: the unpriced ("rejection") universe is summarized
     (exact total, counts by disposition/reason, one first page + cursor); the rest
     is read from GET /projects/{id}/evaluation/unpriceable."""
+    if jobs is not None:
+        if await db.get(Project, project_id) is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return jobs.start(project_id)
     result = await evaluate_project(db, project_id)
     if result.get("status") == "PROJECT_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Project not found")
     # One served shape for fresh and reused evaluations: only ``status`` may differ.
     return await apply_evaluation_contract(db, project_id, result)
+
+
+@router.get("/{project_id}/evaluation/status")
+async def evaluation_run_status(project_id: uuid.UUID, jobs: EvaluationJobs = Depends(get_evaluation_jobs)) -> dict:
+    """The producer-input evaluation run of this project: idle | running | completed | blocked | timed_out | failed, with start, deadline and elapsed time.
+    Read-only; never starts or affects an evaluation."""
+    return jobs.status(project_id)
 
 
 @router.get("/{project_id}/evaluation/unpriceable")

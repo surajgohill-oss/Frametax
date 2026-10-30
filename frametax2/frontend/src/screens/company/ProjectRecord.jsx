@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { API_ORIGIN, beginEvaluation, deleteProject, getProjectRecord, setMasterArtwork } from "../../api";
+import { API_ORIGIN, beginEvaluation, getEvaluationStatus, deleteProject, getProjectRecord, setMasterArtwork } from "../../api";
+import { awaitEvaluation } from "../../lib/evaluationJob";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
@@ -60,8 +61,10 @@ export default function ProjectRecord() {
     setEvalRunning(true);
     setEvalMessage(null);
     try {
-      const result = await beginEvaluation(projectId);
-      if (result.status === "BUDGET_REQUIRED_FOR_CURRENT_EVALUATION" || result.status === "BLOCKED_INCOMPLETE_INPUTS") {
+      const result = await awaitEvaluation(beginEvaluation, getEvaluationStatus, projectId);
+      if (result.jobStatus === "timed_out" || result.jobStatus === "failed") {
+        setEvalMessage(result.message || "The evaluation failed.");
+      } else if (result.status === "BUDGET_REQUIRED_FOR_CURRENT_EVALUATION" || result.status === "BLOCKED_INCOMPLETE_INPUTS" || (result.blockers && result.blockers.length)) {
         setEvalMessage((result.blockers && result.blockers[0]) || "Evaluation is blocked on incomplete inputs.");
       } else {
         setEvalMessage(null);

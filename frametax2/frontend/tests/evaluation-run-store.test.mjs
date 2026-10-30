@@ -71,7 +71,7 @@ test("every producer-input save runs the evaluation through the shared single-fl
     assert.match(src, /runEvaluation\(projectId\)/, file.join("/"));
     assert.doesNotMatch(src, /\bbeginEvaluation\b/, file.join("/"));
   }
-  assert.match(read("lib", "evaluationRun.js"), /createEvaluationRunStore\(beginEvaluation\)/);
+  assert.match(read("lib", "evaluationRun.js"), /createEvaluationRunStore\(\(projectId\) => awaitEvaluation\(beginEvaluation, getEvaluationStatus, projectId\)\)/);
 });
 
 test("the Overview shows the real evaluation status and the controls are locked while it runs (no duplicate runs)", () => {

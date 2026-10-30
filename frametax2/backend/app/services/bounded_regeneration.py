@@ -65,9 +65,12 @@ async def run_bounded(coro_factory, *, timeout_s: float = HARD_TIMEOUT_SECONDS, 
 
 
 async def regenerate_project(project_id, *, timeout_s: float = HARD_TIMEOUT_SECONDS, measure_only: bool = False,
-                             session_factory=None, progress_every_s: float = 60.0) -> dict:
-    """Evaluate one project once, bounded. Returns the evaluator's summary plus `elapsed_s` / `measure_only` / `phase_log`."""
-    assert_acceptance_database()
+                             session_factory=None, progress_every_s: float = 60.0, require_isolated_database: bool = True) -> dict:
+    """Evaluate one project once, bounded. Returns the evaluator's summary plus `elapsed_s` / `measure_only` / `phase_log`.
+    ``require_isolated_database=False`` is for the product's own producer-input Save (services/evaluation_worker.py), which runs this same
+    workflow on whatever database the application serves; the operator scripts keep the isolated-database assertion."""
+    if require_isolated_database:
+        assert_acceptance_database()
     from app.services import _lls_profile_sink as sink
     from app.services import canonical_evaluation as ce
     from app.services.canonical_program_identity import alias_memo_scope
