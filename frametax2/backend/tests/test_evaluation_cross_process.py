@@ -104,6 +104,24 @@ async def _is_none(pid):
 
 
 @pytest.mark.asyncio
+async def test_an_old_local_outcome_is_never_replayed_as_the_outcome_of_another_process_run():
+    pid = uuid.uuid4()
+    jobs = EvaluationJobs(command=lambda *a: ["true"])
+    jobs.start(pid, None)
+    old = await jobs.wait(pid)
+    assert old["status"] in ("failed", "completed")  # this process's own earlier (terminal) run
+    holder = _spawn_holder(pid)
+    try:
+        ext = await _external(pid)
+        assert jobs.status(pid, ext)["external"] is True  # the other process's run is reported as itself
+    finally:
+        holder.kill()
+        holder.wait()
+    assert await _eventually(lambda: _is_none(pid))
+    assert jobs.status(pid, await _external(pid))["status"] == "idle", "the stale local outcome must not stand in for the run that just ended elsewhere"
+
+
+@pytest.mark.asyncio
 async def test_a_local_run_takes_precedence_and_other_projects_are_independent():
     held, free = uuid.uuid4(), uuid.uuid4()
     holder = _spawn_holder(held)

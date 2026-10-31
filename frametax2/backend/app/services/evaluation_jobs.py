@@ -89,8 +89,16 @@ class EvaluationJobs:
         if job is not None and job.status == RUNNING:
             return job.snapshot()
         if external is not None:
+            self._forget_finished(project_id)
             return external
         return job.snapshot() if job else {"status": IDLE, "project_id": str(project_id), "deadline_seconds": self.deadline_s}
+
+    def _forget_finished(self, project_id: uuid.UUID) -> None:
+        """Another process now holds the project: this process's earlier terminal outcome is stale and must not be replayed as the outcome of THAT run. Once it ends, status is
+        idle, and a waiting client resumes through the single-flight begin (reuses a committed result, or evaluates again if the run was rolled back)."""
+        job = self._jobs.get(project_id)
+        if job is not None and job.status != RUNNING:
+            del self._jobs[project_id]
 
     def start(self, project_id: uuid.UUID, external: dict | None = None) -> dict:
         """Start the evaluation, or join the one already running here or in another API process. Returns the status snapshot immediately."""
@@ -99,6 +107,7 @@ class EvaluationJobs:
             job.joined += 1
             return job.snapshot(joined=True)
         if external is not None:
+            self._forget_finished(project_id)
             return {**external, "joined": True}
         job = EvaluationJob(project_id=project_id, deadline_s=self.deadline_s)
         self._jobs[project_id] = job

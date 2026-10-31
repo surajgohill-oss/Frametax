@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { getLeadingSelection } from "../lib/leadingSelection";
+import { followServedLeading } from "../lib/leadingFollow";
 import { useLocation } from "react-router-dom";
 import { MODE_NORMAL } from "../lib/workspaceScenarioMode";
 
@@ -57,6 +58,10 @@ export function AppStateProvider({ children }) {
   // CODEX_FG-004: seeded once per project from its own served
   // `production.leading_structure_id` — see initLeadingStructureId.
   const [leadingStructureId, setLeadingStructureIdRaw] = useState(null);
+  // Mirrors of the latest selection and of the last served persisted id per project, read by initLeadingStructureId (a callback, so it must not close over stale state).
+  const leadingRef = useRef(null);
+  leadingRef.current = leadingStructureId;
+  const servedLeadingRef = useRef({});
   // The currently selected jurisdiction code (Globe click, snapshot strip,
   // Budget Rail jurisdiction row). Drives the Globe's Blue "Currently
   // Selected" state and scopes Budget Rail's jurisdiction-allocation view.
@@ -153,7 +158,14 @@ export function AppStateProvider({ children }) {
   // choice for this same visit.
   const initLeadingStructureId = useCallback((forProjectId, persistedId) => {
     if (!forProjectId || !persistedId) return;
-    if (initializedLeadingForProject.current === forProjectId) return;
+    const prevServed = servedLeadingRef.current[forProjectId];
+    servedLeadingRef.current[forProjectId] = persistedId;
+    if (initializedLeadingForProject.current === forProjectId) {
+      // Already seeded this visit. A re-evaluation re-points the persisted selection to a NEW structure id (new generation): follow it unless the producer moved the selection since.
+      const follow = followServedLeading({ prevServed, current: leadingRef.current, served: persistedId });
+      if (follow && forProjectId === projectId) setLeadingStructureIdRaw(follow);
+      return;
+    }
     initializedLeadingForProject.current = forProjectId;
     if (forProjectId === projectId) setLeadingStructureIdRaw(persistedId);
   }, [projectId]);
