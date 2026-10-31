@@ -15,7 +15,7 @@ from app.services.canonical_production_view import (
     decode_candidate_cursor,
 )
 from app.services.evaluation_contract import apply_evaluation_contract
-from app.services.evaluation_jobs import EvaluationJobs, get_evaluation_jobs
+from app.services.evaluation_jobs import EvaluationJobs, external_run, get_evaluation_jobs
 from app.services.canonical_evaluation import (
     ENGINE_VERSION,
     UNPRICEABLE_PAGE_DEFAULT_LIMIT,
@@ -52,7 +52,7 @@ async def begin_project_evaluation(
     if jobs is not None:
         if await db.get(Project, project_id) is None:
             raise HTTPException(status_code=404, detail="Project not found")
-        return jobs.start(project_id)
+        return jobs.start(project_id, None if jobs.running_here(project_id) else await external_run(db, project_id))
     result = await evaluate_project(db, project_id)
     if result.get("status") == "PROJECT_NOT_FOUND":
         raise HTTPException(status_code=404, detail="Project not found")
@@ -61,10 +61,10 @@ async def begin_project_evaluation(
 
 
 @router.get("/{project_id}/evaluation/status")
-async def evaluation_run_status(project_id: uuid.UUID, jobs: EvaluationJobs = Depends(get_evaluation_jobs)) -> dict:
-    """The producer-input evaluation run of this project: idle | running | completed | blocked | timed_out | failed, with start, deadline and elapsed time.
-    Read-only; never starts or affects an evaluation."""
-    return jobs.status(project_id)
+async def evaluation_run_status(project_id: uuid.UUID, db: AsyncSession = Depends(get_db), jobs: EvaluationJobs = Depends(get_evaluation_jobs)) -> dict:
+    """The producer-input evaluation run of this project: idle | running | completed | blocked | timed_out | failed, with start, deadline and elapsed time. A run held by another
+    API process reports as running with ``external`` true. Read-only; never starts or affects an evaluation."""
+    return jobs.status(project_id, None if jobs.running_here(project_id) else await external_run(db, project_id))
 
 
 @router.get("/{project_id}/evaluation/unpriceable")

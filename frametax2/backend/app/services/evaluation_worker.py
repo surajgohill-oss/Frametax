@@ -5,6 +5,9 @@ Run by ``evaluation_jobs.EvaluationJobs`` for the producer-input Save (POST /pro
 process only keeps the API's event loop responsive while the CPU-bound search runs, and lets the parent kill it at the deadline -- PostgreSQL
 then rolls the transaction back, so no partial generation is ever committed and the saved inputs and prior generations are untouched.
 
+If the API process that started this worker dies (a restart, a crash, a SIGKILL), the worker exits at once (``watch_parent``): its connection closes, PostgreSQL rolls the
+transaction back and releases the lock, so nothing half-saved and no orphan holds the project for up to 12 minutes.
+
 A session-level PostgreSQL advisory lock keyed on the project makes a second evaluation of the same project (another API worker, another
 tab, a retry that raced the first) refuse immediately instead of duplicating work; the lock dies with the connection, so a killed worker never leaves it held.
 
@@ -15,7 +18,10 @@ import argparse
 import asyncio
 import hashlib
 import json
+import os
 import sys
+import threading
+import time
 import uuid
 
 from sqlalchemy import text
@@ -43,6 +49,20 @@ async def _evaluate(project_id: uuid.UUID, timeout_s: float) -> dict:
     return {"outcome": "COMPLETED", **keep}
 
 
+def watch_parent(parent_pid: int, *, poll_s: float = 1.0, exit_fn=os._exit) -> threading.Thread:
+    """Daemon thread: when the process that started this worker is gone (re-parented), leave immediately. ``os._exit`` skips unwinding on purpose: the open transaction must
+    not commit, and the closed connection makes PostgreSQL roll it back."""
+    def _watch() -> None:
+        while True:
+            time.sleep(poll_s)
+            if os.getppid() != parent_pid:
+                exit_fn(4)
+
+    thread = threading.Thread(target=_watch, name="evaluation-worker-parent-watch", daemon=True)
+    thread.start()
+    return thread
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("project_id")
@@ -61,4 +81,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    watch_parent(os.getppid())
     sys.exit(main())

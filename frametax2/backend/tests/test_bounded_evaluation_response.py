@@ -3,9 +3,10 @@ Bounded, deterministic evaluation responses.
 
 The unpriced ("rejection") universe -- 525,613 of F#K Valentine's Day's 526,155 rows -- must
 never be embedded whole in POST /evaluation/begin or the workspace view, must never be
-silently dropped, and must page in a stable order. Synthetic-row tests run in one
-always-rolled-back transaction; the DB-backed tests are read-only/idempotent against the real
-Bad Hombres project row (same convention as the other canonical_evaluation tests).
+silently dropped, and must page in a stable order. Every test runs on a SYNTHETIC project inside one always-rolled-back
+transaction on ``frametax2_pytest`` (tests/isolated_records.py): the row-level tests seed their own generation, and the two
+evaluation tests evaluate a small synthetic budget through the real evaluator. No real production is read, written or evaluated
+(these tests previously named the real Bad Hombres project id, which the write guard refuses and the isolated database does not hold).
 """
 from __future__ import annotations
 
@@ -18,26 +19,23 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.evaluation import list_unpriceable_candidates
-from app.db.session import engine
 from app.models.production import EvaluationGenerationSummary, ProductionStructure, StructureCalculationResult
 from app.services import canonical_evaluation as ce
 from app.services.project_workspace_view import build_project_workspace_view
+from tests.isolated_records import create_synthetic_project, isolated_session
 
-BAD_HOMBRES_PROJECT_ID = uuid.UUID("4355ae88-a636-4c18-af60-ad73b2646124")
 TEST_ENGINE = "test-bounded-response"
 TEST_FP = "c" * 64
 
 
 @pytest.fixture
-async def db():
-    async with AsyncSession(engine, expire_on_commit=False) as session:
-        try:
-            yield session
-        finally:
-            await session.rollback()
+async def synthetic():
+    """(session, synthetic project uuid): a rolled-back savepoint session with its own invented project."""
+    async with isolated_session() as session:
+        yield session, uuid.UUID(await create_synthetic_project(session))
 
 
-def _row(i: int, *, status: str, reason: str, npc=None, baseline=False):
+def _row(pid: uuid.UUID, i: int, *, status: str, reason: str, npc=None, baseline=False):
     sid = uuid.uuid4()
     trace = {
         "candidate_status": status, "rejection_reason_class": reason, "is_baseline": baseline,
@@ -46,7 +44,7 @@ def _row(i: int, *, status: str, reason: str, npc=None, baseline=False):
         "discovery_classification": "full_relocation",
     }
     structure = ProductionStructure(
-        id=sid, project_id=BAD_HOMBRES_PROJECT_ID, name=f"BOUNDED {i}", description="synthetic",
+        id=sid, project_id=pid, name=f"BOUNDED {i}", description="synthetic",
         jurisdiction_allocations=[], claimed_program_ids=[],
     )
     result = StructureCalculationResult(
@@ -57,12 +55,12 @@ def _row(i: int, *, status: str, reason: str, npc=None, baseline=False):
     return structure, result
 
 
-async def _seed(db: AsyncSession, plan):
+async def _seed(db: AsyncSession, pid: uuid.UUID, plan):
     """Persist `plan` through the real bulk writer (ordinals + summary accumulation), then write
     its summary row exactly as commit() would -- but without committing."""
     writer = ce._BulkEvaluationWriter(db, chunk_rows=6)
     for i, (status, reason, npc, *rest) in enumerate(plan):
-        structure, result = _row(i, status=status, reason=reason, npc=npc, baseline=bool(rest and rest[0]))
+        structure, result = _row(pid, i, status=status, reason=reason, npc=npc, baseline=bool(rest and rest[0]))
         writer.add(structure)
         await writer.flush()
         writer.add(result)
@@ -85,12 +83,13 @@ _PLAN = (
 # order: dominated 1-4, unpriceable-authority 5-7 (the 7 persisted unpriced rows), priced 8-10.
 
 
-async def _summary(db):
-    return await ce.load_generation_summary(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE)
+async def _summary(db, pid):
+    return await ce.load_generation_summary(db, pid, TEST_FP, engine_version=TEST_ENGINE)
 
 
-async def test_ordinals_are_monotonic_across_chunk_boundaries_and_summary_counts_are_exact(db: AsyncSession):
-    await _seed(db, _PLAN)
+async def test_ordinals_are_monotonic_across_chunk_boundaries_and_summary_counts_are_exact(synthetic):
+    db, pid = synthetic
+    await _seed(db, pid, _PLAN)
     ordinals = (await db.execute(
         select(StructureCalculationResult.generation_ordinal)
         .where(StructureCalculationResult.input_fingerprint == TEST_FP,
@@ -99,7 +98,7 @@ async def test_ordinals_are_monotonic_across_chunk_boundaries_and_summary_counts
     )).scalars().all()
     assert ordinals == list(range(1, 11))  # 1..M over the PERSISTED rows, no gaps, generation order (chunk size 6)
 
-    totals = ce.summary_totals(await _summary(db))
+    totals = ce.summary_totals(await _summary(db, pid))
     assert totals["total"] == 24 and totals["priced"] == 3  # PRICED rows are not "unpriced"
     # exact accounting: 27 generated == 10 persisted rows + 17 aggregated rejections, in 17 groups
     assert (totals["generated"], totals["persisted_rows"], totals["aggregated_candidates"], totals["aggregate_groups"]) == (27, 10, 17, 17)
@@ -123,12 +122,13 @@ async def test_ordinals_are_monotonic_across_chunk_boundaries_and_summary_counts
     )).scalar() == 1
 
 
-async def test_retained_rows_are_exactly_the_non_rejected_ones_plus_any_baseline(db: AsyncSession):
+async def test_retained_rows_are_exactly_the_non_rejected_ones_plus_any_baseline(synthetic):
+    db, pid = synthetic
     plan = list(_PLAN) + [("RULE_REJECTED", "THRESHOLD_NOT_MET", None, True)]  # a REJECTED baseline, ordinal 28
-    await _seed(db, plan)
-    summary = await _summary(db)
+    await _seed(db, pid, plan)
+    summary = await _summary(db, pid)
     assert summary.non_rejected_ordinals == list(range(1, 12))  # dominated 1-4, unpriceable 5-7, priced 8-10, baseline 11
-    retained = await ce.load_retained_rows(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, summary, engine_version=TEST_ENGINE)
+    retained = await ce.load_retained_rows(db, pid, TEST_FP, summary, engine_version=TEST_ENGINE)
     got = [(r.generation_ordinal, r.calculation_trace_json["candidate_status"]) for _, r in retained]
     assert [o for o, _ in got] == sorted(o for o, _ in got)  # generation order
     assert len(got) == 4 + 3 + 3 + 1  # dominated + unpriceable + priced + the rejected baseline
@@ -137,12 +137,13 @@ async def test_retained_rows_are_exactly_the_non_rejected_ones_plus_any_baseline
     assert sum(1 for _, st in got if st == "RULE_REJECTED") == 1  # only the baseline, not the 17 others
 
 
-async def test_pages_are_bounded_deterministic_exact_and_complete(db: AsyncSession):
-    await _seed(db, _PLAN)
+async def test_pages_are_bounded_deterministic_exact_and_complete(synthetic):
+    db, pid = synthetic
+    await _seed(db, pid, _PLAN)
     pages, cursor = [], None
     while True:
         page = await ce.unpriceable_page(
-            db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=5, cursor=cursor)
+            db, pid, TEST_FP, engine_version=TEST_ENGINE, limit=5, cursor=cursor)
         assert page["limit"] == 5 and page["returned"] == len(page["results"]) <= 5
         assert page["order"] == ce.UNPRICEABLE_PAGE_ORDER
         pages.append(page)
@@ -157,7 +158,7 @@ async def test_pages_are_bounded_deterministic_exact_and_complete(db: AsyncSessi
     # the 17 rejected candidates are not rows: they are counted exactly and paged as GROUPS
     groups, cursor = [], None
     while True:
-        gp = await ce.candidate_groups_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=4, cursor=cursor)
+        gp = await ce.candidate_groups_page(db, pid, TEST_FP, engine_version=TEST_ENGINE, limit=4, cursor=cursor)
         groups += gp["results"]
         cursor = gp["next_cursor"]
         if not gp["has_more"]:
@@ -165,53 +166,57 @@ async def test_pages_are_bounded_deterministic_exact_and_complete(db: AsyncSessi
     assert sum(g["candidate_count"] for g in groups) == 17 and len(groups) == 17
     assert [g["group_ordinal"] for g in groups] == list(range(1, 18))
     assert all(e["true_net_cost_usd"] is None for e in walked)  # PRICED rows never appear
-    again = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=5)
+    again = await ce.unpriceable_page(db, pid, TEST_FP, engine_version=TEST_ENGINE, limit=5)
     assert again == pages[0]  # the same generation pages IDENTICALLY every time
 
 
-async def test_page_limit_clamp_and_empty_generation(db: AsyncSession):
-    await _seed(db, _PLAN)
-    clamped = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=10_000)
+async def test_page_limit_clamp_and_empty_generation(synthetic):
+    db, pid = synthetic
+    await _seed(db, pid, _PLAN)
+    clamped = await ce.unpriceable_page(db, pid, TEST_FP, engine_version=TEST_ENGINE, limit=10_000)
     assert clamped["limit"] == ce.UNPRICEABLE_PAGE_MAX_LIMIT and clamped["returned"] == 7
-    floor = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, TEST_FP, engine_version=TEST_ENGINE, limit=0)
+    floor = await ce.unpriceable_page(db, pid, TEST_FP, engine_version=TEST_ENGINE, limit=0)
     assert floor["limit"] == 1 and floor["has_more"] is True
-    nothing = await ce.unpriceable_page(db, BAD_HOMBRES_PROJECT_ID, "d" * 64, engine_version=TEST_ENGINE)
+    nothing = await ce.unpriceable_page(db, pid, "d" * 64, engine_version=TEST_ENGINE)
     assert nothing["results"] == [] and nothing["has_more"] is False and nothing["next_cursor"] is None
     with pytest.raises(ce.GenerationSummaryUnavailable):
-        await ce.load_generation_summary(db, BAD_HOMBRES_PROJECT_ID, "d" * 64, engine_version=TEST_ENGINE)
+        await ce.load_generation_summary(db, pid, "d" * 64, engine_version=TEST_ENGINE)
 
 
-async def test_evaluation_begin_payload_is_bounded_and_routes_reproduce_the_universe(db: AsyncSession):
-    econ = await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
+async def test_evaluation_begin_payload_is_bounded_and_routes_reproduce_the_universe(synthetic):
+    db, pid = synthetic
+    econ = await ce.evaluate_project(db, pid)
     unpriceable_part = {k: econ[k] for k in (
         "unpriceable_count", "unpriceable", "unpriceable_page", "unpriceable_by_disposition", "unpriceable_by_reason")}
     assert len(econ["unpriceable"]) <= ce.UNPRICEABLE_PAGE_DEFAULT_LIMIT
     assert len(json.dumps(unpriceable_part)) < 200_000
-    assert econ["unpriceable_page"]["results_route"] == f"/api/v1/projects/{BAD_HOMBRES_PROJECT_ID}/evaluation/unpriceable"
+    assert econ["unpriceable_page"]["results_route"] == f"/api/v1/projects/{pid}/evaluation/unpriceable"
     agg = econ["candidate_aggregates"]
     assert sum(econ["unpriceable_by_disposition"].values()) == econ["unpriceable_count"]  # exact, rejected mass included
     assert agg["accounting_holds"] and agg["generated_candidates"] == agg["persisted_rows"] + agg["aggregated_candidates"]
     # the page walks the DETAILED unpriced rows; the rejected mass is counted exactly and paged as groups
-    assert econ["unpriceable_page"]["total"] == econ["unpriceable_count"] - agg["aggregated_candidates"]
-    assert agg["results_route"] == f"/api/v1/projects/{BAD_HOMBRES_PROJECT_ID}/evaluation/aggregates"
+    # Exact identity: the aggregated mass may include PRICED candidates beyond the bounded priced-retention cap (aggregated_priced), which are not unpriced; the shorthand
+    # `unpriceable_count - aggregated_candidates` holds only when none were aggregated. The independent proof is the page walk below (`len(got) == page["total"]`).
+    assert econ["unpriceable_page"]["total"] == econ["unpriceable_count"] - (agg["aggregated_candidates"] - agg["aggregated_priced"])
+    assert agg["results_route"] == f"/api/v1/projects/{pid}/evaluation/aggregates"
     assert len(json.dumps(agg)) < 200_000
 
-    first = await list_unpriceable_candidates(BAD_HOMBRES_PROJECT_ID, limit=40, cursor=None, db=db)
+    first = await list_unpriceable_candidates(pid, limit=40, cursor=None, db=db)
     assert first["status"] == "OK" and first["total_unpriceable_count"] == econ["unpriceable_count"]
     assert first["by_disposition"] == econ["unpriceable_by_disposition"]
     assert first["input_fingerprint"] == econ["state_fingerprint"]
     got, page = list(first["results"]), first
     while page["has_more"]:
-        page = await list_unpriceable_candidates(BAD_HOMBRES_PROJECT_ID, limit=40, cursor=page["next_cursor"], db=db)
+        page = await list_unpriceable_candidates(pid, limit=40, cursor=page["next_cursor"], db=db)
         assert "total_unpriceable_count" not in page  # totals ride the first page only
         got += page["results"]
     assert len(got) == econ["unpriceable_page"]["total"] and len({e["structure_id"] for e in got}) == len(got)
     from app.api.v1.evaluation import list_candidate_aggregates
-    g1 = await list_candidate_aggregates(BAD_HOMBRES_PROJECT_ID, limit=20, cursor=None, detail=False, db=db)
+    g1 = await list_candidate_aggregates(pid, limit=20, cursor=None, detail=False, status=None, db=db)
     assert g1["status"] == "OK" and g1["accounting_holds"] and g1["aggregated_candidates"] == agg["aggregated_candidates"]
     walked_groups, gpage = list(g1["results"]), g1
     while gpage["has_more"]:
-        gpage = await list_candidate_aggregates(BAD_HOMBRES_PROJECT_ID, limit=20, cursor=gpage["next_cursor"], detail=False, db=db)
+        gpage = await list_candidate_aggregates(pid, limit=20, cursor=gpage["next_cursor"], detail=False, status=None, db=db)
         walked_groups += gpage["results"]
     assert sum(g["candidate_count"] for g in walked_groups) == agg["aggregated_candidates"] == g1["aggregated_candidates"]
     assert [g["group_ordinal"] for g in walked_groups] == list(range(1, len(walked_groups) + 1)) and len(walked_groups) == agg["group_count"]
@@ -219,16 +224,17 @@ async def test_evaluation_begin_payload_is_bounded_and_routes_reproduce_the_univ
     assert [e["generation_ordinal"] for e in got] == sorted(e["generation_ordinal"] for e in got)
 
     with pytest.raises(HTTPException) as bad:
-        await list_unpriceable_candidates(BAD_HOMBRES_PROJECT_ID, limit=10, cursor="definitely-not-a-cursor", db=db)
+        await list_unpriceable_candidates(pid, limit=10, cursor="definitely-not-a-cursor", db=db)
     assert bad.value.status_code == 422
     with pytest.raises(HTTPException) as missing:
         await list_unpriceable_candidates(uuid.uuid4(), limit=10, cursor=None, db=db)
     assert missing.value.status_code == 404
 
 
-async def test_workspace_view_is_bounded_and_carries_the_same_accounting(db: AsyncSession):
-    econ = await ce.evaluate_project(db, BAD_HOMBRES_PROJECT_ID)
-    view = await build_project_workspace_view(db, BAD_HOMBRES_PROJECT_ID)
+async def test_workspace_view_is_bounded_and_carries_the_same_accounting(synthetic):
+    db, pid = synthetic
+    econ = await ce.evaluate_project(db, pid)
+    view = await build_project_workspace_view(db, pid)
     evaluation = view["evaluation"]
     universe = evaluation["rejection_universe"]
     assert universe["total_count"] == econ["unpriceable_count"]

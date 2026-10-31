@@ -1,0 +1,331 @@
+{
+ "anchors": {
+  "4355ae88-a636-4c18-af60-ad73b2646124": {
+   "code": "BH",
+   "title": "Bad Hombres"
+  },
+  "6c6f1c13-2d49-4bbc-bafb-2a12efa93112": {
+   "code": "FVD",
+   "title": "F#K Valentine's Day"
+  },
+  "ab10b319-978e-44d3-9331-af2a5f2cccc2": {
+   "code": "LLS",
+   "title": "Lips Like Sugar"
+  },
+  "fa5cade5-0669-4816-bfe6-72146f8d3bae": {
+   "code": "LU",
+   "title": "The Little Utopia"
+  }
+ },
+ "databases": [
+  {
+   "database": "frametax2_claude_optimizer_acceptance_20260919",
+   "evaluation_allowed": false,
+   "note": "the acceptance database; holds other real productions; never evaluated or written by the closeout",
+   "project_count": 328,
+   "projects": {
+    "4355ae88-a636-4c18-af60-ad73b2646124": {
+     "budget_lines": [
+      34,
+      "1ac3d050d17f6cc8"
+     ],
+     "documents": [
+      1,
+      "b7c8865f49ab926f"
+     ],
+     "facts": [
+      1,
+      "ce9736601da353e6"
+     ],
+     "location_requirements": [
+      1,
+      "6d667c1c28511d03"
+     ],
+     "people": [
+      0,
+      "4f53cda18c2baa0c"
+     ],
+     "title": "Bad Hombres"
+    },
+    "6c6f1c13-2d49-4bbc-bafb-2a12efa93112": {
+     "budget_lines": [
+      34,
+      "436a7226b0c861de"
+     ],
+     "documents": [
+      1,
+      "eb974f7b152b35fb"
+     ],
+     "facts": [
+      20,
+      "082e182d71df98c5"
+     ],
+     "location_requirements": [
+      54,
+      "8b8ccd7d864fe1aa"
+     ],
+     "people": [
+      6,
+      "8bf95acf96329a24"
+     ],
+     "title": "F#K Valentine's Day"
+    },
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": {
+     "budget_lines": [
+      46,
+      "66f10f197bed544c"
+     ],
+     "documents": [
+      1,
+      "45aad97496c79e93"
+     ],
+     "facts": [
+      27,
+      "f406084fa1964f9e"
+     ],
+     "location_requirements": [
+      76,
+      "3b36aa3f2a892571"
+     ],
+     "people": [
+      3,
+      "abb721157036ffda"
+     ],
+     "title": "Lips Like Sugar"
+    },
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": {
+     "budget_lines": [
+      44,
+      "6b7219c95415f403"
+     ],
+     "documents": [
+      1,
+      "743ff12f3cfefb06"
+     ],
+     "facts": [
+      14,
+      "7b860939a7d46f3a"
+     ],
+     "location_requirements": [
+      8,
+      "938461a7587cfcbd"
+     ],
+     "people": [
+      4,
+      "3264d1e32171fff8"
+     ],
+     "title": "The Little Utopia"
+    }
+   },
+   "role": "read_only_source"
+  },
+  {
+   "database": "frametax2_four_closeout_20261029",
+   "differs_from_source": {},
+   "evaluation_allowed": true,
+   "note": "isolated copy of the four anchors (facts, people, budget, requirements, newest retained generation) made from the read-only source",
+   "project_count": 4,
+   "projects": {
+    "4355ae88-a636-4c18-af60-ad73b2646124": {
+     "budget_lines": [
+      34,
+      "1ac3d050d17f6cc8"
+     ],
+     "documents": [
+      1,
+      "b7c8865f49ab926f"
+     ],
+     "facts": [
+      1,
+      "ce9736601da353e6"
+     ],
+     "location_requirements": [
+      1,
+      "6d667c1c28511d03"
+     ],
+     "people": [
+      0,
+      "4f53cda18c2baa0c"
+     ],
+     "title": "Bad Hombres"
+    },
+    "6c6f1c13-2d49-4bbc-bafb-2a12efa93112": {
+     "budget_lines": [
+      34,
+      "436a7226b0c861de"
+     ],
+     "documents": [
+      1,
+      "eb974f7b152b35fb"
+     ],
+     "facts": [
+      20,
+      "082e182d71df98c5"
+     ],
+     "location_requirements": [
+      54,
+      "8b8ccd7d864fe1aa"
+     ],
+     "people": [
+      6,
+      "8bf95acf96329a24"
+     ],
+     "title": "F#K Valentine's Day"
+    },
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": {
+     "budget_lines": [
+      46,
+      "66f10f197bed544c"
+     ],
+     "documents": [
+      1,
+      "45aad97496c79e93"
+     ],
+     "facts": [
+      27,
+      "f406084fa1964f9e"
+     ],
+     "location_requirements": [
+      76,
+      "3b36aa3f2a892571"
+     ],
+     "people": [
+      3,
+      "abb721157036ffda"
+     ],
+     "title": "Lips Like Sugar"
+    },
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": {
+     "budget_lines": [
+      44,
+      "6b7219c95415f403"
+     ],
+     "documents": [
+      1,
+      "743ff12f3cfefb06"
+     ],
+     "facts": [
+      14,
+      "7b860939a7d46f3a"
+     ],
+     "location_requirements": [
+      8,
+      "938461a7587cfcbd"
+     ],
+     "people": [
+      4,
+      "3264d1e32171fff8"
+     ],
+     "title": "The Little Utopia"
+    }
+   },
+   "role": "evaluation_copy",
+   "source_database": "frametax2_claude_optimizer_acceptance_20260919"
+  },
+  {
+   "database": "frametax2_four_closeout_base_20261029",
+   "differs_from_source": {},
+   "evaluation_allowed": true,
+   "note": "template clone of the closeout copy, used only for the engine 1.130.0 A/B",
+   "project_count": 4,
+   "projects": {
+    "4355ae88-a636-4c18-af60-ad73b2646124": {
+     "budget_lines": [
+      34,
+      "1ac3d050d17f6cc8"
+     ],
+     "documents": [
+      1,
+      "b7c8865f49ab926f"
+     ],
+     "facts": [
+      1,
+      "ce9736601da353e6"
+     ],
+     "location_requirements": [
+      1,
+      "6d667c1c28511d03"
+     ],
+     "people": [
+      0,
+      "4f53cda18c2baa0c"
+     ],
+     "title": "Bad Hombres"
+    },
+    "6c6f1c13-2d49-4bbc-bafb-2a12efa93112": {
+     "budget_lines": [
+      34,
+      "436a7226b0c861de"
+     ],
+     "documents": [
+      1,
+      "eb974f7b152b35fb"
+     ],
+     "facts": [
+      20,
+      "082e182d71df98c5"
+     ],
+     "location_requirements": [
+      54,
+      "8b8ccd7d864fe1aa"
+     ],
+     "people": [
+      6,
+      "8bf95acf96329a24"
+     ],
+     "title": "F#K Valentine's Day"
+    },
+    "ab10b319-978e-44d3-9331-af2a5f2cccc2": {
+     "budget_lines": [
+      46,
+      "66f10f197bed544c"
+     ],
+     "documents": [
+      1,
+      "45aad97496c79e93"
+     ],
+     "facts": [
+      27,
+      "f406084fa1964f9e"
+     ],
+     "location_requirements": [
+      76,
+      "3b36aa3f2a892571"
+     ],
+     "people": [
+      3,
+      "abb721157036ffda"
+     ],
+     "title": "Lips Like Sugar"
+    },
+    "fa5cade5-0669-4816-bfe6-72146f8d3bae": {
+     "budget_lines": [
+      44,
+      "6b7219c95415f403"
+     ],
+     "documents": [
+      1,
+      "743ff12f3cfefb06"
+     ],
+     "facts": [
+      14,
+      "7b860939a7d46f3a"
+     ],
+     "location_requirements": [
+      8,
+      "938461a7587cfcbd"
+     ],
+     "people": [
+      4,
+      "3264d1e32171fff8"
+     ],
+     "title": "The Little Utopia"
+    }
+   },
+   "role": "evaluation_copy_base",
+   "source_database": "frametax2_claude_optimizer_acceptance_20260919"
+  }
+ ],
+ "hash_method": "sha256 of sorted JSON rows over the id-free columns in scripts/isolated_copy_manifest.py TABLES (first 16 hex)",
+ "manifest": "ISOLATED_COPY_MANIFEST_20261029"
+}

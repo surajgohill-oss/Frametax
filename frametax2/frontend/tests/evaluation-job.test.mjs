@@ -51,9 +51,26 @@ test("a joined run (a second tab) is polled like the first; status errors are to
   await assert.rejects(awaitEvaluation(async () => job("running"), seq(new Error("a"), new Error("b"), new Error("c")), "p1", opts), /Lost contact/);
 });
 
-test("a restarted server (idle after running) and a run that never reports by its deadline are failures with a retry message, never an endless spinner", async () => {
-  await assert.rejects(awaitEvaluation(async () => job("running"), async () => job("idle"), "p1", opts), /restarted.*Retry/);
+test("a run that disappears (idle after running) is resumed ONCE through the same single-flight begin; a second disappearance is reported, never looped", async () => {
+  const begins = [];
+  const begin = async () => { begins.push(1); return job("running"); };
+  const statuses = [job("idle"), job("completed", { result_status: "EVALUATION_COMPLETE" })];
+  const out = await awaitEvaluation(begin, async () => statuses.shift(), "p1", opts);
+  assert.equal(begins.length, 2);  // the Save, then one resume
+  assert.deepEqual([out.status, out.jobStatus], ["EVALUATION_COMPLETE", "completed"]);
+  const again = [];
+  await assert.rejects(awaitEvaluation(async () => { again.push(1); return job("running"); }, async () => job("idle"), "p1", opts), /lost twice.*Retry/);
+  assert.equal(again.length, 2);  // never a third begin
+});
+
+test("a run that never reports by its deadline is a failure with a retry message, never an endless spinner", async () => {
   await assert.rejects(awaitEvaluation(async () => job("running"), async () => job("running"), "p1", { ...opts, now: () => NOW + 720_000 + 61_000 }), /deadline/);
+});
+
+test("a run held by another API process is polled like a local one (external running, then completed)", async () => {
+  const polls = [job("running", { external: true }), job("completed", { result_status: "EVALUATION_COMPLETE", external: true })];
+  const out = await awaitEvaluation(async () => ({ ...job("running", { external: true }), joined: true }), async () => polls.shift(), "p1", opts);
+  assert.equal(out.jobStatus, "completed");
 });
 
 test("the legacy in-transaction shape (no job) is returned unchanged", async () => {

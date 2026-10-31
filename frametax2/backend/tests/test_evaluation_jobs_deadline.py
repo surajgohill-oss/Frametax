@@ -109,7 +109,8 @@ async def test_an_evaluation_already_running_elsewhere_is_refused_not_duplicated
     jobs = jobs_with('import json,sys;print(json.dumps({"outcome":"ALREADY_RUNNING"}));sys.exit(3)')
     jobs.start(pid)
     done = await jobs.wait(pid)
-    assert done["status"] == ej.FAILED and "already running" in done["message"]
+    # Reached only in the instant between the status check and the worker's lock attempt (a held lock is normally joined, see test_evaluation_cross_process.py).
+    assert done["status"] == ej.FAILED and "another server process" in done["message"] and "running" in done["message"]
 
 
 @pytest.mark.asyncio

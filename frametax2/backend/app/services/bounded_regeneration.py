@@ -72,6 +72,7 @@ async def regenerate_project(project_id, *, timeout_s: float = HARD_TIMEOUT_SECO
     if require_isolated_database:
         assert_acceptance_database()
     from app.services import _lls_profile_sink as sink
+    from app.services.evaluation_authorization import assert_authorized_evaluation, restriction_enabled
     from app.services import canonical_evaluation as ce
     from app.services.canonical_program_identity import alias_memo_scope
 
@@ -97,6 +98,10 @@ async def regenerate_project(project_id, *, timeout_s: float = HARD_TIMEOUT_SECO
     ticker = asyncio.ensure_future(_ticker(t0))
     try:
         async with session_factory() as session:
+            # Four-anchor allow-list + registered isolated copy (services/evaluation_authorization.py): fail closed BEFORE any evaluation work. Always for the
+            # operator path; for the product's Save worker only when CINEGLOBE_EVALUATION_ALLOWLIST=four-anchor-copies is set (an isolated verification stack).
+            if require_isolated_database or restriction_enabled():
+                await assert_authorized_evaluation(session, project_id)
             if measure_only:
                 ce.ENGINE_VERSION = real_engine_version + "-measure"
                 session.commit = session.flush  # type: ignore[method-assign]  # never persist a measurement run
